@@ -284,8 +284,13 @@ def pull_multi_task_data(
             post-merge as the row-wise max into the canonical `date_col`. This
             makes a downstream temporal split on `date_col` leakage-safe: a
             compound assayed post-cutoff in *any* source is held out, so future
-            information cannot reach training via any task. Every source must
-            contain `date_col` or a ValueError is raised. Defaults to None
+            information cannot reach training via any task. Missing-date handling
+            differs by pass: an ID-based source missing `date_col` raises (these
+            are internal sources expected to carry a date — a missing one is
+            almost always a typo), whereas a SMILES-based source missing it (e.g.
+            external/public data) contributes NaT, so those date-less rows carry
+            no temporal information and default to the training side of the split.
+            Defaults to None
             (no special date handling — `date_col` would flow through as a
             shared feature and collapse to an arbitrary "first" value across
             sources, which is unsafe for temporal splits).
@@ -299,7 +304,9 @@ def pull_multi_task_data(
 
     smiles_based_sources = smiles_based_sources or {}
 
-    def _pull_and_normalize(fs_name: str, fs_config: dict) -> tuple[pd.DataFrame, list[str], list[str]]:
+    def _pull_and_normalize(
+        fs_name: str, fs_config: dict, date_required: bool = True
+    ) -> tuple[pd.DataFrame, list[str], list[str]]:
         target_info = fs_config["target_info"]
         src_id = fs_config.get("src_id_col", id_column)
 
@@ -325,10 +332,24 @@ def pull_multi_task_data(
         # synthesized as a row-wise max after all merging completes.
         passthrough_cols: list[str] = []
         if date_col is not None:
-            if date_col not in df.columns:
-                raise ValueError(f"Source '{fs_name}' missing date_col '{date_col}'")
             private_date = f"__date_{fs_name}"
-            df = df.rename(columns={date_col: private_date})
+            if date_col in df.columns:
+                df = df.rename(columns={date_col: private_date})
+            elif date_required:
+                # ID-based (internal LIMS) sources are expected to carry the date
+                # column; a missing one is almost always a typo or a wrong
+                # FeatureSet. Fail loudly rather than silently train on everything.
+                raise ValueError(f"Source '{fs_name}' missing required date_col '{date_col}'")
+            else:
+                # SMILES-based (external/public) sources legitimately have no
+                # assay date. They contribute NaT: the canonical date_col is a
+                # row-wise max that skips NaT, and temporal_split places NaT rows
+                # in neither the after-cutoff holdout nor the train-after set — so
+                # they default to weight 1.0 (training). This keeps date-less
+                # public data as leakage-safe background supervision rather than
+                # failing the whole pull.
+                log.warning(f"Source '{fs_name}' missing date_col '{date_col}'; rows contribute NaT (training-only)")
+                df[private_date] = pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
             passthrough_cols.append(private_date)
 
         log.info(f"  {fs_name}: {len(df):,} rows, {len(df.columns)} cols")
@@ -337,7 +358,7 @@ def pull_multi_task_data(
     # Pass 1: id-based outer join
     id_dfs, id_targets, id_passthrough = [], [], []
     for fs_name, fs_config in id_based_sources.items():
-        df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config)
+        df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config, date_required=True)
         id_dfs.append(df)
         id_targets.append(target_cols)
         id_passthrough.append(passthrough_cols)
@@ -350,10 +371,11 @@ def pull_multi_task_data(
     merged_targets = [t for tl in id_targets for t in tl]
     merged_passthrough = [p for pl in id_passthrough for p in pl]
     for fs_name, fs_config in smiles_based_sources.items():
-        df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config)
+        df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config, date_required=False)
         merged = combine_multi_task_data(
             [merged, df],
             [merged_targets, target_cols],
+            id_column=id_column,
             merge_on_smiles=True,
             passthrough_columns=[merged_passthrough, passthrough_cols],
         )
@@ -365,7 +387,18 @@ def pull_multi_task_data(
     # information leaks into training through any auxiliary task.
     if date_col is not None:
         private_cols = [f"__date_{n}" for n in list(id_based_sources) + list(smiles_based_sources)]
-        merged[date_col] = merged[private_cols].max(axis=1)
+        # Coerce every per-source date column to datetime before the row-wise max.
+        # A source that lacked date_col contributes an all-NaT column, and the
+        # cross-source merge can leave such placeholders as object/float NA; the
+        # coercion guarantees a uniform datetime64 block so .max(axis=1) is
+        # dtype-safe and simply skips NaT.
+        date_block = merged[private_cols].apply(lambda s: pd.to_datetime(s, errors="coerce"))
+        # Emit a plain YYYY-MM-DD *string* (NaT -> NaN), not a datetime64. A
+        # datetime64 column is rewritten by PandasToFeatures as a UTC/'Z' ISO
+        # string, which then parses back tz-aware and makes a tz-naive
+        # temporal_split cutoff comparison raise. Storing a date string keeps the
+        # column consistent with single-task FeatureSets and round-trips cleanly.
+        merged[date_col] = date_block.max(axis=1).dt.strftime("%Y-%m-%d")
         merged = merged.drop(columns=private_cols)
 
     return merged

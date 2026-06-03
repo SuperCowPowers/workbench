@@ -24,6 +24,13 @@ def datetime_to_iso8601(datetime_obj) -> str:
     global last_log
     current_time = time.time()
 
+    # NaT / null input -> null output, silently. pd.NaT satisfies the datetime
+    # isinstance check below but raises on astimezone(), which otherwise logs an
+    # error for every date-less row. Null dates are expected (e.g. external/public
+    # data merged on SMILES with no assay date), so just return None.
+    if pd.isna(datetime_obj):
+        return None
+
     # Check for valid input
     if not isinstance(datetime_obj, (datetime, date)):
         log.error("Invalid input: Expected datetime or date object")

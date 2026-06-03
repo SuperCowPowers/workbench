@@ -415,14 +415,17 @@ def temporal_split(df: pd.DataFrame, date_column: str, end_date: str) -> Tuple[p
     # Timestamp is filled into a column that otherwise holds date-only strings).
     df[date_column] = pd.to_datetime(df[date_column], errors="coerce", format="mixed")
 
-    # Log diagnostic info about any unparseable dates
+    # Log diagnostic info about any unparseable dates. A null/unparseable date is
+    # expected for date-less rows (e.g. external/public sources merged in via
+    # SMILES) — those simply fall to the training side below — so this is a
+    # once-per-call warning, not an error.
     nat_count = df[date_column].isna().sum()
     if nat_count > 0:
         nat_mask = df[date_column].isna()
         sample_raw = raw_values[nat_mask].head(5).tolist()
-        log.error(
-            f"temporal_split: {nat_count}/{len(df)} '{date_column}' values could not be parsed as dates. "
-            f"Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
+        log.warning(
+            f"temporal_split: {nat_count}/{len(df)} '{date_column}' values could not be parsed as dates "
+            f"(treated as training). Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
         )
 
     cutoff = pd.to_datetime(end_date)
