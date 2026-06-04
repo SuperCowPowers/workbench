@@ -537,6 +537,9 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     n_valid = len(df)
     if n_valid < n_total:
         log.info(f"UQ metrics: dropped {n_total - n_valid} of {n_total} rows with NaN in metric inputs")
+    if n_valid == 0:
+        log.warning("UQ metrics: no valid rows after dropping NaNs. Returning empty metrics.")
+        return {}
 
     # --- Coverage and Interval Width ---
     if "q_025" in df.columns and "q_975" in df.columns:

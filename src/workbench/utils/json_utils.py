@@ -21,7 +21,9 @@ class CustomEncoder(json.JSONEncoder):
 
     def default(self, obj):
         try:
-            if isinstance(obj, np.integer):
+            if obj is pd.NA or obj is pd.NaT:
+                return None
+            elif isinstance(obj, np.integer):
                 return int(obj)
             elif isinstance(obj, np.floating):
                 return float(obj)
