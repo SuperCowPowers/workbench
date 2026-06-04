@@ -397,8 +397,16 @@ class EndpointCore(Artifact):
             self.log.error("No model found for this endpoint. Returning empty DataFrame.")
             return pd.DataFrame()
 
-        # Pull a sample from the model's training view
-        eval_df = model.training_view().pull_dataframe(limit=num_rows)
+        # Pull a sample from the model's training view, preferring rows with a
+        # non-NaN primary target so multi-task models (sparse per target) yield
+        # scorable rows rather than an all-NaN sample.
+        view = model.training_view()
+        targets = model.target()
+        primary = targets[0] if isinstance(targets, list) else targets
+        if primary and primary in view.column_details():
+            eval_df = view.query(f'SELECT * FROM "{view.table}" WHERE "{primary}" IS NOT NULL LIMIT {num_rows}')
+        else:
+            eval_df = view.pull_dataframe(limit=num_rows)
 
         # Remove AWS created columns
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
