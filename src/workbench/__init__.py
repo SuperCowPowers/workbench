@@ -44,3 +44,11 @@ from workbench.utils.workbench_logging import logging_setup
 # Check the environment variable to decide whether to set up logging
 if os.getenv("WORKBENCH_SKIP_LOGGING", "False").lower() != "true":
     logging_setup()
+
+# Route all awswrangler Athena queries through the Workbench workgroup. The
+# workgroup carries a ResultConfiguration (S3 output location), so awswrangler
+# does not fall back to the default results bucket. This global config is
+# enforced across every wr.athena.* call in the process.
+import awswrangler as wr
+
+wr.config.workgroup = "workbench-workgroup"

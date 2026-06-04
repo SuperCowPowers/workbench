@@ -604,6 +604,7 @@ class WorkbenchCoreStack(Stack):
             "WorkbenchAthenaWorkGroup",
             name="workbench-workgroup",
             work_group_configuration=athena.CfnWorkGroup.WorkGroupConfigurationProperty(
+                enforce_work_group_configuration=True,
                 result_configuration=athena.CfnWorkGroup.ResultConfigurationProperty(
                     output_location=f"s3://{athena_results_bucket}/workbench/"
                 )

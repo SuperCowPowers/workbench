@@ -64,6 +64,24 @@ class AWSAccountCheck:
                 self.log.error(f"Error checking bucket {bucket_name}: {e}")
                 sys.exit(1)
 
+    def ensure_athena_workgroup(self):
+        """Ensure that the Workbench Athena workgroup exists"""
+        workgroup = "workbench-workgroup"
+        self.log.important(f"Checking if Athena workgroup {workgroup} exists...")
+
+        try:
+            athena_client = self.aws_clamp.boto3_session.client("athena")
+            athena_client.get_work_group(WorkGroup=workgroup)
+            self.log.info(f"Athena workgroup {workgroup} already exists")
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "InvalidRequestException":
+                self.log.error(f"Athena workgroup {workgroup} does not exist.")
+                self.log.error("Deploy the workbench_core CDK stack to create it.")
+                sys.exit(1)
+            else:
+                self.log.error(f"Error checking workgroup {workgroup}: {e}")
+                sys.exit(1)
+
     def check(self):
         """Check if the AWS Account is set up Correctly"""
         self.log.info("*** Caller/Base AWS Identity Check ***")
@@ -93,6 +111,11 @@ class AWSAccountCheck:
         # Check that the Athena Results Bucket exists
         self.log.info("*** AWS Athena Results Bucket Check ***")
         self.ensure_athena_results_bucket()
+        print("\n")
+
+        # Check that the Athena workgroup exists
+        self.log.info("*** AWS Athena Workgroup Check ***")
+        self.ensure_athena_workgroup()
         print("\n")
 
         self.log.info("AWS Account Clamp: AOK!")
