@@ -3065,15 +3065,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pipelinesyaml" class="md-nav__link">
+  <a href="#pipelinesjson" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pipelines.yaml
+        pipelines.json
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="pipelines.yaml">
+    <nav class="md-nav" aria-label="pipelines.json">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4276,15 +4276,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pipelinesyaml" class="md-nav__link">
+  <a href="#pipelinesjson" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pipelines.yaml
+        pipelines.json
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="pipelines.yaml">
+    <nav class="md-nav" aria-label="pipelines.json">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4367,26 +4367,23 @@
 <h1 id="ml-pipelines">ML Pipelines</h1>
 <p>An <strong>ML pipeline</strong> is a set of scripts that build Workbench artifacts (FeatureSets,
 Models, Endpoints) with dependencies between them. Pipelines are declared in a
-<code>pipelines.yaml</code> file and launched with the <code>ml_pipeline_launcher</code> CLI, which
+<code>pipelines.json</code> file and launched with the <code>ml_pipeline_launcher</code> CLI, which
 orders the runs and submits them to AWS Batch (or runs them locally).</p>
-<h2 id="pipelinesyaml">pipelines.yaml</h2>
-<p>The launcher discovers every <code>pipelines.yaml</code> under the current directory. Each
+<h2 id="pipelinesjson">pipelines.json</h2>
+<p>The launcher discovers every <code>pipelines.json</code> under the current directory. Each
 file maps pipeline names to a <strong>flat list of nodes</strong>:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">pipelines</span><span class="p">:</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="c1"># Single-node pipeline: one script does data -&gt; features -&gt; model -&gt; endpoint.</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">wine_classifier</span><span class="p">:</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wine_classifier.py</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="c1"># aqsol: one script builds the FeatureSet; the two model scripts consume it and,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="c1"># having no dependency on each other, run in parallel once it completes.</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="nt">aqsol</span><span class="p">:</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">aqsol_feature_set.py</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">produces</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">fs</span><span class="p p-Indicator">:</span><span class="nv">aqsol_features</span><span class="p p-Indicator">]</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">aqsol_class.py</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="nt">consumes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">fs</span><span class="p p-Indicator">:</span><span class="nv">aqsol_features</span><span class="p p-Indicator">]</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">aqsol_reg.py</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="nt">consumes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">fs</span><span class="p p-Indicator">:</span><span class="nv">aqsol_features</span><span class="p p-Indicator">]</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;pipelines&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&quot;wine_classifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;wine_classifier.py&quot;</span><span class="p">}</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">],</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">&quot;aqsol&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aqsol_feature_set.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fs:aqsol_features&quot;</span><span class="p">]},</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aqsol_class.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;inputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fs:aqsol_features&quot;</span><span class="p">]},</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aqsol_reg.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;inputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fs:aqsol_features&quot;</span><span class="p">]}</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">]</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="node-schema">Node schema</h3>
 <table>
@@ -4401,7 +4398,7 @@ file maps pipeline names to a <strong>flat list of nodes</strong>:</p>
 <tr>
 <td><code>script</code></td>
 <td>yes</td>
-<td>Script filename, resolved relative to the <code>pipelines.yaml</code> it's in.</td>
+<td>Script filename, resolved relative to the <code>pipelines.json</code> it's in.</td>
 </tr>
 <tr>
 <td><code>mode</code></td>
@@ -4409,12 +4406,12 @@ file maps pipeline names to a <strong>flat list of nodes</strong>:</p>
 <td>Run mode, <code>dt</code> or <code>ts</code>. Omit for a modeless node (see <a href="#modes">Modes</a>).</td>
 </tr>
 <tr>
-<td><code>produces</code></td>
+<td><code>outputs</code></td>
 <td>no</td>
-<td>Artifact refs this node creates, e.g. <code>[fs:aqsol_features]</code>.</td>
+<td>Artifact refs this node produces, e.g. <code>["fs:aqsol_features"]</code>.</td>
 </tr>
 <tr>
-<td><code>consumes</code></td>
+<td><code>inputs</code></td>
 <td>no</td>
 <td>Artifact refs this node depends on.</td>
 </tr>
@@ -4445,9 +4442,9 @@ artifact ref is a <code>type:name</code> string:</p>
 </tr>
 </tbody>
 </table>
-<p>The execution graph is <strong>derived</strong>: for each <code>consumes</code> ref, the launcher draws an
-edge from whichever node <code>produces</code> that same ref. You never hand-write the
-ordering — it falls out of the data flow. The <code>aqsol</code> pipeline above resolves to:</p>
+<p>The execution graph is <strong>derived</strong>: for each <code>inputs</code> ref, the launcher draws an
+edge from whichever node lists it in <code>outputs</code>. You never hand-write the ordering —
+it falls out of the data flow. The <code>aqsol</code> pipeline above resolves to:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aqsol_feature_set --&gt; aqsol_class | aqsol_reg
 </span></code></pre></div>
 <p>(<code>--&gt;</code> separates dependency stages; <code>|</code> separates nodes that run in parallel.)</p>
@@ -4455,15 +4452,16 @@ ordering — it falls out of the data flow. The <code>aqsol</code> pipeline abov
 <p>A node may declare a singular <code>mode</code>. Because the artifacts a script produces can
 differ by mode, a script that runs in more than one mode appears as <strong>more than one
 node</strong>:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">caco2_er_reg</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">caco2_er_reg_xgb_1.py</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dt</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">produces</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">fs</span><span class="p p-Indicator">:</span><span class="nv">caco2_er_f1</span><span class="p p-Indicator">]</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">caco2_er_reg_xgb_1.py</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ts</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="nt">consumes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">fs</span><span class="p p-Indicator">:</span><span class="nv">caco2_er_f1</span><span class="p p-Indicator">]</span><span class="w">   </span><span class="c1"># the ts run depends on the dt run&#39;s FeatureSet</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;pipelines&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;caco2_er_reg&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;caco2_er_reg_xgb_1.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dt&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;outputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fs:caco2_er_f1&quot;</span><span class="p">]},</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;script&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;caco2_er_reg_xgb_1.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ts&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;inputs&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fs:caco2_er_f1&quot;</span><span class="p">]}</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">]</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Mode selection at launch time:</p>
+<p>Here the <code>ts</code> run depends on the <code>dt</code> run's FeatureSet. Mode selection at launch time:</p>
 <ul>
 <li><strong><code>--dt</code> / <code>--ts</code></strong> — run only nodes with that mode. Modeless nodes always run.</li>
 <li><strong>no mode flag</strong> — run every node (all modes), in dependency order.</li>
@@ -4476,14 +4474,14 @@ run; the launcher assumes the <code>dt</code> run already created it and the job
 <h2 id="validation">Validation</h2>
 <p>When a selected pipeline is built, the launcher enforces:</p>
 <ul>
-<li><strong>One producer per artifact</strong> — two nodes producing the same ref is an error.</li>
+<li><strong>One producer per artifact</strong> — two nodes listing the same ref in <code>outputs</code> is an error.</li>
 <li><strong>Acyclic</strong> — a dependency cycle is an error.</li>
-<li><strong>Dangling consume</strong> — a <code>consumes</code> ref that no node produces emits a warning and
-  is treated as an external (already-existing) input.</li>
+<li><strong>Dangling input</strong> — an <code>inputs</code> ref that no node outputs emits a warning and is
+  treated as an external (already-existing) input.</li>
 </ul>
 <h2 id="running-pipelines">Running pipelines</h2>
 <p>Run <code>ml_pipeline_launcher</code> from a directory containing your pipeline scripts and
-<code>pipelines.yaml</code>:</p>
+<code>pipelines.json</code>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ml_pipeline_launcher<span class="w"> </span>--dt<span class="w"> </span>--all<span class="w">            </span><span class="c1"># Launch ALL pipelines in DT mode</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>ml_pipeline_launcher<span class="w"> </span>--dt<span class="w"> </span>caco2<span class="w">            </span><span class="c1"># Launch pipelines matching &#39;caco2&#39; in DT mode</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>ml_pipeline_launcher<span class="w"> </span>--ts<span class="w"> </span>--all<span class="w">            </span><span class="c1"># Temporal-split ALL pipelines</span>
