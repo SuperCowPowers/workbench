@@ -458,6 +458,7 @@ pytz==2026.2
     #   sagemaker-core
 pyyaml==6.0.3
     # via
+    #   workbench (pyproject.toml)
     #   mlflow-skinny
     #   omegaconf
     #   sagemaker-core
