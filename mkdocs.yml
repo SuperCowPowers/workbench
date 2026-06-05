@@ -86,6 +86,7 @@ nav:
       - Graphs: data_algorithms/graphs/overview.md
       - Spark: data_algorithms/spark/overview.md
       - SQL: data_algorithms/sql/overview.md
+  - ML Pipelines: ml_pipelines/index.md
   - Workbench Enterprise:
       - OverView: enterprise/index.md
       - Private SaaS: enterprise/private_saas.md

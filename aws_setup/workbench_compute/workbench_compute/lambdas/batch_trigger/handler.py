@@ -1,8 +1,8 @@
 """Batch Trigger Lambda: Processes SQS messages and submits jobs to AWS Batch.
 
 This Lambda handles job dependencies by:
-1. Reading outputs/inputs from the SQS message body
-2. Querying Batch for active jobs that produce what this job needs
+1. Reading the artifact outputs/inputs from the SQS message body
+2. Querying Batch for active jobs that produce the artifacts this job needs
 3. Submitting with dependsOn to ensure proper execution order
 """
 
@@ -23,16 +23,16 @@ JOB_DEFINITIONS = {
 
 
 def find_active_jobs_with_output(output_name: str) -> list[str]:
-    """Find all active Batch jobs that produce the specified output.
+    """Find all active Batch jobs that produce the specified artifact.
 
     Queries for jobs in PENDING, RUNNABLE, STARTING, or RUNNING status
-    that have the matching output in their environment.
+    that have the matching artifact ref in their environment.
 
     Args:
-        output_name (str): The output name to look for (e.g., "my_dag:stage_0")
+        output_name (str): The artifact ref to look for (e.g., "fs:aqsol_features")
 
     Returns:
-        list[str]: List of job IDs that produce this output
+        list[str]: List of job IDs that produce this artifact
     """
     active_statuses = ["SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING"]
     job_ids = []

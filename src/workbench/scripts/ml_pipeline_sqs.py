@@ -40,8 +40,8 @@ def submit_to_sqs(
         temporal_split (bool): If True, sets TEMPORAL_SPLIT=True in environment (default: False)
         group_id (str | None): Optional MessageGroupId override for dependency chains
         pipeline_meta (str | None): Optional JSON string for PIPELINE_META environment variable
-        outputs (list[str] | None): Stage outputs for dependency tracking (e.g., ["dag:stage_0"])
-        inputs (list[str] | None): Stage inputs for dependency tracking (e.g., ["dag:stage_0"])
+        outputs (list[str] | None): Artifact refs this job produces (e.g., ["fs:aqsol_features"])
+        inputs (list[str] | None): Artifact refs this job consumes (its dependencies)
         script_args (list[str] | None): Args forwarded verbatim to the pipeline script,
             passed to the Batch container as the PIPELINE_ARGS environment variable
 
@@ -153,7 +153,7 @@ def submit_to_sqs(
     if script_args:
         message["environment"]["PIPELINE_ARGS"] = json.dumps(script_args)
 
-    # Stage dependency info for batch_trigger
+    # Artifact dependency info for batch_trigger
     if outputs:
         message["outputs"] = outputs
     if inputs:
@@ -244,12 +244,12 @@ def main():
     parser.add_argument(
         "--outputs",
         default=None,
-        help="Comma-separated stage outputs for dependency tracking (e.g., 'dag:stage_0')",
+        help="Comma-separated artifact refs this job produces (e.g., 'fs:aqsol_features')",
     )
     parser.add_argument(
         "--inputs",
         default=None,
-        help="Comma-separated stage inputs for dependency tracking (e.g., 'dag:stage_0')",
+        help="Comma-separated artifact refs this job consumes (e.g., 'fs:aqsol_features')",
     )
     parser.add_argument(
         "--script-args",
