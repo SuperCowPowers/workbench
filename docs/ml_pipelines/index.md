@@ -2,40 +2,37 @@
 
 An **ML pipeline** is a set of scripts that build Workbench artifacts (FeatureSets,
 Models, Endpoints) with dependencies between them. Pipelines are declared in a
-`pipelines.yaml` file and launched with the `ml_pipeline_launcher` CLI, which
+`pipelines.json` file and launched with the `ml_pipeline_launcher` CLI, which
 orders the runs and submits them to AWS Batch (or runs them locally).
 
-## pipelines.yaml
+## pipelines.json
 
-The launcher discovers every `pipelines.yaml` under the current directory. Each
+The launcher discovers every `pipelines.json` under the current directory. Each
 file maps pipeline names to a **flat list of nodes**:
 
-```yaml
-pipelines:
-
-  # Single-node pipeline: one script does data -> features -> model -> endpoint.
-  wine_classifier:
-    - script: wine_classifier.py
-
-  # aqsol: one script builds the FeatureSet; the two model scripts consume it and,
-  # having no dependency on each other, run in parallel once it completes.
-  aqsol:
-    - script: aqsol_feature_set.py
-      produces: [fs:aqsol_features]
-    - script: aqsol_class.py
-      consumes: [fs:aqsol_features]
-    - script: aqsol_reg.py
-      consumes: [fs:aqsol_features]
+```json
+{
+  "pipelines": {
+    "wine_classifier": [
+      {"script": "wine_classifier.py"}
+    ],
+    "aqsol": [
+      {"script": "aqsol_feature_set.py", "outputs": ["fs:aqsol_features"]},
+      {"script": "aqsol_class.py", "inputs": ["fs:aqsol_features"]},
+      {"script": "aqsol_reg.py", "inputs": ["fs:aqsol_features"]}
+    ]
+  }
+}
 ```
 
 ### Node schema
 
-| Field      | Required | Description                                                        |
-|------------|----------|--------------------------------------------------------------------|
-| `script`   | yes      | Script filename, resolved relative to the `pipelines.yaml` it's in. |
-| `mode`     | no       | Run mode, `dt` or `ts`. Omit for a modeless node (see [Modes](#modes)). |
-| `produces` | no       | Artifact refs this node creates, e.g. `[fs:aqsol_features]`.        |
-| `consumes` | no       | Artifact refs this node depends on.                                |
+| Field     | Required | Description                                                        |
+|-----------|----------|--------------------------------------------------------------------|
+| `script`  | yes      | Script filename, resolved relative to the `pipelines.json` it's in. |
+| `mode`    | no       | Run mode, `dt` or `ts`. Omit for a modeless node (see [Modes](#modes)). |
+| `outputs` | no       | Artifact refs this node produces, e.g. `["fs:aqsol_features"]`.     |
+| `inputs`  | no       | Artifact refs this node depends on.                                |
 
 ### Artifact refs
 
@@ -48,9 +45,9 @@ artifact ref is a `type:name` string:
 | `ds:`    | DataSource |
 | `model:` | Model      |
 
-The execution graph is **derived**: for each `consumes` ref, the launcher draws an
-edge from whichever node `produces` that same ref. You never hand-write the
-ordering — it falls out of the data flow. The `aqsol` pipeline above resolves to:
+The execution graph is **derived**: for each `inputs` ref, the launcher draws an
+edge from whichever node lists it in `outputs`. You never hand-write the ordering —
+it falls out of the data flow. The `aqsol` pipeline above resolves to:
 
 ```
 aqsol_feature_set --> aqsol_class | aqsol_reg
@@ -64,17 +61,18 @@ A node may declare a singular `mode`. Because the artifacts a script produces ca
 differ by mode, a script that runs in more than one mode appears as **more than one
 node**:
 
-```yaml
-caco2_er_reg:
-  - script: caco2_er_reg_xgb_1.py
-    mode: dt
-    produces: [fs:caco2_er_f1]
-  - script: caco2_er_reg_xgb_1.py
-    mode: ts
-    consumes: [fs:caco2_er_f1]   # the ts run depends on the dt run's FeatureSet
+```json
+{
+  "pipelines": {
+    "caco2_er_reg": [
+      {"script": "caco2_er_reg_xgb_1.py", "mode": "dt", "outputs": ["fs:caco2_er_f1"]},
+      {"script": "caco2_er_reg_xgb_1.py", "mode": "ts", "inputs": ["fs:caco2_er_f1"]}
+    ]
+  }
+}
 ```
 
-Mode selection at launch time:
+Here the `ts` run depends on the `dt` run's FeatureSet. Mode selection at launch time:
 
 - **`--dt` / `--ts`** — run only nodes with that mode. Modeless nodes always run.
 - **no mode flag** — run every node (all modes), in dependency order.
@@ -89,15 +87,15 @@ run; the launcher assumes the `dt` run already created it and the job proceeds
 
 When a selected pipeline is built, the launcher enforces:
 
-- **One producer per artifact** — two nodes producing the same ref is an error.
+- **One producer per artifact** — two nodes listing the same ref in `outputs` is an error.
 - **Acyclic** — a dependency cycle is an error.
-- **Dangling consume** — a `consumes` ref that no node produces emits a warning and
-  is treated as an external (already-existing) input.
+- **Dangling input** — an `inputs` ref that no node outputs emits a warning and is
+  treated as an external (already-existing) input.
 
 ## Running pipelines
 
 Run `ml_pipeline_launcher` from a directory containing your pipeline scripts and
-`pipelines.yaml`:
+`pipelines.json`:
 
 ```bash
 ml_pipeline_launcher --dt --all            # Launch ALL pipelines in DT mode

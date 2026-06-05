@@ -1,5 +1,6 @@
-"""Tests for ml_pipeline_launcher.py - pipelines.yaml loading, DAG building, and sort_pipelines."""
+"""Tests for ml_pipeline_launcher.py - pipelines.json loading, DAG building, and sort_pipelines."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -15,24 +16,25 @@ from workbench.scripts.ml_pipeline_launcher import (
 )
 
 
-def node(script, mode=None, produces=None, consumes=None):
+def node(script, mode=None, outputs=None, inputs=None):
     """Build a PipelineNode with a Path script (test convenience)."""
-    return PipelineNode(Path(script), mode, produces or [], consumes or [])
+    return PipelineNode(Path(script), mode, outputs or [], inputs or [])
 
 
 class TestLoadPipelinesConfig:
-    """Tests for loading pipelines.yaml into PipelineNode lists."""
+    """Tests for loading pipelines.json into PipelineNode lists."""
 
-    def test_load_valid_yaml(self, tmp_path):
-        """Load a valid pipelines.yaml with produces/consumes nodes."""
-        (tmp_path / "pipelines.yaml").write_text("""
-            pipelines:
-              aqsol:
-                - script: aqsol_feature_set.py
-                  produces: [fs:aqsol_features]
-                - script: aqsol_class.py
-                  consumes: [fs:aqsol_features]
-            """)
+    def test_load_valid_json(self, tmp_path):
+        """Load a valid pipelines.json with outputs/inputs nodes."""
+        config = {
+            "pipelines": {
+                "aqsol": [
+                    {"script": "aqsol_feature_set.py", "outputs": ["fs:aqsol_features"]},
+                    {"script": "aqsol_class.py", "inputs": ["fs:aqsol_features"]},
+                ]
+            }
+        }
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
         result = load_pipelines_config(tmp_path)
 
         assert result is not None
@@ -40,40 +42,40 @@ class TestLoadPipelinesConfig:
         nodes = result["aqsol"]
         assert len(nodes) == 2
         assert nodes[0].script == tmp_path / "aqsol_feature_set.py"
-        assert nodes[0].produces == ["fs:aqsol_features"]
-        assert nodes[0].consumes == []
-        assert nodes[1].consumes == ["fs:aqsol_features"]
+        assert nodes[0].outputs == ["fs:aqsol_features"]
+        assert nodes[0].inputs == []
+        assert nodes[1].inputs == ["fs:aqsol_features"]
 
     def test_modeless_and_moded_nodes(self, tmp_path):
         """Nodes may omit mode (modeless) or declare a singular mode."""
-        (tmp_path / "pipelines.yaml").write_text("""
-            pipelines:
-              p:
-                - script: a.py
-                - script: b.py
-                  mode: dt
-                  produces: [fs:x]
-                - script: b.py
-                  mode: ts
-                  consumes: [fs:x]
-            """)
+        config = {
+            "pipelines": {
+                "p": [
+                    {"script": "a.py"},
+                    {"script": "b.py", "mode": "dt", "outputs": ["fs:x"]},
+                    {"script": "b.py", "mode": "ts", "inputs": ["fs:x"]},
+                ]
+            }
+        }
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
         nodes = load_pipelines_config(tmp_path)["p"]
         assert nodes[0].mode is None
         assert nodes[1].mode == "dt"
         assert nodes[2].mode == "ts"
 
-    def test_returns_none_when_no_yaml(self, tmp_path):
-        """Returns None when no pipelines.yaml exists in the directory."""
+    def test_returns_none_when_no_json(self, tmp_path):
+        """Returns None when no pipelines.json exists in the directory."""
         assert load_pipelines_config(tmp_path) is None
 
     def test_empty_pipelines(self, tmp_path):
-        """Handle YAML with an empty pipelines section."""
-        (tmp_path / "pipelines.yaml").write_text("pipelines: {}\n")
+        """Handle JSON with an empty pipelines section."""
+        (tmp_path / "pipelines.json").write_text(json.dumps({"pipelines": {}}))
         assert load_pipelines_config(tmp_path) == {}
 
     def test_paths_resolved_relative_to_directory(self, tmp_path):
-        """Script paths should be resolved relative to the YAML config's directory."""
-        (tmp_path / "pipelines.yaml").write_text("pipelines:\n  p:\n    - script: subdir_script.py\n")
+        """Script paths should be resolved relative to the JSON config's directory."""
+        config = {"pipelines": {"p": [{"script": "subdir_script.py"}]}}
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
         nodes = load_pipelines_config(tmp_path)["p"]
         assert nodes[0].script == tmp_path / "subdir_script.py"
 
@@ -82,9 +84,9 @@ class TestBuildDag:
     """Tests for build_dag artifact-derived edges and validation."""
 
     def test_edges_derived_from_artifacts(self):
-        """A consumed artifact links the consumer to its producer."""
-        producer = node("fs.py", produces=["fs:x"])
-        consumer = node("model.py", consumes=["fs:x"])
+        """An input artifact links the consumer to its producer."""
+        producer = node("fs.py", outputs=["fs:x"])
+        consumer = node("model.py", inputs=["fs:x"])
         graph = build_dag("p", [producer, consumer])
 
         assert graph.number_of_edges() == 1
@@ -93,18 +95,18 @@ class TestBuildDag:
     def test_fan_out(self):
         """One producer feeding two consumers yields two parallel edges."""
         nodes = [
-            node("fs.py", produces=["fs:x"]),
-            node("a.py", consumes=["fs:x"]),
-            node("b.py", consumes=["fs:x"]),
+            node("fs.py", outputs=["fs:x"]),
+            node("a.py", inputs=["fs:x"]),
+            node("b.py", inputs=["fs:x"]),
         ]
         graph = build_dag("p", nodes)
         assert graph.number_of_edges() == 2
         assert graph.out_degree((Path("fs.py"), None)) == 2
 
     def test_duplicate_producer_raises(self):
-        """Two nodes producing the same artifact is a hard error."""
-        with pytest.raises(ValueError, match="produced by both"):
-            build_dag("p", [node("a.py", produces=["fs:x"]), node("b.py", produces=["fs:x"])])
+        """Two nodes outputting the same artifact is a hard error."""
+        with pytest.raises(ValueError, match="output by both"):
+            build_dag("p", [node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
 
     def test_cycle_raises(self):
         """A dependency cycle is a hard error."""
@@ -112,14 +114,14 @@ class TestBuildDag:
             build_dag(
                 "p",
                 [
-                    node("a.py", produces=["fs:x"], consumes=["fs:y"]),
-                    node("b.py", produces=["fs:y"], consumes=["fs:x"]),
+                    node("a.py", outputs=["fs:x"], inputs=["fs:y"]),
+                    node("b.py", outputs=["fs:y"], inputs=["fs:x"]),
                 ],
             )
 
-    def test_dangling_consume_tolerated(self, capsys):
-        """A consume with no in-pipeline producer warns but is tolerated."""
-        graph = build_dag("p", [node("a.py", consumes=["fs:external"])])
+    def test_dangling_input_tolerated(self, capsys):
+        """An input with no in-pipeline producer warns but is tolerated."""
+        graph = build_dag("p", [node("a.py", inputs=["fs:external"])])
         assert graph.number_of_nodes() == 1
         assert graph.number_of_edges() == 0
         assert "external input" in capsys.readouterr().err
@@ -137,7 +139,7 @@ class TestSortPipelines:
         """Producer runs before its consumers."""
         fs = tmp_path / "fs.py"
         a = tmp_path / "a.py"
-        dags = {"p": [node(fs, produces=["fs:x"]), node(a, consumes=["fs:x"])]}
+        dags = {"p": [node(fs, outputs=["fs:x"]), node(a, inputs=["fs:x"])]}
 
         plan = sort_pipelines([fs, a], dags)
 
@@ -153,7 +155,7 @@ class TestSortPipelines:
         fs = tmp_path / "fs.py"
         a = tmp_path / "a.py"
         b = tmp_path / "b.py"
-        dags = {"p": [node(fs, produces=["fs:x"]), node(a, consumes=["fs:x"]), node(b, consumes=["fs:x"])]}
+        dags = {"p": [node(fs, outputs=["fs:x"]), node(a, inputs=["fs:x"]), node(b, inputs=["fs:x"])]}
 
         plan = sort_pipelines([fs, a, b], dags)
 
@@ -166,7 +168,7 @@ class TestSortPipelines:
     def test_mode_filter_dt(self, tmp_path):
         """Filter mode keeps only matching (and modeless) nodes."""
         xgb = tmp_path / "xgb.py"
-        dags = {"p": [node(xgb, "dt", produces=["fs:x"]), node(xgb, "ts", consumes=["fs:x"])]}
+        dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags, mode="dt")
         assert plan.runs == [(xgb, "dt")]
@@ -174,7 +176,7 @@ class TestSortPipelines:
     def test_mode_filter_ts_cross_mode_dependency(self, tmp_path):
         """A ts node keeps its input token even when the dt producer is filtered out."""
         xgb = tmp_path / "xgb.py"
-        dags = {"p": [node(xgb, "dt", produces=["fs:x"]), node(xgb, "ts", consumes=["fs:x"])]}
+        dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags, mode="ts")
         assert plan.runs == [(xgb, "ts")]
@@ -183,7 +185,7 @@ class TestSortPipelines:
     def test_no_filter_runs_all_modes(self, tmp_path):
         """With no filter, both modes run, producer before consumer."""
         xgb = tmp_path / "xgb.py"
-        dags = {"p": [node(xgb, "dt", produces=["fs:x"]), node(xgb, "ts", consumes=["fs:x"])]}
+        dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags)
         assert plan.runs == [(xgb, "dt"), (xgb, "ts")]
@@ -198,7 +200,7 @@ class TestSortPipelines:
         """Override modes run each unique script once, ignoring node modes and edges."""
         xgb = tmp_path / "xgb.py"
         b = tmp_path / "b.py"
-        dags = {"p": [node(xgb, "dt", produces=["fs:x"]), node(xgb, "ts", consumes=["fs:x"]), node(b, "dt")]}
+        dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"]), node(b, "dt")]}
 
         plan = sort_pipelines([xgb, b], dags, mode="promote")
         assert plan.runs == [(xgb, "promote"), (b, "promote")]
@@ -209,7 +211,7 @@ class TestSortPipelines:
         fs = tmp_path / "fs.py"
         a = tmp_path / "a.py"
         b = tmp_path / "b.py"
-        dags = {"p": [node(fs, produces=["fs:x"]), node(a, consumes=["fs:x"]), node(b, consumes=["fs:x"])]}
+        dags = {"p": [node(fs, outputs=["fs:x"]), node(a, inputs=["fs:x"]), node(b, inputs=["fs:x"])]}
 
         plan = sort_pipelines([fs, a], dags)  # b not selected
         scripts = {s for s, _ in plan.runs}
@@ -236,21 +238,22 @@ class TestSortPipelines:
 class TestGetAllPipelines:
     """Tests for get_all_pipelines discovery."""
 
-    def test_nested_yaml_discovered(self, tmp_path, monkeypatch):
-        """pipelines.yaml in a nested directory is found, with standalone scripts."""
+    def test_nested_json_discovered(self, tmp_path, monkeypatch):
+        """pipelines.json in a nested directory is found, with standalone scripts."""
         leaf = tmp_path / "top" / "leaf"
         leaf.mkdir(parents=True)
         (leaf / "fs.py").write_text("# fs\n")
         (leaf / "model.py").write_text("# model\n")
         (leaf / "standalone.py").write_text("# standalone\n")
-        (leaf / "pipelines.yaml").write_text("""
-            pipelines:
-              p:
-                - script: fs.py
-                  produces: [fs:x]
-                - script: model.py
-                  consumes: [fs:x]
-            """)
+        config = {
+            "pipelines": {
+                "p": [
+                    {"script": "fs.py", "outputs": ["fs:x"]},
+                    {"script": "model.py", "inputs": ["fs:x"]},
+                ]
+            }
+        }
+        (leaf / "pipelines.json").write_text(json.dumps(config))
 
         monkeypatch.chdir(tmp_path)
         pipelines, all_dags = get_all_pipelines()

@@ -54,9 +54,8 @@ dependencies = [
     # Plotting (matplotlib lives here because workbench_shell has a show()
     # command that's useful for showing 2D plots of chemical structures
     "matplotlib >= 3.9.2",
-    # Pipeline orchestration (DAG building + YAML pipeline specs)
+    # Pipeline orchestration (DAG building for pipeline specs)
     "networkx >= 3.2",
-    "pyyaml >= 6.0",
 ]
 
 [project.optional-dependencies]
