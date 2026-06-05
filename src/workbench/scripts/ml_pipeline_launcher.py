@@ -1,7 +1,7 @@
 """Launch ML pipelines via SQS or locally.
 
 Run this from a directory containing pipeline subdirectories (e.g., ml_pipelines/).
-Scripts can be defined in pipelines.json DAGs or run as standalone scripts.
+Scripts can be defined in pipelines.yaml DAGs or run as standalone scripts.
 
 Usage:
     ml_pipeline_launcher --dt --all              # Launch ALL pipelines in DT mode
@@ -29,12 +29,47 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import networkx as nx
+import yaml
+
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
 FILTER_MODES = {"dt", "ts"}
 OVERRIDE_MODES = {"promote", "test_promote"}
 ALL_MODES = FILTER_MODES | OVERRIDE_MODES
+
+
+def run_label(script: Path, mode: str | None) -> str:
+    """Human-readable label for a (script, mode) run: 'script@mode' or 'script'."""
+    return f"{script.stem}@{mode}" if mode else script.stem
+
+
+@dataclass
+class PipelineNode:
+    """A single node in a pipeline DAG: a script run in an optional mode.
+
+    A node declares the artifacts it produces and consumes (refs of the form
+    "type:name", e.g. "fs:aqsol_features"). DAG edges are derived by matching a
+    node's consumed artifacts to whichever node produces them, so the same
+    script can appear as multiple nodes under different modes.
+
+    Attributes:
+        script (Path): Path to the pipeline script
+        mode (str | None): Execution mode ("dt"/"ts"), or None for a modeless node
+        produces (list[str]): Artifact refs this node produces
+        consumes (list[str]): Artifact refs this node consumes (its dependencies)
+    """
+
+    script: Path
+    mode: str | None = None
+    produces: list[str] = field(default_factory=list)
+    consumes: list[str] = field(default_factory=list)
+
+    @property
+    def node_id(self) -> str:
+        """Stable label for this node, unique within a pipeline."""
+        return run_label(self.script, self.mode)
 
 
 @dataclass
@@ -59,9 +94,9 @@ class RunPlan:
         Args:
             script (Path): Path to the pipeline script
             mode (str): Execution mode (e.g., "dt", "promote")
-            group_id (str | None): DAG name for grouped execution, or None for standalone
-            outputs (list[str] | None): Stage outputs for dependency tracking
-            inputs (list[str] | None): Stage inputs (dependencies) for ordering
+            group_id (str | None): Pipeline name for grouped execution, or None for standalone
+            outputs (list[str] | None): Artifact refs this run produces
+            inputs (list[str] | None): Artifact refs this run consumes (its dependencies)
         """
         run = (script, mode)
         self.runs.append(run)
@@ -120,56 +155,117 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     )
 
 
-def load_pipelines_config(directory: Path) -> dict[str, list[dict[Path, list[str]]]] | None:
-    """Load pipelines.json from a directory.
+def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | None:
+    """Load pipelines.yaml from a directory.
 
-    The JSON uses a stage-based DAG format where each list item is a stage
-    (dict of script: [modes]). Scripts within a stage can run in parallel;
-    stages run sequentially.
+    The YAML maps each pipeline name to a flat list of nodes. A node runs a
+    script in an optional mode and declares the artifacts it produces/consumes.
+    DAG edges, and therefore execution order, are derived from those artifacts.
 
     Args:
-        directory (Path): Directory to check for pipelines.json
+        directory (Path): Directory to check for pipelines.yaml
 
     Returns:
-        dict | None: {dag_name: [stages]} where each stage is {script_path: [modes]},
-            or None if no JSON config found
+        dict | None: {pipeline_name: [PipelineNode]}, or None if no YAML config found
     """
-    json_path = directory / "pipelines.json"
-    if not json_path.exists():
+    yaml_path = directory / "pipelines.yaml"
+    if not yaml_path.exists():
         return None
-    with open(json_path) as f:
-        config = json.load(f)
-    dags = {}
-    for dag_name, stages in config.get("dags", {}).items():
-        dag_stages = []
-        for stage in stages:
-            stage_dict = {directory / script: modes for script, modes in stage.items()}
-            dag_stages.append(stage_dict)
-        dags[dag_name] = dag_stages
-    return dags
+    with open(yaml_path) as f:
+        config = yaml.safe_load(f) or {}
+    pipelines = {}
+    for name, raw_nodes in config.get("pipelines", {}).items():
+        pipelines[name] = [
+            PipelineNode(
+                script=directory / raw["script"],
+                mode=raw.get("mode"),
+                produces=raw.get("produces", []),
+                consumes=raw.get("consumes", []),
+            )
+            for raw in raw_nodes
+        ]
+    return pipelines
+
+
+def build_dag(name: str, nodes: list[PipelineNode]) -> nx.DiGraph:
+    """Build a DiGraph for a pipeline, deriving edges from produces/consumes.
+
+    Each node becomes a graph node keyed by (script, mode), with the
+    PipelineNode stored under the "node" attribute. Edges run producer ->
+    consumer, matched by artifact ref.
+
+    Args:
+        name (str): Pipeline name (used in error/warning messages)
+        nodes (list[PipelineNode]): Nodes belonging to the pipeline
+
+    Returns:
+        nx.DiGraph: The derived dependency graph
+
+    Raises:
+        ValueError: If two nodes produce the same artifact, if a node is
+            duplicated, or if the resulting graph has a dependency cycle.
+    """
+    graph = nx.DiGraph()
+    producer_of: dict[str, tuple[Path, str | None]] = {}
+
+    # Register nodes and index artifact producers (one producer per artifact)
+    for node in nodes:
+        key = (node.script, node.mode)
+        if key in graph:
+            raise ValueError(f"Pipeline '{name}': duplicate node {node.node_id}")
+        graph.add_node(key, node=node)
+        for artifact in node.produces:
+            if artifact in producer_of:
+                other = run_label(*producer_of[artifact])
+                raise ValueError(
+                    f"Pipeline '{name}': artifact '{artifact}' is produced by "
+                    f"both {other} and {node.node_id} (each artifact needs exactly one producer)"
+                )
+            producer_of[artifact] = key
+
+    # Derive edges: each consumed artifact links back to its producer
+    for node in nodes:
+        for artifact in node.consumes:
+            producer = producer_of.get(artifact)
+            if producer is None:
+                print(
+                    f"WARNING: pipeline '{name}': node {node.node_id} consumes '{artifact}', "
+                    f"which no node in the pipeline produces; treating it as an external input.",
+                    file=sys.stderr,
+                )
+                continue
+            graph.add_edge(producer, (node.script, node.mode))
+
+    if not nx.is_directed_acyclic_graph(graph):
+        cycle = nx.find_cycle(graph)
+        readable = " -> ".join(run_label(s, m) for (s, m), _ in cycle)
+        raise ValueError(f"Pipeline '{name}' has a dependency cycle: {readable}")
+
+    return graph
 
 
 def sort_pipelines(
     pipelines: list[Path],
-    all_dags: dict[str, list[dict[Path, list[str]]]],
+    all_dags: dict[str, list[PipelineNode]],
     mode: str | None = None,
 ) -> RunPlan:
-    """Sort pipelines by DAG stages with per-script modes.
+    """Sort pipelines into a topologically ordered run plan.
 
-    Scripts defined in a pipelines.json DAG are ordered by stage. Standalone
-    scripts (not in any DAG) are appended as independent runs.
+    Scripts defined in a pipelines.yaml DAG are ordered by their derived
+    artifact dependencies. Standalone scripts (not in any DAG) are appended as
+    independent runs.
 
     Mode behavior depends on the mode type:
-        - Filter modes (dt, ts): Only run scripts that declare the mode in
-          their pipelines.json entry. Respects DAG ordering.
+        - Filter modes (dt, ts): Only run nodes whose mode matches (modeless
+          nodes always run). Respects DAG ordering.
         - Override modes (promote, test_promote): Run every unique script once
-          with the override mode, ignoring JSON modes. No DAG ordering.
-        - None: Run all modes from pipelines.json, respecting DAG ordering.
+          with the override mode, ignoring node modes. No DAG ordering.
+        - None: Run all nodes (every mode), respecting DAG ordering.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
-        all_dags (dict): DAG definitions from pipelines.json files
-            {dag_name: [stages]} where each stage is {script_path: [modes]}
+        all_dags (dict): DAG definitions from pipelines.yaml files
+            {pipeline_name: [PipelineNode]}
         mode (str | None): Execution mode from CLI flags (e.g., "dt", "promote")
 
     Returns:
@@ -185,7 +281,7 @@ def sort_pipelines(
 
 def _build_override_plan(
     pipelines: list[Path],
-    all_dags: dict[str, list[dict[Path, list[str]]]],
+    all_dags: dict[str, list[PipelineNode]],
     mode: str,
 ) -> RunPlan:
     """Build a plan that runs each unique script once with the override mode.
@@ -204,107 +300,126 @@ def _build_override_plan(
     plan = RunPlan()
     seen_scripts = set()
 
-    # Collect unique scripts from DAGs (in DAG order for display consistency)
-    for dag_name, stages in all_dags.items():
-        for stage in stages:
-            for script in stage:
-                if script in pipeline_set and script not in seen_scripts:
-                    seen_scripts.add(script)
-                    plan.add_run(script, mode)
-                    plan.display_lines.append(f"   {script.stem}:{mode}")
+    # Collect unique scripts from DAGs (in node order for display consistency)
+    for nodes in all_dags.values():
+        for node in nodes:
+            script = node.script
+            if script in pipeline_set and script not in seen_scripts:
+                seen_scripts.add(script)
+                plan.add_run(script, mode)
+                plan.display_lines.append(f"   {run_label(script, mode)}")
 
     # Add standalone scripts
     for script in pipelines:
         if script not in seen_scripts:
             plan.add_run(script, mode)
-            plan.display_lines.append(f"   {script.stem}:{mode} (standalone)")
+            plan.display_lines.append(f"   {run_label(script, mode)} (standalone)")
 
     return plan
 
 
+def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
+    """Whether a node runs under the given filter mode.
+
+    A modeless node runs under every filter; a moded node runs only when there
+    is no filter or the filter matches its mode.
+    """
+    if node.mode is None or mode_filter is None:
+        return True
+    return node.mode == mode_filter
+
+
 def _build_dag_plan(
     pipelines: list[Path],
-    all_dags: dict[str, list[dict[Path, list[str]]]],
+    all_dags: dict[str, list[PipelineNode]],
     mode_filter: str | None = None,
 ) -> RunPlan:
-    """Build a plan respecting DAG stage ordering, optionally filtering by mode.
+    """Build a plan in topological order, optionally filtering by mode.
+
+    Edges are derived from each pipeline's produces/consumes artifacts. The
+    full (all-mode) graph is built so cross-mode producers resolve, then only
+    the nodes selected by ``mode_filter`` are emitted, preserving topological
+    order. A node's produced/consumed artifacts become its outputs/inputs for
+    the batch dependency layer.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
-        all_dags (dict): DAG definitions from pipelines.json files
+        all_dags (dict): DAG definitions from pipelines.yaml files
         mode_filter (str | None): If set, only include runs for this mode
 
     Returns:
-        RunPlan: Execution plan with runs in DAG stage order
+        RunPlan: Execution plan with runs in topological order
     """
     pipeline_set = set(pipelines)
     plan = RunPlan()
     found_in_dag = set()
 
-    for dag_name, stages in all_dags.items():
-        dag_stage_lines = []
-        dag_has_runs = False
-        for stage_idx, stage in enumerate(stages):
-            stage_parts = []
-            outputs = [f"{dag_name}:stage_{stage_idx}"]
-            inputs = [f"{dag_name}:stage_{stage_idx - 1}"] if stage_idx > 0 else []
-            for script, modes in stage.items():
-                if script not in pipeline_set:
+    for name, nodes in all_dags.items():
+        in_pipeline = [n for n in nodes if n.script in pipeline_set]
+        found_in_dag.update(n.script for n in in_pipeline)
+        if not in_pipeline:
+            continue
+
+        graph = build_dag(name, in_pipeline)
+
+        gen_lines = []
+        for generation in nx.topological_generations(graph):
+            gen_parts = []
+            for key in generation:
+                node = graph.nodes[key]["node"]
+                if not _node_selected(node, mode_filter):
                     continue
-                found_in_dag.add(script)
-                dag_has_runs = True
-                if mode_filter and mode_filter not in modes:
-                    continue
-                for m in ([mode_filter] if mode_filter else modes):
-                    plan.add_run(script, m, group_id=dag_name, outputs=outputs, inputs=inputs)
-                    stage_parts.append(f"{script.stem}:{m}")
-            if stage_parts:
-                dag_stage_lines.append(" | ".join(stage_parts))
-        if dag_has_runs:
-            plan.display_lines.append("   " + " --> ".join(dag_stage_lines))
+                runtime_mode = mode_filter or node.mode
+                plan.add_run(
+                    node.script,
+                    runtime_mode,
+                    group_id=name,
+                    outputs=node.produces,
+                    inputs=node.consumes,
+                )
+                gen_parts.append(run_label(node.script, runtime_mode))
+            if gen_parts:
+                gen_lines.append(" | ".join(gen_parts))
+        if gen_lines:
+            plan.display_lines.append("   " + " --> ".join(gen_lines))
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
         if script in found_in_dag:
             continue
-        run = (script, mode_filter)
-        plan.runs.append(run)
-        plan.group_ids[run] = None
-        plan.deps[run] = {"outputs": [], "inputs": []}
-        label = f"{script.stem}:{mode_filter}" if mode_filter else script.stem
-        plan.display_lines.append(f"   {label} (standalone)")
+        plan.add_run(script, mode_filter)
+        plan.display_lines.append(f"   {run_label(script, mode_filter)} (standalone)")
 
     return plan
 
 
-def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]]]]]:
+def get_all_pipelines() -> tuple[list[Path], dict[str, list[PipelineNode]]]:
     """Get all ML pipeline scripts from subdirectories.
 
-    Discovers scripts from pipelines.json files AND standalone scripts
+    Discovers scripts from pipelines.yaml files AND standalone scripts
     (matching the version naming pattern) that aren't in any DAG.
 
     Returns:
         tuple: (pipelines, all_dags)
             - pipelines: List of unique pipeline script paths
-            - all_dags: {dag_name: [stages]} from pipelines.json files
+            - all_dags: {pipeline_name: [PipelineNode]} from pipelines.yaml files
     """
     cwd = Path.cwd()
     pipelines = []
     all_dags = {}
     seen_scripts = set()
 
-    # Discover scripts from pipelines.json files
-    for config_path in cwd.rglob("pipelines.json"):
+    # Discover scripts from pipelines.yaml files
+    for config_path in cwd.rglob("pipelines.yaml"):
         directory = config_path.parent
         dag_defs = load_pipelines_config(directory)
         if dag_defs:
             all_dags.update(dag_defs)
-            for stages in dag_defs.values():
-                for stage in stages:
-                    for script in stage.keys():
-                        if script not in seen_scripts:
-                            pipelines.append(script)
-                            seen_scripts.add(script)
+            for nodes in dag_defs.values():
+                for node in nodes:
+                    if node.script not in seen_scripts:
+                        pipelines.append(node.script)
+                        seen_scripts.add(node.script)
 
     # Discover standalone scripts not in any DAG (skip __init__.py and private modules)
     for py_file in sorted(cwd.rglob("*.py")):
@@ -528,7 +643,11 @@ def main():
     mode = resolve_mode(args)
 
     # Build execution plan
-    plan = sort_pipelines(selected, all_dags, mode)
+    try:
+        plan = sort_pipelines(selected, all_dags, mode)
+    except ValueError as e:
+        print(f"\nERROR: {e}")
+        exit(1)
 
     # Display summary
     print_summary(plan, selection_desc, mode, args)
