@@ -4444,10 +4444,17 @@ artifact ref is a <code>type:name</code> string:</p>
 </table>
 <p>The execution graph is <strong>derived</strong>: for each <code>inputs</code> ref, the launcher draws an
 edge from whichever node lists it in <code>outputs</code>. You never hand-write the ordering —
-it falls out of the data flow. The <code>aqsol</code> pipeline above resolves to:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aqsol_feature_set --&gt; aqsol_class | aqsol_reg
+it falls out of the data flow. The launcher prints each pipeline as a tree —
+producers at the root, the consumers beneath them. The <code>aqsol</code> pipeline above
+resolves to:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aqsol
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>╙── aqsol_feature_set
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    ├─╼ aqsol_class
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    └─╼ aqsol_reg
 </span></code></pre></div>
-<p>(<code>--&gt;</code> separates dependency stages; <code>|</code> separates nodes that run in parallel.)</p>
+<p>In a terminal this is colorized to make the structure easy to scan: pipeline names,
+the <code>[dt]</code>/<code>[ts]</code> mode tags, and leaf (terminal) nodes are tinted. Colors are
+suppressed automatically when output isn't a TTY (piped or redirected).</p>
 <h3 id="modes">Modes</h3>
 <p>A node may declare a singular <code>mode</code>. Because the artifacts a script produces can
 differ by mode, a script that runs in more than one mode appears as <strong>more than one
