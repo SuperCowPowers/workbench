@@ -31,6 +31,8 @@ from pathlib import Path
 
 import networkx as nx
 
+from workbench.utils.repl_utils import colors as REPL_COLORS
+
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
@@ -38,10 +40,31 @@ FILTER_MODES = {"dt", "ts"}
 OVERRIDE_MODES = {"promote", "test_promote"}
 ALL_MODES = FILTER_MODES | OVERRIDE_MODES
 
+MODE_COLORS = {"dt": "lightgreen", "ts": "darkyellow"}
+
 
 def run_label(script: Path, mode: str | None) -> str:
-    """Human-readable label for a (script, mode) run: 'script@mode' or 'script'."""
-    return f"{script.stem}@{mode}" if mode else script.stem
+    """Human-readable label for a (script, mode) run: 'script [mode]' or 'script'."""
+    return f"{script.stem} [{mode}]" if mode else script.stem
+
+
+def _color(text: str, color: str) -> str:
+    """Wrap text in an ANSI color from the repl palette (no-op when stdout isn't a TTY)."""
+    if not sys.stdout.isatty():
+        return text
+    return f"{REPL_COLORS[color]}{text}{REPL_COLORS['reset']}"
+
+
+def display_label(script: Path, mode: str | None, leaf: bool = False) -> str:
+    """run_label colorized for terminal display.
+
+    The mode bracket is tinted by mode; leaf nodes (terminal consumers) get a
+    subtle blue name to set them apart from producers/intermediate nodes.
+    """
+    stem = _color(script.stem, "lightblue") if leaf else script.stem
+    if not mode:
+        return stem
+    return f"{stem} {_color(f'[{mode}]', MODE_COLORS.get(mode, 'lightgrey'))}"
 
 
 @dataclass
@@ -361,9 +384,9 @@ def _build_dag_plan(
 
         graph = build_dag(name, in_pipeline)
 
-        gen_lines = []
+        # Emit runs in topological order; collect the selected keys for display.
+        selected = []
         for generation in nx.topological_generations(graph):
-            gen_parts = []
             for key in generation:
                 node = graph.nodes[key]["node"]
                 if not _node_selected(node, mode_filter):
@@ -376,11 +399,18 @@ def _build_dag_plan(
                     outputs=node.outputs,
                     inputs=node.inputs,
                 )
-                gen_parts.append(run_label(node.script, runtime_mode))
-            if gen_parts:
-                gen_lines.append(" | ".join(gen_parts))
-        if gen_lines:
-            plan.display_lines.append("   " + " --> ".join(gen_lines))
+                selected.append((key, node, runtime_mode))
+        if not selected:
+            continue
+
+        # Render the selected sub-DAG as a Unicode tree (producers -> consumers).
+        subgraph = graph.subgraph(key for key, _, _ in selected).copy()
+        for key, node, runtime_mode in selected:
+            leaf = subgraph.out_degree(key) == 0
+            subgraph.nodes[key]["label"] = display_label(node.script, runtime_mode, leaf=leaf)
+        plan.display_lines.append(f"   {_color(name, 'lightpurple')}")
+        for line in nx.generate_network_text(subgraph, with_labels=True):
+            plan.display_lines.append(f"   {line}")
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
@@ -531,7 +561,7 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
         print(" GO!\n")
 
     for i, (script, mode) in enumerate(plan.runs, 1):
-        mode_display = f" ({mode})" if mode else ""
+        mode_display = f" [{mode}]" if mode else ""
         print(f"\n{'─' * 60}")
         print(f"{'Running' if args.local else 'Launching'} run {i}/{len(plan.runs)}: {script.name}{mode_display}")
 

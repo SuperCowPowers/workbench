@@ -47,13 +47,20 @@ artifact ref is a `type:name` string:
 
 The execution graph is **derived**: for each `inputs` ref, the launcher draws an
 edge from whichever node lists it in `outputs`. You never hand-write the ordering —
-it falls out of the data flow. The `aqsol` pipeline above resolves to:
+it falls out of the data flow. The launcher prints each pipeline as a tree —
+producers at the root, the consumers beneath them. The `aqsol` pipeline above
+resolves to:
 
 ```
-aqsol_feature_set --> aqsol_class | aqsol_reg
+aqsol
+╙── aqsol_feature_set
+    ├─╼ aqsol_class
+    └─╼ aqsol_reg
 ```
 
-(`-->` separates dependency stages; `|` separates nodes that run in parallel.)
+In a terminal this is colorized to make the structure easy to scan: pipeline names,
+the `[dt]`/`[ts]` mode tags, and leaf (terminal) nodes are tinted. Colors are
+suppressed automatically when output isn't a TTY (piped or redirected).
 
 ### Modes
 

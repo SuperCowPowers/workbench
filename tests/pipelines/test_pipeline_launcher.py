@@ -151,7 +151,7 @@ class TestSortPipelines:
         assert plan.deps[(a, None)] == {"outputs": [], "inputs": ["fs:x"]}
 
     def test_fan_out_display(self, tmp_path):
-        """Parallel consumers share a generation in the display line."""
+        """The display renders each pipeline as a tree: producer above its consumers."""
         fs = tmp_path / "fs.py"
         a = tmp_path / "a.py"
         b = tmp_path / "b.py"
@@ -159,11 +159,11 @@ class TestSortPipelines:
 
         plan = sort_pipelines([fs, a, b], dags)
 
-        assert len(plan.display_lines) == 1
-        line = plan.display_lines[0]
-        assert " --> " in line  # stage separator
-        assert " | " in line  # parallel separator
-        assert line.index("fs") < line.index("a")
+        assert any(line.strip() == "p" for line in plan.display_lines)  # pipeline header
+        assert any("╼" in line for line in plan.display_lines)  # Unicode tree edges
+        text = "\n".join(plan.display_lines)
+        assert text.index("fs") < text.index("a")  # producer (root) before consumers
+        assert text.index("fs") < text.index("b")
 
     def test_mode_filter_dt(self, tmp_path):
         """Filter mode keeps only matching (and modeless) nodes."""
@@ -279,7 +279,7 @@ class TestRunLabel:
     """Tests for the run_label helper."""
 
     def test_with_mode(self):
-        assert run_label(Path("foo/xgb.py"), "dt") == "xgb@dt"
+        assert run_label(Path("foo/xgb.py"), "dt") == "xgb [dt]"
 
     def test_without_mode(self):
         assert run_label(Path("foo/xgb.py"), None) == "xgb"
