@@ -119,4 +119,13 @@ Just rerun the script after doing this and after (2 or 3) of these you should se
 !!! success
     Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install 'workbench[all]'` and start using the API.
     
+## Next Steps
+
+The Core stack is all you need to start using Workbench. Optionally, deploy the other [Workbench stacks](stacks.md):
+
+- [Compute Stack](compute_stack.md) — AWS Batch for running pipelines as parallel jobs
+- [Dashboard Stack](dashboard_stack.md) — a team web UI for browsing Workbench artifacts
+
+Or jump straight to the [Full Pipeline Test](full_pipeline.md) to verify everything end-to-end.
+
 If you ran into any issues with this procedure please contact us via [Discord](https://discord.gg/WHAJuz8sw8) or email [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) and the SCP team will provide **free** setup and support for new Workbench users.

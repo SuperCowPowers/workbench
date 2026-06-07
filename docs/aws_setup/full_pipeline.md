@@ -25,7 +25,7 @@ After the script completes you will see that it's built out an AWS ML Pipeline a
 For testing it's nice to run the Dashboard locally, but for longterm use the Workbench Dashboard should be deployed as an AWS Stack. The deployed Stack allows everyone in the company to use, view, and interact with the AWS Machine Learning Artifacts created with Workbench.
 
 ```
-cd workbench/application/aws_dashboard
+cd workbench/applications/aws_dashboard
 ./dashboard
 ```
 **This will open a browser to http://localhost:8000**

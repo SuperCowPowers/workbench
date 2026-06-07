@@ -66,7 +66,7 @@ AWS_PROFILE=<aws_sso or whatever>
 Now you can list the S3 buckets in the AWS Account
 
 ```
-aws ls s3
+aws s3 ls
 ```
 If you get some message like this...
 
@@ -93,11 +93,6 @@ aws s3 ls
 ## Back to Initial Setup
 If you're doing the initial setup of Workbench you should now go back and finish that process: [Getting Started](../getting_started/index.md)
 
- 
-## AWS Resources
-- [AWS Identity Center](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html)
-- [Users and Groups](https://docs.aws.amazon.com/singlesignon/latest/userguide/users-groups-provisioning.html)
-- [Permission Sets](https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html)
-- [SSO Command Line/Python Configure](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html)
+For handy AWS reference links (Identity Center, Permission Sets, SSO config), see the [AWS Setup Overview](index.md#useful-aws-references).
 
 

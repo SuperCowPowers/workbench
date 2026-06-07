@@ -68,13 +68,6 @@ Now when the user logs onto the AWS Console they should see something like this:
 <img width="800" alt="Screenshot 2023-05-03 at 9 21 27 AM" src="https://user-images.githubusercontent.com/4806709/235970829-d1fdf1a8-84a2-46ca-a20e-143664715531.png">
 
 ### AWS CLI/SSO Setup for Command Line/Python Usage
-Please see our [AWS Setup](aws_setup.md)
-
- 
-## AWS Resources
-- [AWS Identity Center](https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html)
-- [Users and Groups](https://docs.aws.amazon.com/singlesignon/latest/userguide/users-groups-provisioning.html)
-- [Permission Sets](https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html)
-- [SSO Command Line/Python Configure](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html)
+Please see our [AWS CLI/SSO Setup](aws_setup.md).
 
 
