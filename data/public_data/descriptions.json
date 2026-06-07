@@ -151,5 +151,210 @@
             "https://doi.org/10.1021/jm901137j (Baell & Holloway 2010 \u2014 PAINS)",
             "https://doi.org/10.1002/cmdc.200700139 (Brenk et al. 2008 \u2014 BRENK alerts)"
         ]
+    },
+    "pxr_train.csv": {
+        "description": "Primary training set for the OpenADMET PXR Induction Blind Challenge (activity track). Dose-response pEC50 and Emax for human Pregnane-X Receptor (hPXR) induction, measured with OpenADMET's in-house high-fidelity cell-based assay. PXR is the master regulator of CYP3A4 (which metabolises ~50% of marketed drugs), so PXR induction is a primary driver of drug-drug interaction liability.",
+        "columns": {
+            "molecule_name": "Compound name / identifier",
+            "smiles": "Compound structure (SMILES)",
+            "ocnt_batch": "Octant batch identifier for the assayed material",
+            "pec50": "Dose-response potency, -log10(EC50 in M) — the challenge prediction target",
+            "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
+            "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
+            "pec50_std_error": "Standard error of pec50",
+            "emax_std_error": "Standard error of emax_estimate",
+            "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
+            "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
+            "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
+            "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
+            "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
+            "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+            "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+            "split": "Dataset split label (e.g. train)",
+            "ocnt_id": "Octant compound identifier",
+            "source": "Data source / assay identifier"
+        },
+        "num_compounds": 4139,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_test_blinded.csv": {
+        "description": "Blinded activity-track test set (513 compounds) for the PXR challenge \u2014 SMILES only, ground-truth pEC50 withheld for scoring (Relative Absolute Error). Split into two analog sets: Analog Set 1 (scored on the Phase 1 live leaderboard, then unblinded on 2026-05-26 \u2014 see pxr_test_phase1_unblinded) and Analog Set 2 (held out for final scoring after 2026-07-01).",
+        "columns": {
+            "molecule_name": "Compound name / identifier",
+            "smiles": "Compound structure (SMILES)"
+        },
+        "num_compounds": 513,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_test_phase1_unblinded.csv": {
+        "description": "Analog Set 1 of the activity-track test set with ground-truth pEC50 revealed at the Phase 1 to Phase 2 transition (2026-05-26). Serves as a held-out evaluation set and as additional training signal for Phase 2 submissions targeting Analog Set 2.",
+        "columns": {
+            "molecule_name": "Compound name / identifier",
+            "smiles": "Compound structure (SMILES)",
+            "ocnt_batch": "Octant batch identifier for the assayed material",
+            "pec50": "Revealed dose-response potency, -log10(EC50 in M)",
+            "pec50_std_error": "Standard error of pec50",
+            "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
+            "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
+            "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
+            "emax_std_error": "Standard error of emax_estimate",
+            "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
+            "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
+            "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
+            "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
+            "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+            "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+            "split": "Analog-set / split label",
+            "phase": "Challenge phase the compound belongs to"
+        },
+        "num_compounds": 253,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_counter_assay_train.csv": {
+        "description": "PXR-null counter-assay training data. Reports the null-line (non-PXR / off-target) response used to flag and discount assay artifacts, so apparent PXR activity can be separated from non-specific signal.",
+        "columns": {
+            "molecule_name": "Compound name / identifier",
+            "smiles": "Compound structure (SMILES)",
+            "ocnt_batch": "Octant batch identifier for the assayed material",
+            "pec50": "Counter-assay (PXR-null) potency, -log10(EC50 in M)",
+            "emax_estimate": "Counter-assay maximal efficacy (Emax)",
+            "emax_vs_pos_ctrl_estimate": "Counter-assay Emax relative to the positive-control agonist",
+            "pec50_std_error": "Standard error of pec50",
+            "emax_std_error": "Standard error of emax_estimate",
+            "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
+            "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
+            "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
+            "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
+            "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
+            "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+            "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+            "split": "Dataset split label",
+            "ocnt_id": "Octant compound identifier",
+            "source": "Data source / assay identifier"
+        },
+        "num_compounds": 2859,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_single_concentration_train.csv": {
+        "description": "Single-concentration primary-screen training data (log2 fold-change) \u2014 a large, lower-resolution screen useful for pretraining or as auxiliary signal before fine-tuning on the dose-response pEC50 set.",
+        "columns": {
+            "molecule_name": "Compound name / identifier",
+            "ocnt_batch": "Octant batch identifier for the assayed material",
+            "smiles": "Compound structure (SMILES)",
+            "plate_id": "Assay plate identifier",
+            "compound_class": "Compound category / class label",
+            "concentration_m": "Tested concentration (molar)",
+            "log2_fc_estimate": "Induction signal as log2 fold-change vs control",
+            "log2_fc_stderr": "Standard error of log2_fc_estimate",
+            "t_statistic": "t-statistic for the fold-change vs control",
+            "p_value": "p-value for the fold-change",
+            "fdr_bh": "Benjamini-Hochberg FDR-adjusted p-value",
+            "neg_log10_fdr": "-log10 of the BH-adjusted FDR",
+            "median_log2_fc": "Median log2 fold-change across replicates",
+            "n_replicates": "Number of replicate measurements",
+            "cohens_d": "Cohen's d effect size for the induction response",
+            "experiment_name": "Screening experiment identifier",
+            "ocnt_id": "Octant compound identifier",
+            "split": "Dataset split label",
+            "source": "Data source / assay identifier"
+        },
+        "num_compounds": 21003,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_96_compound_semi_pure_train.csv": {
+        "description": "Supplementary 96-compound 'uscale' semi-pure training set, released during Phase 2 to augment the primary training data with additional measured compounds. Includes Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
+        "columns": {
+            "smiles": "Compound structure (SMILES)",
+            "ocnt_id": "Octant compound identifier",
+            "semi_pure_batch_id": "Batch identifier for the semi-pure material",
+            "semi_pure_ec50s": "EC50(s) measured on the semi-pure material (M)",
+            "semi_pure_pec50s": "pEC50(s) measured on the semi-pure material",
+            "semi_pure_emax_normalized": "Emax normalized to the positive control",
+            "semi_pure_emax_raw": "Raw (un-normalized) Emax",
+            "corrected_semi_pure_ec50": "EC50 corrected for measured compound concentration (M)",
+            "corrected_semi_pure_pec50": "pEC50 after concentration correction",
+            "semi_pure_drc_pec50_se": "Dose-response-curve pEC50 standard error",
+            "corrected_semi_pure_pec50_1_se": "Concentration-corrected pEC50 within 1 SE",
+            "semi_pure_pec50_95_ci": "95% CI for the semi-pure pEC50",
+            "corrected_semi_pure_pec50_95_ci": "95% CI for the concentration-corrected pEC50",
+            "volatility": "Compound volatility flag / measure",
+            "semi_pure_evapt": "Evaporation metric during sample handling",
+            "semi_pure_theoretical_mass_on_column": "Theoretical mass loaded on the LC column",
+            "semi_pure_peak_area": "CAD peak area",
+            "semi_pure_actual_mass_on_column": "Actual mass on column from CAD quantitation",
+            "semi_pure_product_yield": "Recovered product yield",
+            "semi_pure_correction_factor": "Concentration correction factor applied to potency",
+            "semi_pure_cad_peak_area_cv": "Coefficient of variation of the CAD peak area",
+            "semi_pure_cad_slope_cv": "Coefficient of variation of the CAD calibration slope",
+            "semi_pure_cad_yield_se": "Standard error of the CAD-derived yield"
+        },
+        "num_compounds": 96,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_htchem_libraries_train.csv": {
+        "description": "High-throughput chemistry (HT-chem) library screening data, released during Phase 2 \u2014 library-scale measurements that broaden training coverage of chemical space. Measured on crude library material, with Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
+        "columns": {
+            "smiles": "Compound structure (SMILES)",
+            "ocnt_id": "Octant compound identifier",
+            "crude_batch_id": "Batch identifier for the crude library material",
+            "crude_ec50s": "EC50(s) measured on the crude material (M)",
+            "crude_pec50s": "pEC50(s) measured on the crude material",
+            "crude_emax_normalized": "Emax normalized to the positive control",
+            "crude_emax_raw": "Raw (un-normalized) Emax",
+            "corrected_crude_ec50": "EC50 corrected for measured compound concentration (M)",
+            "corrected_crude_pec50": "pEC50 after concentration correction",
+            "crude_drc_pec50_se": "Dose-response-curve pEC50 standard error",
+            "corrected_crude_pec50_1_se": "Concentration-corrected pEC50 within 1 SE",
+            "crude_pec50_95_ci": "95% CI for the crude pEC50",
+            "corrected_crude_pec50_95_ci": "95% CI for the concentration-corrected pEC50",
+            "volatility": "Compound volatility flag / measure",
+            "cad_yield_volatility_note": "Note on CAD yield / volatility caveats for this compound",
+            "crude_evapt": "Evaporation metric during sample handling",
+            "crude_theoretical_mass_on_column": "Theoretical mass loaded on the LC column",
+            "crude_peak_area": "CAD peak area",
+            "crude_actual_mass_on_column": "Actual mass on column from CAD quantitation",
+            "crude_product_yield": "Recovered product yield",
+            "crude_correction_factor": "Concentration correction factor applied to potency",
+            "crude_cad_peak_area_cv": "Coefficient of variation of the CAD peak area",
+            "crude_cad_slope_cv": "Coefficient of variation of the CAD calibration slope",
+            "crude_cad_yield_se": "Standard error of the CAD-derived yield"
+        },
+        "num_compounds": 456,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
+    },
+    "pxr_structure_test_blinded.csv": {
+        "description": "Structure-track blinded test set: fragment-sized molecules for predicting protein-ligand complexes against PXR, scored by LDDT-PLI. Crystallographic data generated with the Fraser lab at UCSF. Distinct from the activity track.",
+        "columns": {
+            "structure": "Structure-track entry identifier (crystallographic target)",
+            "smiles": "Compound / fragment structure (SMILES)",
+            "molecule_name": "Compound name / identifier",
+            "ocnt_id": "Octant compound identifier"
+        },
+        "num_compounds": 184,
+        "references": [
+            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+        ]
     }
 }

@@ -21,7 +21,7 @@ Each per-cliff CSV holds the cliff compound + its unique fingerprint
 neighbors with measured values pulled live from the source Model's UQ
 proximity index and FeatureSet. The shared metadata (assay, source model,
 chemistry rationale) lives both in-row (for portability) and in the
-comp_chem/descriptions.json entry keyed by the filename.
+top-level descriptions.json entry keyed by the filename.
 
 Access (read-only, unsigned):
     from workbench.api import PublicData

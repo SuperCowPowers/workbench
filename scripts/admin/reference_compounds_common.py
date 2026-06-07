@@ -1,8 +1,8 @@
 """Shared helpers for the reference-compounds populate scripts under scripts/admin/.
 
 Each populate_*_reference_compounds.py defines a compound list and a description
-dict, then calls run_populate() to upload the CSV and patch the shared
-comp_chem/descriptions.json. Keeps the per-set scripts short and focused on
+dict, then calls run_populate() to upload the CSV and patch the shared top-level
+descriptions.json. Keeps the per-set scripts short and focused on
 the compound definitions.
 
 Not a public API — only imported by the populate scripts in this directory
@@ -19,7 +19,7 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 BUCKET = "workbench-public-data"
-DESCRIPTIONS_KEY = "comp_chem/descriptions.json"
+DESCRIPTIONS_KEY = "descriptions.json"  # top-level (matches PublicData._load_descriptions)
 
 
 def s3_path_for(csv_key: str) -> str:
@@ -34,7 +34,7 @@ def upload_csv(df: pd.DataFrame, csv_key: str) -> None:
 
 
 def update_descriptions(csv_basename: str, description_dict: dict) -> None:
-    """Patch a single entry into comp_chem/descriptions.json keyed by filename."""
+    """Patch a single entry into the top-level descriptions.json keyed by filename."""
     s3 = boto3.client("s3")
     try:
         obj = s3.get_object(Bucket=BUCKET, Key=DESCRIPTIONS_KEY)
