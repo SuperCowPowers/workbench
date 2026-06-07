@@ -110,7 +110,9 @@ def _featurize(df: pd.DataFrame, refeaturize: bool) -> tuple[pd.DataFrame, list[
     return df, cols_2d, cols_3d
 
 
-def _ensure_feature_set(fs_name: str, df: pd.DataFrame, feature_cols: list[str], variant_tag: str, rebuild: bool) -> None:
+def _ensure_feature_set(
+    fs_name: str, df: pd.DataFrame, feature_cols: list[str], variant_tag: str, rebuild: bool
+) -> None:
     """Create a FeatureSet with the given feature columns, if missing or rebuilding."""
     if FeatureSet(fs_name).exists() and not rebuild:
         log.info(f"FeatureSet '{fs_name}' already exists — skipping")
@@ -159,6 +161,8 @@ def main(rebuild: bool, refeaturize: bool) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rebuild", action="store_true", help="Force-rebuild DataSource and all FeatureSets.")
-    parser.add_argument("--refeaturize", action="store_true", help="Clear the 3D InferenceCache so all 3D features recompute.")
+    parser.add_argument(
+        "--refeaturize", action="store_true", help="Clear the 3D InferenceCache so all 3D features recompute."
+    )
     args = parser.parse_args()
     main(rebuild=args.rebuild, refeaturize=args.refeaturize)

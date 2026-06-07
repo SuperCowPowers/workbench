@@ -107,8 +107,14 @@ if __name__ == "__main__":
 
     # XGBoost UQ — full feature list.
     xgb_name = f"pxr-{VARIANT}-reg-xgb"
-    build_if_missing(fs, xgb_name, ModelFramework.XGBOOST, feats, [VARIANT, "xgboost"],
-                     f"PXR pEC50 XGBoost UQ model on {VARIANT} features")
+    build_if_missing(
+        fs,
+        xgb_name,
+        ModelFramework.XGBOOST,
+        feats,
+        [VARIANT, "xgboost"],
+        f"PXR pEC50 XGBoost UQ model on {VARIANT} features",
+    )
     capture_phase1(xgb_name, test_df)
 
     # PyTorch UQ — all features, top-100 SHAP, top-50 SHAP.
@@ -119,8 +125,14 @@ if __name__ == "__main__":
     ]:
         name = f"pxr-{VARIANT}-reg-pytorch-{count}"
         selected = preset if preset is not None else top_n_shap(xgb_name, count)
-        build_if_missing(fs, name, ModelFramework.PYTORCH, selected, [VARIANT, "pytorch", f"feat{count}"],
-                         f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}")
+        build_if_missing(
+            fs,
+            name,
+            ModelFramework.PYTORCH,
+            selected,
+            [VARIANT, "pytorch", f"feat{count}"],
+            f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}",
+        )
         capture_phase1(name, test_df)
 
     log.info(f"Done. {VARIANT} endpoints carry the '{CAPTURE_NAME}' capture.")
