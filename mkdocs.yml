@@ -97,14 +97,18 @@ nav:
   - AWS Lambda Layer: lambda_layer/index.md 
   - AWS CloudWatch: cloudwatch/index.md 
   - AWS Setup: 
+    - Overview: aws_setup/index.md
+    - The Workbench Stacks: aws_setup/stacks.md
     - AWS CLI/SSO Setup: aws_setup/aws_setup.md
-    - Full Pipeline Testing: aws_setup/full_pipeline.md
-    - AWS Admin Initial Setup: aws_setup/core_stack.md
-    - Dashboard Setup: aws_setup/dashboard_stack.md
-    - Domain/SSL Cert Setup: aws_setup/domain_cert_setup.md
-    - AWS Tips and Tricks: aws_setup/aws_tips_and_tricks.md
-    - AWS Access Management: aws_setup/aws_access_management.md
-    - AWS Client VPN: aws_setup/aws_client_vpn.md
+    - Administrator Setup:
+      - AWS Account & Users: aws_setup/aws_tips_and_tricks.md
+      - Core Stack: aws_setup/core_stack.md
+      - Grant Access (SSO Users): aws_setup/sso_assume_role.md
+      - Grant Access (IAM Users): aws_setup/iam_assume_role.md
+      - Compute Stack: aws_setup/compute_stack.md
+      - Dashboard Stack: aws_setup/dashboard_stack.md
+      - Domain/SSL Cert Setup: aws_setup/domain_cert_setup.md
+    - Verify - Full Pipeline Test: aws_setup/full_pipeline.md
   - Road Maps: 
     - 0.9.0:  road_maps/0_9_0.md
     - 0.9.5:  road_maps/0_9_5.md
