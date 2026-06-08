@@ -3721,6 +3721,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#public-vs-private-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Public vs Private Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4447,6 +4458,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#public-vs-private-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Public vs Private Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4481,7 +4503,7 @@
 <p class="admonition-title">AWS Stuff</p>
 <p>Activate your AWS Account that's used for Workbench deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup/workbench_dashboard_full
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup/workbench_dashboard
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">WORKBENCH_CONFIG</span><span class="o">=</span>/full/path/to/config.json
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>cdk<span class="w"> </span>bootstrap
@@ -4506,14 +4528,14 @@
 </ol>
 <div class="admonition warning">
 <p class="admonition-title">AWS Costs</p>
-<p>Deploying the Workbench Dashboard does incur some monthly AWS costs. If you're on a tight budget you can deploy the 'lite' version of the Dashboard Stack.</p>
+<p>Deploying the Workbench Dashboard does incur some monthly AWS costs.</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup/workbench_dashboard_lite
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">WORKBENCH_CONFIG</span><span class="o">=</span>/full/path/to/config.json
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>cdk<span class="w"> </span>bootstrap
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>cdk<span class="w"> </span>deploy
-</span></code></pre></div>
+<h3 id="public-vs-private-deployment">Public vs Private Deployment</h3>
+<p>The same stack deploys either an internal (private) or an internet-facing (public) dashboard, controlled by config:</p>
+<ul>
+<li><code>WORKBENCH_DASHBOARD_PUBLIC</code> (default <code>false</code>): set to <code>true</code> for an internet-facing load balancer with open 443/80 ingress. Leave unset/<code>false</code> for an internal load balancer reachable only via your whitelisted IPs and prefix lists.</li>
+<li><code>WORKBENCH_DASHBOARD_TASK_COUNT</code> (default <code>1</code>): number of Fargate tasks to run behind the load balancer.</li>
+</ul>
 
 
 
