@@ -1,5 +1,6 @@
 from typing import Optional, List
 from aws_cdk import (
+    CfnOutput,
     Duration,
     Stack,
     StackProps,
@@ -27,6 +28,8 @@ class WorkbenchDashboardStackProps(StackProps):
         whitelist_ips: Optional[List[str]] = None,
         whitelist_prefix_lists: Optional[List[str]] = None,
         certificate_arn: Optional[str] = None,
+        public: bool = False,
+        desired_count: int = 1,
     ):
         self.dashboard_image = dashboard_image
         self.workbench_bucket = workbench_bucket
@@ -38,6 +41,8 @@ class WorkbenchDashboardStackProps(StackProps):
         self.whitelist_ips = whitelist_ips
         self.certificate_arn = certificate_arn
         self.whitelist_prefix_lists = whitelist_prefix_lists
+        self.public = public
+        self.desired_count = desired_count
 
 
 class WorkbenchDashboardStack(Stack):
@@ -165,18 +170,27 @@ class WorkbenchDashboardStack(Stack):
             else None
         )
 
+        # Allow HTTP/HTTPS access from the internet (public)
+        if props.public:
+            if certificate:
+                # Only allow HTTPS access if a certificate is provided
+                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443))
+            else:
+                # Allow HTTP access if no certificate is provided
+                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80))
+
         # Adding LoadBalancer with Fargate Service
         fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "WorkbenchService",
             cluster=cluster,
             cpu=2048,
-            desired_count=2,
+            desired_count=props.desired_count,
             task_definition=task_definition,
             memory_limit_mib=4096,
-            public_load_balancer=False,
+            public_load_balancer=props.public,
             security_groups=[lb_security_group],
-            open_listener=False,
+            open_listener=props.public,
             certificate=certificate,
             task_subnets=subnet_selection,
         )
@@ -189,3 +203,27 @@ class WorkbenchDashboardStack(Stack):
 
         # Enable sticky sessions so users stay on the same container (preserves in-memory state)
         fargate_service.target_group.enable_cookie_stickiness(Duration.hours(1))
+
+        # Stack outputs
+        alb_dns_name = fargate_service.load_balancer.load_balancer_dns_name
+        scheme = "https" if certificate else "http"
+        CfnOutput(self, "VpcId", value=cluster.vpc.vpc_id, description="VPC the dashboard is deployed into")
+        CfnOutput(self, "RedisEndpoint", value=redis_endpoint, description="ElastiCache Redis endpoint address")
+        CfnOutput(
+            self,
+            "DashboardMode",
+            value="public" if props.public else "private",
+            description="Whether the load balancer is internet-facing (public) or internal (private)",
+        )
+        CfnOutput(
+            self,
+            "LoadBalancerDnsName",
+            value=alb_dns_name,
+            description="DNS name of the Application Load Balancer",
+        )
+        CfnOutput(
+            self,
+            "ServiceUrl",
+            value=f"{scheme}://{alb_dns_name}",
+            description="URL for reaching the dashboard through the load balancer",
+        )

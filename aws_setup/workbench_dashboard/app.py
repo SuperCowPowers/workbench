@@ -2,7 +2,7 @@ import boto3
 import aws_cdk as cdk
 from pprint import pprint
 
-from workbench_dashboard_full.workbench_dashboard_stack import WorkbenchDashboardStack, WorkbenchDashboardStackProps
+from workbench_dashboard.workbench_dashboard_stack import WorkbenchDashboardStack, WorkbenchDashboardStackProps
 
 # Grab the account and region using boto3
 session = boto3.session.Session()
@@ -31,6 +31,8 @@ try:
     config_prefix = cm.get_config("WORKBENCH_PREFIX_LISTS", "")
     whitelist_prefix_lists = [ip.strip() for ip in config_prefix.split(",") if ip.strip()]
     certificate_arn = cm.get_config("WORKBENCH_CERTIFICATE_ARN")
+    public = str(cm.get_config("WORKBENCH_DASHBOARD_PUBLIC", "false")).strip().lower() in ("1", "true", "yes", "on")
+    desired_count = int(cm.get_config("WORKBENCH_DASHBOARD_TASK_COUNT", 1))
 except ImportError:
     print("Workbench Configuration Manager Not Found...")
     print("Set the WORKBENCH_CONFiG Env var and run again...")
@@ -55,6 +57,8 @@ WorkbenchDashboardStack(
         whitelist_ips=whitelist_ips,
         whitelist_prefix_lists=whitelist_prefix_lists,
         certificate_arn=certificate_arn,
+        public=public,
+        desired_count=desired_count,
     ),
 )
 

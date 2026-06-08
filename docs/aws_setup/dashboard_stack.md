@@ -14,7 +14,7 @@ Please review the [Stack Details](#stack-details) section to understand all the 
     Activate your AWS Account that's used for Workbench deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)
 
   ```bash
-  cd workbench/aws_setup/workbench_dashboard_full
+  cd workbench/aws_setup/workbench_dashboard
   export WORKBENCH_CONFIG=/full/path/to/config.json
   pip install -r requirements.txt
   cdk bootstrap
@@ -37,12 +37,10 @@ Please review the [Stack Details](#stack-details) section to understand all the 
 1. **Higher Security**: Utilizes security groups for both the ECS tasks, load balancer, plus VPC private subnets for Redis and the utilization of NAT Gateways.
 
 !!! warning "AWS Costs"
-    Deploying the Workbench Dashboard does incur some monthly AWS costs. If you're on a tight budget you can deploy the 'lite' version of the Dashboard Stack.
+    Deploying the Workbench Dashboard does incur some monthly AWS costs.
 
-  ```bash
-  cd workbench/aws_setup/workbench_dashboard_lite
-  export WORKBENCH_CONFIG=/full/path/to/config.json
-  pip install -r requirements.txt
-  cdk bootstrap
-  cdk deploy
-  ```
+### Public vs Private Deployment
+The same stack deploys either an internal (private) or an internet-facing (public) dashboard, controlled by config:
+
+- `WORKBENCH_DASHBOARD_PUBLIC` (default `false`): set to `true` for an internet-facing load balancer with open 443/80 ingress. Leave unset/`false` for an internal load balancer reachable only via your whitelisted IPs and prefix lists.
+- `WORKBENCH_DASHBOARD_TASK_COUNT` (default `1`): number of Fargate tasks to run behind the load balancer.
