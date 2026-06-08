@@ -31,8 +31,12 @@ if __name__ == "__main__":
     cm = ConfigManager()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pattern", default="workbench:RowStorage:*", help="Key pattern to delete")
-    parser.add_argument("--redis-host", default=cm.get_config("REDIS_HOST"), help="Redis host (default: config REDIS_HOST)")
-    parser.add_argument("--redis-port", default=cm.get_config("REDIS_PORT", "6379"), help="Redis port (default: config REDIS_PORT)")
+    parser.add_argument(
+        "--redis-host", default=cm.get_config("REDIS_HOST"), help="Redis host (default: config REDIS_HOST)"
+    )
+    parser.add_argument(
+        "--redis-port", default=cm.get_config("REDIS_PORT", "6379"), help="Redis port (default: config REDIS_PORT)"
+    )
     args = parser.parse_args()
 
     if not args.redis_host:

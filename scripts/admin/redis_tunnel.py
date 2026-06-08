@@ -18,8 +18,8 @@ manage EC2/IAM/SSM (the same admin profile used for ``cdk deploy``).
 Prereq: the AWS CLI ``session-manager-plugin`` (``brew install session-manager-plugin``).
 
 Usage:
-    WORKBENCH_CONFIG=.../scp_sandbox_admin.json python redis_tunnel.py             # open tunnel (Ctrl-C closes + stops)
-    WORKBENCH_CONFIG=.../scp_sandbox_admin.json python redis_tunnel.py --terminate # remove the instance + its SG entirely
+    WORKBENCH_CONFIG=.../admin.json python redis_tunnel.py              # open tunnel (Ctrl-C closes + stops)
+    WORKBENCH_CONFIG=.../admin.json python redis_tunnel.py --terminate  # remove the instance + its SG
 """
 
 import argparse
@@ -55,7 +55,7 @@ def require_plugin() -> None:
         raise SystemExit(
             "The AWS 'session-manager-plugin' is not installed.\n"
             "  macOS:  brew install session-manager-plugin\n"
-            "  Other:  https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html"
+            "  Other:  https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html"  # noqa: E501
         )
 
 
@@ -179,9 +179,15 @@ def wait_ssm_registered(ssm, instance_id: str, timeout: int = 180) -> None:
 def open_tunnel(instance_id: str, endpoint: str, local_port: int, region: str) -> None:
     """Run `aws ssm start-session` port-forwarding in the foreground (blocks until Ctrl-C)."""
     cmd = [
-        "aws", "ssm", "start-session", "--target", instance_id,
-        "--document-name", "AWS-StartPortForwardingSessionToRemoteHost",
-        "--parameters", f"host={endpoint},portNumber={REDIS_PORT},localPortNumber={local_port}",
+        "aws",
+        "ssm",
+        "start-session",
+        "--target",
+        instance_id,
+        "--document-name",
+        "AWS-StartPortForwardingSessionToRemoteHost",
+        "--parameters",
+        f"host={endpoint},portNumber={REDIS_PORT},localPortNumber={local_port}",
     ]
     if region:
         cmd += ["--region", region]
@@ -211,8 +217,12 @@ def terminate(ec2, instance_id: str, vpc_id: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--terminate", action="store_true", help="Terminate the tunnel instance and delete its SG, then exit")
-    parser.add_argument("--local-port", type=int, default=DEFAULT_LOCAL_PORT, help="Local port to forward (default 6380)")
+    parser.add_argument(
+        "--terminate", action="store_true", help="Terminate the tunnel instance and delete its SG, then exit"
+    )
+    parser.add_argument(
+        "--local-port", type=int, default=DEFAULT_LOCAL_PORT, help="Local port to forward (default 6380)"
+    )
     args = parser.parse_args()
 
     cm = ConfigManager()
