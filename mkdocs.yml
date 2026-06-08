@@ -109,6 +109,7 @@ nav:
       - Dashboard Stack: aws_setup/dashboard_stack.md
       - Domain/SSL Cert Setup: aws_setup/domain_cert_setup.md
     - Verify - Full Pipeline Test: aws_setup/full_pipeline.md
+    - Redis Access (SSM Tunnel): aws_setup/redis_tunnel.md
   - Road Maps: 
     - 0.9.0:  road_maps/0_9_0.md
     - 0.9.5:  road_maps/0_9_5.md
