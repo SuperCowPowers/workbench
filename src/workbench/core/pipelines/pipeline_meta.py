@@ -73,7 +73,7 @@ class PipelineMeta:
 
     @property
     def mode(self) -> str:
-        """The pipeline execution mode (e.g., 'dt', 'ts', 'promote', 'test_promote')."""
+        """The pipeline execution mode (e.g., 'dt', 'ts', 'promote')."""
         return self._meta["mode"]
 
     @property
@@ -95,7 +95,6 @@ class PipelineMeta:
         Uses the owner set via set_owner() and transforms based on mode:
             - dt / ts: "DT"
             - promote: "Pro-{owner}"
-            - test_promote: "Pro-Test-{owner}"
             - any other: "{owner}"
 
         Returns:
@@ -107,8 +106,6 @@ class PipelineMeta:
             return "DT"
         elif mode == "promote":
             return f"Pro-{owner}"
-        elif mode == "test_promote":
-            return f"Pro-Test-{owner}"
         else:
             return owner
 

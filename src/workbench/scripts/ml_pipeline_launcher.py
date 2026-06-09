@@ -9,7 +9,6 @@ Usage:
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
     ml_pipeline_launcher --ts --all              # Temporal split ALL pipelines
     ml_pipeline_launcher --promote --all         # Promote ALL pipelines
-    ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
     ml_pipeline_launcher caco2                   # Launch all pipelines matching 'caco2' (JSON default modes)
     ml_pipeline_launcher my_script.py            # Launch exact script (modeless, via SQS)
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
@@ -37,7 +36,7 @@ VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
 FILTER_MODES = {"dt", "ts"}
-OVERRIDE_MODES = {"promote", "test_promote"}
+OVERRIDE_MODES = {"promote"}
 ALL_MODES = FILTER_MODES | OVERRIDE_MODES
 
 MODE_COLORS = {"dt": "lightgreen", "ts": "darkyellow"}
@@ -166,11 +165,15 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     elif mode == "promote":
         model_name = f"{basename_hyphen}{v}-{today}"
         endpoint_name = f"{endpoint_base}{v}"
-    elif mode == "test_promote":
-        model_name = f"{basename_hyphen}{v}-{today}"
-        endpoint_name = f"{endpoint_base}{v}-test"
     else:
-        raise RuntimeError(f"Unknown mode: {mode}")
+        # Non-model mode (e.g. "fs" FeatureSet producers, or future modes): nothing
+        # to name, so pass the mode through with no model/endpoint metadata. Warn so
+        # a typo'd mode is still visible rather than silently producing no model.
+        print(
+            f"NOTE: mode {mode!r} is not a model-producing mode; passing through with no model metadata.",
+            file=sys.stderr,
+        )
+        return json.dumps({"mode": mode, "serverless": serverless})
 
     return json.dumps(
         {"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless}
@@ -280,7 +283,7 @@ def sort_pipelines(
     Mode behavior depends on the mode type:
         - Filter modes (dt, ts): Only run nodes whose mode matches (modeless
           nodes always run). Respects DAG ordering.
-        - Override modes (promote, test_promote): Run every unique script once
+        - Override modes (promote): Run every unique script once
           with the override mode, ignoring node modes. No DAG ordering.
         - None: Run all nodes (every mode), respecting DAG ordering.
 
@@ -293,7 +296,7 @@ def sort_pipelines(
     Returns:
         RunPlan: Execution plan with runs, group IDs, display lines, and dependencies
     """
-    # Override modes (promote, test_promote) take a completely different path:
+    # Override modes (promote) take a completely different path:
     # deduplicate scripts and run each once, no DAG ordering needed.
     if mode and mode in OVERRIDE_MODES:
         return _build_override_plan(pipelines, all_dags, mode)
@@ -308,7 +311,7 @@ def _build_override_plan(
 ) -> RunPlan:
     """Build a plan that runs each unique script once with the override mode.
 
-    Used for promote/test_promote where DAG ordering is irrelevant.
+    Used for promote where DAG ordering is irrelevant.
 
     Args:
         pipelines (list[Path]): Pipelines to run
@@ -343,10 +346,11 @@ def _build_override_plan(
 def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
     """Whether a node runs under the given filter mode.
 
-    A modeless node runs under every filter; a moded node runs only when there
-    is no filter or the filter matches its mode.
+    A filter (e.g. ``--dt``) only excludes *other filter modes*. Modeless nodes,
+    and named non-filter modes like ``fs`` producers, are prerequisites that run
+    under every filter -- they're never selected away.
     """
-    if node.mode is None or mode_filter is None:
+    if mode_filter is None or node.mode not in FILTER_MODES:
         return True
     return node.mode == mode_filter
 
@@ -391,7 +395,12 @@ def _build_dag_plan(
                 node = graph.nodes[key]["node"]
                 if not _node_selected(node, mode_filter):
                     continue
-                runtime_mode = mode_filter or node.mode
+                # A named non-filter mode (e.g. "fs") runs as itself; a modeless
+                # node adopts the active filter; a filter mode keeps its mode.
+                if node.mode and node.mode not in FILTER_MODES:
+                    runtime_mode = node.mode
+                else:
+                    runtime_mode = mode_filter or node.mode
                 plan.add_run(
                     node.script,
                     runtime_mode,
@@ -643,7 +652,6 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     mode_group.add_argument("--dt", action="store_true", help="Filter to DT mode (dynamic training)")
     mode_group.add_argument("--ts", action="store_true", help="Filter to temporal split evaluation mode")
     mode_group.add_argument("--promote", action="store_true", help="Run all scripts in PROMOTE mode")
-    mode_group.add_argument("--test-promote", action="store_true", help="Run all scripts in TEST_PROMOTE mode")
 
     return parser.parse_args(argv), extra_args
 

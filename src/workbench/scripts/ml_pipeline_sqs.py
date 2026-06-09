@@ -19,7 +19,6 @@ def submit_to_sqs(
     realtime: bool = False,
     dt: bool = False,
     promote: bool = False,
-    test_promote: bool = False,
     temporal_split: bool = False,
     group_id: str | None = None,
     pipeline_meta: str | None = None,
@@ -36,7 +35,6 @@ def submit_to_sqs(
         realtime (bool): If True, sets serverless=False for real-time processing (default: False)
         dt (bool): If True, sets DT=True in environment (default: False)
         promote (bool): If True, sets PROMOTE=True in environment (default: False)
-        test_promote (bool): If True, sets TEST_PROMOTE=True in environment (default: False)
         temporal_split (bool): If True, sets TEMPORAL_SPLIT=True in environment (default: False)
         group_id (str | None): Optional MessageGroupId override for dependency chains
         pipeline_meta (str | None): Optional JSON string for PIPELINE_META environment variable
@@ -73,7 +71,6 @@ def submit_to_sqs(
     print(f"  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"  DynamicTraining: {dt}")
     print(f"  Promote: {promote}")
-    print(f"  Test Promote: {test_promote}")
     print(f"  Temporal Split: {temporal_split}")
     if pipeline_meta:
         print(f"  Pipeline Meta: {pipeline_meta}")
@@ -145,7 +142,6 @@ def submit_to_sqs(
         "SERVERLESS": "False" if realtime else "True",
         "DT": str(dt),
         "PROMOTE": str(promote),
-        "TEST_PROMOTE": str(test_promote),
         "TEMPORAL_SPLIT": str(temporal_split),
     }
     if pipeline_meta:
@@ -183,7 +179,6 @@ def submit_to_sqs(
     print(f"  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
     print(f"  DynamicTraining: {dt}")
     print(f"  Promote: {promote}")
-    print(f"  Test Promote: {test_promote}")
     print(f"  Temporal Split: {temporal_split}")
     if outputs:
         print(f"  Outputs: {outputs}")
@@ -220,11 +215,6 @@ def main():
         "--promote",
         action="store_true",
         help="Set Promote=True (models and endpoints will use promoted naming)",
-    )
-    parser.add_argument(
-        "--test-promote",
-        action="store_true",
-        help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
     )
     parser.add_argument(
         "--ts",
@@ -269,7 +259,6 @@ def main():
             realtime=args.realtime,
             dt=args.dt,
             promote=args.promote,
-            test_promote=args.test_promote,
             temporal_split=args.ts,
             group_id=args.group_id,
             pipeline_meta=args.pipeline_meta,

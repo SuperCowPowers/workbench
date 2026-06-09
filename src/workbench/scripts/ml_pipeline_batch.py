@@ -50,7 +50,6 @@ def run_batch_job(
     realtime: bool = False,
     dt: bool = False,
     promote: bool = False,
-    test_promote: bool = False,
     temporal_split: bool = False,
     pipeline_meta: str | None = None,
 ) -> int:
@@ -68,7 +67,6 @@ def run_batch_job(
         realtime: If True, sets serverless=False for real-time processing (default: False)
         dt: If True, sets DT=True in environment (default: False)
         promote: If True, sets PROMOTE=True in environment (default: False)
-        test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
         temporal_split: If True, sets TEMPORAL_SPLIT=True in environment (default: False)
         pipeline_meta: Optional JSON string for PIPELINE_META environment variable
 
@@ -99,7 +97,6 @@ def run_batch_job(
                 {"name": "SERVERLESS", "value": "False" if realtime else "True"},
                 {"name": "DT", "value": str(dt)},
                 {"name": "PROMOTE", "value": str(promote)},
-                {"name": "TEST_PROMOTE", "value": str(test_promote)},
                 {"name": "TEMPORAL_SPLIT", "value": str(temporal_split)},
             ]
             + ([{"name": "PIPELINE_META", "value": pipeline_meta}] if pipeline_meta else [])
@@ -164,11 +161,6 @@ def main():
         help="Set Promote=True (models and endpoints will use promoted naming)",
     )
     parser.add_argument(
-        "--test-promote",
-        action="store_true",
-        help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
-    )
-    parser.add_argument(
         "--ts",
         action="store_true",
         help="Set TEMPORAL_SPLIT=True (temporal split evaluation mode)",
@@ -186,7 +178,6 @@ def main():
             realtime=args.realtime,
             dt=args.dt,
             promote=args.promote,
-            test_promote=args.test_promote,
             temporal_split=args.ts,
             pipeline_meta=args.pipeline_meta,
         )
