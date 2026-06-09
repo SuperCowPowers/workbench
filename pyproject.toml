@@ -107,8 +107,17 @@ lambda_test = "workbench.scripts.lambda_test:main"
 endpoint_test = "workbench.scripts.endpoint_test:main"
 training_test = "workbench.scripts.training_test:main"
 
+[tool.uv]
+# torch arrives transitively via sagemaker-serve (unconstrained); this floor
+# stops uv's universal resolver from picking a py313-incompatible old build.
+# A constraint bounds the transitive version without declaring torch as our dep.
+constraint-dependencies = ["torch >= 2.12"]
+
 [tool.black]
 line-length = 120
+# Supported Python versions; keeps black from auto-targeting a newer one and
+# warning when run under an older interpreter.
+target-version = ["py310", "py311", "py312", "py313"]
 
 [tool.pytest.ini_options]
 addopts = "-v --cov=workbench --cov-report term-missing"

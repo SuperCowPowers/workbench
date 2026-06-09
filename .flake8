@@ -1,3 +1,6 @@
 [flake8]
 extend-ignore = E203
 max-line-length = 120
+# Skip the in-repo virtualenv and generated/build dirs. extend-exclude is
+# additive, so it applies even when --exclude is passed on the command line.
+extend-exclude = .venv,venv,*generated*,.tox,build,dist
