@@ -8,6 +8,7 @@ import pytest
 from workbench.scripts.ml_pipeline_launcher import (
     PipelineNode,
     build_dag,
+    build_pipeline_meta,
     get_all_pipelines,
     load_pipelines_config,
     parse_script_name,
@@ -352,3 +353,21 @@ class TestParseScriptName:
 
     def test_non_numeric_suffix_returns_none(self):
         assert parse_script_name(Path("my_script_abc.py")) == ("my_script_abc", None)
+
+
+class TestBuildPipelineMeta:
+    """build_pipeline_meta prefers the declared model: output, falls back to the filename."""
+
+    def test_dt_uses_declared_model_ref(self):
+        meta = json.loads(build_pipeline_meta(Path("ppb_human_free_reg_xgb_1.py"), "dt", True, "model:custom-name"))
+        assert meta["model_name"] == "custom-name"
+        assert meta["endpoint_name"] == "custom-name"
+
+    def test_dt_falls_back_to_filename(self):
+        meta = json.loads(build_pipeline_meta(Path("ppb_human_free_reg_xgb_1.py"), "dt", True, None))
+        assert meta["model_name"] == "ppb-human-free-reg-xgb-1-dt"
+
+    def test_modeless_has_no_model(self):
+        meta = json.loads(build_pipeline_meta(Path("ppb_human_feature_sets_1.py"), None, True, None))
+        assert "model_name" not in meta
+        assert meta["serverless"] is True

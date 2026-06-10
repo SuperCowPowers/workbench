@@ -22,6 +22,7 @@ import argparse
 import contextlib
 import io
 import json
+import logging
 import os
 import re
 import subprocess
@@ -40,8 +41,12 @@ from workbench.utils.pipelines_manager import (
     derive_edges,
     parse_spec,
     plan_runs,
+    ref_name,
+    ref_type,
     simulated_mtime,
 )
+
+log = logging.getLogger("workbench")
 
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
@@ -124,12 +129,14 @@ def parse_script_name(script_path: Path) -> tuple[str, str | None]:
     return script_path.stem, None
 
 
-def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
+def build_pipeline_meta(script_path: Path, mode: str, serverless: bool, model_ref: str | None = None) -> str:
     """Build PIPELINE_META JSON for a pipeline script.
 
-    Derives model_name and endpoint_name from the script filename and mode.
-    For promoted endpoints, the framework suffix (xgb, pytorch, etc.) is stripped.
-    Version suffix is included in names when present in the filename.
+    For dt/ts the model/endpoint name comes from the node's declared ``model:``
+    output (the DAG is the source of truth); it falls back to deriving the name
+    from the filename when no declared output is available (e.g. a standalone
+    run). promote derives a date-stamped name from the filename (with the
+    framework suffix stripped for the endpoint). Modeless producers get no model.
     """
     from datetime import datetime
 
@@ -140,19 +147,21 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     v = f"-{version}" if version else ""
 
     if mode in ("dt", "ts"):
-        model_name = f"{basename_hyphen}{v}-{mode}"
-        endpoint_name = f"{basename_hyphen}{v}-{mode}"
+        # Prefer the DAG-declared model: output; derive from filename only if absent.
+        model_name = endpoint_name = ref_name(model_ref) if model_ref else f"{basename_hyphen}{v}-{mode}"
     elif mode == "promote":
         model_name = f"{basename_hyphen}{v}-{today}"
         endpoint_name = f"{endpoint_base}{v}"
     else:
-        # Non-model mode (e.g. "fs" FeatureSet producers, or future modes): nothing
-        # to name, so pass the mode through with no model/endpoint metadata. Warn so
-        # a typo'd mode is still visible rather than silently producing no model.
-        print(
-            f"NOTE: mode {mode!r} is not a model-producing mode; passing through with no model metadata.",
-            file=sys.stderr,
-        )
+        # No model to name. Modeless producers (e.g. FeatureSets) are normal and
+        # stay quiet; a non-empty mode here is unrecognized (not dt/ts/promote) --
+        # likely a typo -- so warn.
+        if mode:
+            print(
+                f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote); "
+                f"passing through with no model metadata.",
+                file=sys.stderr,
+            )
         return json.dumps({"mode": mode, "serverless": serverless})
 
     return json.dumps(
@@ -619,14 +628,17 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
         print(f"\n{'─' * 60}")
         print(f"{'Running' if args.local else 'Launching'} run {i}/{len(plan.runs)}: {script.name}{mode_display}")
 
-        # Build PIPELINE_META only when a mode is set (standalone scripts don't need it)
-        pipeline_meta = build_pipeline_meta(script, mode, serverless) if mode else None
+        # Every run gets PIPELINE_META, uniformly -- the script decides whether to
+        # use it. dt/ts take the model name from the node's declared model: output
+        # (DAG is the source of truth); see build_pipeline_meta.
+        deps = plan.deps.get((script, mode), {})
+        model_ref = next((o for o in deps.get("outputs", []) if ref_type(o) == "model"), None)
+        pipeline_meta = build_pipeline_meta(script, mode, serverless, model_ref)
 
         if args.local:
             env = os.environ.copy()
-            if pipeline_meta:
-                env["PIPELINE_META"] = pipeline_meta
-                print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
+            env["PIPELINE_META"] = pipeline_meta
+            print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
             print(f"{'─' * 60}\n")
             cmd = [sys.executable, str(script), *extra_args]
             result = subprocess.run(cmd, env=env)
@@ -636,14 +648,12 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
                 cmd.append(f"--{mode.replace('_', '-')}")
             if args.realtime:
                 cmd.append("--realtime")
-            if pipeline_meta:
-                cmd.extend(["--pipeline-meta", pipeline_meta])
+            cmd.extend(["--pipeline-meta", pipeline_meta])
             if extra_args:
                 cmd.extend(["--script-args", json.dumps(extra_args)])
             group_id = plan.group_ids.get((script, mode))
             if group_id:
                 cmd.extend(["--group-id", group_id])
-            deps = plan.deps.get((script, mode), {})
             if deps.get("outputs"):
                 cmd.extend(["--outputs", ",".join(deps["outputs"])])
             if deps.get("inputs"):
@@ -758,6 +768,11 @@ def main():
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
         exit(1)
+    if not all_dags:
+        log.warning(
+            f"No pipelines.json found under {Path.cwd()} -- running scripts standalone "
+            f"(no DAG ordering or modes). To run DAG nodes, cd to a directory with the relevant pipelines.json."
+        )
 
     # Freshness simulation: show what a modified source would submit (no launch).
     if args.sim_mod:
