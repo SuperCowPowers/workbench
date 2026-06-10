@@ -244,19 +244,11 @@ def aws_tags_to_dict(aws_tags) -> dict:
     for base_key, chunks in stitched_data.items():
         # Sort by chunk number and concatenate
         sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
-        stitched_base64_str = "".join(sorted_chunks)
+        stitched_str = "".join(sorted_chunks)
 
-        # Decode the stitched base64 string
-        try:
-            stitched_json_str = base64.b64decode(stitched_base64_str).decode("utf-8")
-        except UnicodeDecodeError:
-            stitched_json_str = stitched_base64_str
-        try:
-            stitched_dict = json.loads(stitched_json_str)
-        except json.decoder.JSONDecodeError:
-            stitched_dict = stitched_json_str
-
-        regular_tags[base_key] = stitched_dict
+        # Decode the stitched value (same forgiving path as regular tags: a value that
+        # isn't actually base64 — e.g. tag-safe ARNs stored raw — falls through untouched)
+        regular_tags[base_key] = decode_value(stitched_str)
 
     return regular_tags
 
