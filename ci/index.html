@@ -12,7 +12,7 @@
         <link rel="prev" href="../release_notes/0_8_158/">
       
       
-        <link rel="next" href="../admin/aws_service_limits/">
+        <link rel="next" href="github_oidc_setup/">
       
       
         
@@ -4149,6 +4149,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="github_oidc_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GitHub OIDC Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -4593,6 +4621,11 @@ shared packages match the workspace everywhere.</p>
 <td><a href="https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/publish.yml"><code>publish.yml</code></a></td>
 <td><code>v*</code> tag</td>
 <td>Lints, builds, publishes to PyPI (trusted publishing), and creates a GitHub release with changelog notes</td>
+</tr>
+<tr>
+<td><a href="https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/aws-tests.yml"><code>aws-tests.yml</code></a></td>
+<td>nightly, manual</td>
+<td>Runs <code>tox -m quick</code> against the sandbox AWS account via OIDC — see <a href="github_oidc_setup/">GitHub OIDC Setup</a></td>
 </tr>
 </tbody>
 </table>
