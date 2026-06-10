@@ -1,0 +1,52 @@
+name: AWS Tests (scp_sandbox)
+
+# Runs the real-AWS test suite (`tox -m quick`) against the scp_sandbox
+# account. Auth is GitHub OIDC -> github-actions-workbench role, which can
+# only sts:AssumeRole into Workbench-ExecutionRole — the same role workbench
+# assumes everywhere else; no AWS keys are stored in GitHub.
+#
+# Nightly + manual only (not per-PR): the tests create/delete real resources,
+# so cost and shared-state collisions argue against running them on every push.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # nightly, 06:00 UTC (~11pm MST)
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# One run at a time — the tests share AWS resources (endpoints, Parameter
+# Store keys) and two concurrent runs would collide.
+concurrency:
+  group: aws-tests-scp-sandbox
+  cancel-in-progress: false
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/github-actions-workbench
+          aws-region: us-west-2
+
+      - name: Install tox
+        run: pip install tox
+
+      - name: Run quick tests
+        env:
+          WORKBENCH_CONFIG: ${{ github.workspace }}/ci/workbench_ci_config.json
+          WORKBENCH_BUCKET: ${{ secrets.WORKBENCH_BUCKET_SANDBOX }}
+          WORKBENCH_API_KEY: ${{ secrets.WORKBENCH_API_KEY_SANDBOX }}
+        run: tox -m quick

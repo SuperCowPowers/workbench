@@ -19,6 +19,7 @@ class WorkbenchCoreStackProps:
     additional_buckets: List[str] = field(default_factory=list)
     existing_vpc_id: str = None
     subnet_ids: List[str] = field(default_factory=list)  # Optional subnets ids for the Batch compute environment
+    trusted_arns: List[str] = field(default_factory=list)  # Extra principal ARNs trusted to assume Workbench roles
 
 
 class WorkbenchCoreStack(Stack):
@@ -43,6 +44,7 @@ class WorkbenchCoreStack(Stack):
         self.additional_buckets = props.additional_buckets
         self.existing_vpc_id = props.existing_vpc_id
         self.subnet_ids = props.subnet_ids
+        self.trusted_arns = props.trusted_arns
 
         # Workbench Role Names
         self.execution_role_name = "Workbench-ExecutionRole"  # Main role
@@ -1667,7 +1669,10 @@ class WorkbenchCoreStack(Stack):
             # This is particularly important for Lake Formation and enterprise SSO integrations
             all_sso_arns = sso_group_arns_pattern_1 + sso_group_arns_pattern_2
 
-            condition = {"ArnLike": {"aws:PrincipalArn": all_sso_arns}}
+            # Optional additional trusted principals (e.g. a CI role) from config
+            all_trusted_arns = all_sso_arns + self.trusted_arns
+
+            condition = {"ArnLike": {"aws:PrincipalArn": all_trusted_arns}}
             assumed_by.add_principals(iam.AccountPrincipal(self.account).with_conditions(condition))
         else:
             # Fallback: Allow any principal in the account to assume this role

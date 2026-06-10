@@ -37,6 +37,7 @@ Only packages outside the workspace escape the master: image-only overlays
 | [`endpoint-import-smoke.yml`](https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/endpoint-import-smoke.yml) | push, PR | Every `workbench.endpoints` module imports under the lean endpoint dep surface (no heavy orchestration/UI libs pulled in transitively) |
 | [`deploy-docs.yml`](https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/deploy-docs.yml) | push to `main` | Builds this MkDocs site and deploys it to GitHub Pages |
 | [`publish.yml`](https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/publish.yml) | `v*` tag | Lints, builds, publishes to PyPI (trusted publishing), and creates a GitHub release with changelog notes |
+| [`aws-tests.yml`](https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/aws-tests.yml) | nightly, manual | Runs `tox -m quick` against the sandbox AWS account via OIDC — see [GitHub OIDC Setup](github_oidc_setup.md) |
 
 ## Fixing a Red Check
 

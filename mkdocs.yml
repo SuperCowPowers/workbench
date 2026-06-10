@@ -119,6 +119,7 @@ nav:
     - 0.8.158:  release_notes/0_8_158.md
   - CI:
     - Overview: ci/index.md
+    - GitHub OIDC Setup: ci/github_oidc_setup.md
   - Admin:
     - AWS Service Limits:  admin/aws_service_limits.md
     - PyPI Release:  admin/pypi_release.md

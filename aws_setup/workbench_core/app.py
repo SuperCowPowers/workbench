@@ -43,6 +43,10 @@ additional_buckets_str = (cm and cm.get_config("WORKBENCH_ADDITIONAL_BUCKETS")) 
 additional_buckets = (
     [bucket.strip() for bucket in additional_buckets_str.split(",") if bucket.strip()] if additional_buckets_str else []
 )
+# Trusted ARNs (extra principals allowed to assume the Workbench roles, e.g. a CI role)
+trusted_arns_str = (cm and cm.get_config("WORKBENCH_TRUSTED_ARNS")) or os.getenv("WORKBENCH_TRUSTED_ARNS", "")
+trusted_arns = [arn.strip() for arn in trusted_arns_str.split(",") if arn.strip()] if trusted_arns_str else []
+
 existing_vpc_id = (cm and cm.get_config("WORKBENCH_VPC_ID")) or os.getenv("WORKBENCH_VPC_ID")
 subnet_ids = (cm and cm.get_config("WORKBENCH_SUBNET_IDS")) or os.getenv("WORKBENCH_SUBNET_IDS", "")
 
@@ -51,6 +55,7 @@ print("Configuration:")
 print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
 print(f"  WORKBENCH_SSO_GROUPS: {sso_groups}")
 print(f"  WORKBENCH_ADDITIONAL_BUCKETS: {additional_buckets}")
+print(f"  WORKBENCH_TRUSTED_ARNS: {trusted_arns}")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
 print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
 
@@ -69,6 +74,7 @@ sandbox_stack = WorkbenchCoreStack(
         additional_buckets=additional_buckets,
         existing_vpc_id=existing_vpc_id,
         subnet_ids=subnet_ids,
+        trusted_arns=trusted_arns,
     ),
 )
 
