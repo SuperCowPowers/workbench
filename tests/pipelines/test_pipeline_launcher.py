@@ -120,11 +120,11 @@ class TestBuildDag:
             )
 
     def test_dangling_input_tolerated(self, capsys):
-        """An input with no in-pipeline producer warns but is tolerated."""
+        """An input with no producer is tolerated silently (it's an external root)."""
         graph = build_dag("p", [node("a.py", inputs=["fs:external"])])
         assert graph.number_of_nodes() == 1
         assert graph.number_of_edges() == 0
-        assert "external input" in capsys.readouterr().err
+        assert capsys.readouterr().err == ""  # no warning noise
 
     def test_duplicate_node_raises(self):
         """The same (script, mode) declared twice is a hard error."""
@@ -167,8 +167,8 @@ class TestSortPipelines:
         assert plan.group_ids[(fs, None)] == "producers"
         assert plan.group_ids[(consumer, None)] == "consumers"
 
-    def test_cross_pipeline_input_not_flagged_external(self, tmp_path, capsys):
-        """Resolved + ds: inputs stay quiet; a dangling non-ds ref still warns."""
+    def test_external_inputs_tolerated_silently(self, tmp_path, capsys):
+        """Dangling/external inputs emit no warnings -- the render's grey/green conveys them."""
         fs = tmp_path / "fs.py"
         consumer = tmp_path / "consumer.py"
         dags = {
@@ -176,42 +176,41 @@ class TestSortPipelines:
             "consumers": [node(consumer, inputs=["fs:shared", "ds:raw", "fs:missing"])],
         }
 
-        sort_pipelines([fs, consumer], dags)
+        sort_pipelines([fs, consumer], dags)  # all selected
+        sort_pipelines([consumer], dags)  # producer NOT selected -> fs:shared external here
+        assert "external input" not in capsys.readouterr().err
 
-        err = capsys.readouterr().err
-        assert "fs:shared" not in err  # resolved across pipelines, no warning
-        assert "ds:raw" not in err  # DataSource: external by definition, quiet
-        assert "fs:missing" in err  # dangling non-ds ref: still warns
-
-    def test_unselected_producer_input_flagged_external(self, tmp_path, capsys):
-        """If the producing node isn't selected, its artifact is treated as external."""
-        fs = tmp_path / "fs.py"
-        consumer = tmp_path / "consumer.py"
+    def test_dataflow_display(self, tmp_path):
+        """Display renders the data-flow DAG: artifacts as nodes, producer above consumers."""
+        producer = tmp_path / "producer.py"
+        cons_a = tmp_path / "cons_a.py"
+        cons_b = tmp_path / "cons_b.py"
         dags = {
-            "producers": [node(fs, outputs=["fs:shared"])],
-            "consumers": [node(consumer, inputs=["fs:shared"])],
+            "p": [
+                node(producer, outputs=["fs:x"]),
+                node(cons_a, inputs=["fs:x"]),
+                node(cons_b, inputs=["fs:x"]),
+            ]
         }
 
-        sort_pipelines([consumer], dags)  # fs producer NOT selected
+        plan = sort_pipelines([producer, cons_a, cons_b], dags)
 
-        err = capsys.readouterr().err
-        assert "fs:shared" in err
-        assert "external input" in err
-
-    def test_fan_out_display(self, tmp_path):
-        """The display renders each pipeline as a tree: producer above its consumers."""
-        fs = tmp_path / "fs.py"
-        a = tmp_path / "a.py"
-        b = tmp_path / "b.py"
-        dags = {"p": [node(fs, outputs=["fs:x"]), node(a, inputs=["fs:x"]), node(b, inputs=["fs:x"])]}
-
-        plan = sort_pipelines([fs, a, b], dags)
-
-        assert any(line.strip() == "p" for line in plan.display_lines)  # pipeline header
-        assert any("╼" in line for line in plan.display_lines)  # Unicode tree edges
         text = "\n".join(plan.display_lines)
-        assert text.index("fs") < text.index("a")  # producer (root) before consumers
-        assert text.index("fs") < text.index("b")
+        assert "fs:x" in text  # the artifact is rendered as a node
+        assert any("╼" in line for line in plan.display_lines)  # Unicode tree edges
+        # Producer script -> the artifact it makes -> the consumers.
+        assert text.index("producer") < text.index("fs:x") < text.index("cons_a")
+
+    def test_external_input_greyed(self, tmp_path):
+        """An input with no producer renders (it's a node); resolved + external both show."""
+        fs = tmp_path / "fs.py"
+        consumer = tmp_path / "consumer.py"
+        dags = {"p": [node(fs, outputs=["fs:x"]), node(consumer, inputs=["fs:x", "ds:raw"])]}
+
+        plan = sort_pipelines([fs, consumer], dags)
+        text = "\n".join(plan.display_lines)
+        assert "fs:x" in text  # resolved artifact
+        assert "ds:raw" in text  # external root rendered too
 
     def test_mode_filter_dt(self, tmp_path):
         """Filter mode keeps only matching (and modeless) nodes."""

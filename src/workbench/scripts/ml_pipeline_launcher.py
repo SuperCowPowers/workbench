@@ -19,6 +19,8 @@ Args after a literal '--' are forwarded verbatim to the underlying script:
 """
 
 import argparse
+import contextlib
+import io
 import json
 import os
 import re
@@ -31,12 +33,14 @@ from pathlib import Path
 import networkx as nx
 
 from workbench.utils.repl_utils import colors as REPL_COLORS
+from workbench.utils.tree_render import render_forest
 from workbench.utils.pipelines_manager import (
     PipelineNode,
     build_producer_index,
     derive_edges,
     parse_spec,
-    ref_type,
+    plan_runs,
+    simulated_mtime,
 )
 
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
@@ -61,16 +65,12 @@ def _color(text: str, color: str) -> str:
     return f"{REPL_COLORS[color]}{text}{REPL_COLORS['reset']}"
 
 
-def display_label(script: Path, mode: str | None, leaf: bool = False) -> str:
-    """run_label colorized for terminal display.
-
-    The mode bracket is tinted by mode; leaf nodes (terminal consumers) get a
-    subtle blue name to set them apart from producers/intermediate nodes.
-    """
-    stem = _color(script.stem, "lightblue") if leaf else script.stem
+def script_label(stem: str, mode: str | None) -> str:
+    """Data-flow label for a script node: blue name + mode-colored [mode] bracket."""
+    name = _color(stem, "lightblue")
     if not mode:
-        return stem
-    return f"{stem} {_color(f'[{mode}]', MODE_COLORS.get(mode, 'lightgrey'))}"
+        return name
+    return f"{name} {_color(f'[{mode}]', MODE_COLORS.get(mode, 'lightgrey'))}"
 
 
 @dataclass
@@ -218,22 +218,10 @@ def build_dag(name: str, nodes: list[PipelineNode]) -> nx.DiGraph:
             raise ValueError(f"Pipeline '{name}': duplicate node {node.node_id}")
         graph.add_node(node.key, node=node)
 
+    # Inputs with no producer are simply external roots; the data-flow render
+    # shows them (grey vs green), so there's nothing to warn about here.
     index = build_producer_index(nodes)
-    edges, externals = derive_edges(nodes, index)
-
-    for consumer, ref in externals:
-        # DataSources are external by definition (updated by nightly Glue jobs we
-        # don't own), so a ds: with no producer is expected -- stay quiet. Any
-        # other dangling ref likely means a typo or a missing pipeline: warn.
-        if ref_type(ref) == "ds":
-            continue
-        where = consumer.group or name
-        print(
-            f"WARNING: pipeline '{where}': node {consumer.node_id} inputs '{ref}', "
-            f"which no selected node produces; treating it as an external input.",
-            file=sys.stderr,
-        )
-    for producer, consumer in edges:
+    for producer, consumer in derive_edges(nodes, index):
         graph.add_edge(producer.key, consumer.key)
 
     if not nx.is_directed_acyclic_graph(graph):
@@ -330,6 +318,80 @@ def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
     return node.mode == mode_filter
 
 
+def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=None, highlight=()) -> list[str]:
+    """Render the data-flow DAG: ds:/fs:/model: artifacts and scripts as nodes,
+    edges flowing artifact -> script -> artifact. Shared producers fan out and
+    cross-pipeline joins show as multi-parent, rooted at the external sources.
+
+    Artifacts are colored by resolution against ``produced`` (every ref any
+    pipeline in the repo produces, not just the selected ones): in it -> green,
+    a true external source (DataSource / static FeatureSet) -> grey. So an input
+    resolves to green even when its producer isn't in this selection. Scripts
+    keep their mode coloring.
+
+    Args:
+        nodes (list[PipelineNode]): The selected nodes to render.
+        runtime_mode (callable): node -> the mode to display it under.
+        produced (set[str]): Every artifact ref produced anywhere in the repo.
+        roots (list | None): Render these refs/keys as the roots (e.g. simulated
+            sources) instead of the natural in-degree-0 sources.
+        highlight (iterable): Artifact refs to mark in orange (e.g. the simulated
+            modified sources).
+    """
+    # Build the bipartite data-flow graph: artifacts and scripts as nodes, with
+    # children ordered (script -> its outputs; artifact -> its consumer scripts).
+    label: dict = {}
+    children: dict = {}
+    has_parent = set()
+    order = []
+    external: dict = {}  # artifact ref -> True if no selected node produces it
+
+    def ensure(key):
+        if key not in children:
+            children[key] = []
+            order.append(key)
+
+    # Scripts: name blue, the [mode] bracket keeps its mode color.
+    for node in nodes:
+        ensure(node.key)
+        label[node.key] = script_label(node.stem, runtime_mode(node))
+
+    for node in nodes:
+        for ref in node.inputs:
+            ensure(ref)
+            external.setdefault(ref, ref not in produced)
+            children[ref].append(node.key)
+            has_parent.add(node.key)
+        for ref in node.outputs:
+            ensure(ref)
+            external.setdefault(ref, ref not in produced)
+            children[node.key].append(ref)
+            has_parent.add(ref)
+
+    # Color artifacts by role: only those consumed as an input get color -- green
+    # if resolved (produced by a selected node), left default ("white") if
+    # external. Terminal outputs (e.g. model:, no consumer) get no color.
+    # Highlighted refs (e.g. simulated modified sources) override to orange.
+    highlight = set(highlight)
+    for ref in external:
+        if ref in highlight:
+            label[ref] = _color(ref, "orange")
+        else:
+            consumed = bool(children[ref])
+            label[ref] = _color(ref, "lightgreen") if (consumed and not external[ref]) else ref
+
+    if roots is None:
+        # Roots = external sources (in-degree 0): artifacts no one produces, plus
+        # scripts with no inputs. Sorted artifacts-first by name for stable output.
+        roots = sorted(
+            (k for k in order if k not in has_parent),
+            key=lambda k: (0 if isinstance(k, str) else 1, str(k)),
+        )
+    else:
+        roots = [r for r in roots if r in children]  # keep only refs present in the graph
+    return render_forest(roots, children, label)
+
+
 def _build_dag_plan(
     pipelines: list[Path],
     all_dags: dict[str, list[PipelineNode]],
@@ -383,7 +445,7 @@ def _build_dag_plan(
 
         # Emit runs in global topological order so every producer precedes its
         # consumers, even when the consumer lives in another pipeline.
-        selected_keys = set()
+        selected_nodes = []
         for generation in nx.topological_generations(graph):
             for key in generation:
                 node = graph.nodes[key]["node"]
@@ -396,23 +458,13 @@ def _build_dag_plan(
                     outputs=node.outputs,
                     inputs=node.inputs,
                 )
-                selected_keys.add(key)
+                selected_nodes.append(node)
 
-        # Render each pipeline as its own Unicode tree (producers -> consumers).
-        # Cross-pipeline edges are intentionally dropped from per-pipeline
-        # subgraphs, so a consumer fed by a sibling still shows as a local root.
-        for name, nodes in grouped.items():
-            keys = [(n.script, n.mode) for n in nodes if (n.script, n.mode) in selected_keys]
-            if not keys:
-                continue
-            subgraph = graph.subgraph(keys).copy()
-            for key in keys:
-                node = graph.nodes[key]["node"]
-                leaf = subgraph.out_degree(key) == 0
-                subgraph.nodes[key]["label"] = display_label(node.script, runtime_mode(node), leaf=leaf)
-            plan.display_lines.append(f"   {_color(name, 'lightpurple')}")
-            for line in nx.generate_network_text(subgraph, with_labels=True):
-                plan.display_lines.append(f"   {line}")
+        # Render the true global data-flow DAG (artifacts + scripts), not sliced
+        # per-pipeline trees. Resolution is judged against every pipeline in the
+        # repo, so an input stays green even when its producer isn't selected.
+        produced = {ref for nodes in all_dags.values() for n in nodes for ref in n.outputs}
+        plan.display_lines.extend(render_dataflow(selected_nodes, runtime_mode, produced))
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
@@ -635,6 +687,13 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser.add_argument("--realtime", action="store_true", help="Create realtime endpoints (default is serverless)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be launched without actually launching")
     parser.add_argument(
+        "--sim-mod",
+        nargs="+",
+        metavar="REF",
+        help="Simulate these artifact refs as freshly modified; show the global DAG paths that "
+        "would be submitted to Batch (no AWS, no launch). E.g. --sim-mod ds:ppb_human_assay_processed_ds",
+    )
+    parser.add_argument(
         "--local",
         action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
@@ -649,6 +708,48 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     return parser.parse_args(argv), extra_args
 
 
+def run_simulation(all_dags, modified_refs):
+    """Simulate modifying ``modified_refs`` and show the DAG paths that would submit.
+
+    Source-rooted freshness over the whole repo's DAG: any node downstream of a
+    modified source goes stale and would be submitted to Batch. No AWS, no launch.
+    """
+    global_nodes = [node for nodes in all_dags.values() for node in nodes]
+    produced = {ref for node in global_nodes for ref in node.outputs}
+    # plan_runs warns (to stdout) for no-input nodes -- CloudWatch-useful in the
+    # Lambda but noise here, and our summary already counts them, so swallow it.
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        plan = plan_runs(global_nodes, simulated_mtime(modified_refs))
+    runs = [(node, reason) for node, should_run, reason in plan if should_run]
+    triggered = sum(1 for _, reason in runs if reason == "stale")
+    always_run = sum(1 for _, reason in runs if reason in ("no_inputs", "unmanaged"))
+
+    print(f"\nSimulating modification of: {', '.join(modified_refs)}")
+    internal = [ref for ref in modified_refs if ref in produced]
+    if internal:
+        print(
+            f"  NOTE: {', '.join(internal)} is produced internally; freshness is source-rooted,\n"
+            f"        so modifying it does not propagate -- simulate its upstream ds: instead."
+        )
+    print(f"  {triggered} run(s) triggered by this change; {always_run} always-run regardless.\n")
+
+    print("Submitted paths:")
+    lines = render_dataflow(
+        global_nodes, lambda node: node.mode, produced, roots=list(modified_refs), highlight=modified_refs
+    )
+    print("\n".join(lines) + "\n")
+
+    # The always-run nodes aren't downstream of the change, so they don't appear
+    # in the paths above -- list them so it's clear they submit regardless.
+    always = [node for node, reason in runs if reason in ("no_inputs", "unmanaged")]
+    if always:
+        print("Always-run regardless of this change:")
+        for node in always:
+            print(f"   {script_label(node.stem, node.mode)}")
+        print()
+
+
 def main():
     args, extra_args = parse_args()
 
@@ -657,6 +758,11 @@ def main():
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
         exit(1)
+
+    # Freshness simulation: show what a modified source would submit (no launch).
+    if args.sim_mod:
+        run_simulation(all_dags, args.sim_mod)
+        return
 
     # Select which pipelines to run
     selected, selection_desc = select_pipelines(all_pipelines, args)

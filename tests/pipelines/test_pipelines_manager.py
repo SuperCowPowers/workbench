@@ -17,6 +17,7 @@ from workbench.utils.pipelines_manager import (
     plan_runs,
     ref_name,
     ref_type,
+    simulated_mtime,
     topo_order,
 )
 
@@ -73,13 +74,12 @@ class TestProducerIndexAndEdges:
         with pytest.raises(ValueError, match="produced by both"):
             build_producer_index([node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
 
-    def test_edges_and_externals(self):
+    def test_edges(self):
         fs = node("fs.py", outputs=["fs:x"])
         consumer = node("m.py", inputs=["fs:x", "ds:raw"])
         nodes = [fs, consumer]
-        edges, externals = derive_edges(nodes, build_producer_index(nodes))
-        assert edges == [(fs, consumer)]
-        assert externals == [(consumer, "ds:raw")]
+        edges = derive_edges(nodes, build_producer_index(nodes))
+        assert edges == [(fs, consumer)]  # ds:raw has no producer -> no edge
 
 
 class TestTopoOrder:
@@ -179,3 +179,26 @@ class TestPlanRuns:
         plan = plan_runs(nodes, clock({"ds:raw": 100}))  # everything missing/stale
         order = [n.node_id for n, _, _ in plan]
         assert order.index("fs") < order.index("m")
+
+
+class TestSimulatedMtime:
+    """Simulating a modified source propagates staleness; a produced fs does not."""
+
+    def _dag(self):
+        fs = node("fs.py", outputs=["fs:x"], inputs=["ds:raw"])
+        m = node("m.py", outputs=["model:m"], inputs=["fs:x"])
+        return [fs, m]
+
+    def test_modified_source_propagates(self):
+        plan = plan_runs(self._dag(), simulated_mtime(["ds:raw"]))
+        runs = {n.node_id: reason for n, run, reason in plan if run}
+        assert runs == {"fs": "stale", "m": "stale"}
+
+    def test_modified_internal_fs_is_a_noop(self):
+        # fs:x is produced by fs.py, so freshness roots at ds:raw -- not fs:x.
+        plan = plan_runs(self._dag(), simulated_mtime(["fs:x"]))
+        assert [n.node_id for n, run, _ in plan if run] == []
+
+    def test_unrelated_source_does_not_trigger(self):
+        plan = plan_runs(self._dag(), simulated_mtime(["ds:other"]))
+        assert [n.node_id for n, run, _ in plan if run] == []

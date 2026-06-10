@@ -33,9 +33,6 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-# Typed artifact ref prefixes understood by the schema. A ref is "<type>:<name>".
-KNOWN_REF_TYPES = ("ds", "fs", "model", "endpoint")
-
 
 def ref_type(ref: str) -> str:
     """Type prefix of an artifact ref, e.g. 'fs:caco2_1' -> 'fs'."""
@@ -143,29 +140,25 @@ def build_producer_index(nodes: list[PipelineNode]) -> dict[str, PipelineNode]:
 def derive_edges(
     nodes: list[PipelineNode],
     index: dict[str, PipelineNode],
-) -> tuple[list[tuple[PipelineNode, PipelineNode]], list[tuple[PipelineNode, str]]]:
-    """Derive (producer -> consumer) edges and list inputs with no producer.
+) -> list[tuple[PipelineNode, PipelineNode]]:
+    """Derive (producer -> consumer) edges, matched by artifact ref.
+
+    Inputs with no producer (DataSources / external artifacts) add no edge.
 
     Args:
         nodes (list[PipelineNode]): All nodes under consideration
         index (dict): Producer index from build_producer_index()
 
     Returns:
-        tuple: (edges, externals)
-            - edges: (producer_node, consumer_node) pairs, one per resolved input
-            - externals: (consumer_node, ref) pairs for inputs no node produces
-              (DataSources, or artifacts produced outside the selected set)
+        list: (producer_node, consumer_node) pairs, one per resolved input.
     """
     edges: list[tuple[PipelineNode, PipelineNode]] = []
-    externals: list[tuple[PipelineNode, str]] = []
     for node in nodes:
         for ref in node.inputs:
             producer = index.get(ref)
-            if producer is None:
-                externals.append((node, ref))
-            elif producer is not node:
+            if producer is not None and producer is not node:
                 edges.append((producer, node))
-    return edges, externals
+    return edges
 
 
 def topo_order(nodes: list[PipelineNode]) -> list[PipelineNode]:
@@ -294,3 +287,18 @@ def plan_runs(nodes, mtime_fn):
     """
     index = build_producer_index(nodes)
     return [(node, *needs_run(node, index, mtime_fn)) for node in topo_order(nodes)]
+
+
+def simulated_mtime(modified_refs):
+    """An ``mtime_fn`` that marks ``modified_refs`` as freshly modified.
+
+    For simulating freshness propagation without AWS: the given refs report a
+    newer time, every other artifact an older-but-present time. Feed it to
+    plan_runs() to see which nodes a change to those refs would make stale.
+
+    Note: freshness is source-rooted, so only true sources (DataSources, or
+    external/unproduced FeatureSets) propagate -- a *produced* FeatureSet roots
+    at its upstream source, so simulating it as modified is a no-op.
+    """
+    modified = set(modified_refs)
+    return lambda ref: 1 if ref in modified else 0
