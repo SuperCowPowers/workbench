@@ -4,7 +4,6 @@ import time
 import functools
 import json
 import base64
-import re
 import os
 from typing import Union, List, Callable, Optional, TYPE_CHECKING
 import pandas as pd
@@ -145,11 +144,6 @@ def decode_value(value):
     return value
 
 
-def is_valid_tag(tag):
-    pattern = r"^([a-zA-Z0-9_.:/=+\-@]*)$"
-    return re.match(pattern, tag) is not None
-
-
 def dict_to_aws_tags(meta_data: dict) -> list:
     """AWS Tags are in an odd format, so we need to convert, encode, and chunk the data
     Args:
@@ -172,10 +166,9 @@ def dict_to_aws_tags(meta_data: dict) -> list:
         if not isinstance(value, str):
             value = json.dumps(value, separators=(",", ":"))
 
-        # Make sure the value is valid
-        if not is_valid_tag(value):
-            log.important(f"Base64 encoding metadata: {value}")
-            value = base64.b64encode(value.encode()).decode()
+        # Base64-encode every value so the read side can always decode unambiguously.
+        # base64 output is always tag-safe (A-Za-z0-9+/=), so no validity check is needed.
+        value = base64.b64encode(value.encode()).decode()
 
         # Check if the value will fit in the 256-character limit
         if len(value) < char_limit:
@@ -246,8 +239,7 @@ def aws_tags_to_dict(aws_tags) -> dict:
         sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
         stitched_str = "".join(sorted_chunks)
 
-        # Decode the stitched value (same forgiving path as regular tags: a value that
-        # isn't actually base64 — e.g. tag-safe ARNs stored raw — falls through untouched)
+        # Decode the stitched value (decode_value tolerates legacy un-encoded tags)
         regular_tags[base_key] = decode_value(stitched_str)
 
     return regular_tags

@@ -92,3 +92,38 @@ def test_aws_tags_to_dict():
     result = aws_tags_to_dict(aws_tags)
     assert result["status"] == "ready"
     assert result["owner"] == "test_user"
+
+
+def test_tag_roundtrip_value_types():
+    """Mixed value types survive the encode -> tags -> decode round-trip (no AWS needed)"""
+    meta = {
+        "status": "ready",
+        "count": 42,
+        "ratios": [0.1, 0.2, 0.3],
+        "nested": {"a": [1, 2, 3], "b": "hello world!"},
+        "empty": "",
+    }
+    assert aws_tags_to_dict(dict_to_aws_tags(meta)) == meta
+
+
+def test_tag_roundtrip_chunked():
+    """Values longer than one tag get chunked and must still round-trip (no AWS needed).
+
+    Regression: a long tag-safe value (joined ARNs) previously stitched back to a base64
+    string of length 4n+1 and raised binascii.Error on read.
+    """
+    meta = {
+        "arns": "arn:aws:sagemaker:us-west-2:123456789012:model-package-group/abalone-regression," * 11,
+        "big_list": [{"name": f"thing_{i}", "score": i} for i in range(60)],
+    }
+    assert aws_tags_to_dict(dict_to_aws_tags(meta)) == meta
+
+
+def test_decode_legacy_unencoded_tags():
+    """Legacy tags written before base64-everything (stored raw) still decode (no AWS needed)"""
+    aws_tags = [
+        {"key": "status", "value": "ready"},  # plain string
+        {"key": "owner", "value": "test_user"},  # underscores, not base64
+    ]
+    result = aws_tags_to_dict(aws_tags)
+    assert result == {"status": "ready", "owner": "test_user"}
