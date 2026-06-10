@@ -157,8 +157,5 @@ test_evaluation_data.csv
 # Pull public data outputs
 data/public_data/output/
 
-# uv lock files at the repo root (each Dockerfile generates its own scoped lock)
-uv.lock
-
 # Claude Code 
 .claude/
