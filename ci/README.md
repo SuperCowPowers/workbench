@@ -12,48 +12,44 @@ pushing.
 
 ## `lock.sh` — lockfile regeneration
 
-Compiles a pinned `requirements.lock` for each image/application from its inputs
-(`pyproject.toml` plus, where present, a per-image `requirements.in` for
-image-only deps like `fastapi`/`uvicorn`). Run it after bumping a dependency in
-`pyproject.toml` or changing an image's dep selection, then commit the resulting
-lock diff.
+The workspace `uv.lock` is the **master**; the per-image `requirements.lock`
+files are derived views. `lock.sh` exports `uv.lock` as a constraints file and
+compiles each image's lock from its inputs (`pyproject.toml` plus, where
+present, a per-image `requirements.in` for image-only deps like
+`fastapi`/`uvicorn`) under those constraints — so wherever an image shares a
+package with the workspace, the versions match.
+
+### Moving the master and pushing to the images
 
 ```bash
-./ci/lock.sh
+uv lock --upgrade        # or: uv lock --upgrade-package <name>
+./ci/lock.sh             # propagate to the image locks
+git diff                 # review, then commit uv.lock + *.lock together
 ```
+
+The same two steps apply after editing a dependency in `pyproject.toml` or an
+image's `requirements.in` (skip `--upgrade` — a plain `uv lock` picks up the
+edit).
 
 ### Resolution behavior
 
-By default the run is **incremental**: `uv pip compile` reads each existing
-`requirements.lock` and reuses its pins as preferred-version hints, so a re-run
-only changes what a constraint edit (in `pyproject.toml` / `requirements.in`)
-actually forces. New upstream releases on PyPI do **not** move the locks — the
-locks move when, and only when, you change a dependency constraint.
-
-Escape hatches when you do want movement:
-
-- **Refresh everything to the latest** (the old aggressive behavior — drops the
-  preferred-versions hint and forces fresh PyPI metadata):
-
-  ```bash
-  UPGRADE=1 ./ci/lock.sh
-  ```
-
-- **Bump a single package**, leaving the rest pinned — add to the relevant
-  `compile` call in `lock.sh`:
-
-  ```
-  --upgrade-package <name>
-  ```
+New upstream releases on PyPI do **not** move the locks — versions move only
+when `uv.lock` moves or a dependency constraint changes. Packages outside the
+workspace are unconstrained by the master: image-only overlays like
+`chemprop`/`shap`, plus torch/`nvidia-*`/`triton`, which are deliberately
+excluded from the constraints because the images pin index-specific variants
+(`+cpu`/`+cu130`). Those re-pin incrementally, reusing each lock's existing
+versions as preferred-version hints; `UPGRADE=1 ./ci/lock.sh` drops the hints
+and refreshes them to the latest.
 
 ### CI gate
 
 [`lockfile-drift.yml`](../.github/workflows/lockfile-drift.yml) runs `./ci/lock.sh`
-and fails if `git diff` shows any change, catching a `pyproject.toml` /
-`requirements.in` edit that wasn't accompanied by a fresh lock. Because the
-default run is incremental, this check stays green as upstream releases happen —
-a diff only appears when a dependency constraint actually changed. To fix a
-failure: run `./ci/lock.sh` locally and commit the diff.
+and fails if `git diff` shows any change, catching a `uv.lock` /
+`pyproject.toml` / `requirements.in` change that wasn't propagated to the image
+locks. The check stays green as upstream releases happen — a diff only appears
+when the master or a dependency constraint actually moved. To fix a failure:
+run `./ci/lock.sh` locally and commit the diff.
 
 ## `endpoint_import_smoke.py` — endpoint import contract
 

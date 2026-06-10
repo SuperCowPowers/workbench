@@ -117,7 +117,9 @@ nav:
     - 0.8.358:  release_notes/0_8_358.md
     - 0.8.339:  release_notes/0_8_339.md
     - 0.8.158:  release_notes/0_8_158.md
-  - Admin: 
+  - CI:
+    - Overview: ci/index.md
+  - Admin:
     - AWS Service Limits:  admin/aws_service_limits.md
     - PyPI Release:  admin/pypi_release.md
     - Base Docker Push:  admin/base_docker_push.md

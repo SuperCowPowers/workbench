@@ -2,12 +2,26 @@
 # Regenerate per-image requirements.lock files from pyproject.toml (+ optional
 # per-image requirements.in for image-only deps like fastapi/uvicorn).
 #
+# The workspace uv.lock is the master: it is exported as a constraints file
+# and applied to every compile, so wherever an image shares a package with
+# the workspace, the versions match. Run `uv lock`/`uv lock --upgrade` to move
+# the master, then this script to propagate.
+#
 # Run after bumping deps in pyproject.toml or changing image dep selections.
 # CI verifies the lockfiles are in sync by running this and checking
 # `git diff --exit-code`.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+
+# Constraints from uv.lock. torch / triton / nvidia-* are excluded: images pin
+# index-specific variants (+cpu / +cu130) chosen per image below, which a
+# workspace constraint would fight with. Fixed path (not mktemp): it appears
+# in lockfile annotations, which must be deterministic for the CI sync check.
+CONSTRAINTS=ci/.uv-constraints.txt
+trap 'rm -f "$CONSTRAINTS"' EXIT
+uv export --all-extras --no-hashes --no-emit-project --no-annotate --no-header \
+    | grep -vE '^(torch==|triton==|nvidia-)' > "$CONSTRAINTS"
 
 PYTHON_VERSION=3.12
 PYTHON_PLATFORM=x86_64-unknown-linux-gnu
@@ -41,6 +55,7 @@ compile() {
     uv pip compile pyproject.toml \
         --python-version "$PYTHON_VERSION" \
         --python-platform "$PYTHON_PLATFORM" \
+        -c "$CONSTRAINTS" \
         $FRESH \
         -o "$out" \
         "$@"
@@ -68,6 +83,7 @@ echo "==> sagemaker_images/base/inference/requirements.lock"
 uv pip compile sagemaker_images/base/inference/requirements.in \
     --python-version "$PYTHON_VERSION" \
     --python-platform "$PYTHON_PLATFORM" \
+    -c "$CONSTRAINTS" \
     $FRESH \
     -o sagemaker_images/base/inference/requirements.lock
 
@@ -77,6 +93,7 @@ echo "==> sagemaker_images/base/training/requirements.lock"
 uv pip compile sagemaker_images/base/training/requirements.in \
     --python-version "$PYTHON_VERSION" \
     --python-platform "$PYTHON_PLATFORM" \
+    -c "$CONSTRAINTS" \
     $FRESH \
     -o sagemaker_images/base/training/requirements.lock
 
@@ -93,6 +110,7 @@ uv pip compile sagemaker_images/pytorch_chem/inference/requirements.in \
     --python-platform "$PYTHON_PLATFORM" \
     --extra-index-url "$PYTORCH_CPU" \
     --index-strategy unsafe-best-match \
+    -c "$CONSTRAINTS" \
     $FRESH \
     -o sagemaker_images/pytorch_chem/inference/requirements.lock
 
@@ -104,6 +122,7 @@ uv pip compile sagemaker_images/pytorch_chem/training/requirements.in \
     --python-platform "$PYTHON_PLATFORM" \
     --extra-index-url "$PYTORCH_CUDA" \
     --index-strategy unsafe-best-match \
+    -c "$CONSTRAINTS" \
     $FRESH \
     -o sagemaker_images/pytorch_chem/training/requirements.lock
 
