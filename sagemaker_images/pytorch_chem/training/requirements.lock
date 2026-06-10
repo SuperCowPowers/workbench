@@ -256,6 +256,7 @@ threadpoolctl==3.6.0
     # via scikit-learn
 torch==2.12.0+cu130
     # via
+    #   -c (workspace)
     #   -r sagemaker_images/pytorch_chem/training/requirements.in
     #   chemprop
     #   lightning
