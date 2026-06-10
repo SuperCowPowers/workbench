@@ -31,6 +31,13 @@ from pathlib import Path
 import networkx as nx
 
 from workbench.utils.repl_utils import colors as REPL_COLORS
+from workbench.utils.pipelines_manager import (
+    PipelineNode,
+    build_producer_index,
+    derive_edges,
+    parse_spec,
+    ref_type,
+)
 
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
@@ -64,33 +71,6 @@ def display_label(script: Path, mode: str | None, leaf: bool = False) -> str:
     if not mode:
         return stem
     return f"{stem} {_color(f'[{mode}]', MODE_COLORS.get(mode, 'lightgrey'))}"
-
-
-@dataclass
-class PipelineNode:
-    """A single node in a pipeline DAG: a script run in an optional mode.
-
-    A node declares the artifacts it outputs and inputs (refs of the form
-    "type:name", e.g. "fs:aqsol_features"). DAG edges are derived by matching a
-    node's input artifacts to whichever node outputs them, so the same script
-    can appear as multiple nodes under different modes.
-
-    Attributes:
-        script (Path): Path to the pipeline script
-        mode (str | None): Execution mode ("dt"/"ts"), or None for a modeless node
-        outputs (list[str]): Artifact refs this node produces
-        inputs (list[str]): Artifact refs this node depends on
-    """
-
-    script: Path
-    mode: str | None = None
-    outputs: list[str] = field(default_factory=list)
-    inputs: list[str] = field(default_factory=list)
-
-    @property
-    def node_id(self) -> str:
-        """Stable label for this node, unique within a pipeline."""
-        return run_label(self.script, self.mode)
 
 
 @dataclass
@@ -198,30 +178,28 @@ def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | No
         return None
     with open(json_path) as f:
         config = json.load(f)
-    pipelines = {}
-    for name, raw_nodes in config.get("pipelines", {}).items():
-        pipelines[name] = [
-            PipelineNode(
-                script=directory / raw["script"],
-                mode=raw.get("mode"),
-                outputs=raw.get("outputs", []),
-                inputs=raw.get("inputs", []),
-            )
-            for raw in raw_nodes
-        ]
+    # Resolve each node's script relative to this config's directory, then group
+    # the flat node list back into {pipeline_name: [nodes]}.
+    nodes = parse_spec(config, script_resolver=lambda script: directory / script)
+    pipelines: dict[str, list[PipelineNode]] = {}
+    for node in nodes:
+        pipelines.setdefault(node.group, []).append(node)
     return pipelines
 
 
 def build_dag(name: str, nodes: list[PipelineNode]) -> nx.DiGraph:
-    """Build a DiGraph for a pipeline, deriving edges from node outputs/inputs.
+    """Build a DiGraph from a set of nodes, deriving edges from outputs/inputs.
 
     Each node becomes a graph node keyed by (script, mode), with the
     PipelineNode stored under the "node" attribute. Edges run producer ->
-    consumer, matched by artifact ref.
+    consumer, matched by artifact ref. The producer index spans every node
+    passed in, so callers can hand it all selected nodes at once and have
+    cross-pipeline dependencies (a node consuming a sibling pipeline's
+    FeatureSet) resolve to real edges rather than be flagged as external.
 
     Args:
-        name (str): Pipeline name (used in error/warning messages)
-        nodes (list[PipelineNode]): Nodes belonging to the pipeline
+        name (str): Label used in error messages when a node has no group
+        nodes (list[PipelineNode]): Nodes to wire into the graph
 
     Returns:
         nx.DiGraph: The derived dependency graph
@@ -231,35 +209,32 @@ def build_dag(name: str, nodes: list[PipelineNode]) -> nx.DiGraph:
             duplicated, or if the resulting graph has a dependency cycle.
     """
     graph = nx.DiGraph()
-    producer_of: dict[str, tuple[Path, str | None]] = {}
 
-    # Register nodes and index artifact producers (one producer per artifact)
+    # Register every node, keyed by (script, mode). The producer index, edges,
+    # and external-input detection are the manager's job (one source of truth);
+    # this function only assembles the networkx graph used for display + ordering.
     for node in nodes:
-        key = (node.script, node.mode)
-        if key in graph:
+        if node.key in graph:
             raise ValueError(f"Pipeline '{name}': duplicate node {node.node_id}")
-        graph.add_node(key, node=node)
-        for artifact in node.outputs:
-            if artifact in producer_of:
-                other = run_label(*producer_of[artifact])
-                raise ValueError(
-                    f"Pipeline '{name}': artifact '{artifact}' is output by "
-                    f"both {other} and {node.node_id} (each artifact needs exactly one producer)"
-                )
-            producer_of[artifact] = key
+        graph.add_node(node.key, node=node)
 
-    # Derive edges: each input artifact links back to its producer
-    for node in nodes:
-        for artifact in node.inputs:
-            producer = producer_of.get(artifact)
-            if producer is None:
-                print(
-                    f"WARNING: pipeline '{name}': node {node.node_id} inputs '{artifact}', "
-                    f"which no node in the pipeline outputs; treating it as an external input.",
-                    file=sys.stderr,
-                )
-                continue
-            graph.add_edge(producer, (node.script, node.mode))
+    index = build_producer_index(nodes)
+    edges, externals = derive_edges(nodes, index)
+
+    for consumer, ref in externals:
+        # DataSources are external by definition (updated by nightly Glue jobs we
+        # don't own), so a ds: with no producer is expected -- stay quiet. Any
+        # other dangling ref likely means a typo or a missing pipeline: warn.
+        if ref_type(ref) == "ds":
+            continue
+        where = consumer.group or name
+        print(
+            f"WARNING: pipeline '{where}': node {consumer.node_id} inputs '{ref}', "
+            f"which no selected node produces; treating it as an external input.",
+            file=sys.stderr,
+        )
+    for producer, consumer in edges:
+        graph.add_edge(producer.key, consumer.key)
 
     if not nx.is_directed_acyclic_graph(graph):
         cycle = nx.find_cycle(graph)
@@ -380,46 +355,64 @@ def _build_dag_plan(
     plan = RunPlan()
     found_in_dag = set()
 
+    def runtime_mode(node: PipelineNode) -> str | None:
+        # A named non-filter mode (e.g. "fs") runs as itself; a modeless node
+        # adopts the active filter; a filter mode keeps its own mode.
+        if node.mode and node.mode not in FILTER_MODES:
+            return node.mode
+        return mode_filter or node.mode
+
+    # Gather the selected nodes from every pipeline, tagging each with its
+    # pipeline so the file-wide graph can be split back into per-pipeline trees.
+    grouped: dict[str, list[PipelineNode]] = {}
     for name, nodes in all_dags.items():
         in_pipeline = [n for n in nodes if n.script in pipeline_set]
         found_in_dag.update(n.script for n in in_pipeline)
         if not in_pipeline:
             continue
+        for n in in_pipeline:
+            n.group = name
+        grouped[name] = in_pipeline
 
-        graph = build_dag(name, in_pipeline)
+    if grouped:
+        # One file-wide graph so an input produced by a *sibling* pipeline (e.g.
+        # ppb_mt consuming a FeatureSet built by ppb_human_free) resolves to a
+        # real edge instead of being mistaken for an external input.
+        all_nodes = [n for nodes in grouped.values() for n in nodes]
+        graph = build_dag("selected pipelines", all_nodes)
 
-        # Emit runs in topological order; collect the selected keys for display.
-        selected = []
+        # Emit runs in global topological order so every producer precedes its
+        # consumers, even when the consumer lives in another pipeline.
+        selected_keys = set()
         for generation in nx.topological_generations(graph):
             for key in generation:
                 node = graph.nodes[key]["node"]
                 if not _node_selected(node, mode_filter):
                     continue
-                # A named non-filter mode (e.g. "fs") runs as itself; a modeless
-                # node adopts the active filter; a filter mode keeps its mode.
-                if node.mode and node.mode not in FILTER_MODES:
-                    runtime_mode = node.mode
-                else:
-                    runtime_mode = mode_filter or node.mode
                 plan.add_run(
                     node.script,
-                    runtime_mode,
-                    group_id=name,
+                    runtime_mode(node),
+                    group_id=node.group,
                     outputs=node.outputs,
                     inputs=node.inputs,
                 )
-                selected.append((key, node, runtime_mode))
-        if not selected:
-            continue
+                selected_keys.add(key)
 
-        # Render the selected sub-DAG as a Unicode tree (producers -> consumers).
-        subgraph = graph.subgraph(key for key, _, _ in selected).copy()
-        for key, node, runtime_mode in selected:
-            leaf = subgraph.out_degree(key) == 0
-            subgraph.nodes[key]["label"] = display_label(node.script, runtime_mode, leaf=leaf)
-        plan.display_lines.append(f"   {_color(name, 'lightpurple')}")
-        for line in nx.generate_network_text(subgraph, with_labels=True):
-            plan.display_lines.append(f"   {line}")
+        # Render each pipeline as its own Unicode tree (producers -> consumers).
+        # Cross-pipeline edges are intentionally dropped from per-pipeline
+        # subgraphs, so a consumer fed by a sibling still shows as a local root.
+        for name, nodes in grouped.items():
+            keys = [(n.script, n.mode) for n in nodes if (n.script, n.mode) in selected_keys]
+            if not keys:
+                continue
+            subgraph = graph.subgraph(keys).copy()
+            for key in keys:
+                node = graph.nodes[key]["node"]
+                leaf = subgraph.out_degree(key) == 0
+                subgraph.nodes[key]["label"] = display_label(node.script, runtime_mode(node), leaf=leaf)
+            plan.display_lines.append(f"   {_color(name, 'lightpurple')}")
+            for line in nx.generate_network_text(subgraph, with_labels=True):
+                plan.display_lines.append(f"   {line}")
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:

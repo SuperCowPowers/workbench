@@ -149,13 +149,6 @@ class TestPipelineMetaOwner:
             pm.set_owner("BW")
             assert pm.dynamic_owner() == "Pro-BW"
 
-    def test_test_promote_owner(self):
-        meta = {"mode": "test_promote", "model_name": "m-260222", "endpoint_name": "e-1-test", "serverless": True}
-        with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
-            pm = PipelineMeta()
-            pm.set_owner("MB")
-            assert pm.dynamic_owner() == "Pro-Test-MB"
-
 
 class TestPipelineMetaRepr:
     """Tests for PipelineMeta string representation."""

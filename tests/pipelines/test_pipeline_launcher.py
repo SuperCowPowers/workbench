@@ -105,7 +105,7 @@ class TestBuildDag:
 
     def test_duplicate_producer_raises(self):
         """Two nodes outputting the same artifact is a hard error."""
-        with pytest.raises(ValueError, match="output by both"):
+        with pytest.raises(ValueError, match="produced by both"):
             build_dag("p", [node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
 
     def test_cycle_raises(self):
@@ -149,6 +149,54 @@ class TestSortPipelines:
         # Artifacts flow straight into the batch dependency tokens
         assert plan.deps[(fs, None)] == {"outputs": ["fs:x"], "inputs": []}
         assert plan.deps[(a, None)] == {"outputs": [], "inputs": ["fs:x"]}
+
+    def test_cross_pipeline_dependency_orders_globally(self, tmp_path):
+        """A producer in one pipeline orders before a consumer in another."""
+        fs = tmp_path / "fs.py"
+        consumer = tmp_path / "consumer.py"
+        dags = {
+            "producers": [node(fs, outputs=["fs:shared"])],
+            "consumers": [node(consumer, inputs=["fs:shared"])],
+        }
+
+        plan = sort_pipelines([fs, consumer], dags)
+
+        order = [s for s, _ in plan.runs]
+        assert order.index(fs) < order.index(consumer)
+        # Each run keeps its own pipeline as its group.
+        assert plan.group_ids[(fs, None)] == "producers"
+        assert plan.group_ids[(consumer, None)] == "consumers"
+
+    def test_cross_pipeline_input_not_flagged_external(self, tmp_path, capsys):
+        """Resolved + ds: inputs stay quiet; a dangling non-ds ref still warns."""
+        fs = tmp_path / "fs.py"
+        consumer = tmp_path / "consumer.py"
+        dags = {
+            "producers": [node(fs, outputs=["fs:shared"])],
+            "consumers": [node(consumer, inputs=["fs:shared", "ds:raw", "fs:missing"])],
+        }
+
+        sort_pipelines([fs, consumer], dags)
+
+        err = capsys.readouterr().err
+        assert "fs:shared" not in err  # resolved across pipelines, no warning
+        assert "ds:raw" not in err  # DataSource: external by definition, quiet
+        assert "fs:missing" in err  # dangling non-ds ref: still warns
+
+    def test_unselected_producer_input_flagged_external(self, tmp_path, capsys):
+        """If the producing node isn't selected, its artifact is treated as external."""
+        fs = tmp_path / "fs.py"
+        consumer = tmp_path / "consumer.py"
+        dags = {
+            "producers": [node(fs, outputs=["fs:shared"])],
+            "consumers": [node(consumer, inputs=["fs:shared"])],
+        }
+
+        sort_pipelines([consumer], dags)  # fs producer NOT selected
+
+        err = capsys.readouterr().err
+        assert "fs:shared" in err
+        assert "external input" in err
 
     def test_fan_out_display(self, tmp_path):
         """The display renders each pipeline as a tree: producer above its consumers."""
