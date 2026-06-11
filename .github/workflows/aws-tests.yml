@@ -73,4 +73,7 @@ jobs:
           WORKBENCH_CONFIG: ${{ github.workspace }}/ci/workbench_ci_config.json
           WORKBENCH_BUCKET: ${{ secrets.WORKBENCH_BUCKET_SANDBOX }}
           WORKBENCH_API_KEY: ${{ secrets.WORKBENCH_API_KEY_SANDBOX }}
-        run: tox -m quick
+        # -n 8 overrides tox's -n auto (last flag wins): the runner has 4 vCPUs
+        # but these tests are network-bound (endpoints/Athena/S3), so
+        # oversubscribing keeps workers busy while others wait on AWS.
+        run: tox -m quick -- -n 8 tests
