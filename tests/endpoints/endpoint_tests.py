@@ -117,6 +117,7 @@ def test_classification_roc_auc(class_endpoint):
     print(metrics)
 
 
+@pytest.mark.medium  # ~100s: endpoint inference on 50 rows
 def test_regression_metrics(reg_endpoint):
     # Compute performance metrics for our test predictions
     target_column = "class_number_of_rings"

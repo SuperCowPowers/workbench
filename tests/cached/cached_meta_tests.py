@@ -149,6 +149,7 @@ def test_poke_single_stale_cycle():
     print(f"Registry stable: poke={poke_ts}, after_refresh={post_refresh_ts}")
 
 
+@pytest.mark.medium  # ~70s: registry refresh waits after artifact delete
 def test_deleted_artifact():
     """Artifacts deleted from AWS should be removed from cached details"""
     meta = CachedMeta()
