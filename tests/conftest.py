@@ -1,10 +1,14 @@
 """Shared pytest configuration for the workbench test suite"""
 
 import os
+import pytest
 
-# On CI runners there's no browser, so figure.show() calls in tests (a local
-# dev nicety for eyeballing plots) become a no-op. GitHub Actions sets CI=true.
-if os.getenv("CI"):
-    import plotly.graph_objects as go
+import plotly.graph_objects as go
 
-    go.Figure.show = lambda self, *args, **kwargs: None
+
+@pytest.fixture(autouse=True)
+def headless_plotly(monkeypatch):
+    """No-op figure.show() on CI runners (no browser there). GitHub Actions
+    sets CI=true; locally show() still pops a browser for plot eyeballing."""
+    if os.getenv("CI"):
+        monkeypatch.setattr(go.Figure, "show", lambda self, *args, **kwargs: None)
