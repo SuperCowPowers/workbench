@@ -55,7 +55,7 @@ print("Configuration:")
 print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
 print(f"  WORKBENCH_SSO_GROUPS: {sso_groups}")
 print(f"  WORKBENCH_ADDITIONAL_BUCKETS: {additional_buckets}")
-print(f"  WORKBENCH_TRUSTED_ARNS: {trusted_arns}")
+print(f"  WORKBENCH_TRUSTED_ARNS: {len(trusted_arns)} ARN(s)")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
 print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
 
