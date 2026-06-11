@@ -16,6 +16,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  issues: write  # failure notification step files/updates an issue
 
 # One run at a time — the tests share AWS resources (endpoints, Parameter
 # Store keys) and two concurrent runs would collide.
@@ -77,3 +78,22 @@ jobs:
         # but these tests are network-bound (endpoints/Athena/S3), so
         # oversubscribing keeps workers busy while others wait on AWS.
         run: tox -m quick -- -n 8 tests
+
+      # Scheduled-run failures notify nobody by default — surface them as an
+      # issue: one open issue collects repeat failures until it's closed.
+      - name: File issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="AWS tests failing on main"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          existing=$(gh issue list --repo "${{ github.repository }}" --state open \
+            --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "${{ github.repository }}" \
+              --body "Still failing: $run_url (commit ${{ github.sha }})"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$title" \
+              --body "The AWS test workflow failed: $run_url (commit ${{ github.sha }}). Subsequent failures will be added as comments here; close this issue once the suite is green."
+          fi
