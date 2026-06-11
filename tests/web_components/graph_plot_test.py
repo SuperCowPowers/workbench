@@ -25,12 +25,12 @@ def test_graph_plot():
 
     # The first property should be the figure
     figure = properties[0]
-    figure.show()
-
-    # Sleep for a second (for plot to show)
-    time.sleep(1)
+    return figure
 
 
 if __name__ == "__main__":
-    # Run the tests
-    test_graph_plot()
+    # Run the test and show the figure
+    test_graph_plot().show()
+
+    # Sleep for a second (for plot to show)
+    time.sleep(1)

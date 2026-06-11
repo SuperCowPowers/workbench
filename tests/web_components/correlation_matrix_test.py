@@ -19,11 +19,9 @@ def test_correlation_matrix():
 
     # Apply dark theme
     fig.update_layout(template="plotly_dark")
-
-    # Show the figure
-    fig.show()
+    return fig
 
 
 if __name__ == "__main__":
-    # Run the tests
-    test_correlation_matrix()
+    # Run the test and show the figure
+    test_correlation_matrix().show()

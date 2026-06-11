@@ -18,9 +18,9 @@ def test_confusion_matrix():
     # Update the properties (the figure is the first element in the property list)
     all_properties = cm.update_properties(model, inference_run=inference_run)
     figure = all_properties[0]
-    figure.show()
+    return figure
 
 
 if __name__ == "__main__":
-    # Run the tests
-    test_confusion_matrix()
+    # Run the test and show the figure
+    test_confusion_matrix().show()
