@@ -52,6 +52,9 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/Workbench-ExecutionRole
           aws-region: us-west-2
           role-chaining: true
+          # The execution role's trust policy allows sts:AssumeRole only —
+          # session tagging would need sts:TagSession on both sides.
+          role-skip-session-tagging: true
 
       - name: Install tox
         run: pip install tox
