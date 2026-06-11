@@ -3,6 +3,8 @@
 import time
 from datetime import datetime
 
+import pytest
+
 # Workbench Imports
 from workbench.cached.cached_meta import CachedMeta
 from workbench.cached.cached_model import CachedModel
@@ -85,6 +87,7 @@ def test_poke():
     print(f"Poke updated registry: {before} -> {after}")
 
 
+@pytest.mark.medium  # ~80s: poke lifecycle with refresh waits
 def test_poke_triggers_detail_refresh():
     """After a poke, models(details=True) should refetch the poked model"""
     meta = CachedMeta()
@@ -110,6 +113,7 @@ def test_poke_triggers_detail_refresh():
     print("Poke triggered detail refresh successfully")
 
 
+@pytest.mark.medium  # ~65s: full stale/refresh cycle
 def test_poke_single_stale_cycle():
     """After a poke and one refresh, the registry should be stable (no double-stale)
 

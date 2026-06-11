@@ -28,15 +28,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/github-actions-workbench
           aws-region: us-west-2
@@ -47,7 +47,7 @@ jobs:
       # so the ambient identity needs the execution role's permissions.
       # Note: chained sessions are capped at 1 hour — fine for the quick suite.
       - name: Assume Workbench-ExecutionRole
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/Workbench-ExecutionRole
           aws-region: us-west-2
@@ -63,7 +63,7 @@ jobs:
       # Keyed on the dep inputs; tox itself recreates the env if tox.ini's
       # deps change, so a stale hit is at worst a recreate, never a wrong env.
       - name: Cache tox environment
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .tox/py313
           key: tox-py313-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
