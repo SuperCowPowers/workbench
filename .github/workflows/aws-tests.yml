@@ -41,6 +41,18 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/github-actions-workbench
           aws-region: us-west-2
 
+      # Chain into the execution role so the job's ambient credentials match
+      # what workbench code expects everywhere else (ECS, endpoint containers).
+      # The lean workbench.endpoints surface uses raw boto3 clients by design,
+      # so the ambient identity needs the execution role's permissions.
+      # Note: chained sessions are capped at 1 hour — fine for the quick suite.
+      - name: Assume Workbench-ExecutionRole
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/Workbench-ExecutionRole
+          aws-region: us-west-2
+          role-chaining: true
+
       - name: Install tox
         run: pip install tox
 
@@ -49,4 +61,5 @@ jobs:
           WORKBENCH_CONFIG: ${{ github.workspace }}/ci/workbench_ci_config.json
           WORKBENCH_BUCKET: ${{ secrets.WORKBENCH_BUCKET_SANDBOX }}
           WORKBENCH_API_KEY: ${{ secrets.WORKBENCH_API_KEY_SANDBOX }}
+          PLOTLY_RENDERER: json  # headless runner — no browser to open
         run: tox -m quick

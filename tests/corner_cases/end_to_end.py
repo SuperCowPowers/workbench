@@ -1,7 +1,12 @@
 """Tests for Endpoint 'chaining''"""
 
+import pytest
+
 # Workbench Imports
 from workbench.api import Endpoint
+
+# Corner case tests: deselected by the default/quick test runs
+pytestmark = pytest.mark.corner_case
 
 end_reg = Endpoint("test-regression")
 end_class = Endpoint("test-classification")
