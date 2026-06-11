@@ -70,12 +70,12 @@ if __name__ == "__main__":
     pd.set_option("display.width", None)
 
     # Construct the model directly (pytest fixture provides this during test runs)
-    model = Model("empty-model-group")
+    empty_model = Model("empty-model-group")
 
     # Run the tests
-    test_list_inference_runs(model)
-    test_performance_metrics(model)
-    test_retrieval_with_capture_name(model)
-    test_validation_predictions(model)
-    test_confusion_matrix(model)
-    test_metrics_with_capture_name(model)
+    test_list_inference_runs(empty_model)
+    test_performance_metrics(empty_model)
+    test_retrieval_with_capture_name(empty_model)
+    test_validation_predictions(empty_model)
+    test_confusion_matrix(empty_model)
+    test_metrics_with_capture_name(empty_model)

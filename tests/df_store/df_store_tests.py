@@ -73,17 +73,17 @@ def test_deletion(df_store):
 if __name__ == "__main__":
 
     # Create a DFStore object
-    df_store = DFStore()
+    store = DFStore()
 
     # Run the tests
-    test_repr(df_store)
-    test_summary(df_store)
-    test_details(df_store)
-    test_upsert_dataframe(df_store)
-    test_upsert_series(df_store)
-    test_get_dataframe(df_store)
-    test_get_series(df_store)
-    test_repr(df_store)
-    test_string_types(df_store)
-    test_type_conflation_issues(df_store)
-    test_deletion(df_store)
+    test_repr(store)
+    test_summary(store)
+    test_details(store)
+    test_upsert_dataframe(store)
+    test_upsert_series(store)
+    test_get_dataframe(store)
+    test_get_series(store)
+    test_repr(store)
+    test_string_types(store)
+    test_type_conflation_issues(store)
+    test_deletion(store)

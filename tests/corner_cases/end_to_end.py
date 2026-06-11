@@ -56,13 +56,13 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Construct the endpoints directly (pytest fixtures provide these during test runs)
-    end_reg = Endpoint("test-regression")
-    end_class = Endpoint("test-classification")
+    reg_end = Endpoint("test-regression")
+    class_end = Endpoint("test-classification")
 
     # Run the tests
-    test_reg_to_reg(end_reg)
-    test_reg_to_class(end_reg, end_class)
-    test_class_to_class(end_class)
-    test_class_to_reg(end_reg, end_class)
+    test_reg_to_reg(reg_end)
+    test_reg_to_class(reg_end, class_end)
+    test_class_to_class(class_end)
+    test_class_to_reg(reg_end, class_end)
 
     print("All tests passed!")

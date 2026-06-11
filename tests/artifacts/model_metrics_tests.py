@@ -179,18 +179,18 @@ if __name__ == "__main__":
     # create_model_and_endpoint()
 
     # Construct the models directly (pytest fixtures provide these during test runs)
-    model_reg = Model("abalone-regression")
-    model_class = Model("wine-classification")
+    reg_model = Model("abalone-regression")
+    class_model = Model("wine-classification")
 
     # Run the tests
-    test_list_inference_runs(model_reg, model_class)
-    test_performance_metrics(model_reg, model_class)
-    test_retrieval_with_capture_name(model_class)
-    test_validation_predictions(model_reg, model_class)
-    test_inference_predictions(model_class)
-    test_confusion_matrix(model_reg, model_class)
-    test_shap_values(model_reg, model_class)
-    test_metrics_with_capture_name(model_reg, model_class)
+    test_list_inference_runs(reg_model, class_model)
+    test_performance_metrics(reg_model, class_model)
+    test_retrieval_with_capture_name(class_model)
+    test_validation_predictions(reg_model, class_model)
+    test_inference_predictions(class_model)
+    test_confusion_matrix(reg_model, class_model)
+    test_shap_values(reg_model, class_model)
+    test_metrics_with_capture_name(reg_model, class_model)
 
     # These are longer tests (commented out for now)
     # test_endpoint_inference()

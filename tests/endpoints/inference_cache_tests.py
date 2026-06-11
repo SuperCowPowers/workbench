@@ -129,10 +129,10 @@ def test_attribute_delegation(endpoint):
 
 
 if __name__ == "__main__":
-    endpoint = Endpoint("abalone-regression")
+    end = Endpoint("abalone-regression")
 
-    test_basic_cache_hit(endpoint)
-    test_extra_column_not_leaked(endpoint)
-    test_cache_info(endpoint)
-    test_attribute_delegation(endpoint)
+    test_basic_cache_hit(end)
+    test_extra_column_not_leaked(end)
+    test_cache_info(end)
+    test_attribute_delegation(end)
     print("\nAll InferenceCache tests passed!")

@@ -171,18 +171,18 @@ def test_categorical_features():
 
 
 if __name__ == "__main__":
-    reg_endpoint = Endpoint("abalone-regression")
-    class_endpoint = Endpoint("wine-classification")
+    reg_end = Endpoint("abalone-regression")
+    class_end = Endpoint("wine-classification")
 
-    test_endpoint_exists(reg_endpoint, class_endpoint)
-    test_regression_test_inference(reg_endpoint)
-    test_classification_test_inference(class_endpoint)
-    test_manual_inference(reg_endpoint)
-    test_classification_inference_with_subset_of_labels(class_endpoint)
-    test_regression_metrics(reg_endpoint)
-    test_classification_metrics(class_endpoint)
-    test_classification_roc_auc(class_endpoint)
-    test_fast_inference(class_endpoint)
+    test_endpoint_exists(reg_end, class_end)
+    test_regression_test_inference(reg_end)
+    test_classification_test_inference(class_end)
+    test_manual_inference(reg_end)
+    test_classification_inference_with_subset_of_labels(class_end)
+    test_regression_metrics(reg_end)
+    test_classification_metrics(class_end)
+    test_classification_roc_auc(class_end)
+    test_fast_inference(class_end)
     test_categorical_features()
 
     print("\nAll endpoint tests passed!")
