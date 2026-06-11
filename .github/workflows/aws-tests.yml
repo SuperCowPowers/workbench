@@ -59,6 +59,15 @@ jobs:
       - name: Install tox
         run: pip install tox
 
+      # Reuse the tox env across runs (~2.5 min of pip install on a miss).
+      # Keyed on the dep inputs; tox itself recreates the env if tox.ini's
+      # deps change, so a stale hit is at worst a recreate, never a wrong env.
+      - name: Cache tox environment
+        uses: actions/cache@v4
+        with:
+          path: .tox/py313
+          key: tox-py313-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
+
       - name: Run quick tests
         env:
           WORKBENCH_CONFIG: ${{ github.workspace }}/ci/workbench_ci_config.json
