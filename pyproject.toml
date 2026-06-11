@@ -125,6 +125,7 @@ python_files = "*.py"
 python_functions = "test"
 norecursedirs = [".tox", ".git", "*.egg-info", "__pycache__", "dist", "build"]
 markers = [
+    "medium: marks heavier validation tests excluded from quick runs (run with 'tox -e medium')",
     "long: marks tests as long (deselect with '-m \"not long\"')",
     "corner_case: marks corner case tests not run by default (deselect with '-m \"not corner_case\"')"
 ]

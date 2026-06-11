@@ -21,8 +21,12 @@ Populated by: scripts/admin/populate_flexibility_reference_compounds.py
 """
 
 import pandas as pd
+import pytest
 
 from workbench.api import Endpoint, PublicData
+
+# Heavy validation study (~8 min): medium tier, excluded from quick runs
+pytestmark = pytest.mark.medium
 
 FAST_ENDPOINT = "smiles-to-3d-fast-v1"
 FULL_ENDPOINT = "smiles-to-3d-full-v1"

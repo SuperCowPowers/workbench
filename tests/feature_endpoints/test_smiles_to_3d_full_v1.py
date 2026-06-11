@@ -13,9 +13,13 @@ Populated by: scripts/admin/populate_3d_reference_compounds.py
 """
 
 import pandas as pd
+import pytest
 
 from workbench.api import Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
+
+# Heavy validation study (~6 min): medium tier, excluded from quick runs
+pytestmark = pytest.mark.medium
 
 ENDPOINT_NAME = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
