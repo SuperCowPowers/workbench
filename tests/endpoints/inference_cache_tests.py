@@ -5,22 +5,27 @@ key + endpoint features, so any caller gets back their own input columns
 plus the endpoint's features — regardless of what a previous caller sent.
 """
 
+import pytest
+
 from workbench.api import Endpoint, InferenceCache
 from workbench.utils.endpoint_utils import get_evaluation_data
 
-endpoint = Endpoint("abalone-regression")
+
+@pytest.fixture(scope="module")
+def endpoint():
+    return Endpoint("abalone-regression")
 
 
-def _make_cache(key_col: str = "auto_id") -> InferenceCache:
+def _make_cache(endpoint: Endpoint, key_col: str = "auto_id") -> InferenceCache:
     """Create a fresh InferenceCache with a clean slate."""
     cache = InferenceCache(endpoint, cache_key_column=key_col)
     cache.clear_cache()
     return cache
 
 
-def test_basic_cache_hit():
+def test_basic_cache_hit(endpoint):
     """First call populates the cache, second call should be all hits."""
-    cached_endpoint = _make_cache()
+    cached_endpoint = _make_cache(endpoint)
     eval_df = get_evaluation_data(endpoint)[:10]
     print(f"Input shape: {eval_df.shape}, columns: {list(eval_df.columns)}")
 
@@ -43,14 +48,14 @@ def test_basic_cache_hit():
     print("Basic cache hit test passed!")
 
 
-def test_extra_column_not_leaked():
+def test_extra_column_not_leaked(endpoint):
     """Adding a column to the caller's DataFrame should not pollute the cache.
 
     Contract: cache stores key + features only. A second caller with
     different input columns should get back *their* columns + features,
     not columns from the first caller.
     """
-    cached_endpoint = _make_cache()
+    cached_endpoint = _make_cache(endpoint)
     eval_df = get_evaluation_data(endpoint)[:10]
     input_cols = list(eval_df.columns)
 
@@ -87,9 +92,9 @@ def test_extra_column_not_leaked():
     print("Extra column leak test passed!")
 
 
-def test_cache_info():
+def test_cache_info(endpoint):
     """Verify cache_info returns expected structure."""
-    cached_endpoint = _make_cache()
+    cached_endpoint = _make_cache(endpoint)
     eval_df = get_evaluation_data(endpoint)[:10]
 
     # Populate cache
@@ -114,9 +119,9 @@ def test_cache_info():
     print("Cache info test passed!")
 
 
-def test_attribute_delegation():
+def test_attribute_delegation(endpoint):
     """InferenceCache should delegate unknown attributes to the endpoint."""
-    cached_endpoint = _make_cache()
+    cached_endpoint = _make_cache(endpoint)
     assert cached_endpoint.name == "abalone-regression"
     assert cached_endpoint.exists()
     print(f"Delegated name: {cached_endpoint.name}")
@@ -124,8 +129,10 @@ def test_attribute_delegation():
 
 
 if __name__ == "__main__":
-    test_basic_cache_hit()
-    test_extra_column_not_leaked()
-    test_cache_info()
-    test_attribute_delegation()
+    endpoint = Endpoint("abalone-regression")
+
+    test_basic_cache_hit(endpoint)
+    test_extra_column_not_leaked(endpoint)
+    test_cache_info(endpoint)
+    test_attribute_delegation(endpoint)
     print("\nAll InferenceCache tests passed!")

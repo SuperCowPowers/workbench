@@ -1,15 +1,23 @@
 """Tests for the Endpoint functionality (regression + classification)"""
 
 import pandas as pd
+import pytest
 
 from workbench.api import Endpoint, FeatureSet
 from workbench.utils.endpoint_utils import get_evaluation_data
 
-reg_endpoint = Endpoint("abalone-regression")
-class_endpoint = Endpoint("wine-classification")
+
+@pytest.fixture(scope="module")
+def reg_endpoint():
+    return Endpoint("abalone-regression")
 
 
-def test_endpoint_exists():
+@pytest.fixture(scope="module")
+def class_endpoint():
+    return Endpoint("wine-classification")
+
+
+def test_endpoint_exists(reg_endpoint, class_endpoint):
     """Verify the endpoints are deployed and healthy"""
     assert reg_endpoint.exists()
     assert class_endpoint.exists()
@@ -19,7 +27,7 @@ def test_endpoint_exists():
     print(f"Tags: {reg_endpoint.get_tags()}")
 
 
-def test_regression_test_inference():
+def test_regression_test_inference(reg_endpoint):
     pred_df = reg_endpoint.test_inference()
     assert not pred_df.empty
     assert "prediction" in pred_df.columns
@@ -27,7 +35,7 @@ def test_regression_test_inference():
     print(pred_df.head())
 
 
-def test_classification_test_inference():
+def test_classification_test_inference(class_endpoint):
     pred_df = class_endpoint.test_inference()
     assert not pred_df.empty
     assert "prediction" in pred_df.columns
@@ -35,7 +43,7 @@ def test_classification_test_inference():
     print(pred_df.head())
 
 
-def test_manual_inference():
+def test_manual_inference(reg_endpoint):
     """Run inference on a subset and verify the output contract:
     input columns in --> input columns + prediction columns out"""
     eval_df = get_evaluation_data(reg_endpoint)[:10]
@@ -53,7 +61,7 @@ def test_manual_inference():
     print(pred_df.head())
 
 
-def test_classification_inference_with_subset_of_labels():
+def test_classification_inference_with_subset_of_labels(class_endpoint):
     eval_data_df = get_evaluation_data(class_endpoint)[:50]
 
     # Subset the rows to only include the first 2 classes
@@ -78,7 +86,7 @@ def test_classification_inference_with_subset_of_labels():
     print(pred_df)
 
 
-def test_classification_roc_auc():
+def test_classification_roc_auc(class_endpoint):
     # Compute performance metrics for our test predictions
     eval_data_df = get_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.inference(eval_data_df)
@@ -109,7 +117,7 @@ def test_classification_roc_auc():
     print(metrics)
 
 
-def test_regression_metrics():
+def test_regression_metrics(reg_endpoint):
     # Compute performance metrics for our test predictions
     target_column = "class_number_of_rings"
     eval_data_df = get_evaluation_data(reg_endpoint)[:50]
@@ -122,7 +130,7 @@ def test_regression_metrics():
     print(residuals)
 
 
-def test_classification_metrics():
+def test_classification_metrics(class_endpoint):
     eval_data_df = get_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.inference(eval_data_df)
     print(pred_df)
@@ -141,7 +149,7 @@ def test_classification_metrics():
     print(residuals)
 
 
-def test_fast_inference():
+def test_fast_inference(class_endpoint):
     eval_data_df = get_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.fast_inference(eval_data_df)
     print(pred_df)
@@ -163,15 +171,18 @@ def test_categorical_features():
 
 
 if __name__ == "__main__":
-    test_endpoint_exists()
-    test_regression_test_inference()
-    test_classification_test_inference()
-    test_manual_inference()
-    test_classification_inference_with_subset_of_labels()
-    test_regression_metrics()
-    test_classification_metrics()
-    test_classification_roc_auc()
-    test_fast_inference()
+    reg_endpoint = Endpoint("abalone-regression")
+    class_endpoint = Endpoint("wine-classification")
+
+    test_endpoint_exists(reg_endpoint, class_endpoint)
+    test_regression_test_inference(reg_endpoint)
+    test_classification_test_inference(class_endpoint)
+    test_manual_inference(reg_endpoint)
+    test_classification_inference_with_subset_of_labels(class_endpoint)
+    test_regression_metrics(reg_endpoint)
+    test_classification_metrics(class_endpoint)
+    test_classification_roc_auc(class_endpoint)
+    test_fast_inference(class_endpoint)
     test_categorical_features()
 
     print("\nAll endpoint tests passed!")

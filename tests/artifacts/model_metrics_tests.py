@@ -8,19 +8,26 @@ from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model, ModelType, ModelFramework
 from workbench.api.endpoint import Endpoint
 
-model_reg = Model("abalone-regression")
-model_class = Model("wine-classification")
+
+@pytest.fixture(scope="module")
+def model_reg():
+    return Model("abalone-regression")
+
+
+@pytest.fixture(scope="module")
+def model_class():
+    return Model("wine-classification")
 
 
 # Test the Model Metrics
-def test_list_inference_runs():
+def test_list_inference_runs(model_reg, model_class):
     """Test the List Inference Runs"""
     print("\n\n*** List Inference Runs ***")
     pprint(model_reg.list_inference_runs())
     pprint(model_class.list_inference_runs())
 
 
-def test_performance_metrics():
+def test_performance_metrics(model_reg, model_class):
     """Test the Model Performance Metrics"""
     print("\n\n*** Performance Metrics ***")
     pprint(model_reg.get_inference_metadata())
@@ -28,7 +35,7 @@ def test_performance_metrics():
     pprint(model_class.get_inference_metrics())
 
 
-def test_retrieval_with_capture_name():
+def test_retrieval_with_capture_name(model_class):
     """Test the retrieval of the model metrics using capture Name"""
     capture_list = model_class.list_inference_runs()
     for capture_name in capture_list:
@@ -39,7 +46,7 @@ def test_retrieval_with_capture_name():
         pprint(model_class.confusion_matrix(capture_name))
 
 
-def test_validation_predictions():
+def test_validation_predictions(model_reg, model_class):
     print("\n\n*** Validation Predictions ***")
     reg_val_preds = model_reg._get_validation_predictions()
     pprint(reg_val_preds.head())
@@ -47,7 +54,7 @@ def test_validation_predictions():
     pprint(class_val_preds.head())
 
 
-def test_inference_predictions():
+def test_inference_predictions(model_class):
     print("\n\n*** Inference Predictions ***")
 
     # Make sure we have inference predictions
@@ -68,13 +75,13 @@ def test_inference_predictions():
     pprint(model_class.get_inference_predictions().head())
 
 
-def test_confusion_matrix():
+def test_confusion_matrix(model_reg, model_class):
     print("\n\n*** Confusion Matrix ***")
     pprint(model_reg.confusion_matrix())
     pprint(model_class.confusion_matrix())
 
 
-def test_shap_values():
+def test_shap_values(model_reg, model_class):
     print("\n\n*** SHAP Features (regression) ***")
     shap_features = model_reg.shap_importance()
     if shap_features is None:
@@ -107,7 +114,7 @@ def test_shap_values():
             print(df.head())
 
 
-def test_metrics_with_capture_name():
+def test_metrics_with_capture_name(model_reg, model_class):
     """Test the Performance Metrics using a Capture Name"""
     metrics = model_reg.get_inference_metrics("test_inference")
     print("\n\n*** Performance Metrics with Capture Name ***")
@@ -170,15 +177,19 @@ if __name__ == "__main__":
     # Create/Recreate the Model and Endpoint
     # create_model_and_endpoint()
 
+    # Construct the models directly (pytest fixtures provide these during test runs)
+    model_reg = Model("abalone-regression")
+    model_class = Model("wine-classification")
+
     # Run the tests
-    test_list_inference_runs()
-    test_performance_metrics()
-    test_retrieval_with_capture_name()
-    test_validation_predictions()
-    test_inference_predictions()
-    test_confusion_matrix()
-    test_shap_values()
-    test_metrics_with_capture_name()
+    test_list_inference_runs(model_reg, model_class)
+    test_performance_metrics(model_reg, model_class)
+    test_retrieval_with_capture_name(model_class)
+    test_validation_predictions(model_reg, model_class)
+    test_inference_predictions(model_class)
+    test_confusion_matrix(model_reg, model_class)
+    test_shap_values(model_reg, model_class)
+    test_metrics_with_capture_name(model_reg, model_class)
 
     # These are longer tests (commented out for now)
     # test_endpoint_inference()

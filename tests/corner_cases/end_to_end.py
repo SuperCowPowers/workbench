@@ -8,32 +8,39 @@ from workbench.api import Endpoint
 # Corner case tests: deselected by the default/quick test runs
 pytestmark = pytest.mark.corner_case
 
-end_reg = Endpoint("test-regression")
-end_class = Endpoint("test-classification")
+
+@pytest.fixture(scope="module")
+def end_reg():
+    return Endpoint("test-regression")
 
 
-def test_reg_to_reg():
+@pytest.fixture(scope="module")
+def end_class():
+    return Endpoint("test-classification")
+
+
+def test_reg_to_reg(end_reg):
     """Test chaining two regression endpoints"""
     pred_df = end_reg.inference(end_reg.test_inference())
     print(pred_df.columns)
     print(pred_df)
 
 
-def test_reg_to_class():
+def test_reg_to_class(end_reg, end_class):
     """Test chaining a regression endpoint to a classification endpoint"""
     pred_df = end_class.inference(end_reg.test_inference())
     print(pred_df.columns)
     print(pred_df)
 
 
-def test_class_to_class():
+def test_class_to_class(end_class):
     """Test chaining two classification endpoints"""
     pred_df = end_class.inference(end_class.test_inference())
     print(pred_df.columns)
     print(pred_df)
 
 
-def test_class_to_reg():
+def test_class_to_reg(end_reg, end_class):
     """Test chaining a classification endpoint to a regression endpoint"""
     pred_df = end_reg.inference(end_class.test_inference())
     print(pred_df.columns)
@@ -48,10 +55,14 @@ if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
 
+    # Construct the endpoints directly (pytest fixtures provide these during test runs)
+    end_reg = Endpoint("test-regression")
+    end_class = Endpoint("test-classification")
+
     # Run the tests
-    test_reg_to_reg()
-    test_reg_to_class()
-    test_class_to_class()
-    test_class_to_reg()
+    test_reg_to_reg(end_reg)
+    test_reg_to_class(end_reg, end_class)
+    test_class_to_class(end_class)
+    test_class_to_reg(end_reg, end_class)
 
     print("All tests passed!")

@@ -29,9 +29,6 @@ FAST_ENDPOINT = "smiles-to-3d-fast-v1"
 FULL_ENDPOINT = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
-fast_endpoint = Endpoint(FAST_ENDPOINT)
-full_endpoint = Endpoint(FULL_ENDPOINT)
-
 # ---------------------------------------------------------------------------
 # Per-feature tolerances for cross-endpoint comparison.
 #
@@ -86,43 +83,43 @@ def _tolerance_for(feature: str) -> tuple:
 
 
 # ---------------------------------------------------------------------------
-# Cached inference results
+# Fixtures: module-scoped so AWS calls happen once per file, at run time
 # ---------------------------------------------------------------------------
 
-_ref_df = None
-_fast_df = None
-_bolt_df = None
+
+@pytest.fixture(scope="module")
+def fast_endpoint():
+    return Endpoint(FAST_ENDPOINT)
 
 
-def _get_reference_df() -> pd.DataFrame:
-    global _ref_df
-    if _ref_df is None:
-        _ref_df = PublicData().get(REFERENCE_DATASET)
-        assert _ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
-    return _ref_df
+@pytest.fixture(scope="module")
+def full_endpoint():
+    return Endpoint(FULL_ENDPOINT)
 
 
-def _get_fast_df() -> pd.DataFrame:
-    global _fast_df
-    if _fast_df is None:
-        ref_df = _get_reference_df()
-        _fast_df = fast_endpoint.inference(ref_df[["id", "smiles"]].copy())
-    return _fast_df
+@pytest.fixture(scope="module")
+def reference_df():
+    df = PublicData().get(REFERENCE_DATASET)
+    assert df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
+    return df
 
 
-def _get_full_df() -> pd.DataFrame:
-    global _bolt_df
-    if _bolt_df is None:
-        ref_df = _get_reference_df()
-        _bolt_df = full_endpoint.inference(ref_df[["id", "smiles"]].copy())
-    return _bolt_df
+@pytest.fixture(scope="module")
+def fast_df(fast_endpoint, reference_df):
+    return fast_endpoint.inference(reference_df[["id", "smiles"]].copy())
 
 
-def _joined() -> pd.DataFrame:
-    """Return reference rows joined with both endpoints' outputs (suffixed _fast / _bolt)."""
-    ref = _get_reference_df()[["id", "name"]]
-    fast = _get_fast_df().add_suffix("_fast").rename(columns={"id_fast": "id"})
-    bolt = _get_full_df().add_suffix("_bolt").rename(columns={"id_bolt": "id"})
+@pytest.fixture(scope="module")
+def full_df(full_endpoint, reference_df):
+    return full_endpoint.inference(reference_df[["id", "smiles"]].copy())
+
+
+@pytest.fixture(scope="module")
+def joined(reference_df, fast_df, full_df):
+    """Reference rows joined with both endpoints' outputs (suffixed _fast / _bolt)."""
+    ref = reference_df[["id", "name"]]
+    fast = fast_df.add_suffix("_fast").rename(columns={"id_fast": "id"})
+    bolt = full_df.add_suffix("_bolt").rename(columns={"id_bolt": "id"})
     return ref.merge(fast, on="id", how="inner").merge(bolt, on="id", how="inner")
 
 
@@ -131,14 +128,13 @@ def _joined() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def test_both_endpoints_exist():
+def test_both_endpoints_exist(fast_endpoint, full_endpoint):
     assert fast_endpoint.exists(), f"Endpoint '{FAST_ENDPOINT}' does not exist"
     assert full_endpoint.exists(), f"Endpoint '{FULL_ENDPOINT}' does not exist"
 
 
-def test_both_endpoints_succeed_on_all_compounds():
+def test_both_endpoints_succeed_on_all_compounds(joined):
     """Every reference compound computes successfully on both endpoints."""
-    joined = _joined()
     bad_fast = joined[joined["desc3d_status_fast"] != "ok"]
     bad_bolt = joined[joined["desc3d_status_bolt"] != "ok"]
     if not bad_fast.empty:
@@ -150,27 +146,24 @@ def test_both_endpoints_succeed_on_all_compounds():
     assert bad_fast.empty and bad_bolt.empty
 
 
-def test_mode_labels_differ():
+def test_mode_labels_differ(joined):
     """Fast endpoint reports mode='fast', Boltzmann reports mode='full'."""
-    joined = _joined()
     fast_modes = set(joined["desc3d_mode_fast"].unique())
     bolt_modes = set(joined["desc3d_mode_bolt"].unique())
     assert fast_modes == {"fast"}, f"Fast endpoint modes: {fast_modes}"
     assert bolt_modes == {"full"}, f"Boltzmann endpoint modes: {bolt_modes}"
 
 
-def test_full_samples_at_least_as_many_conformers():
+def test_full_samples_at_least_as_many_conformers(joined):
     """For every compound, Boltzmann conformer count >= fast conformer count."""
-    joined = _joined()
     bad = joined[joined["desc3d_conf_count_bolt"] < joined["desc3d_conf_count_fast"]]
     if not bad.empty:
         print(bad[["name", "desc3d_conf_count_fast", "desc3d_conf_count_bolt"]].to_string(index=False))
     assert bad.empty, f"{len(bad)} compounds have Boltzmann conf_count < fast conf_count"
 
 
-def test_feature_agreement():
+def test_feature_agreement(joined):
     """Every non-excluded feature agrees between the two endpoints within tolerance."""
-    joined = _joined()
     feature_names = get_3d_feature_names()
 
     failures = []
@@ -210,7 +203,7 @@ def test_feature_agreement():
     assert not failures, f"{len(failures)} feature-agreement checks failed"
 
 
-def test_shape_descriptors_strongly_agree():
+def test_shape_descriptors_strongly_agree(joined):
     """Rigid-molecule shape descriptors should agree tightly (sanity subset).
 
     For benzene and adamantane — rigid molecules where every conformer is
@@ -218,7 +211,6 @@ def test_shape_descriptors_strongly_agree():
     conformer count. Tight threshold catches systematic divergence that the
     full-feature test's 0.15 tolerance would miss.
     """
-    joined = _joined()
     rigid = joined[joined["name"].isin(["benzene", "adamantane"])]
     assert not rigid.empty, "Expected rigid molecules (benzene, adamantane) in reference set"
 
@@ -235,10 +227,22 @@ def test_shape_descriptors_strongly_agree():
 
 
 if __name__ == "__main__":
-    test_both_endpoints_exist()
-    test_both_endpoints_succeed_on_all_compounds()
-    test_mode_labels_differ()
-    test_full_samples_at_least_as_many_conformers()
-    test_feature_agreement()
-    test_shape_descriptors_strongly_agree()
+    # Construct artifacts and data directly, then pass to tests explicitly
+    fast_ep = Endpoint(FAST_ENDPOINT)
+    full_ep = Endpoint(FULL_ENDPOINT)
+    ref = PublicData().get(REFERENCE_DATASET)
+    fast = fast_ep.inference(ref[["id", "smiles"]].copy())
+    bolt = full_ep.inference(ref[["id", "smiles"]].copy())
+    joined_df = (
+        ref[["id", "name"]]
+        .merge(fast.add_suffix("_fast").rename(columns={"id_fast": "id"}), on="id", how="inner")
+        .merge(bolt.add_suffix("_bolt").rename(columns={"id_bolt": "id"}), on="id", how="inner")
+    )
+
+    test_both_endpoints_exist(fast_ep, full_ep)
+    test_both_endpoints_succeed_on_all_compounds(joined_df)
+    test_mode_labels_differ(joined_df)
+    test_full_samples_at_least_as_many_conformers(joined_df)
+    test_feature_agreement(joined_df)
+    test_shape_descriptors_strongly_agree(joined_df)
     print("\nAll 3D endpoint consistency tests passed!")

@@ -14,56 +14,50 @@ The reference compounds are loaded from:
 Populated by: scripts/admin/populate_complexity_skip_reference_compounds.py
 """
 
-import pandas as pd
+import pytest
 
 from workbench.api import Endpoint, PublicData
 
 ENDPOINT_NAME = "smiles-to-3d-fast-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/complexity_skips"
 
-endpoint = Endpoint(ENDPOINT_NAME)
 
-_ref_df = None
-_result_df = None
-
-
-def _get_reference_df() -> pd.DataFrame:
-    global _ref_df
-    if _ref_df is None:
-        _ref_df = PublicData().get(REFERENCE_DATASET)
-        assert _ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
-    return _ref_df
+@pytest.fixture(scope="module")
+def endpoint():
+    return Endpoint(ENDPOINT_NAME)
 
 
-def _get_result() -> pd.DataFrame:
-    global _result_df
-    if _result_df is None:
-        ref_df = _get_reference_df()
-        payload = ref_df[["id", "smiles"]].copy()
-        pred = endpoint.inference(payload)
-        _result_df = pred.merge(
-            ref_df[["id", "name", "expected_status", "notes"]],
-            on="id",
-            how="left",
-        )
-    return _result_df
+@pytest.fixture(scope="module")
+def reference_df():
+    ref_df = PublicData().get(REFERENCE_DATASET)
+    assert ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
+    return ref_df
 
 
-def test_endpoint_exists():
+@pytest.fixture(scope="module")
+def result_df(endpoint, reference_df):
+    payload = reference_df[["id", "smiles"]].copy()
+    pred = endpoint.inference(payload)
+    return pred.merge(
+        reference_df[["id", "name", "expected_status", "notes"]],
+        on="id",
+        how="left",
+    )
+
+
+def test_endpoint_exists(endpoint):
     assert endpoint.exists(), f"Endpoint '{ENDPOINT_NAME}' does not exist"
 
 
-def test_reference_compounds_loadable():
-    ref_df = _get_reference_df()
-    assert len(ref_df) > 0
-    assert {"id", "name", "smiles", "expected_status"}.issubset(ref_df.columns)
+def test_reference_compounds_loadable(reference_df):
+    assert len(reference_df) > 0
+    assert {"id", "name", "smiles", "expected_status"}.issubset(reference_df.columns)
 
 
-def test_desc3d_status_matches_expected():
+def test_desc3d_status_matches_expected(result_df):
     """Every reference compound's desc3d_status matches expected_status."""
-    result = _get_result()
     failures = []
-    for _, row in result.iterrows():
+    for _, row in result_df.iterrows():
         actual = row["desc3d_status"]
         expected = row["expected_status"]
         if actual != expected:
@@ -75,7 +69,17 @@ def test_desc3d_status_matches_expected():
 
 
 if __name__ == "__main__":
-    test_endpoint_exists()
-    test_reference_compounds_loadable()
-    test_desc3d_status_matches_expected()
+    # Build the fixture objects directly for standalone runs.
+    ep = Endpoint(ENDPOINT_NAME)
+    ref_df = PublicData().get(REFERENCE_DATASET)
+    assert ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
+    res_df = ep.inference(ref_df[["id", "smiles"]].copy()).merge(
+        ref_df[["id", "name", "expected_status", "notes"]],
+        on="id",
+        how="left",
+    )
+
+    test_endpoint_exists(ep)
+    test_reference_compounds_loadable(ref_df)
+    test_desc3d_status_matches_expected(res_df)
     print("\nAll 3D complexity-skip tests passed!")

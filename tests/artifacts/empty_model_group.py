@@ -9,23 +9,26 @@ from workbench.api.model import Model
 # Mark all tests in this module as corner cases (not run by default)
 pytestmark = pytest.mark.corner_case
 
-model = Model("empty-model-group")
+
+@pytest.fixture(scope="module")
+def model():
+    return Model("empty-model-group")
 
 
 # Test the Model Metrics
-def test_list_inference_runs():
+def test_list_inference_runs(model):
     """Test the List Inference Runs"""
     print("\n\n*** List Inference Runs ***")
     pprint(model.list_inference_runs())
 
 
-def test_performance_metrics():
+def test_performance_metrics(model):
     """Test the Model Performance Metrics"""
     print("\n\n*** Performance Metrics ***")
     pprint(model.get_inference_metadata())
 
 
-def test_retrieval_with_capture_name():
+def test_retrieval_with_capture_name(model):
     """Test the retrieval of the model metrics using capture Name"""
     capture_list = model.list_inference_runs()
     for capture_name in capture_list:
@@ -36,7 +39,7 @@ def test_retrieval_with_capture_name():
         pprint(model.confusion_matrix(capture_name))
 
 
-def test_validation_predictions():
+def test_validation_predictions(model):
     print("\n\n*** Validation Predictions ***")
     val_predictions = model._get_validation_predictions()
     if val_predictions is None:
@@ -45,12 +48,12 @@ def test_validation_predictions():
         pprint(val_predictions.head())
 
 
-def test_confusion_matrix():
+def test_confusion_matrix(model):
     print("\n\n*** Confusion Matrix ***")
     pprint(model.confusion_matrix())
 
 
-def test_metrics_with_capture_name():
+def test_metrics_with_capture_name(model):
     """Test the Performance Metrics using a Capture Name"""
     metrics = model.get_inference_metrics("test_inference")
     print("\n\n*** Performance Metrics with Capture Name ***")
@@ -66,10 +69,13 @@ if __name__ == "__main__":
     pd.set_option("display.max_rows", None)
     pd.set_option("display.width", None)
 
+    # Construct the model directly (pytest fixture provides this during test runs)
+    model = Model("empty-model-group")
+
     # Run the tests
-    test_list_inference_runs()
-    test_performance_metrics()
-    test_retrieval_with_capture_name()
-    test_validation_predictions()
-    test_confusion_matrix()
-    test_metrics_with_capture_name()
+    test_list_inference_runs(model)
+    test_performance_metrics(model)
+    test_retrieval_with_capture_name(model)
+    test_validation_predictions(model)
+    test_confusion_matrix(model)
+    test_metrics_with_capture_name(model)

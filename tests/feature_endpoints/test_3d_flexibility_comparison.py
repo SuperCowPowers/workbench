@@ -59,39 +59,39 @@ BOUNDED_FEATURES = {"npr1", "npr2", "asphericity"}
 # Order used when printing class-grouped sections in the report.
 CLASS_ORDER = ["rigid", "semi_rigid", "flexible", "very_flexible"]
 
-fast_endpoint = Endpoint(FAST_ENDPOINT)
-full_endpoint = Endpoint(FULL_ENDPOINT)
-
 # ---------------------------------------------------------------------------
-# Cached inference results
+# Fixtures: module-scoped so AWS calls happen once per file, at run time
 # ---------------------------------------------------------------------------
 
-_ref_df = None
-_joined_df = None
+
+@pytest.fixture(scope="module")
+def fast_endpoint():
+    return Endpoint(FAST_ENDPOINT)
 
 
-def _get_reference_df() -> pd.DataFrame:
-    global _ref_df
-    if _ref_df is None:
-        _ref_df = PublicData().get(REFERENCE_DATASET)
-        assert _ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
-    return _ref_df
+@pytest.fixture(scope="module")
+def full_endpoint():
+    return Endpoint(FULL_ENDPOINT)
 
 
-def _get_joined_df() -> pd.DataFrame:
+@pytest.fixture(scope="module")
+def reference_df():
+    df = PublicData().get(REFERENCE_DATASET)
+    assert df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
+    return df
+
+
+@pytest.fixture(scope="module")
+def joined_df(fast_endpoint, full_endpoint, reference_df):
     """Reference rows joined with both endpoints' outputs (suffixed _fast / _bolt)."""
-    global _joined_df
-    if _joined_df is None:
-        ref_df = _get_reference_df()
-        payload = ref_df[["id", "smiles"]].copy()
-        fast = fast_endpoint.inference(payload).add_suffix("_fast").rename(columns={"id_fast": "id"})
-        bolt = full_endpoint.inference(payload).add_suffix("_bolt").rename(columns={"id_bolt": "id"})
-        _joined_df = (
-            ref_df[["id", "name", "rot_bonds", "flexibility_class", "notes"]]
-            .merge(fast, on="id", how="inner")
-            .merge(bolt, on="id", how="inner")
-        )
-    return _joined_df
+    payload = reference_df[["id", "smiles"]].copy()
+    fast = fast_endpoint.inference(payload).add_suffix("_fast").rename(columns={"id_fast": "id"})
+    bolt = full_endpoint.inference(payload).add_suffix("_bolt").rename(columns={"id_bolt": "id"})
+    return (
+        reference_df[["id", "name", "rot_bonds", "flexibility_class", "notes"]]
+        .merge(fast, on="id", how="inner")
+        .merge(bolt, on="id", how="inner")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -135,21 +135,19 @@ def _print_report(joined: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_both_endpoints_exist():
+def test_both_endpoints_exist(fast_endpoint, full_endpoint):
     assert fast_endpoint.exists()
     assert full_endpoint.exists()
 
 
-def test_reference_compounds_loadable():
-    ref_df = _get_reference_df()
-    assert len(ref_df) > 0
-    assert {"id", "name", "smiles", "rot_bonds", "flexibility_class"}.issubset(ref_df.columns)
+def test_reference_compounds_loadable(reference_df):
+    assert len(reference_df) > 0
+    assert {"id", "name", "smiles", "rot_bonds", "flexibility_class"}.issubset(reference_df.columns)
 
 
-def test_both_endpoints_succeed_on_all_compounds():
-    joined = _get_joined_df()
-    bad_fast = joined[joined["desc3d_status_fast"] != "ok"]
-    bad_bolt = joined[joined["desc3d_status_bolt"] != "ok"]
+def test_both_endpoints_succeed_on_all_compounds(joined_df):
+    bad_fast = joined_df[joined_df["desc3d_status_fast"] != "ok"]
+    bad_bolt = joined_df[joined_df["desc3d_status_bolt"] != "ok"]
     if not bad_fast.empty:
         print("Fast endpoint failures:")
         print(bad_fast[["name", "desc3d_status_fast"]].to_string(index=False))
@@ -159,19 +157,18 @@ def test_both_endpoints_succeed_on_all_compounds():
     assert bad_fast.empty and bad_bolt.empty
 
 
-def test_print_full_comparison_report():
+def test_print_full_comparison_report(joined_df):
     """Not a gate — just prints the per-compound delta report for human review."""
-    _print_report(_get_joined_df())
+    _print_report(joined_df)
 
 
-def test_rigid_compounds_agree_tightly():
+def test_rigid_compounds_agree_tightly(joined_df):
     """Regression gate: rigid-class compounds (0 rot bonds) must produce
     nearly identical feature values on both endpoints. Tight agreement here
     proves the two endpoints implement the same descriptor math — any
     divergence means something has drifted.
     """
-    joined = _get_joined_df()
-    rigid = joined[joined["flexibility_class"] == "rigid"]
+    rigid = joined_df[joined_df["flexibility_class"] == "rigid"]
     assert not rigid.empty, "Expected rigid-class compounds in the reference set"
 
     failures = []
@@ -203,9 +200,22 @@ def test_rigid_compounds_agree_tightly():
 
 
 if __name__ == "__main__":
-    test_both_endpoints_exist()
-    test_reference_compounds_loadable()
-    test_both_endpoints_succeed_on_all_compounds()
-    test_print_full_comparison_report()
-    test_rigid_compounds_agree_tightly()
+    # Construct artifacts and data directly, then pass to tests explicitly
+    fast_ep = Endpoint(FAST_ENDPOINT)
+    full_ep = Endpoint(FULL_ENDPOINT)
+    ref = PublicData().get(REFERENCE_DATASET)
+    payload = ref[["id", "smiles"]].copy()
+    fast = fast_ep.inference(payload).add_suffix("_fast").rename(columns={"id_fast": "id"})
+    bolt = full_ep.inference(payload).add_suffix("_bolt").rename(columns={"id_bolt": "id"})
+    joined = (
+        ref[["id", "name", "rot_bonds", "flexibility_class", "notes"]]
+        .merge(fast, on="id", how="inner")
+        .merge(bolt, on="id", how="inner")
+    )
+
+    test_both_endpoints_exist(fast_ep, full_ep)
+    test_reference_compounds_loadable(ref)
+    test_both_endpoints_succeed_on_all_compounds(joined)
+    test_print_full_comparison_report(joined)
+    test_rigid_compounds_agree_tightly(joined)
     print("All 3D flexibility-comparison tests passed!")

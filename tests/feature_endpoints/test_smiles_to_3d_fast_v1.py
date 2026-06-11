@@ -14,6 +14,7 @@ Populated by: scripts/admin/populate_3d_reference_compounds.py
 """
 
 import pandas as pd
+import pytest
 
 from workbench.api import Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
@@ -21,36 +22,36 @@ from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 ENDPOINT_NAME = "smiles-to-3d-fast-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
-endpoint = Endpoint(ENDPOINT_NAME)
 
-# Module-level caches — populated once by _get_result(), reused by every test.
-_ref_df = None
-_result_df = None
-
-
-def _get_reference_df() -> pd.DataFrame:
-    """Load the reference-compounds table (cached)."""
-    global _ref_df
-    if _ref_df is None:
-        _ref_df = PublicData().get(REFERENCE_DATASET)
-        assert _ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
-    return _ref_df
+# ---------------------------------------------------------------------------
+# Fixtures (module-scoped: endpoint and inference run once per module)
+# ---------------------------------------------------------------------------
 
 
-def _get_result() -> pd.DataFrame:
-    """Run inference on all reference compounds (cached) and attach expected-range cols."""
-    global _result_df
-    if _result_df is None:
-        ref_df = _get_reference_df()
-        payload = ref_df[["id", "smiles"]].copy()
-        pred = endpoint.inference(payload)
-        _result_df = pred.merge(
-            ref_df.drop(columns=["smiles"]),
-            on="id",
-            how="left",
-            suffixes=("", "_expected"),
-        )
-    return _result_df
+@pytest.fixture(scope="module")
+def endpoint():
+    return Endpoint(ENDPOINT_NAME)
+
+
+@pytest.fixture(scope="module")
+def reference_df():
+    """Reference-compounds table."""
+    ref_df = PublicData().get(REFERENCE_DATASET)
+    assert ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
+    return ref_df
+
+
+@pytest.fixture(scope="module")
+def result_df(endpoint, reference_df):
+    """Inference on all reference compounds with expected-range cols attached."""
+    payload = reference_df[["id", "smiles"]].copy()
+    pred = endpoint.inference(payload)
+    return pred.merge(
+        reference_df.drop(columns=["smiles"]),
+        on="id",
+        how="left",
+        suffixes=("", "_expected"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -58,37 +59,34 @@ def _get_result() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def test_endpoint_exists():
+def test_endpoint_exists(endpoint):
     """Endpoint is deployed and healthy."""
     assert endpoint.exists(), f"Endpoint '{ENDPOINT_NAME}' does not exist"
     print(f"Endpoint: {endpoint.name}")
 
 
-def test_reference_compounds_loadable():
+def test_reference_compounds_loadable(reference_df):
     """Reference-compounds dataset is accessible and non-empty."""
-    ref_df = _get_reference_df()
-    assert len(ref_df) > 0
-    assert {"id", "name", "smiles"}.issubset(ref_df.columns)
-    print(f"Loaded {len(ref_df)} reference compounds")
+    assert len(reference_df) > 0
+    assert {"id", "name", "smiles"}.issubset(reference_df.columns)
+    print(f"Loaded {len(reference_df)} reference compounds")
 
 
-def test_all_reference_compounds_succeed():
+def test_all_reference_compounds_succeed(result_df):
     """Every reference compound returns desc3d_status == 'ok'."""
-    result = _get_result()
-    bad = result[result["desc3d_status"] != "ok"]
+    bad = result_df[result_df["desc3d_status"] != "ok"]
     if not bad.empty:
         print(bad[["name", "smiles", "desc3d_status"]].to_string(index=False))
     assert bad.empty, f"{len(bad)} reference compounds did not compute successfully"
 
 
-def test_all_features_finite():
+def test_all_features_finite(result_df):
     """All 74 feature columns are present and non-NaN for every reference compound."""
-    result = _get_result()
     feature_names = get_3d_feature_names()
-    missing = [c for c in feature_names if c not in result.columns]
+    missing = [c for c in feature_names if c not in result_df.columns]
     assert not missing, f"Missing feature columns: {missing[:5]}"
 
-    nan_rows = result[result[feature_names].isna().any(axis=1)]
+    nan_rows = result_df[result_df[feature_names].isna().any(axis=1)]
     if not nan_rows.empty:
         for _, row in nan_rows.iterrows():
             bad_cols = [c for c in feature_names if pd.isna(row[c])]
@@ -97,47 +95,43 @@ def test_all_features_finite():
     assert nan_rows.empty, f"{len(nan_rows)} compounds have NaN feature values"
 
 
-def test_pmi_ordering():
+def test_pmi_ordering(result_df):
     """Principal moments of inertia satisfy PMI1 <= PMI2 <= PMI3."""
-    result = _get_result()
-    ordered = (result["pmi1"] <= result["pmi2"]) & (result["pmi2"] <= result["pmi3"])
-    bad = result[~ordered]
+    ordered = (result_df["pmi1"] <= result_df["pmi2"]) & (result_df["pmi2"] <= result_df["pmi3"])
+    bad = result_df[~ordered]
     if not bad.empty:
         print(bad[["name", "pmi1", "pmi2", "pmi3"]].to_string(index=False))
     assert bad.empty, f"{len(bad)} compounds violate PMI ordering"
 
 
-def test_npr_bounds():
+def test_npr_bounds(result_df):
     """NPR1, NPR2 in [0, 1], NPR1 <= NPR2, NPR1 + NPR2 >= 1 (mass-distribution invariant)."""
-    result = _get_result()
-    n1, n2 = result["npr1"], result["npr2"]
+    n1, n2 = result_df["npr1"], result_df["npr2"]
     # Allow small numerical slack on the NPR1+NPR2 >= 1 bound.
     valid = (n1 >= 0) & (n1 <= 1) & (n2 >= 0) & (n2 <= 1) & (n1 <= n2) & ((n1 + n2) >= 0.99)
-    bad = result[~valid]
+    bad = result_df[~valid]
     if not bad.empty:
         print(bad[["name", "npr1", "npr2"]].to_string(index=False))
     assert bad.empty, f"{len(bad)} compounds violate NPR bounds"
 
 
-def test_geometric_positivity():
+def test_geometric_positivity(result_df):
     """Geometric descriptors are strictly positive (or non-negative, as appropriate)."""
-    result = _get_result()
     for col in ["radius_of_gyration", "pharm3d_molecular_volume", "pharm3d_molecular_axis"]:
-        bad = result[result[col] <= 0]
+        bad = result_df[result_df[col] <= 0]
         if not bad.empty:
             print(bad[["name", col]].to_string(index=False))
         assert bad.empty, f"{col} not strictly positive for {len(bad)} compounds"
 
     for col in ["asphericity", "spherocity_index"]:
-        bad = result[result[col] < 0]
+        bad = result_df[result_df[col] < 0]
         if not bad.empty:
             print(bad[["name", col]].to_string(index=False))
         assert bad.empty, f"{col} has negative values for {len(bad)} compounds"
 
 
-def test_expected_ranges():
+def test_expected_ranges(result_df):
     """Every compound-specific expected range (where set) is satisfied."""
-    result = _get_result()
 
     # (feature column in response, min col, max col)
     checks = [
@@ -150,7 +144,7 @@ def test_expected_ranges():
 
     failures = []
     for feature, lo_col, hi_col in checks:
-        for _, row in result.iterrows():
+        for _, row in result_df.iterrows():
             lo, hi, val = row[lo_col], row[hi_col], row[feature]
             if pd.isna(lo) or pd.isna(hi):
                 continue
@@ -162,11 +156,10 @@ def test_expected_ranges():
     assert not failures, f"{len(failures)} expected-range assertions failed"
 
 
-def test_undefined_chiral_centers_match_expected():
+def test_undefined_chiral_centers_match_expected(result_df):
     """Each reference compound's undefined_chiral_centers matches the expected value."""
-    result = _get_result()
     failures = []
-    for _, row in result.iterrows():
+    for _, row in result_df.iterrows():
         expected = row.get("undefined_chiral_centers_expected")
         if pd.isna(expected):
             continue
@@ -179,11 +172,10 @@ def test_undefined_chiral_centers_match_expected():
     assert not failures, f"{len(failures)} compounds have wrong undefined_chiral_centers count"
 
 
-def test_stereo_preserved_matches_expected():
+def test_stereo_preserved_matches_expected(result_df):
     """Each reference compound's desc3d_stereo_preserved matches the expected value."""
-    result = _get_result()
     failures = []
-    for _, row in result.iterrows():
+    for _, row in result_df.iterrows():
         expected = row.get("stereo_preserved_expected")
         if pd.isna(expected):
             continue
@@ -197,14 +189,25 @@ def test_stereo_preserved_matches_expected():
 
 
 if __name__ == "__main__":
-    test_endpoint_exists()
-    test_reference_compounds_loadable()
-    test_all_reference_compounds_succeed()
-    test_all_features_finite()
-    test_pmi_ordering()
-    test_npr_bounds()
-    test_geometric_positivity()
-    test_expected_ranges()
-    test_undefined_chiral_centers_match_expected()
-    test_stereo_preserved_matches_expected()
+    # Build the fixture objects directly for standalone runs.
+    ep = Endpoint(ENDPOINT_NAME)
+    ref_df = PublicData().get(REFERENCE_DATASET)
+    assert ref_df is not None, f"Reference dataset not found: {REFERENCE_DATASET}"
+    res_df = ep.inference(ref_df[["id", "smiles"]].copy()).merge(
+        ref_df.drop(columns=["smiles"]),
+        on="id",
+        how="left",
+        suffixes=("", "_expected"),
+    )
+
+    test_endpoint_exists(ep)
+    test_reference_compounds_loadable(ref_df)
+    test_all_reference_compounds_succeed(res_df)
+    test_all_features_finite(res_df)
+    test_pmi_ordering(res_df)
+    test_npr_bounds(res_df)
+    test_geometric_positivity(res_df)
+    test_expected_ranges(res_df)
+    test_undefined_chiral_centers_match_expected(res_df)
+    test_stereo_preserved_matches_expected(res_df)
     print("\nAll 3D endpoint validation tests passed!")
