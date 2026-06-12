@@ -1,8 +1,6 @@
-"""Tests for SageMaker V3 Tag operations (add, get/list, delete)"""
+"""Tests for Workbench tag/metadata operations (add, get/list, delete)"""
 
 import pytest
-from sagemaker.core.resources import Tag
-from sagemaker.core.common_utils import list_tags
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.utils.aws_utils import dict_to_aws_tags, aws_tags_to_dict
 
@@ -14,61 +12,39 @@ def fs():
 
 
 def test_tag_add(fs):
-    """Test adding tags to a SageMaker resource via V3 Tag.add_tags()"""
-    arn = fs.arn()
-    assert arn is not None
+    """Test adding metadata via upsert_workbench_meta()"""
+    fs.upsert_workbench_meta({"test_add_tag": "hello_world"})
 
-    # Add tags using V3 lowercase dict format
-    tags = [{"key": "test_add_tag", "value": "hello_world"}]
-    Tag.add_tags(resource_arn=arn, tags=tags, session=fs.boto3_session)
-
-    # Verify the tag was added by reading raw AWS tags
-    raw_tags = list_tags(fs.sm_session, arn)
-    tag_dict = {t["Key"]: t["Value"] for t in raw_tags}
-    assert "test_add_tag" in tag_dict
-    assert tag_dict["test_add_tag"] == "hello_world"
+    # Verify the tag was added (workbench_meta reads AWS tags with throttle backoff)
+    meta = fs.workbench_meta()
+    assert meta.get("test_add_tag") == "hello_world"
 
 
 def test_tag_list(fs):
-    """Test listing/getting tags from a SageMaker resource via list_tags"""
-    arn = fs.arn()
-    raw_tags = list_tags(fs.sm_session, arn)
+    """Test listing metadata via workbench_meta()"""
+    meta = fs.workbench_meta()
+    assert isinstance(meta, dict)
+    assert len(meta) > 0
 
-    # Should be a list of dicts with Key/Value
-    assert isinstance(raw_tags, list)
-    assert len(raw_tags) > 0
-
-    tag_dict = {t["Key"]: t["Value"] for t in raw_tags}
     # Workbench always has workbench_tags
-    assert "workbench_tags" in tag_dict or "workbench_status" in tag_dict
+    assert "workbench_tags" in meta or "workbench_status" in meta
 
 
 def test_tag_delete(fs):
-    """Test deleting tags from a SageMaker resource via V3 Tag.delete_tags()"""
-    arn = fs.arn()
+    """Test deleting metadata via delete_metadata()"""
 
     # First add a tag we can delete
-    tags = [{"key": "test_delete_tag", "value": "to_be_deleted"}]
-    Tag.add_tags(resource_arn=arn, tags=tags, session=fs.boto3_session)
-
-    # Verify it exists
-    raw_tags = list_tags(fs.sm_session, arn)
-    tag_dict = {t["Key"]: t["Value"] for t in raw_tags}
-    assert "test_delete_tag" in tag_dict
+    fs.upsert_workbench_meta({"test_delete_tag": "to_be_deleted"})
+    assert "test_delete_tag" in fs.workbench_meta()
 
     # Now delete it
-    Tag.delete_tags(resource_arn=arn, tag_keys=["test_delete_tag"], session=fs.boto3_session)
-
-    # Verify it's gone
-    raw_tags = list_tags(fs.sm_session, arn)
-    tag_dict = {t["Key"]: t["Value"] for t in raw_tags}
-    assert "test_delete_tag" not in tag_dict
+    fs.delete_metadata("test_delete_tag")
+    assert "test_delete_tag" not in fs.workbench_meta()
 
 
 def test_tag_cleanup(fs):
     """Clean up: remove the test_add_tag we created"""
-    arn = fs.arn()
-    Tag.delete_tags(resource_arn=arn, tag_keys=["test_add_tag"], session=fs.boto3_session)
+    fs.delete_metadata("test_add_tag")
 
 
 def test_dict_to_aws_tags():

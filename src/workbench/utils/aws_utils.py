@@ -133,7 +133,10 @@ def decode_value(value):
     try:
         value = base64.b64decode(value).decode("utf-8")
     except Exception:
-        pass
+        # Legacy compatibility: tag-safe values written before base64-everything
+        # (June 2026) are stored raw. Remove this fallback once CloudWatch shows
+        # no more legacy hits across deployments.
+        log.warning(f"Legacy un-encoded tag value detected: {str(value)[:50]}")
     # Try to JSON decode the value
     try:
         value = json.loads(value)

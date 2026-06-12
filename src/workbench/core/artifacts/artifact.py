@@ -5,12 +5,13 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
 from typing import Union
+from botocore.exceptions import ClientError
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.core.df_store_core import DFStoreCore
 from workbench.core.parameter_store_core import ParameterStoreCore as ParameterStore
-from workbench.utils.aws_utils import dict_to_aws_tags
+from workbench.utils.aws_utils import aws_throttle, dict_to_aws_tags
 from sagemaker.core.resources import Tag
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
@@ -230,6 +231,7 @@ class Artifact(ABC):
         """Delete this artifact including all related AWS objects"""
         pass
 
+    @aws_throttle
     def upsert_workbench_meta(self, new_meta: dict):
         """Add Workbench specific metadata to this Artifact
         Args:
@@ -255,6 +257,11 @@ class Artifact(ABC):
         aws_tags = dict_to_aws_tags(new_meta)
         try:
             Tag.add_tags(resource_arn=aws_arn, tags=aws_tags, session=self.boto3_session)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ThrottlingException":
+                raise  # @aws_throttle handles the backoff/retry
+            self.log.error(f"Error adding metadata to {aws_arn}: {type(e).__name__}: {e}")
+            return
         except Exception as e:
             self.log.error(f"Error adding metadata to {aws_arn}: {type(e).__name__}: {e}")
             return
@@ -432,6 +439,7 @@ class Artifact(ABC):
         summary_str = f"{self.__class__.__name__}: {self.name}\n" + ",\n".join(summary_items)
         return summary_str
 
+    @aws_throttle
     def delete_metadata(self, key_to_delete: str):
         """Delete specific metadata from this artifact
         Args:
