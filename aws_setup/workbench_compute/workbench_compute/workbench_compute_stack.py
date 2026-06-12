@@ -171,6 +171,20 @@ class WorkbenchComputeStack(Stack):
                     },
                 ),
                 timeout=Duration.hours(24),
+                # Retry infrastructure-level start failures only; pipeline errors
+                # fall through to the catch-all EXIT and fail on the first attempt
+                retry_attempts=3,
+                retry_strategies=[
+                    batch.RetryStrategy.of(
+                        batch.Action.RETRY,
+                        batch.Reason.custom(on_status_reason="Timeout waiting for network interface*"),
+                    ),
+                    batch.RetryStrategy.of(
+                        batch.Action.RETRY,
+                        batch.Reason.custom(on_status_reason="Host EC2*"),
+                    ),
+                    batch.RetryStrategy.of(batch.Action.EXIT, batch.Reason.custom(on_reason="*")),
+                ],
             )
         return job_definitions
 
