@@ -87,7 +87,7 @@ def test_poke():
     print(f"Poke updated registry: {before} -> {after}")
 
 
-@pytest.mark.medium  # ~80s: poke lifecycle with refresh waits
+@pytest.mark.medium
 def test_poke_triggers_detail_refresh():
     """After a poke, models(details=True) should refetch the poked model"""
     meta = CachedMeta()
@@ -113,7 +113,7 @@ def test_poke_triggers_detail_refresh():
     print("Poke triggered detail refresh successfully")
 
 
-@pytest.mark.medium  # ~65s: full stale/refresh cycle
+@pytest.mark.medium
 def test_poke_single_stale_cycle():
     """After a poke and one refresh, the registry should be stable (no double-stale)
 
@@ -149,7 +149,7 @@ def test_poke_single_stale_cycle():
     print(f"Registry stable: poke={poke_ts}, after_refresh={post_refresh_ts}")
 
 
-@pytest.mark.medium  # ~70s: registry refresh waits after artifact delete
+@pytest.mark.medium
 def test_deleted_artifact():
     """Artifacts deleted from AWS should be removed from cached details"""
     meta = CachedMeta()

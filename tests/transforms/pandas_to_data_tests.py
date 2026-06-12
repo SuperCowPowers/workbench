@@ -7,7 +7,7 @@ from workbench.core.transforms.pandas_transforms import PandasToData
 from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
 
-@pytest.mark.medium  # ~80s: full DataSource creation round-trip
+@pytest.mark.medium
 def test():
     """Tests for the Pandas DataFrame to Data Transforms"""
 

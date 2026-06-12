@@ -54,7 +54,7 @@ def test_validation_predictions(model_reg, model_class):
     pprint(class_val_preds.head())
 
 
-@pytest.mark.medium  # ~60s: runs test_inference on two endpoints first
+@pytest.mark.medium
 def test_inference_predictions(model_class):
     print("\n\n*** Inference Predictions ***")
 

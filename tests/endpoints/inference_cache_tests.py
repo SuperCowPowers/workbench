@@ -92,7 +92,7 @@ def test_extra_column_not_leaked(endpoint):
     print("Extra column leak test passed!")
 
 
-@pytest.mark.medium  # ~110s: inference runs to populate the cache
+@pytest.mark.medium
 def test_cache_info(endpoint):
     """Verify cache_info returns expected structure."""
     cached_endpoint = _make_cache(endpoint)
