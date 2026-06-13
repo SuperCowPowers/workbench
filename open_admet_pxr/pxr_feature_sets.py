@@ -30,8 +30,8 @@ if recreate or not FeatureSet(fs_name).exists():
     DataSource(df, name="openadmet_pxr_combined_ds").to_features(
         fs_name, id_column="molecule_name", tags=["openadmet_pxr", "activity"]
     )
-    print(
-        f"Built '{fs_name}': {len(df)} rows ({(df.split == 'train').sum()} train + {(df.split == 'phase1_test').sum()} phase1_test)"
-    )
+    n_train = (df.split == "train").sum()
+    n_phase1 = (df.split == "phase1_test").sum()
+    print(f"Built '{fs_name}': {len(df)} rows ({n_train} train + {n_phase1} phase1_test)")
 else:
     print(f"FeatureSet '{fs_name}' exists — skipping (set recreate=True to rebuild)")
