@@ -44,6 +44,7 @@ from workbench.utils.pipelines_manager import (
     ref_name,
     ref_type,
     simulated_mtime,
+    with_dependencies,
 )
 
 log = logging.getLogger("workbench")
@@ -548,21 +549,38 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
     return results
 
 
-def select_pipelines(all_pipelines: list[Path], args: argparse.Namespace) -> tuple[list[Path], str]:
+def select_pipelines(
+    all_pipelines: list[Path], all_dags: dict[str, list[PipelineNode]], args: argparse.Namespace
+) -> tuple[list[Path], str]:
     """Select which pipelines to run based on CLI args.
+
+    - ``--all`` runs every script declared in a ``pipelines.json`` DAG. Standalone
+      scripts (not in any DAG) are skipped — to be run by ``--all``, declare it.
+    - ``--patterns`` matches against all discovered scripts (declared *and*
+      standalone) and pulls in each match's transitive upstream producers (via
+      ``with_dependencies``), so the dependencies of a matched pipeline run first.
 
     Returns:
         tuple[list[Path], str]: (selected_pipelines, human-readable selection description)
     """
+    all_nodes = [node for nodes in all_dags.values() for node in nodes]
+    declared = {node.script for node in all_nodes}
+
     if args.patterns:
-        selected = filter_pipelines_by_patterns(all_pipelines, args.patterns)
-        if not selected:
+        matched = filter_pipelines_by_patterns(all_pipelines, args.patterns)
+        if not matched:
             print(f"No pipelines matching patterns: {args.patterns}")
             exit(1)
-        return selected, f"matching {args.patterns}"
+        matched_set = set(matched)
+        target_nodes = [n for n in all_nodes if n.script in matched_set]
+        # matched_set keeps any loose (non-DAG) matches; the closure adds declared deps.
+        wanted = matched_set | {n.script for n in with_dependencies(target_nodes, all_nodes)}
+        selected = [p for p in all_pipelines if p in wanted]  # preserve discovery order
+        return selected, f"matching {args.patterns} (+ dependencies)"
 
     if args.all:
-        return all_pipelines, "ALL"
+        selected = [p for p in all_pipelines if p in declared]  # declared DAG scripts only
+        return selected, "ALL"
 
     print("Specify pipeline patterns or use --all to launch all pipelines.")
     exit(1)
@@ -780,7 +798,7 @@ def main():
         return
 
     # Select which pipelines to run
-    selected, selection_desc = select_pipelines(all_pipelines, args)
+    selected, selection_desc = select_pipelines(all_pipelines, all_dags, args)
 
     # Validate --local before doing more work
     if args.local and len(selected) > 1:

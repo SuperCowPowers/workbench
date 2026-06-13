@@ -19,6 +19,7 @@ from workbench.utils.pipelines_manager import (
     ref_type,
     simulated_mtime,
     topo_order,
+    with_dependencies,
 )
 
 
@@ -99,6 +100,34 @@ class TestTopoOrder:
         b = node("b.py", outputs=["fs:y"], inputs=["fs:x"])
         with pytest.raises(ValueError, match="cycle"):
             topo_order([a, b])
+
+
+class TestWithDependencies:
+    def test_pulls_direct_producer(self):
+        fs = node("fs.py", outputs=["fs:x"])
+        m = node("m.py", inputs=["fs:x"])
+        result = with_dependencies([m], [fs, m])
+        assert {n.script for n in result} == {"fs.py", "m.py"}
+
+    def test_transitive_chain_and_orders(self):
+        a = node("a.py", outputs=["fs:x"])
+        b = node("b.py", inputs=["fs:x"], outputs=["fs:y"])
+        c = node("c.py", inputs=["fs:y"], outputs=["model:c"])
+        result = with_dependencies([c], [a, b, c])
+        assert {n.script for n in result} == {"a.py", "b.py", "c.py"}
+        assert topo_order(result) == [a, b, c]  # schedules producers first
+
+    def test_external_input_adds_nothing(self):
+        m = node("m.py", inputs=["ds:raw"])  # ds:raw has no in-set producer
+        result = with_dependencies([m], [m])
+        assert [n.script for n in result] == ["m.py"]
+
+    def test_unrelated_producers_excluded(self):
+        fs = node("fs.py", outputs=["fs:x"])
+        m = node("m.py", inputs=["fs:x"])
+        other = node("other.py", outputs=["fs:z"])  # produces something nobody selected needs
+        result = with_dependencies([m], [fs, m, other])
+        assert {n.script for n in result} == {"fs.py", "m.py"}
 
 
 class TestEffectiveSourceTime:

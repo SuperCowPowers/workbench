@@ -197,6 +197,39 @@ def topo_order(nodes: list[PipelineNode]) -> list[PipelineNode]:
     return [nodes[i] for i in order]
 
 
+def with_dependencies(targets: list[PipelineNode], all_nodes: list[PipelineNode]) -> list[PipelineNode]:
+    """Expand a target subset to include its transitive upstream producers.
+
+    Given the nodes you want to run, walk each one's inputs back to the nodes
+    that produce them (anywhere in ``all_nodes``), recursively — so every
+    dependency of a selected node comes along. Inputs with no in-set producer
+    (DataSources / external artifacts) simply add nothing.
+
+    Order is not meaningful here; pass the result through :func:`topo_order` to
+    schedule producers before consumers.
+
+    Args:
+        targets (list[PipelineNode]): The nodes explicitly selected to run.
+        all_nodes (list[PipelineNode]): Every node available to resolve producers
+            against (across pipelines / files).
+
+    Returns:
+        list[PipelineNode]: ``targets`` plus all of their transitive upstream
+            producers, de-duplicated by node identity.
+    """
+    index = build_producer_index(all_nodes)  # artifact ref -> producing node
+    result: dict[int, PipelineNode] = {id(n): n for n in targets}
+    queue = list(targets)
+    while queue:
+        node = queue.pop()
+        for ref in node.inputs:
+            producer = index.get(ref)
+            if producer is not None and id(producer) not in result:
+                result[id(producer)] = producer
+                queue.append(producer)
+    return list(result.values())
+
+
 def effective_source_time(ref, index, mtime_fn, _stack=None):
     """Latest upstream source time feeding ``ref``, walking the declared graph.
 
