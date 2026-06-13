@@ -16,9 +16,9 @@ launching from inside a phase never picks them up).
 pipelines.json         # one DAG: producer → phase1 + phase2 (subdir-relative paths)
 pxr_feature_sets.py    # producer: builds the shared FeatureSet openadmet_pxr_f1
 phase1/
-  pxr_chemprop.py      # consumes the FS; zero-weights phase1_test; capture on it
+  pxr_chemprop_phase1.py   # consumes the FS; zero-weights phase1_test; capture on it
 phase2/
-  pxr_chemprop.py      # consumes the FS; trains on all rows; predict 513 blinded → submission CSV
+  pxr_chemprop_phase2.py   # consumes the FS; trains on all rows; predict 513 blinded → submission CSV
   activity_leaderboard_phase2.csv
 storage/               # parked (*.py.archived): feature_sets, 2d/3d/2d_3d (xgb+pytorch), hybrid
 ```
