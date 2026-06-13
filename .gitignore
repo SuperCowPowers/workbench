@@ -159,3 +159,6 @@ data/public_data/output/
 
 # Claude Code 
 .claude/
+
+# Open ADMET Misc
+open_admet_pxr/activity_leaderboard_phase2.csv
