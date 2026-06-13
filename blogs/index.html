@@ -1958,6 +1958,34 @@
   
   
     <li class="md-nav__item">
+      <a href="pxr_2d_vs_3d/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D vs 3D (PXR Case Study)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="feature_endpoints/" class="md-nav__link">
         
   
@@ -4568,6 +4596,9 @@
 </li>
 <li>
 <p><strong><a href="molecular_standardization/">Molecular Standardization</a>:</strong> Why molecular standardization matters for ML pipelines. We walk through Workbench's four-step pipeline — cleanup, salt handling, charge neutralization, and tautomer canonicalization. We also describe <strong>2D</strong> and <strong>3D</strong> molecular descriptors computed by our feature endpoints.</p>
+</li>
+<li>
+<p><strong><a href="pxr_2d_vs_3d/">Do 3D Descriptors Help on PXR Induction?</a>:</strong> A single-target case study — 2D / 3D / 2D+3D ablations (plus a Chemprop-hybrid test) on the OpenADMET PXR induction blind challenge. The twist: on <em>this</em> target the 3D conformer features earn high SHAP importance inside the combined model, yet adding them hurts held-out accuracy and a 3D-only model scores <em>negative</em> R² on a new analog series. We use the CV-vs-held-out gap to separate features that <em>fit</em> from features that <em>transfer</em> — and we're careful to scope the result to this one endpoint, not 3D in general.</p>
 </li>
 <li>
 <p><strong><a href="3d_descriptors/">3D Molecular Descriptors</a>:</strong> A deep dive into Workbench's 3D descriptor pipeline — from conformer generation (ETKDGv3 with tiered fallback and MMFF94s optimization) to 75 features covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. We cover the production guardrails (complexity checks, per-molecule timeouts) that keep it reliable as a deployed endpoint.</p>
