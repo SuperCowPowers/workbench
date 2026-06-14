@@ -31,20 +31,15 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import networkx as nx
-
 from workbench.utils.repl_utils import colors as REPL_COLORS
 from workbench.utils.tree_render import render_forest
 from workbench.utils.pipelines_manager import (
-    PipelineNode,
-    build_producer_index,
-    derive_edges,
+    Job,
+    PipelineGraph,
     parse_spec,
-    plan_runs,
     ref_name,
     ref_type,
     simulated_mtime,
-    with_dependencies,
 )
 
 log = logging.getLogger("workbench")
@@ -170,7 +165,7 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool, model_re
     )
 
 
-def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | None:
+def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
     """Load pipelines.json from a directory.
 
     The JSON maps each pipeline name to a flat list of nodes. A node runs a
@@ -181,7 +176,7 @@ def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | No
         directory (Path): Directory to check for pipelines.json
 
     Returns:
-        dict | None: {pipeline_name: [PipelineNode]}, or None if no JSON config found
+        dict | None: {pipeline_name: [Job]}, or None if no JSON config found
     """
     json_path = directory / "pipelines.json"
     if not json_path.exists():
@@ -191,60 +186,15 @@ def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | No
     # Resolve each node's script relative to this config's directory, then group
     # the flat node list back into {pipeline_name: [nodes]}.
     nodes = parse_spec(config, script_resolver=lambda script: directory / script)
-    pipelines: dict[str, list[PipelineNode]] = {}
+    pipelines: dict[str, list[Job]] = {}
     for node in nodes:
         pipelines.setdefault(node.group, []).append(node)
     return pipelines
 
 
-def build_dag(name: str, nodes: list[PipelineNode]) -> nx.DiGraph:
-    """Build a DiGraph from a set of nodes, deriving edges from outputs/inputs.
-
-    Each node becomes a graph node keyed by (script, mode), with the
-    PipelineNode stored under the "node" attribute. Edges run producer ->
-    consumer, matched by artifact ref. The producer index spans every node
-    passed in, so callers can hand it all selected nodes at once and have
-    cross-pipeline dependencies (a node consuming a sibling pipeline's
-    FeatureSet) resolve to real edges rather than be flagged as external.
-
-    Args:
-        name (str): Label used in error messages when a node has no group
-        nodes (list[PipelineNode]): Nodes to wire into the graph
-
-    Returns:
-        nx.DiGraph: The derived dependency graph
-
-    Raises:
-        ValueError: If two nodes output the same artifact, if a node is
-            duplicated, or if the resulting graph has a dependency cycle.
-    """
-    graph = nx.DiGraph()
-
-    # Register every node, keyed by (script, mode). The producer index, edges,
-    # and external-input detection are the manager's job (one source of truth);
-    # this function only assembles the networkx graph used for display + ordering.
-    for node in nodes:
-        if node.key in graph:
-            raise ValueError(f"Pipeline '{name}': duplicate node {node.node_id}")
-        graph.add_node(node.key, node=node)
-
-    # Inputs with no producer are simply external roots; the data-flow render
-    # shows them (grey vs green), so there's nothing to warn about here.
-    index = build_producer_index(nodes)
-    for producer, consumer in derive_edges(nodes, index):
-        graph.add_edge(producer.key, consumer.key)
-
-    if not nx.is_directed_acyclic_graph(graph):
-        cycle = nx.find_cycle(graph)
-        readable = " -> ".join(run_label(s, m) for (s, m), _ in cycle)
-        raise ValueError(f"Pipeline '{name}' has a dependency cycle: {readable}")
-
-    return graph
-
-
 def sort_pipelines(
     pipelines: list[Path],
-    all_dags: dict[str, list[PipelineNode]],
+    all_dags: dict[str, list[Job]],
     mode: str | None = None,
 ) -> RunPlan:
     """Sort pipelines into a topologically ordered run plan.
@@ -263,7 +213,7 @@ def sort_pipelines(
     Args:
         pipelines (list[Path]): Pipelines to sort
         all_dags (dict): DAG definitions from pipelines.json files
-            {pipeline_name: [PipelineNode]}
+            {pipeline_name: [Job]}
         mode (str | None): Execution mode from CLI flags (e.g., "dt", "promote")
 
     Returns:
@@ -279,7 +229,7 @@ def sort_pipelines(
 
 def _build_override_plan(
     pipelines: list[Path],
-    all_dags: dict[str, list[PipelineNode]],
+    all_dags: dict[str, list[Job]],
     mode: str,
 ) -> RunPlan:
     """Build a plan that runs each unique script once with the override mode.
@@ -316,7 +266,7 @@ def _build_override_plan(
     return plan
 
 
-def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
+def _node_selected(node: Job, mode_filter: str | None) -> bool:
     """Whether a node runs under the given filter mode.
 
     A filter (e.g. ``--dt``) only excludes *other filter modes*. Modeless nodes,
@@ -328,7 +278,7 @@ def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
     return node.mode == mode_filter
 
 
-def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=None, highlight=()) -> list[str]:
+def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highlight=()) -> list[str]:
     """Render the data-flow DAG: ds:/fs:/model: artifacts and scripts as nodes,
     edges flowing artifact -> script -> artifact. Shared producers fan out and
     cross-pipeline joins show as multi-parent, rooted at the external sources.
@@ -340,7 +290,7 @@ def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=Non
     keep their mode coloring.
 
     Args:
-        nodes (list[PipelineNode]): The selected nodes to render.
+        nodes (list[Job]): The selected nodes to render.
         runtime_mode (callable): node -> the mode to display it under.
         produced (set[str]): Every artifact ref produced anywhere in the repo.
         roots (list | None): Render these refs/keys as the roots (e.g. simulated
@@ -404,7 +354,7 @@ def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=Non
 
 def _build_dag_plan(
     pipelines: list[Path],
-    all_dags: dict[str, list[PipelineNode]],
+    all_dags: dict[str, list[Job]],
     mode_filter: str | None = None,
 ) -> RunPlan:
     """Build a plan in topological order, optionally filtering by mode.
@@ -427,7 +377,7 @@ def _build_dag_plan(
     plan = RunPlan()
     found_in_dag = set()
 
-    def runtime_mode(node: PipelineNode) -> str | None:
+    def runtime_mode(node: Job) -> str | None:
         # A named non-filter mode (e.g. "fs") runs as itself; a modeless node
         # adopts the active filter; a filter mode keeps its own mode.
         if node.mode and node.mode not in FILTER_MODES:
@@ -436,7 +386,7 @@ def _build_dag_plan(
 
     # Gather the selected nodes from every pipeline, tagging each with its
     # pipeline so the file-wide graph can be split back into per-pipeline trees.
-    grouped: dict[str, list[PipelineNode]] = {}
+    grouped: dict[str, list[Job]] = {}
     for name, nodes in all_dags.items():
         in_pipeline = [n for n in nodes if n.script in pipeline_set]
         found_in_dag.update(n.script for n in in_pipeline)
@@ -451,24 +401,22 @@ def _build_dag_plan(
         # ppb_mt consuming a FeatureSet built by ppb_human_free) resolves to a
         # real edge instead of being mistaken for an external input.
         all_nodes = [n for nodes in grouped.values() for n in nodes]
-        graph = build_dag("selected pipelines", all_nodes)
+        pg = PipelineGraph(all_nodes)
 
         # Emit runs in global topological order so every producer precedes its
         # consumers, even when the consumer lives in another pipeline.
         selected_nodes = []
-        for generation in nx.topological_generations(graph):
-            for key in generation:
-                node = graph.nodes[key]["node"]
-                if not _node_selected(node, mode_filter):
-                    continue
-                plan.add_run(
-                    node.script,
-                    runtime_mode(node),
-                    group_id=node.group,
-                    outputs=node.outputs,
-                    inputs=node.inputs,
-                )
-                selected_nodes.append(node)
+        for node in pg.job_order():
+            if not _node_selected(node, mode_filter):
+                continue
+            plan.add_run(
+                node.script,
+                runtime_mode(node),
+                group_id=node.group,
+                outputs=node.outputs,
+                inputs=node.inputs,
+            )
+            selected_nodes.append(node)
 
         # Render the true global data-flow DAG (artifacts + scripts), not sliced
         # per-pipeline trees. Resolution is judged against every pipeline in the
@@ -486,7 +434,7 @@ def _build_dag_plan(
     return plan
 
 
-def get_all_pipelines() -> tuple[list[Path], dict[str, list[PipelineNode]]]:
+def get_all_pipelines() -> tuple[list[Path], dict[str, list[Job]]]:
     """Get all ML pipeline scripts from subdirectories.
 
     Discovers scripts from pipelines.json files AND standalone scripts
@@ -495,7 +443,7 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[PipelineNode]]]:
     Returns:
         tuple: (pipelines, all_dags)
             - pipelines: List of unique pipeline script paths
-            - all_dags: {pipeline_name: [PipelineNode]} from pipelines.json files
+            - all_dags: {pipeline_name: [Job]} from pipelines.json files
     """
     cwd = Path.cwd()
     pipelines = []
@@ -550,7 +498,7 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
 
 
 def select_pipelines(
-    all_pipelines: list[Path], all_dags: dict[str, list[PipelineNode]], args: argparse.Namespace
+    all_pipelines: list[Path], all_dags: dict[str, list[Job]], args: argparse.Namespace
 ) -> tuple[list[Path], str]:
     """Select which pipelines to run based on CLI args.
 
@@ -558,7 +506,7 @@ def select_pipelines(
       scripts (not in any DAG) are skipped — to be run by ``--all``, declare it.
     - ``--patterns`` matches against all discovered scripts (declared *and*
       standalone) and pulls in each match's transitive upstream producers (via
-      ``with_dependencies``), so the dependencies of a matched pipeline run first.
+      ``PipelineGraph.select``), so the dependencies of a matched pipeline run first.
 
     Returns:
         tuple[list[Path], str]: (selected_pipelines, human-readable selection description)
@@ -574,7 +522,7 @@ def select_pipelines(
         matched_set = set(matched)
         target_nodes = [n for n in all_nodes if n.script in matched_set]
         # matched_set keeps any loose (non-DAG) matches; the closure adds declared deps.
-        wanted = matched_set | {n.script for n in with_dependencies(target_nodes, all_nodes)}
+        wanted = matched_set | {n.script for n in PipelineGraph(all_nodes).select(target_nodes)}
         selected = [p for p in all_pipelines if p in wanted]  # preserve discovery order
         return selected, f"matching {args.patterns} (+ dependencies)"
 
@@ -739,27 +687,23 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
 def run_simulation(all_dags, modified_refs):
     """Simulate modifying ``modified_refs`` and show the DAG paths that would submit.
 
-    Source-rooted freshness over the whole repo's DAG: any node downstream of a
-    modified source goes stale and would be submitted to Batch. No AWS, no launch.
+    Forward freshness flood over the whole repo's DAG: any job downstream of a
+    modified artifact goes stale and would be submitted to Batch. The modified
+    ref can be any type (ds:/fs:/model:) -- staleness floods forward regardless.
+    No AWS, no launch.
     """
     global_nodes = [node for nodes in all_dags.values() for node in nodes]
     produced = {ref for node in global_nodes for ref in node.outputs}
-    # plan_runs warns (to stdout) for no-input nodes -- CloudWatch-useful in the
+    # plan() warns (to stdout) for no-input jobs -- CloudWatch-useful in the
     # Lambda but noise here, and our summary already counts them, so swallow it.
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        plan = plan_runs(global_nodes, simulated_mtime(modified_refs))
+        plan = PipelineGraph(global_nodes).plan(simulated_mtime(modified_refs))
     runs = [(node, reason) for node, should_run, reason in plan if should_run]
-    triggered = sum(1 for _, reason in runs if reason == "stale")
+    triggered = sum(1 for _, reason in runs if reason in ("stale", "upstream", "missing"))
     always_run = sum(1 for _, reason in runs if reason in ("no_inputs", "unmanaged"))
 
     print(f"\nSimulating modification of: {', '.join(modified_refs)}")
-    internal = [ref for ref in modified_refs if ref in produced]
-    if internal:
-        print(
-            f"  NOTE: {', '.join(internal)} is produced internally; freshness is source-rooted,\n"
-            f"        so modifying it does not propagate -- simulate its upstream ds: instead."
-        )
     print(f"  {triggered} run(s) triggered by this change; {always_run} always-run regardless.\n")
 
     print("Submitted paths:")

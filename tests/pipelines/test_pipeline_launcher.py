@@ -6,8 +6,7 @@ from pathlib import Path
 import pytest
 
 from workbench.scripts.ml_pipeline_launcher import (
-    PipelineNode,
-    build_dag,
+    Job,
     build_pipeline_meta,
     get_all_pipelines,
     load_pipelines_config,
@@ -15,11 +14,12 @@ from workbench.scripts.ml_pipeline_launcher import (
     run_label,
     sort_pipelines,
 )
+from workbench.utils.pipelines_manager import PipelineGraph
 
 
 def node(script, mode=None, outputs=None, inputs=None):
-    """Build a PipelineNode with a Path script (test convenience)."""
-    return PipelineNode(Path(script), mode, outputs or [], inputs or [])
+    """Build a Job with a Path script (test convenience)."""
+    return Job(Path(script), mode, outputs or [], inputs or [])
 
 
 class TestLoadPipelinesConfig:
@@ -81,14 +81,14 @@ class TestLoadPipelinesConfig:
         assert nodes[0].script == tmp_path / "subdir_script.py"
 
 
-class TestBuildDag:
-    """Tests for build_dag artifact-derived edges and validation."""
+class TestJobGraph:
+    """Tests for the job-level DAG the launcher orders on (PipelineGraph.job_graph)."""
 
     def test_edges_derived_from_artifacts(self):
         """An input artifact links the consumer to its producer."""
         producer = node("fs.py", outputs=["fs:x"])
         consumer = node("model.py", inputs=["fs:x"])
-        graph = build_dag("p", [producer, consumer])
+        graph = PipelineGraph([producer, consumer]).job_graph
 
         assert graph.number_of_edges() == 1
         assert graph.has_edge((Path("fs.py"), None), (Path("model.py"), None))
@@ -100,37 +100,36 @@ class TestBuildDag:
             node("a.py", inputs=["fs:x"]),
             node("b.py", inputs=["fs:x"]),
         ]
-        graph = build_dag("p", nodes)
+        graph = PipelineGraph(nodes).job_graph
         assert graph.number_of_edges() == 2
         assert graph.out_degree((Path("fs.py"), None)) == 2
 
     def test_duplicate_producer_raises(self):
         """Two nodes outputting the same artifact is a hard error."""
         with pytest.raises(ValueError, match="produced by both"):
-            build_dag("p", [node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
+            PipelineGraph([node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
 
     def test_cycle_raises(self):
         """A dependency cycle is a hard error."""
         with pytest.raises(ValueError, match="cycle"):
-            build_dag(
-                "p",
+            PipelineGraph(
                 [
                     node("a.py", outputs=["fs:x"], inputs=["fs:y"]),
                     node("b.py", outputs=["fs:y"], inputs=["fs:x"]),
-                ],
+                ]
             )
 
     def test_dangling_input_tolerated(self, capsys):
         """An input with no producer is tolerated silently (it's an external root)."""
-        graph = build_dag("p", [node("a.py", inputs=["fs:external"])])
-        assert graph.number_of_nodes() == 1
+        graph = PipelineGraph([node("a.py", inputs=["fs:external"])]).job_graph
+        assert graph.number_of_nodes() == 1  # the one job
         assert graph.number_of_edges() == 0
         assert capsys.readouterr().err == ""  # no warning noise
 
     def test_duplicate_node_raises(self):
         """The same (script, mode) declared twice is a hard error."""
-        with pytest.raises(ValueError, match="duplicate node"):
-            build_dag("p", [node("a.py", mode="dt"), node("a.py", mode="dt")])
+        with pytest.raises(ValueError, match="duplicate job"):
+            PipelineGraph([node("a.py", mode="dt"), node("a.py", mode="dt")])
 
 
 class TestSortPipelines:

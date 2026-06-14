@@ -1,4 +1,4 @@
-"""Tests for the canonical pipelines_manager: graph wiring and freshness.
+"""Tests for the graph-first pipelines_manager: artifact DAG + forward flood.
 
 Freshness is exercised with a fake clock (a dict of ref -> integer "time"), so
 no AWS is involved -- mtime_fn just looks the ref up, returning None for refs not
@@ -8,29 +8,28 @@ in the dict (i.e. "doesn't exist yet").
 import pytest
 
 from workbench.utils.pipelines_manager import (
-    PipelineNode,
-    build_producer_index,
-    derive_edges,
-    effective_source_time,
-    needs_run,
+    Job,
+    PipelineGraph,
     parse_spec,
-    plan_runs,
     ref_name,
     ref_type,
     simulated_mtime,
-    topo_order,
-    with_dependencies,
 )
 
 
-def node(script, mode=None, outputs=None, inputs=None, group=None):
-    """Build a PipelineNode (test convenience)."""
-    return PipelineNode(script, mode, outputs or [], inputs or [], group)
+def job(script, mode=None, outputs=None, inputs=None, group=None):
+    """Build a Job (test convenience)."""
+    return Job(script, mode, outputs or [], inputs or [], group)
 
 
 def clock(times):
     """Fake mtime_fn: look up a ref's time, None if absent."""
     return lambda ref: times.get(ref)
+
+
+def ran(plan):
+    """{node_id: reason} for the jobs a plan would run."""
+    return {j.node_id: reason for j, should, reason in plan if should}
 
 
 class TestRefHelpers:
@@ -53,181 +52,189 @@ class TestParseSpec:
                 ]
             }
         }
-        nodes = parse_spec(spec)
-        assert [n.group for n in nodes] == ["p", "p"]
-        assert nodes[0].outputs == ["fs:x"]
-        assert nodes[1].mode == "dt"
-        assert nodes[1].inputs == ["fs:x"]
+        jobs = parse_spec(spec)
+        assert [j.group for j in jobs] == ["p", "p"]
+        assert jobs[0].outputs == ["fs:x"]
+        assert jobs[1].mode == "dt"
+        assert jobs[1].inputs == ["fs:x"]
 
     def test_script_resolver_applied(self):
         spec = {"pipelines": {"p": [{"script": "sub/fs.py"}]}}
-        nodes = parse_spec(spec, script_resolver=lambda s: f"s3://bucket/{s}")
-        assert nodes[0].script == "s3://bucket/sub/fs.py"
+        jobs = parse_spec(spec, script_resolver=lambda s: f"s3://bucket/{s}")
+        assert jobs[0].script == "s3://bucket/sub/fs.py"
 
 
-class TestProducerIndexAndEdges:
-    def test_index_maps_output_to_node(self):
-        fs = node("fs.py", outputs=["fs:x"])
-        index = build_producer_index([fs, node("m.py", inputs=["fs:x"])])
-        assert index["fs:x"] is fs
-
+class TestConstruction:
     def test_duplicate_producer_raises(self):
         with pytest.raises(ValueError, match="produced by both"):
-            build_producer_index([node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
+            PipelineGraph([job("a.py", outputs=["fs:x"]), job("b.py", outputs=["fs:x"])])
 
-    def test_edges(self):
-        fs = node("fs.py", outputs=["fs:x"])
-        consumer = node("m.py", inputs=["fs:x", "ds:raw"])
-        nodes = [fs, consumer]
-        edges = derive_edges(nodes, build_producer_index(nodes))
-        assert edges == [(fs, consumer)]  # ds:raw has no producer -> no edge
-
-
-class TestTopoOrder:
-    def test_producer_before_consumer(self):
-        fs = node("fs.py", outputs=["fs:x"])
-        m = node("m.py", inputs=["fs:x"])
-        assert topo_order([m, fs]) == [fs, m]
-
-    def test_cross_pipeline(self):
-        """A producer in one pipeline orders before a consumer in another."""
-        fs = node("fs.py", outputs=["fs:x"], group="a")
-        m = node("m.py", inputs=["fs:x"], group="b")
-        assert topo_order([m, fs]) == [fs, m]
+    def test_producer_lookup(self):
+        fs = job("fs.py", outputs=["fs:x"])
+        g = PipelineGraph([fs, job("m.py", inputs=["fs:x"])])
+        assert g.producer("fs:x") is fs
+        assert g.producer("ds:raw") is None  # external root
 
     def test_cycle_raises(self):
-        a = node("a.py", outputs=["fs:x"], inputs=["fs:y"])
-        b = node("b.py", outputs=["fs:y"], inputs=["fs:x"])
+        a = job("a.py", outputs=["fs:x"], inputs=["fs:y"])
+        b = job("b.py", outputs=["fs:y"], inputs=["fs:x"])
         with pytest.raises(ValueError, match="cycle"):
-            topo_order([a, b])
+            PipelineGraph([a, b])
 
 
-class TestWithDependencies:
-    def test_pulls_direct_producer(self):
-        fs = node("fs.py", outputs=["fs:x"])
-        m = node("m.py", inputs=["fs:x"])
-        result = with_dependencies([m], [fs, m])
-        assert {n.script for n in result} == {"fs.py", "m.py"}
+class TestArtifactTopology:
+    def _chain(self):
+        # ds:raw -> fs:x -> model:m
+        fs = job("fs.py", outputs=["fs:x"], inputs=["ds:raw"])
+        m = job("m.py", outputs=["model:m"], inputs=["fs:x"])
+        return PipelineGraph([fs, m])
 
-    def test_transitive_chain_and_orders(self):
-        a = node("a.py", outputs=["fs:x"])
-        b = node("b.py", inputs=["fs:x"], outputs=["fs:y"])
-        c = node("c.py", inputs=["fs:y"], outputs=["model:c"])
-        result = with_dependencies([c], [a, b, c])
-        assert {n.script for n in result} == {"a.py", "b.py", "c.py"}
-        assert topo_order(result) == [a, b, c]  # schedules producers first
+    def test_ancestors_and_descendants(self):
+        g = self._chain()
+        assert g.ancestors("model:m") == {"ds:raw", "fs:x"}
+        assert g.descendants("ds:raw") == {"fs:x", "model:m"}
+
+    def test_root_can_be_any_type(self):
+        # A FeatureSet built elsewhere (no producer) is a perfectly good root.
+        m = job("m.py", outputs=["model:m"], inputs=["fs:external"])
+        g = PipelineGraph([m])
+        assert g.roots() == ["fs:external"]
+        assert g.descendants("fs:external") == {"model:m"}
+
+    def test_subdag_upstream(self):
+        g = self._chain()
+        sub = g.subdag(["model:m"])  # upstream by default
+        assert set(sub.nodes) == {"ds:raw", "fs:x", "model:m"}
+
+    def test_subdag_downstream(self):
+        g = self._chain()
+        sub = g.subdag(["ds:raw"], upstream=False, downstream=True)
+        assert set(sub.nodes) == {"ds:raw", "fs:x", "model:m"}
+
+
+class TestJobOrdering:
+    def test_producer_before_consumer(self):
+        fs = job("fs.py", outputs=["fs:x"])
+        m = job("m.py", inputs=["fs:x"])
+        order = PipelineGraph([m, fs]).job_order()
+        assert [j.node_id for j in order] == ["fs", "m"]
+
+    def test_cross_pipeline(self):
+        fs = job("fs.py", outputs=["fs:x"], group="a")
+        m = job("m.py", inputs=["fs:x"], group="b")
+        order = PipelineGraph([m, fs]).job_order()
+        assert [j.node_id for j in order] == ["fs", "m"]
+
+    def test_subset_still_globally_ordered(self):
+        fs = job("fs.py", outputs=["fs:x"])
+        m = job("m.py", inputs=["fs:x"], outputs=["model:m"])
+        g = PipelineGraph([fs, m])
+        assert [j.node_id for j in g.job_order(subset=[m, fs])] == ["fs", "m"]
+
+
+class TestSelect:
+    def test_pulls_transitive_producers(self):
+        a = job("a.py", outputs=["fs:x"])
+        b = job("b.py", inputs=["fs:x"], outputs=["fs:y"])
+        c = job("c.py", inputs=["fs:y"], outputs=["model:c"])
+        g = PipelineGraph([a, b, c])
+        selected = g.select([c])
+        assert {j.script for j in selected} == {"a.py", "b.py", "c.py"}
+        assert [j.node_id for j in g.job_order(subset=selected)] == ["a", "b", "c"]
 
     def test_external_input_adds_nothing(self):
-        m = node("m.py", inputs=["ds:raw"])  # ds:raw has no in-set producer
-        result = with_dependencies([m], [m])
-        assert [n.script for n in result] == ["m.py"]
+        m = job("m.py", inputs=["ds:raw"])  # ds:raw has no producer
+        g = PipelineGraph([m])
+        assert {j.script for j in g.select([m])} == {"m.py"}
 
     def test_unrelated_producers_excluded(self):
-        fs = node("fs.py", outputs=["fs:x"])
-        m = node("m.py", inputs=["fs:x"])
-        other = node("other.py", outputs=["fs:z"])  # produces something nobody selected needs
-        result = with_dependencies([m], [fs, m, other])
-        assert {n.script for n in result} == {"fs.py", "m.py"}
+        fs = job("fs.py", outputs=["fs:x"])
+        m = job("m.py", inputs=["fs:x"])
+        other = job("other.py", outputs=["fs:z"])
+        g = PipelineGraph([fs, m, other])
+        assert {j.script for j in g.select([m])} == {"fs.py", "m.py"}
 
 
-class TestEffectiveSourceTime:
-    def test_walks_to_leaf_datasource(self):
-        # ds:raw -> fs:x -> model:m ; freshness of model roots at ds:raw's time.
-        fs = node("fs.py", outputs=["fs:x"], inputs=["ds:raw"])
-        m = node("m.py", outputs=["model:m"], inputs=["fs:x"])
-        index = build_producer_index([fs, m])
-        assert effective_source_time("fs:x", index, clock({"ds:raw": 100})) == 100
+class TestPlan:
+    """Forward flood: a change pushes the full downstream path, in order."""
 
-    def test_takes_latest_of_multiple_inputs(self):
-        fs = node("fs.py", outputs=["fs:x"], inputs=["ds:a", "ds:b"])
-        index = build_producer_index([fs])
-        assert effective_source_time("fs:x", index, clock({"ds:a": 5, "ds:b": 9})) == 9
+    def _dag(self):
+        # ds:raw -> fs:x (one pipeline) -> model:m (another)
+        fs = job("fs.py", outputs=["fs:x"], inputs=["ds:raw"], group="features")
+        m = job("m.py", outputs=["model:m"], inputs=["fs:x"], group="models")
+        return PipelineGraph([m, fs])  # deliberately out of order
 
-    def test_leaf_uses_own_time(self):
-        # No producer for ds:raw -> use its own mtime.
-        assert effective_source_time("ds:raw", {}, clock({"ds:raw": 42})) == 42
+    def test_missing_output_runs(self):
+        g = self._dag()
+        # model:m absent, fs:x present and fresh -> only m runs (missing).
+        plan = g.plan(clock({"ds:raw": 1, "fs:x": 5}))
+        assert ran(plan) == {"m": "missing"}
 
+    def test_changed_source_floods_whole_path_in_order(self):
+        g = self._dag()
+        # ds:raw newer than both outputs: fs goes stale, m inherits via upstream.
+        plan = g.plan(clock({"ds:raw": 100, "fs:x": 10, "model:m": 10}))
+        scheduled = [j.node_id for j, run, _ in plan if run]
+        assert scheduled == ["fs", "m"]
+        assert ran(plan) == {"fs": "stale", "m": "upstream"}
 
-class TestNeedsRun:
-    def _graph(self):
-        fs = node("fs.py", outputs=["fs:x"], inputs=["ds:raw"])
-        m = node("m.py", outputs=["model:m"], inputs=["fs:x"])
-        return m, build_producer_index([fs, m])
+    def test_up_to_date_pushes_nothing(self):
+        g = self._dag()
+        plan = g.plan(clock({"ds:raw": 1, "fs:x": 50, "model:m": 60}))
+        assert ran(plan) == {}
 
-    def test_missing_output(self):
-        m, index = self._graph()
-        # model:m absent -> must run.
-        assert needs_run(m, index, clock({"ds:raw": 1})) == (True, "missing")
-
-    def test_stale_when_source_newer(self):
-        m, index = self._graph()
-        # source (ds:raw=10) newer than output (model:m=5) -> stale.
-        assert needs_run(m, index, clock({"ds:raw": 10, "model:m": 5})) == (True, "stale")
-
-    def test_up_to_date(self):
-        m, index = self._graph()
-        # output (20) newer than source (10) -> skip.
-        assert needs_run(m, index, clock({"ds:raw": 10, "model:m": 20})) == (False, "up_to_date")
+    def test_plan_is_topologically_ordered(self):
+        g = self._dag()
+        order = [j.node_id for j, _, _ in g.plan(clock({"ds:raw": 100}))]
+        assert order.index("fs") < order.index("m")
 
     def test_unmanaged_without_outputs(self):
-        n = node("x.py", inputs=["ds:raw"])
-        assert needs_run(n, {}, clock({"ds:raw": 1})) == (True, "unmanaged")
+        g = PipelineGraph([job("x.py", inputs=["ds:raw"])])
+        assert ran(g.plan(clock({"ds:raw": 1}))) == {"x": "unmanaged"}
 
-    def test_no_inputs_runs(self, capsys):
-        n = node("x.py", outputs=["model:m"])
-        assert needs_run(n, {}, clock({"model:m": 1})) == (True, "no_inputs")
+    def test_no_inputs_runs_and_warns(self, capsys):
+        g = PipelineGraph([job("x.py", outputs=["model:m"])])
+        assert ran(g.plan(clock({"model:m": 1}))) == {"x": "no_inputs"}
         assert "no inputs" in capsys.readouterr().out
 
 
-class TestPlanRuns:
-    """The scheduler: source change pushes the full downstream path, in order."""
+class TestMultiOutputJob:
+    """A job runs as a unit; any stale output reruns it and refreshes them all."""
 
-    def _dag(self):
-        # ds:raw -> fs:x (cross to another pipeline) -> model:m
-        fs = node("fs.py", outputs=["fs:x"], inputs=["ds:raw"], group="features")
-        m = node("m.py", outputs=["model:m"], inputs=["fs:x"], group="models")
-        return [m, fs]  # deliberately out of order
-
-    def test_changed_source_pushes_whole_path_in_order(self):
-        nodes = self._dag()
-        # ds:raw newer than both outputs -> both stale, producer first.
-        plan = plan_runs(nodes, clock({"ds:raw": 100, "fs:x": 10, "model:m": 10}))
-        # Producer (fs) ordered before consumer (m), both flagged stale.
-        scheduled = [n.node_id for n, run, _ in plan if run]
-        assert scheduled == ["fs", "m"]
-        assert all(reason == "stale" for _, run, reason in plan if run)
-
-    def test_up_to_date_source_pushes_nothing(self):
-        nodes = self._dag()
-        # outputs newer than source -> nothing to push.
-        plan = plan_runs(nodes, clock({"ds:raw": 1, "fs:x": 50, "model:m": 60}))
-        assert [n.node_id for n, run, _ in plan if run] == []
-
-    def test_plan_is_topologically_ordered(self):
-        nodes = self._dag()
-        plan = plan_runs(nodes, clock({"ds:raw": 100}))  # everything missing/stale
-        order = [n.node_id for n, _, _ in plan]
-        assert order.index("fs") < order.index("m")
+    def test_one_stale_output_reruns_job_and_floods_siblings(self):
+        # producer emits fs:a + fs:b; consumers of each depend on the one job.
+        producer = job("p.py", outputs=["fs:a", "fs:b"], inputs=["ds:raw"])
+        ca = job("ca.py", inputs=["fs:a"], outputs=["model:a"])
+        cb = job("cb.py", inputs=["fs:b"], outputs=["model:b"])
+        g = PipelineGraph([producer, ca, cb])
+        # fs:a missing (so p reruns), fs:b + both models present and "fresh".
+        plan = g.plan(clock({"ds:raw": 1, "fs:b": 5, "model:a": 5, "model:b": 5}))
+        # p reruns (missing fs:a); both consumers inherit even though fs:b looked fresh.
+        assert ran(plan) == {"p": "missing", "ca": "upstream", "cb": "upstream"}
 
 
 class TestSimulatedMtime:
-    """Simulating a modified source propagates staleness; a produced fs does not."""
+    """Simulating a modified ref propagates forward, whatever the ref's type."""
 
     def _dag(self):
-        fs = node("fs.py", outputs=["fs:x"], inputs=["ds:raw"])
-        m = node("m.py", outputs=["model:m"], inputs=["fs:x"])
-        return [fs, m]
+        fs = job("fs.py", outputs=["fs:x"], inputs=["ds:raw"])
+        m = job("m.py", outputs=["model:m"], inputs=["fs:x"])
+        return PipelineGraph([fs, m])
 
     def test_modified_source_propagates(self):
-        plan = plan_runs(self._dag(), simulated_mtime(["ds:raw"]))
-        runs = {n.node_id: reason for n, run, reason in plan if run}
-        assert runs == {"fs": "stale", "m": "stale"}
+        plan = self._dag().plan(simulated_mtime(["ds:raw"]))
+        assert ran(plan) == {"fs": "stale", "m": "upstream"}
 
-    def test_modified_internal_fs_is_a_noop(self):
-        # fs:x is produced by fs.py, so freshness roots at ds:raw -- not fs:x.
-        plan = plan_runs(self._dag(), simulated_mtime(["fs:x"]))
-        assert [n.node_id for n, run, _ in plan if run] == []
+    def test_modified_intermediate_fs_now_propagates(self):
+        # Forward flood, no backtracking: a modified intermediate FeatureSet
+        # triggers its consumers (its own producer stays put -- already fresh).
+        plan = self._dag().plan(simulated_mtime(["fs:x"]))
+        assert ran(plan) == {"m": "stale"}
 
     def test_unrelated_source_does_not_trigger(self):
-        plan = plan_runs(self._dag(), simulated_mtime(["ds:other"]))
-        assert [n.node_id for n, run, _ in plan if run] == []
+        plan = self._dag().plan(simulated_mtime(["ds:other"]))
+        assert ran(plan) == {}
+
+    def test_stale_artifacts_view(self):
+        g = self._dag()
+        assert g.stale_artifacts(simulated_mtime(["ds:raw"])) == {"fs:x", "model:m"}
