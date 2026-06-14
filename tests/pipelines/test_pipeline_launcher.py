@@ -14,7 +14,7 @@ from workbench.scripts.ml_pipeline_launcher import (
     run_label,
     sort_pipelines,
 )
-from workbench.utils.pipelines_manager import PipelineGraph
+from workbench.lambda_layer.pipelines_manager import PipelineGraph
 
 
 def node(script, mode=None, outputs=None, inputs=None):

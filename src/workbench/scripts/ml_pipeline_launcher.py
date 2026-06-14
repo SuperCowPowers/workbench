@@ -33,7 +33,7 @@ from pathlib import Path
 
 from workbench.utils.repl_utils import colors as REPL_COLORS
 from workbench.utils.tree_render import render_forest
-from workbench.utils.pipelines_manager import (
+from workbench.lambda_layer.pipelines_manager import (
     Job,
     PipelineGraph,
     parse_spec,

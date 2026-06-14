@@ -7,7 +7,7 @@ in the dict (i.e. "doesn't exist yet").
 
 import pytest
 
-from workbench.utils.pipelines_manager import (
+from workbench.lambda_layer.pipelines_manager import (
     Job,
     PipelineGraph,
     parse_spec,
