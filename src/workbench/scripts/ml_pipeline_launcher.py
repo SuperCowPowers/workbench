@@ -33,9 +33,9 @@ from pathlib import Path
 
 from workbench.utils.repl_utils import colors as REPL_COLORS
 from workbench.utils.tree_render import render_forest
-from workbench.lambda_layer.pipelines_manager import (
+from workbench.lambda_layer.pipeline_manager import (
     Job,
-    PipelineGraph,
+    PipelineManager,
     parse_spec,
     ref_name,
     ref_type,
@@ -401,12 +401,12 @@ def _build_dag_plan(
         # ppb_mt consuming a FeatureSet built by ppb_human_free) resolves to a
         # real edge instead of being mistaken for an external input.
         all_nodes = [n for nodes in grouped.values() for n in nodes]
-        pg = PipelineGraph(all_nodes)
+        pm = PipelineManager.from_jobs(all_nodes)
 
         # Emit runs in global topological order so every producer precedes its
         # consumers, even when the consumer lives in another pipeline.
         selected_nodes = []
-        for node in pg.job_order():
+        for node in pm._ordered_batch_jobs():
             if not _node_selected(node, mode_filter):
                 continue
             plan.add_run(
@@ -506,7 +506,7 @@ def select_pipelines(
       scripts (not in any DAG) are skipped — to be run by ``--all``, declare it.
     - ``--patterns`` matches against all discovered scripts (declared *and*
       standalone) and pulls in each match's transitive upstream producers (via
-      ``PipelineGraph.select``), so the dependencies of a matched pipeline run first.
+      ``PipelineManager._select``), so the dependencies of a matched pipeline run first.
 
     Returns:
         tuple[list[Path], str]: (selected_pipelines, human-readable selection description)
@@ -522,7 +522,7 @@ def select_pipelines(
         matched_set = set(matched)
         target_nodes = [n for n in all_nodes if n.script in matched_set]
         # matched_set keeps any loose (non-DAG) matches; the closure adds declared deps.
-        wanted = matched_set | {n.script for n in PipelineGraph(all_nodes).select(target_nodes)}
+        wanted = matched_set | {n.script for n in PipelineManager.from_jobs(all_nodes)._select(target_nodes)}
         selected = [p for p in all_pipelines if p in wanted]  # preserve discovery order
         return selected, f"matching {args.patterns} (+ dependencies)"
 
@@ -698,7 +698,7 @@ def run_simulation(all_dags, modified_refs):
     # Lambda but noise here, and our summary already counts them, so swallow it.
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        plan = PipelineGraph(global_nodes).plan(simulated_mtime(modified_refs))
+        plan = PipelineManager.from_jobs(global_nodes)._plan(simulated_mtime(modified_refs))
     runs = [(node, reason) for node, should_run, reason in plan if should_run]
     triggered = sum(1 for _, reason in runs if reason in ("stale", "upstream", "missing"))
     always_run = sum(1 for _, reason in runs if reason in ("no_inputs", "unmanaged"))

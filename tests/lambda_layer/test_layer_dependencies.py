@@ -1,12 +1,11 @@
 """Dependency-creep guard for the workbench.lambda_layer subpackage.
 
 Everything under workbench.lambda_layer ships in the published workbench Lambda
-layer, whose only bundled third-party dependency is networkx (boto3/botocore are
-provided by the Lambda runtime; pandas rides along but the layer code must not
-*require* it). This test pins that budget: it imports every module in the
-subpackage with all non-allowlisted top-level imports blocked, so adding a module
-that drags a new dependency fails here -- loudly, naming the offender -- instead
-of at deploy time with a CloudWatch ``No module named ...``.
+layer, whose bundled third-party deps are networkx and pandas (boto3/botocore are
+provided by the Lambda runtime). This test pins that budget: it imports every
+module in the subpackage with all non-allowlisted top-level imports blocked, so
+adding a module that drags a new dependency fails here -- loudly, naming the
+offender -- instead of at deploy time with a CloudWatch ``No module named ...``.
 
 To intentionally grow the layer's footprint, add the dependency to ALLOWED below
 (and to the layer build's requirements).
@@ -22,7 +21,8 @@ import pytest
 # layer code may import:
 ALLOWED = {
     "workbench",  # internal (the subpackage and its siblings it reaches)
-    "networkx",  # the one bundled third-party dep
+    "networkx",  # bundled third-party dep
+    "pandas",  # bundled third-party dep (pulls numpy/dateutil/pytz transitively)
     "boto3",  # provided by the Lambda runtime
     "botocore",  # provided by the Lambda runtime
 }

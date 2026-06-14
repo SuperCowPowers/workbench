@@ -14,7 +14,7 @@ from workbench.scripts.ml_pipeline_launcher import (
     run_label,
     sort_pipelines,
 )
-from workbench.lambda_layer.pipelines_manager import PipelineGraph
+from workbench.lambda_layer.pipeline_manager import PipelineManager
 
 
 def node(script, mode=None, outputs=None, inputs=None):
@@ -82,13 +82,13 @@ class TestLoadPipelinesConfig:
 
 
 class TestJobGraph:
-    """Tests for the job-level DAG the launcher orders on (PipelineGraph.job_graph)."""
+    """Tests for the job-level DAG the launcher orders on (PipelineManager.job_graph)."""
 
     def test_edges_derived_from_artifacts(self):
         """An input artifact links the consumer to its producer."""
         producer = node("fs.py", outputs=["fs:x"])
         consumer = node("model.py", inputs=["fs:x"])
-        graph = PipelineGraph([producer, consumer]).job_graph
+        graph = PipelineManager.from_jobs([producer, consumer]).job_graph
 
         assert graph.number_of_edges() == 1
         assert graph.has_edge((Path("fs.py"), None), (Path("model.py"), None))
@@ -100,19 +100,19 @@ class TestJobGraph:
             node("a.py", inputs=["fs:x"]),
             node("b.py", inputs=["fs:x"]),
         ]
-        graph = PipelineGraph(nodes).job_graph
+        graph = PipelineManager.from_jobs(nodes).job_graph
         assert graph.number_of_edges() == 2
         assert graph.out_degree((Path("fs.py"), None)) == 2
 
     def test_duplicate_producer_raises(self):
         """Two nodes outputting the same artifact is a hard error."""
         with pytest.raises(ValueError, match="produced by both"):
-            PipelineGraph([node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
+            PipelineManager.from_jobs([node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
 
     def test_cycle_raises(self):
         """A dependency cycle is a hard error."""
         with pytest.raises(ValueError, match="cycle"):
-            PipelineGraph(
+            PipelineManager.from_jobs(
                 [
                     node("a.py", outputs=["fs:x"], inputs=["fs:y"]),
                     node("b.py", outputs=["fs:y"], inputs=["fs:x"]),
@@ -121,7 +121,7 @@ class TestJobGraph:
 
     def test_dangling_input_tolerated(self, capsys):
         """An input with no producer is tolerated silently (it's an external root)."""
-        graph = PipelineGraph([node("a.py", inputs=["fs:external"])]).job_graph
+        graph = PipelineManager.from_jobs([node("a.py", inputs=["fs:external"])]).job_graph
         assert graph.number_of_nodes() == 1  # the one job
         assert graph.number_of_edges() == 0
         assert capsys.readouterr().err == ""  # no warning noise
@@ -129,7 +129,7 @@ class TestJobGraph:
     def test_duplicate_node_raises(self):
         """The same (script, mode) declared twice is a hard error."""
         with pytest.raises(ValueError, match="duplicate job"):
-            PipelineGraph([node("a.py", mode="dt"), node("a.py", mode="dt")])
+            PipelineManager.from_jobs([node("a.py", mode="dt"), node("a.py", mode="dt")])
 
 
 class TestSortPipelines:

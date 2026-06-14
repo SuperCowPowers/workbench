@@ -1,0 +1,7 @@
+# Third-party dependencies bundled into the workbench Lambda layer.
+#
+# Keep this in lockstep with the dependency budget enforced by
+# tests/lambda_layer/test_layer_dependencies.py (ALLOWED). boto3/botocore are
+# provided by the Lambda runtime, so they are deliberately NOT listed here.
+networkx
+pandas
