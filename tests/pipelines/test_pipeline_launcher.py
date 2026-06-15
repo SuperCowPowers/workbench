@@ -22,6 +22,16 @@ def node(script, mode=None, outputs=None, inputs=None):
     return Job(Path(script), mode, outputs or [], inputs or [])
 
 
+@pytest.fixture(autouse=True)
+def all_stale(monkeypatch):
+    """Launcher tests run without AWS. Make the built-in mtime resolver report
+    every artifact missing, so all selected jobs are stale and run -- these tests
+    cover selection / ordering / mode / display, not freshness (which is tested in
+    test_pipeline_manager). Individual tests override for freshness behavior.
+    """
+    monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: None)
+
+
 class TestLoadPipelinesConfig:
     """Tests for loading pipelines.json into PipelineNode lists."""
 
@@ -280,6 +290,37 @@ class TestSortPipelines:
         plan = sort_pipelines([], {})
         assert plan.runs == []
         assert plan.display_lines == []
+
+
+class TestFreshness:
+    """The launcher is mtime-aware: only stale jobs run; --full-dag still shows all."""
+
+    def _dags(self, tmp_path):
+        fs = tmp_path / "fs.py"
+        m = tmp_path / "m.py"
+        dags = {"p": [node(fs, outputs=["fs:x"], inputs=["ds:raw"]), node(m, inputs=["fs:x"], outputs=["model:m"])]}
+        return fs, m, dags
+
+    def test_up_to_date_runs_nothing(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}  # outputs newer than source
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        assert sort_pipelines([fs, m], dags).runs == []
+
+    def test_stale_source_runs_whole_path(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 100, "fs:x": 10, "model:m": 10}  # source newer -> both stale
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        assert {s for s, _ in sort_pipelines([fs, m], dags).runs} == {fs, m}
+
+    def test_full_dag_shows_closure_even_when_nothing_stale(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        plan = sort_pipelines([fs, m], dags, full_dag=True)
+        assert plan.runs == []  # nothing stale -> nothing submits
+        text = "\n".join(plan.display_lines)
+        assert "fs:x" in text and "model:m" in text  # ...but the closure is still rendered
 
 
 class TestGetAllPipelines:

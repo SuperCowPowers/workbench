@@ -196,6 +196,10 @@ def sort_pipelines(
     pipelines: list[Path],
     all_dags: dict[str, list[Job]],
     mode: str | None = None,
+    selected_keys: set | None = None,
+    mtime_fn=None,
+    full_dag: bool = False,
+    session=None,
 ) -> RunPlan:
     """Sort pipelines into a topologically ordered run plan.
 
@@ -224,7 +228,15 @@ def sort_pipelines(
     if mode and mode in OVERRIDE_MODES:
         return _build_override_plan(pipelines, all_dags, mode)
 
-    return _build_dag_plan(pipelines, all_dags, mode_filter=mode)
+    return _build_dag_plan(
+        pipelines,
+        all_dags,
+        mode_filter=mode,
+        selected_keys=selected_keys,
+        mtime_fn=mtime_fn,
+        full_dag=full_dag,
+        session=session,
+    )
 
 
 def _build_override_plan(
@@ -356,26 +368,40 @@ def _build_dag_plan(
     pipelines: list[Path],
     all_dags: dict[str, list[Job]],
     mode_filter: str | None = None,
+    selected_keys: set | None = None,
+    mtime_fn=None,
+    full_dag: bool = False,
+    session=None,
 ) -> RunPlan:
-    """Build a plan in topological order, optionally filtering by mode.
+    """Build a plan of the stale jobs to run, in dependency order.
 
-    Edges are derived from each pipeline's outputs/inputs artifacts. The
-    full (all-mode) graph is built so cross-mode producers resolve, then only
-    the nodes selected by ``mode_filter`` are emitted, preserving topological
-    order. A node's produced/consumed artifacts become its outputs/inputs for
-    the batch dependency layer.
+    Edges are derived from each pipeline's outputs/inputs artifacts. The full
+    (all-mode) graph is built so cross-mode producers resolve, then freshness
+    decides what runs: a job submits only when stale (forward flood). A node's
+    produced/consumed artifacts become its outputs/inputs for the batch
+    dependency layer.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
         all_dags (dict): DAG definitions from pipelines.json files
         mode_filter (str | None): If set, only include runs for this mode
+        selected_keys (set | None): If set, restrict to these ``(script, mode)``
+            job keys -- so a dependency contributes only its needed mode, not every
+            mode of its script. When None, every mode of every ``pipelines`` script
+            is eligible (used by ``--all`` and direct callers/tests).
+        mtime_fn (callable | None): Freshness clock; None -> real AWS mtimes.
+        full_dag (bool): Display the whole selected closure (up-to-date nodes
+            included) instead of just the will-run paths.
 
     Returns:
-        RunPlan: Execution plan with runs in topological order
+        RunPlan: Execution plan with the stale runs in topological order
     """
     pipeline_set = set(pipelines)
     plan = RunPlan()
     found_in_dag = set()
+
+    def in_selection(node: Job) -> bool:
+        return node.key in selected_keys if selected_keys is not None else node.script in pipeline_set
 
     def runtime_mode(node: Job) -> str | None:
         # A named non-filter mode (e.g. "fs") runs as itself; a modeless node
@@ -388,7 +414,7 @@ def _build_dag_plan(
     # pipeline so the file-wide graph can be split back into per-pipeline trees.
     grouped: dict[str, list[Job]] = {}
     for name, nodes in all_dags.items():
-        in_pipeline = [n for n in nodes if n.script in pipeline_set]
+        in_pipeline = [n for n in nodes if in_selection(n)]
         found_in_dag.update(n.script for n in in_pipeline)
         if not in_pipeline:
             continue
@@ -401,28 +427,33 @@ def _build_dag_plan(
         # ppb_mt consuming a FeatureSet built by ppb_human_free) resolves to a
         # real edge instead of being mistaken for an external input.
         all_nodes = [n for nodes in grouped.values() for n in nodes]
-        pm = PipelineManager.from_jobs(all_nodes)
+        pm = PipelineManager.from_jobs(all_nodes, session=session)
 
-        # Emit runs in global topological order so every producer precedes its
-        # consumers, even when the consumer lives in another pipeline.
-        selected_nodes = []
-        for node in pm._ordered_batch_jobs():
-            if not _node_selected(node, mode_filter):
+        # Freshness decides what runs: a job submits only when stale (mtime_fn
+        # None -> real AWS mtimes). Emit in global topological order so every
+        # producer precedes its consumers, honoring the mode filter.
+        decisions = pm._plan(mtime_fn)
+        mode_jobs = [job for job, _, _ in decisions if _node_selected(job, mode_filter)]
+        will_run = []
+        for job, should_run, _reason in decisions:
+            if not _node_selected(job, mode_filter) or not should_run:
                 continue
             plan.add_run(
-                node.script,
-                runtime_mode(node),
-                group_id=node.group,
-                outputs=node.outputs,
-                inputs=node.inputs,
+                job.script,
+                runtime_mode(job),
+                group_id=job.group,
+                outputs=job.outputs,
+                inputs=job.inputs,
             )
-            selected_nodes.append(node)
+            will_run.append(job)
 
-        # Render the true global data-flow DAG (artifacts + scripts), not sliced
-        # per-pipeline trees. Resolution is judged against every pipeline in the
-        # repo, so an input stays green even when its producer isn't selected.
+        # Render the global data-flow DAG (artifacts + scripts). Resolution is
+        # judged against every pipeline in the repo, so an input stays green even
+        # when its producer isn't selected. Default shows only the will-run paths;
+        # --full-dag shows the whole selected closure for diagnosing dependencies.
         produced = {ref for nodes in all_dags.values() for n in nodes for ref in n.outputs}
-        plan.display_lines.extend(render_dataflow(selected_nodes, runtime_mode, produced))
+        display_nodes = mode_jobs if full_dag else will_run
+        plan.display_lines.extend(render_dataflow(display_nodes, runtime_mode, produced))
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
@@ -499,7 +530,7 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
 
 def select_pipelines(
     all_pipelines: list[Path], all_dags: dict[str, list[Job]], args: argparse.Namespace
-) -> tuple[list[Path], str]:
+) -> tuple[list[Path], set | None, str]:
     """Select which pipelines to run based on CLI args.
 
     - ``--all`` runs every script declared in a ``pipelines.json`` DAG. Standalone
@@ -509,7 +540,12 @@ def select_pipelines(
       ``PipelineManager._select``), so the dependencies of a matched pipeline run first.
 
     Returns:
-        tuple[list[Path], str]: (selected_pipelines, human-readable selection description)
+        tuple: (selected_scripts, selected_keys, description). ``selected_keys`` is
+        the precise set of ``(script, mode)`` job keys to run -- a matched script
+        contributes all its modes, but a dependency only the ``(script, mode)``
+        actually in the closure (so a pulled-in ``logd [dt]`` producer doesn't
+        also drag along its unrelated ``logd [ts]`` sibling). ``None`` for ``--all``
+        (run every mode of every declared script).
     """
     all_nodes = [node for nodes in all_dags.values() for node in nodes]
     declared = {node.script for node in all_nodes}
@@ -520,15 +556,18 @@ def select_pipelines(
             print(f"No pipelines matching patterns: {args.patterns}")
             exit(1)
         matched_set = set(matched)
+        # All modes of matched scripts are targets; the closure adds each target's
+        # transitive upstream producer *jobs* (specific (script, mode)).
         target_nodes = [n for n in all_nodes if n.script in matched_set]
-        # matched_set keeps any loose (non-DAG) matches; the closure adds declared deps.
-        wanted = matched_set | {n.script for n in PipelineManager.from_jobs(all_nodes)._select(target_nodes)}
+        closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes)
+        selected_keys = {n.key for n in closure}
+        wanted = matched_set | {n.script for n in closure}  # matched_set keeps loose (non-DAG) matches
         selected = [p for p in all_pipelines if p in wanted]  # preserve discovery order
-        return selected, f"matching {args.patterns} (+ dependencies)"
+        return selected, selected_keys, f"matching {args.patterns} (+ dependencies)"
 
     if args.all:
         selected = [p for p in all_pipelines if p in declared]  # declared DAG scripts only
-        return selected, "ALL"
+        return selected, None, "ALL"
 
     print("Specify pipeline patterns or use --all to launch all pipelines.")
     exit(1)
@@ -663,6 +702,11 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser.add_argument("--realtime", action="store_true", help="Create realtime endpoints (default is serverless)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be launched without actually launching")
     parser.add_argument(
+        "--full-dag",
+        action="store_true",
+        help="Show the whole selected dependency closure (incl. up-to-date nodes), not just what will run",
+    )
+    parser.add_argument(
         "--sim-mod",
         nargs="+",
         metavar="REF",
@@ -742,7 +786,7 @@ def main():
         return
 
     # Select which pipelines to run
-    selected, selection_desc = select_pipelines(all_pipelines, all_dags, args)
+    selected, selected_keys, selection_desc = select_pipelines(all_pipelines, all_dags, args)
 
     # Validate --local before doing more work
     if args.local and len(selected) > 1:
@@ -755,9 +799,13 @@ def main():
     # Resolve execution mode
     mode = resolve_mode(args)
 
-    # Build execution plan
+    # Build execution plan (mtime-aware: only stale jobs run). Hand the manager
+    # workbench's region-bound, assumed-role session so it can resolve mtimes.
+    from workbench.core.cloud_platform.aws.aws_session import AWSSession
+
+    session = AWSSession().boto3_session
     try:
-        plan = sort_pipelines(selected, all_dags, mode)
+        plan = sort_pipelines(selected, all_dags, mode, selected_keys, full_dag=args.full_dag, session=session)
     except ValueError as e:
         print(f"\nERROR: {e}")
         exit(1)

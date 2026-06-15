@@ -192,6 +192,13 @@ class TestPlan:
         plan = self._dag()._plan(clock({"ds:raw": 1, "fs:x": 50, "model:m": 60}))
         assert ran(plan) == {}
 
+    def test_defaults_to_builtin_resolver(self):
+        # No clock passed -> uses the cached real resolver. Pre-seed the cache so
+        # no AWS call happens (every ref in this dag is seeded).
+        mgr = self._dag()
+        mgr._mtime_cache = {"ds:raw": 100, "fs:x": 10, "model:m": 10}
+        assert ran(mgr._plan()) == {"fs": "stale", "m": "upstream"}
+
     def test_unmanaged_without_outputs(self):
         assert ran(pm([job("x.py", inputs=["ds:raw"])])._plan(clock({"ds:raw": 1}))) == {"x": "unmanaged"}
 
@@ -211,28 +218,6 @@ class TestMultiOutputJob:
         assert ran(plan) == {"p": "missing", "ca": "upstream", "cb": "upstream"}
 
 
-class TestOrderedBatchJobs:
-    def _dag(self):
-        return pm(
-            [
-                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"]),
-                job("m.py", outputs=["model:m"], inputs=["fs:x"]),
-            ]
-        )
-
-    def test_all_jobs_when_no_clock(self):
-        assert [j.node_id for j in self._dag()._ordered_batch_jobs()] == ["fs", "m"]
-
-    def test_only_stale_with_clock(self):
-        jobs = self._dag()._ordered_batch_jobs(clock({"ds:raw": 1, "fs:x": 50, "model:m": 60}))
-        assert jobs == []  # all up to date
-
-    def test_subset_restricts_but_keeps_order(self):
-        mgr = self._dag()
-        only_fs = [j for j in mgr.jobs if j.stem == "fs"]
-        assert [j.node_id for j in mgr._ordered_batch_jobs(subset=only_fs)] == ["fs"]
-
-
 class TestSelect:
     def test_pulls_transitive_producers(self):
         a = job("a.py", outputs=["fs:x"])
@@ -244,6 +229,16 @@ class TestSelect:
     def test_external_input_adds_nothing(self):
         m = job("m.py", inputs=["ds:raw"])
         assert {j.script for j in pm([m])._select([m])} == {"m.py"}
+
+
+class TestPipelineMeta:
+    def test_model_node_carries_names(self):
+        meta = job("m.py", mode="dt", outputs=["model:ppb-reg-dt"]).pipeline_meta(serverless=True)
+        assert meta == {"serverless": True, "mode": "dt", "model_name": "ppb-reg-dt", "endpoint_name": "ppb-reg-dt"}
+
+    def test_modeless_producer_has_no_model(self):
+        meta = job("fs.py", outputs=["fs:x"]).pipeline_meta()
+        assert meta == {"serverless": True}
 
 
 class TestSimulatedMtime:

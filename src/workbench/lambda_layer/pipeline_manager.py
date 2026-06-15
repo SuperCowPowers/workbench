@@ -27,9 +27,11 @@ in topological order, a single pass pushes a whole ``ds -> fs -> model`` chain
 even though the intermediate artifacts have not been rebuilt yet -- no
 backtracking, nothing special-cases artifact type.
 
-Resolving a ref to a modified time needs AWS, so callers inject an
-``mtime_fn(ref) -> datetime | None``; the scheduling stays I/O-free and
-unit-testable with a fake clock.
+Resolving a ref to a modified time needs AWS. By default the manager does this
+itself (raw boto3, cached per instance) -- the normal path for both the launcher
+and the Lambda. A clock can be injected (``mtime_fn(ref) -> datetime | None``)
+only to simulate (``simulated_mtime``) or to unit-test with a fake clock; that
+override never touches the default path.
 """
 
 import json
@@ -91,6 +93,24 @@ class Job:
         """Human-readable label for messages: 'stem [mode]' or 'stem'."""
         return f"{self.stem} [{self.mode}]" if self.mode else self.stem
 
+    def pipeline_meta(self, serverless: bool = True) -> dict:
+        """The PIPELINE_META a run hands its script: mode + the names to create.
+
+        ``model_name``/``endpoint_name`` come from the declared ``model:`` output
+        (the DAG is the source of truth). Modeless producers (e.g. FeatureSets)
+        get just ``mode``/``serverless`` and no model. Shared by the launcher and
+        the DT Lambda; launcher-only modes (promote, filename fallback) wrap this.
+        """
+        meta: dict = {"serverless": serverless}
+        if self.mode is not None:
+            meta["mode"] = self.mode
+        model_ref = next((o for o in self.outputs if ref_type(o) == "model"), None)
+        if model_ref is not None:
+            name = ref_name(model_ref)
+            meta["model_name"] = name
+            meta["endpoint_name"] = name
+        return meta
+
 
 def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) -> list[Job]:
     """Parse one pipelines.json dict into Jobs, tagged by pipeline name.
@@ -139,13 +159,19 @@ class PipelineManager:
         _ordered_batch_jobs(mtime_fn=None) / _plan(mtime_fn) / _select(targets)
     """
 
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, session=None):
+        # session: an optional boto3 Session for mtime/S3 access. The launcher
+        # passes workbench's region-bound, assumed-role session; the Lambda passes
+        # None and gets the default client (region from AWS_REGION). Kept as a
+        # plain boto3 Session so the manager needs no workbench import.
+        self._session = session
         self._init_from_jobs(self._discover(str(path)))
 
     @classmethod
-    def from_jobs(cls, jobs: list[Job]) -> "PipelineManager":
+    def from_jobs(cls, jobs: list[Job], session=None) -> "PipelineManager":
         """Build from an in-memory job list, bypassing pipelines.json discovery."""
         obj = cls.__new__(cls)
+        obj._session = session
         obj._init_from_jobs(list(jobs))
         return obj
 
@@ -165,12 +191,11 @@ class PipelineManager:
             jobs += parse_spec(spec, script_resolver=lambda s, d=d: d / s)
         return jobs
 
-    @staticmethod
-    def _discover_s3(path: str) -> list[Job]:
+    def _discover_s3(self, path: str) -> list[Job]:
         import boto3  # lazy: only the Lambda path needs it (runtime-provided)
 
         bucket, _, prefix = path[len("s3://") :].partition("/")
-        s3 = boto3.client("s3")
+        s3 = (self._session or boto3).client("s3")
         jobs: list[Job] = []
         paginator = s3.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
@@ -187,6 +212,8 @@ class PipelineManager:
 
     def _init_from_jobs(self, jobs: list[Job]) -> None:
         self.jobs = jobs
+        self._mtime_cache: dict = {}  # ref -> mtime, resolved at most once per instance
+        self._aws: dict = {}  # boto3 client cache (lazy)
 
         # Each (script, mode) is a unique run.
         seen: set = set()
@@ -370,11 +397,62 @@ class PipelineManager:
             return True, "stale"
         return False, "up_to_date"
 
-    def _plan(self, mtime_fn) -> list[tuple[Job, bool, str]]:
+    def _aws_client(self, name: str):
+        import boto3  # lazy: from the Lambda runtime / workbench's boto3
+
+        if name not in self._aws:
+            self._aws[name] = (self._session or boto3).client(name)
+        return self._aws[name]
+
+    def _artifact_mtime(self, ref: str):
+        """Resolve a typed artifact ref to its last-modified time (None if absent).
+
+        Raw boto3 so it stays in the layer's dependency budget:
+            ds:<name>    -> Glue table UpdateTime
+            fs:<name>    -> FeatureGroup CreationTime
+            model:<name> -> latest model package CreationTime
+            endpoint:... -> not supported yet
+        A missing artifact (or transient lookup failure) returns None -> "must run".
+        """
+        kind, _, name = ref.partition(":")
+        if not name:
+            print(f"Unrecognized artifact ref (no type prefix): {ref!r}")
+            return None
+        try:
+            if kind == "ds":
+                return self._aws_client("glue").get_table(DatabaseName="workbench", Name=name)["Table"]["UpdateTime"]
+            if kind == "fs":
+                return self._aws_client("sagemaker").describe_feature_group(FeatureGroupName=name)["CreationTime"]
+            if kind == "model":
+                packages = self._aws_client("sagemaker").list_model_packages(
+                    ModelPackageGroupName=name, SortBy="CreationTime", SortOrder="Descending", MaxResults=1
+                )["ModelPackageSummaryList"]
+                return packages[0]["CreationTime"] if packages else None
+            if kind == "endpoint":
+                print(f"endpoint artifact refs are not supported yet: {ref!r}")
+                return None
+        except Exception as e:
+            print(f"_artifact_mtime({ref!r}) -> absent ({type(e).__name__}: {e})")
+            return None
+        print(f"Unknown artifact type in ref: {ref!r}")
+        return None
+
+    def _cached_mtime(self, ref: str):
+        """``_artifact_mtime`` memoized per instance (the freshness walk hits refs many times)."""
+        if ref not in self._mtime_cache:
+            self._mtime_cache[ref] = self._artifact_mtime(ref)
+        return self._mtime_cache[ref]
+
+    def _plan(self, mtime_fn=None) -> list[tuple[Job, bool, str]]:
         """Schedule the whole DAG: (job, should_run, reason) in topo order.
+
+        ``mtime_fn`` defaults to the built-in (real, cached) AWS resolver -- the
+        normal path. Pass a clock only to simulate (``simulated_mtime``) or test.
 
         Reasons: missing / stale / upstream / unmanaged / no_inputs / up_to_date.
         """
+        if mtime_fn is None:
+            mtime_fn = self._cached_mtime
         running: set = set()
         decisions: list[tuple[Job, bool, str]] = []
         for job in self._job_order():
@@ -383,23 +461,6 @@ class PipelineManager:
                 running.add(job.key)
             decisions.append((job, should_run, reason))
         return decisions
-
-    def _ordered_batch_jobs(self, mtime_fn=None, subset: list[Job] | None = None) -> list[Job]:
-        """Jobs to submit to Batch, in dependency order.
-
-        ``mtime_fn`` None -> every job (e.g. an explicit launch); a clock -> only
-        the stale jobs (the DT Lambda). ``subset`` restricts to those jobs (still
-        globally ordered) -- e.g. the launcher's selected pipelines.
-        """
-        if mtime_fn is None:
-            jobs = self._job_order()
-        else:
-            jobs = [job for job, should_run, _ in self._plan(mtime_fn) if should_run]
-        if subset is not None:
-            keys = {j.key for j in subset}
-            jobs = [j for j in jobs if j.key in keys]
-        return jobs
-
 
 def simulated_mtime(modified_refs):
     """An ``mtime_fn`` that marks ``modified_refs`` as freshly modified.
