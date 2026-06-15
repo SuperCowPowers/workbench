@@ -1,0 +1,9 @@
+{
+  "pipelines": {
+    "demo": [
+      {"script": "demo_fs.py", "outputs": ["fs:demo_features"], "inputs": ["ds:demo_raw"]},
+      {"script": "demo_reg.py", "mode": "dt", "outputs": ["model:demo-reg-dt"], "inputs": ["fs:demo_features"]},
+      {"script": "demo_reg.py", "mode": "ts", "outputs": ["model:demo-reg-ts"], "inputs": ["fs:demo_features"]}
+    ]
+  }
+}

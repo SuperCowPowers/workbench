@@ -48,7 +48,7 @@ done
 PYVER_TAG="python${PYTHON_VERSION//./}"   # 3.12 -> python312
 BUILD_DIR="$SCRIPT_DIR/build"
 PY_DIR="$BUILD_DIR/python"                  # Lambda puts <layer>/python on sys.path
-ZIP_PATH="$SCRIPT_DIR/workbench_lambda_layer-${PYVER_TAG}.zip"
+ZIP_PATH="$SCRIPT_DIR/workbench-lambda-layer-${PYVER_TAG}.zip"
 
 if [ "$DEPLOY" = true ]; then
   : "${AWS_PROFILE:?AWS_PROFILE environment variable is not set.}"
@@ -97,7 +97,7 @@ echo "======================================"
 for region in "${REGION_LIST[@]}"; do
   # -wip suffix while the layer's contents are churning -- keeps the rapid version
   # bumps off the "real" layer name. Drop -wip once the contents settle.
-  layer_name="workbench_lambda_layer-${region}-${PYVER_TAG}-wip"
+  layer_name="workbench-lambda-layer-${region}-${PYVER_TAG}-wip"
   echo "Publishing $layer_name in $region..."
 
   version=$(aws lambda publish-layer-version \
