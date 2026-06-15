@@ -31,8 +31,11 @@ client accounts attach them by ARN with no per-account permission grants. After
 Attach the layer ARN for your region/Python version, then:
 
 ```python
-from workbench.lambda_layer.pipelines_manager import PipelineGraph
+from workbench.lambda_layer.pipeline_manager import PipelineManager
 ```
+
+See [`example_lambda/`](example_lambda/) for a runnable, read-only example handler
+plus an offline smoke test that loads the built layer.
 
 To add more of workbench to the layer, move (or add) the module under
 `workbench.lambda_layer` and keep it within the dependency budget — if it needs

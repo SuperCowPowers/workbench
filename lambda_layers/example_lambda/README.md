@@ -25,7 +25,10 @@ Publish the layer, then create the function with the layer attached:
 # Publish the layer (notes the version N) -- see lambda_layers/build_deploy.sh
 AWS_PROFILE=<scp> ./lambda_layers/build_deploy.sh --deploy
 
-# Package + create the function (python3.12), attaching the layer ARN from above
+# Package + create the function (python3.12), attaching the layer ARN from above.
+# Currently published (bump the trailing version after each re-publish):
+#   arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:1
+#   arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:1
 cd lambda_layers/example_lambda
 zip handler.zip handler.py
 aws lambda create-function \
@@ -33,7 +36,7 @@ aws lambda create-function \
   --runtime python3.12 --handler handler.lambda_handler \
   --role <execution-role-arn> \
   --timeout 60 --memory-size 512 \
-  --layers arn:aws:lambda:<region>:507740646243:layer:workbench-lambda-layer-<region>-python312-wip:N \
+  --layers arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:1 \
   --zip-file fileb://handler.zip
 ```
 

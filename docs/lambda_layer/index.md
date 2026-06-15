@@ -1,112 +1,106 @@
-!!! tip inline end "Workbench Lambda Layers"
-    AWS Lambda Jobs are a great way to spin up data processing jobs. Follow this guide and empower AWS Lambda with Workbench!
+!!! tip inline end "Workbench Lambda Layer"
+    AWS Lambda is a great way to run lightweight, scheduled Workbench jobs. The Workbench Lambda layer ships a dependency-minimal slice of Workbench you can import directly — no packaging, no container.
 
-Workbench makes creating, testing, and debugging of AWS Lambda Functions easy. The exact same [Workbench API Classes](../api_classes/overview.md) are used in your AWS Lambda Functions. Also since Workbench manages the access policies you'll be able to test new Lambda Jobs locally and minimizes surprises when deploying.
-    
-!!! warning inline end "Work In Progress"
-    The Workbench Lambda Layers are a great way to use Workbench but they are still in 'beta' mode so please let us know if you have any issues.
-    
-## Lambda Job Setup
+The **Workbench Lambda layer** is a dependency-minimal slice of Workbench, published
+per region and Python version. It bundles **all of Workbench's source** plus only
+`networkx` and `pandas`; `boto3`/`botocore` come from the Lambda runtime. The heavy
+dependencies (torch, awswrangler, sagemaker, ...) are intentionally absent, so the
+layer stays small and imports fast.
 
-Setting up a AWS Lambda Job that uses Workbench is straight forward. Workbench can be 'installed' using a Lambda Layer and then you can use the Workbench API just like normal.
+!!! warning inline end "Scope"
+    The layer carries the [`workbench.lambda_layer`](https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/lambda_layer) subpackage — today, the `PipelineManager` that powers [ML Pipelines](../ml_pipelines/index.md). It does **not** carry the full Workbench API (e.g. `Meta`/`Model`), which needs the heavy dependencies.
 
-Here are the ARNs for the current Workbench Lambda Layers, please note they are specified with region and Python version in the name, so if your lambda is us-east-1, python 3.12, pick this ARN with those values in it.
+## Published ARNs
 
-### Python 3.12
- 
+Attach the ARN matching your region and Python version (3.12):
+
 **us-east-1**
 
-- arn:aws:lambda:us-east-1:507740646243:layer:workbench_lambda_layer-us-east-1-python312:2
+- `arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:1`
 
 **us-west-2**
 
-- arn:aws:lambda:us-west-2:507740646243:layer:workbench\_lambda\_layer-us-west-2-python312:3
+- `arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:1`
 
-**Note:** If you're using lambdas on a different region or with a different Python version, just let us know and we'll publish some additional layers.
+The published versions are made public (`lambda:GetLayerVersion` to `*`), so you
+attach them by ARN with no per-account permission grants. Need a different region or
+Python version? Let us know and we'll publish it.
 
-<img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
-src="https://github.com/user-attachments/assets/7d0e2fbe-b907-42bc-96bd-3b274d94c3de">
+!!! note "The `-wip` suffix"
+    The layer name carries `-wip` while its contents are still settling, and the
+    version (`:1`) bumps on each re-publish. Pin the exact version your function uses.
 
-At the bottom of the Lambda page there's an 'Add Layer' button. You can click that button and specify the layer using the ARN above. Also in the 'General Configuration' set these parameters:
+## Using it from a Lambda
 
-- Timeout: 5 Minutes
-- Memory: 4096
-- Ephemeral storage: 2048
+In the Lambda console, **Add a layer → Specify an ARN** and paste the ARN above.
+Then import and use `PipelineManager` directly:
 
-**Set the WORKBENCH_BUCKET ENV**
-Workbench will need to know what bucket to work out of, so go into the Configuration...Environment Variables... and add one for the Workbench bucket that your are using for AWS Account (dev, prod, etc).
-<img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
-src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b0b2a">
+```python
+from workbench.lambda_layer.pipeline_manager import PipelineManager
 
-
-!!! tip "Lambda Role Details"
-    If your Lambda Function already use an existing IAM Role then you can add the Workbench policies to that Role to enable the Lambda Job to perform Workbench API Tasks. See [Workbench Access Controls](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
-
-## Workbench Lambda Example
-Here's a simple example of using Workbench in your Lambda Function. 
-
-!!! warning "Workbench Layer is Compressed"
-    The Workbench Lambda Layer is compressed (*to fit all the awesome*). This means that the `load_lambda_layer()` method must be called before using any other Workbench imports, see the example below. If you do not do this you'll probably get a `No module named 'numpy'` error or something like that.
-
-```py title="examples/lambda_hello_world.py"
-import json
-from pprint import pprint
-from workbench.utils.lambda_utils import load_lambda_layer
-    
-# Load/Decompress the Workbench Lambda Layer
-load_lambda_layer()
-
-# After 'load_lambda_layer()' we can use other Workbench imports
-from workbench.api import Meta
-from workbench.api import Model 
 
 def lambda_handler(event, context):
-    
-    # Create our Meta Class and get a list of our Models
-    meta = Meta()
-    models = meta.models()
-    
-    print(f"Number of Models: {len(models)}")
-    print(models)
-        
-    # Onboard a model
-    model = Model("abalone-regression")
-    pprint(model.details())
-        
-    # Return success
-    return {
-        'statusCode': 200,
-        'body': { "incoming_event": event}
-    }
+    pm = PipelineManager(f"s3://{event['bucket']}/ml_pipelines/")
+    for item in pm.plan():            # (job, run, reason) per job, real AWS mtimes
+        if item.run:
+            ...  # submit item.job
 ```
 
-## Exception Log Forwarding
-When a Lambda Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use Workbench log forwarding the exception/stack will be forwarded to CloudWatch.
+`PipelineManager` uses the default boto3 session (the Lambda's role and region), so
+no Workbench config is required.
 
-```py
+<img alt="add lambda layer" src="https://github.com/user-attachments/assets/7d0e2fbe-b907-42bc-96bd-3b274d94c3de">
+
+### IAM
+
+The execution role needs read access to whatever artifacts the manager resolves
+modification times against (plus the bucket it discovers `pipelines.json` from):
+
+- `glue:GetTable` — DataSource update times
+- `sagemaker:DescribeFeatureGroup`, `sagemaker:ListModelPackages` — FeatureSet/Model times
+- `s3:GetObject`, `s3:ListBucket` — discovering `pipelines.json` files
+
+See [Workbench Access Controls](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing).
+
+### Runnable example
+
+A read-only example handler plus an offline smoke test (loads the *built* layer and
+runs without AWS) lives in
+[`lambda_layers/example_lambda/`](https://github.com/SuperCowPowers/workbench/tree/main/lambda_layers/example_lambda).
+Use it to validate the layer in your account before wiring up a real job.
+
+## Exception log forwarding
+
+When a Lambda crashes, the AWS console shows only the last line of the exception.
+Wrap your handler to forward the full stack to CloudWatch:
+
+```python
 from workbench.utils.workbench_logging import exception_log_forward
 
 with exception_log_forward():
-   <my lambda code>
-   ...
-   <exception happens>
-   <more of my code>
+    ...  # your lambda code; any exception/stack is forwarded to CloudWatch
 ```
-The `exception_log_forward` sets up a **context manager** that will trap exceptions and forward the exception/stack to CloudWatch for diagnosis. 
 
-## Lambda Function Local Testing
-Lambda Power without the Pain. Workbench manages the AWS Execution Role/Policies, so local API and Lambda Functions will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Lambda Functions a breeze.
+## Building and publishing
 
-```shell
-python my_lambda_function.py --workbench-bucket <your bucket>
+The layer is built and published from
+[`lambda_layers/`](https://github.com/SuperCowPowers/workbench/tree/main/lambda_layers):
+
+```bash
+./lambda_layers/build_deploy.sh                                    # build the zip locally
+AWS_PROFILE=<profile> ./lambda_layers/build_deploy.sh --deploy     # publish to us-east-1, us-west-2
 ```
+
+The dependency budget (source + `networkx` + `pandas`) is enforced by
+`tests/lambda_layer/test_layer_dependencies.py`, which fails if any `lambda_layer`
+module imports outside it.
 
 ## Additional Resources
-- Workbench Access Management: [Workbench Access Management](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
+
 - Setting up Workbench on your AWS Account: [AWS Setup](../aws_setup/core_stack.md)
+- Using Workbench for ML Pipelines: [ML Pipelines](../ml_pipelines/index.md)
+- Workbench Access Management: [Access Management](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing)
 
 <img align="right" src="../images/scp.png" width="180">
-
-- Using Workbench for ML Pipelines: [Workbench API Classes](../api_classes/overview.md)
 
 - Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)
