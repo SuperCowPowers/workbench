@@ -22,6 +22,16 @@ def node(script, mode=None, outputs=None, inputs=None):
     return Job(Path(script), mode, outputs or [], inputs or [])
 
 
+def run_keys(plan):
+    """[(script, mode), ...] for the plan's run-jobs."""
+    return [(j.script, j.mode) for j in plan.runs]
+
+
+def run_by(plan, script, mode):
+    """The run-job in the plan matching (script, mode)."""
+    return next(j for j in plan.runs if j.script == script and j.mode == mode)
+
+
 @pytest.fixture(autouse=True)
 def all_stale(monkeypatch):
     """Launcher tests run without AWS. Make the built-in mtime resolver report
@@ -153,12 +163,12 @@ class TestSortPipelines:
 
         plan = sort_pipelines([fs, a], dags)
 
-        order = [s for s, _ in plan.runs]
+        order = [j.script for j in plan.runs]
         assert order.index(fs) < order.index(a)
-        assert plan.group_ids[(fs, None)] == "p"
+        assert run_by(plan, fs, None).group == "p"
         # Artifacts flow straight into the batch dependency tokens
-        assert plan.deps[(fs, None)] == {"outputs": ["fs:x"], "inputs": []}
-        assert plan.deps[(a, None)] == {"outputs": [], "inputs": ["fs:x"]}
+        assert (run_by(plan, fs, None).outputs, run_by(plan, fs, None).inputs) == (["fs:x"], [])
+        assert (run_by(plan, a, None).outputs, run_by(plan, a, None).inputs) == ([], ["fs:x"])
 
     def test_cross_pipeline_dependency_orders_globally(self, tmp_path):
         """A producer in one pipeline orders before a consumer in another."""
@@ -171,11 +181,11 @@ class TestSortPipelines:
 
         plan = sort_pipelines([fs, consumer], dags)
 
-        order = [s for s, _ in plan.runs]
+        order = [j.script for j in plan.runs]
         assert order.index(fs) < order.index(consumer)
         # Each run keeps its own pipeline as its group.
-        assert plan.group_ids[(fs, None)] == "producers"
-        assert plan.group_ids[(consumer, None)] == "consumers"
+        assert run_by(plan, fs, None).group == "producers"
+        assert run_by(plan, consumer, None).group == "consumers"
 
     def test_external_inputs_tolerated_silently(self, tmp_path, capsys):
         """Dangling/external inputs emit no warnings -- the render's grey/green conveys them."""
@@ -228,7 +238,7 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags, mode="dt")
-        assert plan.runs == [(xgb, "dt")]
+        assert run_keys(plan) == [(xgb, "dt")]
 
     def test_mode_filter_ts_cross_mode_dependency(self, tmp_path):
         """A ts node keeps its input token even when the dt producer is filtered out."""
@@ -236,8 +246,8 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags, mode="ts")
-        assert plan.runs == [(xgb, "ts")]
-        assert plan.deps[(xgb, "ts")]["inputs"] == ["fs:x"]
+        assert run_keys(plan) == [(xgb, "ts")]
+        assert run_by(plan, xgb, "ts").inputs == ["fs:x"]
 
     def test_no_filter_runs_all_modes(self, tmp_path):
         """With no filter, both modes run, producer before consumer."""
@@ -245,13 +255,13 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags)
-        assert plan.runs == [(xgb, "dt"), (xgb, "ts")]
+        assert run_keys(plan) == [(xgb, "dt"), (xgb, "ts")]
 
     def test_modeless_node_runs_under_filter(self, tmp_path):
         """A modeless node runs under a filter, taking the filter as its runtime mode."""
         a = tmp_path / "a.py"
         plan = sort_pipelines([a], {"p": [node(a)]}, mode="dt")
-        assert plan.runs == [(a, "dt")]
+        assert run_keys(plan) == [(a, "dt")]
 
     def test_override_mode_dedup(self, tmp_path):
         """Override modes run each unique script once, ignoring node modes and edges."""
@@ -260,8 +270,8 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"]), node(b, "dt")]}
 
         plan = sort_pipelines([xgb, b], dags, mode="promote")
-        assert plan.runs == [(xgb, "promote"), (b, "promote")]
-        assert plan.deps[(xgb, "promote")] == {"outputs": [], "inputs": []}
+        assert run_keys(plan) == [(xgb, "promote"), (b, "promote")]
+        assert (run_by(plan, xgb, "promote").outputs, run_by(plan, xgb, "promote").inputs) == ([], [])
 
     def test_filtered_selection_excludes_unselected(self, tmp_path):
         """Only scripts in the selected set appear."""
@@ -271,7 +281,7 @@ class TestSortPipelines:
         dags = {"p": [node(fs, outputs=["fs:x"]), node(a, inputs=["fs:x"]), node(b, inputs=["fs:x"])]}
 
         plan = sort_pipelines([fs, a], dags)  # b not selected
-        scripts = {s for s, _ in plan.runs}
+        scripts = {j.script for j in plan.runs}
         assert scripts == {fs, a}
 
     def test_standalone_scripts_included(self, tmp_path):
@@ -280,9 +290,9 @@ class TestSortPipelines:
         orphan = tmp_path / "orphan.py"
         plan = sort_pipelines([a, orphan], {"p": [node(a)]}, mode="dt")
 
-        assert (orphan, "dt") in plan.runs
-        assert plan.group_ids[(orphan, "dt")] is None
-        assert plan.deps[(orphan, "dt")] == {"outputs": [], "inputs": []}
+        assert (orphan, "dt") in run_keys(plan)
+        assert run_by(plan, orphan, "dt").group is None
+        assert (run_by(plan, orphan, "dt").outputs, run_by(plan, orphan, "dt").inputs) == ([], [])
         assert any("standalone" in line for line in plan.display_lines)
 
     def test_empty(self):
@@ -311,7 +321,7 @@ class TestFreshness:
         fs, m, dags = self._dags(tmp_path)
         times = {"ds:raw": 100, "fs:x": 10, "model:m": 10}  # source newer -> both stale
         monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
-        assert {s for s, _ in sort_pipelines([fs, m], dags).runs} == {fs, m}
+        assert {j.script for j in sort_pipelines([fs, m], dags).runs} == {fs, m}
 
     def test_full_dag_shows_closure_even_when_nothing_stale(self, tmp_path, monkeypatch):
         fs, m, dags = self._dags(tmp_path)
@@ -399,15 +409,15 @@ class TestBuildPipelineMeta:
     """build_pipeline_meta prefers the declared model: output, falls back to the filename."""
 
     def test_dt_uses_declared_model_ref(self):
-        meta = json.loads(build_pipeline_meta(Path("ppb_human_free_reg_xgb_1.py"), "dt", True, "model:custom-name"))
+        meta = json.loads(build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt", outputs=["model:custom-name"]), True))
         assert meta["model_name"] == "custom-name"
         assert meta["endpoint_name"] == "custom-name"
 
     def test_dt_falls_back_to_filename(self):
-        meta = json.loads(build_pipeline_meta(Path("ppb_human_free_reg_xgb_1.py"), "dt", True, None))
+        meta = json.loads(build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt"), True))
         assert meta["model_name"] == "ppb-human-free-reg-xgb-1-dt"
 
     def test_modeless_has_no_model(self):
-        meta = json.loads(build_pipeline_meta(Path("ppb_human_feature_sets_1.py"), None, True, None))
+        meta = json.loads(build_pipeline_meta(node("ppb_human_feature_sets_1.py", None), True))
         assert "model_name" not in meta
         assert meta["serverless"] is True
