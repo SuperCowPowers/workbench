@@ -806,7 +806,7 @@ def main():
     all_pipelines, all_dags = get_all_pipelines()
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
-        exit(1)
+        sys.exit(1)
     if not all_dags:
         log.warning(
             f"No pipelines.json found under {Path.cwd()} -- running scripts standalone "
@@ -827,7 +827,7 @@ def main():
         for p in selected:
             print(f"   {p.name}")
         print("\nNarrow your selection to a single script.")
-        exit(1)
+        sys.exit(1)
 
     # Resolve execution mode
     mode = resolve_mode(args)
@@ -843,7 +843,7 @@ def main():
         )
     except ValueError as e:
         print(f"\nERROR: {e}")
-        exit(1)
+        sys.exit(1)
 
     # Display summary
     print_summary(plan, selection_desc, mode, args)
@@ -864,7 +864,7 @@ def main():
             "account/region (check WORKBENCH_CONFIG). Re-run with --force if this is intentional "
             "(e.g. a genuine from-scratch build).\n"
         )
-        exit(1)
+        sys.exit(1)
 
     run_pipelines(plan, args, extra_args)
 
