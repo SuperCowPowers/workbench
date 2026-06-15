@@ -5,20 +5,26 @@ that drives both the launcher (laptop -> AWS Batch) and the nightly DT Lambda.
 Both import this *same* module (the Lambda gets it from the workbench layer), so
 the two paths run identical graph logic.
 
-Two layers, deliberately separated:
+One **bipartite** dependency DAG is the single source of truth, modeled the way
+Dagster/Airflow/dbt do it -- two node kinds, semantic edges:
 
-  * **Artifact DAG** -- the graph of typed artifacts (``ds:``/``fs:``/``model:``
-    /``endpoint:``). Each artifact is a node carrying the job that produces it.
-    A *root* is any artifact with no in-graph producer -- a DataSource, an
-    externally-built FeatureSet, a hand-uploaded Model: the type does not
-    matter. This is what the human-facing queries (full graph / upstream /
-    downstream / per-pipeline) return, as ``networkx.DiGraph`` objects you can
-    hand straight to :meth:`PipelineManager.show`.
+  * **Artifact nodes** -- typed artifacts (``ds:``/``fs:``/``model:``
+    /``endpoint:``). A *root* is any artifact with no producing job: a
+    DataSource, an externally-built FeatureSet, a hand-uploaded Model -- the type
+    does not matter.
+  * **Job nodes** -- one script run ``(script, mode)`` with N declared inputs and
+    N declared outputs. A job is the submission unit (one job = one Batch run).
 
-  * **Jobs** -- a job is one script run ``(script, mode)`` with N declared
-    inputs and N declared outputs. Jobs are the submission unit (one job = one
-    Batch submission). Ordering/scheduling over jobs is *internal* orchestration
-    (used by the launcher and the DT Lambda), not part of the interactive API.
+Edges are directional and semantic: ``artifact -> job`` (the job consumes it) and
+``job -> artifact`` (the job produces it). Because there is never a direct
+artifact-to-artifact edge, a chain like ``ds -> fs -> model -> endpoint`` is
+*structural* -- it can only exist through the producing jobs, so impossible
+shortcuts (e.g. a FeatureSet wired straight to an endpoint) are unrepresentable.
+
+The human-facing queries (full graph / upstream / downstream / per-pipeline)
+return slices of this one graph -- artifacts *and* the jobs between them -- as
+``networkx.DiGraph`` objects you can hand straight to :meth:`PipelineManager.show`.
+Scheduling filters the same graph to its job nodes (topological order).
 
 Freshness flows *forward* over the graph (Dagster-style "stale" propagation): a
 job is stale when one of its outputs is missing, an immediate input is newer
@@ -39,7 +45,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, NamedTuple
 
 import networkx as nx
 
@@ -157,6 +163,23 @@ def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) 
     return jobs
 
 
+class PlanItem(NamedTuple):
+    """One scheduling decision from :meth:`PipelineManager.plan`.
+
+    Unpacks as ``(job, run, reason)`` for convenience, or use the attributes.
+
+    Attributes:
+        job (Job): The job this decision is about.
+        run (bool): Whether it should run.
+        reason (str): Why -- missing / stale / upstream / unmanaged / no_inputs /
+            up_to_date / selected.
+    """
+
+    job: Job
+    run: bool
+    reason: str
+
+
 class PipelineManager:
     """Loads pipelines.json into a dependency DAG and answers questions about it.
 
@@ -170,8 +193,9 @@ class PipelineManager:
         full_dependency_graph / upstream_graph / downstream_graph -- artifact DAG
         show(graph)                                          -- ascii render
 
-    Orchestration API (internal; launcher + DT Lambda):
-        _ordered_batch_jobs(mtime_fn=None) / _plan(mtime_fn) / _select(targets)
+    Orchestration API (shared by the launcher + DT Lambda):
+        plan(mtime_fn=None, force=None) -> list[PlanItem]    -- what runs, and why
+        suspect_environment                                  -- wrong-account guard
     """
 
     def __init__(self, path: str | Path, session=None):
@@ -250,49 +274,40 @@ class PipelineManager:
                     )
                 self._producer[ref] = job
 
-        self.graph = self._build_artifact_graph()
-        self.job_graph = self._build_job_graph()  # also validates: no cycles
+        self.graph = self._build_graph()  # also validates: no cycles
 
-    def _build_artifact_graph(self) -> nx.DiGraph:
-        """Artifact DAG: nodes are refs, edges run each input -> each output."""
+    def _build_graph(self) -> nx.DiGraph:
+        """The bipartite dependency DAG (the single source of truth).
+
+        Artifact nodes (keyed by ref) and job nodes (keyed by ``job.key``), with
+        semantic edges: ``artifact -> job`` (consumes) and ``job -> artifact``
+        (produces). No artifact-to-artifact edges -- a chain only exists through
+        the producing jobs.
+        """
         g = nx.DiGraph()
+        # Artifact nodes: every ref any job consumes or produces.
+        for ref in {r for job in self.jobs for r in (*job.inputs, *job.outputs)}:
+            producer = self._producer.get(ref)
+            g.add_node(ref, kind="artifact", type=ref_type(ref), group=producer.group if producer else None)
+        # Job nodes + their input/output edges.
         for job in self.jobs:
-            for ref in (*job.inputs, *job.outputs):
-                if ref not in g:
-                    producer = self._producer.get(ref)
-                    g.add_node(
-                        ref,
-                        producer=producer,
-                        group=producer.group if producer else None,
-                        type=ref_type(ref),
-                    )
-            # Each input -> each output. Correct while every node has one output
-            # (just fs -> model fan-in). INVARIANT for the future: artifacts chain
-            # ds -> fs -> model -> endpoint; there is never an fs -> endpoint edge.
-            # When endpoints become refs, model them as depending on the model
-            # (a chain), NOT as a second output here -- a co-output would wire a
-            # false fs -> endpoint via this cartesian.
+            g.add_node(job.key, kind="job", job=job, group=job.group)
             for inp in job.inputs:
-                for out in job.outputs:
-                    g.add_edge(inp, out)
-        return g
-
-    def _build_job_graph(self) -> nx.DiGraph:
-        """Job DAG: nodes are job.key, edges run producer-job -> consumer-job."""
-        g = nx.DiGraph()
-        for job in self.jobs:
-            g.add_node(job.key, job=job)
-        for job in self.jobs:
-            for ref in job.inputs:
-                producer = self._producer.get(ref)
-                if producer is not None and producer is not job:
-                    g.add_edge(producer.key, job.key)
+                g.add_edge(inp, job.key)
+            for out in job.outputs:
+                g.add_edge(job.key, out)
 
         if not nx.is_directed_acyclic_graph(g):
             cycle = nx.find_cycle(g)
-            readable = " -> ".join(g.nodes[k]["job"].node_id for k, _ in cycle)
+            readable = " -> ".join(self._node_label(g, n) for n, _ in cycle)
             raise ValueError(f"pipeline dependency cycle: {readable}")
         return g
+
+    @staticmethod
+    def _node_label(graph: nx.DiGraph, n) -> str:
+        """Display label for a node: a job's 'stem [mode]', or the artifact ref."""
+        data = graph.nodes[n]
+        return data["job"].node_id if data.get("kind") == "job" else str(n)
 
     # -- pipelines (named, human units) --------------------------------------
 
@@ -309,15 +324,17 @@ class PipelineManager:
         return len(self.list_pipelines())
 
     def get_pipeline(self, name: str) -> nx.DiGraph:
-        """The artifact sub-DAG for one pipeline (its jobs' inputs + outputs).
+        """The sub-DAG for one pipeline: its jobs plus the artifacts they touch.
 
-        Inputs produced by *other* pipelines appear as roots here (they have no
-        producer within this slice). Raises KeyError for an unknown name.
+        Inputs produced by *other* pipelines appear as roots here (their producing
+        job is outside this slice). Raises KeyError for an unknown name.
         """
-        refs = {ref for job in self.jobs if job.group == name for ref in (*job.inputs, *job.outputs)}
-        if not refs:
+        group_jobs = [job for job in self.jobs if job.group == name]
+        if not group_jobs:
             raise KeyError(f"no pipeline named {name!r}")
-        return self.graph.subgraph(refs).copy()
+        nodes = {job.key for job in group_jobs}
+        nodes |= {ref for job in group_jobs for ref in (*job.inputs, *job.outputs)}
+        return self.graph.subgraph(nodes).copy()
 
     def validate_pipeline(self, name: str):
         """FUTURE: cross-check declared wiring against real artifact lineage."""
@@ -341,27 +358,18 @@ class PipelineManager:
 
     @staticmethod
     def show(graph: nx.DiGraph) -> None:
-        """Print any artifact DAG (from the getters above) as a Unicode tree.
+        """Print a bipartite dependency DAG (from the getters above) as a tree.
 
-        Each node is an artifact ref; its producing job (script + mode) is folded
-        into the label, e.g. ``fs:caco2_features <- caco2_fs [dt]``. Roots
-        (sources with no producer) show as the bare ref.
-
-        Scope: this is the *artifact-lineage* view. A job that produces no
-        artifact (e.g. a future "report" that consumes endpoints and just emails)
-        has no node here -- those terminal jobs live in the job graph. When such
-        jobs become common, render from a job-inclusive view instead.
+        Edges flow input-artifact -> job -> output-artifact. Artifact nodes show
+        their ref (``ds:``/``fs:``/``model:``); job nodes show the script as
+        ``stem [mode]``. A job that produces no artifact still renders -- it's just
+        a leaf, no special-casing.
         """
         from workbench.utils.tree_render import render_forest
 
         children = {n: list(graph.successors(n)) for n in graph}
-
-        def label(n):
-            producer = graph.nodes[n].get("producer")
-            return f"{n} <- {producer.node_id}" if producer else n
-
-        labels = {n: label(n) for n in graph}
-        roots = sorted(n for n in graph if graph.in_degree(n) == 0)
+        labels = {n: PipelineManager._node_label(graph, n) for n in graph}
+        roots = sorted((n for n in graph if graph.in_degree(n) == 0), key=str)
         print("\n".join(render_forest(roots, children, labels)))
 
     # -- orchestration (internal; launcher + DT Lambda) ----------------------
@@ -371,12 +379,21 @@ class PipelineManager:
         keys = set()
         for job in targets:
             keys.add(job.key)
-            keys |= nx.ancestors(self.job_graph, job.key)
-        return [self.job_graph.nodes[k]["job"] for k in keys]
+            keys |= {n for n in nx.ancestors(self.graph, job.key) if self.graph.nodes[n].get("kind") == "job"}
+        return [self.graph.nodes[k]["job"] for k in keys]
 
     def _job_order(self) -> list[Job]:
-        """All jobs, topologically (every producer before its consumers)."""
-        return [self.job_graph.nodes[k]["job"] for k in nx.topological_sort(self.job_graph)]
+        """All jobs, topologically (every producer before its consumers).
+
+        Topo order over the bipartite graph interleaves artifacts and jobs; the
+        job nodes still come out producer-before-consumer (their shared artifact
+        sits between them), so filtering to jobs preserves a valid run order.
+        """
+        return [
+            self.graph.nodes[n]["job"]
+            for n in nx.topological_sort(self.graph)
+            if self.graph.nodes[n].get("kind") == "job"
+        ]
 
     def _needs_run(self, job: Job, mtime_fn, running: set) -> tuple[bool, str]:
         """Whether ``job`` must run, given which upstream jobs already will.
@@ -458,7 +475,7 @@ class PipelineManager:
             code = e.response.get("Error", {}).get("Code", "")
             if code in _ARTIFACT_NOT_FOUND_CODES:
                 # Artifact doesn't exist -> "must run". Expected on a first build; a *wall*
-                # of these is caught by the plan-level guard in _plan.
+                # of these is caught by the plan-level guard in plan().
                 self.log.warning(f"_artifact_mtime({ref!r}) -> absent ({code})")
                 return None
             # Couldn't determine freshness (AccessDenied, throttling, ...). Fail loudly
@@ -474,19 +491,20 @@ class PipelineManager:
             self._mtime_cache[ref] = self._artifact_mtime(ref)
         return self._mtime_cache[ref]
 
-    def _environment_looks_wrong(self, threshold: float = SUSPICIOUS_MISS_FRACTION) -> bool:
+    @property
+    def suspect_environment(self) -> bool:
         """True when almost every resolved artifact was absent -- the classic
-        wrong-account/region fingerprint. Only meaningful after a real ``_plan()``
-        has populated the mtime cache; returns False if nothing was resolved.
+        wrong-account/region fingerprint. Only meaningful after a real ``plan()``
+        has populated the mtime cache; False if nothing was resolved.
         """
         cache = self._mtime_cache
         if not cache:
             return False
         absent = sum(1 for v in cache.values() if v is None)
-        return absent / len(cache) >= threshold
+        return absent / len(cache) >= SUSPICIOUS_MISS_FRACTION
 
-    def _plan(self, mtime_fn=None, force=None) -> list[tuple[Job, bool, str]]:
-        """Schedule the whole DAG: (job, should_run, reason) in topo order.
+    def plan(self, mtime_fn=None, force=None) -> list[PlanItem]:
+        """Schedule the whole DAG: a :class:`PlanItem` per job in topo order.
 
         ``mtime_fn`` defaults to the built-in (real, cached) AWS resolver -- the
         normal path. Pass a clock only to simulate (``simulated_mtime``) or test.
@@ -496,25 +514,23 @@ class PipelineManager:
         pattern-matched script the user just edited runs even when its inputs are
         up to date. A forced job joins the running set, so the forward flood still
         propagates to its downstream consumers. The DT Lambda passes no force.
-
-        Reasons: missing / stale / upstream / unmanaged / no_inputs / up_to_date / selected.
         """
         force = force or set()
         real = mtime_fn is None  # only the real AWS resolver feeds the wrong-env guard
         if mtime_fn is None:
             mtime_fn = self._cached_mtime
         running: set = set()
-        decisions: list[tuple[Job, bool, str]] = []
+        decisions: list[PlanItem] = []
         for job in self._job_order():
             if job.key in force:
-                should_run, reason = True, "selected"
+                run, reason = True, "selected"
             else:
-                should_run, reason = self._needs_run(job, mtime_fn, running)
-            if should_run:
+                run, reason = self._needs_run(job, mtime_fn, running)
+            if run:
                 running.add(job.key)
-            decisions.append((job, should_run, reason))
+            decisions.append(PlanItem(job, run, reason))
 
-        if real and self._environment_looks_wrong():
+        if real and self.suspect_environment:
             absent = sum(1 for v in self._mtime_cache.values() if v is None)
             total = len(self._mtime_cache)
             self.log.warning(
@@ -529,7 +545,7 @@ def simulated_mtime(modified_refs):
 
     For simulating freshness propagation without AWS: the given refs report a
     newer time, every other artifact an older-but-present time. Feed it to
-    :meth:`PipelineManager._plan` to see which jobs a change to those refs
+    :meth:`PipelineManager.plan` to see which jobs a change to those refs
     triggers. Because freshness floods forward (no backtracking), simulating
     *any* ref -- ds:, an intermediate fs:, even a model: -- propagates to its
     descendants; the job that produces a simulated ref does not re-run.

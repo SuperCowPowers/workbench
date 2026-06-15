@@ -40,6 +40,16 @@ def ran(plan):
     return {j.node_id: reason for j, should, reason in plan if should}
 
 
+def arts(graph):
+    """The artifact refs in a (bipartite) graph."""
+    return {n for n, d in graph.nodes(data=True) if d.get("kind") == "artifact"}
+
+
+def job_ids(graph):
+    """The node_ids of the job nodes in a (bipartite) graph."""
+    return {d["job"].node_id for _, d in graph.nodes(data=True) if d.get("kind") == "job"}
+
+
 class TestRefHelpers:
     def test_type_and_name(self):
         assert ref_type("fs:caco2_1") == "fs"
@@ -119,8 +129,10 @@ class TestPipelinesAPI:
 
     def test_get_pipeline_slice(self):
         mgr = self._mgr()
-        # The features pipeline's own artifacts; its model consumer is elsewhere.
-        assert set(mgr.get_pipeline("features").nodes) == {"ds:raw", "fs:x"}
+        slice_ = mgr.get_pipeline("features")
+        # The features job plus its own artifacts; its model consumer is elsewhere.
+        assert arts(slice_) == {"ds:raw", "fs:x"}
+        assert job_ids(slice_) == {"fs"}
 
     def test_get_pipeline_unknown_raises(self):
         with pytest.raises(KeyError):
@@ -138,18 +150,27 @@ class TestDependencyGraph:
         )
 
     def test_full_graph(self):
-        assert set(self._chain().full_dependency_graph().nodes) == {"ds:raw", "fs:x", "model:m"}
+        g = self._chain().full_dependency_graph()
+        assert arts(g) == {"ds:raw", "fs:x", "model:m"}
+        assert job_ids(g) == {"fs", "m"}  # jobs are nodes too (bipartite)
 
     def test_upstream(self):
-        assert set(self._chain().upstream_graph("model:m").nodes) == {"ds:raw", "fs:x", "model:m"}
+        # Upstream of model:m -> the artifacts AND the jobs that produce them.
+        g = self._chain().upstream_graph("model:m")
+        assert arts(g) == {"ds:raw", "fs:x", "model:m"}
+        assert job_ids(g) == {"fs", "m"}
 
     def test_downstream(self):
-        assert set(self._chain().downstream_graph("ds:raw").nodes) == {"ds:raw", "fs:x", "model:m"}
+        g = self._chain().downstream_graph("ds:raw")
+        assert arts(g) == {"ds:raw", "fs:x", "model:m"}
+        assert job_ids(g) == {"fs", "m"}
 
     def test_root_can_be_any_type(self):
         # A FeatureSet built elsewhere (no producer) is a perfectly good root.
         mgr = pm([job("m.py", outputs=["model:m"], inputs=["fs:external"])])
-        assert set(mgr.downstream_graph("fs:external").nodes) == {"fs:external", "model:m"}
+        g = mgr.downstream_graph("fs:external")
+        assert arts(g) == {"fs:external", "model:m"}
+        assert job_ids(g) == {"m"}
 
 
 class TestShow:
@@ -162,8 +183,9 @@ class TestShow:
         )
         mgr.show(mgr.full_dependency_graph())
         out = capsys.readouterr().out
-        assert "ds:raw" in out  # root shows bare
-        assert "fs:caco2 <- caco2_fs [dt]" in out  # producer folded into label
+        assert "ds:raw" in out  # root artifact
+        assert "caco2_fs [dt]" in out  # the producing job is its own node
+        assert "fs:caco2" in out  # ...feeding the artifact it produces
         assert "╼" in out  # Unicode tree edges
 
 
@@ -180,17 +202,17 @@ class TestPlan:
         )
 
     def test_missing_output_runs(self):
-        plan = self._dag()._plan(clock({"ds:raw": 1, "fs:x": 5}))
+        plan = self._dag().plan(clock({"ds:raw": 1, "fs:x": 5}))
         assert ran(plan) == {"m": "missing"}
 
     def test_changed_source_floods_whole_path_in_order(self):
-        plan = self._dag()._plan(clock({"ds:raw": 100, "fs:x": 10, "model:m": 10}))
+        plan = self._dag().plan(clock({"ds:raw": 100, "fs:x": 10, "model:m": 10}))
         scheduled = [j.node_id for j, run, _ in plan if run]
         assert scheduled == ["fs", "m"]
         assert ran(plan) == {"fs": "stale", "m": "upstream"}
 
     def test_up_to_date_pushes_nothing(self):
-        plan = self._dag()._plan(clock({"ds:raw": 1, "fs:x": 50, "model:m": 60}))
+        plan = self._dag().plan(clock({"ds:raw": 1, "fs:x": 50, "model:m": 60}))
         assert ran(plan) == {}
 
     def test_defaults_to_builtin_resolver(self):
@@ -198,17 +220,17 @@ class TestPlan:
         # no AWS call happens (every ref in this dag is seeded).
         mgr = self._dag()
         mgr._mtime_cache = {"ds:raw": 100, "fs:x": 10, "model:m": 10}
-        assert ran(mgr._plan()) == {"fs": "stale", "m": "upstream"}
+        assert ran(mgr.plan()) == {"fs": "stale", "m": "upstream"}
 
     def test_unmanaged_without_outputs(self):
-        assert ran(pm([job("x.py", inputs=["ds:raw"])])._plan(clock({"ds:raw": 1}))) == {"x": "unmanaged"}
+        assert ran(pm([job("x.py", inputs=["ds:raw"])]).plan(clock({"ds:raw": 1}))) == {"x": "unmanaged"}
 
     def test_no_inputs_runs_and_warns(self, caplog):
         # workbench logger has propagate=False, so attach caplog's handler directly.
         logger = logging.getLogger("workbench")
         logger.addHandler(caplog.handler)
         try:
-            plan = pm([job("x.py", outputs=["model:m"])])._plan(clock({"model:m": 1}))
+            plan = pm([job("x.py", outputs=["model:m"])]).plan(clock({"model:m": 1}))
         finally:
             logger.removeHandler(caplog.handler)
         assert ran(plan) == {"x": "no_inputs"}
@@ -220,7 +242,7 @@ class TestMultiOutputJob:
         producer = job("p.py", outputs=["fs:a", "fs:b"], inputs=["ds:raw"])
         ca = job("ca.py", inputs=["fs:a"], outputs=["model:a"])
         cb = job("cb.py", inputs=["fs:b"], outputs=["model:b"])
-        plan = pm([producer, ca, cb])._plan(clock({"ds:raw": 1, "fs:b": 5, "model:a": 5, "model:b": 5}))
+        plan = pm([producer, ca, cb]).plan(clock({"ds:raw": 1, "fs:b": 5, "model:a": 5, "model:b": 5}))
         # fs:a missing -> p reruns; both consumers inherit even though fs:b looked fresh.
         assert ran(plan) == {"p": "missing", "ca": "upstream", "cb": "upstream"}
 
@@ -258,15 +280,15 @@ class TestSimulatedMtime:
         )
 
     def test_modified_source_propagates(self):
-        assert ran(self._dag()._plan(simulated_mtime(["ds:raw"]))) == {"fs": "stale", "m": "upstream"}
+        assert ran(self._dag().plan(simulated_mtime(["ds:raw"]))) == {"fs": "stale", "m": "upstream"}
 
     def test_modified_intermediate_fs_now_propagates(self):
         # Forward flood, no backtracking: a modified intermediate FeatureSet
         # triggers its consumers (its own producer stays put -- already fresh).
-        assert ran(self._dag()._plan(simulated_mtime(["fs:x"]))) == {"m": "stale"}
+        assert ran(self._dag().plan(simulated_mtime(["fs:x"]))) == {"m": "stale"}
 
     def test_unrelated_source_does_not_trigger(self):
-        assert ran(self._dag()._plan(simulated_mtime(["ds:other"]))) == {}
+        assert ran(self._dag().plan(simulated_mtime(["ds:other"]))) == {}
 
 
 class TestForce:
@@ -283,12 +305,12 @@ class TestForce:
     def test_forced_job_runs_when_up_to_date(self):
         up_to_date = clock({"ds:raw": 1, "fs:x": 5, "model:m": 9})  # nothing stale
         dag = self._dag()
-        assert ran(dag._plan(up_to_date)) == {}
-        assert ran(dag._plan(up_to_date, force={("m.py", None)})) == {"m": "selected"}
+        assert ran(dag.plan(up_to_date)) == {}
+        assert ran(dag.plan(up_to_date, force={("m.py", None)})) == {"m": "selected"}
 
     def test_forced_producer_floods_downstream(self):
         up_to_date = clock({"ds:raw": 1, "fs:x": 5, "model:m": 9})
-        assert ran(self._dag()._plan(up_to_date, force={("fs.py", None)})) == {"fs": "selected", "m": "upstream"}
+        assert ran(self._dag().plan(up_to_date, force={("fs.py", None)})) == {"fs": "selected", "m": "upstream"}
 
 
 class TestArtifactMtime:
@@ -335,13 +357,13 @@ class TestEnvironmentGuard:
     def test_all_absent_is_suspect(self):
         manager = pm([job("x.py", outputs=["fs:a"])])
         manager._mtime_cache = {"fs:a": None, "fs:b": None, "ds:c": None}
-        assert manager._environment_looks_wrong() is True
+        assert manager.suspect_environment is True
 
     def test_mostly_present_is_fine(self):
         manager = pm([job("x.py", outputs=["fs:a"])])
         manager._mtime_cache = {"fs:a": 1, "fs:b": 2, "ds:c": None}
-        assert manager._environment_looks_wrong() is False
+        assert manager.suspect_environment is False
 
     def test_empty_cache_is_not_suspect(self):
         # Nothing resolved (e.g. a simulated/test clock) -> never flag.
-        assert pm([job("x.py", outputs=["fs:a"])])._environment_looks_wrong() is False
+        assert pm([job("x.py", outputs=["fs:a"])]).suspect_environment is False

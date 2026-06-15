@@ -19,8 +19,6 @@ Args after a literal '--' are forwarded verbatim to the underlying script:
 """
 
 import argparse
-import contextlib
-import io
 import json
 import logging
 import os
@@ -280,7 +278,7 @@ def _node_selected(node: Job, mode_filter: str | None) -> bool:
     return node.mode == mode_filter
 
 
-def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highlight=()) -> list[str]:
+def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highlight=(), dep_status=None) -> list[str]:
     """Render the data-flow DAG: ds:/fs:/model: artifacts and scripts as nodes,
     edges flowing artifact -> script -> artifact. Shared producers fan out and
     cross-pipeline joins show as multi-parent, rooted at the external sources.
@@ -299,6 +297,8 @@ def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highli
             sources) instead of the natural in-degree-0 sources.
         highlight (iterable): Artifact refs to mark in orange (e.g. the simulated
             modified sources).
+        dep_status (dict | None): ref -> "current"/"modified"/"missing"; appends a
+            colored freshness suffix to those dependency artifacts.
     """
     # Build the bipartite data-flow graph: artifacts and scripts as nodes, with
     # children ordered (script -> its outputs; artifact -> its consumer scripts).
@@ -335,12 +335,18 @@ def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highli
     # external. Terminal outputs (e.g. model:, no consumer) get no color.
     # Highlighted refs (e.g. simulated modified sources) override to orange.
     highlight = set(highlight)
+    dep_status = dep_status or {}
+    suffix_color = {"current": "lightgreen", "modified": "orange", "missing": "red"}
     for ref in external:
         if ref in highlight:
             label[ref] = _color(ref, "orange")
         else:
             consumed = bool(children[ref])
             label[ref] = _color(ref, "lightgreen") if (consumed and not external[ref]) else ref
+        # Freshness suffix on dependency artifacts (def. A): is this input current?
+        status = dep_status.get(ref)
+        if status:
+            label[ref] += " " + _color(f"({status})", suffix_color[status])
 
     if roots is None:
         # Roots = external sources (in-degree 0): artifacts no one produces, plus
@@ -431,8 +437,8 @@ def _build_dag_plan(
         # Freshness decides the rest: a dependency submits only when stale (mtime_fn
         # None -> real AWS mtimes). Emit in global topological order so every
         # producer precedes its consumers, honoring the mode filter.
-        decisions = pm._plan(mtime_fn, force=forced)
-        plan.environment_suspect = pm._environment_looks_wrong()
+        decisions = pm.plan(mtime_fn, force=forced)
+        plan.environment_suspect = pm.suspect_environment
         mode_jobs = [job for job, _, _ in decisions if _node_selected(job, mode_filter)]
         will_run = []
         for job, should_run, _reason in decisions:
@@ -441,13 +447,35 @@ def _build_dag_plan(
             plan.add_run(replace(job, mode=runtime_mode(job)))  # run-job carries the runtime mode
             will_run.append(job)
 
+        # Freshness suffix for each dependency artifact (def. A): a consumed input is
+        # (modified) if it's newer than a model built from it, (current) if every
+        # consumer is already newer, (missing) if it doesn't exist. Reuses the mtimes
+        # the plan already cached (mtime_fn None -> real AWS resolver) -- no extra calls.
+        resolve = mtime_fn or pm._cached_mtime
+
+        def dep_status_of(ref):
+            t = resolve(ref)
+            if t is None:
+                return "missing"
+            # Build time of each consumer that's fully built (all outputs present).
+            built = []
+            for c in all_nodes:
+                if ref in c.inputs and c.outputs:
+                    outs = [resolve(r) for r in c.outputs]
+                    if None not in outs:
+                        built.append(min(outs))
+            # Newer than the oldest model built from it -> at least one is stale.
+            return "modified" if (built and t > min(built)) else "current"
+
+        dep_status = {ref: dep_status_of(ref) for n in all_nodes for ref in n.inputs}
+
         # Render the global data-flow DAG (artifacts + scripts). Resolution is
         # judged against every pipeline in the repo, so an input stays green even
         # when its producer isn't selected. Default shows only the will-run paths;
         # --full-dag shows the whole selected closure for diagnosing dependencies.
         produced = {ref for nodes in all_dags.values() for n in nodes for ref in n.outputs}
         display_nodes = mode_jobs if full_dag else will_run
-        plan.display_lines.extend(render_dataflow(display_nodes, runtime_mode, produced))
+        plan.display_lines.extend(render_dataflow(display_nodes, runtime_mode, produced, dep_status=dep_status))
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
@@ -740,14 +768,17 @@ def run_simulation(all_dags, modified_refs):
     """
     global_nodes = [node for nodes in all_dags.values() for node in nodes]
     produced = {ref for node in global_nodes for ref in node.outputs}
-    # plan() warns (to stdout) for no-input jobs -- CloudWatch-useful in the
-    # Lambda but noise here, and our summary already counts them, so swallow it.
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        plan = PipelineManager.from_jobs(global_nodes)._plan(simulated_mtime(modified_refs))
-    runs = [(node, reason) for node, should_run, reason in plan if should_run]
-    triggered = sum(1 for _, reason in runs if reason in ("stale", "upstream", "missing"))
-    always_run = sum(1 for _, reason in runs if reason in ("no_inputs", "unmanaged"))
+    # plan() logs a no-input warning -- CloudWatch-useful in the Lambda but noise in
+    # this offline view (our summary already counts them), so quiet the logger for it.
+    prior_level = log.level
+    log.setLevel(logging.ERROR)
+    try:
+        plan = PipelineManager.from_jobs(global_nodes).plan(simulated_mtime(modified_refs))
+    finally:
+        log.setLevel(prior_level)
+    runs = [item for item in plan if item.run]
+    triggered = sum(1 for it in runs if it.reason in ("stale", "upstream", "missing"))
+    always_run = sum(1 for it in runs if it.reason in ("no_inputs", "unmanaged"))
 
     print(f"\nSimulating modification of: {', '.join(modified_refs)}")
     print(f"  {triggered} run(s) triggered by this change; {always_run} always-run regardless.\n")

@@ -102,27 +102,27 @@ class TestLoadPipelinesConfig:
 
 
 class TestJobGraph:
-    """Tests for the job-level DAG the launcher orders on (PipelineManager.job_graph)."""
+    """Tests for the bipartite dependency DAG the launcher orders on (PipelineManager.graph)."""
 
     def test_edges_derived_from_artifacts(self):
-        """An input artifact links the consumer to its producer."""
+        """Producer and consumer are linked *through* the artifact node (bipartite)."""
         producer = node("fs.py", outputs=["fs:x"])
         consumer = node("model.py", inputs=["fs:x"])
-        graph = PipelineManager.from_jobs([producer, consumer]).job_graph
+        graph = PipelineManager.from_jobs([producer, consumer]).graph
 
-        assert graph.number_of_edges() == 1
-        assert graph.has_edge((Path("fs.py"), None), (Path("model.py"), None))
+        assert graph.has_edge((Path("fs.py"), None), "fs:x")  # job -> artifact (produces)
+        assert graph.has_edge("fs:x", (Path("model.py"), None))  # artifact -> job (consumes)
 
     def test_fan_out(self):
-        """One producer feeding two consumers yields two parallel edges."""
+        """One artifact feeding two consumers yields two edges out of the artifact."""
         nodes = [
             node("fs.py", outputs=["fs:x"]),
             node("a.py", inputs=["fs:x"]),
             node("b.py", inputs=["fs:x"]),
         ]
-        graph = PipelineManager.from_jobs(nodes).job_graph
-        assert graph.number_of_edges() == 2
-        assert graph.out_degree((Path("fs.py"), None)) == 2
+        graph = PipelineManager.from_jobs(nodes).graph
+        assert graph.out_degree("fs:x") == 2  # feeds a.py and b.py
+        assert graph.out_degree((Path("fs.py"), None)) == 1  # produces just fs:x
 
     def test_duplicate_producer_raises(self):
         """Two nodes outputting the same artifact is a hard error."""
@@ -141,9 +141,9 @@ class TestJobGraph:
 
     def test_dangling_input_tolerated(self, capsys):
         """An input with no producer is tolerated silently (it's an external root)."""
-        graph = PipelineManager.from_jobs([node("a.py", inputs=["fs:external"])]).job_graph
-        assert graph.number_of_nodes() == 1  # the one job
-        assert graph.number_of_edges() == 0
+        graph = PipelineManager.from_jobs([node("a.py", inputs=["fs:external"])]).graph
+        assert graph.number_of_nodes() == 2  # the job + its external input artifact
+        assert graph.has_edge("fs:external", (Path("a.py"), None))
         assert capsys.readouterr().err == ""  # no warning noise
 
     def test_duplicate_node_raises(self):
@@ -339,6 +339,24 @@ class TestFreshness:
         monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
         plan = sort_pipelines([fs, m], dags, force_keys={(m, None)})
         assert {j.script for j in plan.runs} == {m}  # only the forced match; up-to-date fs stays put
+
+    def _suffix_text(self, tmp_path, monkeypatch, times):
+        fs, m, dags = self._dags(tmp_path)
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        plan = sort_pipelines([fs, m], dags, full_dag=True)  # full_dag so nodes show even when nothing runs
+        return "\n".join(plan.display_lines)
+
+    def test_dep_suffix_current(self, tmp_path, monkeypatch):
+        text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "fs:x": 5, "model:m": 9})
+        assert "fs:x (current)" in text  # fs older than the model built from it
+
+    def test_dep_suffix_modified(self, tmp_path, monkeypatch):
+        text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "fs:x": 20, "model:m": 9})
+        assert "fs:x (modified)" in text  # fs newer than the model -> would trigger a rebuild
+
+    def test_dep_suffix_missing(self, tmp_path, monkeypatch):
+        text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "model:m": 9})  # fs:x absent
+        assert "fs:x (missing)" in text
 
 
 class TestGetAllPipelines:
