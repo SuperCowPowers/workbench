@@ -409,7 +409,9 @@ class TestBuildPipelineMeta:
     """build_pipeline_meta prefers the declared model: output, falls back to the filename."""
 
     def test_dt_uses_declared_model_ref(self):
-        meta = json.loads(build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt", outputs=["model:custom-name"]), True))
+        meta = json.loads(
+            build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt", outputs=["model:custom-name"]), True)
+        )
         assert meta["model_name"] == "custom-name"
         assert meta["endpoint_name"] == "custom-name"
 

@@ -37,7 +37,6 @@ from workbench.lambda_layer.pipeline_manager import (
     Job,
     PipelineManager,
     parse_spec,
-    ref_name,
     ref_type,
     simulated_mtime,
 )
