@@ -35,12 +35,27 @@ override never touches the default path.
 """
 
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
 import networkx as nx
+
+# boto3 error codes that mean "this artifact does not exist (yet)" -- a legitimate
+# "must run". Distinct from auth/region/throttle failures, which mean "could not
+# determine freshness" and must NOT be silently treated as must-run.
+_ARTIFACT_NOT_FOUND_CODES = {
+    "EntityNotFoundException",  # Glue get_table
+    "ResourceNotFound",  # SageMaker describe_feature_group
+    "ResourceNotFoundException",
+    "ValidationException",  # SageMaker list_model_packages against a missing group
+}
+
+# If nearly every resolved artifact is absent, it's almost always the wrong AWS
+# account/region rather than a genuine from-scratch build.
+SUSPICIOUS_MISS_FRACTION = 0.9
 
 
 def ref_type(ref: str) -> str:
@@ -212,6 +227,7 @@ class PipelineManager:
 
     def _init_from_jobs(self, jobs: list[Job]) -> None:
         self.jobs = jobs
+        self.log = logging.getLogger("workbench")  # color + CloudWatch via logging_setup()
         self._mtime_cache: dict = {}  # ref -> mtime, resolved at most once per instance
         self._aws: dict = {}  # boto3 client cache (lazy)
 
@@ -386,9 +402,9 @@ class PipelineManager:
                 return True, "upstream"
 
         if not job.inputs:
-            print(
-                f"WARNING: job {job.node_id!r} declares no inputs; running "
-                f"unconditionally (cannot assess freshness -- declare inputs or mark it a root)."
+            self.log.warning(
+                f"job {job.node_id!r} declares no inputs; running unconditionally "
+                f"(cannot assess freshness -- declare inputs or mark it a root)."
             )
             return True, "no_inputs"
 
@@ -412,11 +428,18 @@ class PipelineManager:
             fs:<name>    -> FeatureGroup CreationTime
             model:<name> -> latest model package CreationTime
             endpoint:... -> not supported yet
-        A missing artifact (or transient lookup failure) returns None -> "must run".
+
+        A genuinely-absent artifact returns None -> "must run". A lookup that we
+        *couldn't complete* (bad creds, no region, AccessDenied, throttling) is a
+        different beast: returning None there would silently resubmit every job, so
+        we let it raise instead. NoCredentials/NoRegion/connection errors aren't
+        ClientErrors, so they propagate uncaught -- same intent.
         """
+        from botocore.exceptions import ClientError
+
         kind, _, name = ref.partition(":")
         if not name:
-            print(f"Unrecognized artifact ref (no type prefix): {ref!r}")
+            self.log.error(f"Unrecognized artifact ref (no type prefix): {ref!r}")
             return None
         try:
             if kind == "ds":
@@ -429,12 +452,20 @@ class PipelineManager:
                 )["ModelPackageSummaryList"]
                 return packages[0]["CreationTime"] if packages else None
             if kind == "endpoint":
-                print(f"endpoint artifact refs are not supported yet: {ref!r}")
+                self.log.warning(f"endpoint artifact refs are not supported yet: {ref!r}")
                 return None
-        except Exception as e:
-            print(f"_artifact_mtime({ref!r}) -> absent ({type(e).__name__}: {e})")
-            return None
-        print(f"Unknown artifact type in ref: {ref!r}")
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "")
+            if code in _ARTIFACT_NOT_FOUND_CODES:
+                # Artifact doesn't exist -> "must run". Expected on a first build; a *wall*
+                # of these is caught by the plan-level guard in _plan.
+                self.log.warning(f"_artifact_mtime({ref!r}) -> absent ({code})")
+                return None
+            # Couldn't determine freshness (AccessDenied, throttling, ...). Fail loudly
+            # rather than guess "must run" and resubmit everything.
+            self.log.error(f"_artifact_mtime({ref!r}) -> lookup failed ({code}); cannot assess freshness")
+            raise
+        self.log.error(f"Unknown artifact type in ref: {ref!r}")
         return None
 
     def _cached_mtime(self, ref: str):
@@ -443,23 +474,53 @@ class PipelineManager:
             self._mtime_cache[ref] = self._artifact_mtime(ref)
         return self._mtime_cache[ref]
 
-    def _plan(self, mtime_fn=None) -> list[tuple[Job, bool, str]]:
+    def _environment_looks_wrong(self, threshold: float = SUSPICIOUS_MISS_FRACTION) -> bool:
+        """True when almost every resolved artifact was absent -- the classic
+        wrong-account/region fingerprint. Only meaningful after a real ``_plan()``
+        has populated the mtime cache; returns False if nothing was resolved.
+        """
+        cache = self._mtime_cache
+        if not cache:
+            return False
+        absent = sum(1 for v in cache.values() if v is None)
+        return absent / len(cache) >= threshold
+
+    def _plan(self, mtime_fn=None, force=None) -> list[tuple[Job, bool, str]]:
         """Schedule the whole DAG: (job, should_run, reason) in topo order.
 
         ``mtime_fn`` defaults to the built-in (real, cached) AWS resolver -- the
         normal path. Pass a clock only to simulate (``simulated_mtime``) or test.
 
-        Reasons: missing / stale / upstream / unmanaged / no_inputs / up_to_date.
+        ``force`` is a set of job keys that run unconditionally (reason
+        ``selected``), regardless of freshness -- the launcher uses it so a
+        pattern-matched script the user just edited runs even when its inputs are
+        up to date. A forced job joins the running set, so the forward flood still
+        propagates to its downstream consumers. The DT Lambda passes no force.
+
+        Reasons: missing / stale / upstream / unmanaged / no_inputs / up_to_date / selected.
         """
+        force = force or set()
+        real = mtime_fn is None  # only the real AWS resolver feeds the wrong-env guard
         if mtime_fn is None:
             mtime_fn = self._cached_mtime
         running: set = set()
         decisions: list[tuple[Job, bool, str]] = []
         for job in self._job_order():
-            should_run, reason = self._needs_run(job, mtime_fn, running)
+            if job.key in force:
+                should_run, reason = True, "selected"
+            else:
+                should_run, reason = self._needs_run(job, mtime_fn, running)
             if should_run:
                 running.add(job.key)
             decisions.append((job, should_run, reason))
+
+        if real and self._environment_looks_wrong():
+            absent = sum(1 for v in self._mtime_cache.values() if v is None)
+            total = len(self._mtime_cache)
+            self.log.warning(
+                f"{absent}/{total} artifacts could not be found -- this usually means the wrong "
+                f"AWS account/region (check WORKBENCH_CONFIG). Every job will be (re)built."
+            )
         return decisions
 
 

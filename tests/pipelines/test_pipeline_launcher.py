@@ -332,6 +332,14 @@ class TestFreshness:
         text = "\n".join(plan.display_lines)
         assert "fs:x" in text and "model:m" in text  # ...but the closure is still rendered
 
+    def test_force_runs_matched_script_when_up_to_date(self, tmp_path, monkeypatch):
+        # User named a pattern -> the matched script runs even though its deps are current.
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        plan = sort_pipelines([fs, m], dags, force_keys={(m, None)})
+        assert {j.script for j in plan.runs} == {m}  # only the forced match; up-to-date fs stays put
+
 
 class TestGetAllPipelines:
     """Tests for get_all_pipelines discovery."""

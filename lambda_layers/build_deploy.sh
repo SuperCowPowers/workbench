@@ -95,7 +95,9 @@ echo "🚀  Publishing layer to: ${REGION_LIST[*]}"
 echo "======================================"
 
 for region in "${REGION_LIST[@]}"; do
-  layer_name="workbench_lambda_layer-${region}-${PYVER_TAG}"
+  # -wip suffix while the layer's contents are churning -- keeps the rapid version
+  # bumps off the "real" layer name. Drop -wip once the contents settle.
+  layer_name="workbench_lambda_layer-${region}-${PYVER_TAG}-wip"
   echo "Publishing $layer_name in $region..."
 
   version=$(aws lambda publish-layer-version \

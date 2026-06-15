@@ -6,6 +6,7 @@ in the dict (i.e. "doesn't exist yet").
 """
 
 import json
+import logging
 
 import pytest
 
@@ -202,10 +203,16 @@ class TestPlan:
     def test_unmanaged_without_outputs(self):
         assert ran(pm([job("x.py", inputs=["ds:raw"])])._plan(clock({"ds:raw": 1}))) == {"x": "unmanaged"}
 
-    def test_no_inputs_runs_and_warns(self, capsys):
-        plan = pm([job("x.py", outputs=["model:m"])])._plan(clock({"model:m": 1}))
+    def test_no_inputs_runs_and_warns(self, caplog):
+        # workbench logger has propagate=False, so attach caplog's handler directly.
+        logger = logging.getLogger("workbench")
+        logger.addHandler(caplog.handler)
+        try:
+            plan = pm([job("x.py", outputs=["model:m"])])._plan(clock({"model:m": 1}))
+        finally:
+            logger.removeHandler(caplog.handler)
         assert ran(plan) == {"x": "no_inputs"}
-        assert "no inputs" in capsys.readouterr().out
+        assert "no inputs" in caplog.text
 
 
 class TestMultiOutputJob:
@@ -260,3 +267,81 @@ class TestSimulatedMtime:
 
     def test_unrelated_source_does_not_trigger(self):
         assert ran(self._dag()._plan(simulated_mtime(["ds:other"]))) == {}
+
+
+class TestForce:
+    """Forced job keys run regardless of freshness, and still flood downstream."""
+
+    def _dag(self):
+        return pm(
+            [
+                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"]),
+                job("m.py", outputs=["model:m"], inputs=["fs:x"]),
+            ]
+        )
+
+    def test_forced_job_runs_when_up_to_date(self):
+        up_to_date = clock({"ds:raw": 1, "fs:x": 5, "model:m": 9})  # nothing stale
+        dag = self._dag()
+        assert ran(dag._plan(up_to_date)) == {}
+        assert ran(dag._plan(up_to_date, force={("m.py", None)})) == {"m": "selected"}
+
+    def test_forced_producer_floods_downstream(self):
+        up_to_date = clock({"ds:raw": 1, "fs:x": 5, "model:m": 9})
+        assert ran(self._dag()._plan(up_to_date, force={("fs.py", None)})) == {"fs": "selected", "m": "upstream"}
+
+
+class TestArtifactMtime:
+    """Per-ref resolution: a genuinely-absent artifact -> None ("must run"); a
+    lookup we couldn't complete (auth/region/throttle) must raise, never None."""
+
+    @staticmethod
+    def _fs_client_raising(error):
+        class _Client:
+            def describe_feature_group(self, **_):
+                raise error
+
+        return _Client()
+
+    def test_resource_not_found_means_absent(self):
+        from botocore.exceptions import ClientError
+
+        manager = pm([job("x.py", outputs=["fs:foo"])])
+        err = ClientError({"Error": {"Code": "ResourceNotFound", "Message": "nope"}}, "DescribeFeatureGroup")
+        manager._aws_client = lambda _name: self._fs_client_raising(err)
+        assert manager._artifact_mtime("fs:foo") is None
+
+    def test_access_denied_raises(self):
+        from botocore.exceptions import ClientError
+
+        manager = pm([job("x.py", outputs=["fs:foo"])])
+        err = ClientError({"Error": {"Code": "AccessDeniedException", "Message": "denied"}}, "DescribeFeatureGroup")
+        manager._aws_client = lambda _name: self._fs_client_raising(err)
+        with pytest.raises(ClientError):
+            manager._artifact_mtime("fs:foo")
+
+    def test_no_credentials_propagates(self):
+        from botocore.exceptions import NoCredentialsError
+
+        manager = pm([job("x.py", outputs=["fs:foo"])])
+        manager._aws_client = lambda _name: self._fs_client_raising(NoCredentialsError())
+        with pytest.raises(NoCredentialsError):
+            manager._artifact_mtime("fs:foo")
+
+
+class TestEnvironmentGuard:
+    """Wrong-account/region fingerprint: nearly every resolved artifact is absent."""
+
+    def test_all_absent_is_suspect(self):
+        manager = pm([job("x.py", outputs=["fs:a"])])
+        manager._mtime_cache = {"fs:a": None, "fs:b": None, "ds:c": None}
+        assert manager._environment_looks_wrong() is True
+
+    def test_mostly_present_is_fine(self):
+        manager = pm([job("x.py", outputs=["fs:a"])])
+        manager._mtime_cache = {"fs:a": 1, "fs:b": 2, "ds:c": None}
+        assert manager._environment_looks_wrong() is False
+
+    def test_empty_cache_is_not_suspect(self):
+        # Nothing resolved (e.g. a simulated/test clock) -> never flag.
+        assert pm([job("x.py", outputs=["fs:a"])])._environment_looks_wrong() is False

@@ -84,6 +84,7 @@ class RunPlan:
 
     runs: list[Job] = field(default_factory=list)
     display_lines: list[str] = field(default_factory=list)
+    environment_suspect: bool = False  # nearly every artifact missing -> likely wrong account/region
 
     def add_run(self, job: Job):
         """Add a run-job to the plan."""
@@ -187,6 +188,7 @@ def sort_pipelines(
     mtime_fn=None,
     full_dag: bool = False,
     session=None,
+    force_keys: set | None = None,
 ) -> RunPlan:
     """Sort pipelines into a topologically ordered run plan.
 
@@ -223,6 +225,7 @@ def sort_pipelines(
         mtime_fn=mtime_fn,
         full_dag=full_dag,
         session=session,
+        force_keys=force_keys,
     )
 
 
@@ -359,6 +362,7 @@ def _build_dag_plan(
     mtime_fn=None,
     full_dag: bool = False,
     session=None,
+    force_keys: set | None = None,
 ) -> RunPlan:
     """Build a plan of the stale jobs to run, in dependency order.
 
@@ -379,6 +383,8 @@ def _build_dag_plan(
         mtime_fn (callable | None): Freshness clock; None -> real AWS mtimes.
         full_dag (bool): Display the whole selected closure (up-to-date nodes
             included) instead of just the will-run paths.
+        force_keys (set | None): Job keys to run regardless of freshness (the
+            pattern-matched scripts). Their downstream consumers flood as usual.
 
     Returns:
         RunPlan: Execution plan with the stale runs in topological order
@@ -416,10 +422,17 @@ def _build_dag_plan(
         all_nodes = [n for nodes in grouped.values() for n in nodes]
         pm = PipelineManager.from_jobs(all_nodes, session=session)
 
-        # Freshness decides what runs: a job submits only when stale (mtime_fn
+        # Pattern-matched jobs run regardless of freshness (the user just edited them);
+        # restrict to the active mode so e.g. `--dt` doesn't also force the [ts] sibling.
+        forced = set()
+        if force_keys:
+            forced = {n.key for n in all_nodes if n.key in force_keys and _node_selected(n, mode_filter)}
+
+        # Freshness decides the rest: a dependency submits only when stale (mtime_fn
         # None -> real AWS mtimes). Emit in global topological order so every
         # producer precedes its consumers, honoring the mode filter.
-        decisions = pm._plan(mtime_fn)
+        decisions = pm._plan(mtime_fn, force=forced)
+        plan.environment_suspect = pm._environment_looks_wrong()
         mode_jobs = [job for job, _, _ in decisions if _node_selected(job, mode_filter)]
         will_run = []
         for job, should_run, _reason in decisions:
@@ -511,7 +524,7 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
 
 def select_pipelines(
     all_pipelines: list[Path], all_dags: dict[str, list[Job]], args: argparse.Namespace
-) -> tuple[list[Path], set | None, str]:
+) -> tuple[list[Path], set | None, set | None, str]:
     """Select which pipelines to run based on CLI args.
 
     - ``--all`` runs every script declared in a ``pipelines.json`` DAG. Standalone
@@ -521,12 +534,15 @@ def select_pipelines(
       ``PipelineManager._select``), so the dependencies of a matched pipeline run first.
 
     Returns:
-        tuple: (selected_scripts, selected_keys, description). ``selected_keys`` is
-        the precise set of ``(script, mode)`` job keys to run -- a matched script
-        contributes all its modes, but a dependency only the ``(script, mode)``
-        actually in the closure (so a pulled-in ``logd [dt]`` producer doesn't
-        also drag along its unrelated ``logd [ts]`` sibling). ``None`` for ``--all``
-        (run every mode of every declared script).
+        tuple: (selected_scripts, selected_keys, force_keys, description).
+        ``selected_keys`` is the precise set of ``(script, mode)`` job keys to run --
+        a matched script contributes all its modes, but a dependency only the
+        ``(script, mode)`` actually in the closure (so a pulled-in ``logd [dt]``
+        producer doesn't also drag along its unrelated ``logd [ts]`` sibling).
+        ``force_keys`` is the subset that ran because the *user named it* (the matched
+        scripts, not their dependencies) -- those run regardless of freshness, since
+        naming a pattern means "run what I just edited." Both are ``None`` for
+        ``--all`` (run every mode of every declared script; freshness decides).
     """
     all_nodes = [node for nodes in all_dags.values() for node in nodes]
     declared = {node.script for node in all_nodes}
@@ -542,13 +558,14 @@ def select_pipelines(
         target_nodes = [n for n in all_nodes if n.script in matched_set]
         closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes)
         selected_keys = {n.key for n in closure}
+        force_keys = {n.key for n in target_nodes}  # matched scripts run regardless of freshness
         wanted = matched_set | {n.script for n in closure}  # matched_set keeps loose (non-DAG) matches
         selected = [p for p in all_pipelines if p in wanted]  # preserve discovery order
-        return selected, selected_keys, f"matching {args.patterns} (+ dependencies)"
+        return selected, selected_keys, force_keys, f"matching {args.patterns} (+ dependencies)"
 
     if args.all:
         selected = [p for p in all_pipelines if p in declared]  # declared DAG scripts only
-        return selected, None, "ALL"
+        return selected, None, None, "ALL"
 
     print("Specify pipeline patterns or use --all to launch all pipelines.")
     exit(1)
@@ -697,6 +714,12 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
         action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Submit even when nearly every artifact is missing (otherwise treated as a likely "
+        "wrong-account/region misconfig and aborted)",
+    )
 
     # Mode flags (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group()
@@ -765,7 +788,7 @@ def main():
         return
 
     # Select which pipelines to run
-    selected, selected_keys, selection_desc = select_pipelines(all_pipelines, all_dags, args)
+    selected, selected_keys, force_keys, selection_desc = select_pipelines(all_pipelines, all_dags, args)
 
     # Validate --local before doing more work
     if args.local and len(selected) > 1:
@@ -784,7 +807,9 @@ def main():
 
     session = AWSSession().boto3_session
     try:
-        plan = sort_pipelines(selected, all_dags, mode, selected_keys, full_dag=args.full_dag, session=session)
+        plan = sort_pipelines(
+            selected, all_dags, mode, selected_keys, full_dag=args.full_dag, session=session, force_keys=force_keys
+        )
     except ValueError as e:
         print(f"\nERROR: {e}")
         exit(1)
@@ -798,6 +823,17 @@ def main():
     if args.dry_run:
         print("Dry run complete. No pipelines were launched.\n")
         return
+
+    # Wrong-environment guard: if nearly every artifact came back missing, this is almost
+    # certainly the wrong AWS account/region rather than a real from-scratch build. Refuse
+    # to submit the whole world unless the user explicitly forces it.
+    if plan.environment_suspect and not args.force:
+        print(
+            "\nABORTED: nearly every artifact was not found -- this usually means the wrong AWS "
+            "account/region (check WORKBENCH_CONFIG). Re-run with --force if this is intentional "
+            "(e.g. a genuine from-scratch build).\n"
+        )
+        exit(1)
 
     run_pipelines(plan, args, extra_args)
 
