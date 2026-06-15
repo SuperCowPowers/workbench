@@ -1,0 +1,3 @@
+# Build outputs (assembled layer tree + zip); rebuild with build_deploy.sh.
+build/
+*.zip

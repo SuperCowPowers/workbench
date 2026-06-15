@@ -19,8 +19,6 @@ Args after a literal '--' are forwarded verbatim to the underlying script:
 """
 
 import argparse
-import contextlib
-import io
 import json
 import logging
 import os
@@ -28,23 +26,17 @@ import re
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
-
-import networkx as nx
 
 from workbench.utils.repl_utils import colors as REPL_COLORS
 from workbench.utils.tree_render import render_forest
-from workbench.utils.pipelines_manager import (
-    PipelineNode,
-    build_producer_index,
-    derive_edges,
+from workbench.lambda_layer.pipeline_manager import (
+    Job,
+    PipelineManager,
     parse_spec,
-    plan_runs,
-    ref_name,
     ref_type,
     simulated_mtime,
-    with_dependencies,
 )
 
 log = logging.getLogger("workbench")
@@ -81,34 +73,20 @@ def script_label(stem: str, mode: str | None) -> str:
 
 @dataclass
 class RunPlan:
-    """Execution plan produced by sort_pipelines()."""
+    """Execution plan from sort_pipelines(): the run-jobs plus the display lines.
 
-    runs: list[tuple[Path, str]] = field(default_factory=list)
-    group_ids: dict[tuple[Path, str], str | None] = field(default_factory=dict)
+    Each run is a :class:`Job` whose ``mode`` is the *runtime* mode (a modeless
+    node adopts the active filter). ``group``/``outputs``/``inputs`` ride along on
+    the job, so there are no parallel dicts to keep in sync.
+    """
+
+    runs: list[Job] = field(default_factory=list)
     display_lines: list[str] = field(default_factory=list)
-    deps: dict[tuple[Path, str], dict] = field(default_factory=dict)
+    environment_suspect: bool = False  # nearly every artifact missing -> likely wrong account/region
 
-    def add_run(
-        self,
-        script: Path,
-        mode: str,
-        group_id: str | None = None,
-        outputs: list[str] | None = None,
-        inputs: list[str] | None = None,
-    ):
-        """Add a run to the plan.
-
-        Args:
-            script (Path): Path to the pipeline script
-            mode (str): Execution mode (e.g., "dt", "promote")
-            group_id (str | None): Pipeline name for grouped execution, or None for standalone
-            outputs (list[str] | None): Artifact refs this run produces
-            inputs (list[str] | None): Artifact refs this run consumes (its dependencies)
-        """
-        run = (script, mode)
-        self.runs.append(run)
-        self.group_ids[run] = group_id
-        self.deps[run] = {"outputs": outputs or [], "inputs": inputs or []}
+    def add_run(self, job: Job):
+        """Add a run-job to the plan."""
+        self.runs.append(job)
 
 
 def parse_script_name(script_path: Path) -> tuple[str, str | None]:
@@ -130,47 +108,50 @@ def parse_script_name(script_path: Path) -> tuple[str, str | None]:
     return script_path.stem, None
 
 
-def build_pipeline_meta(script_path: Path, mode: str, serverless: bool, model_ref: str | None = None) -> str:
-    """Build PIPELINE_META JSON for a pipeline script.
+def build_pipeline_meta(job: Job, serverless: bool) -> str:
+    """Build the PIPELINE_META JSON for a run.
 
-    For dt/ts the model/endpoint name comes from the node's declared ``model:``
-    output (the DAG is the source of truth); it falls back to deriving the name
-    from the filename when no declared output is available (e.g. a standalone
-    run). promote derives a date-stamped name from the filename (with the
-    framework suffix stripped for the endpoint). Modeless producers get no model.
+    Declared dt/ts model jobs use the shared core (:meth:`Job.pipeline_meta` --
+    model/endpoint names from the declared ``model:`` output). The launcher adds
+    two cases the core can't express: ``promote`` derives a date-stamped name from
+    the filename (framework suffix stripped for the endpoint), and a
+    standalone/undeclared dt/ts run falls back to a filename-derived name.
     """
     from datetime import datetime
 
-    basename, version = parse_script_name(script_path)
+    mode = job.mode
+    model_ref = next((o for o in job.outputs if ref_type(o) == "model"), None)
+
+    # Declared dt/ts with a model: output -> the shared core.
+    if mode in ("dt", "ts") and model_ref is not None:
+        return json.dumps(job.pipeline_meta(serverless))
+
+    basename, version = parse_script_name(Path(job.script))
     basename_hyphen = basename.replace("_", "-")  # e.g., "ppb-human-free-reg-xgb"
-    endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
-    today = datetime.now().strftime("%y%m%d")
     v = f"-{version}" if version else ""
 
-    if mode in ("dt", "ts"):
-        # Prefer the DAG-declared model: output; derive from filename only if absent.
-        model_name = endpoint_name = ref_name(model_ref) if model_ref else f"{basename_hyphen}{v}-{mode}"
-    elif mode == "promote":
-        model_name = f"{basename_hyphen}{v}-{today}"
-        endpoint_name = f"{endpoint_base}{v}"
-    else:
-        # No model to name. Modeless producers (e.g. FeatureSets) are normal and
-        # stay quiet; a non-empty mode here is unrecognized (not dt/ts/promote) --
-        # likely a typo -- so warn.
-        if mode:
-            print(
-                f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote); "
-                f"passing through with no model metadata.",
-                file=sys.stderr,
-            )
-        return json.dumps({"mode": mode, "serverless": serverless})
+    if mode in ("dt", "ts"):  # no declared output -> filename fallback
+        name = f"{basename_hyphen}{v}-{mode}"
+        return json.dumps({"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": name})
 
-    return json.dumps(
-        {"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless}
-    )
+    if mode == "promote":
+        endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
+        name = f"{basename_hyphen}{v}-{datetime.now().strftime('%y%m%d')}"
+        return json.dumps(
+            {"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": f"{endpoint_base}{v}"}
+        )
+
+    # Modeless producer (e.g. FeatureSet) -> no model. A non-empty unrecognized
+    # mode is likely a typo, so warn.
+    if mode:
+        print(
+            f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote); passing through with no model metadata.",
+            file=sys.stderr,
+        )
+    return json.dumps({"mode": mode, "serverless": serverless})
 
 
-def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | None:
+def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
     """Load pipelines.json from a directory.
 
     The JSON maps each pipeline name to a flat list of nodes. A node runs a
@@ -181,7 +162,7 @@ def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | No
         directory (Path): Directory to check for pipelines.json
 
     Returns:
-        dict | None: {pipeline_name: [PipelineNode]}, or None if no JSON config found
+        dict | None: {pipeline_name: [Job]}, or None if no JSON config found
     """
     json_path = directory / "pipelines.json"
     if not json_path.exists():
@@ -191,61 +172,21 @@ def load_pipelines_config(directory: Path) -> dict[str, list[PipelineNode]] | No
     # Resolve each node's script relative to this config's directory, then group
     # the flat node list back into {pipeline_name: [nodes]}.
     nodes = parse_spec(config, script_resolver=lambda script: directory / script)
-    pipelines: dict[str, list[PipelineNode]] = {}
+    pipelines: dict[str, list[Job]] = {}
     for node in nodes:
         pipelines.setdefault(node.group, []).append(node)
     return pipelines
 
 
-def build_dag(name: str, nodes: list[PipelineNode]) -> nx.DiGraph:
-    """Build a DiGraph from a set of nodes, deriving edges from outputs/inputs.
-
-    Each node becomes a graph node keyed by (script, mode), with the
-    PipelineNode stored under the "node" attribute. Edges run producer ->
-    consumer, matched by artifact ref. The producer index spans every node
-    passed in, so callers can hand it all selected nodes at once and have
-    cross-pipeline dependencies (a node consuming a sibling pipeline's
-    FeatureSet) resolve to real edges rather than be flagged as external.
-
-    Args:
-        name (str): Label used in error messages when a node has no group
-        nodes (list[PipelineNode]): Nodes to wire into the graph
-
-    Returns:
-        nx.DiGraph: The derived dependency graph
-
-    Raises:
-        ValueError: If two nodes output the same artifact, if a node is
-            duplicated, or if the resulting graph has a dependency cycle.
-    """
-    graph = nx.DiGraph()
-
-    # Register every node, keyed by (script, mode). The producer index, edges,
-    # and external-input detection are the manager's job (one source of truth);
-    # this function only assembles the networkx graph used for display + ordering.
-    for node in nodes:
-        if node.key in graph:
-            raise ValueError(f"Pipeline '{name}': duplicate node {node.node_id}")
-        graph.add_node(node.key, node=node)
-
-    # Inputs with no producer are simply external roots; the data-flow render
-    # shows them (grey vs green), so there's nothing to warn about here.
-    index = build_producer_index(nodes)
-    for producer, consumer in derive_edges(nodes, index):
-        graph.add_edge(producer.key, consumer.key)
-
-    if not nx.is_directed_acyclic_graph(graph):
-        cycle = nx.find_cycle(graph)
-        readable = " -> ".join(run_label(s, m) for (s, m), _ in cycle)
-        raise ValueError(f"Pipeline '{name}' has a dependency cycle: {readable}")
-
-    return graph
-
-
 def sort_pipelines(
     pipelines: list[Path],
-    all_dags: dict[str, list[PipelineNode]],
+    all_dags: dict[str, list[Job]],
     mode: str | None = None,
+    selected_keys: set | None = None,
+    mtime_fn=None,
+    full_dag: bool = False,
+    session=None,
+    force_keys: set | None = None,
 ) -> RunPlan:
     """Sort pipelines into a topologically ordered run plan.
 
@@ -263,7 +204,7 @@ def sort_pipelines(
     Args:
         pipelines (list[Path]): Pipelines to sort
         all_dags (dict): DAG definitions from pipelines.json files
-            {pipeline_name: [PipelineNode]}
+            {pipeline_name: [Job]}
         mode (str | None): Execution mode from CLI flags (e.g., "dt", "promote")
 
     Returns:
@@ -274,12 +215,21 @@ def sort_pipelines(
     if mode and mode in OVERRIDE_MODES:
         return _build_override_plan(pipelines, all_dags, mode)
 
-    return _build_dag_plan(pipelines, all_dags, mode_filter=mode)
+    return _build_dag_plan(
+        pipelines,
+        all_dags,
+        mode_filter=mode,
+        selected_keys=selected_keys,
+        mtime_fn=mtime_fn,
+        full_dag=full_dag,
+        session=session,
+        force_keys=force_keys,
+    )
 
 
 def _build_override_plan(
     pipelines: list[Path],
-    all_dags: dict[str, list[PipelineNode]],
+    all_dags: dict[str, list[Job]],
     mode: str,
 ) -> RunPlan:
     """Build a plan that runs each unique script once with the override mode.
@@ -304,19 +254,19 @@ def _build_override_plan(
             script = node.script
             if script in pipeline_set and script not in seen_scripts:
                 seen_scripts.add(script)
-                plan.add_run(script, mode)
+                plan.add_run(Job(script, mode))
                 plan.display_lines.append(f"   {run_label(script, mode)}")
 
     # Add standalone scripts
     for script in pipelines:
         if script not in seen_scripts:
-            plan.add_run(script, mode)
+            plan.add_run(Job(script, mode))
             plan.display_lines.append(f"   {run_label(script, mode)} (standalone)")
 
     return plan
 
 
-def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
+def _node_selected(node: Job, mode_filter: str | None) -> bool:
     """Whether a node runs under the given filter mode.
 
     A filter (e.g. ``--dt``) only excludes *other filter modes*. Modeless nodes,
@@ -328,7 +278,7 @@ def _node_selected(node: PipelineNode, mode_filter: str | None) -> bool:
     return node.mode == mode_filter
 
 
-def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=None, highlight=()) -> list[str]:
+def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highlight=(), dep_status=None) -> list[str]:
     """Render the data-flow DAG: ds:/fs:/model: artifacts and scripts as nodes,
     edges flowing artifact -> script -> artifact. Shared producers fan out and
     cross-pipeline joins show as multi-parent, rooted at the external sources.
@@ -340,13 +290,15 @@ def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=Non
     keep their mode coloring.
 
     Args:
-        nodes (list[PipelineNode]): The selected nodes to render.
+        nodes (list[Job]): The selected nodes to render.
         runtime_mode (callable): node -> the mode to display it under.
         produced (set[str]): Every artifact ref produced anywhere in the repo.
         roots (list | None): Render these refs/keys as the roots (e.g. simulated
             sources) instead of the natural in-degree-0 sources.
         highlight (iterable): Artifact refs to mark in orange (e.g. the simulated
             modified sources).
+        dep_status (dict | None): ref -> "current"/"modified"/"missing"; appends a
+            colored freshness suffix to those dependency artifacts.
     """
     # Build the bipartite data-flow graph: artifacts and scripts as nodes, with
     # children ordered (script -> its outputs; artifact -> its consumer scripts).
@@ -383,12 +335,18 @@ def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=Non
     # external. Terminal outputs (e.g. model:, no consumer) get no color.
     # Highlighted refs (e.g. simulated modified sources) override to orange.
     highlight = set(highlight)
+    dep_status = dep_status or {}
+    suffix_color = {"current": "lightgreen", "modified": "orange", "missing": "red"}
     for ref in external:
         if ref in highlight:
             label[ref] = _color(ref, "orange")
         else:
             consumed = bool(children[ref])
             label[ref] = _color(ref, "lightgreen") if (consumed and not external[ref]) else ref
+        # Freshness suffix on dependency artifacts (def. A): is this input current?
+        status = dep_status.get(ref)
+        if status:
+            label[ref] += " " + _color(f"({status})", suffix_color[status])
 
     if roots is None:
         # Roots = external sources (in-degree 0): artifacts no one produces, plus
@@ -404,30 +362,47 @@ def render_dataflow(nodes: list[PipelineNode], runtime_mode, produced, roots=Non
 
 def _build_dag_plan(
     pipelines: list[Path],
-    all_dags: dict[str, list[PipelineNode]],
+    all_dags: dict[str, list[Job]],
     mode_filter: str | None = None,
+    selected_keys: set | None = None,
+    mtime_fn=None,
+    full_dag: bool = False,
+    session=None,
+    force_keys: set | None = None,
 ) -> RunPlan:
-    """Build a plan in topological order, optionally filtering by mode.
+    """Build a plan of the stale jobs to run, in dependency order.
 
-    Edges are derived from each pipeline's outputs/inputs artifacts. The
-    full (all-mode) graph is built so cross-mode producers resolve, then only
-    the nodes selected by ``mode_filter`` are emitted, preserving topological
-    order. A node's produced/consumed artifacts become its outputs/inputs for
-    the batch dependency layer.
+    Edges are derived from each pipeline's outputs/inputs artifacts. The full
+    (all-mode) graph is built so cross-mode producers resolve, then freshness
+    decides what runs: a job submits only when stale (forward flood). A node's
+    produced/consumed artifacts become its outputs/inputs for the batch
+    dependency layer.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
         all_dags (dict): DAG definitions from pipelines.json files
         mode_filter (str | None): If set, only include runs for this mode
+        selected_keys (set | None): If set, restrict to these ``(script, mode)``
+            job keys -- so a dependency contributes only its needed mode, not every
+            mode of its script. When None, every mode of every ``pipelines`` script
+            is eligible (used by ``--all`` and direct callers/tests).
+        mtime_fn (callable | None): Freshness clock; None -> real AWS mtimes.
+        full_dag (bool): Display the whole selected closure (up-to-date nodes
+            included) instead of just the will-run paths.
+        force_keys (set | None): Job keys to run regardless of freshness (the
+            pattern-matched scripts). Their downstream consumers flood as usual.
 
     Returns:
-        RunPlan: Execution plan with runs in topological order
+        RunPlan: Execution plan with the stale runs in topological order
     """
     pipeline_set = set(pipelines)
     plan = RunPlan()
     found_in_dag = set()
 
-    def runtime_mode(node: PipelineNode) -> str | None:
+    def in_selection(node: Job) -> bool:
+        return node.key in selected_keys if selected_keys is not None else node.script in pipeline_set
+
+    def runtime_mode(node: Job) -> str | None:
         # A named non-filter mode (e.g. "fs") runs as itself; a modeless node
         # adopts the active filter; a filter mode keeps its own mode.
         if node.mode and node.mode not in FILTER_MODES:
@@ -436,9 +411,9 @@ def _build_dag_plan(
 
     # Gather the selected nodes from every pipeline, tagging each with its
     # pipeline so the file-wide graph can be split back into per-pipeline trees.
-    grouped: dict[str, list[PipelineNode]] = {}
+    grouped: dict[str, list[Job]] = {}
     for name, nodes in all_dags.items():
-        in_pipeline = [n for n in nodes if n.script in pipeline_set]
+        in_pipeline = [n for n in nodes if in_selection(n)]
         found_in_dag.update(n.script for n in in_pipeline)
         if not in_pipeline:
             continue
@@ -451,42 +426,68 @@ def _build_dag_plan(
         # ppb_mt consuming a FeatureSet built by ppb_human_free) resolves to a
         # real edge instead of being mistaken for an external input.
         all_nodes = [n for nodes in grouped.values() for n in nodes]
-        graph = build_dag("selected pipelines", all_nodes)
+        pm = PipelineManager.from_jobs(all_nodes, session=session)
 
-        # Emit runs in global topological order so every producer precedes its
-        # consumers, even when the consumer lives in another pipeline.
-        selected_nodes = []
-        for generation in nx.topological_generations(graph):
-            for key in generation:
-                node = graph.nodes[key]["node"]
-                if not _node_selected(node, mode_filter):
-                    continue
-                plan.add_run(
-                    node.script,
-                    runtime_mode(node),
-                    group_id=node.group,
-                    outputs=node.outputs,
-                    inputs=node.inputs,
-                )
-                selected_nodes.append(node)
+        # Pattern-matched jobs run regardless of freshness (the user just edited them);
+        # restrict to the active mode so e.g. `--dt` doesn't also force the [ts] sibling.
+        forced = set()
+        if force_keys:
+            forced = {n.key for n in all_nodes if n.key in force_keys and _node_selected(n, mode_filter)}
 
-        # Render the true global data-flow DAG (artifacts + scripts), not sliced
-        # per-pipeline trees. Resolution is judged against every pipeline in the
-        # repo, so an input stays green even when its producer isn't selected.
+        # Freshness decides the rest: a dependency submits only when stale (mtime_fn
+        # None -> real AWS mtimes). Emit in global topological order so every
+        # producer precedes its consumers, honoring the mode filter.
+        decisions = pm.plan(mtime_fn, force=forced)
+        plan.environment_suspect = pm.suspect_environment
+        mode_jobs = [job for job, _, _ in decisions if _node_selected(job, mode_filter)]
+        will_run = []
+        for job, should_run, _reason in decisions:
+            if not _node_selected(job, mode_filter) or not should_run:
+                continue
+            plan.add_run(replace(job, mode=runtime_mode(job)))  # run-job carries the runtime mode
+            will_run.append(job)
+
+        # Freshness suffix for each dependency artifact (def. A): a consumed input is
+        # (modified) if it's newer than a model built from it, (current) if every
+        # consumer is already newer, (missing) if it doesn't exist. Reuses the mtimes
+        # the plan already cached (mtime_fn None -> real AWS resolver) -- no extra calls.
+        resolve = mtime_fn or pm._cached_mtime
+
+        def dep_status_of(ref):
+            t = resolve(ref)
+            if t is None:
+                return "missing"
+            # Build time of each consumer that's fully built (all outputs present).
+            built = []
+            for c in all_nodes:
+                if ref in c.inputs and c.outputs:
+                    outs = [resolve(r) for r in c.outputs]
+                    if None not in outs:
+                        built.append(min(outs))
+            # Newer than the oldest model built from it -> at least one is stale.
+            return "modified" if (built and t > min(built)) else "current"
+
+        dep_status = {ref: dep_status_of(ref) for n in all_nodes for ref in n.inputs}
+
+        # Render the global data-flow DAG (artifacts + scripts). Resolution is
+        # judged against every pipeline in the repo, so an input stays green even
+        # when its producer isn't selected. Default shows only the will-run paths;
+        # --full-dag shows the whole selected closure for diagnosing dependencies.
         produced = {ref for nodes in all_dags.values() for n in nodes for ref in n.outputs}
-        plan.display_lines.extend(render_dataflow(selected_nodes, runtime_mode, produced))
+        display_nodes = mode_jobs if full_dag else will_run
+        plan.display_lines.extend(render_dataflow(display_nodes, runtime_mode, produced, dep_status=dep_status))
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
         if script in found_in_dag:
             continue
-        plan.add_run(script, mode_filter)
+        plan.add_run(Job(script, mode_filter))
         plan.display_lines.append(f"   {run_label(script, mode_filter)} (standalone)")
 
     return plan
 
 
-def get_all_pipelines() -> tuple[list[Path], dict[str, list[PipelineNode]]]:
+def get_all_pipelines() -> tuple[list[Path], dict[str, list[Job]]]:
     """Get all ML pipeline scripts from subdirectories.
 
     Discovers scripts from pipelines.json files AND standalone scripts
@@ -495,7 +496,7 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[PipelineNode]]]:
     Returns:
         tuple: (pipelines, all_dags)
             - pipelines: List of unique pipeline script paths
-            - all_dags: {pipeline_name: [PipelineNode]} from pipelines.json files
+            - all_dags: {pipeline_name: [Job]} from pipelines.json files
     """
     cwd = Path.cwd()
     pipelines = []
@@ -550,18 +551,26 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
 
 
 def select_pipelines(
-    all_pipelines: list[Path], all_dags: dict[str, list[PipelineNode]], args: argparse.Namespace
-) -> tuple[list[Path], str]:
+    all_pipelines: list[Path], all_dags: dict[str, list[Job]], args: argparse.Namespace
+) -> tuple[list[Path], set | None, set | None, str]:
     """Select which pipelines to run based on CLI args.
 
     - ``--all`` runs every script declared in a ``pipelines.json`` DAG. Standalone
       scripts (not in any DAG) are skipped — to be run by ``--all``, declare it.
     - ``--patterns`` matches against all discovered scripts (declared *and*
       standalone) and pulls in each match's transitive upstream producers (via
-      ``with_dependencies``), so the dependencies of a matched pipeline run first.
+      ``PipelineManager._select``), so the dependencies of a matched pipeline run first.
 
     Returns:
-        tuple[list[Path], str]: (selected_pipelines, human-readable selection description)
+        tuple: (selected_scripts, selected_keys, force_keys, description).
+        ``selected_keys`` is the precise set of ``(script, mode)`` job keys to run --
+        a matched script contributes all its modes, but a dependency only the
+        ``(script, mode)`` actually in the closure (so a pulled-in ``logd [dt]``
+        producer doesn't also drag along its unrelated ``logd [ts]`` sibling).
+        ``force_keys`` is the subset that ran because the *user named it* (the matched
+        scripts, not their dependencies) -- those run regardless of freshness, since
+        naming a pattern means "run what I just edited." Both are ``None`` for
+        ``--all`` (run every mode of every declared script; freshness decides).
     """
     all_nodes = [node for nodes in all_dags.values() for node in nodes]
     declared = {node.script for node in all_nodes}
@@ -572,15 +581,19 @@ def select_pipelines(
             print(f"No pipelines matching patterns: {args.patterns}")
             exit(1)
         matched_set = set(matched)
+        # All modes of matched scripts are targets; the closure adds each target's
+        # transitive upstream producer *jobs* (specific (script, mode)).
         target_nodes = [n for n in all_nodes if n.script in matched_set]
-        # matched_set keeps any loose (non-DAG) matches; the closure adds declared deps.
-        wanted = matched_set | {n.script for n in with_dependencies(target_nodes, all_nodes)}
+        closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes)
+        selected_keys = {n.key for n in closure}
+        force_keys = {n.key for n in target_nodes}  # matched scripts run regardless of freshness
+        wanted = matched_set | {n.script for n in closure}  # matched_set keeps loose (non-DAG) matches
         selected = [p for p in all_pipelines if p in wanted]  # preserve discovery order
-        return selected, f"matching {args.patterns} (+ dependencies)"
+        return selected, selected_keys, force_keys, f"matching {args.patterns} (+ dependencies)"
 
     if args.all:
         selected = [p for p in all_pipelines if p in declared]  # declared DAG scripts only
-        return selected, "ALL"
+        return selected, None, None, "ALL"
 
     print("Specify pipeline patterns or use --all to launch all pipelines.")
     exit(1)
@@ -602,7 +615,7 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
     """Print the launch summary banner."""
     if mode:
         mode_display = mode.upper()
-    elif any(gid is not None for gid in plan.group_ids.values()):
+    elif any(job.group is not None for job in plan.runs):
         mode_display = "JSON defaults"
     else:
         mode_display = "none (standalone)"
@@ -641,17 +654,16 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             time.sleep(1)
         print(" GO!\n")
 
-    for i, (script, mode) in enumerate(plan.runs, 1):
+    for i, job in enumerate(plan.runs, 1):
+        script, mode = job.script, job.mode
         mode_display = f" [{mode}]" if mode else ""
         print(f"\n{'─' * 60}")
         print(f"{'Running' if args.local else 'Launching'} run {i}/{len(plan.runs)}: {script.name}{mode_display}")
 
         # Every run gets PIPELINE_META, uniformly -- the script decides whether to
-        # use it. dt/ts take the model name from the node's declared model: output
-        # (DAG is the source of truth); see build_pipeline_meta.
-        deps = plan.deps.get((script, mode), {})
-        model_ref = next((o for o in deps.get("outputs", []) if ref_type(o) == "model"), None)
-        pipeline_meta = build_pipeline_meta(script, mode, serverless, model_ref)
+        # use it. dt/ts take the model name from the declared model: output (DAG is
+        # the source of truth); see build_pipeline_meta.
+        pipeline_meta = build_pipeline_meta(job, serverless)
 
         if args.local:
             env = os.environ.copy()
@@ -669,13 +681,12 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             cmd.extend(["--pipeline-meta", pipeline_meta])
             if extra_args:
                 cmd.extend(["--script-args", json.dumps(extra_args)])
-            group_id = plan.group_ids.get((script, mode))
-            if group_id:
-                cmd.extend(["--group-id", group_id])
-            if deps.get("outputs"):
-                cmd.extend(["--outputs", ",".join(deps["outputs"])])
-            if deps.get("inputs"):
-                cmd.extend(["--inputs", ",".join(deps["inputs"])])
+            if job.group:
+                cmd.extend(["--group-id", job.group])
+            if job.outputs:
+                cmd.extend(["--outputs", ",".join(job.outputs)])
+            if job.inputs:
+                cmd.extend(["--inputs", ",".join(job.inputs)])
             print(f"{'─' * 60}")
             print(f"Running: {' '.join(cmd)}\n")
             result = subprocess.run(cmd)
@@ -715,6 +726,11 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser.add_argument("--realtime", action="store_true", help="Create realtime endpoints (default is serverless)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be launched without actually launching")
     parser.add_argument(
+        "--full-dag",
+        action="store_true",
+        help="Show the whole selected dependency closure (incl. up-to-date nodes), not just what will run",
+    )
+    parser.add_argument(
         "--sim-mod",
         nargs="+",
         metavar="REF",
@@ -725,6 +741,12 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
         "--local",
         action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Submit even when nearly every artifact is missing (otherwise treated as a likely "
+        "wrong-account/region misconfig and aborted)",
     )
 
     # Mode flags (mutually exclusive)
@@ -739,27 +761,26 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
 def run_simulation(all_dags, modified_refs):
     """Simulate modifying ``modified_refs`` and show the DAG paths that would submit.
 
-    Source-rooted freshness over the whole repo's DAG: any node downstream of a
-    modified source goes stale and would be submitted to Batch. No AWS, no launch.
+    Forward freshness flood over the whole repo's DAG: any job downstream of a
+    modified artifact goes stale and would be submitted to Batch. The modified
+    ref can be any type (ds:/fs:/model:) -- staleness floods forward regardless.
+    No AWS, no launch.
     """
     global_nodes = [node for nodes in all_dags.values() for node in nodes]
     produced = {ref for node in global_nodes for ref in node.outputs}
-    # plan_runs warns (to stdout) for no-input nodes -- CloudWatch-useful in the
-    # Lambda but noise here, and our summary already counts them, so swallow it.
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        plan = plan_runs(global_nodes, simulated_mtime(modified_refs))
-    runs = [(node, reason) for node, should_run, reason in plan if should_run]
-    triggered = sum(1 for _, reason in runs if reason == "stale")
-    always_run = sum(1 for _, reason in runs if reason in ("no_inputs", "unmanaged"))
+    # plan() logs a no-input warning -- CloudWatch-useful in the Lambda but noise in
+    # this offline view (our summary already counts them), so quiet the logger for it.
+    prior_level = log.level
+    log.setLevel(logging.ERROR)
+    try:
+        plan = PipelineManager.from_jobs(global_nodes).plan(simulated_mtime(modified_refs))
+    finally:
+        log.setLevel(prior_level)
+    runs = [item for item in plan if item.run]
+    triggered = sum(1 for it in runs if it.reason in ("stale", "upstream", "missing"))
+    always_run = sum(1 for it in runs if it.reason in ("no_inputs", "unmanaged"))
 
     print(f"\nSimulating modification of: {', '.join(modified_refs)}")
-    internal = [ref for ref in modified_refs if ref in produced]
-    if internal:
-        print(
-            f"  NOTE: {', '.join(internal)} is produced internally; freshness is source-rooted,\n"
-            f"        so modifying it does not propagate -- simulate its upstream ds: instead."
-        )
     print(f"  {triggered} run(s) triggered by this change; {always_run} always-run regardless.\n")
 
     print("Submitted paths:")
@@ -770,7 +791,7 @@ def run_simulation(all_dags, modified_refs):
 
     # The always-run nodes aren't downstream of the change, so they don't appear
     # in the paths above -- list them so it's clear they submit regardless.
-    always = [node for node, reason in runs if reason in ("no_inputs", "unmanaged")]
+    always = [it.job for it in runs if it.reason in ("no_inputs", "unmanaged")]
     if always:
         print("Always-run regardless of this change:")
         for node in always:
@@ -785,7 +806,7 @@ def main():
     all_pipelines, all_dags = get_all_pipelines()
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
-        exit(1)
+        sys.exit(1)
     if not all_dags:
         log.warning(
             f"No pipelines.json found under {Path.cwd()} -- running scripts standalone "
@@ -798,7 +819,7 @@ def main():
         return
 
     # Select which pipelines to run
-    selected, selection_desc = select_pipelines(all_pipelines, all_dags, args)
+    selected, selected_keys, force_keys, selection_desc = select_pipelines(all_pipelines, all_dags, args)
 
     # Validate --local before doing more work
     if args.local and len(selected) > 1:
@@ -806,17 +827,23 @@ def main():
         for p in selected:
             print(f"   {p.name}")
         print("\nNarrow your selection to a single script.")
-        exit(1)
+        sys.exit(1)
 
     # Resolve execution mode
     mode = resolve_mode(args)
 
-    # Build execution plan
+    # Build execution plan (mtime-aware: only stale jobs run). Hand the manager
+    # workbench's region-bound, assumed-role session so it can resolve mtimes.
+    from workbench.core.cloud_platform.aws.aws_session import AWSSession
+
+    session = AWSSession().boto3_session
     try:
-        plan = sort_pipelines(selected, all_dags, mode)
+        plan = sort_pipelines(
+            selected, all_dags, mode, selected_keys, full_dag=args.full_dag, session=session, force_keys=force_keys
+        )
     except ValueError as e:
         print(f"\nERROR: {e}")
-        exit(1)
+        sys.exit(1)
 
     # Display summary
     print_summary(plan, selection_desc, mode, args)
@@ -827,6 +854,17 @@ def main():
     if args.dry_run:
         print("Dry run complete. No pipelines were launched.\n")
         return
+
+    # Wrong-environment guard: if nearly every artifact came back missing, this is almost
+    # certainly the wrong AWS account/region rather than a real from-scratch build. Refuse
+    # to submit the whole world unless the user explicitly forces it.
+    if plan.environment_suspect and not args.force:
+        print(
+            "\nABORTED: nearly every artifact was not found -- this usually means the wrong AWS "
+            "account/region (check WORKBENCH_CONFIG). Re-run with --force if this is intentional "
+            "(e.g. a genuine from-scratch build).\n"
+        )
+        sys.exit(1)
 
     run_pipelines(plan, args, extra_args)
 

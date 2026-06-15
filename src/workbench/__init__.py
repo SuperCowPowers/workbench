@@ -49,6 +49,15 @@ if os.getenv("WORKBENCH_SKIP_LOGGING", "False").lower() != "true":
 # workgroup carries a ResultConfiguration (S3 output location), so awswrangler
 # does not fall back to the default results bucket. This global config is
 # enforced across every wr.athena.* call in the process.
-import awswrangler as wr
+#
+# Guarded so a minimal install (e.g. the workbench.lambda_layer subset) can
+# import workbench without awswrangler/pandas present; full installs configure
+# the workgroup as before.
+try:
+    import awswrangler as wr
 
-wr.config.workgroup = "workbench-workgroup"
+    wr.config.workgroup = "workbench-workgroup"
+except ImportError:
+    # awswrangler is optional in minimal installs (e.g. the workbench.lambda_layer
+    # subset); skip the global workgroup config. Importing workbench still succeeds.
+    pass

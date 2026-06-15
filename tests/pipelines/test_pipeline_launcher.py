@@ -6,20 +6,41 @@ from pathlib import Path
 import pytest
 
 from workbench.scripts.ml_pipeline_launcher import (
-    PipelineNode,
-    build_dag,
+    Job,
     build_pipeline_meta,
     get_all_pipelines,
     load_pipelines_config,
     parse_script_name,
     run_label,
+    run_simulation,
     sort_pipelines,
 )
+from workbench.lambda_layer.pipeline_manager import PipelineManager
 
 
 def node(script, mode=None, outputs=None, inputs=None):
-    """Build a PipelineNode with a Path script (test convenience)."""
-    return PipelineNode(Path(script), mode, outputs or [], inputs or [])
+    """Build a Job with a Path script (test convenience)."""
+    return Job(Path(script), mode, outputs or [], inputs or [])
+
+
+def run_keys(plan):
+    """[(script, mode), ...] for the plan's run-jobs."""
+    return [(j.script, j.mode) for j in plan.runs]
+
+
+def run_by(plan, script, mode):
+    """The run-job in the plan matching (script, mode)."""
+    return next(j for j in plan.runs if j.script == script and j.mode == mode)
+
+
+@pytest.fixture(autouse=True)
+def all_stale(monkeypatch):
+    """Launcher tests run without AWS. Make the built-in mtime resolver report
+    every artifact missing, so all selected jobs are stale and run -- these tests
+    cover selection / ordering / mode / display, not freshness (which is tested in
+    test_pipeline_manager). Individual tests override for freshness behavior.
+    """
+    monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: None)
 
 
 class TestLoadPipelinesConfig:
@@ -81,56 +102,38 @@ class TestLoadPipelinesConfig:
         assert nodes[0].script == tmp_path / "subdir_script.py"
 
 
-class TestBuildDag:
-    """Tests for build_dag artifact-derived edges and validation."""
+class TestJobGraph:
+    """Tests for the bipartite dependency DAG the launcher orders on (PipelineManager.graph)."""
 
     def test_edges_derived_from_artifacts(self):
-        """An input artifact links the consumer to its producer."""
+        """Producer and consumer are linked *through* the artifact node (bipartite)."""
         producer = node("fs.py", outputs=["fs:x"])
         consumer = node("model.py", inputs=["fs:x"])
-        graph = build_dag("p", [producer, consumer])
+        graph = PipelineManager.from_jobs([producer, consumer]).graph
 
-        assert graph.number_of_edges() == 1
-        assert graph.has_edge((Path("fs.py"), None), (Path("model.py"), None))
+        assert graph.has_edge((Path("fs.py"), None), "fs:x")  # job -> artifact (produces)
+        assert graph.has_edge("fs:x", (Path("model.py"), None))  # artifact -> job (consumes)
 
     def test_fan_out(self):
-        """One producer feeding two consumers yields two parallel edges."""
+        """One artifact feeding two consumers yields two edges out of the artifact."""
         nodes = [
             node("fs.py", outputs=["fs:x"]),
             node("a.py", inputs=["fs:x"]),
             node("b.py", inputs=["fs:x"]),
         ]
-        graph = build_dag("p", nodes)
-        assert graph.number_of_edges() == 2
-        assert graph.out_degree((Path("fs.py"), None)) == 2
-
-    def test_duplicate_producer_raises(self):
-        """Two nodes outputting the same artifact is a hard error."""
-        with pytest.raises(ValueError, match="produced by both"):
-            build_dag("p", [node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
-
-    def test_cycle_raises(self):
-        """A dependency cycle is a hard error."""
-        with pytest.raises(ValueError, match="cycle"):
-            build_dag(
-                "p",
-                [
-                    node("a.py", outputs=["fs:x"], inputs=["fs:y"]),
-                    node("b.py", outputs=["fs:y"], inputs=["fs:x"]),
-                ],
-            )
+        graph = PipelineManager.from_jobs(nodes).graph
+        assert graph.out_degree("fs:x") == 2  # feeds a.py and b.py
+        assert graph.out_degree((Path("fs.py"), None)) == 1  # produces just fs:x
 
     def test_dangling_input_tolerated(self, capsys):
         """An input with no producer is tolerated silently (it's an external root)."""
-        graph = build_dag("p", [node("a.py", inputs=["fs:external"])])
-        assert graph.number_of_nodes() == 1
-        assert graph.number_of_edges() == 0
+        graph = PipelineManager.from_jobs([node("a.py", inputs=["fs:external"])]).graph
+        assert graph.number_of_nodes() == 2  # the job + its external input artifact
+        assert graph.has_edge("fs:external", (Path("a.py"), None))
         assert capsys.readouterr().err == ""  # no warning noise
 
-    def test_duplicate_node_raises(self):
-        """The same (script, mode) declared twice is a hard error."""
-        with pytest.raises(ValueError, match="duplicate node"):
-            build_dag("p", [node("a.py", mode="dt"), node("a.py", mode="dt")])
+    # Note: duplicate-producer / cycle / duplicate-job validation is covered by
+    # TestConstruction in test_pipeline_manager.py (graph-building is a manager concern).
 
 
 class TestSortPipelines:
@@ -144,12 +147,12 @@ class TestSortPipelines:
 
         plan = sort_pipelines([fs, a], dags)
 
-        order = [s for s, _ in plan.runs]
+        order = [j.script for j in plan.runs]
         assert order.index(fs) < order.index(a)
-        assert plan.group_ids[(fs, None)] == "p"
+        assert run_by(plan, fs, None).group == "p"
         # Artifacts flow straight into the batch dependency tokens
-        assert plan.deps[(fs, None)] == {"outputs": ["fs:x"], "inputs": []}
-        assert plan.deps[(a, None)] == {"outputs": [], "inputs": ["fs:x"]}
+        assert (run_by(plan, fs, None).outputs, run_by(plan, fs, None).inputs) == (["fs:x"], [])
+        assert (run_by(plan, a, None).outputs, run_by(plan, a, None).inputs) == ([], ["fs:x"])
 
     def test_cross_pipeline_dependency_orders_globally(self, tmp_path):
         """A producer in one pipeline orders before a consumer in another."""
@@ -162,11 +165,11 @@ class TestSortPipelines:
 
         plan = sort_pipelines([fs, consumer], dags)
 
-        order = [s for s, _ in plan.runs]
+        order = [j.script for j in plan.runs]
         assert order.index(fs) < order.index(consumer)
         # Each run keeps its own pipeline as its group.
-        assert plan.group_ids[(fs, None)] == "producers"
-        assert plan.group_ids[(consumer, None)] == "consumers"
+        assert run_by(plan, fs, None).group == "producers"
+        assert run_by(plan, consumer, None).group == "consumers"
 
     def test_external_inputs_tolerated_silently(self, tmp_path, capsys):
         """Dangling/external inputs emit no warnings -- the render's grey/green conveys them."""
@@ -219,7 +222,7 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags, mode="dt")
-        assert plan.runs == [(xgb, "dt")]
+        assert run_keys(plan) == [(xgb, "dt")]
 
     def test_mode_filter_ts_cross_mode_dependency(self, tmp_path):
         """A ts node keeps its input token even when the dt producer is filtered out."""
@@ -227,8 +230,8 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags, mode="ts")
-        assert plan.runs == [(xgb, "ts")]
-        assert plan.deps[(xgb, "ts")]["inputs"] == ["fs:x"]
+        assert run_keys(plan) == [(xgb, "ts")]
+        assert run_by(plan, xgb, "ts").inputs == ["fs:x"]
 
     def test_no_filter_runs_all_modes(self, tmp_path):
         """With no filter, both modes run, producer before consumer."""
@@ -236,13 +239,13 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"])]}
 
         plan = sort_pipelines([xgb], dags)
-        assert plan.runs == [(xgb, "dt"), (xgb, "ts")]
+        assert run_keys(plan) == [(xgb, "dt"), (xgb, "ts")]
 
     def test_modeless_node_runs_under_filter(self, tmp_path):
         """A modeless node runs under a filter, taking the filter as its runtime mode."""
         a = tmp_path / "a.py"
         plan = sort_pipelines([a], {"p": [node(a)]}, mode="dt")
-        assert plan.runs == [(a, "dt")]
+        assert run_keys(plan) == [(a, "dt")]
 
     def test_override_mode_dedup(self, tmp_path):
         """Override modes run each unique script once, ignoring node modes and edges."""
@@ -251,8 +254,8 @@ class TestSortPipelines:
         dags = {"p": [node(xgb, "dt", outputs=["fs:x"]), node(xgb, "ts", inputs=["fs:x"]), node(b, "dt")]}
 
         plan = sort_pipelines([xgb, b], dags, mode="promote")
-        assert plan.runs == [(xgb, "promote"), (b, "promote")]
-        assert plan.deps[(xgb, "promote")] == {"outputs": [], "inputs": []}
+        assert run_keys(plan) == [(xgb, "promote"), (b, "promote")]
+        assert (run_by(plan, xgb, "promote").outputs, run_by(plan, xgb, "promote").inputs) == ([], [])
 
     def test_filtered_selection_excludes_unselected(self, tmp_path):
         """Only scripts in the selected set appear."""
@@ -262,7 +265,7 @@ class TestSortPipelines:
         dags = {"p": [node(fs, outputs=["fs:x"]), node(a, inputs=["fs:x"]), node(b, inputs=["fs:x"])]}
 
         plan = sort_pipelines([fs, a], dags)  # b not selected
-        scripts = {s for s, _ in plan.runs}
+        scripts = {j.script for j in plan.runs}
         assert scripts == {fs, a}
 
     def test_standalone_scripts_included(self, tmp_path):
@@ -271,9 +274,9 @@ class TestSortPipelines:
         orphan = tmp_path / "orphan.py"
         plan = sort_pipelines([a, orphan], {"p": [node(a)]}, mode="dt")
 
-        assert (orphan, "dt") in plan.runs
-        assert plan.group_ids[(orphan, "dt")] is None
-        assert plan.deps[(orphan, "dt")] == {"outputs": [], "inputs": []}
+        assert (orphan, "dt") in run_keys(plan)
+        assert run_by(plan, orphan, "dt").group is None
+        assert (run_by(plan, orphan, "dt").outputs, run_by(plan, orphan, "dt").inputs) == ([], [])
         assert any("standalone" in line for line in plan.display_lines)
 
     def test_empty(self):
@@ -281,6 +284,81 @@ class TestSortPipelines:
         plan = sort_pipelines([], {})
         assert plan.runs == []
         assert plan.display_lines == []
+
+
+class TestFreshness:
+    """The launcher is mtime-aware: only stale jobs run; --full-dag still shows all."""
+
+    def _dags(self, tmp_path):
+        fs = tmp_path / "fs.py"
+        m = tmp_path / "m.py"
+        dags = {"p": [node(fs, outputs=["fs:x"], inputs=["ds:raw"]), node(m, inputs=["fs:x"], outputs=["model:m"])]}
+        return fs, m, dags
+
+    def test_up_to_date_runs_nothing(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}  # outputs newer than source
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        assert sort_pipelines([fs, m], dags).runs == []
+
+    def test_stale_source_runs_whole_path(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 100, "fs:x": 10, "model:m": 10}  # source newer -> both stale
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        assert {j.script for j in sort_pipelines([fs, m], dags).runs} == {fs, m}
+
+    def test_full_dag_shows_closure_even_when_nothing_stale(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        plan = sort_pipelines([fs, m], dags, full_dag=True)
+        assert plan.runs == []  # nothing stale -> nothing submits
+        text = "\n".join(plan.display_lines)
+        assert "fs:x" in text and "model:m" in text  # ...but the closure is still rendered
+
+    def test_force_runs_matched_script_when_up_to_date(self, tmp_path, monkeypatch):
+        # User named a pattern -> the matched script runs even though its deps are current.
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        plan = sort_pipelines([fs, m], dags, force_keys={(m, None)})
+        assert {j.script for j in plan.runs} == {m}  # only the forced match; up-to-date fs stays put
+
+    def _suffix_text(self, tmp_path, monkeypatch, times):
+        fs, m, dags = self._dags(tmp_path)
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        plan = sort_pipelines([fs, m], dags, full_dag=True)  # full_dag so nodes show even when nothing runs
+        return "\n".join(plan.display_lines)
+
+    def test_dep_suffix_current(self, tmp_path, monkeypatch):
+        text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "fs:x": 5, "model:m": 9})
+        assert "fs:x (current)" in text  # fs older than the model built from it
+
+    def test_dep_suffix_modified(self, tmp_path, monkeypatch):
+        text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "fs:x": 20, "model:m": 9})
+        assert "fs:x (modified)" in text  # fs newer than the model -> would trigger a rebuild
+
+    def test_dep_suffix_missing(self, tmp_path, monkeypatch):
+        text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "model:m": 9})  # fs:x absent
+        assert "fs:x (missing)" in text
+
+
+class TestRunSimulation:
+    """--sim-mod: offline forward-flood view of what a modified ref would submit."""
+
+    def test_renders_triggered_path_and_always_run(self, capsys):
+        # A no-inputs job is "always-run"; a ds -> fs chain is triggered by the sim.
+        dags = {
+            "p": [
+                node("logp.py", "dt", outputs=["model:logp-dt"]),  # no inputs -> always-run
+                node("fs.py", outputs=["fs:x"], inputs=["ds:raw"]),
+            ]
+        }
+        run_simulation(dags, ["ds:raw"])  # regression: must not raise on the always-run branch
+        out = capsys.readouterr().out
+        assert "ds:raw" in out  # the triggered path is rendered
+        assert "Always-run regardless" in out  # the no-inputs job is listed separately
+        assert "logp [dt]" in out
 
 
 class TestGetAllPipelines:
@@ -359,15 +437,17 @@ class TestBuildPipelineMeta:
     """build_pipeline_meta prefers the declared model: output, falls back to the filename."""
 
     def test_dt_uses_declared_model_ref(self):
-        meta = json.loads(build_pipeline_meta(Path("ppb_human_free_reg_xgb_1.py"), "dt", True, "model:custom-name"))
+        meta = json.loads(
+            build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt", outputs=["model:custom-name"]), True)
+        )
         assert meta["model_name"] == "custom-name"
         assert meta["endpoint_name"] == "custom-name"
 
     def test_dt_falls_back_to_filename(self):
-        meta = json.loads(build_pipeline_meta(Path("ppb_human_free_reg_xgb_1.py"), "dt", True, None))
+        meta = json.loads(build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt"), True))
         assert meta["model_name"] == "ppb-human-free-reg-xgb-1-dt"
 
     def test_modeless_has_no_model(self):
-        meta = json.loads(build_pipeline_meta(Path("ppb_human_feature_sets_1.py"), None, True, None))
+        meta = json.loads(build_pipeline_meta(node("ppb_human_feature_sets_1.py", None), True))
         assert "model_name" not in meta
         assert meta["serverless"] is True
