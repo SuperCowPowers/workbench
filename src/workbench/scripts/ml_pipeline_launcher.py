@@ -28,7 +28,7 @@ import re
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from workbench.utils.repl_utils import colors as REPL_COLORS
@@ -76,34 +76,19 @@ def script_label(stem: str, mode: str | None) -> str:
 
 @dataclass
 class RunPlan:
-    """Execution plan produced by sort_pipelines()."""
+    """Execution plan from sort_pipelines(): the run-jobs plus the display lines.
 
-    runs: list[tuple[Path, str]] = field(default_factory=list)
-    group_ids: dict[tuple[Path, str], str | None] = field(default_factory=dict)
+    Each run is a :class:`Job` whose ``mode`` is the *runtime* mode (a modeless
+    node adopts the active filter). ``group``/``outputs``/``inputs`` ride along on
+    the job, so there are no parallel dicts to keep in sync.
+    """
+
+    runs: list[Job] = field(default_factory=list)
     display_lines: list[str] = field(default_factory=list)
-    deps: dict[tuple[Path, str], dict] = field(default_factory=dict)
 
-    def add_run(
-        self,
-        script: Path,
-        mode: str,
-        group_id: str | None = None,
-        outputs: list[str] | None = None,
-        inputs: list[str] | None = None,
-    ):
-        """Add a run to the plan.
-
-        Args:
-            script (Path): Path to the pipeline script
-            mode (str): Execution mode (e.g., "dt", "promote")
-            group_id (str | None): Pipeline name for grouped execution, or None for standalone
-            outputs (list[str] | None): Artifact refs this run produces
-            inputs (list[str] | None): Artifact refs this run consumes (its dependencies)
-        """
-        run = (script, mode)
-        self.runs.append(run)
-        self.group_ids[run] = group_id
-        self.deps[run] = {"outputs": outputs or [], "inputs": inputs or []}
+    def add_run(self, job: Job):
+        """Add a run-job to the plan."""
+        self.runs.append(job)
 
 
 def parse_script_name(script_path: Path) -> tuple[str, str | None]:
@@ -125,44 +110,47 @@ def parse_script_name(script_path: Path) -> tuple[str, str | None]:
     return script_path.stem, None
 
 
-def build_pipeline_meta(script_path: Path, mode: str, serverless: bool, model_ref: str | None = None) -> str:
-    """Build PIPELINE_META JSON for a pipeline script.
+def build_pipeline_meta(job: Job, serverless: bool) -> str:
+    """Build the PIPELINE_META JSON for a run.
 
-    For dt/ts the model/endpoint name comes from the node's declared ``model:``
-    output (the DAG is the source of truth); it falls back to deriving the name
-    from the filename when no declared output is available (e.g. a standalone
-    run). promote derives a date-stamped name from the filename (with the
-    framework suffix stripped for the endpoint). Modeless producers get no model.
+    Declared dt/ts model jobs use the shared core (:meth:`Job.pipeline_meta` --
+    model/endpoint names from the declared ``model:`` output). The launcher adds
+    two cases the core can't express: ``promote`` derives a date-stamped name from
+    the filename (framework suffix stripped for the endpoint), and a
+    standalone/undeclared dt/ts run falls back to a filename-derived name.
     """
     from datetime import datetime
 
-    basename, version = parse_script_name(script_path)
+    mode = job.mode
+    model_ref = next((o for o in job.outputs if ref_type(o) == "model"), None)
+
+    # Declared dt/ts with a model: output -> the shared core.
+    if mode in ("dt", "ts") and model_ref is not None:
+        return json.dumps(job.pipeline_meta(serverless))
+
+    basename, version = parse_script_name(Path(job.script))
     basename_hyphen = basename.replace("_", "-")  # e.g., "ppb-human-free-reg-xgb"
-    endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
-    today = datetime.now().strftime("%y%m%d")
     v = f"-{version}" if version else ""
 
-    if mode in ("dt", "ts"):
-        # Prefer the DAG-declared model: output; derive from filename only if absent.
-        model_name = endpoint_name = ref_name(model_ref) if model_ref else f"{basename_hyphen}{v}-{mode}"
-    elif mode == "promote":
-        model_name = f"{basename_hyphen}{v}-{today}"
-        endpoint_name = f"{endpoint_base}{v}"
-    else:
-        # No model to name. Modeless producers (e.g. FeatureSets) are normal and
-        # stay quiet; a non-empty mode here is unrecognized (not dt/ts/promote) --
-        # likely a typo -- so warn.
-        if mode:
-            print(
-                f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote); "
-                f"passing through with no model metadata.",
-                file=sys.stderr,
-            )
-        return json.dumps({"mode": mode, "serverless": serverless})
+    if mode in ("dt", "ts"):  # no declared output -> filename fallback
+        name = f"{basename_hyphen}{v}-{mode}"
+        return json.dumps({"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": name})
 
-    return json.dumps(
-        {"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless}
-    )
+    if mode == "promote":
+        endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
+        name = f"{basename_hyphen}{v}-{datetime.now().strftime('%y%m%d')}"
+        return json.dumps(
+            {"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": f"{endpoint_base}{v}"}
+        )
+
+    # Modeless producer (e.g. FeatureSet) -> no model. A non-empty unrecognized
+    # mode is likely a typo, so warn.
+    if mode:
+        print(
+            f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote); passing through with no model metadata.",
+            file=sys.stderr,
+        )
+    return json.dumps({"mode": mode, "serverless": serverless})
 
 
 def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
@@ -266,13 +254,13 @@ def _build_override_plan(
             script = node.script
             if script in pipeline_set and script not in seen_scripts:
                 seen_scripts.add(script)
-                plan.add_run(script, mode)
+                plan.add_run(Job(script, mode))
                 plan.display_lines.append(f"   {run_label(script, mode)}")
 
     # Add standalone scripts
     for script in pipelines:
         if script not in seen_scripts:
-            plan.add_run(script, mode)
+            plan.add_run(Job(script, mode))
             plan.display_lines.append(f"   {run_label(script, mode)} (standalone)")
 
     return plan
@@ -438,13 +426,7 @@ def _build_dag_plan(
         for job, should_run, _reason in decisions:
             if not _node_selected(job, mode_filter) or not should_run:
                 continue
-            plan.add_run(
-                job.script,
-                runtime_mode(job),
-                group_id=job.group,
-                outputs=job.outputs,
-                inputs=job.inputs,
-            )
+            plan.add_run(replace(job, mode=runtime_mode(job)))  # run-job carries the runtime mode
             will_run.append(job)
 
         # Render the global data-flow DAG (artifacts + scripts). Resolution is
@@ -459,7 +441,7 @@ def _build_dag_plan(
     for script in pipelines:
         if script in found_in_dag:
             continue
-        plan.add_run(script, mode_filter)
+        plan.add_run(Job(script, mode_filter))
         plan.display_lines.append(f"   {run_label(script, mode_filter)} (standalone)")
 
     return plan
@@ -589,7 +571,7 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
     """Print the launch summary banner."""
     if mode:
         mode_display = mode.upper()
-    elif any(gid is not None for gid in plan.group_ids.values()):
+    elif any(job.group is not None for job in plan.runs):
         mode_display = "JSON defaults"
     else:
         mode_display = "none (standalone)"
@@ -628,17 +610,16 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             time.sleep(1)
         print(" GO!\n")
 
-    for i, (script, mode) in enumerate(plan.runs, 1):
+    for i, job in enumerate(plan.runs, 1):
+        script, mode = job.script, job.mode
         mode_display = f" [{mode}]" if mode else ""
         print(f"\n{'─' * 60}")
         print(f"{'Running' if args.local else 'Launching'} run {i}/{len(plan.runs)}: {script.name}{mode_display}")
 
         # Every run gets PIPELINE_META, uniformly -- the script decides whether to
-        # use it. dt/ts take the model name from the node's declared model: output
-        # (DAG is the source of truth); see build_pipeline_meta.
-        deps = plan.deps.get((script, mode), {})
-        model_ref = next((o for o in deps.get("outputs", []) if ref_type(o) == "model"), None)
-        pipeline_meta = build_pipeline_meta(script, mode, serverless, model_ref)
+        # use it. dt/ts take the model name from the declared model: output (DAG is
+        # the source of truth); see build_pipeline_meta.
+        pipeline_meta = build_pipeline_meta(job, serverless)
 
         if args.local:
             env = os.environ.copy()
@@ -656,13 +637,12 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             cmd.extend(["--pipeline-meta", pipeline_meta])
             if extra_args:
                 cmd.extend(["--script-args", json.dumps(extra_args)])
-            group_id = plan.group_ids.get((script, mode))
-            if group_id:
-                cmd.extend(["--group-id", group_id])
-            if deps.get("outputs"):
-                cmd.extend(["--outputs", ",".join(deps["outputs"])])
-            if deps.get("inputs"):
-                cmd.extend(["--inputs", ",".join(deps["inputs"])])
+            if job.group:
+                cmd.extend(["--group-id", job.group])
+            if job.outputs:
+                cmd.extend(["--outputs", ",".join(job.outputs)])
+            if job.inputs:
+                cmd.extend(["--inputs", ",".join(job.inputs)])
             print(f"{'─' * 60}")
             print(f"Running: {' '.join(cmd)}\n")
             result = subprocess.run(cmd)
