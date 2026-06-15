@@ -462,6 +462,7 @@ class PipelineManager:
             decisions.append((job, should_run, reason))
         return decisions
 
+
 def simulated_mtime(modified_refs):
     """An ``mtime_fn`` that marks ``modified_refs`` as freshly modified.
 
