@@ -3154,10 +3154,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#freshness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Freshness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#running-pipelines" class="md-nav__link">
     <span class="md-ellipsis">
       
         Running pipelines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipelinemanager-the-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PipelineManager (the engine)
       
     </span>
   </a>
@@ -4642,10 +4664,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#freshness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Freshness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#running-pipelines" class="md-nav__link">
     <span class="md-ellipsis">
       
         Running pipelines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipelinemanager-the-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PipelineManager (the engine)
       
     </span>
   </a>
@@ -4749,17 +4793,20 @@ artifact ref is a <code>type:name</code> string:</p>
 </table>
 <p>The execution graph is <strong>derived</strong>: for each <code>inputs</code> ref, the launcher draws an
 edge from whichever node lists it in <code>outputs</code>. You never hand-write the ordering —
-it falls out of the data flow. The launcher prints each pipeline as a tree —
-producers at the root, the consumers beneath them. The <code>aqsol</code> pipeline above
-resolves to:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aqsol
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>╙── aqsol_feature_set
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    ├─╼ aqsol_class
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    └─╼ aqsol_reg
+it falls out of the data flow. Internally this is a <strong>bipartite DAG</strong> (the
+Dagster/Airflow model): artifacts <em>and</em> scripts are both nodes, with edges flowing
+<code>input-artifact → script → output-artifact</code>. The launcher prints it as a tree, so
+the <code>aqsol</code> pipeline (with a <code>ds:aqsol_data</code> source and <code>model:</code> outputs) resolves to:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ds:aqsol_data
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>└─╼ aqsol_feature_set
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    └─╼ fs:aqsol_features
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        ├─╼ aqsol_class ─╼ model:aqsol-class
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        └─╼ aqsol_reg ─╼ model:aqsol-reg
 </span></code></pre></div>
-<p>In a terminal this is colorized to make the structure easy to scan: pipeline names,
-the <code>[dt]</code>/<code>[ts]</code> mode tags, and leaf (terminal) nodes are tinted. Colors are
-suppressed automatically when output isn't a TTY (piped or redirected).</p>
+<p>In a terminal this is colorized to make the structure easy to scan: script names,
+the <code>[dt]</code>/<code>[ts]</code> mode tags, and dependency artifacts (tagged with their freshness —
+see <a href="#freshness">Freshness</a>) are tinted. Colors are suppressed automatically when
+output isn't a TTY (piped or redirected).</p>
 <h3 id="modes">Modes</h3>
 <p>A node may declare a singular <code>mode</code>. Because the artifacts a script produces can
 differ by mode, a script that runs in more than one mode appears as <strong>more than one
@@ -4777,8 +4824,7 @@ node</strong>:</p>
 <ul>
 <li><strong><code>--dt</code> / <code>--ts</code></strong> — run only nodes with that mode. Modeless nodes always run.</li>
 <li><strong>no mode flag</strong> — run every node (all modes), in dependency order.</li>
-<li><strong><code>--promote</code> / <code>--test-promote</code></strong> — run each unique script once, ignoring modes
-  and edges.</li>
+<li><strong><code>--promote</code></strong> — run each unique script once, ignoring modes and edges.</li>
 </ul>
 <p>When you launch <code>--ts</code> alone, a <code>ts</code> node's input artifact has no producer in that
 run; the launcher assumes the <code>dt</code> run already created it and the job proceeds
@@ -4788,9 +4834,30 @@ run; the launcher assumes the <code>dt</code> run already created it and the job
 <ul>
 <li><strong>One producer per artifact</strong> — two nodes listing the same ref in <code>outputs</code> is an error.</li>
 <li><strong>Acyclic</strong> — a dependency cycle is an error.</li>
-<li><strong>Dangling input</strong> — an <code>inputs</code> ref that no node outputs emits a warning and is
-  treated as an external (already-existing) input.</li>
+<li><strong>Dangling input</strong> — an <code>inputs</code> ref that no node outputs is treated, silently, as
+  an external (already-existing) input — e.g. a DataSource, or a FeatureSet built by
+  another pipeline. It's a graph <em>root</em>, not an error.</li>
 </ul>
+<h2 id="freshness">Freshness</h2>
+<p>The launcher is <strong>modification-time aware</strong> (Dagster-style "stale" propagation): it
+resolves each artifact's last-modified time from AWS (Glue/SageMaker) and submits a
+job only when it's actually out of date. Staleness floods <em>forward</em> over the DAG —
+if a DataSource changed, its FeatureSet rebuilds, and every model downstream
+rebuilds in turn — in one pass, in dependency order. A job is stale when an output
+is missing, an input is newer than its outputs, or an upstream job is itself
+rerunning.</p>
+<p>Two intents are layered on top:</p>
+<ul>
+<li><strong>Named patterns force a run.</strong> <code>ml_pipeline_launcher ppb_human</code> runs the matched
+  scripts <em>regardless</em> of freshness (you just edited them); their up-to-date
+  dependencies stay put. <code>--all</code> is freshness-only (rebuild whatever drifted).</li>
+<li><strong>Dependency freshness is shown.</strong> Each dependency artifact in the printed DAG is
+  tagged <code>(current)</code> / <code>(modified)</code> / <code>(missing)</code> so you can see <em>why</em> something will
+  or won't rerun.</li>
+</ul>
+<p>A safety guard: if nearly every artifact comes back missing (the fingerprint of a
+wrong AWS account/region), the launcher aborts rather than resubmit the whole world —
+override with <code>--force</code>.</p>
 <h2 id="running-pipelines">Running pipelines</h2>
 <p>Run <code>ml_pipeline_launcher</code> from a directory containing your pipeline scripts and
 <code>pipelines.json</code>:</p>
@@ -4801,12 +4868,34 @@ run; the launcher assumes the <code>dt</code> run already created it and the job
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>ml_pipeline_launcher<span class="w"> </span>caco2<span class="w">                 </span><span class="c1"># Launch matching pipelines in their declared modes</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>ml_pipeline_launcher<span class="w"> </span>--dt<span class="w"> </span>--dry-run<span class="w">        </span><span class="c1"># Show what would launch, without launching</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>ml_pipeline_launcher<span class="w"> </span>--local<span class="w"> </span>--dt<span class="w"> </span>aqsol<span class="w">    </span><span class="c1"># Run a single pipeline locally</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>ml_pipeline_launcher<span class="w"> </span>--full-dag<span class="w"> </span>caco2<span class="w">      </span><span class="c1"># Show the whole closure, incl. up-to-date nodes</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>ml_pipeline_launcher<span class="w"> </span>--sim-mod<span class="w"> </span>ds:foo<span class="w">      </span><span class="c1"># Simulate &quot;ds:foo changed&quot; — what would rerun? (offline)</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>ml_pipeline_launcher<span class="w"> </span>--all<span class="w"> </span>--force<span class="w">         </span><span class="c1"># Submit even if the wrong-environment guard trips</span>
 </span></code></pre></div>
 <p>Args after a literal <code>--</code> are forwarded verbatim to each underlying script:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ml_pipeline_launcher<span class="w"> </span>--dt<span class="w"> </span>my_script.py<span class="w"> </span>--<span class="w"> </span>--epochs<span class="w"> </span><span class="m">10</span><span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.01
 </span></code></pre></div>
 <p>A full runnable example lives in
 <a href="https://github.com/SuperCowPowers/workbench/tree/main/examples/ml_pipelines"><code>examples/ml_pipelines/</code></a>.</p>
+<h2 id="pipelinemanager-the-engine">PipelineManager (the engine)</h2>
+<p>Both the launcher and the nightly DT Lambda share one class,
+<a href="https://github.com/SuperCowPowers/workbench/blob/main/src/workbench/lambda_layer/pipeline_manager.py"><code>PipelineManager</code></a>,
+which owns the schema, the bipartite DAG, freshness resolution, and scheduling. Use
+it directly to introspect a pipeline tree:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.lambda_layer.pipeline_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">PipelineManager</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">pm</span> <span class="o">=</span> <span class="n">PipelineManager</span><span class="p">(</span><span class="s2">&quot;path/to/ml_pipelines&quot;</span><span class="p">)</span>     <span class="c1"># local dir or s3:// prefix</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">pm</span><span class="o">.</span><span class="n">list_pipelines</span><span class="p">()</span>                                <span class="c1"># named pipelines</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">PipelineManager</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">get_pipeline</span><span class="p">(</span><span class="s2">&quot;aqsol&quot;</span><span class="p">))</span>     <span class="c1"># ascii DAG for one pipeline</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">PipelineManager</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">upstream_graph</span><span class="p">(</span><span class="s2">&quot;model:aqsol-reg&quot;</span><span class="p">))</span>    <span class="c1"># what produces it</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">PipelineManager</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">downstream_graph</span><span class="p">(</span><span class="s2">&quot;ds:aqsol_data&quot;</span><span class="p">))</span>    <span class="c1"># what a change impacts</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">pm</span><span class="o">.</span><span class="n">plan</span><span class="p">():</span>        <span class="c1"># (job, run, reason) per job, in topological order</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">job</span><span class="o">.</span><span class="n">node_id</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">run</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+</span></code></pre></div>
+<p>It lives under <code>workbench.lambda_layer</code> because it ships in the
+<a href="../lambda_layer/">workbench Lambda layer</a> — a dependency-minimal slice of
+workbench that the DT Lambda imports to run this <em>exact</em> scheduling logic in AWS.</p>
 
 
 

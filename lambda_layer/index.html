@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#lambda-job-setup" class="md-skip">
+        <a href="#published-arns" class="md-skip">
           Skip to content
         </a>
       
@@ -3336,22 +3336,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#lambda-job-setup" class="md-nav__link">
+  <a href="#published-arns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lambda Job Setup
+        Published ARNs
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Lambda Job Setup">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-it-from-a-lambda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using it from a Lambda
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using it from a Lambda">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#python-312" class="md-nav__link">
+  <a href="#iam" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Python 3.12
+        IAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runnable-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runnable example
       
     </span>
   </a>
@@ -3364,21 +3386,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#workbench-lambda-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Workbench Lambda Example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#exception-log-forwarding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Exception Log Forwarding
+        Exception log forwarding
       
     </span>
   </a>
@@ -3386,10 +3397,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lambda-function-local-testing" class="md-nav__link">
+  <a href="#building-and-publishing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lambda Function Local Testing
+        Building and publishing
       
     </span>
   </a>
@@ -4575,22 +4586,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#lambda-job-setup" class="md-nav__link">
+  <a href="#published-arns" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lambda Job Setup
+        Published ARNs
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Lambda Job Setup">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-it-from-a-lambda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using it from a Lambda
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using it from a Lambda">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#python-312" class="md-nav__link">
+  <a href="#iam" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Python 3.12
+        IAM
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runnable-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runnable example
       
     </span>
   </a>
@@ -4603,21 +4636,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#workbench-lambda-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Workbench Lambda Example
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#exception-log-forwarding" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Exception Log Forwarding
+        Exception log forwarding
       
     </span>
   </a>
@@ -4625,10 +4647,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#lambda-function-local-testing" class="md-nav__link">
+  <a href="#building-and-publishing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Lambda Function Local Testing
+        Building and publishing
       
     </span>
   </a>
@@ -4666,107 +4688,91 @@
   <h1>AWS Lambda Layer</h1>
 
 <div class="admonition tip inline end">
-<p class="admonition-title">Workbench Lambda Layers</p>
-<p>AWS Lambda Jobs are a great way to spin up data processing jobs. Follow this guide and empower AWS Lambda with Workbench!</p>
+<p class="admonition-title">Workbench Lambda Layer</p>
+<p>AWS Lambda is a great way to run lightweight, scheduled Workbench jobs. The Workbench Lambda layer ships a dependency-minimal slice of Workbench you can import directly — no packaging, no container.</p>
 </div>
-<p>Workbench makes creating, testing, and debugging of AWS Lambda Functions easy. The exact same <a href="../api_classes/overview/">Workbench API Classes</a> are used in your AWS Lambda Functions. Also since Workbench manages the access policies you'll be able to test new Lambda Jobs locally and minimizes surprises when deploying.</p>
+<p>The <strong>Workbench Lambda layer</strong> is a dependency-minimal slice of Workbench, published
+per region and Python version. It bundles <strong>all of Workbench's source</strong> plus only
+<code>networkx</code> and <code>pandas</code>; <code>boto3</code>/<code>botocore</code> come from the Lambda runtime. The heavy
+dependencies (torch, awswrangler, sagemaker, ...) are intentionally absent, so the
+layer stays small and imports fast.</p>
 <div class="admonition warning inline end">
-<p class="admonition-title">Work In Progress</p>
-<p>The Workbench Lambda Layers are a great way to use Workbench but they are still in 'beta' mode so please let us know if you have any issues.</p>
+<p class="admonition-title">Scope</p>
+<p>The layer carries the <a href="https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/lambda_layer"><code>workbench.lambda_layer</code></a> subpackage — today, the <code>PipelineManager</code> that powers <a href="../ml_pipelines/">ML Pipelines</a>. It does <strong>not</strong> carry the full Workbench API (e.g. <code>Meta</code>/<code>Model</code>), which needs the heavy dependencies.</p>
 </div>
-<h2 id="lambda-job-setup">Lambda Job Setup</h2>
-<p>Setting up a AWS Lambda Job that uses Workbench is straight forward. Workbench can be 'installed' using a Lambda Layer and then you can use the Workbench API just like normal.</p>
-<p>Here are the ARNs for the current Workbench Lambda Layers, please note they are specified with region and Python version in the name, so if your lambda is us-east-1, python 3.12, pick this ARN with those values in it.</p>
-<h3 id="python-312">Python 3.12</h3>
+<h2 id="published-arns">Published ARNs</h2>
+<p>Attach the ARN matching your region and Python version (3.12):</p>
 <p><strong>us-east-1</strong></p>
 <ul>
-<li>arn:aws:lambda:us-east-1:507740646243:layer:workbench_lambda_layer-us-east-1-python312:2</li>
+<li><code>arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:1</code></li>
 </ul>
 <p><strong>us-west-2</strong></p>
 <ul>
-<li>arn:aws:lambda:us-west-2:507740646243:layer:workbench_lambda_layer-us-west-2-python312:3</li>
+<li><code>arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:1</code></li>
 </ul>
-<p><strong>Note:</strong> If you're using lambdas on a different region or with a different Python version, just let us know and we'll publish some additional layers.</p>
-<p><img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
-src="https://github.com/user-attachments/assets/7d0e2fbe-b907-42bc-96bd-3b274d94c3de"></p>
-<p>At the bottom of the Lambda page there's an 'Add Layer' button. You can click that button and specify the layer using the ARN above. Also in the 'General Configuration' set these parameters:</p>
-<ul>
-<li>Timeout: 5 Minutes</li>
-<li>Memory: 4096</li>
-<li>Ephemeral storage: 2048</li>
-</ul>
-<p><strong>Set the WORKBENCH_BUCKET ENV</strong>
-Workbench will need to know what bucket to work out of, so go into the Configuration...Environment Variables... and add one for the Workbench bucket that your are using for AWS Account (dev, prod, etc).
-<img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
-src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b0b2a"></p>
-<div class="admonition tip">
-<p class="admonition-title">Lambda Role Details</p>
-<p>If your Lambda Function already use an existing IAM Role then you can add the Workbench policies to that Role to enable the Lambda Job to perform Workbench API Tasks. See <a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">Workbench Access Controls</a></p>
+<p>The published versions are made public (<code>lambda:GetLayerVersion</code> to <code>*</code>), so you
+attach them by ARN with no per-account permission grants. Need a different region or
+Python version? Let us know and we'll publish it.</p>
+<div class="admonition note">
+<p class="admonition-title">The <code>-wip</code> suffix</p>
+<p>The layer name carries <code>-wip</code> while its contents are still settling, and the
+version (<code>:1</code>) bumps on each re-publish. Pin the exact version your function uses.</p>
 </div>
-<h2 id="workbench-lambda-example">Workbench Lambda Example</h2>
-<p>Here's a simple example of using Workbench in your Lambda Function. </p>
-<div class="admonition warning">
-<p class="admonition-title">Workbench Layer is Compressed</p>
-<p>The Workbench Lambda Layer is compressed (<em>to fit all the awesome</em>). This means that the <code>load_lambda_layer()</code> method must be called before using any other Workbench imports, see the example below. If you do not do this you'll probably get a <code>No module named 'numpy'</code> error or something like that.</p>
-</div>
-<div class="language-py highlight"><span class="filename">examples/lambda_hello_world.py</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pprint</span><span class="w"> </span><span class="kn">import</span> <span class="n">pprint</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.lambda_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_lambda_layer</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Load/Decompress the Workbench Lambda Layer</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">load_lambda_layer</span><span class="p">()</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># After &#39;load_lambda_layer()&#39; we can use other Workbench imports</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Meta</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span> 
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">def</span><span class="w"> </span><span class="nf">lambda_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="c1"># Create our Meta Class and get a list of our Models</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="n">Meta</span><span class="p">()</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">models</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">models</span><span class="p">()</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of Models: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">models</span><span class="p">)</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="c1"># Onboard a model</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;abalone-regression&quot;</span><span class="p">)</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="n">pprint</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">details</span><span class="p">())</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>    <span class="c1"># Return success</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="k">return</span> <span class="p">{</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>        <span class="s1">&#39;statusCode&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="s1">&#39;body&#39;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;incoming_event&quot;</span><span class="p">:</span> <span class="n">event</span><span class="p">}</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    <span class="p">}</span>
+<h2 id="using-it-from-a-lambda">Using it from a Lambda</h2>
+<p>In the Lambda console, <strong>Add a layer → Specify an ARN</strong> and paste the ARN above.
+Then import and use <code>PipelineManager</code> directly:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.lambda_layer.pipeline_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">PipelineManager</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">lambda_handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">pm</span> <span class="o">=</span> <span class="n">PipelineManager</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;s3://</span><span class="si">{</span><span class="n">event</span><span class="p">[</span><span class="s1">&#39;bucket&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/ml_pipelines/&quot;</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">pm</span><span class="o">.</span><span class="n">plan</span><span class="p">():</span>            <span class="c1"># (job, run, reason) per job, real AWS mtimes</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">run</span><span class="p">:</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="o">...</span>  <span class="c1"># submit item.job</span>
 </span></code></pre></div>
-<h2 id="exception-log-forwarding">Exception Log Forwarding</h2>
-<p>When a Lambda Job crashes (has an exception), the AWS console will show you the last line of the exception, this is mostly useless. If you use Workbench log forwarding the exception/stack will be forwarded to CloudWatch.</p>
-<p><div class="language-py highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.workbench_logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">exception_log_forward</span>
+<p><code>PipelineManager</code> uses the default boto3 session (the Lambda's role and region), so
+no Workbench config is required.</p>
+<p><img alt="add lambda layer" src="https://github.com/user-attachments/assets/7d0e2fbe-b907-42bc-96bd-3b274d94c3de"></p>
+<h3 id="iam">IAM</h3>
+<p>The execution role needs read access to whatever artifacts the manager resolves
+modification times against (plus the bucket it discovers <code>pipelines.json</code> from):</p>
+<ul>
+<li><code>glue:GetTable</code> — DataSource update times</li>
+<li><code>sagemaker:DescribeFeatureGroup</code>, <code>sagemaker:ListModelPackages</code> — FeatureSet/Model times</li>
+<li><code>s3:GetObject</code>, <code>s3:ListBucket</code> — discovering <code>pipelines.json</code> files</li>
+</ul>
+<p>See <a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">Workbench Access Controls</a>.</p>
+<h3 id="runnable-example">Runnable example</h3>
+<p>A read-only example handler plus an offline smoke test (loads the <em>built</em> layer and
+runs without AWS) lives in
+<a href="https://github.com/SuperCowPowers/workbench/tree/main/lambda_layers/example_lambda"><code>lambda_layers/example_lambda/</code></a>.
+Use it to validate the layer in your account before wiring up a real job.</p>
+<h2 id="exception-log-forwarding">Exception log forwarding</h2>
+<p>When a Lambda crashes, the AWS console shows only the last line of the exception.
+Wrap your handler to forward the full stack to CloudWatch:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.workbench_logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">exception_log_forward</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">with</span> <span class="n">exception_log_forward</span><span class="p">():</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>   <span class="o">&lt;</span><span class="n">my</span> <span class="k">lambda</span> <span class="n">code</span><span class="o">&gt;</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>   <span class="o">...</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>   <span class="o">&lt;</span><span class="n">exception</span> <span class="n">happens</span><span class="o">&gt;</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>   <span class="o">&lt;</span><span class="n">more</span> <span class="n">of</span> <span class="n">my</span> <span class="n">code</span><span class="o">&gt;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="o">...</span>  <span class="c1"># your lambda code; any exception/stack is forwarded to CloudWatch</span>
 </span></code></pre></div>
-The <code>exception_log_forward</code> sets up a <strong>context manager</strong> that will trap exceptions and forward the exception/stack to CloudWatch for diagnosis. </p>
-<h2 id="lambda-function-local-testing">Lambda Function Local Testing</h2>
-<p>Lambda Power without the Pain. Workbench manages the AWS Execution Role/Policies, so local API and Lambda Functions will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Lambda Functions a breeze.</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>my_lambda_function.py<span class="w"> </span>--workbench-bucket<span class="w"> </span>&lt;your<span class="w"> </span>bucket&gt;
+<h2 id="building-and-publishing">Building and publishing</h2>
+<p>The layer is built and published from
+<a href="https://github.com/SuperCowPowers/workbench/tree/main/lambda_layers"><code>lambda_layers/</code></a>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./lambda_layers/build_deploy.sh<span class="w">                                    </span><span class="c1"># build the zip locally</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nv">AWS_PROFILE</span><span class="o">=</span>&lt;profile&gt;<span class="w"> </span>./lambda_layers/build_deploy.sh<span class="w"> </span>--deploy<span class="w">     </span><span class="c1"># publish to us-east-1, us-west-2</span>
 </span></code></pre></div>
+<p>The dependency budget (source + <code>networkx</code> + <code>pandas</code>) is enforced by
+<code>tests/lambda_layer/test_layer_dependencies.py</code>, which fails if any <code>lambda_layer</code>
+module imports outside it.</p>
 <h2 id="additional-resources">Additional Resources</h2>
 <ul>
-<li>Workbench Access Management: <a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">Workbench Access Management</a></li>
 <li>Setting up Workbench on your AWS Account: <a href="../aws_setup/core_stack/">AWS Setup</a></li>
+<li>Using Workbench for ML Pipelines: <a href="../ml_pipelines/">ML Pipelines</a></li>
+<li>Workbench Access Management: <a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">Access Management</a></li>
 </ul>
 <p><img align="right" src="../images/scp.png" width="180"></p>
 <ul>
-<li>
-<p>Using Workbench for ML Pipelines: <a href="../api_classes/overview/">Workbench API Classes</a></p>
-</li>
-<li>
-<p>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></p>
-</li>
+<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
 </ul>
 
 
