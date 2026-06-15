@@ -58,4 +58,6 @@ try:
 
     wr.config.workgroup = "workbench-workgroup"
 except ImportError:
+    # awswrangler is optional in minimal installs (e.g. the workbench.lambda_layer
+    # subset); skip the global workgroup config. Importing workbench still succeeds.
     pass
