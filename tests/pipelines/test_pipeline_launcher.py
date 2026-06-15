@@ -342,6 +342,14 @@ class TestFreshness:
         text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "model:m": 9})  # fs:x absent
         assert "fs:x (missing)" in text
 
+    def test_run_reason_on_script_node(self, tmp_path, monkeypatch):
+        # model:m absent -> the m script runs as (missing); fs is current.
+        fs, m, dags = self._dags(tmp_path)
+        times = {"ds:raw": 1, "fs:x": 50}  # model:m absent
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
+        text = "\n".join(sort_pipelines([fs, m], dags).display_lines)
+        assert "m (missing)" in text  # the run reason is shown on the script node
+
 
 class TestRunSimulation:
     """--sim-mod: offline forward-flood view of what a modified ref would submit."""

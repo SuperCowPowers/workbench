@@ -50,6 +50,17 @@ ALL_MODES = FILTER_MODES | OVERRIDE_MODES
 
 MODE_COLORS = {"dt": "lightgreen", "ts": "darkyellow"}
 
+# Colors for the per-job run reason shown on script nodes in the data-flow tree.
+REASON_COLORS = {
+    "missing": "red",
+    "stale": "orange",
+    "upstream": "orange",
+    "no_inputs": "yellow",
+    "selected": "lightblue",
+    "unmanaged": "yellow",
+    "up_to_date": "lightgreen",
+}
+
 
 def run_label(script: Path, mode: str | None) -> str:
     """Human-readable label for a (script, mode) run: 'script [mode]' or 'script'."""
@@ -278,7 +289,9 @@ def _node_selected(node: Job, mode_filter: str | None) -> bool:
     return node.mode == mode_filter
 
 
-def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highlight=(), dep_status=None) -> list[str]:
+def render_dataflow(
+    nodes, runtime_mode, produced, roots=None, highlight=(), dep_status=None, reasons=None
+) -> list[str]:
     """Render the data-flow DAG: ds:/fs:/model: artifacts and scripts as nodes,
     edges flowing artifact -> script -> artifact. Shared producers fan out and
     cross-pipeline joins show as multi-parent, rooted at the external sources.
@@ -299,7 +312,11 @@ def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highli
             modified sources).
         dep_status (dict | None): ref -> "current"/"modified"/"missing"; appends a
             colored freshness suffix to those dependency artifacts.
+        reasons (dict | None): node.key -> run reason (missing/stale/upstream/...);
+            appends a colored "(reason)" suffix to the script node, explaining why
+            it runs (or, in --full-dag, why it doesn't: up_to_date).
     """
+    reasons = reasons or {}
     # Build the bipartite data-flow graph: artifacts and scripts as nodes, with
     # children ordered (script -> its outputs; artifact -> its consumer scripts).
     label: dict = {}
@@ -313,10 +330,15 @@ def render_dataflow(nodes: list[Job], runtime_mode, produced, roots=None, highli
             children[key] = []
             order.append(key)
 
-    # Scripts: name blue, the [mode] bracket keeps its mode color.
+    # Scripts: name blue, the [mode] bracket keeps its mode color, with an optional
+    # colored "(reason)" explaining why the job runs.
     for node in nodes:
         ensure(node.key)
-        label[node.key] = script_label(node.stem, runtime_mode(node))
+        lbl = script_label(node.stem, runtime_mode(node))
+        reason = reasons.get(node.key)
+        if reason:
+            lbl += " " + _color(f"({reason})", REASON_COLORS.get(reason, "lightgrey"))
+        label[node.key] = lbl
 
     for node in nodes:
         for ref in node.inputs:
@@ -439,6 +461,7 @@ def _build_dag_plan(
         # producer precedes its consumers, honoring the mode filter.
         decisions = pm.plan(mtime_fn, force=forced)
         plan.environment_suspect = pm.suspect_environment
+        reasons = {d.job.key: d.reason for d in decisions}  # node.key -> why it (won't) run
         mode_jobs = [job for job, _, _ in decisions if _node_selected(job, mode_filter)]
         will_run = []
         for job, should_run, _reason in decisions:
@@ -475,7 +498,9 @@ def _build_dag_plan(
         # --full-dag shows the whole selected closure for diagnosing dependencies.
         produced = {ref for nodes in all_dags.values() for n in nodes for ref in n.outputs}
         display_nodes = mode_jobs if full_dag else will_run
-        plan.display_lines.extend(render_dataflow(display_nodes, runtime_mode, produced, dep_status=dep_status))
+        plan.display_lines.extend(
+            render_dataflow(display_nodes, runtime_mode, produced, dep_status=dep_status, reasons=reasons)
+        )
 
     # Handle standalone scripts (not in any DAG)
     for script in pipelines:
