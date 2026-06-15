@@ -791,7 +791,7 @@ def run_simulation(all_dags, modified_refs):
 
     # The always-run nodes aren't downstream of the change, so they don't appear
     # in the paths above -- list them so it's clear they submit regardless.
-    always = [node for node, reason in runs if reason in ("no_inputs", "unmanaged")]
+    always = [it.job for it in runs if it.reason in ("no_inputs", "unmanaged")]
     if always:
         print("Always-run regardless of this change:")
         for node in always:

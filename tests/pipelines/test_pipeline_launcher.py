@@ -12,6 +12,7 @@ from workbench.scripts.ml_pipeline_launcher import (
     load_pipelines_config,
     parse_script_name,
     run_label,
+    run_simulation,
     sort_pipelines,
 )
 from workbench.lambda_layer.pipeline_manager import PipelineManager
@@ -124,21 +125,6 @@ class TestJobGraph:
         assert graph.out_degree("fs:x") == 2  # feeds a.py and b.py
         assert graph.out_degree((Path("fs.py"), None)) == 1  # produces just fs:x
 
-    def test_duplicate_producer_raises(self):
-        """Two nodes outputting the same artifact is a hard error."""
-        with pytest.raises(ValueError, match="produced by both"):
-            PipelineManager.from_jobs([node("a.py", outputs=["fs:x"]), node("b.py", outputs=["fs:x"])])
-
-    def test_cycle_raises(self):
-        """A dependency cycle is a hard error."""
-        with pytest.raises(ValueError, match="cycle"):
-            PipelineManager.from_jobs(
-                [
-                    node("a.py", outputs=["fs:x"], inputs=["fs:y"]),
-                    node("b.py", outputs=["fs:y"], inputs=["fs:x"]),
-                ]
-            )
-
     def test_dangling_input_tolerated(self, capsys):
         """An input with no producer is tolerated silently (it's an external root)."""
         graph = PipelineManager.from_jobs([node("a.py", inputs=["fs:external"])]).graph
@@ -146,10 +132,8 @@ class TestJobGraph:
         assert graph.has_edge("fs:external", (Path("a.py"), None))
         assert capsys.readouterr().err == ""  # no warning noise
 
-    def test_duplicate_node_raises(self):
-        """The same (script, mode) declared twice is a hard error."""
-        with pytest.raises(ValueError, match="duplicate job"):
-            PipelineManager.from_jobs([node("a.py", mode="dt"), node("a.py", mode="dt")])
+    # Note: duplicate-producer / cycle / duplicate-job validation is covered by
+    # TestConstruction in test_pipeline_manager.py (graph-building is a manager concern).
 
 
 class TestSortPipelines:
@@ -357,6 +341,24 @@ class TestFreshness:
     def test_dep_suffix_missing(self, tmp_path, monkeypatch):
         text = self._suffix_text(tmp_path, monkeypatch, {"ds:raw": 1, "model:m": 9})  # fs:x absent
         assert "fs:x (missing)" in text
+
+
+class TestRunSimulation:
+    """--sim-mod: offline forward-flood view of what a modified ref would submit."""
+
+    def test_renders_triggered_path_and_always_run(self, capsys):
+        # A no-inputs job is "always-run"; a ds -> fs chain is triggered by the sim.
+        dags = {
+            "p": [
+                node("logp.py", "dt", outputs=["model:logp-dt"]),  # no inputs -> always-run
+                node("fs.py", outputs=["fs:x"], inputs=["ds:raw"]),
+            ]
+        }
+        run_simulation(dags, ["ds:raw"])  # regression: must not raise on the always-run branch
+        out = capsys.readouterr().out
+        assert "ds:raw" in out  # the triggered path is rendered
+        assert "Always-run regardless" in out  # the no-inputs job is listed separately
+        assert "logp [dt]" in out
 
 
 class TestGetAllPipelines:
