@@ -24,7 +24,9 @@ sys.path = [HERE, LAYER] + [p for p in sys.path if "site-packages" not in p and 
 
 import handler  # noqa: E402  (after sys.path surgery)
 
-assert handler.workbench.__file__.startswith(LAYER), f"handler loaded dev workbench, not the layer: {handler.workbench.__file__}"
+assert handler.workbench.__file__.startswith(
+    LAYER
+), f"handler loaded dev workbench, not the layer: {handler.workbench.__file__}"
 
 # ds:demo_raw "modified" -> demo_fs stale -> both demo_reg models flood downstream.
 event = {"pipelines_path": os.path.join(HERE, "sample_pipelines"), "simulate_modified": ["ds:demo_raw"]}
