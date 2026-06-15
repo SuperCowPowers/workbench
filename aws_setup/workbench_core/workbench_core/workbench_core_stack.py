@@ -1582,6 +1582,14 @@ class WorkbenchCoreStack(Stack):
         lambda_role.add_to_policy(self.batch_jobs_full())
         lambda_role.add_to_policy(self.batch_pass_role())
         lambda_role.add_to_policy(self.s3_read())
+        # Artifact modification-time resolution (PipelineManager): read-only lookups
+        # across the services backing ds:/fs:/model:/endpoint: refs.
+        lambda_role.add_to_policy(self.glue_catalog_read())  # ds:  -> glue:GetTable (catalog resource)
+        lambda_role.add_to_policy(self.glue_databases_read())  # ds:  -> glue:GetTable (db/table resources)
+        lambda_role.add_to_policy(self.featurestore_read())  # fs:  -> DescribeFeatureGroup
+        lambda_role.add_to_policy(self.models_discovery())  # model: -> ListModelPackages
+        lambda_role.add_to_policy(self.models_read())  # model: -> Describe/GetModelPackage
+        lambda_role.add_to_policy(self.endpoint_read())  # endpoint: -> DescribeEndpoint (future)
         return lambda_role
 
     def create_glue_role(self) -> iam.Role:

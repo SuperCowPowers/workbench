@@ -8,10 +8,10 @@ the two paths run identical graph logic.
 One **bipartite** dependency DAG is the single source of truth, modeled the way
 Dagster/Airflow/dbt do it -- two node kinds, semantic edges:
 
-  * **Artifact nodes** -- typed artifacts (``ds:``/``fs:``/``model:``
-    /``endpoint:``). A *root* is any artifact with no producing job: a
-    DataSource, an externally-built FeatureSet, a hand-uploaded Model -- the type
-    does not matter.
+  * **Artifact nodes** -- typed artifacts (``ds:``/``fs:``/``model:``/``public:``
+    /``endpoint:``). A *root* is any artifact with no producing job: a DataSource,
+    an externally-built FeatureSet, a hand-uploaded Model, a ``public:`` dataset --
+    the type does not matter.
   * **Job nodes** -- one script run ``(script, mode)`` with N declared inputs and
     N declared outputs. A job is the submission unit (one job = one Batch run).
 
@@ -62,6 +62,13 @@ _ARTIFACT_NOT_FOUND_CODES = {
 # If nearly every resolved artifact is absent, it's almost always the wrong AWS
 # account/region rather than a genuine from-scratch build.
 SUSPICIOUS_MISS_FRACTION = 0.9
+
+# Public datasets live in this anonymous, read-only S3 bucket. Mirrors
+# workbench.api.PublicData.BUCKET, duplicated here (rather than imported) to keep the
+# layer dependency-light -- importing PublicData would pull pandas. Resolved via an
+# unsigned client, so a `public:` ref's mtime needs no credentials.
+PUBLIC_DATA_BUCKET = "workbench-public-data"
+PUBLIC_DATA_EXTENSIONS = (".parquet", ".csv")
 
 
 def ref_type(ref: str) -> str:
@@ -437,14 +444,47 @@ class PipelineManager:
             self._aws[name] = (self._session or boto3).client(name)
         return self._aws[name]
 
+    def _public_s3(self):
+        """Anonymous (unsigned) S3 client for the public data bucket -- no creds, us-west-2."""
+        import boto3
+        from botocore import UNSIGNED
+        from botocore.config import Config
+
+        if "__public__" not in self._aws:
+            self._aws["__public__"] = boto3.client(
+                "s3", region_name="us-west-2", config=Config(signature_version=UNSIGNED)
+            )
+        return self._aws["__public__"]
+
+    def _public_mtime(self, name: str):
+        """LastModified of a PublicData object, trying each known extension.
+
+        Returns None if the dataset isn't found under any extension (-> "must run").
+        A non-404 error (throttle, etc.) propagates to the caller's ClientError
+        handler -- same "don't guess on failure" rule as the other resolvers.
+        """
+        from botocore.exceptions import ClientError
+
+        s3 = self._public_s3()
+        for ext in PUBLIC_DATA_EXTENSIONS:
+            try:
+                return s3.head_object(Bucket=PUBLIC_DATA_BUCKET, Key=name + ext)["LastModified"]
+            except ClientError as e:
+                if e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
+                    continue  # try the next extension
+                raise
+        self.log.warning(f"_artifact_mtime('public:{name}') -> absent (no .parquet/.csv in {PUBLIC_DATA_BUCKET})")
+        return None
+
     def _artifact_mtime(self, ref: str):
         """Resolve a typed artifact ref to its last-modified time (None if absent).
 
         Raw boto3 so it stays in the layer's dependency budget:
-            ds:<name>    -> Glue table UpdateTime
-            fs:<name>    -> FeatureGroup CreationTime
-            model:<name> -> latest model package CreationTime
-            endpoint:... -> not supported yet
+            ds:<name>     -> Glue table UpdateTime
+            fs:<name>     -> FeatureGroup CreationTime
+            model:<name>  -> latest model package CreationTime
+            public:<name> -> PublicData S3 object LastModified (unsigned, no creds)
+            endpoint:...  -> not supported yet
 
         A genuinely-absent artifact returns None -> "must run". A lookup that we
         *couldn't complete* (bad creds, no region, AccessDenied, throttling) is a
@@ -468,6 +508,8 @@ class PipelineManager:
                     ModelPackageGroupName=name, SortBy="CreationTime", SortOrder="Descending", MaxResults=1
                 )["ModelPackageSummaryList"]
                 return packages[0]["CreationTime"] if packages else None
+            if kind == "public":
+                return self._public_mtime(name)
             if kind == "endpoint":
                 self.log.warning(f"endpoint artifact refs are not supported yet: {ref!r}")
                 return None

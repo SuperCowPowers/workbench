@@ -350,6 +350,36 @@ class TestArtifactMtime:
         with pytest.raises(NoCredentialsError):
             manager._artifact_mtime("fs:foo")
 
+    # -- public: (PublicData S3 object via unsigned head_object) --------------
+
+    @staticmethod
+    def _public_s3(available):
+        """Fake unsigned S3 client: head_object returns LastModified for known keys, 404 otherwise."""
+        from botocore.exceptions import ClientError
+
+        class _S3:
+            def head_object(self, Bucket, Key):
+                if Key in available:
+                    return {"LastModified": available[Key]}
+                raise ClientError({"Error": {"Code": "404"}}, "HeadObject")
+
+        return _S3()
+
+    def test_public_resolves_parquet(self):
+        manager = pm([job("x.py", inputs=["public:comp_chem/logp/logp_all"])])
+        manager._public_s3 = lambda: self._public_s3({"comp_chem/logp/logp_all.parquet": 123})
+        assert manager._artifact_mtime("public:comp_chem/logp/logp_all") == 123
+
+    def test_public_falls_back_to_csv(self):
+        manager = pm([job("x.py", inputs=["public:foo/bar"])])
+        manager._public_s3 = lambda: self._public_s3({"foo/bar.csv": 99})  # no .parquet -> tries .csv
+        assert manager._artifact_mtime("public:foo/bar") == 99
+
+    def test_public_absent_returns_none(self):
+        manager = pm([job("x.py", inputs=["public:nope/missing"])])
+        manager._public_s3 = lambda: self._public_s3({})  # neither extension exists -> must run
+        assert manager._artifact_mtime("public:nope/missing") is None
+
 
 class TestEnvironmentGuard:
     """Wrong-account/region fingerprint: nearly every resolved artifact is absent."""
