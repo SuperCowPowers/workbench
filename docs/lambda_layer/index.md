@@ -16,11 +16,11 @@ Attach the ARN matching your region and Python version (3.12):
 
 **us-east-1**
 
-- `arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:1`
+- `arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:2`
 
 **us-west-2**
 
-- `arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:1`
+- `arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:2`
 
 The published versions are made public (`lambda:GetLayerVersion` to `*`), so you
 attach them by ARN with no per-account permission grants. Need a different region or
