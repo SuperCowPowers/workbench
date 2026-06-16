@@ -1,12 +1,24 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import (
     ClientError,
     UnauthorizedSSOTokenError,
     TokenRetrievalError,
 )
 from botocore.client import BaseClient
+
+# Hardened config for the SageMaker client: long-running training jobs poll
+# DescribeTrainingJob for hours, and under heavy concurrent Batch load a single
+# poll can hit a transient HttpTimeoutException. Adaptive retries + a longer read
+# timeout + a larger connection pool keep a blip from killing the whole pipeline.
+SAGEMAKER_CLIENT_CONFIG = Config(
+    connect_timeout=30,
+    read_timeout=120,
+    max_pool_connections=50,
+    retries={"max_attempts": 10, "mode": "adaptive"},
+)
 import logging
 from sagemaker.core.helper.session_helper import Session as SageSession
 
@@ -132,7 +144,10 @@ class AWSAccountClamp:
         Returns:
             SageSession: A SageMaker session object
         """
-        return SageSession(boto_session=self.boto3_session)
+        return SageSession(
+            boto_session=self.boto3_session,
+            sagemaker_client=self.boto3_session.client("sagemaker", config=SAGEMAKER_CLIENT_CONFIG),
+        )
 
     def sagemaker_client(self) -> BaseClient:
         """Create a workbench SageMaker client (using our boto3 refreshable session)
@@ -140,7 +155,7 @@ class AWSAccountClamp:
         Returns:
             BaseClient: A SageMaker client object
         """
-        return self.boto3_session.client("sagemaker")
+        return self.boto3_session.client("sagemaker", config=SAGEMAKER_CLIENT_CONFIG)
 
     def check_tag_permissions(self):
         """Check if current role has permission to add tags to SageMaker endpoints.
