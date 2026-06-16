@@ -4,6 +4,7 @@ import time
 import functools
 import json
 import base64
+import re
 import os
 from typing import Union, List, Callable, Optional, TYPE_CHECKING
 import pandas as pd
@@ -128,16 +129,38 @@ def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: st
         return decorator(func)
 
 
+# Workbench marks base64-encoded tag values with this prefix so the read side can tell
+# its own encoded values from plain or foreign (AWS-injected, human) tags without guessing.
+# Tag-safe values are stored plain (no marker); only unsafe values get the marker.
+B64_MARKER = "b64:"
+
+# AWS resource tag values allow letters, numbers, spaces, and _ . : / = + - @
+_TAG_SAFE_RE = re.compile(r"^[A-Za-z0-9 _.:/=+@-]*$")
+
+
+def tag_safe(value: str) -> bool:
+    """True if value can be stored as a plain AWS tag (no encoding needed)"""
+    # Force-encode anything that collides with our marker, so the read side stays unambiguous
+    return bool(_TAG_SAFE_RE.match(value)) and not value.startswith(B64_MARKER)
+
+
 def decode_value(value):
-    # Try to base64 decode the value
-    try:
-        value = base64.b64decode(value).decode("utf-8")
-    except Exception:
-        # Legacy compatibility: tag-safe values written before base64-everything
-        # (June 2026) are stored raw. Remove this fallback once CloudWatch shows
-        # no more legacy hits across deployments.
-        log.warning(f"Legacy un-encoded tag value detected: {str(value)[:50]}")
-    # Try to JSON decode the value
+    # Only Workbench values that needed encoding carry the marker; tag-safe Workbench values
+    # and foreign tags (aws:*, human) are stored plain and pass through untouched.
+    if isinstance(value, str) and value.startswith(B64_MARKER):
+        try:
+            value = base64.b64decode(value[len(B64_MARKER):]).decode("utf-8")
+        except Exception:
+            # Marked but undecodable: a genuinely corrupt Workbench value, worth surfacing.
+            log.warning(f"Marked tag value failed to decode: {str(value)[:50]}")
+            return value
+    else:
+        # TODO(remove-legacy-tag-fallback): drop this branch once migration is complete (see _decode_legacy_b64)
+        legacy = _decode_legacy_b64(value)
+        if legacy is not None:
+            value = legacy
+
+    # JSON-decode so non-string values (numbers, lists, dicts) round-trip back to their type
     try:
         value = json.loads(value)
     except Exception:
@@ -145,6 +168,22 @@ def decode_value(value):
 
     # Okay, just return whatever we have
     return value
+
+
+def _decode_legacy_b64(value):
+    """TRANSITIONAL: decode a markerless-base64 tag value, or return None if it's plain.
+
+    Lets new code read un-migrated artifacts. Remove once migrate_legacy_tags.py has run
+    everywhere and the warning below has gone quiet (grep: remove-legacy-tag-fallback).
+    """
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        decoded = base64.b64decode(value, validate=True).decode("utf-8")
+    except Exception:
+        return None  # genuinely plain (or foreign) — not old-format encoded
+    log.warning(f"Found legacy encoded tag (run migrate_legacy_tags.py): {str(value)[:50]}")
+    return decoded
 
 
 def dict_to_aws_tags(meta_data: dict) -> list:
@@ -169,9 +208,11 @@ def dict_to_aws_tags(meta_data: dict) -> list:
         if not isinstance(value, str):
             value = json.dumps(value, separators=(",", ":"))
 
-        # Base64-encode every value so the read side can always decode unambiguously.
-        # base64 output is always tag-safe (A-Za-z0-9+/=), so no validity check is needed.
-        value = base64.b64encode(value.encode()).decode()
+        # Store plain when the value is already tag-safe; otherwise base64-encode and mark it
+        # so the read side decodes unambiguously. The marker sits at the front, so it survives
+        # chunking (chunks are reassembled in order).
+        if not tag_safe(value):
+            value = B64_MARKER + base64.b64encode(value.encode()).decode()
 
         # Check if the value will fit in the 256-character limit
         if len(value) < char_limit:
@@ -242,7 +283,7 @@ def aws_tags_to_dict(aws_tags) -> dict:
         sorted_chunks = [chunks[i] for i in sorted(chunks.keys())]
         stitched_str = "".join(sorted_chunks)
 
-        # Decode the stitched value (decode_value tolerates legacy un-encoded tags)
+        # Decode the stitched value (b64: marker, if present, sits at the front)
         regular_tags[base_key] = decode_value(stitched_str)
 
     return regular_tags

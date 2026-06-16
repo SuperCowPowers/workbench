@@ -1,8 +1,11 @@
 """Tests for Workbench tag/metadata operations (add, get/list, delete)"""
 
+import base64
+import json
+
 import pytest
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
-from workbench.utils.aws_utils import dict_to_aws_tags, aws_tags_to_dict
+from workbench.utils.aws_utils import dict_to_aws_tags, aws_tags_to_dict, B64_MARKER
 
 
 @pytest.fixture(scope="module")
@@ -83,11 +86,7 @@ def test_tag_roundtrip_value_types():
 
 
 def test_tag_roundtrip_chunked():
-    """Values longer than one tag get chunked and must still round-trip (no AWS needed).
-
-    Regression: a long tag-safe value (joined ARNs) previously stitched back to a base64
-    string of length 4n+1 and raised binascii.Error on read.
-    """
+    """Values longer than one tag get chunked and must still round-trip (no AWS needed)"""
     meta = {
         "arns": "arn:aws:sagemaker:us-west-2:123456789012:model-package-group/abalone-regression," * 11,
         "big_list": [{"name": f"thing_{i}", "score": i} for i in range(60)],
@@ -95,11 +94,66 @@ def test_tag_roundtrip_chunked():
     assert aws_tags_to_dict(dict_to_aws_tags(meta)) == meta
 
 
-def test_decode_legacy_unencoded_tags():
-    """Legacy tags written before base64-everything (stored raw) still decode (no AWS needed)"""
+def test_tag_safe_values_stored_plain():
+    """Tag-safe values are stored as plain text (no b64: marker), unsafe values are marked"""
+    tags = {t["key"]: t["value"] for t in dict_to_aws_tags({"safe": "us-west-2", "unsafe": "hello, world!"})}
+    assert tags["safe"] == "us-west-2"  # plain, no marker
+    assert tags["unsafe"].startswith(B64_MARKER)  # encoded + marked
+
+
+def test_plain_non_base64_pass_through():
+    """Plain/foreign tags that aren't valid base64 pass through untouched (no decode, no warning)"""
     aws_tags = [
-        {"key": "status", "value": "ready"},  # plain string
-        {"key": "owner", "value": "test_user"},  # underscores, not base64
+        {"key": "status", "value": "ready"},  # plain word
+        {"key": "owner", "value": "test_user"},  # underscore -> not valid base64
+        {"key": "aws:cloudformation:stack-name", "value": "my-stack"},  # foreign AWS tag
     ]
     result = aws_tags_to_dict(aws_tags)
-    assert result == {"status": "ready", "owner": "test_user"}
+    assert result == {"status": "ready", "owner": "test_user", "aws:cloudformation:stack-name": "my-stack"}
+
+
+def test_legacy_markerless_b64_decoded_transitional():
+    """TRANSITIONAL: markerless-base64 tags are still decoded by the fallback.
+
+    When _decode_legacy_b64 is removed, invert this: "TWFu" stays "TWFu" instead of decoding to "Man".
+    """
+    aws_tags = [{"key": "perm", "value": "TWFu"}]  # markerless base64 of "Man"
+    assert aws_tags_to_dict(aws_tags) == {"perm": "Man"}
+
+
+def test_marked_values_decode():
+    """Values carrying the b64: marker are base64-decoded on read"""
+    aws_tags = dict_to_aws_tags({"blob": {"a": 1, "b": "x!y"}})  # not tag-safe -> marked
+    assert aws_tags[0]["value"].startswith(B64_MARKER)
+    assert aws_tags_to_dict(aws_tags) == {"blob": {"a": 1, "b": "x!y"}}
+
+
+def test_chunked_plain_value():
+    """A long tag-safe value (>256) is chunked as PLAIN text (no marker) and round-trips"""
+    long_plain = "a/b.c-d_e:" * 30  # 300 chars, all tag-safe, no comma
+    tags = dict_to_aws_tags({"path": long_plain})
+    assert any("_chunk_" in t["key"] for t in tags)  # it actually chunked
+    assert not any(t["value"].startswith(B64_MARKER) for t in tags)  # no chunk is marked
+    assert aws_tags_to_dict(tags)["path"] == long_plain
+
+
+def test_chunked_marked_value():
+    """A long unsafe value (>256) is b64:-marked, then chunked; marker stays on the first chunk only"""
+    long_unsafe = "x!y," * 80  # 320 chars, '!' and ',' are not tag-safe
+    tags = dict_to_aws_tags({"blob": long_unsafe})
+    assert any("_chunk_" in t["key"] for t in tags)
+    # Marker sits at the front of the reassembled string -> exactly one chunk carries it
+    assert sum(t["value"].startswith(B64_MARKER) for t in tags) == 1
+    assert aws_tags_to_dict(tags)["blob"] == long_unsafe
+
+
+def test_legacy_chunked_b64_decoded_transitional():
+    """TRANSITIONAL: old markerless-base64 values that were chunked still stitch + decode.
+
+    Remove alongside the _decode_legacy_b64 fallback once migration is complete.
+    """
+    items = [{"i": i} for i in range(60)]
+    # Old storage: a single key's value (here the list) base64-encoded, markerless, then chunked
+    raw_b64 = base64.b64encode(json.dumps(items, separators=(",", ":")).encode()).decode()
+    aws_tags = [{"key": f"items_chunk_{i + 1}", "value": raw_b64[i : i + 256]} for i in range(0, len(raw_b64), 256)]
+    assert aws_tags_to_dict(aws_tags) == {"items": items}

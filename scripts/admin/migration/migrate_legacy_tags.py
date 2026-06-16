@@ -1,21 +1,40 @@
-"""One-time migration: re-encode legacy raw AWS tag values as base64.
+"""One-time migration: rewrite base64-everything tags into the plain/b64: format.
 
-Before June 2026 (commit 6da354f36) tag-safe values were stored raw; now every
-value is base64-encoded on write. This script finds artifacts that still carry
-raw (legacy) tag values and rewrites them via upsert_workbench_meta(), which
-re-encodes everything. Once all accounts are clean, the legacy fallback in
-aws_utils.decode_value() can be removed (strict decode).
+A prior change (June 2026) base64-encoded *every* tag value on write and used a
+guess-on-read decode path. That mangled foreign tags and could silently corrupt
+plain values that happened to be valid base64. The current scheme instead stores
+tag-safe values as plain text and only base64-encodes (with a "b64:" marker) the
+values that aren't tag-safe -- so the read side never has to guess.
 
-Covers FeatureSets, Models, and Endpoints (DataSources/Graphs store their
-metadata in the Glue catalog, not AWS tags).
+This script finds artifacts whose tag values are still in the old markerless-base64
+format and rewrites them via upsert_workbench_meta(), which re-encodes in the new
+format. Values that are already plain (truly-legacy raw, or foreign aws:/human tags)
+or already b64:-marked are left alone.
+
+Detection assumption: a non-aws:, markerless value that cleanly base64-decodes to
+UTF-8 was written by the prior all-base64 code. This holds for everything Workbench
+wrote; a human-added plain tag that happens to be valid base64 is the only false
+positive, and aws:-prefixed tags (which can't be modified anyway) are skipped.
+
+Covers FeatureSets, Models, and Endpoints (DataSources/Graphs store their metadata
+in the Glue catalog, not AWS tags).
+
+Cleanup (strict-decode release) -- once this has run on ALL accounts and CloudWatch
+shows no more "Found legacy encoded tag" warnings, remove the transitional fallback
+(grep: remove-legacy-tag-fallback):
+  1. aws_utils.py        -- delete _decode_legacy_b64() and the else: branch in decode_value()
+  2. tag_tests.py        -- delete the two *_transitional tests; re-add the strict
+                            "TWFu stays TWFu" assertion to test_plain_non_base64_pass_through
+  3. this script         -- delete it (one-time, done)
 
 Usage:
-    python migrate_legacy_tags.py            # dry-run: report legacy values
-    python migrate_legacy_tags.py --apply    # rewrite legacy artifacts
+    python migrate_legacy_tags.py            # dry-run: report what would change
+    python migrate_legacy_tags.py --apply    # rewrite affected artifacts
 """
 
 import argparse
 import base64
+import json
 
 from sagemaker.core.common_utils import list_tags
 
@@ -23,12 +42,18 @@ from workbench.api.meta import Meta
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore
 from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.utils.aws_utils import B64_MARKER
 
 
-def is_encoded(value: str) -> bool:
-    """Strictly check that a tag value is valid base64-encoded UTF-8"""
+def needs_migration(key: str, value: str) -> bool:
+    """True if this value is still in the old markerless-base64 format and must be rewritten"""
+    if key.startswith("aws:"):  # reserved AWS tags — can't modify, never ours
+        return False
     if value == " ":  # V3 empty-value workaround, written by current code
-        return True
+        return False
+    if value.startswith(B64_MARKER):  # already new format
+        return False
+    # Old format: markerless base64 of valid UTF-8 (anything else is already plain-compatible)
     try:
         base64.b64decode(value, validate=True).decode("utf-8")
         return True
@@ -36,13 +61,19 @@ def is_encoded(value: str) -> bool:
         return False
 
 
-def legacy_keys(artifact) -> list:
-    """Return the tag keys on this artifact whose values are not base64-encoded"""
-    raw_tags = list_tags(artifact.sm_session, artifact.arn())
+def recover_value(value: str):
+    """Decode an old markerless-base64 value back to the Python value upsert should re-store"""
+    decoded = base64.b64decode(value, validate=True).decode("utf-8")
+    try:
+        return json.loads(decoded)
+    except Exception:
+        return decoded
 
-    # Stitch chunked values back together before checking
-    stitched = {}
-    values = {}
+
+def stitched_values(artifact) -> dict:
+    """Current tag values for an artifact, with chunked values stitched back together"""
+    raw_tags = list_tags(artifact.sm_session, artifact.arn())
+    stitched, values = {}, {}
     for tag in raw_tags:
         key, value = tag["Key"], tag["Value"]
         if "_chunk_" in key:
@@ -52,13 +83,12 @@ def legacy_keys(artifact) -> list:
             values[key] = value
     for base_key, chunks in stitched.items():
         values[base_key] = "".join(chunks[i] for i in sorted(chunks))
-
-    return [key for key, value in values.items() if not is_encoded(value)]
+    return values
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apply", action="store_true", help="rewrite legacy artifacts (default: dry-run)")
+    parser.add_argument("--apply", action="store_true", help="rewrite affected artifacts (default: dry-run)")
     args = parser.parse_args()
 
     meta = Meta()
@@ -70,22 +100,26 @@ def main():
 
     clean, migrated, failed = 0, 0, []
     for artifact in artifacts:
-        keys = legacy_keys(artifact)
-        if not keys:
+        values = stitched_values(artifact)
+        recovered = {k: recover_value(v) for k, v in values.items() if needs_migration(k, v)}
+        if not recovered:
             clean += 1
             continue
 
-        print(f"{artifact.name}: legacy keys {keys}")
+        print(f"{artifact.name}: rewriting {list(recovered.keys())}")
         if not args.apply:
             continue
 
-        # Round-trip through the forgiving decode and the (now base64-everything)
-        # encode, then re-check in case anything didn't fit the tag budget
-        artifact.upsert_workbench_meta(artifact.workbench_meta())
-        still_legacy = legacy_keys(artifact)
-        if still_legacy:
-            failed.append((artifact.name, still_legacy))
-            print(f"  STILL LEGACY after rewrite: {still_legacy}")
+        # Delete first (clears orphan _chunk_ tags — new plain/marked values need fewer chunks),
+        # then re-write the recovered values in the new plain/b64: format.
+        for key in recovered:
+            artifact.delete_metadata(key)
+        artifact.upsert_workbench_meta(recovered)
+
+        still = {k: v for k, v in stitched_values(artifact).items() if needs_migration(k, v)}
+        if still:
+            failed.append((artifact.name, list(still.keys())))
+            print(f"  STILL OLD FORMAT after rewrite: {list(still.keys())}")
         else:
             migrated += 1
             print("  migrated")
