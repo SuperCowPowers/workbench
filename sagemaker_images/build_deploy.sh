@@ -69,6 +69,21 @@ REGION_LIST=("us-east-1" "us-west-2")
 REPO_NAME=${REPO_MAP[$IMAGE_TYPE]}
 DIR=$SCRIPT_DIR/$IMAGE_TYPE
 
+# Registry-backed BuildKit cache. Persisted to ECR under a `buildcache` tag in
+# the image's own repo, so a fresh build restores the heavy dependency layers
+# with their ORIGINAL digest instead of re-resolving them — ECR then dedupes
+# those layers instead of re-pushing ~188 MB every deploy. Only enabled when
+# deploying (the cache lives in ECR and needs auth). image-manifest/
+# oci-mediatypes are required: ECR rejects the default image-index cache
+# manifest. Needs a docker-container buildx builder (registry cache export is
+# unsupported by the default `docker` driver).
+CACHE_REGION="us-east-1"
+CACHE_REF="$AWS_ACCOUNT_ID.dkr.ecr.$CACHE_REGION.amazonaws.com/$REPO_NAME:buildcache"
+CACHE_FLAGS=""
+if [ "$DEPLOY" = true ]; then
+  CACHE_FLAGS="--cache-from type=registry,ref=$CACHE_REF --cache-to type=registry,ref=$CACHE_REF,mode=max,image-manifest=true,oci-mediatypes=true"
+fi
+
 # Function to build a Docker image
 build_image() {
   local arch=$1  # amd64 or arm64
@@ -87,7 +102,7 @@ build_image() {
   # `buildx build --load` shares the cache with applications/aws_dashboard/deploy.sh
   # (both use the active buildx builder) and loads the result into `docker images`
   # so the subsequent `docker tag` / `docker push` find it.
-  docker buildx build --platform $platform -t $name -f $DIR/Dockerfile --load $SCRIPT_DIR
+  docker buildx build --platform $platform -t $name -f $DIR/Dockerfile $CACHE_FLAGS --load $SCRIPT_DIR
   echo -e "${GREEN}✅  Successfully built: $name${NC}"
 }
 
@@ -145,6 +160,14 @@ deploy_image() {
     docker push $ecr_latest
   done
 }
+
+# When deploying, log in to the cache region's ECR before building so the
+# registry build cache (--cache-from/--cache-to) can authenticate.
+if [ "$DEPLOY" = true ]; then
+  echo "Logging in to ECR ($CACHE_REGION) for build cache..."
+  aws ecr get-login-password --region $CACHE_REGION --profile $AWS_PROFILE | \
+    docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$CACHE_REGION.amazonaws.com"
+fi
 
 # Build AMD64 image
 echo "======================================"
