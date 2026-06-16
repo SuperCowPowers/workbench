@@ -149,7 +149,7 @@ def decode_value(value):
     # and foreign tags (aws:*, human) are stored plain and pass through untouched.
     if isinstance(value, str) and value.startswith(B64_MARKER):
         try:
-            value = base64.b64decode(value[len(B64_MARKER):]).decode("utf-8")
+            value = base64.b64decode(value[len(B64_MARKER) :]).decode("utf-8")
         except Exception:
             # Marked but undecodable: a genuinely corrupt Workbench value, worth surfacing.
             log.warning(f"Marked tag value failed to decode: {str(value)[:50]}")
