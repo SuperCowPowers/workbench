@@ -8,6 +8,12 @@ from botocore.exceptions import (
     TokenRetrievalError,
 )
 from botocore.client import BaseClient
+import logging
+from sagemaker.core.helper.session_helper import Session as SageSession
+
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_session import AWSSession
+from workbench.utils.config_manager import ConfigManager, FatalConfigError
 
 # Hardened config for the SageMaker client: long-running training jobs poll
 # DescribeTrainingJob for hours, and under heavy concurrent Batch load a single
@@ -19,12 +25,6 @@ SAGEMAKER_CLIENT_CONFIG = Config(
     max_pool_connections=50,
     retries={"max_attempts": 10, "mode": "adaptive"},
 )
-import logging
-from sagemaker.core.helper.session_helper import Session as SageSession
-
-# Workbench Imports
-from workbench.core.cloud_platform.aws.aws_session import AWSSession
-from workbench.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class AWSAccountClamp:
