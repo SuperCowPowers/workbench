@@ -353,7 +353,10 @@ class CachedMeta(CloudMeta):
             registry_ts = registry.get(name)
             if registry_ts is not None:
                 cached_modified = cached_df.loc[cached_df[name_col] == name, "Modified"].iloc[0]
-                if cached_modified < registry_ts:
+                # Compare at whole-second resolution: the cached DataFrame round-trips
+                # through pandas to_json (ms precision) while the registry keeps full
+                # microseconds, so a strict compare would flag poked artifacts stale forever.
+                if cached_modified.replace(microsecond=0) < registry_ts.replace(microsecond=0):
                     stale_names.add(name)  # Registry says it changed
 
         # Step 5: Refetch stale artifacts and merge into cached DataFrame
