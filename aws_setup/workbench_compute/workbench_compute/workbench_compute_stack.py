@@ -115,7 +115,7 @@ class WorkbenchComputeStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            maxv_cpus=16,  # Limit to 16 vCPU to minimize AWS Throttling issues
+            maxv_cpus=40,  # Limit to 40 vCPU (20 concurrent jobs) to minimize AWS Throttling issues
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
