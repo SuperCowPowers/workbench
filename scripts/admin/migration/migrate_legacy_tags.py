@@ -42,7 +42,7 @@ from workbench.api.meta import Meta
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench.utils.aws_utils import B64_MARKER
+from workbench.utils.aws_utils import B64_MARKER, aws_throttle
 
 
 def needs_migration(key: str, value: str) -> bool:
@@ -70,8 +70,13 @@ def recover_value(value: str):
         return decoded
 
 
+@aws_throttle
 def stitched_values(artifact) -> dict:
-    """Current tag values for an artifact, with chunked values stitched back together"""
+    """Current tag values for an artifact, with chunked values stitched back together.
+
+    Raw list_tags (not the decoded read path) so we can inspect the on-disk encoding. Throttle-wrapped
+    because this runs twice per artifact across ~1000 artifacts; delete/upsert are already decorated.
+    """
     raw_tags = list_tags(artifact.sm_session, artifact.arn())
     stitched, values = {}, {}
     for tag in raw_tags:
