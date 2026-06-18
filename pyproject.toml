@@ -106,6 +106,7 @@ ensemble_sim = "workbench.scripts.ensemble_sim:main"
 lambda_test = "workbench.scripts.lambda_test:main"
 endpoint_test = "workbench.scripts.endpoint_test:main"
 training_test = "workbench.scripts.training_test:main"
+redis_tunnel = "workbench.scripts.redis_tunnel:main"
 
 [tool.uv]
 # torch arrives transitively via sagemaker-serve (unconstrained); this floor

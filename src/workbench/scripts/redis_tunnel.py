@@ -18,8 +18,8 @@ manage EC2/IAM/SSM (the same admin profile used for ``cdk deploy``).
 Prereq: the AWS CLI ``session-manager-plugin`` (``brew install session-manager-plugin``).
 
 Usage:
-    WORKBENCH_CONFIG=.../admin.json python redis_tunnel.py              # open tunnel (Ctrl-C closes + stops)
-    WORKBENCH_CONFIG=.../admin.json python redis_tunnel.py --terminate  # remove the instance + its SG
+    WORKBENCH_CONFIG=.../admin.json redis_tunnel              # open tunnel (Ctrl-C closes + stops)
+    WORKBENCH_CONFIG=.../admin.json redis_tunnel --terminate  # remove the instance + its SG
 """
 
 import argparse

@@ -28,7 +28,7 @@ Run the helper with admin AWS credentials (the same profile you use for `cdk dep
 
 ```bash
 export WORKBENCH_CONFIG=/path/to/<profile>_admin.json
-python workbench/scripts/admin/redis_tunnel.py
+redis_tunnel
 ```
 
 It discovers the VPC / private subnet from your config and the Redis endpoint from
@@ -52,7 +52,7 @@ it). To remove it entirely — instance **and** security group — when you no l
 need tunnels:
 
 ```bash
-python workbench/scripts/admin/redis_tunnel.py --terminate
+redis_tunnel --terminate
 ```
 
 ## How it works
