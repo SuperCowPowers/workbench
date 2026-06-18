@@ -89,9 +89,7 @@ def find_orphans(pipelines_path: str = ".", full_traverse: bool = False):
         # "data_sources": sorted(n for n in all_ds - live["ds"] if not _ds_excluded(n)),
         "feature_sets": sorted(n for n in all_fs - live["fs"] if not _excluded(n)),
         "models": sorted(
-            n
-            for n in set(model_owner) - live["model"]
-            if not _excluded(n) and not _owner_protected(model_owner.get(n))
+            n for n in set(model_owner) - live["model"] if not _excluded(n) and not _owner_protected(model_owner.get(n))
         ),
     }
 
