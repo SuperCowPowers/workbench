@@ -61,8 +61,6 @@ _ARTIFACT_NOT_FOUND_CODES = {
 
 # If nearly every resolved artifact is absent, it's almost always the wrong AWS
 # account/region rather than a genuine from-scratch build.
-SUSPICIOUS_MISS_FRACTION = 0.9
-
 # Public datasets live in this anonymous, read-only S3 bucket. Mirrors
 # workbench.api.PublicData.BUCKET, duplicated here (rather than imported) to keep the
 # layer dependency-light -- importing PublicData would pull pandas. Resolved via an
@@ -202,7 +200,7 @@ class PipelineManager:
 
     Orchestration API (shared by the launcher + DT Lambda):
         plan(mtime_fn=None, force=None) -> list[PlanItem]    -- what runs, and why
-        suspect_environment                                  -- wrong-account guard
+        blocked_by_missing_sources(mtime_fn=None)            -- jobs doomed by an absent source
     """
 
     def __init__(self, path: str | Path, session=None):
