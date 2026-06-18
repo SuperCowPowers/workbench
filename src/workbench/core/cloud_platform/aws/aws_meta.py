@@ -414,6 +414,7 @@ class AWSMeta:
             return {"instance": "-", "variant": "-"}
 
     @not_found_returns_none
+    @aws_throttle
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Describe a single Glue ETL Job in AWS.
 
@@ -436,6 +437,7 @@ class AWSMeta:
         }
 
     @not_found_returns_none
+    @aws_throttle
     def data_source(self, table_name: str, database: str = "workbench") -> Union[dict, None]:
         """Describe a single Data Source (Glue Table) in AWS.
 
@@ -452,6 +454,7 @@ class AWSMeta:
         return table_details
 
     @not_found_returns_none
+    @aws_throttle
     def feature_set(self, feature_group_name: str) -> Union[dict, None]:
         """Describe a single Feature Set (Feature Group) in AWS.
 
@@ -475,6 +478,7 @@ class AWSMeta:
         return feature_set_details
 
     @not_found_returns_none
+    @aws_throttle
     def stand_alone_model(self, model_name: str) -> Union[dict, None]:
         """Describe a single Model in AWS.
 
@@ -488,6 +492,7 @@ class AWSMeta:
         return model_details
 
     @not_found_returns_none
+    @aws_throttle
     def model(self, model_group_name: str) -> Union[dict, None]:
         """Describe a single Model Package Group in AWS.
 
@@ -519,6 +524,7 @@ class AWSMeta:
         return model_group_details
 
     @not_found_returns_none
+    @aws_throttle
     def endpoint(self, endpoint_name: str) -> Union[dict, None]:
         """Describe a single Endpoint in AWS.
 
