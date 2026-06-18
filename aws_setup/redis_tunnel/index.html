@@ -4637,7 +4637,7 @@ team needs routine access to many private resources.</p>
 <h2 id="open-a-tunnel">Open a tunnel</h2>
 <p>Run the helper with admin AWS credentials (the same profile you use for <code>cdk deploy</code>):</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">WORKBENCH_CONFIG</span><span class="o">=</span>/path/to/&lt;profile&gt;_admin.json
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>workbench/scripts/admin/redis_tunnel.py
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>redis_tunnel
 </span></code></pre></div>
 <p>It discovers the VPC / private subnet from your config and the Redis endpoint from
 ElastiCache, brings up (or starts) a tiny keyless instance, waits for it to
@@ -4653,7 +4653,7 @@ to reconnect (it restarts the same instance).</p>
 stopped <code>t3.micro</code> costs only its small EBS volume, and reconnecting just restarts
 it). To remove it entirely — instance <strong>and</strong> security group — when you no longer
 need tunnels:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python<span class="w"> </span>workbench/scripts/admin/redis_tunnel.py<span class="w"> </span>--terminate
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>redis_tunnel<span class="w"> </span>--terminate
 </span></code></pre></div>
 <h2 id="how-it-works">How it works</h2>
 <ol>
