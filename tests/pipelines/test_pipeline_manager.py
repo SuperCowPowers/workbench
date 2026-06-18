@@ -381,19 +381,31 @@ class TestArtifactMtime:
         assert manager._artifact_mtime("public:nope/missing") is None
 
 
-class TestEnvironmentGuard:
-    """Wrong-account/region fingerprint: nearly every resolved artifact is absent."""
+class TestMissingSources:
+    """blocked_by_missing_sources: an absent external source dooms a job + its downstream."""
 
-    def test_all_absent_is_suspect(self):
-        manager = pm([job("x.py", outputs=["fs:a"])])
-        manager._mtime_cache = {"fs:a": None, "fs:b": None, "ds:c": None}
-        assert manager.suspect_environment is True
+    def test_missing_source_blocks_job_and_downstream(self):
+        manager = pm(
+            [
+                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"]),
+                job("m.py", inputs=["fs:x"], outputs=["model:m"]),
+            ]
+        )
+        blocked = manager.blocked_by_missing_sources(clock({}))  # ds:raw absent
+        assert set(blocked) == {("fs.py", None), ("m.py", None)}
+        assert blocked[("fs.py", None)] == ["ds:raw"]  # the originating source is reported
+        assert blocked[("m.py", None)] == ["ds:raw"]  # downstream inherits the cause
 
-    def test_mostly_present_is_fine(self):
-        manager = pm([job("x.py", outputs=["fs:a"])])
-        manager._mtime_cache = {"fs:a": 1, "fs:b": 2, "ds:c": None}
-        assert manager.suspect_environment is False
+    def test_present_source_blocks_nothing(self):
+        manager = pm([job("fs.py", outputs=["fs:x"], inputs=["ds:raw"])])
+        assert manager.blocked_by_missing_sources(clock({"ds:raw": 1})) == {}
 
-    def test_empty_cache_is_not_suspect(self):
-        # Nothing resolved (e.g. a simulated/test clock) -> never flag.
-        assert pm([job("x.py", outputs=["fs:a"])]).suspect_environment is False
+    def test_produced_input_is_not_a_source(self):
+        # fs:x has a producer in the DAG -> not a source; its absence doesn't block m.
+        manager = pm(
+            [
+                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"]),
+                job("m.py", inputs=["fs:x"], outputs=["model:m"]),
+            ]
+        )
+        assert manager.blocked_by_missing_sources(clock({"ds:raw": 1})) == {}  # fs:x absent, but produced

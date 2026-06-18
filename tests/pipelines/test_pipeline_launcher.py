@@ -35,12 +35,17 @@ def run_by(plan, script, mode):
 
 @pytest.fixture(autouse=True)
 def all_stale(monkeypatch):
-    """Launcher tests run without AWS. Make the built-in mtime resolver report
-    every artifact missing, so all selected jobs are stale and run -- these tests
-    cover selection / ordering / mode / display, not freshness (which is tested in
-    test_pipeline_manager). Individual tests override for freshness behavior.
+    """Launcher tests run without AWS. Model a genuine from-scratch build: raw
+    sources (ds:/public:) exist, but every derived artifact (fs:/model:) is absent,
+    so all selected jobs are stale and run. These tests cover selection / ordering /
+    mode / display -- not freshness (test_pipeline_manager) or missing-source pruning
+    (TestMissingSourceSkip), both of which override this resolver.
     """
-    monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: None)
+    monkeypatch.setattr(
+        PipelineManager,
+        "_artifact_mtime",
+        lambda self, ref: 1 if ref.startswith(("ds:", "public:")) else None,
+    )
 
 
 class TestLoadPipelinesConfig:
@@ -211,7 +216,7 @@ class TestSortPipelines:
         consumer = tmp_path / "consumer.py"
         dags = {"p": [node(fs, outputs=["fs:x"]), node(consumer, inputs=["fs:x", "ds:raw"])]}
 
-        plan = sort_pipelines([fs, consumer], dags)
+        plan = sort_pipelines([fs, consumer], dags)  # ds:raw present (from-scratch fixture)
         text = "\n".join(plan.display_lines)
         assert "fs:x" in text  # resolved artifact
         assert "ds:raw" in text  # external root rendered too
@@ -349,6 +354,45 @@ class TestFreshness:
         monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
         text = "\n".join(sort_pipelines([fs, m], dags).display_lines)
         assert "m (missing)" in text  # the run reason is shown on the script node
+
+
+class TestMissingSourceSkip:
+    """A job whose external source input is missing is pruned (with its downstream)."""
+
+    def _dags(self, tmp_path):
+        fs = tmp_path / "fs.py"
+        m = tmp_path / "m.py"
+        dags = {"p": [node(fs, outputs=["fs:x"], inputs=["ds:raw"]), node(m, inputs=["fs:x"], outputs=["model:m"])]}
+        return fs, m, dags
+
+    def test_missing_source_skips_job_and_downstream(self, tmp_path, monkeypatch):
+        # ds:raw absent -> fs is doomed, and m (downstream) with it.
+        fs, m, dags = self._dags(tmp_path)
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: None)
+        plan = sort_pipelines([fs, m], dags)
+        assert plan.runs == []
+        assert {j.script for j, _ in plan.skipped} == {fs, m}
+        assert all("ds:raw" in refs for _, refs in plan.skipped)  # the originating source is reported
+
+    def test_present_source_runs_normally(self, tmp_path, monkeypatch):
+        fs, m, dags = self._dags(tmp_path)
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: 1 if ref == "ds:raw" else None)
+        plan = sort_pipelines([fs, m], dags)
+        assert {j.script for j in plan.runs} == {fs, m}
+        assert plan.skipped == []
+
+    def test_healthy_sibling_still_runs(self, tmp_path, monkeypatch):
+        # Pipeline a's source is missing; b's is present -> only a is pruned.
+        a = tmp_path / "a.py"
+        b = tmp_path / "b.py"
+        dags = {
+            "a": [node(a, inputs=["ds:a_raw"], outputs=["model:a"])],
+            "b": [node(b, inputs=["ds:b_raw"], outputs=["model:b"])],
+        }
+        monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: 1 if ref == "ds:b_raw" else None)
+        plan = sort_pipelines([a, b], dags)
+        assert {j.script for j in plan.runs} == {b}
+        assert {j.script for j, _ in plan.skipped} == {a}
 
 
 class TestRunSimulation:

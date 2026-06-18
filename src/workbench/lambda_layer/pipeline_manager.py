@@ -531,17 +531,32 @@ class PipelineManager:
             self._mtime_cache[ref] = self._artifact_mtime(ref)
         return self._mtime_cache[ref]
 
-    @property
-    def suspect_environment(self) -> bool:
-        """True when almost every resolved artifact was absent -- the classic
-        wrong-account/region fingerprint. Only meaningful after a real ``plan()``
-        has populated the mtime cache; False if nothing was resolved.
+    def blocked_by_missing_sources(self, mtime_fn=None) -> dict:
+        """Map ``job.key`` -> the missing *source* artifacts that doom it.
+
+        A source input is an input ref with no producer in the DAG -- a true
+        external root (``ds:``/``public:``/static ``fs:``). When one is absent the
+        consuming job can't succeed, and neither can anything downstream of it (the
+        artifact it would have produced will never exist either). So a job is
+        blocked if it has a missing source input, or if any upstream job is; the
+        listed refs are the originating missing sources. Unblocked jobs are omitted.
+
+        ``mtime_fn`` defaults to the real (cached) AWS resolver, matching ``plan`` --
+        reusing the cache ``plan`` already populated, so no extra lookups.
         """
-        cache = self._mtime_cache
-        if not cache:
-            return False
-        absent = sum(1 for v in cache.values() if v is None)
-        return absent / len(cache) >= SUSPICIOUS_MISS_FRACTION
+        resolve = mtime_fn or self._cached_mtime
+        blocked: dict = {}
+        for job in self.jobs:
+            missing = {
+                ref for ref in job.inputs if self._producer.get(ref) is None and resolve(ref) is None
+            }
+            if not missing:
+                continue
+            blocked.setdefault(job.key, set()).update(missing)
+            for n in nx.descendants(self.graph, job.key):
+                if self.graph.nodes[n].get("kind") == "job":
+                    blocked.setdefault(n, set()).update(missing)
+        return {k: sorted(v) for k, v in blocked.items()}
 
     def plan(self, mtime_fn=None, force=None) -> list[PlanItem]:
         """Schedule the whole DAG: a :class:`PlanItem` per job in topo order.
@@ -556,7 +571,6 @@ class PipelineManager:
         propagates to its downstream consumers. The DT Lambda passes no force.
         """
         force = force or set()
-        real = mtime_fn is None  # only the real AWS resolver feeds the wrong-env guard
         if mtime_fn is None:
             mtime_fn = self._cached_mtime
         running: set = set()
@@ -569,14 +583,6 @@ class PipelineManager:
             if run:
                 running.add(job.key)
             decisions.append(PlanItem(job, run, reason))
-
-        if real and self.suspect_environment:
-            absent = sum(1 for v in self._mtime_cache.values() if v is None)
-            total = len(self._mtime_cache)
-            self.log.warning(
-                f"{absent}/{total} artifacts could not be found -- this usually means the wrong "
-                f"AWS account/region (check WORKBENCH_CONFIG). Every job will be (re)built."
-            )
         return decisions
 
 

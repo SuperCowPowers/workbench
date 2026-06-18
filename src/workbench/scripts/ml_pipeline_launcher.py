@@ -59,6 +59,7 @@ REASON_COLORS = {
     "selected": "lightblue",
     "unmanaged": "yellow",
     "up_to_date": "lightgreen",
+    "blocked": "red",
 }
 
 
@@ -93,7 +94,7 @@ class RunPlan:
 
     runs: list[Job] = field(default_factory=list)
     display_lines: list[str] = field(default_factory=list)
-    environment_suspect: bool = False  # nearly every artifact missing -> likely wrong account/region
+    skipped: list = field(default_factory=list)  # (Job, [missing source refs]) pruned before launch
 
     def add_run(self, job: Job):
         """Add a run-job to the plan."""
@@ -460,12 +461,23 @@ def _build_dag_plan(
         # None -> real AWS mtimes). Emit in global topological order so every
         # producer precedes its consumers, honoring the mode filter.
         decisions = pm.plan(mtime_fn, force=forced)
-        plan.environment_suspect = pm.suspect_environment
         reasons = {d.job.key: d.reason for d in decisions}  # node.key -> why it (won't) run
+
+        # Pre-flight: a job whose external source input (a ds:/public:/static fs:
+        # with no producer) is missing can't succeed, and neither can its downstream
+        # closure. Prune those from the run set -- launching them only fails at
+        # runtime -- and surface them in the summary. Reuses plan()'s mtime cache.
+        blocked = pm.blocked_by_missing_sources(mtime_fn)
+        for key in blocked:
+            reasons[key] = "blocked"
+
         mode_jobs = [job for job, _, _ in decisions if _node_selected(job, mode_filter)]
         will_run = []
         for job, should_run, _reason in decisions:
             if not _node_selected(job, mode_filter) or not should_run:
+                continue
+            if job.key in blocked:
+                plan.skipped.append((replace(job, mode=runtime_mode(job)), blocked[job.key]))
                 continue
             plan.add_run(replace(job, mode=runtime_mode(job)))  # run-job carries the runtime mode
             will_run.append(job)
@@ -659,6 +671,12 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
         print(line)
     print()
 
+    if plan.skipped:
+        print(_color("Skipped -- missing source data (would only fail at runtime):", "red"))
+        for job, refs in plan.skipped:
+            print(_color(f"   {run_label(job.script, job.mode)} -- missing {', '.join(refs)}", "red"))
+        print()
+
 
 def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]):
     """Execute all pipeline runs (local or SQS).
@@ -767,12 +785,6 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
         action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
     )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Submit even when nearly every artifact is missing (otherwise treated as a likely "
-        "wrong-account/region misconfig and aborted)",
-    )
 
     # Mode flags (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group()
@@ -879,17 +891,6 @@ def main():
     if args.dry_run:
         print("Dry run complete. No pipelines were launched.\n")
         return
-
-    # Wrong-environment guard: if nearly every artifact came back missing, this is almost
-    # certainly the wrong AWS account/region rather than a real from-scratch build. Refuse
-    # to submit the whole world unless the user explicitly forces it.
-    if plan.environment_suspect and not args.force:
-        print(
-            "\nABORTED: nearly every artifact was not found -- this usually means the wrong AWS "
-            "account/region (check WORKBENCH_CONFIG). Re-run with --force if this is intentional "
-            "(e.g. a genuine from-scratch build).\n"
-        )
-        sys.exit(1)
 
     run_pipelines(plan, args, extra_args)
 
