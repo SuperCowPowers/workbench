@@ -53,8 +53,10 @@ def find_orphans(pipelines_path: str = ".", full_traverse: bool = False):
         "fs": {ref_name(r) for r in live_refs if ref_type(r) == "fs"},
         "model": {ref_name(r) for r in live_refs if ref_type(r) == "model"},
     }
-    print(f"Loaded {pm.get_num_pipelines()} pipeline(s): "
-          f"{len(live['ds'])} ds, {len(live['fs'])} fs, {len(live['model'])} model refs.\n")
+    print(
+        f"Loaded {pm.get_num_pipelines()} pipeline(s): "
+        f"{len(live['ds'])} ds, {len(live['fs'])} fs, {len(live['model'])} model refs.\n"
+    )
 
     # All artifacts known to Workbench, by type.
     all_ds = set(meta.data_sources()["Name"])
