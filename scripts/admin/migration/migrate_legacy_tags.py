@@ -97,44 +97,54 @@ def main():
     args = parser.parse_args()
 
     meta = Meta()
-    artifacts = (
-        [FeatureSetCore(name) for name in meta.feature_sets()["Feature Group"]]
-        + [ModelCore(name) for name in meta.models()["Model Group"]]
-        + [EndpointCore(name) for name in meta.endpoints()["Name"]]
+    targets = (
+        [(FeatureSetCore, name) for name in meta.feature_sets()["Feature Group"]]
+        + [(ModelCore, name) for name in meta.models()["Model Group"]]
+        + [(EndpointCore, name) for name in meta.endpoints()["Name"]]
     )
 
-    clean, migrated, failed = 0, 0, []
-    for artifact in artifacts:
-        values = stitched_values(artifact)
-        recovered = {k: recover_value(v) for k, v in values.items() if needs_migration(k, v)}
-        if not recovered:
-            clean += 1
-            continue
+    clean, migrated, failed, errored = 0, 0, [], []
+    for cls, name in targets:
+        # Per-artifact isolation: a transient AWS/network error (or a malformed artifact) skips just
+        # this one instead of aborting the whole run. The migration is idempotent, so a re-run retries it.
+        try:
+            artifact = cls(name)  # construction itself hits AWS, so it's inside the try
+            recovered = {k: recover_value(v) for k, v in stitched_values(artifact).items() if needs_migration(k, v)}
+            if not recovered:
+                clean += 1
+                continue
 
-        print(f"{artifact.name}: rewriting {list(recovered.keys())}")
-        if not args.apply:
-            continue
+            print(f"{name}: rewriting {list(recovered.keys())}")
+            if not args.apply:
+                continue
 
-        # Delete first (clears orphan _chunk_ tags — new plain/marked values need fewer chunks),
-        # then re-write the recovered values in the new plain/b64: format.
-        for key in recovered:
-            artifact.delete_metadata(key)
-        artifact.upsert_workbench_meta(recovered)
+            # Delete first (clears orphan _chunk_ tags — new plain/marked values need fewer chunks),
+            # then re-write the recovered values in the new plain/b64: format.
+            for key in recovered:
+                artifact.delete_metadata(key)
+            artifact.upsert_workbench_meta(recovered)
 
-        still = {k: v for k, v in stitched_values(artifact).items() if needs_migration(k, v)}
-        if still:
-            failed.append((artifact.name, list(still.keys())))
-            print(f"  STILL OLD FORMAT after rewrite: {list(still.keys())}")
-        else:
-            migrated += 1
-            print("  migrated")
+            still = {k: v for k, v in stitched_values(artifact).items() if needs_migration(k, v)}
+            if still:
+                failed.append((name, list(still.keys())))
+                print(f"  STILL OLD FORMAT after rewrite: {list(still.keys())}")
+            else:
+                migrated += 1
+                print("  migrated")
+        except Exception as e:
+            errored.append((name, f"{type(e).__name__}: {e}"))
+            print(f"  ERROR on {name}: {type(e).__name__} — skipping (safe to re-run)")
 
-    print(f"\n{clean} clean, {migrated} migrated, {len(failed)} failed")
+    print(f"\n{clean} clean, {migrated} migrated, {len(failed)} failed, {len(errored)} errored")
     if failed:
         print("Failed artifacts (likely exceeded the 50-tag/256-char budget on re-encode):")
         for name, keys in failed:
             print(f"  {name}: {keys}")
-    if not args.apply and clean < len(artifacts):
+    if errored:
+        print("Errored artifacts (transient/AWS error — re-run to retry):")
+        for name, err in errored:
+            print(f"  {name}: {err}")
+    if not args.apply and clean < len(targets):
         print("Dry-run only — rerun with --apply to rewrite")
 
 
