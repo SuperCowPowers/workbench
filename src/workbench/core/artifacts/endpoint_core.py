@@ -1261,11 +1261,7 @@ class EndpointCore(Artifact):
         if not self.exists():
             self.log.warning(f"Trying to delete an Endpoint that doesn't exist: {self.name}")
 
-        # Remove this endpoint from the list of registered endpoints
-        self.log.info(f"Removing {self.name} from the list of registered endpoints...")
-        ModelCore(self.model_name).remove_endpoint(self.name)
-
-        # Call the Class Method to delete the Endpoint
+        # Delegate to the class method (it also de-registers the endpoint from its model)
         EndpointCore.managed_delete(endpoint_name=self.name)
 
     @classmethod
@@ -1280,6 +1276,17 @@ class EndpointCore(Artifact):
                 cls.log.info(f"Endpoint {endpoint_name} not found!")
                 return
             raise  # Re-raise unexpected errors
+
+        # De-register this endpoint from its owning model so the model's metadata
+        # stays in sync (model name lives in the endpoint's workbench_input tag).
+        from workbench.core.cloud_platform.cloud_meta import CloudMeta
+
+        endpoint_arn = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)["EndpointArn"]
+        tags = CloudMeta().get_aws_tags(endpoint_arn) or {}
+        model_name = tags.get("workbench_input")
+        if model_name and model_name != "unknown":
+            cls.log.info(f"Removing {endpoint_name} from the registered endpoints of {model_name}...")
+            ModelCore(model_name).remove_endpoint(endpoint_name)
 
         # Async endpoints carry auto-scaling policies + alarms that AWS won't
         # clean up for us — deregister them first so we don't orphan stale

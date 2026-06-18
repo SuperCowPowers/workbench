@@ -515,6 +515,11 @@ class AthenaSource(DataSourceAbstract):
     def managed_delete(cls, data_source_name: str, database: str = "workbench"):
         """Class Method: Delete the AWS Data Catalog Table and S3 Storage Objects
 
+        Note:
+            Callers that bypass instance creation (e.g. bulk_delete) get the default
+            "workbench" database. A DataSource in a non-default database must be
+            deleted via its instance (delete() passes self.database).
+
         Args:
             data_source_name (str): Name of DataSource (AthenaSource)
             database (str): Athena Database Name (default: workbench)

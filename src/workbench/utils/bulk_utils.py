@@ -11,6 +11,12 @@ log = logging.getLogger("workbench")
 def bulk_delete(artifacts_to_delete: list[tuple[str, str]]):
     """Bulk delete various artifacts
 
+    Bypasses artifact object creation and calls each class's managed_delete()
+    directly. This is equivalent to instantiating the artifact and calling
+    .delete() (e.g. Model(name).delete()), with one caveat: DataSource deletion
+    targets the default "workbench" database, so a DataSource in a non-default
+    database must be deleted via its instance.
+
     Args:
         artifacts_to_delete (list[tuple[str, str]]): A list of tuples of the form (item_type, item_name)
     """
