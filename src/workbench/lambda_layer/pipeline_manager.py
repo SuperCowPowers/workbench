@@ -547,9 +547,7 @@ class PipelineManager:
         resolve = mtime_fn or self._cached_mtime
         blocked: dict = {}
         for job in self.jobs:
-            missing = {
-                ref for ref in job.inputs if self._producer.get(ref) is None and resolve(ref) is None
-            }
+            missing = {ref for ref in job.inputs if self._producer.get(ref) is None and resolve(ref) is None}
             if not missing:
                 continue
             blocked.setdefault(job.key, set()).update(missing)
