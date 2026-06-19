@@ -922,7 +922,7 @@ class EndpointCore(Artifact):
 
         except ClientError as err:
             error_code = err.response["Error"]["Code"]
-            if error_code in ("ModelNotReadyException", "ThrottlingException"):
+            if error_code in ("ModelNotReadyException", "ThrottlingException", "ServiceUnavailable"):
                 max_retries = 5
                 if retries < max_retries:
                     sleep_time = min(2**retries * 30, 120)
