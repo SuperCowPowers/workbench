@@ -672,9 +672,9 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
     print()
 
     if plan.skipped:
-        print(_color("Skipped -- missing source data (would only fail at runtime):", "red"))
+        print(_color("Skipped -- missing source data (would fail at runtime):", "red"))
         for job, refs in plan.skipped:
-            print(_color(f"   {run_label(job.script, job.mode)} -- missing {', '.join(refs)}", "red"))
+            print(f"   {run_label(job.script, job.mode)} -- missing {', '.join(refs)}")
         print()
 
 
