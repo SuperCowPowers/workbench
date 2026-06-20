@@ -80,7 +80,9 @@ def upload(in_dir: Path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Copy DataSources between AWS/Workbench envs.")
     parser.add_argument("mode", choices=["download", "upload"], help="download from source env, upload to target env")
-    parser.add_argument("--dir", default="./ds_export", help="Local directory for the exported files (default: ./ds_export)")
+    parser.add_argument(
+        "--dir", default="./ds_export", help="Local directory for the exported files (default: ./ds_export)"
+    )
     args = parser.parse_args()
 
     work_dir = Path(args.dir)
