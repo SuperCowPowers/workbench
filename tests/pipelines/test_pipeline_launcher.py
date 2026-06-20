@@ -154,7 +154,7 @@ class TestSortPipelines:
 
         order = [j.script for j in plan.runs]
         assert order.index(fs) < order.index(a)
-        assert run_by(plan, fs, None).group == "p"
+        assert run_by(plan, fs, None).pipeline == "p"
         # Artifacts flow straight into the batch dependency tokens
         assert (run_by(plan, fs, None).outputs, run_by(plan, fs, None).inputs) == (["fs:x"], [])
         assert (run_by(plan, a, None).outputs, run_by(plan, a, None).inputs) == ([], ["fs:x"])
@@ -172,9 +172,12 @@ class TestSortPipelines:
 
         order = [j.script for j in plan.runs]
         assert order.index(fs) < order.index(consumer)
-        # Each run keeps its own pipeline as its group.
-        assert run_by(plan, fs, None).group == "producers"
-        assert run_by(plan, consumer, None).group == "consumers"
+        # Each run keeps its own pipeline name (the human grouping)...
+        assert run_by(plan, fs, None).pipeline == "producers"
+        assert run_by(plan, consumer, None).pipeline == "consumers"
+        # ...but producer and consumer share one dependency group -> one SQS FIFO group, so
+        # the queue drains them in topological order and the consumer's dependsOn resolves.
+        assert run_by(plan, fs, None).group == run_by(plan, consumer, None).group
 
     def test_external_inputs_tolerated_silently(self, tmp_path, capsys):
         """Dangling/external inputs emit no warnings -- the render's grey/green conveys them."""
@@ -280,7 +283,7 @@ class TestSortPipelines:
         plan = sort_pipelines([a, orphan], {"p": [node(a)]}, mode="dt")
 
         assert (orphan, "dt") in run_keys(plan)
-        assert run_by(plan, orphan, "dt").group is None
+        assert run_by(plan, orphan, "dt").pipeline is None  # standalone: no pipeline, no dependency group
         assert (run_by(plan, orphan, "dt").outputs, run_by(plan, orphan, "dt").inputs) == ([], [])
         assert any("standalone" in line for line in plan.display_lines)
 

@@ -94,13 +94,18 @@ class Job:
         mode (str | None): Execution mode ("dt"/"ts"/...), or None for modeless
         outputs (list[str]): Artifact refs this job produces
         inputs (list[str]): Artifact refs this job depends on
-        group (str | None): The pipeline this job belongs to (its name)
+        pipeline (str | None): The pipelines.json key that declared this job -- the
+            human grouping (list_pipelines / get_pipeline). Set by parse_spec.
+        group (str | None): The SQS FIFO MessageGroupId for Batch submission -- the
+            job's dependency group. Set by PipelineManager; see
+            :meth:`PipelineManager._assign_dependency_groups`.
     """
 
     script: Any
     mode: str | None = None
     outputs: list[str] = field(default_factory=list)
     inputs: list[str] = field(default_factory=list)
+    pipeline: str | None = None
     group: str | None = None
 
     @property
@@ -148,10 +153,10 @@ def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) 
             Identity when omitted.
 
     Returns:
-        list[Job]: One job per declared entry, with ``group`` set.
+        list[Job]: One job per declared entry, with ``pipeline`` set.
     """
     jobs: list[Job] = []
-    for group, raw_jobs in spec.get("pipelines", {}).items():
+    for pipeline_name, raw_jobs in spec.get("pipelines", {}).items():
         for raw in raw_jobs:
             script = raw["script"]
             if script_resolver is not None:
@@ -162,7 +167,7 @@ def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) 
                     mode=raw.get("mode"),
                     outputs=list(raw.get("outputs", [])),
                     inputs=list(raw.get("inputs", [])),
-                    group=group,
+                    pipeline=pipeline_name,
                 )
             )
     return jobs
@@ -195,6 +200,8 @@ class PipelineManager:
 
     Interactive (human) API:
         list_pipelines / get_num_pipelines / get_pipeline   -- named pipelines
+        list_dependency_groups / get_num_dependency_groups / dependency_groups
+            / get_dependency_group                          -- Batch scheduling units
         full_dependency_graph / upstream_graph / downstream_graph -- artifact DAG
         show(graph)                                          -- ascii render
 
@@ -280,6 +287,35 @@ class PipelineManager:
                 self._producer[ref] = job
 
         self.graph = self._build_graph()  # also validates: no cycles
+        self._assign_dependency_groups()  # SQS FIFO submission group per dependency group
+
+    def _assign_dependency_groups(self) -> None:
+        """Set each job's ``group`` to its dependency-group id (its FIFO group).
+
+        A dependency group is one weakly-connected component (graph closure) of the
+        artifact/job DAG: a producer plus every job transitively connected to it through
+        shared artifacts. Dependency groups are disjoint -- no edge crosses them -- so
+        giving each its own SQS FIFO MessageGroupId is both sufficient (every real
+        producer/consumer edge is within one group, and the queue drains a group in the
+        topological order jobs are sent, so a producer is submitted to Batch ahead of
+        its consumers and the consumer's dependsOn resolves) and maximally isolated (a
+        failure stalls only its own group). Only *submission* serializes within a
+        group -- Batch still runs every dependency-satisfied job concurrently.
+
+        The id is the group's first root source: the smallest artifact ref with no
+        producer in the graph (an external ds:/fs:/model: input). Computed from the
+        full declared DAG, so it's stable across runs regardless of which jobs are
+        stale.
+        """
+        for component in nx.weakly_connected_components(self.graph):
+            roots = sorted(
+                n for n in component if self.graph.nodes[n].get("kind") == "artifact" and self.graph.in_degree(n) == 0
+            )
+            jobs = [self.graph.nodes[n]["job"] for n in component if self.graph.nodes[n].get("kind") == "job"]
+            # Every component has a root artifact, or (a lone input-less job) at least one job.
+            group_id = roots[0] if roots else min(j.node_id for j in jobs)
+            for job in jobs:
+                job.group = group_id
 
     def _build_graph(self) -> nx.DiGraph:
         """The bipartite dependency DAG (the single source of truth).
@@ -293,10 +329,10 @@ class PipelineManager:
         # Artifact nodes: every ref any job consumes or produces.
         for ref in {r for job in self.jobs for r in (*job.inputs, *job.outputs)}:
             producer = self._producer.get(ref)
-            g.add_node(ref, kind="artifact", type=ref_type(ref), group=producer.group if producer else None)
+            g.add_node(ref, kind="artifact", type=ref_type(ref), pipeline=producer.pipeline if producer else None)
         # Job nodes + their input/output edges.
         for job in self.jobs:
-            g.add_node(job.key, kind="job", job=job, group=job.group)
+            g.add_node(job.key, kind="job", job=job, pipeline=job.pipeline)
             for inp in job.inputs:
                 g.add_edge(inp, job.key)
             for out in job.outputs:
@@ -320,8 +356,8 @@ class PipelineManager:
         """The pipeline names, in first-seen order."""
         names: dict[str, None] = {}
         for job in self.jobs:
-            if job.group is not None:
-                names.setdefault(job.group, None)
+            if job.pipeline is not None:
+                names.setdefault(job.pipeline, None)
         return list(names)
 
     def get_num_pipelines(self) -> int:
@@ -334,16 +370,57 @@ class PipelineManager:
         Inputs produced by *other* pipelines appear as roots here (their producing
         job is outside this slice). Raises KeyError for an unknown name.
         """
-        group_jobs = [job for job in self.jobs if job.group == name]
-        if not group_jobs:
+        pipeline_jobs = [job for job in self.jobs if job.pipeline == name]
+        if not pipeline_jobs:
             raise KeyError(f"no pipeline named {name!r}")
-        nodes = {job.key for job in group_jobs}
-        nodes |= {ref for job in group_jobs for ref in (*job.inputs, *job.outputs)}
+        nodes = {job.key for job in pipeline_jobs}
+        nodes |= {ref for job in pipeline_jobs for ref in (*job.inputs, *job.outputs)}
         return self.graph.subgraph(nodes).copy()
 
     def validate_pipeline(self, name: str):
         """FUTURE: cross-check declared wiring against real artifact lineage."""
         raise NotImplementedError("validate_pipeline is not implemented yet")
+
+    # -- dependency groups (scheduling-oriented) -----------------------------
+    # A dependency group is one weakly-connected component of the DAG: a producer
+    # plus everything transitively connected to it. Each is submitted under its own
+    # SQS FIFO MessageGroupId (Job.group), so producers precede consumers and
+    # disjoint groups submit in parallel. Unlike pipelines (a human grouping that
+    # can span groups), these are the actual scheduling units.
+
+    def list_dependency_groups(self) -> list[str]:
+        """The dependency-group ids (the Batch FIFO MessageGroupIds), in first-seen order."""
+        ids: dict[str, None] = {}
+        for job in self.jobs:
+            if job.group is not None:
+                ids.setdefault(job.group, None)
+        return list(ids)
+
+    def get_num_dependency_groups(self) -> int:
+        """How many dependency groups the DAG splits into."""
+        return len(self.list_dependency_groups())
+
+    def dependency_groups(self) -> dict[str, list["Job"]]:
+        """Map each dependency-group id to its jobs (handy for sizes/membership)."""
+        groups: dict[str, list[Job]] = {}
+        for job in self.jobs:
+            if job.group is not None:
+                groups.setdefault(job.group, []).append(job)
+        return groups
+
+    def get_dependency_group(self, group_id: str) -> nx.DiGraph:
+        """The sub-DAG for one dependency group: its jobs plus the artifacts they touch.
+
+        Self-contained by construction -- a dependency group is a weakly-connected
+        component, so every edge of those jobs stays inside the slice. Raises KeyError
+        for an unknown id.
+        """
+        group_jobs = [job for job in self.jobs if job.group == group_id]
+        if not group_jobs:
+            raise KeyError(f"no dependency group {group_id!r}")
+        nodes = {job.key for job in group_jobs}
+        nodes |= {ref for job in group_jobs for ref in (*job.inputs, *job.outputs)}
+        return self.graph.subgraph(nodes).copy()
 
     # -- dependency graph (artifact-oriented) --------------------------------
 

@@ -20,9 +20,9 @@ from workbench.lambda_layer.pipeline_manager import (
 )
 
 
-def job(script, mode=None, outputs=None, inputs=None, group=None):
+def job(script, mode=None, outputs=None, inputs=None, pipeline=None):
     """Build a Job (test convenience)."""
-    return Job(script, mode, outputs or [], inputs or [], group)
+    return Job(script, mode, outputs or [], inputs or [], pipeline)
 
 
 def pm(jobs):
@@ -67,7 +67,7 @@ class TestParseSpec:
             }
         }
         jobs = parse_spec(spec)
-        assert [j.group for j in jobs] == ["p", "p"]
+        assert [j.pipeline for j in jobs] == ["p", "p"]
         assert jobs[0].outputs == ["fs:x"]
         assert jobs[1].mode == "dt"
 
@@ -117,8 +117,8 @@ class TestPipelinesAPI:
     def _mgr(self):
         return pm(
             [
-                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"], group="features"),
-                job("m.py", outputs=["model:m"], inputs=["fs:x"], group="models"),
+                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"], pipeline="features"),
+                job("m.py", outputs=["model:m"], inputs=["fs:x"], pipeline="models"),
             ]
         )
 
@@ -137,6 +137,43 @@ class TestPipelinesAPI:
     def test_get_pipeline_unknown_raises(self):
         with pytest.raises(KeyError):
             self._mgr().get_pipeline("nope")
+
+
+class TestDependencyGroupsAPI:
+    def _mgr(self):
+        # Two disjoint dependency chains -> two dependency groups, regardless of the
+        # (human) pipeline labels. The cross-pipeline chain collapses into one group.
+        return pm(
+            [
+                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"], pipeline="features"),
+                job("m.py", outputs=["model:m"], inputs=["fs:x"], pipeline="models"),
+                job("other.py", outputs=["fs:y"], inputs=["ds:other"], pipeline="other"),
+            ]
+        )
+
+    def test_list_and_count(self):
+        mgr = self._mgr()
+        # Group id is each chain's root source; fs+model collapse into the ds:raw group.
+        assert mgr.list_dependency_groups() == ["ds:raw", "ds:other"]
+        assert mgr.get_num_dependency_groups() == 2
+
+    def test_dependency_groups_membership(self):
+        groups = self._mgr().dependency_groups()
+        assert {gid: sorted(j.node_id for j in jobs) for gid, jobs in groups.items()} == {
+            "ds:raw": ["fs", "m"],
+            "ds:other": ["other"],
+        }
+
+    def test_get_dependency_group_slice(self):
+        mgr = self._mgr()
+        slice_ = mgr.get_dependency_group("ds:raw")
+        # The whole connected component: both jobs and every artifact they touch.
+        assert arts(slice_) == {"ds:raw", "fs:x", "model:m"}
+        assert job_ids(slice_) == {"fs", "m"}
+
+    def test_get_dependency_group_unknown_raises(self):
+        with pytest.raises(KeyError):
+            self._mgr().get_dependency_group("nope")
 
 
 class TestDependencyGraph:
@@ -196,8 +233,8 @@ class TestPlan:
         # ds:raw -> fs:x -> model:m  (cross-pipeline)
         return pm(
             [
-                job("m.py", outputs=["model:m"], inputs=["fs:x"], group="models"),
-                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"], group="features"),
+                job("m.py", outputs=["model:m"], inputs=["fs:x"], pipeline="models"),
+                job("fs.py", outputs=["fs:x"], inputs=["ds:raw"], pipeline="features"),
             ]
         )
 

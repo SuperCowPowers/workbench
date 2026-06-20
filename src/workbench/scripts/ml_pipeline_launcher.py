@@ -88,8 +88,8 @@ class RunPlan:
     """Execution plan from sort_pipelines(): the run-jobs plus the display lines.
 
     Each run is a :class:`Job` whose ``mode`` is the *runtime* mode (a modeless
-    node adopts the active filter). ``group``/``outputs``/``inputs`` ride along on
-    the job, so there are no parallel dicts to keep in sync.
+    node adopts the active filter). ``pipeline``/``group``/``outputs``/``inputs``
+    ride along on the job, so there are no parallel dicts to keep in sync.
     """
 
     runs: list[Job] = field(default_factory=list)
@@ -186,7 +186,7 @@ def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
     nodes = parse_spec(config, script_resolver=lambda script: directory / script)
     pipelines: dict[str, list[Job]] = {}
     for node in nodes:
-        pipelines.setdefault(node.group, []).append(node)
+        pipelines.setdefault(node.pipeline, []).append(node)
     return pipelines
 
 
@@ -441,7 +441,7 @@ def _build_dag_plan(
         if not in_pipeline:
             continue
         for n in in_pipeline:
-            n.group = name
+            n.pipeline = name
         grouped[name] = in_pipeline
 
     if grouped:
@@ -652,7 +652,7 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
     """Print the launch summary banner."""
     if mode:
         mode_display = mode.upper()
-    elif any(job.group is not None for job in plan.runs):
+    elif any(job.pipeline is not None for job in plan.runs):
         mode_display = "JSON defaults"
     else:
         mode_display = "none (standalone)"
@@ -724,7 +724,7 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             cmd.extend(["--pipeline-meta", pipeline_meta])
             if extra_args:
                 cmd.extend(["--script-args", json.dumps(extra_args)])
-            if job.group:
+            if job.group:  # dependency-group id for DAG jobs; standalone falls back to the SQS default
                 cmd.extend(["--group-id", job.group])
             if job.outputs:
                 cmd.extend(["--outputs", ",".join(job.outputs)])
