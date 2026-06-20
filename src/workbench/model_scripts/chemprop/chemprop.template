@@ -56,7 +56,7 @@ DEFAULT_HYPERPARAMETERS = {
     # Training
     "n_folds": 5,
     "max_epochs": 400,
-    "patience": 50,
+    "patience": 40,
     "batch_size": 64,
     # Message Passing (ignored when using foundation model)
     "hidden_dim": 700,
@@ -775,6 +775,10 @@ if __name__ == "__main__":
             target_scaler = train_dataset.normalize_targets()
             val_dataset.normalize_targets(target_scaler)
             output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
+
+        # Cache featurized MolGraphs so dataloader workers don't re-featurize every epoch (CPU bottleneck)
+        train_dataset.cache = True
+        val_dataset.cache = True
 
         num_workers = min(os.cpu_count() or 4, 8)  # Scale with CPUs, cap at 8
         train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=num_workers > 0, pin_memory=True, prefetch_factor=2)
