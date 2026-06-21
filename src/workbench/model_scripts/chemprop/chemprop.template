@@ -15,12 +15,17 @@ import json
 import os
 import time
 
+# Template revision marker — bump on edits so log output identifies the script
+# version independent of the training image's installed workbench version.
+TEMPLATE_REVISION = "2026-06-21a (featurization caching + timing)"
+
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
 # is the most common source of silent inference-container startup hangs.
 # CloudWatch attaches its own timestamps, but the AWS console and default
 # `aws logs get-log-events` text output strip them — inline HH:MM:SS so we can
 # read raw log text without an extra round-trip.
+print(f"[{time.strftime('%H:%M:%S')}] [startup] chemprop template revision: {TEMPLATE_REVISION}", flush=True)
 print(f"[{time.strftime('%H:%M:%S')}] [startup] importing heavy deps...", flush=True)
 
 import joblib
@@ -397,6 +402,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 # Training
 # =============================================================================
 if __name__ == "__main__":
+    _run_t0 = time.time()  # [timing] start of training-mode execution
     # -------------------------------------------------------------------------
     # Training-only imports (deferred to reduce serverless startup time)
     # -------------------------------------------------------------------------
@@ -727,7 +733,9 @@ if __name__ == "__main__":
     )
     print(f"Split strategy: {split_strategy}")
 
+    print(f"[timing] setup (imports + data load + scaffold split): {time.time() - _run_t0:.1f}s", flush=True)
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
+    _train_t0 = time.time()  # [timing] total training across all folds
 
     # -------------------------------------------------------------------------
     # Training loop
@@ -776,9 +784,14 @@ if __name__ == "__main__":
             val_dataset.normalize_targets(target_scaler)
             output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
 
-        # Cache featurized MolGraphs so dataloader workers don't re-featurize every epoch (CPU bottleneck)
+        # Cache featurized MolGraphs so dataloader workers don't re-featurize every epoch (CPU bottleneck).
+        # Setting cache=True eagerly precomputes all MolGraphs; timing it both confirms the code ran and
+        # measures how much featurization cost moved up front (vs. the per-batch collation floor).
+        _cache_t0 = time.time()
         train_dataset.cache = True
         val_dataset.cache = True
+        print(f"[cache] featurization cache ENABLED — {len(train_dataset)} train + {len(val_dataset)} val "
+              f"MolGraphs precomputed in {time.time() - _cache_t0:.1f}s", flush=True)
 
         num_workers = min(os.cpu_count() or 4, 8)  # Scale with CPUs, cap at 8
         train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=num_workers > 0, pin_memory=True, prefetch_factor=2)
@@ -811,6 +824,7 @@ if __name__ == "__main__":
                 ))
             return pl.Trainer(accelerator="auto", max_epochs=max_epochs, precision="16-mixed", logger=False, enable_progress_bar=True, callbacks=callbacks)
 
+        _fit_t0 = time.time()
         if use_two_phase:
             # Phase 1: Freeze MPNN, train FFN only
             print(f"Phase 1: Training with frozen MPNN for {freeze_mpnn_epochs} epochs...")
@@ -827,6 +841,9 @@ if __name__ == "__main__":
             trainer = _make_trainer(hyperparameters["max_epochs"], save_checkpoint=True)
             trainer.fit(mpnn, train_loader, val_loader)
 
+        _fit_secs = time.time() - _fit_t0
+        print(f"[timing] fold {fold_idx + 1} fit: {_fit_secs:.1f}s", flush=True)
+
         # Load best checkpoint
         if trainer.checkpoint_callback and trainer.checkpoint_callback.best_model_path:
             checkpoint = torch.load(trainer.checkpoint_callback.best_model_path, weights_only=False)
@@ -840,8 +857,10 @@ if __name__ == "__main__":
         oof_dataset = data.MoleculeDataset(val_dps_raw)
         val_loader_pred = data.build_dataloader(oof_dataset, batch_size=_safe_batch_size(len(oof_dataset), batch_size), shuffle=False, num_workers=num_workers, pin_memory=True)
 
+        _oof_t0 = time.time()
         with torch.inference_mode():
             fold_preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, val_loader_pred)], axis=0)
+        print(f"[timing] fold {fold_idx + 1} OOF predict: {time.time() - _oof_t0:.1f}s", flush=True)
         print(f"Fold {fold_idx + 1} OOF predictions complete.", flush=True)
         if fold_preds.ndim == 3 and fold_preds.shape[1] == 1:
             fold_preds = fold_preds.squeeze(axis=1)
@@ -855,7 +874,8 @@ if __name__ == "__main__":
                 fold_preds = fold_preds.reshape(-1, 1)
             oof_predictions[val_idx] = fold_preds
 
-    _diag_t0 = time.time()  # [DIAG]
+    print(f"[timing] total training ({len(ensemble_models)} folds): {time.time() - _train_t0:.1f}s", flush=True)
+    _post_t0 = time.time()  # [timing] post-training: std + UQ + SHAP + save
     print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).", flush=True)
 
     # -------------------------------------------------------------------------
@@ -944,7 +964,7 @@ if __name__ == "__main__":
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
         if len(ensemble_models) > 1:
-            print(f"[DIAG] {time.time() - _diag_t0:.1f}s since training complete", flush=True)  # [DIAG]
+            _std_t0 = time.time()
             print("Computing prediction_std from ensemble...", flush=True)
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
@@ -967,13 +987,13 @@ if __name__ == "__main__":
                 if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
                     ens_preds = ens_preds.squeeze(axis=1)
                 all_ens_preds.append(ens_preds)
-            print(f"  Ensemble inference complete. [DIAG] {time.time() - _diag_t0:.1f}s", flush=True)  # [DIAG]
+            print(f"[timing] prediction_std (ensemble inference): {time.time() - _std_t0:.1f}s", flush=True)
             preds_std = np.std(np.stack(all_ens_preds), axis=0)
             if preds_std.ndim == 1:
                 preds_std = preds_std.reshape(-1, 1)
             preds_std = compress_std_outliers(preds_std)
 
-        print(f"[DIAG] {time.time() - _diag_t0:.1f}s before metrics", flush=True)  # [DIAG]
+        print(f"[timing] post-training elapsed before metrics: {time.time() - _post_t0:.1f}s", flush=True)
         print("\n--- Per-target metrics ---")
         for t_idx, t_name in enumerate(target_columns):
             valid_mask = ~np.isnan(y_validate[:, t_idx])
@@ -1041,12 +1061,12 @@ if __name__ == "__main__":
     # Output format matches XGB/PyTorch templates: shap_importance.json,
     # shap_values.csv, and shap_feature_values.csv.
     # -------------------------------------------------------------------------
-    print(f"[DIAG] {time.time() - _diag_t0:.1f}s before SHAP", flush=True)  # [DIAG]
+    _shap_t0 = time.time()  # [timing] SHAP phase
     print("\n" + "=" * 50, flush=True)
     print("Computing SHAP Values", flush=True)
     print("=" * 50, flush=True)
     from workbench.endpoints.chemprop_shap_utils import compute_chemprop_shap, format_shap_results
-    print("[DIAG] SHAP imports loaded", flush=True)  # [DIAG]
+    print("[timing] SHAP imports loaded", flush=True)
 
     shap_values_array, shap_feature_names, shap_indices, shap_fractions = compute_chemprop_shap(
         model=ensemble_models[0],
@@ -1104,6 +1124,7 @@ if __name__ == "__main__":
 
     save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
     print(f"Saved SHAP artifacts ({len(shap_indices)} samples, {len(shap_importance)} features)")
+    print(f"[timing] SHAP: {time.time() - _shap_t0:.1f}s", flush=True)
 
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
@@ -1122,7 +1143,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Save model artifacts
     # -------------------------------------------------------------------------
-    print(f"[DIAG] {time.time() - _diag_t0:.1f}s before model save", flush=True)  # [DIAG]
+    print(f"[timing] post-training elapsed before model save: {time.time() - _post_t0:.1f}s", flush=True)
     for idx, m in enumerate(ensemble_models):
         models.save_model(os.path.join(args.model_dir, f"chemprop_model_{idx}.pt"), m)
     print(f"Saved {len(ensemble_models)} model(s)")
@@ -1158,6 +1179,7 @@ if __name__ == "__main__":
         joblib.dump({"extra_feature_cols": extra_feature_cols, "col_means": col_means.tolist()}, os.path.join(args.model_dir, "feature_metadata.joblib"))
         print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
 
-    print(f"[DIAG] {time.time() - _diag_t0:.1f}s total post-training", flush=True)  # [DIAG]
+    print(f"[timing] total post-training: {time.time() - _post_t0:.1f}s", flush=True)
+    print(f"[timing] total run: {time.time() - _run_t0:.1f}s", flush=True)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
