@@ -105,15 +105,23 @@ class ModelToEndpoint(Transform):
         if auto_scaling_mode is None:
             auto_scaling_mode = "batch" if async_endpoint else "realtime"
 
-        # Resolve autoscaler numeric defaults when the caller didn't specify them.
-        # We pin these at __init__ (rather than letting register_autoscaling's defaults
-        # take over silently) so workbench_meta honestly records the effective values
-        # the endpoint was deployed with — and so downstream consumers
-        # (e.g. _resolve_max_in_flight) can see real numbers. Only meaningful for
-        # non-serverless endpoints; serverless doesn't use the autoscaler.
+        # Pin autoscaler defaults here so the effective values land in workbench_meta
+        # and stay visible to downstream consumers (e.g. _resolve_max_in_flight).
+        # Non-serverless only — serverless self-manages capacity.
+        #
+        # Defaults by transport:
+        #   async    → 0 → 8  (queue-driven, scales to zero when idle)
+        #   realtime → 1 → 1  (fixed by default; a realtime variant can't sit at 0
+        #              and CPU target-tracking can't scale from 0. Opt into scaling
+        #              by passing max_instances > 1.)
         if not serverless:
-            if max_instances is None:
-                max_instances = _DEFAULT_MAX_CAPACITY
+            if async_endpoint:
+                if max_instances is None:
+                    max_instances = _DEFAULT_MAX_CAPACITY
+            else:
+                min_instances = max(1, min_instances)
+                if max_instances is None:
+                    max_instances = 1
             if scale_in_idle_minutes is None:
                 scale_in_idle_minutes = _DEFAULT_SCALE_IN_IDLE_MINUTES
 
@@ -352,16 +360,15 @@ class ModelToEndpoint(Transform):
         )
         endpoint.wait_for_status("InService")
 
-        # Register the autoscaler for async endpoints. Must happen after the
-        # endpoint is InService — AWS doesn't allow managed instance scaling on
-        # the ProductionVariant for async configs until then.
+        # Register the autoscaler for instance-based endpoints (async + realtime).
+        # Must happen after the endpoint is InService — AWS doesn't allow managed
+        # instance scaling on the ProductionVariant until then.
         #
-        # Serverless endpoints manage their own capacity via AWS's serverless
-        # config and don't need this. Instance-based realtime endpoints currently
-        # run with fixed capacity — the "realtime" auto_scaling_mode is available
-        # in register_autoscaling but wiring it up here would be a behavior change
-        # for existing deployments, so we defer that to a separate change.
-        if self.async_endpoint:
+        # Serverless endpoints manage their own capacity via AWS's serverless config
+        # and don't use the autoscaler. Realtime endpoints default to fixed capacity
+        # (min=max=1), in which case register_autoscaling is a no-op; scaling kicks
+        # in only when the caller raises max_instances > 1.
+        if not self.serverless:
             register_autoscaling(
                 self.boto3_session,
                 self.output_name,

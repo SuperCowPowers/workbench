@@ -19,8 +19,9 @@ ENDPOINT_NAME = "smiles-to-2d-v1"
 # SERVERLESS=False → dedicated instance (more predictable latency).
 SERVERLESS = os.environ.get("SERVERLESS", "True").lower() == "true"
 MEM_SIZE = 4096  # MB — serverless memory ceiling.
-MAX_CONCURRENCY = 5  # serverless concurrent invocations.
+MAX_CONCURRENCY = 20  # serverless concurrent invocations (this endpoint is hit by many batch jobs at once).
 INSTANCE = "ml.c7i.large"  # used only when SERVERLESS=False.
+MAX_INSTANCES = 4  # SERVERLESS=False only: autoscale 1 → MAX_INSTANCES on CPU.
 
 
 if __name__ == "__main__":
@@ -44,4 +45,4 @@ if __name__ == "__main__":
     if SERVERLESS:
         model.to_endpoint(tags=tags, serverless=True, mem_size=MEM_SIZE, max_concurrency=MAX_CONCURRENCY)
     else:
-        model.to_endpoint(tags=tags, serverless=False, instance=INSTANCE)
+        model.to_endpoint(tags=tags, serverless=False, instance=INSTANCE, max_instances=MAX_INSTANCES)

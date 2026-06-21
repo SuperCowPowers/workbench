@@ -40,3 +40,16 @@ Each script will:
 2. Build the model with its custom script
 3. Deploy the SageMaker endpoint
 4. Run a small test inference
+
+## Autoscaling
+
+| Deployment | Scaling |
+|------------|---------|
+| Serverless | AWS-managed via `max_concurrency` (scale to zero when idle) |
+| Realtime (`SERVERLESS=false`) | Fixed at 1 instance, unless `max_instances` is set |
+| Async (`smiles-to-3d-full-v1`) | Step-scales `0 → 8` on queue backlog |
+
+Realtime endpoints default to a single fixed instance. Only `smiles_to_2d_v1.py`
+opts into scaling (`MAX_INSTANCES=4`), since it's hit by many batch jobs at once;
+it autoscales `1 → MAX_INSTANCES` on CPU (~60% variant-average — featurizers are
+CPU-bound).

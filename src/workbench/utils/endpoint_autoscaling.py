@@ -4,7 +4,7 @@ Two modes:
   - "batch": step policies for async endpoints. ApproximateBacklogSize >= 1
     jumps to max in one step; < 1 for N minutes drains to min. Pile of work
     arrives, chew through it, go cold.
-  - "realtime": single target-tracking policy on InvocationsPerInstance.
+  - "realtime": single target-tracking policy on CPUUtilization.
 
 Resources are named ``{endpoint_name}-{role}`` (e.g. ``ep-scale-out``).
 ``deregister_autoscaling`` finds them by prefix.
@@ -28,7 +28,10 @@ _DEFAULT_MAX_CAPACITY = 8
 # would have killed the request itself. Shorter windows risk orphaning long
 # predict_fns while their queue is empty.
 _DEFAULT_SCALE_IN_IDLE_MINUTES = 60
-_DEFAULT_REALTIME_TARGET = 750.0
+# Target variant-average CPU% for realtime target-tracking. SageMaker's
+# CPUUtilization sums across cores (single-worker container pegs ~100 on 2 vCPU),
+# so 60 scales out once instances are consistently more than half-busy.
+_DEFAULT_REALTIME_TARGET = 60.0
 
 
 def register_autoscaling(
@@ -53,11 +56,16 @@ def register_autoscaling(
         max_capacity: Autoscaler ceiling. Default 8.
         scale_in_idle_minutes: Batch only. Minutes of empty queue before
             scaling in. Default 5.
-        realtime_target: Realtime only. Target InvocationsPerInstance. Default 750.
+        realtime_target: Realtime only. Target variant-average CPU%. Default 60.
         raise_on_error: If True, re-raise after logging.
     """
     if auto_scaling_mode not in ("batch", "realtime"):
         raise ValueError(f"Unsupported auto_scaling_mode {auto_scaling_mode!r}. Valid: ['batch', 'realtime']")
+
+    # Fixed capacity (e.g. realtime default min=max=1) — nothing to scale.
+    if max_capacity <= min_capacity:
+        log.info(f"Autoscaling skipped for '{endpoint_name}': fixed capacity (min={min_capacity}, max={max_capacity})")
+        return
 
     aas = boto3_session.client("application-autoscaling")
     cw = boto3_session.client("cloudwatch")
@@ -219,9 +227,14 @@ def _put_step_policy_with_alarm(aas, cw, endpoint_name, resource_id, role, adjus
 
 
 def _install_realtime(aas, endpoint_name, resource_id, target_value):
-    """Target-tracking on InvocationsPerInstance. AWS auto-creates the alarms."""
+    """Target-tracking on CPUUtilization. AWS auto-creates the alarms.
+
+    CPU fits CPU-bound featurizers (request count misleads — batches carry 1-N
+    rows). ``target_value`` is variant-average CPU%; SageMaker sums across cores,
+    so a single-worker container pegs ~100 on a 2-vCPU box.
+    """
     aas.put_scaling_policy(
-        PolicyName=f"{endpoint_name}-invocations-target",
+        PolicyName=f"{endpoint_name}-cpu-target",
         ServiceNamespace=_SERVICE_NS,
         ResourceId=resource_id,
         ScalableDimension=_SCALABLE_DIM,
@@ -229,10 +242,13 @@ def _install_realtime(aas, endpoint_name, resource_id, target_value):
         TargetTrackingScalingPolicyConfiguration={
             "TargetValue": target_value,
             "CustomizedMetricSpecification": {
-                "MetricName": "InvocationsPerInstance",
-                "Namespace": "AWS/SageMaker",
-                "Statistic": "Sum",
-                "Dimensions": [{"Name": "EndpointName", "Value": endpoint_name}],
+                "MetricName": "CPUUtilization",
+                "Namespace": "/aws/sagemaker/Endpoints",
+                "Statistic": "Average",
+                "Dimensions": [
+                    {"Name": "EndpointName", "Value": endpoint_name},
+                    {"Name": "VariantName", "Value": "AllTraffic"},
+                ],
             },
             "ScaleInCooldown": 900,
             "ScaleOutCooldown": 60,

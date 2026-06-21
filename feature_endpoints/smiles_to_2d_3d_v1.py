@@ -4,7 +4,7 @@ Combines two existing feature endpoints into a single inference target:
 
     [smiles-to-2d-v1]   (sync, RDKit + Mordred 2D, ~313 features)  ──┐
                                                                      ├── Concat
-    [smiles-to-3d-full-v1] (async, Boltzmann 3D, 74 features)     ──┘
+    [smiles-to-3d-full-v1] (async, Boltzmann 3D, 74 features)      ──┘
 
 Caller sends a SMILES DataFrame; the deployed MetaEndpoint fans out to
 both children, merges their feature columns, and returns a single wide
