@@ -232,6 +232,9 @@ def _install_realtime(aas, endpoint_name, resource_id, target_value):
     CPU fits CPU-bound featurizers (request count misleads — batches carry 1-N
     rows). ``target_value`` is variant-average CPU%; SageMaker sums across cores,
     so a single-worker container pegs ~100 on a 2-vCPU box.
+
+    Scale-out detection is AWS-fixed at ~3 min here. To react in ~1 min, add a
+    custom step-scaling policy on a 1-min CPU alarm (see the batch mode).
     """
     aas.put_scaling_policy(
         PolicyName=f"{endpoint_name}-cpu-target",
