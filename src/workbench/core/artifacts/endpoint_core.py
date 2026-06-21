@@ -922,24 +922,32 @@ class EndpointCore(Artifact):
 
         except ClientError as err:
             error_code = err.response["Error"]["Code"]
-            if error_code in ("ModelNotReadyException", "ThrottlingException", "ServiceUnavailable"):
+            raw_msg = err.response.get("Error", {}).get("Message", "")
+
+            # A ModelError carrying a timeout / "no response" message is the container
+            # being saturated (CPU-pegged), not a bad row. Treat it as transient: back
+            # off and retry the same batch. Bisecting here just amplifies the load.
+            is_timeout = error_code == "ModelError" and (
+                "timed out" in raw_msg.lower()
+                or "could not get a response" in raw_msg.lower()
+                or "server error (0)" in raw_msg.lower()
+            )
+
+            if error_code in ("ModelNotReadyException", "ThrottlingException", "ServiceUnavailable") or is_timeout:
+                label = "ModelError (timeout)" if is_timeout else error_code
                 max_retries = 5
                 if retries < max_retries:
                     sleep_time = min(2**retries * 30, 120)
-                    self.log.warning(f"{error_code} (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
+                    self.log.warning(f"{label} (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
                     time.sleep(sleep_time)
                     return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)
-                self.log.critical(f"{error_code}: max retries exceeded")
+                self.log.critical(f"{label}: max retries exceeded")
                 raise
 
             elif error_code == "ModelError":
-                # Compact log; full response only at debug level
-                raw_msg = err.response.get("Error", {}).get("Message", "")
+                # Genuine model error tied to specific row(s) — bisect to isolate.
                 short_msg = raw_msg.split("See https://")[0].strip()[:200] or str(err)[:200]
                 self.log.debug(err.response)
-
-                # Container hung (CPU pegged) vs. genuinely bad row
-                is_hung_container = "could not get a response" in raw_msg.lower()
 
                 # Base case: single row → record the failure once and move on
                 if len(feature_df) == 1:
@@ -954,19 +962,8 @@ class EndpointCore(Artifact):
                         return pd.DataFrame(columns=feature_df.columns)
                     return self._fill_with_nans(feature_df)
 
-                # Multi-row case: log once at this level, then bisect
-                if is_hung_container:
-                    # Let the hung container recover before we bisect into it
-                    recovery_sleep = 90
-                    self.log.warning(
-                        f"ModelError (container unresponsive) on {len(feature_df)} rows: "
-                        f"{short_msg}. Sleeping {recovery_sleep}s before bisecting."
-                    )
-                    time.sleep(recovery_sleep)
-                else:
-                    self.log.warning(f"ModelError on {len(feature_df)} rows: {short_msg}. Bisecting...")
-
-                # Binary search for the problematic row(s)
+                # Multi-row case: log once, then binary search for the problematic row(s)
+                self.log.warning(f"ModelError on {len(feature_df)} rows: {short_msg}. Bisecting...")
                 mid_point = len(feature_df) // 2
                 self.log.info(f"Bisect: 0:{mid_point} and {mid_point}:{len(feature_df)}")
                 first_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[:mid_point], drop_error_rows)
