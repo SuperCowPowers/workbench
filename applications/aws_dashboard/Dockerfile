@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         -r /tmp/requirements.lock
 
 # Layer 2: Workbench only (changes often, ~20 MB)
-ARG WORKBENCH_VERSION=0.8.375
+ARG WORKBENCH_VERSION=0.8.376
 RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)
