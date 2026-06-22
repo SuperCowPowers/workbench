@@ -58,6 +58,7 @@ def async_inference(
     s3_bucket: Optional[str] = None,
     s3_input_prefix: Optional[str] = None,
     instances_str_fn: Optional[Callable[[], str]] = None,
+    progress_str_fn: Optional[Callable[[], str]] = None,
 ) -> pd.DataFrame:
     """Run async inference on a SageMaker endpoint and return a DataFrame.
 
@@ -87,6 +88,12 @@ def async_inference(
             An empty string suppresses the field. Useful for callers whose
             endpoint count carries no useful signal (e.g. orchestrators
             locked to a single instance).
+        progress_str_fn: Optional callable returning a progress string,
+            appended to each heartbeat log. Lets a caller surface work that
+            is invisible from here — e.g. a MetaEndpoint whose single opaque
+            invocation fans out server-side; the callable reports the child
+            queue drain. When ``None`` (default), heartbeats show elapsed
+            time only.
 
     Returns:
         DataFrame containing the endpoint's response, with rows in input
@@ -105,7 +112,7 @@ def async_inference(
     # Build clients with a connection pool sized to the in-flight concurrency.
     # Default botocore pool is 10 — anything larger triggers "Connection pool is
     # full" warnings and forces ad-hoc socket creation.
-    boto_session = _resolve_boto_session(sm_session)
+    boto_session = resolve_boto_session(sm_session)
     client_config = Config(max_pool_connections=max(max_in_flight * 2, 10))
     s3_client = boto_session.client("s3", config=client_config)
     runtime_client = boto_session.client("sagemaker-runtime", config=client_config)
@@ -160,7 +167,14 @@ def async_inference(
                 # still running server-side (common for a MetaEndpoint's single
                 # large invocation). Emit a liveness line so it doesn't look hung.
                 elapsed_min = (time.time() - loop_start) / 60
-                log.info(f"async_inference: waiting on {endpoint_name}, {completed}/{total} complete, {elapsed_min:.0f}m elapsed")
+                msg = f"async_inference: waiting on {endpoint_name}, {elapsed_min:.0f}m elapsed"
+                if total > 1:
+                    msg += f", {completed}/{total} chunks done"
+                if progress_str_fn is not None:
+                    progress = progress_str_fn()
+                    if progress:
+                        msg += f" — {progress}"
+                log.info(msg)
                 continue
             for fut in done:
                 idx = futures[fut]
@@ -179,7 +193,9 @@ def async_inference(
                 completed += 1
                 if completed % 25 == 0 or completed == total:
                     progress_instances = _label()
-                    progress_msg = f"Async progress: {completed}/{total} chunks complete " f"({len(failed_indices)} failed"
+                    progress_msg = (
+                        f"Async progress: {completed}/{total} chunks complete " f"({len(failed_indices)} failed"
+                    )
                     if progress_instances:
                         progress_msg += f", instances={progress_instances}"
                     progress_msg += ")"
@@ -212,9 +228,12 @@ def instance_count_str(sm_client, endpoint_name: str) -> str:
         return "?"
 
 
-def _resolve_boto_session(sm_session) -> boto3.Session:
+def resolve_boto_session(sm_session) -> boto3.Session:
     """Accept a plain boto3.Session, a legacy SageMaker Session (with
-    ``.boto_session``), or None (build from ambient env)."""
+    ``.boto_session``), or None (build from ambient env).
+
+    Shared with :mod:`workbench.utils.async_endpoint_utils` (queue management),
+    hence public rather than module-private."""
     if sm_session is not None:
         return getattr(sm_session, "boto_session", sm_session)
 
@@ -328,58 +347,6 @@ def _poll_s3_output(s3_client, output_location: str) -> str:
         interval = min(interval * _POLL_BACKOFF, _POLL_MAX_S)
 
     raise TimeoutError(f"Async output not available after {_POLL_DEADLINE_S}s: {output_location}")
-
-
-def purge_async_queue(
-    endpoint_name: str,
-    s3_bucket: str,
-    sm_session=None,
-    s3_input_prefix: Optional[str] = None,
-) -> int:
-    """Cancel all queued async invocations for an endpoint.
-
-    SageMaker async invocations reference an input CSV in S3. Deleting those
-    staged inputs causes any not-yet-pulled invocation to fail fast with
-    ``NoSuchKey`` when SageMaker tries to read it — draining the queue
-    without further compute. In-flight invocations are unaffected (they've
-    already pulled their input).
-
-    Run this only when no live callers are dispatching against the endpoint;
-    otherwise their just-uploaded inputs may be deleted before SageMaker
-    pulls them.
-
-    Args:
-        endpoint_name: Name of the deployed SageMaker async endpoint.
-        s3_bucket: Bucket where async-input CSVs are staged.
-        sm_session: Optional boto3/SageMaker session (see
-            :func:`async_inference`). If None, builds one from the ambient
-            AWS environment.
-        s3_input_prefix: S3 key prefix for staged inputs. Defaults to
-            ``endpoints/<endpoint_name>/async-input`` to match
-            :func:`async_inference`'s upload location.
-
-    Returns:
-        int: Number of staged input objects deleted.
-    """
-    if s3_input_prefix is None:
-        s3_input_prefix = f"endpoints/{endpoint_name}/async-input"
-    prefix = s3_input_prefix.rstrip("/") + "/"
-
-    boto_session = _resolve_boto_session(sm_session)
-    s3_client = boto_session.client("s3")
-
-    deleted = 0
-    paginator = s3_client.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=s3_bucket, Prefix=prefix):
-        objs = page.get("Contents") or []
-        if not objs:
-            continue
-        keys = [{"Key": o["Key"]} for o in objs]
-        s3_client.delete_objects(Bucket=s3_bucket, Delete={"Objects": keys, "Quiet": True})
-        deleted += len(keys)
-
-    log.info(f"purge_async_queue: deleted {deleted} staged inputs from s3://{s3_bucket}/{prefix}")
-    return deleted
 
 
 def _cleanup_s3(s3_client, *s3_uris: str) -> None:

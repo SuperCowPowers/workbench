@@ -25,41 +25,18 @@ import logging
 import pandas as pd
 
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench.endpoints.async_inference import async_inference, purge_async_queue
+from workbench.endpoints.async_inference import async_inference
+from workbench.utils.async_endpoint_utils import (
+    build_meta_instances_str_fn,
+    build_meta_progress_str_fn,
+    purge_async_queue,
+    resolve_batch_sizing,
+)
 
 log = logging.getLogger("workbench")
 
-# Default rows per invocation. Smaller batches give better load balancing
-# across workers — a handful of slow rows in one chunk stretches total time
-# less when there are more chunks to absorb the variance. At ~20s/row (typical
-# async workload) the extra per-chunk overhead (~3s polling startup) is <2%.
-# Fast endpoints (sub-second per row) should override higher via meta so the
-# overhead doesn't dominate.
-# Override per-endpoint via workbench_meta["inference_batch_size"].
-_DEFAULT_BATCH_SIZE = 10
-
-# Safety cap on client-side thread-pool size for direct (non-InferenceCache)
-# calls with large DataFrames. Prevents thread-pool blowup on calls like
-# ``end.inference(huge_df)``. Override per-call via
-# workbench_meta["inference_max_in_flight"].
-_MAX_IN_FLIGHT_CAP = 64
-
 # Pandas option applied once at import — avoid mutating global state per call.
 pd.set_option("future.no_silent_downcasting", True)
-
-
-def _resolve_max_in_flight(meta: dict, n_batches: int) -> int:
-    """Size the client-side thread pool for one ``_async_batch_invoke`` call.
-
-    Default: ``n_batches`` — one worker per sub-batch, fully parallel, no
-    queueing in the client pool.
-
-    Safety cap: ``inference_max_in_flight`` from meta, defaulting to
-    :data:`_MAX_IN_FLIGHT_CAP`. Prevents thread-pool blowup on calls with
-    very large DataFrames.
-    """
-    cap = int(meta.get("inference_max_in_flight", _MAX_IN_FLIGHT_CAP))
-    return min(n_batches, cap)
 
 
 class AsyncEndpointCore(EndpointCore):
@@ -112,7 +89,7 @@ class AsyncEndpointCore(EndpointCore):
     def purge_async_queue(self) -> int:
         """Cancel all queued async invocations for this endpoint.
 
-        Thin wrapper over :func:`workbench.endpoints.async_inference.purge_async_queue`.
+        Thin wrapper over :func:`workbench.utils.async_endpoint_utils.purge_async_queue`.
         See that function for behavior, caveats, and return semantics.
         """
         return purge_async_queue(
@@ -144,23 +121,18 @@ class AsyncEndpointCore(EndpointCore):
     def _async_batch_invoke(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Delegate batch invocation to ``workbench.endpoints.async_inference``.
 
-        Reads two tunable knobs from ``workbench_meta()``:
-          * ``inference_batch_size`` (default 10): rows per invocation.
-          * ``inference_max_in_flight`` (default :data:`_MAX_IN_FLIGHT_CAP`):
-            outstanding invocation cap for direct calls bypassing
-            :class:`InferenceCache`.
+        Sizing (``batch_size``/``max_in_flight``) comes from
+        :func:`~workbench.utils.async_endpoint_utils.resolve_batch_sizing` via
+        the ``inference_batch_size`` / ``inference_max_in_flight`` meta knobs.
 
-        For MetaEndpoints (detected via ``workbench_meta["meta_endpoint_dag"]``),
-        an ``instances_str_fn`` callable is passed to ``async_inference`` so
-        its ``instances=`` log field renders per-child counts instead of the
-        meta orchestrator's own (always-1) count. The callable composes
-        :meth:`Endpoint.instance_counts` per async child.
+        For MetaEndpoints, two log-decoration callables are passed so the
+        otherwise-opaque single meta invocation reports useful detail:
+        ``instances_str_fn`` (per-child instance counts in the ``instances=``
+        field) and ``progress_str_fn`` (per-child queue drain, surfaced in the
+        heartbeat). Both are ``None`` for non-meta endpoints.
         """
         meta = self.workbench_meta() or {}
-        batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
-        # Estimate chunks for sizing; bridges re-derives this internally too.
-        n_batches = max(1, (len(eval_df) + batch_size - 1) // batch_size)
-        max_in_flight = _resolve_max_in_flight(meta, n_batches=n_batches)
+        batch_size, max_in_flight = resolve_batch_sizing(meta, len(eval_df))
 
         return async_inference(
             endpoint_name=self.endpoint_name,
@@ -170,42 +142,6 @@ class AsyncEndpointCore(EndpointCore):
             max_in_flight=max_in_flight,
             s3_bucket=self.workbench_bucket,
             s3_input_prefix=f"endpoints/{self.name}/async-input",
-            instances_str_fn=self._meta_instances_str_fn(meta),
+            instances_str_fn=build_meta_instances_str_fn(meta),
+            progress_str_fn=build_meta_progress_str_fn(meta, self.boto3_session, self.workbench_bucket),
         )
-
-    def _meta_instances_str_fn(self, meta: dict):
-        """Build the ``instances_str_fn`` callable for a MetaEndpoint, or None.
-
-        For non-meta endpoints, returns ``None`` so workbench-bridges renders
-        its default (``endpoint_name``'s own count).
-
-        For MetaEndpoints, returns a callable that composes
-        :meth:`Endpoint.instance_counts` per async child:
-        ``[child_a:2, child_b:1→3]``. Returns an empty string when the meta
-        has no async children, which suppresses the ``instances=`` field.
-        """
-        dag_dict = meta.get("meta_endpoint_dag")
-        if not dag_dict:
-            return None
-
-        async_children = [name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async]
-        if not async_children:
-            return lambda: ""
-
-        from workbench.api.endpoint import Endpoint
-
-        def fn() -> str:
-            parts = []
-            for child_name in async_children:
-                # Construction fetches fresh; use the cached read helper
-                # to avoid a redundant refresh round-trip.
-                counts = Endpoint(child_name)._read_instance_counts()
-                if not counts:
-                    parts.append(f"{child_name}:?")
-                    continue
-                c, d = counts["current"], counts["desired"]
-                val = str(c) if c == d else f"{c}→{d}"
-                parts.append(f"{child_name}:{val}")
-            return "[" + ", ".join(parts) + "]"
-
-        return fn
