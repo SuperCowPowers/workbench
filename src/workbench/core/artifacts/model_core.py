@@ -19,7 +19,7 @@ from sagemaker.core.resources import (
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
-from workbench.utils.aws_utils import newest_path, pull_s3_data
+from workbench.utils.aws_utils import newest_path, pull_s3_data, dict_to_aws_tags
 from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
@@ -985,6 +985,83 @@ class ModelCore(Artifact):
         if prox_model_name is None:
             prox_model_name = self.model_name + "-prox"
         return published_proximity_model(self, prox_model_name, include_all_columns=include_all_columns)
+
+    # Source-bound metadata that must NOT carry to a copy: its endpoints, transient
+    # health tags, and its training view (managed_delete uses workbench_training_view,
+    # so carrying it would make deleting the copy drop the SOURCE's Athena view).
+    _COPY_META_SKIP = {"workbench_registered_endpoints", "workbench_health_tags", "workbench_training_view"}
+
+    def copy(self, dst_name: str, owner: str = None) -> "ModelCore":
+        """Copy this model to a new model group (no retraining).
+
+        Clones the model package (container spec + a frozen copy of the model
+        artifact) plus workbench metadata. Used to snapshot a winning challenger
+        into a stable, date-stamped promoted model. Overwrites dst if it exists.
+
+        Args:
+            dst_name (str): Name of the new model group
+            owner (str, optional): Owner for the copy; overrides the source's owner
+                (e.g. a promoted copy is "Pro-{owner}", not the source's "DT")
+
+        Returns:
+            ModelCore: The newly created model
+        """
+        if self.latest_model is None:
+            raise ValueError(f"Cannot copy {self.model_name}: no registered model package")
+
+        # Capture source artifact/container before any dst mutations
+        src_url = self.model_data_url()
+        src_spec = self.latest_model["InferenceSpecification"]
+        src_meta = self.workbench_meta() or {}
+
+        # Overwrite-safe: no-op if dst is absent, else clears the group + its S3 dir
+        ModelCore.managed_delete(dst_name)
+
+        # Freeze the artifact under the copy's own group dir (immune to the source's
+        # delete-then-create churn, which wipes the source's training path)
+        frozen_url = f"{self.models_s3_path}/training/{dst_name}/model.tar.gz"
+        wr.s3.copy_objects(
+            [src_url],
+            source_path=src_url.rsplit("/", 1)[0],
+            target_path=frozen_url.rsplit("/", 1)[0],
+            boto3_session=self.boto3_session,
+        )
+
+        # Rebuild the container from create-valid fields only, repointing the artifact
+        # URL to the frozen copy. Skip describe's read-only fields (ModelDataETag,
+        # IsCheckpoint) and ImageDigest (pins a digest the mutable :latest tag may have
+        # moved past -> ValidationException); SageMaker resolves the current digest.
+        src_container = src_spec["Containers"][0]
+        container = {"Image": src_container["Image"], "ModelDataUrl": frozen_url}
+        for field in ("Environment", "Framework", "FrameworkVersion"):
+            if field in src_container:
+                container[field] = src_container[field]
+
+        # Carry source metadata (incl. type/framework/status) as group tags so the copy
+        # lands fully typed and ready -- set at create time to avoid the init flagging it
+        # unknown/needs_onboard before tags exist.
+        carried = {k: v for k, v in src_meta.items() if k not in self._COPY_META_SKIP}
+        if owner:
+            carried["workbench_owner"] = owner
+        ModelPackageGroup.create(
+            model_package_group_name=dst_name,
+            model_package_group_description=self.description,
+            tags=dict_to_aws_tags(carried),
+            session=self.boto3_session,
+        )
+        # boto3 (not the V3 SDK) -- see create_and_register_model for the SDK bug
+        self.sm_client.create_model_package(
+            ModelPackageGroupName=dst_name,
+            ModelPackageDescription=self.description,
+            InferenceSpecification={
+                "Containers": [container],
+                "SupportedContentTypes": src_spec.get("SupportedContentTypes", ["text/csv"]),
+                "SupportedResponseMIMETypes": src_spec.get("SupportedResponseMIMETypes", ["text/csv"]),
+            },
+            ModelApprovalStatus="Approved",
+        )
+        self.log.important(f"Copied model {self.model_name} -> {dst_name}")
+        return ModelCore(dst_name)
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""
