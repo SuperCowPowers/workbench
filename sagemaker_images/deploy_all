@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+# Build and deploy all sagemaker images.
+# Usage: deploy_all GENERAL_VERSION ML_PIPELINES_VERSION
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $(basename "$0") GENERAL_VERSION ML_PIPELINES_VERSION"
+  echo "  e.g. $(basename "$0") 0.5 0.11"
+  exit 1
+fi
+
+GENERAL_VERSION="$1"
+ML_PIPELINES_VERSION="$2"
+
+"$SCRIPT_DIR/build_deploy.sh" base/training "$GENERAL_VERSION" --deploy --overwrite
+"$SCRIPT_DIR/build_deploy.sh" base/inference "$GENERAL_VERSION" --deploy --overwrite
+"$SCRIPT_DIR/build_deploy.sh" pytorch_chem/training "$GENERAL_VERSION" --deploy --overwrite
+"$SCRIPT_DIR/build_deploy.sh" pytorch_chem/inference "$GENERAL_VERSION" --deploy --overwrite
+"$SCRIPT_DIR/build_deploy.sh" ml_pipelines "$ML_PIPELINES_VERSION" --deploy --overwrite
