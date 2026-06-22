@@ -24,18 +24,14 @@ METRIC_NS = "/aws/sagemaker/TrainingJobs"
 
 def latest_job(sm, prefix: str):
     """Most recent training job whose name contains `prefix` (None if none)."""
-    resp = sm.list_training_jobs(
-        NameContains=prefix, SortBy="CreationTime", SortOrder="Descending", MaxResults=5
-    )
+    resp = sm.list_training_jobs(NameContains=prefix, SortBy="CreationTime", SortOrder="Descending", MaxResults=5)
     summaries = resp.get("TrainingJobSummaries", [])
     return summaries[0] if summaries else None
 
 
 def timing_lines(logs, job_name: str):
     """All [timing] / [cache] log lines for the job, in order."""
-    streams = logs.describe_log_streams(
-        logGroupName=LOG_GROUP, logStreamNamePrefix=job_name
-    ).get("logStreams", [])
+    streams = logs.describe_log_streams(logGroupName=LOG_GROUP, logStreamNamePrefix=job_name).get("logStreams", [])
     if not streams:
         return []
     stream = streams[0]["logStreamName"]
@@ -115,8 +111,10 @@ def main(model_names):
         secs = desc.get("TrainingTimeInSeconds")
         inst = desc.get("ResourceConfig", {}).get("InstanceType")
         print(f"  job: {job_name}")
-        print(f"  status: {job['TrainingJobStatus']}  instance: {inst}  "
-              f"train_time: {secs}s" + (f" ({secs // 60}m)" if secs else ""))
+        print(
+            f"  status: {job['TrainingJobStatus']}  instance: {inst}  "
+            f"train_time: {secs}s" + (f" ({secs // 60}m)" if secs else "")
+        )
 
         lines = timing_lines(logs, job_name)
         if lines:
@@ -132,34 +130,46 @@ def main(model_names):
         cpu_pk, cpu_mn = metric(cw, job_name, "CPUUtilization", start, end)
         mem_pk, _ = metric(cw, job_name, "MemoryUtilization", start, end)
         print("  --- utilization ---")
-        fmt = lambda v: f"{v:.0f}%" if v is not None else "n/a"
+
+        def fmt(v):
+            return f"{v:.0f}%" if v is not None else "n/a"
+
         print(f"    GPU util: peak {fmt(gpu_pk)} / mean {fmt(gpu_mn)}   GPU mem: peak {fmt(gmem_pk)}")
         print(f"    CPU util: peak {fmt(cpu_pk)} / mean {fmt(cpu_mn)}   RAM: peak {fmt(mem_pk)}")
 
         t = parse_metrics_from_timing(lines)
         mean_fit = sum(t["fold_fits"]) / len(t["fold_fits"]) if t["fold_fits"] else None
-        summary.append({
-            "model": name,
-            "cache_s": t["cache_s"],
-            "mean_fit_s": mean_fit,
-            "total_train_s": t["total_train_s"],
-            "gpu_mean": gpu_mn,
-            "gpu_peak": gpu_pk,
-        })
+        summary.append(
+            {
+                "model": name,
+                "cache_s": t["cache_s"],
+                "mean_fit_s": mean_fit,
+                "total_train_s": t["total_train_s"],
+                "gpu_mean": gpu_mn,
+                "gpu_peak": gpu_pk,
+            }
+        )
 
     # Summary table
     if summary:
         print("\n" + "=" * 70)
         print("SUMMARY")
         print("=" * 70)
-        hdr = f"{'model':<32} {'cache(s)':>9} {'mean fold fit(s)':>17} {'total train(s)':>15} {'GPU mean':>9} {'GPU peak':>9}"
+        hdr = (
+            f"{'model':<32} {'cache(s)':>9} {'mean fold fit(s)':>17} "
+            f"{'total train(s)':>15} {'GPU mean':>9} {'GPU peak':>9}"
+        )
         print(hdr)
         print("-" * len(hdr))
         for s in summary:
+
             def f(v, suf=""):
                 return f"{v:.1f}{suf}" if isinstance(v, (int, float)) else "n/a"
-            print(f"{s['model'][:32]:<32} {f(s['cache_s']):>9} {f(s['mean_fit_s']):>17} "
-                  f"{f(s['total_train_s']):>15} {f(s['gpu_mean'], '%'):>9} {f(s['gpu_peak'], '%'):>9}")
+
+            print(
+                f"{s['model'][:32]:<32} {f(s['cache_s']):>9} {f(s['mean_fit_s']):>17} "
+                f"{f(s['total_train_s']):>15} {f(s['gpu_mean'], '%'):>9} {f(s['gpu_peak'], '%'):>9}"
+            )
 
 
 if __name__ == "__main__":
