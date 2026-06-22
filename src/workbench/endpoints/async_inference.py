@@ -21,7 +21,7 @@ import logging
 import os
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from io import StringIO
 from typing import Callable, Optional
 
@@ -42,6 +42,11 @@ _POLL_BACKOFF = 1.5
 
 # SageMaker async endpoints support up to 60-minute invocations.
 _POLL_DEADLINE_S = 3600
+
+# Heartbeat cadence for the chunk-completion loop. When no chunk finishes
+# within this window, emit a liveness line so long quiet polls (e.g. a
+# MetaEndpoint's single large invocation) don't look hung.
+_HEARTBEAT_S = 60
 
 
 def async_inference(
@@ -146,28 +151,39 @@ def async_inference(
             ): idx
             for idx, chunk_df in chunks
         }
-        for fut in as_completed(futures):
-            idx = futures[fut]
-            try:
-                result_df = fut.result()
-            except Exception as e:
-                log.error(f"Chunk {idx} raised unexpectedly: {e}")
-                failed_indices.append(idx)
-                result_df = None
-            else:
-                if result_df is None or result_df.empty:
+        pending = set(futures)
+        loop_start = time.time()
+        while pending:
+            done, pending = wait(pending, timeout=_HEARTBEAT_S, return_when=FIRST_COMPLETED)
+            if not done:
+                # No chunk finished within the heartbeat window — the work is
+                # still running server-side (common for a MetaEndpoint's single
+                # large invocation). Emit a liveness line so it doesn't look hung.
+                elapsed_min = (time.time() - loop_start) / 60
+                log.info(f"async_inference: waiting on {endpoint_name}, {completed}/{total} complete, {elapsed_min:.0f}m elapsed")
+                continue
+            for fut in done:
+                idx = futures[fut]
+                try:
+                    result_df = fut.result()
+                except Exception as e:
+                    log.error(f"Chunk {idx} raised unexpectedly: {e}")
                     failed_indices.append(idx)
+                    result_df = None
                 else:
-                    results[idx] = result_df
+                    if result_df is None or result_df.empty:
+                        failed_indices.append(idx)
+                    else:
+                        results[idx] = result_df
 
-            completed += 1
-            if completed % 25 == 0 or completed == total:
-                progress_instances = _label()
-                progress_msg = f"Async progress: {completed}/{total} chunks complete " f"({len(failed_indices)} failed"
-                if progress_instances:
-                    progress_msg += f", instances={progress_instances}"
-                progress_msg += ")"
-                log.info(progress_msg)
+                completed += 1
+                if completed % 25 == 0 or completed == total:
+                    progress_instances = _label()
+                    progress_msg = f"Async progress: {completed}/{total} chunks complete " f"({len(failed_indices)} failed"
+                    if progress_instances:
+                        progress_msg += f", instances={progress_instances}"
+                    progress_msg += ")"
+                    log.info(progress_msg)
 
     if not results:
         raise RuntimeError(f"All {total} async invocations failed for endpoint '{endpoint_name}'")
