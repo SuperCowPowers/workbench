@@ -273,6 +273,7 @@ class WorkbenchShell:
             self.commands["CachedModel"] = importlib.import_module("workbench.cached.cached_model").CachedModel
             self.commands["ModelType"] = importlib.import_module("workbench.api.model").ModelType
             self.commands["Endpoint"] = importlib.import_module("workbench.api.endpoint").Endpoint
+            self.commands["MetaEndpoint"] = importlib.import_module("workbench.api.meta_endpoint").MetaEndpoint
             self.commands["Monitor"] = importlib.import_module("workbench.api.monitor").Monitor
             self.commands["ParameterStore"] = importlib.import_module("workbench.api.parameter_store").ParameterStore
             self.commands["DFStore"] = importlib.import_module("workbench.api.df_store").DFStore
