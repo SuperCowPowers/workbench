@@ -72,6 +72,11 @@ class PipelineMeta:
         return self._meta["endpoint_name"]
 
     @property
+    def challengers(self) -> list:
+        """The challenger model names for a promote node (its model inputs)."""
+        return self._meta["challengers"]
+
+    @property
     def mode(self) -> str:
         """The pipeline execution mode (e.g., 'dt', 'ts', 'promote')."""
         return self._meta["mode"]

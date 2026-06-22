@@ -125,21 +125,29 @@ class Job:
         return f"{self.stem} [{self.mode}]" if self.mode else self.stem
 
     def pipeline_meta(self, serverless: bool = True) -> dict:
-        """The PIPELINE_META a run hands its script: mode + the names to create.
+        """Return a dictionary used by the PipelineMeta class.
 
-        ``model_name``/``endpoint_name`` come from the declared ``model:`` output
-        (the DAG is the source of truth). Modeless producers (e.g. FeatureSets)
-        get just ``mode``/``serverless`` and no model. Shared by the launcher and
-        the DT Lambda; launcher-only modes (promote, filename fallback) wrap this.
+        An ml_pipeline script can use the PipelineMeta() class to get information
+        about naming or modes that this script might use. This reflects the node
+        into every field it implies; the script pulls whatever it needs (maybe
+        nothing). Fields:
+
+         model_name    -> from a model: output
+         endpoint_name -> from an endpoint: output, else the model's own endpoint
+         challengers   -> from model: inputs (a promote node's contestants)
         """
         meta: dict = {"serverless": serverless}
         if self.mode is not None:
             meta["mode"] = self.mode
-        model_ref = next((o for o in self.outputs if ref_type(o) == "model"), None)
-        if model_ref is not None:
-            name = ref_name(model_ref)
-            meta["model_name"] = name
-            meta["endpoint_name"] = name
+        model_out = next((ref_name(o) for o in self.outputs if ref_type(o) == "model"), None)
+        endpoint_out = next((ref_name(o) for o in self.outputs if ref_type(o) == "endpoint"), None)
+        challengers = [ref_name(i) for i in self.inputs if ref_type(i) == "model"]
+        if model_out:
+            meta["model_name"] = model_out
+        if endpoint_out or model_out:
+            meta["endpoint_name"] = endpoint_out or model_out
+        if challengers:
+            meta["challengers"] = challengers
         return meta
 
 
@@ -559,7 +567,7 @@ class PipelineManager:
             fs:<name>     -> FeatureGroup CreationTime
             model:<name>  -> latest model package CreationTime
             public:<name> -> PublicData S3 object LastModified (unsigned, no creds)
-            endpoint:...  -> not supported yet
+            endpoint:<name> -> SageMaker endpoint LastModifiedTime
 
         A genuinely-absent artifact returns None -> "must run". A lookup that we
         *couldn't complete* (bad creds, no region, AccessDenied, throttling) is a
@@ -586,8 +594,7 @@ class PipelineManager:
             if kind == "public":
                 return self._public_mtime(name)
             if kind == "endpoint":
-                self.log.warning(f"endpoint artifact refs are not supported yet: {ref!r}")
-                return None
+                return self._aws_client("sagemaker").describe_endpoint(EndpointName=name)["LastModifiedTime"]
         except ClientError as e:
             code = e.response.get("Error", {}).get("Code", "")
             if code in _ARTIFACT_NOT_FOUND_CODES:
