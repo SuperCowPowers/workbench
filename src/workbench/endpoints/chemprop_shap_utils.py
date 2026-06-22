@@ -226,13 +226,17 @@ def _batched_predict(model, molgraphs, x_d_array=None, batch_size=128):
             (n, n_classes) for single-task classification (task dim squeezed).
             For multi-task classification: (n, n_tasks, n_classes).
     """
+    # Run on GPU when available — message-passing inference on CPU is dramatically slower.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = model.to(device)
     all_preds = []
     for start in range(0, len(molgraphs), batch_size):
         end = min(start + batch_size, len(molgraphs))
         bmg = data.BatchMolGraph(molgraphs[start:end])
+        bmg.to(device)
         V_d = None
         if x_d_array is not None:
-            X_d = torch.tensor(x_d_array[start:end], dtype=torch.float32)
+            X_d = torch.tensor(x_d_array[start:end], dtype=torch.float32).to(device)
         else:
             X_d = None
         with torch.inference_mode():

@@ -17,7 +17,7 @@ import time
 
 # Template revision marker — bump on edits so log output identifies the script
 # version independent of the training image's installed workbench version.
-TEMPLATE_REVISION = "2026-06-21a (featurization caching + timing)"
+TEMPLATE_REVISION = "2026-06-21d (GPU post-training inference)"
 
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
@@ -411,11 +411,15 @@ if __name__ == "__main__":
 
     import awswrangler as wr
     from lightning import pytorch as pl
-    from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
     from sklearn.preprocessing import LabelEncoder
 
     # Enable Tensor Core optimization for GPUs that support it
     torch.set_float32_matmul_precision("medium")
+
+    # Device for post-training inference (prediction_std, calibration). These manual
+    # loops bypass Lightning, so they must move model + batches to the GPU explicitly
+    # or they silently run on CPU (was the single largest cost before this fix).
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     from chemprop import nn
 
@@ -930,11 +934,14 @@ if __name__ == "__main__":
 
             all_model_probs = []
             for m in ensemble_models:
-                m.eval()
+                m.eval().to(device)
                 model_preds = []
                 with torch.inference_mode():
                     for batch in cal_loader:
                         bmg, V_d, X_d, *_ = batch
+                        bmg.to(device)
+                        V_d = V_d.to(device) if V_d is not None else None
+                        X_d = X_d.to(device) if X_d is not None else None
                         output = m(bmg, V_d, X_d)
                         model_preds.append(output.detach().cpu().numpy())
                 probs = np.concatenate(model_preds, axis=0)
@@ -968,19 +975,25 @@ if __name__ == "__main__":
             print("Computing prediction_std from ensemble...", flush=True)
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
+            std_dataset.cache = True
             infer_batch = min(len(std_dataset), 4096)
+            infer_workers = min(os.cpu_count() or 4, 8)
             val_loader = data.build_dataloader(
                 std_dataset, batch_size=_safe_batch_size(len(std_dataset), infer_batch), shuffle=False,
+                num_workers=infer_workers, pin_memory=True,
             )
             print(f"  Dataset ready ({len(std_dataset)} samples), running {len(ensemble_models)} models...", flush=True)
 
             all_ens_preds = []
             for m in ensemble_models:
-                m.eval()
+                m.eval().to(device)
                 model_preds = []
                 with torch.inference_mode():
                     for batch in val_loader:
                         bmg, V_d, X_d, *_ = batch
+                        bmg.to(device)
+                        V_d = V_d.to(device) if V_d is not None else None
+                        X_d = X_d.to(device) if X_d is not None else None
                         output = m(bmg, V_d, X_d)
                         model_preds.append(output.detach().cpu().numpy())
                 ens_preds = np.concatenate(model_preds, axis=0)
@@ -1145,7 +1158,9 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     print(f"[timing] post-training elapsed before model save: {time.time() - _post_t0:.1f}s", flush=True)
     for idx, m in enumerate(ensemble_models):
-        models.save_model(os.path.join(args.model_dir, f"chemprop_model_{idx}.pt"), m)
+        # Move back to CPU before saving so the artifact loads on CPU-only endpoints
+        # (post-training inference above may have moved the model to GPU).
+        models.save_model(os.path.join(args.model_dir, f"chemprop_model_{idx}.pt"), m.cpu())
     print(f"Saved {len(ensemble_models)} model(s)")
 
     # Clean up checkpoints
