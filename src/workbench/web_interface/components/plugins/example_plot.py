@@ -58,14 +58,17 @@ class ExamplePlot(PluginInterface):
 
         Args:
             input_data (pd.DataFrame): The input DataFrame to plot.
-            **kwargs: Optional plugin-specific arguments (this example ignores them).
+            **kwargs: Optional plugin-specific arguments. This example supports:
+                      - x: Column for the x-axis (defaults to the first numeric column)
+                      - y: Column for the y-axis (defaults to the second numeric column)
 
         Returns:
             list: Updated property values, one per entry in self.properties (here: [figure]).
         """
-        # Plot the first two numeric columns as a simple scatter plot.
+        # Plot the requested columns, or fall back to the first two numeric columns.
         numeric_columns = input_data.select_dtypes(include="number").columns.tolist()
-        x_col, y_col = numeric_columns[0], numeric_columns[1]
+        x_col = kwargs.get("x", numeric_columns[0])
+        y_col = kwargs.get("y", numeric_columns[1])
         figure = go.Figure(data=go.Scatter(x=input_data[x_col], y=input_data[y_col], mode="markers"))
 
         # Must return a list matching self.properties order.
@@ -81,5 +84,5 @@ if __name__ == "__main__":
     model = Model("logd-reg-xgb")
     df = model.get_inference_predictions("full_cross_fold")
 
-    # Run the Unit Test on the Plugin.
-    PluginUnitTest(ExamplePlot, input_data=df).run()
+    # Run the Unit Test on the Plugin (x/y kwargs are forwarded to update_properties).
+    PluginUnitTest(ExamplePlot, input_data=df, x="logd", y="prediction").run()
