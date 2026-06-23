@@ -25,6 +25,11 @@ def job(script, mode=None, outputs=None, inputs=None, pipeline=None):
     return Job(script, mode, outputs or [], inputs or [], pipeline)
 
 
+def key(script, mode=None, outputs=None):
+    """The Job.key (script, mode, sorted-outputs) for force/blocked assertions."""
+    return Job(script, mode, outputs or []).key
+
+
 def pm(jobs):
     """A PipelineManager over in-memory jobs."""
     return PipelineManager.from_jobs(jobs)
@@ -343,11 +348,14 @@ class TestForce:
         up_to_date = clock({"ds:raw": 1, "fs:x": 5, "model:m": 9})  # nothing stale
         dag = self._dag()
         assert ran(dag.plan(up_to_date)) == {}
-        assert ran(dag.plan(up_to_date, force={("m.py", None)})) == {"m": "selected"}
+        assert ran(dag.plan(up_to_date, force={key("m.py", outputs=["model:m"])})) == {"m": "selected"}
 
     def test_forced_producer_floods_downstream(self):
         up_to_date = clock({"ds:raw": 1, "fs:x": 5, "model:m": 9})
-        assert ran(self._dag().plan(up_to_date, force={("fs.py", None)})) == {"fs": "selected", "m": "upstream"}
+        assert ran(self._dag().plan(up_to_date, force={key("fs.py", outputs=["fs:x"])})) == {
+            "fs": "selected",
+            "m": "upstream",
+        }
 
 
 class TestArtifactMtime:
@@ -429,9 +437,11 @@ class TestMissingSources:
             ]
         )
         blocked = manager.blocked_by_missing_sources(clock({}))  # ds:raw absent
-        assert set(blocked) == {("fs.py", None), ("m.py", None)}
-        assert blocked[("fs.py", None)] == ["ds:raw"]  # the originating source is reported
-        assert blocked[("m.py", None)] == ["ds:raw"]  # downstream inherits the cause
+        fs_key = key("fs.py", outputs=["fs:x"])
+        m_key = key("m.py", outputs=["model:m"])
+        assert set(blocked) == {fs_key, m_key}
+        assert blocked[fs_key] == ["ds:raw"]  # the originating source is reported
+        assert blocked[m_key] == ["ds:raw"]  # downstream inherits the cause
 
     def test_present_source_blocks_nothing(self):
         manager = pm([job("fs.py", outputs=["fs:x"], inputs=["ds:raw"])])

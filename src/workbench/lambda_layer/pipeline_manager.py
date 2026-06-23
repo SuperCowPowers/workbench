@@ -79,6 +79,18 @@ def ref_name(ref: str) -> str:
     return ref.partition(":")[2]
 
 
+# A script ref may carry a source scheme that overrides the default (S3, relative to
+# the pipelines.json dir): "workbench:<path>" -> a script bundled in the workbench
+# package; "plugin:<path>" -> a script under WORKBENCH_PLUGINS. The runner dispatches
+# on these at execution; discovery passes a schemed ref through unchanged.
+SCRIPT_SCHEMES = ("workbench:", "plugin:", "s3://")
+
+
+def is_schemed_script(ref: str) -> bool:
+    """True if a script ref carries an explicit source scheme (see SCRIPT_SCHEMES)."""
+    return ref.startswith(SCRIPT_SCHEMES)
+
+
 @dataclass
 class Job:
     """One script run: a ``script`` in an optional ``mode`` with typed refs.
@@ -109,9 +121,15 @@ class Job:
     group: str | None = None
 
     @property
-    def key(self) -> tuple[Any, str | None]:
-        """Identity of this run: (script, mode). Unique across the loaded set."""
-        return (self.script, self.mode)
+    def key(self) -> tuple:
+        """Identity of this run: (script, mode, outputs).
+
+        Outputs are part of the identity so several nodes can share one script --
+        e.g. a ``workbench:`` arbiter reused across contests -- and still be distinct.
+        Script+mode alone would collide; outputs are globally unique (one producer
+        per ref), so they disambiguate. Sorted for a canonical, order-independent key.
+        """
+        return (self.script, self.mode, tuple(sorted(self.outputs)))
 
     @property
     def stem(self) -> str:
@@ -121,8 +139,13 @@ class Job:
 
     @property
     def node_id(self) -> str:
-        """Human-readable label for messages: 'stem [mode]' or 'stem'."""
-        return f"{self.stem} [{self.mode}]" if self.mode else self.stem
+        """Human-readable label for messages: 'stem [mode]' or 'stem', plus the
+        endpoint output for promote nodes (which share one script -- so logs read
+        'model_promotion -> ppb-mouse-free-reg-1' instead of just 'model_promotion').
+        """
+        label = f"{self.stem} [{self.mode}]" if self.mode else self.stem
+        endpoint = next((ref_name(o) for o in self.outputs if ref_type(o) == "endpoint"), None)
+        return f"{label} -> {endpoint}" if endpoint else label
 
     def pipeline_meta(self, serverless: bool = True) -> dict:
         """Return a dictionary used by the PipelineMeta class.
@@ -247,7 +270,7 @@ class PipelineManager:
         for cfg in sorted(root.rglob("pipelines.json")):
             spec = json.loads(cfg.read_text())
             d = cfg.parent
-            jobs += parse_spec(spec, script_resolver=lambda s, d=d: d / s)
+            jobs += parse_spec(spec, script_resolver=lambda s, d=d: s if is_schemed_script(s) else d / s)
         return jobs
 
     def _discover_s3(self, path: str) -> list[Job]:
@@ -264,7 +287,9 @@ class PipelineManager:
                     continue
                 spec = json.loads(s3.get_object(Bucket=bucket, Key=key)["Body"].read())
                 d = key.rsplit("/", 1)[0]
-                jobs += parse_spec(spec, script_resolver=lambda s, d=d: f"s3://{bucket}/{d}/{s}")
+                jobs += parse_spec(
+                    spec, script_resolver=lambda s, d=d: s if is_schemed_script(s) else f"s3://{bucket}/{d}/{s}"
+                )
         return jobs
 
     # -- construction ---------------------------------------------------------
@@ -279,7 +304,7 @@ class PipelineManager:
         seen: set = set()
         for job in self.jobs:
             if job.key in seen:
-                raise ValueError(f"duplicate job {job.node_id!r} ((script, mode) declared more than once)")
+                raise ValueError(f"duplicate job {job.node_id!r} ((script, mode, outputs) declared more than once)")
             seen.add(job.key)
 
         # ref -> the one job that outputs it; two producers is a schema error.

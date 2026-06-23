@@ -116,25 +116,27 @@ class TestJobGraph:
         consumer = node("model.py", inputs=["fs:x"])
         graph = PipelineManager.from_jobs([producer, consumer]).graph
 
-        assert graph.has_edge((Path("fs.py"), None), "fs:x")  # job -> artifact (produces)
-        assert graph.has_edge("fs:x", (Path("model.py"), None))  # artifact -> job (consumes)
+        assert graph.has_edge(producer.key, "fs:x")  # job -> artifact (produces)
+        assert graph.has_edge("fs:x", consumer.key)  # artifact -> job (consumes)
 
     def test_fan_out(self):
         """One artifact feeding two consumers yields two edges out of the artifact."""
+        fs_node = node("fs.py", outputs=["fs:x"])
         nodes = [
-            node("fs.py", outputs=["fs:x"]),
+            fs_node,
             node("a.py", inputs=["fs:x"]),
             node("b.py", inputs=["fs:x"]),
         ]
         graph = PipelineManager.from_jobs(nodes).graph
         assert graph.out_degree("fs:x") == 2  # feeds a.py and b.py
-        assert graph.out_degree((Path("fs.py"), None)) == 1  # produces just fs:x
+        assert graph.out_degree(fs_node.key) == 1  # produces just fs:x
 
     def test_dangling_input_tolerated(self, capsys):
         """An input with no producer is tolerated silently (it's an external root)."""
-        graph = PipelineManager.from_jobs([node("a.py", inputs=["fs:external"])]).graph
+        a_node = node("a.py", inputs=["fs:external"])
+        graph = PipelineManager.from_jobs([a_node]).graph
         assert graph.number_of_nodes() == 2  # the job + its external input artifact
-        assert graph.has_edge("fs:external", (Path("a.py"), None))
+        assert graph.has_edge("fs:external", a_node.key)
         assert capsys.readouterr().err == ""  # no warning noise
 
     # Note: duplicate-producer / cycle / duplicate-job validation is covered by
@@ -329,7 +331,7 @@ class TestFreshness:
         fs, m, dags = self._dags(tmp_path)
         times = {"ds:raw": 1, "fs:x": 50, "model:m": 60}
         monkeypatch.setattr(PipelineManager, "_artifact_mtime", lambda self, ref: times.get(ref))
-        plan = sort_pipelines([fs, m], dags, force_keys={(m, None)})
+        plan = sort_pipelines([fs, m], dags, force_keys={dags["p"][1].key})
         assert {j.script for j in plan.runs} == {m}  # only the forced match; up-to-date fs stays put
 
     def _suffix_text(self, tmp_path, monkeypatch, times):
