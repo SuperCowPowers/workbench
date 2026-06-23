@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -64,7 +64,7 @@ jobs:
       # Keyed on the dep inputs; tox itself recreates the env if tox.ini's
       # deps change, so a stale hit is at worst a recreate, never a wrong env.
       - name: Cache tox environment
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .tox/py313
           key: tox-py313-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}
