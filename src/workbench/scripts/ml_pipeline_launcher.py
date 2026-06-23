@@ -197,7 +197,12 @@ def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
     # Resolve each node's script relative to this config's directory (schemed refs
     # like workbench:/plugin: pass through), then group into {pipeline_name: [nodes]}.
     nodes = parse_spec(
-        config, script_resolver=lambda script: script if is_schemed_script(script) else directory / script
+        config,
+        script_resolver=lambda s: (
+            directory / "plugins" / s[len("plugin:"):]  # client plugin, discovery root
+            if s.startswith("plugin:")
+            else s if is_schemed_script(s) else directory / s
+        ),
     )
     pipelines: dict[str, list[Job]] = {}
     for node in nodes:

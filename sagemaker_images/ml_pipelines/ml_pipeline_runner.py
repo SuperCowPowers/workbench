@@ -25,10 +25,10 @@ def resolve_script_ref(ref: str) -> str:
     """Resolve a pipeline script ref to a local runnable path, dispatched by scheme.
 
         workbench:<path> -> a script bundled in the workbench package (run in place)
-        plugin:<path>    -> a script under WORKBENCH_PLUGINS (local, or copied from s3)
         s3://... / path  -> downloaded from S3 to /tmp (the default)
 
-    Mirrors the schemes the PipelineManager resolver passes through unchanged.
+    plugin: refs are resolved to s3:// at discovery time (the bucket is only known
+    there), so the runner never sees one -- it just downloads the resolved s3:// path.
     """
     if ref.startswith("workbench:"):
         base = os.path.join(os.path.dirname(workbench.__file__), "batch")
@@ -36,19 +36,6 @@ def resolve_script_ref(ref: str) -> str:
         if not os.path.exists(path):
             raise FileNotFoundError(f"workbench script not found: {path}")
         return path
-
-    if ref.startswith("plugin:"):
-        from workbench.utils.config_manager import ConfigManager
-
-        plugin_dir = ConfigManager().get_config("WORKBENCH_PLUGINS")
-        if not plugin_dir:
-            raise RuntimeError("plugin: script requires WORKBENCH_PLUGINS to be set")
-        src = f"{plugin_dir.rstrip('/')}/{ref[len('plugin:'):]}"
-        if src.startswith("s3://"):
-            local = f"/tmp/{os.path.basename(src)}"
-            download_ml_pipeline_from_s3(src, local)
-            return local
-        return src
 
     # Default: a full S3 URI -> download to /tmp
     local = f"/tmp/{os.path.basename(ref)}"

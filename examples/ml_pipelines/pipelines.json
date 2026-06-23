@@ -9,7 +9,7 @@
       {"script": "aqsol_class_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-class-2"]},
       {"script": "aqsol_reg_1.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-1"]},
       {"script": "aqsol_reg_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-2"]},
-      {"script": "workbench:models/model_promotion.py",
+      {"script": "plugin:models/model_promotion.py",
        "inputs": ["model:aqsol-class-1", "model:aqsol-class-2"], "outputs": ["endpoint:aqsol-class"]},
       {"script": "workbench:models/model_promotion.py",
        "inputs": ["model:aqsol-regression-1", "model:aqsol-regression-2"], "outputs": ["endpoint:aqsol-regression"]}

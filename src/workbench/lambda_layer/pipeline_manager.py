@@ -81,8 +81,9 @@ def ref_name(ref: str) -> str:
 
 # A script ref may carry a source scheme that overrides the default (S3, relative to
 # the pipelines.json dir): "workbench:<path>" -> a script bundled in the workbench
-# package; "plugin:<path>" -> a script under WORKBENCH_PLUGINS. The runner dispatches
-# on these at execution; discovery passes a schemed ref through unchanged.
+# package; "plugin:<path>" -> a shared script under a "plugins/" dir at the discovery
+# root (local dir or S3 prefix). The runner dispatches on these at execution; discovery
+# passes a schemed ref through unchanged.
 SCRIPT_SCHEMES = ("workbench:", "plugin:", "s3://")
 
 
@@ -270,13 +271,22 @@ class PipelineManager:
         for cfg in sorted(root.rglob("pipelines.json")):
             spec = json.loads(cfg.read_text())
             d = cfg.parent
-            jobs += parse_spec(spec, script_resolver=lambda s, d=d: s if is_schemed_script(s) else d / s)
+            jobs += parse_spec(
+                spec,
+                script_resolver=lambda s, d=d: (
+                    root / "plugins" / s[len("plugin:"):]  # client plugin, discovery root
+                    if s.startswith("plugin:")
+                    else s if is_schemed_script(s) else d / s
+                ),
+            )
         return jobs
 
     def _discover_s3(self, path: str) -> list[Job]:
         import boto3  # lazy: only the Lambda path needs it (runtime-provided)
 
         bucket, _, prefix = path[len("s3://") :].partition("/")
+        disc_root = prefix.rstrip("/")  # plugins live in a "plugins/" dir at the discovery root
+        plugin_base = f"{disc_root}/plugins" if disc_root else "plugins"
         s3 = (self._session or boto3).client("s3")
         jobs: list[Job] = []
         paginator = s3.get_paginator("list_objects_v2")
@@ -288,7 +298,12 @@ class PipelineManager:
                 spec = json.loads(s3.get_object(Bucket=bucket, Key=key)["Body"].read())
                 d = key.rsplit("/", 1)[0]
                 jobs += parse_spec(
-                    spec, script_resolver=lambda s, d=d: s if is_schemed_script(s) else f"s3://{bucket}/{d}/{s}"
+                    spec,
+                    script_resolver=lambda s, d=d: (
+                        f"s3://{bucket}/{plugin_base}/{s[len('plugin:'):]}"  # client plugin, discovery root
+                        if s.startswith("plugin:")
+                        else s if is_schemed_script(s) else f"s3://{bucket}/{d}/{s}"
+                    ),
                 )
         return jobs
 
