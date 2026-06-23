@@ -1004,7 +1004,8 @@ class ModelCore(Artifact):
                 (e.g. a promoted copy is "Pro-{owner}", not the source's "DT")
 
         Returns:
-            ModelCore: The newly created model
+            ModelCore: The newly created model (same class as the receiver -- an api
+                Model when called on one, so it has to_endpoint() etc.)
         """
         if self.latest_model is None:
             raise ValueError(f"Cannot copy {self.model_name}: no registered model package")
@@ -1061,7 +1062,9 @@ class ModelCore(Artifact):
             ModelApprovalStatus="Approved",
         )
         self.log.important(f"Copied model {self.model_name} -> {dst_name}")
-        return ModelCore(dst_name)
+        # Same class as the receiver, so Model(...).copy() returns an api Model (with
+        # to_endpoint etc.), not a bare ModelCore.
+        return type(self)(dst_name)
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""
