@@ -32,7 +32,7 @@ def resolve_script_ref(ref: str) -> str:
     """
     if ref.startswith("workbench:"):
         base = os.path.join(os.path.dirname(workbench.__file__), "batch")
-        path = os.path.join(base, ref[len("workbench:"):])
+        path = os.path.join(base, ref[len("workbench:") :])
         if not os.path.exists(path):
             raise FileNotFoundError(f"workbench script not found: {path}")
         return path
