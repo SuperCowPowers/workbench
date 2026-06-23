@@ -199,7 +199,7 @@ def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
     nodes = parse_spec(
         config,
         script_resolver=lambda s: (
-            directory / "plugins" / s[len("plugin:"):]  # client plugin, discovery root
+            directory / "plugins" / s[len("plugin:") :]  # client plugin, discovery root
             if s.startswith("plugin:")
             else s if is_schemed_script(s) else directory / s
         ),

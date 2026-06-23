@@ -274,7 +274,7 @@ class PipelineManager:
             jobs += parse_spec(
                 spec,
                 script_resolver=lambda s, d=d: (
-                    root / "plugins" / s[len("plugin:"):]  # client plugin, discovery root
+                    root / "plugins" / s[len("plugin:") :]  # client plugin, discovery root
                     if s.startswith("plugin:")
                     else s if is_schemed_script(s) else d / s
                 ),
