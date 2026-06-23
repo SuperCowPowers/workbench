@@ -68,12 +68,12 @@ class TestPipelineMetaWithEnvVar:
             assert pm.get("batch_size") == 32
             assert pm.get("nonexistent", "fallback") == "fallback"
 
-    def test_partial_meta_defaults_mode_and_serverless(self):
-        """Partial PIPELINE_META should default mode and serverless only."""
+    def test_partial_meta_defaults_serverless_mode_optional(self):
+        """Partial PIPELINE_META defaults serverless; mode is optional (None, not fabricated)."""
         meta = {"model_name": "my-model", "endpoint_name": "my-endpoint"}
         with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
             pm = PipelineMeta()
-            assert pm.mode == "dt"
+            assert pm.mode is None  # modeless run -> no fabricated 'dt'
             assert pm.serverless is True
             assert pm.model_name == "my-model"
             assert pm.endpoint_name == "my-endpoint"

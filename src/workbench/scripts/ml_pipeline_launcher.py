@@ -130,35 +130,41 @@ def parse_script_name(script_path: Path) -> tuple[str, str | None]:
 def build_pipeline_meta(job: Job, serverless: bool) -> str:
     """Build the PIPELINE_META JSON for a run.
 
-    Declared dt/ts model jobs use the shared core (:meth:`Job.pipeline_meta` --
-    model/endpoint names from the declared ``model:`` output). The launcher adds
-    two cases the core can't express: ``promote`` derives a date-stamped name from
-    the filename (framework suffix stripped for the endpoint), and a
+    Declared dt/ts model jobs and promote-arbiter nodes (an ``endpoint:`` output)
+    use the shared core (:meth:`Job.pipeline_meta` -- model/endpoint names from the
+    declared output, plus ``challengers`` for an arbiter). The launcher adds two
+    cases the core can't express: legacy ``promote`` mode derives a date-stamped
+    name from the filename (framework suffix stripped for the endpoint), and a
     standalone/undeclared dt/ts run falls back to a filename-derived name.
     """
     from datetime import datetime
 
     mode = job.mode
-    model_ref = next((o for o in job.outputs if ref_type(o) == "model"), None)
+    declared = any(ref_type(o) in ("model", "endpoint") for o in job.outputs)
 
-    # Declared dt/ts with a model: output -> the shared core.
-    if mode in ("dt", "ts") and model_ref is not None:
-        return json.dumps(job.pipeline_meta(serverless))
+    def _filename_parts():
+        basename, version = parse_script_name(Path(job.script))
+        return basename.replace("_", "-"), (f"-{version}" if version else "")
 
-    basename, version = parse_script_name(Path(job.script))
-    basename_hyphen = basename.replace("_", "-")  # e.g., "ppb-human-free-reg-xgb"
-    v = f"-{version}" if version else ""
-
-    if mode in ("dt", "ts"):  # no declared output -> filename fallback
-        name = f"{basename_hyphen}{v}-{mode}"
-        return json.dumps({"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": name})
-
+    # Legacy promote mode: date-stamped name from the filename (framework suffix
+    # stripped for the endpoint). Checked first -- it overrides any declared name.
     if mode == "promote":
+        basename_hyphen, v = _filename_parts()
         endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
         name = f"{basename_hyphen}{v}-{datetime.now().strftime('%y%m%d')}"
         return json.dumps(
             {"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": f"{endpoint_base}{v}"}
         )
+
+    # Any declared node (model:/endpoint: output) -> the shared core is the source of
+    # truth (model/endpoint names, plus challengers for a promote-arbiter node).
+    if declared:
+        return json.dumps(job.pipeline_meta(serverless))
+
+    if mode in ("dt", "ts"):  # no declared output -> filename fallback
+        basename_hyphen, v = _filename_parts()
+        name = f"{basename_hyphen}{v}-{mode}"
+        return json.dumps({"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": name})
 
     # Modeless producer (e.g. FeatureSet) -> no model. A non-empty unrecognized
     # mode is likely a typo, so warn.

@@ -77,9 +77,9 @@ class PipelineMeta:
         return self._meta["challengers"]
 
     @property
-    def mode(self) -> str:
-        """The pipeline execution mode (e.g., 'dt', 'ts', 'promote')."""
-        return self._meta["mode"]
+    def mode(self) -> str | None:
+        """The pipeline execution mode (e.g., 'dt', 'ts'), or None for a modeless run."""
+        return self._meta.get("mode")
 
     @property
     def serverless(self) -> bool:
@@ -136,10 +136,11 @@ class PipelineMeta:
             self.log.critical(msg)
             raise RuntimeError(msg)
 
-        # Sensible defaults for mode and serverless (launcher always provides these)
-        self._meta.setdefault("mode", "dt")
+        # mode defaults to None (modeless nodes have none -- don't fabricate a 'dt'); a
+        # known key so pm.mode and pm.get("mode") agree. serverless defaults to True.
+        self._meta.setdefault("mode", None)
         self._meta.setdefault("serverless", True)
-        self.log.info(f"PipelineMeta: mode={self._meta['mode']}, model={self._meta.get('model_name', 'N/A')}")
+        self.log.info(f"PipelineMeta: mode={self._meta.get('mode')}, model={self._meta.get('model_name', 'N/A')}")
 
     def __repr__(self) -> str:
         """String representation of this PipelineMeta."""
