@@ -5,6 +5,7 @@ from pathlib import Path
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.lambda_layer.pipeline_manager import is_schemed_script
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.s3_utils import upload_content_to_s3
 
@@ -56,17 +57,22 @@ def submit_to_sqs(
     if size not in ["small", "medium", "large"]:
         raise ValueError(f"Invalid size '{size}'. Must be 'small', 'medium', or 'large'")
 
-    # Validate script exists
-    script_file = Path(script_path)
-    if not script_file.exists():
-        raise FileNotFoundError(f"Script not found: {script_path}")
-
-    script_content = script_file.read_text()
+    # A schemed ref (workbench:/plugin:/s3://) is resolved by the runner -- no local
+    # file to validate or upload. Otherwise it's a local script we upload to S3.
+    schemed = is_schemed_script(script_path)
+    if schemed:
+        script_name = script_path.rsplit("/", 1)[-1]
+    else:
+        script_file = Path(script_path)
+        if not script_file.exists():
+            raise FileNotFoundError(f"Script not found: {script_path}")
+        script_content = script_file.read_text()
+        script_name = script_file.name
 
     if group_id is None:
         group_id = "ml-pipeline-jobs"
 
-    print(f"  Script: {script_file.name}")
+    print(f"  Script: {script_name}")
     print(f"  Size tier: {size}")
     print(f"  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"  DynamicTraining: {dt}")
@@ -83,7 +89,6 @@ def submit_to_sqs(
         print(f"  Inputs: {inputs}")
     print(f"  Batch Group: {group_id}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
-    script_name = script_file.name
 
     # List Workbench queues
     print("\n  Listing Workbench SQS queues...")
@@ -100,18 +105,21 @@ def submit_to_sqs(
     except Exception as e:
         print(f"  Error listing queues: {e}")
 
-    # Upload script to S3
-    s3_path = f"s3://{workbench_bucket}/batch-jobs/{script_name}"
-    print("\n  Uploading script to S3...")
-    print(f"   Source: {script_path}")
-    print(f"   Destination: {s3_path}")
-
-    try:
-        upload_content_to_s3(script_content, s3_path)
-        print("  Script uploaded successfully")
-    except Exception as e:
-        print(f"  Upload failed: {e}")
-        raise
+    # Upload the local script to S3, or pass the schemed ref through (runner resolves it)
+    if schemed:
+        s3_path = script_path
+        print(f"\n  Script ref (resolved at runtime): {s3_path}")
+    else:
+        s3_path = f"s3://{workbench_bucket}/batch-jobs/{script_name}"
+        print("\n  Uploading script to S3...")
+        print(f"   Source: {script_path}")
+        print(f"   Destination: {s3_path}")
+        try:
+            upload_content_to_s3(script_content, s3_path)
+            print("  Script uploaded successfully")
+        except Exception as e:
+            print(f"  Upload failed: {e}")
+            raise
     # Get queue URL and info
     queue_name = "workbench-ml-pipeline-queue.fifo"
     print("\n  Getting queue information...")

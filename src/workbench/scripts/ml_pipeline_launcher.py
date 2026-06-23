@@ -34,6 +34,7 @@ from workbench.utils.tree_render import render_forest
 from workbench.lambda_layer.pipeline_manager import (
     Job,
     PipelineManager,
+    is_schemed_script,
     parse_spec,
     ref_type,
     simulated_mtime,
@@ -63,9 +64,15 @@ REASON_COLORS = {
 }
 
 
-def run_label(script: Path, mode: str | None) -> str:
+def script_basename(script) -> str:
+    """Filename of a script ref -- handles a Path or a scheme string (workbench:/plugin:/s3://)."""
+    return os.path.basename(str(script))
+
+
+def run_label(script, mode: str | None) -> str:
     """Human-readable label for a (script, mode) run: 'script [mode]' or 'script'."""
-    return f"{script.stem} [{mode}]" if mode else script.stem
+    stem = os.path.splitext(script_basename(script))[0]
+    return f"{stem} [{mode}]" if mode else stem
 
 
 def _color(text: str, color: str) -> str:
@@ -181,9 +188,11 @@ def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
         return None
     with open(json_path) as f:
         config = json.load(f)
-    # Resolve each node's script relative to this config's directory, then group
-    # the flat node list back into {pipeline_name: [nodes]}.
-    nodes = parse_spec(config, script_resolver=lambda script: directory / script)
+    # Resolve each node's script relative to this config's directory (schemed refs
+    # like workbench:/plugin: pass through), then group into {pipeline_name: [nodes]}.
+    nodes = parse_spec(
+        config, script_resolver=lambda script: script if is_schemed_script(script) else directory / script
+    )
     pipelines: dict[str, list[Job]] = {}
     for node in nodes:
         pipelines.setdefault(node.pipeline, []).append(node)
@@ -700,8 +709,9 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
     for i, job in enumerate(plan.runs, 1):
         script, mode = job.script, job.mode
         mode_display = f" [{mode}]" if mode else ""
+        verb = "Running" if args.local else "Launching"
         print(f"\n{'─' * 60}")
-        print(f"{'Running' if args.local else 'Launching'} run {i}/{len(plan.runs)}: {script.name}{mode_display}")
+        print(f"{verb} run {i}/{len(plan.runs)}: {script_basename(script)}{mode_display}")
 
         # Every run gets PIPELINE_META, uniformly -- the script decides whether to
         # use it. dt/ts take the model name from the declared model: output (DAG is
@@ -735,7 +745,7 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             result = subprocess.run(cmd)
 
         if result.returncode != 0:
-            print(f"Failed to launch {script.name} (exit code: {result.returncode})")
+            print(f"Failed to launch {script_basename(script)} (exit code: {result.returncode})")
 
     print(f"\n{'=' * 60}")
     print(f"FINISHED LAUNCHING {len(plan.runs)} PIPELINE RUNS")
@@ -862,7 +872,7 @@ def main():
     if args.local and len(selected) > 1:
         print(f"\n--local only supports a single script, but {len(selected)} matched:")
         for p in selected:
-            print(f"   {p.name}")
+            print(f"   {script_basename(p)}")
         print("\nNarrow your selection to a single script.")
         sys.exit(1)
 
