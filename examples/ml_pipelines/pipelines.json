@@ -1,12 +1,18 @@
 {
   "pipelines": {
     "wine_classifier": [
-      {"script": "wine_classifier.py"}
+      {"script": "wine_classifier.py", "inputs": ["fs:wine_features"], "outputs": ["model:wine-classifier"]}
     ],
     "aqsol": [
-      {"script": "aqsol_feature_set.py", "outputs": ["fs:aqsol_features"]},
-      {"script": "aqsol_class.py", "inputs": ["fs:aqsol_features"]},
-      {"script": "aqsol_reg.py", "inputs": ["fs:aqsol_features"]}
+      {"script": "aqsol_feature_set.py", "inputs": ["ds:aqsol_data"], "outputs": ["fs:aqsol_features"]},
+      {"script": "aqsol_class_1.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-class-1"]},
+      {"script": "aqsol_class_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-class-2"]},
+      {"script": "aqsol_reg_1.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-1"]},
+      {"script": "aqsol_reg_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-2"]},
+      {"script": "workbench:models/model_promotion.py",
+       "inputs": ["model:aqsol-class-1", "model:aqsol-class-2"], "outputs": ["endpoint:aqsol-class"]},
+      {"script": "workbench:models/model_promotion.py",
+       "inputs": ["model:aqsol-regression-1", "model:aqsol-regression-2"], "outputs": ["endpoint:aqsol-regression"]}
     ]
   }
 }

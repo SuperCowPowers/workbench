@@ -38,4 +38,5 @@ if __name__ == "__main__":
 
     # Run inference on the endpoint
     end.test_inference()
+    end.cross_fold_inference()
     end.set_owner("test")
