@@ -12,6 +12,7 @@ from scipy.stats import spearmanr
 
 from workbench.utils.chem_utils.mol_descriptors_3d import (
     TBLITE_AVAILABLE,
+    conformer_energies_and_method,
     get_conformer_energies,
     xtb_conformer_energies,
     _forcefield_conformer_energies,
@@ -33,24 +34,34 @@ def _optimized_mol(smiles: str, n_conf: int = 20) -> Chem.Mol:
     return mol
 
 
-def test_dispatch_and_fallback_always_finite():
-    """get_conformer_energies returns one finite energy per conformer either way."""
+def test_energies_always_finite():
+    """get_conformer_energies returns one finite energy per conformer.
+
+    Finite whether xTB ran or fell back to the force field.
+    """
     mol = _optimized_mol(DIPHENHYDRAMINE)
-    n = mol.GetNumConformers()
-
-    xtb_default = get_conformer_energies(mol)  # method defaults to GFN2-xTB
-    mmff_forced = get_conformer_energies(mol, method="MMFF")
-
-    assert len(xtb_default) == n and len(mmff_forced) == n
-    assert np.all(np.isfinite(mmff_forced))
-    # Default path is finite whether xTB ran or fell back to MMFF.
-    assert np.all(np.isfinite(xtb_default))
+    energies = get_conformer_energies(mol)
+    assert len(energies) == mol.GetNumConformers()
+    assert np.all(np.isfinite(energies))
 
 
-def test_mmff_forced_matches_forcefield_helper():
-    """method='MMFF' bypasses xTB and equals the raw force-field energies."""
+def test_forcefield_fallback_is_finite():
+    """The MMFF/UFF fallback path (used when tblite is absent) is well-formed."""
     mol = _optimized_mol(DIPHENHYDRAMINE)
-    assert get_conformer_energies(mol, method="MMFF") == _forcefield_conformer_energies(mol)
+    ff_energies = _forcefield_conformer_energies(mol)
+    assert len(ff_energies) == mol.GetNumConformers()
+    assert np.all(np.isfinite(ff_energies))
+
+
+def test_method_label_reports_actual_model():
+    """The method label reflects what really produced the energies.
+
+    This is what feeds desc3d_energy_method: GFN2-xTB when xTB ran, else the
+    force-field name on fallback.
+    """
+    mol = _optimized_mol(DIPHENHYDRAMINE)
+    _, method = conformer_energies_and_method(mol)
+    assert method == ("GFN2-xTB" if TBLITE_AVAILABLE else "MMFF94s")
 
 
 @pytest.mark.skipif(not TBLITE_AVAILABLE, reason="tblite not installed in this env")

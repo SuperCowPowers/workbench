@@ -142,13 +142,12 @@ BOLTZMANN_ENERGY_WINDOW_KCAL = 5.0
 # Standard temperature for Boltzmann weights.
 BOLTZMANN_TEMPERATURE_K = 298.0
 
-# Energy model used to rank conformers for Boltzmann weighting. GFN2-xTB
-# (via tblite) gives physically reliable rankings; MMFF94s rankings are known
-# to be poor for flexible/polar molecules (we measured near-zero rank
-# correlation vs xTB on diphenhydramine). Geometry is still MMFF-optimized;
-# only the energies that drive the weights use xTB. Falls back to MMFF/UFF
-# when tblite is unavailable or fails. See Kong et al., ChemPhysChem 2025.
-DEFAULT_ENERGY_METHOD = "GFN2-xTB"
+# Conformers are ranked for Boltzmann weighting with GFN2-xTB (via tblite):
+# MMFF94s rankings are known to be poor for flexible/polar molecules (we
+# measured near-zero rank correlation vs xTB on diphenhydramine). Geometry is
+# still MMFF-optimized; only the energies that drive the weights use xTB, with
+# an MMFF/UFF fallback when tblite is unavailable or fails. See
+# conformer_energies_and_method and Kong et al., ChemPhysChem 2025.
 
 # Hartree → kcal/mol (xTB returns total energy in Hartree).
 HARTREE_TO_KCAL = 627.509474
@@ -464,31 +463,49 @@ def _forcefield_conformer_energies(mol: Chem.Mol) -> List[float]:
     return [np.nan] * n_confs
 
 
-def get_conformer_energies(mol: Chem.Mol, method: str = DEFAULT_ENERGY_METHOD) -> List[float]:
-    """
-    Calculate per-conformer energies for Boltzmann weighting.
+def conformer_energies_and_method(mol: Chem.Mol) -> Tuple[List[float], str]:
+    """Per-conformer energies plus the energy model actually used.
 
-    GFN2-xTB (default) gives physically reliable conformer rankings; it falls
-    back to MMFF94s/UFF when tblite is unavailable or returns no usable
-    energies. Geometry is unchanged either way — this only scores energies.
+    GFN2-xTB gives physically reliable conformer rankings; it falls back to
+    MMFF94s/UFF when tblite is unavailable (optional dependency — see the
+    guarded import) or returns no usable energies. The returned method string
+    reflects the model that produced the energies (``"GFN2-xTB"``,
+    ``"MMFF94s"``, ``"UFF"``, or ``"none"``) — this surfaces as
+    ``desc3d_energy_method`` so a silent xTB→FF fallback is visible in the
+    output.
 
     Args:
         mol: RDKit molecule with conformers and explicit Hs
-        method: ``"GFN2-xTB"`` (default) or ``"MMFF"`` to force the force field
 
     Returns:
-        List of energies (kcal/mol), NaN for failed calculations
+        Tuple of (energies in kcal/mol with NaN for failures, method name).
     """
     if mol is None or mol.GetNumConformers() == 0:
-        return []
+        return [], "none"
 
-    if method == "GFN2-xTB":
-        energies = xtb_conformer_energies(mol)
-        if not np.all(np.isnan(energies)):
-            return energies
-        logger.debug("GFN2-xTB produced no usable energies, falling back to MMFF/UFF")
+    energies = xtb_conformer_energies(mol)
+    if not np.all(np.isnan(energies)):
+        return energies, "GFN2-xTB"
+    logger.debug("GFN2-xTB produced no usable energies, falling back to MMFF/UFF")
 
-    return _forcefield_conformer_energies(mol)
+    energies = _forcefield_conformer_energies(mol)
+    if AllChem.MMFFGetMoleculeProperties(mol, mmffVariant="MMFF94s") is not None:
+        ff_name = "MMFF94s"
+    elif AllChem.UFFHasAllMoleculeParams(mol):
+        ff_name = "UFF"
+    else:
+        ff_name = "none"
+    return energies, ff_name
+
+
+def get_conformer_energies(mol: Chem.Mol) -> List[float]:
+    """Per-conformer energies (kcal/mol) for Boltzmann weighting.
+
+    Thin wrapper over :func:`conformer_energies_and_method` for callers that
+    don't need the method label (e.g. conformer-energy statistics).
+    """
+    energies, _ = conformer_energies_and_method(mol)
+    return energies
 
 
 # =============================================================================
@@ -1263,6 +1280,7 @@ def get_3d_diagnostic_names() -> List[str]:
         "desc3d_timeout_failures",
         "desc3d_embed_tier",
         "desc3d_force_field",
+        "desc3d_energy_method",
         "desc3d_compute_time_s",
         "desc3d_stereo_preserved",
     ]
@@ -1299,7 +1317,7 @@ def _stereo_preserved(mol_with_conf: Chem.Mol, input_chirality: frozenset) -> bo
         return False
 
 
-def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int]:
+def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int, str]:
     """Compute Boltzmann-weighted ensemble descriptors.
 
     Computes energies for all conformers, selects those within the energy
@@ -1317,10 +1335,12 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
         mol: RDKit molecule with conformer(s) and explicit Hs
 
     Returns:
-        Tuple of (features_dict, confs_in_window) where confs_in_window is
-        the number of conformers that contributed to the Boltzmann average.
+        Tuple of (features_dict, confs_in_window, energy_method) where
+        confs_in_window is the number of conformers that contributed to the
+        Boltzmann average and energy_method is the energy model that produced
+        the weights (e.g. ``"GFN2-xTB"`` or ``"MMFF94s"``).
     """
-    energies = get_conformer_energies(mol)
+    energies, energy_method = conformer_energies_and_method(mol)
     conf_ids, weights = boltzmann_weights(energies)
 
     # Collect per-conformer descriptors for all conformers in the window
@@ -1356,7 +1376,7 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
     # Conformer ensemble stats are computed over the full generated ensemble,
     # not just the Boltzmann window.
     features.update(compute_conformer_statistics(mol))
-    return features, len(conf_ids)
+    return features, len(conf_ids), energy_method
 
 
 def compute_descriptors_3d(
@@ -1430,6 +1450,7 @@ def compute_descriptors_3d(
         "desc3d_status",
         "desc3d_mode",
         "desc3d_force_field",
+        "desc3d_energy_method",
         "desc3d_stereo_preserved",
     }
     new_columns: Dict[str, pd.Series] = {}
@@ -1504,13 +1525,14 @@ def compute_descriptors_3d(
             result.at[idx, "desc3d_stereo_preserved"] = _stereo_preserved(mol, input_chirality)
 
             # Both modes: Boltzmann-weighted ensemble descriptors
-            features, confs_in_window = _compute_descriptors_boltzmann(mol)
+            features, confs_in_window, energy_method = _compute_descriptors_boltzmann(mol)
 
             for name, value in features.items():
                 if name in result.columns:
                     result.at[idx, name] = value
 
             result.at[idx, "desc3d_confs_in_window"] = confs_in_window
+            result.at[idx, "desc3d_energy_method"] = energy_method
             result.at[idx, "desc3d_status"] = "ok"
             result.at[idx, "desc3d_compute_time_s"] = round(time.time() - mol_start, 3)
 

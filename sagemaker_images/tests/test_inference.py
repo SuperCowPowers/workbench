@@ -274,6 +274,35 @@ def test_ping_endpoint(url):
         return False
 
 
+def test_energy_calc_deps(image_uri):
+    """Verify the GFN2-xTB energy-calc path is live in the base inference image.
+
+    Confirms tblite is installed AND the image's workbench is new enough to
+    expose TBLITE_AVAILABLE. A green deploy with tblite missing (or an old
+    workbench pinned in the Dockerfile) would silently fall back to MMFF
+    energies and produce valid-looking but wrongly-weighted 3D features — this
+    guards against that footgun before the image ships.
+    """
+    print("Verifying GFN2-xTB energy-calc dependencies in image...")
+    smoke = (
+        "import tblite.interface; "
+        "from workbench.utils.chem_utils.mol_descriptors_3d import TBLITE_AVAILABLE; "
+        "assert TBLITE_AVAILABLE, 'workbench in image does not see tblite (stale pin?)'; "
+        "print('tblite + GFN2-xTB energy path OK')"
+    )
+    cmd = ["docker", "run", "--rm"]
+    if os.uname().machine == "arm64":
+        cmd += ["--platform", "linux/amd64"]
+    cmd += [image_uri, "python", "-c", smoke]
+    try:
+        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode("utf-8")
+        print(out.strip())
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Energy-calc dependency smoke failed:\n{e.output.decode('utf-8')}")
+        return False
+
+
 def main():
     """Run the test using MockModel and MockEndpoint"""
     parser = argparse.ArgumentParser(description="Test SageMaker inference container")
@@ -313,8 +342,12 @@ def main():
         csv_success = test_csv_inference(endpoint)
         json_success = test_json_inference(endpoint)
 
+        # Energy-calc deps live only in the base inference image (the 3D
+        # descriptor endpoint runs there); skip for other images.
+        deps_success = test_energy_calc_deps(args.image) if "base-inference" in args.image else True
+
         # Overall success
-        success = ping_success and csv_success and json_success
+        success = ping_success and csv_success and json_success and deps_success
 
         if success:
             print("\n✅ All inference tests passed successfully!")
