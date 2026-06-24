@@ -1,5 +1,10 @@
 """Create the SMILES → 3D Molecular Descriptors (fast) Feature Endpoint.
 
+DEPRECATED: the fast endpoint trades feature quality for speed (single
+lowest-energy conformer instead of a Boltzmann-weighted ensemble) and is no
+longer used. Use ``smiles-to-3d-full-v1`` instead. Kept for reference only;
+do not deploy.
+
 Salts are removed. Computes 74 3D descriptors per SMILES:
   - RDKit 3D shape      (PMI, NPR, asphericity, …)
   - Mordred 3D          (CPSA, GeometricalIndex, GravitationalIndex, PBF)
@@ -17,6 +22,7 @@ Created artifacts:  Model/Endpoint ``smiles-to-3d-fast-v1``
 import os
 
 from workbench.api import Model, ModelType, ModelFramework
+from workbench.utils.deprecated_utils import deprecated
 from _common import ensure_featureset
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
@@ -40,7 +46,8 @@ BATCH_SIZE_BY_CONFIG = {
 }
 
 
-if __name__ == "__main__":
+@deprecated(version="0.9")
+def main():
     # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
     feature_set = ensure_featureset()
     tags = ["smiles", "3d descriptors", "conformer", "pharmacophore", "shape"]
@@ -67,3 +74,7 @@ if __name__ == "__main__":
 
     end.upsert_workbench_meta({"inference_batch_size": batch_size})
     print(f"inference_batch_size={batch_size}")
+
+
+if __name__ == "__main__":
+    main()

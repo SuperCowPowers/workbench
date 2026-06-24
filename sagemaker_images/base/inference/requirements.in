@@ -18,6 +18,11 @@ joblib >= 1.3.2
 rdkit >= 2026.3.1
 mordredcommunity >= 2.0.6
 
+# GFN2-xTB conformer energies for Boltzmann reweighting of 3D descriptors
+# (mol_descriptors_3d.get_conformer_energies). Ships cp312 manylinux wheels;
+# pulls cffi transitively. numpy already constrained by the locked deps.
+tblite >= 0.6.0
+
 # Endpoint server (image-specific, not in workbench main)
 fastapi
 uvicorn

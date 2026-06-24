@@ -112,6 +112,17 @@ from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
 
+# tblite (GFN2-xTB) is an optional dependency: present in the 3D inference
+# image, absent in lightweight core installs. Imported lazily-guarded so the
+# module still imports without it (energy calc falls back to MMFF/UFF).
+try:
+    from tblite.interface import Calculator as XTBCalculator
+
+    TBLITE_AVAILABLE = True
+except ImportError:
+    XTBCalculator = None
+    TBLITE_AVAILABLE = False
+
 # Per-conformer wall-clock timeout (seconds, int) enforced inside RDKit's
 # EmbedMultipleConfs. Requires RDKit >= 2025.03.1.
 CONFORMER_TIMEOUT_SECONDS = 10
@@ -131,6 +142,19 @@ BOLTZMANN_ENERGY_WINDOW_KCAL = 5.0
 # Standard temperature for Boltzmann weights.
 BOLTZMANN_TEMPERATURE_K = 298.0
 
+# Energy model used to rank conformers for Boltzmann weighting. GFN2-xTB
+# (via tblite) gives physically reliable rankings; MMFF94s rankings are known
+# to be poor for flexible/polar molecules (we measured near-zero rank
+# correlation vs xTB on diphenhydramine). Geometry is still MMFF-optimized;
+# only the energies that drive the weights use xTB. Falls back to MMFF/UFF
+# when tblite is unavailable or fails. See Kong et al., ChemPhysChem 2025.
+DEFAULT_ENERGY_METHOD = "GFN2-xTB"
+
+# Hartree → kcal/mol (xTB returns total energy in Hartree).
+HARTREE_TO_KCAL = 627.509474
+# Ångström → Bohr (tblite expects atomic-unit coordinates).
+BOHR_PER_ANGSTROM = 1.0 / 0.529177210903
+
 # Adaptive conformer counts keyed by rotatable-bond thresholds.
 # The tier is selected by the first (threshold, n_confs) whose threshold is
 # strictly greater than the molecule's rotatable-bond count.
@@ -145,11 +169,12 @@ BOLTZMANN_TEMPERATURE_K = 298.0
 # molecules. For most ADMET endpoints this residual is below downstream
 # model noise and not worth chasing further.
 #
-# Forward-looking notes (evidence-backed, not yet implemented):
+# Forward-looking notes (evidence-backed):
 #   - Single-point xTB / tblite re-ranking of MMFF-optimized conformers
-#     before Boltzmann weighting. Kong et al., ChemPhysChem 2025 show
+#     before Boltzmann weighting. IMPLEMENTED — see get_conformer_energies
+#     (method="GFN2-xTB", the default). Kong et al., ChemPhysChem 2025 show
 #     GFN2-xTB is the most suitable energy filter for drug-like conformer
-#     ranking. Pip-installable via tblite-python, deterministic.
+#     ranking. Pip-installable via tblite, deterministic.
 #   - CONFORGE (Seidel et al., JCIM 2023, CDPKit) as an alternative
 #     embedder for macrocycles and very-flexible scaffolds where ETKDGv3
 #     sampling plateaus. Open source, pip-installable.
@@ -369,22 +394,46 @@ def _optimize_conformers(mol: Chem.Mol) -> str:
         return "none"
 
 
-def get_conformer_energies(mol: Chem.Mol) -> List[float]:
-    """
-    Calculate force field energies for all conformers.
+def xtb_conformer_energies(mol: Chem.Mol) -> List[float]:
+    """Single-point GFN2-xTB energies for all conformers (kcal/mol).
 
-    Uses MMFF94s (preferred for drug-like molecules), falls back to UFF
-    for molecules with unsupported MMFF atom types.
+    Energies are computed on the existing (MMFF-optimized) geometries — this
+    re-ranks conformers without moving atoms. The total molecular charge is
+    passed through so charged/zwitterionic species are handled correctly.
+
+    Per-conformer failures (SCF non-convergence, etc.) yield NaN rather than
+    failing the whole molecule. Returns all-NaN if tblite is unavailable, so
+    callers can fall back to the force-field path.
 
     Args:
-        mol: RDKit molecule with conformers and explicit Hs
+        mol: RDKit molecule with conformer(s) and explicit Hs
 
     Returns:
-        List of energies (kcal/mol), NaN for failed calculations
+        List of energies (kcal/mol), NaN for failed conformers.
     """
-    if mol is None or mol.GetNumConformers() == 0:
-        return []
+    n_confs = mol.GetNumConformers()
+    if not TBLITE_AVAILABLE:
+        return [np.nan] * n_confs
 
+    numbers = np.array([a.GetAtomicNum() for a in mol.GetAtoms()])
+    charge = Chem.GetFormalCharge(mol)
+
+    energies = []
+    for conf_id in range(n_confs):
+        try:
+            pos_bohr = mol.GetConformer(conf_id).GetPositions() * BOHR_PER_ANGSTROM
+            calc = XTBCalculator("GFN2-xTB", numbers, pos_bohr, charge=charge)
+            calc.set("verbosity", 0)
+            res = calc.singlepoint()
+            energies.append(float(res.get("energy")) * HARTREE_TO_KCAL)
+        except Exception as e:
+            logger.debug(f"GFN2-xTB single-point failed for conf {conf_id}: {e}")
+            energies.append(np.nan)
+    return energies
+
+
+def _forcefield_conformer_energies(mol: Chem.Mol) -> List[float]:
+    """MMFF94s (preferred) / UFF (fallback) energies for all conformers (kcal/mol)."""
     n_confs = mol.GetNumConformers()
     energies = []
 
@@ -413,6 +462,33 @@ def get_conformer_energies(mol: Chem.Mol) -> List[float]:
     # Neither force field can handle this molecule
     logger.debug("No force field params available for energy calc")
     return [np.nan] * n_confs
+
+
+def get_conformer_energies(mol: Chem.Mol, method: str = DEFAULT_ENERGY_METHOD) -> List[float]:
+    """
+    Calculate per-conformer energies for Boltzmann weighting.
+
+    GFN2-xTB (default) gives physically reliable conformer rankings; it falls
+    back to MMFF94s/UFF when tblite is unavailable or returns no usable
+    energies. Geometry is unchanged either way — this only scores energies.
+
+    Args:
+        mol: RDKit molecule with conformers and explicit Hs
+        method: ``"GFN2-xTB"`` (default) or ``"MMFF"`` to force the force field
+
+    Returns:
+        List of energies (kcal/mol), NaN for failed calculations
+    """
+    if mol is None or mol.GetNumConformers() == 0:
+        return []
+
+    if method == "GFN2-xTB":
+        energies = xtb_conformer_energies(mol)
+        if not np.all(np.isnan(energies)):
+            return energies
+        logger.debug("GFN2-xTB produced no usable energies, falling back to MMFF/UFF")
+
+    return _forcefield_conformer_energies(mol)
 
 
 # =============================================================================
