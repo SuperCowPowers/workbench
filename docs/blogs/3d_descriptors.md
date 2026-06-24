@@ -47,15 +47,20 @@ Workbench provides two 3D descriptor endpoints that share the same computation c
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Realtime SageMaker endpoint</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Synchronous inference from training pipelines</td><td style="padding: 8px 16px;">Overnight batch processing (10k-100k compounds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 12 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 12 diagnostic columns</td></tr>
   </tbody>
 </table>
 
-Both modes use **Boltzmann-weighted ensemble averaging** -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the MMFF minimum, then combined using normalized Boltzmann weights:
+!!! warning "The fast endpoint is deprecated"
+    `smiles-to-3d-fast-v1` traded feature quality for latency (a single lowest-energy conformer, force-field energies) and is no longer maintained. **Use `smiles-to-3d-full-v1`.** The full endpoint is async with no practical per-molecule latency ceiling, which is what lets it run the higher-quality GFN2-xTB energy ranking described below. The fast/full comparison is retained here for historical context; new work should target the full endpoint exclusively.
+
+Both modes use **Boltzmann-weighted ensemble averaging** -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the lowest-energy conformer, then combined using normalized Boltzmann weights:
 
 $$\Large w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i$$
 
 where $\Delta E_i = E_i - E_{\min}$ is the energy above the minimum conformer, $k_BT$ is the thermal energy at 298 K (0.592 kcal/mol), and $d_i$ is the descriptor value for conformer $i$. This is more reproducible than single-conformer descriptors, which can vary significantly with random seed, especially for flexible molecules. The MARCEL benchmark and Nikonenko et al. have shown that ensemble approaches produce more stable QSAR models.
+
+The energies $E_i$ that drive these weights come from **GFN2-xTB** (a fast semi-empirical quantum method), not the MMFF94s force field used to build the geometries. MMFF94s energy rankings are known to be unreliable for flexible and polar molecules -- the conformers it ranks lowest are frequently not the ones a quantum method favors, which biases the weighted average toward the wrong geometries. Decoupling the two -- MMFF94s for *geometry*, GFN2-xTB for the *energy ranking* that sets the weights -- is the single highest-leverage accuracy lever for the ensemble, since every one of the 74 features is a Boltzmann average over these weights. See [Step 3](#step-3-boltzmann-weighted-descriptor-calculation) for the mechanics and fallback behavior.
 
 ### Adaptive Conformer Counts (Boltzmann Mode)
 
@@ -75,7 +80,7 @@ The 3D descriptor endpoint runs a multi-step pipeline for each molecule:
 
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/3d_descriptor_pipeline.svg" alt="3D descriptor pipeline: SMILES to Standardize to Conformers to 74 Descriptors" style="width: 100%; min-height: 300px;">
-<figcaption><em>The 3D descriptor pipeline: standardization, tiered conformer generation with MMFF94s optimization, and Boltzmann-weighted ensemble descriptors across four categories.</em></figcaption>
+<figcaption><em>The 3D descriptor pipeline: standardization, tiered conformer generation with MMFF94s geometry optimization, GFN2-xTB energy ranking, and Boltzmann-weighted ensemble descriptors across four categories.</em></figcaption>
 </figure>
 
 ### Step 1: Standardization
@@ -104,13 +109,15 @@ The algorithm uses a three-tier embedding strategy to maximize success rates acr
   </tbody>
 </table>
 
-All conformers are optimized with the **MMFF94s** force field (preferred over MMFF94 for its improved handling of planar nitrogen centers common in drug molecules), using `optimizerForceTol=0.0135` which provides a ~20% speedup with negligible geometry loss. For molecules with unsupported MMFF atom types, the pipeline automatically falls back to **UFF** (Universal Force Field).
+Conformer **geometries** are optimized with the **MMFF94s** force field (preferred over MMFF94 for its improved handling of planar nitrogen centers common in drug molecules), using `optimizerForceTol=0.0135` which provides a ~20% speedup with negligible geometry loss. For molecules with unsupported MMFF atom types, the pipeline automatically falls back to **UFF** (Universal Force Field). Note that MMFF94s is used here only to *build* the geometries -- the energies that rank those geometries for Boltzmann weighting come from GFN2-xTB (see Step 3).
 
 RMSD-based pruning (`pruneRmsThresh=0.5`) removes redundant geometries -- rigid molecules like benzene naturally collapse to 1-2 unique conformers, while flexible chains retain more diversity.
 
 ### Step 3: Boltzmann-Weighted Descriptor Calculation
 
-All 74 descriptors are computed on the molecule with **explicit hydrogens preserved** throughout — MMFF94s energy calculations, Mordred CPSA partial charges, and RDKit's mass-weighted shape descriptors (PMI, radius of gyration) all require explicit Hs for correct results.
+All 74 descriptors are computed on the molecule with **explicit hydrogens preserved** throughout — GFN2-xTB energy calculations, Mordred CPSA partial charges, and RDKit's mass-weighted shape descriptors (PMI, radius of gyration) all require explicit Hs for correct results.
+
+**Conformer energy ranking (GFN2-xTB).** The energies that set the Boltzmann weights come from single-point **GFN2-xTB** calculations (via the [`tblite`](https://github.com/tblite/tblite) library) on the MMFF-optimized geometries. xTB only *scores* the conformers — it does not move atoms, so the geometries the descriptors see are still the MMFF94s ones. The molecule's total formal charge is passed through so charged and zwitterionic species are ranked correctly. If `tblite` is unavailable or a molecule fails to converge, the pipeline transparently falls back to MMFF94s/UFF energies; the `desc3d_energy_method` diagnostic column records which model actually produced the weights (`GFN2-xTB`, `MMFF94s`, or `UFF`) so a fallback is never silent. GFN2-xTB is deterministic and adds roughly 0.1–0.5 s per conformer, which is why xTB ranking runs on the async **full** endpoint where the per-molecule time budget accommodates it.
 
 The custom pharmacophore descriptors, however, follow the cheminformatics convention of heavy-atom-only geometry for distance and centroid calculations (molecular axis, nitrogen span, charge/HBA centroids). The one exception is molecular volume, which uses RDKit's grid-based van der Waals volume and does include Hs — this gives a physically meaningful volume even for small molecules where a heavy-atom-only convex hull would be degenerate.
 
@@ -182,7 +189,7 @@ The **intramolecular hydrogen bond potential** (IMHB) deserves special mention. 
 
 Statistics computed over the full generated conformer ensemble that capture conformational flexibility:
 
-- **Energy minimum**: The lowest MMFF94s/UFF energy -- a proxy for strain
+- **Energy minimum**: The lowest GFN2-xTB energy (or MMFF94s/UFF on fallback) -- a proxy for strain
 - **Energy range / standard deviation**: How spread out the conformer energies are
 - **Conformational flexibility index**: Normalized energy range -- higher values indicate more conformational freedom
 
@@ -190,7 +197,7 @@ Highly flexible molecules tend to have larger energy ranges and higher flexibili
 
 ### Diagnostic Columns
 
-In addition to the 74 model features, both endpoints produce 11 `desc3d_*` diagnostic columns that track pipeline status, conformer generation quality, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:
+In addition to the 74 model features, both endpoints produce 12 `desc3d_*` diagnostic columns that track pipeline status, conformer generation quality, energy model, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:
 
 | Column | Description |
 |--------|-------------|
@@ -202,7 +209,8 @@ In addition to the 74 model features, both endpoints produce 11 `desc3d_*` diagn
 | `desc3d_embed_failures` | Distance geometry retry count |
 | `desc3d_timeout_failures` | Per-conformer RDKit timeout count |
 | `desc3d_embed_tier` | Which embedding tier succeeded (1/2/3) |
-| `desc3d_force_field` | MMFF94s, UFF, or none |
+| `desc3d_force_field` | Geometry optimizer: MMFF94s, UFF, or none |
+| `desc3d_energy_method` | Energy model used for Boltzmann weights: GFN2-xTB, MMFF94s, or UFF |
 | `desc3d_stereo_preserved` | True if the 3D geometry reproduces the input's assigned stereo (always True for achiral inputs) |
 | `desc3d_compute_time_s` | Per-molecule wall clock |
 
@@ -273,11 +281,12 @@ The pipeline is conservative by design — production ADMET targets stable, dete
 
 **Cross-seed variance on highly flexible molecules.** The 500-conformer top tier reduces within-seed stochastic variance, but different random seeds will still produce slightly different Boltzmann averages on 13+ rotatable-bond molecules. For most ADMET endpoints this residual is below downstream model noise; for tasks that genuinely depend on a single conformer geometry it is not.
 
+**Recently shipped:** **single-point GFN2-xTB re-ranking** of MMFF-optimized conformers before Boltzmann weighting (via the `tblite` library, deterministic). Kong et al. (*ChemPhysChem* 2025) show GFN2-xTB is currently the most suitable energy filter for drug-like conformer ranking, and we measured near-zero rank correlation between MMFF94s and GFN2-xTB orderings on flexible/polar molecules — so this materially shifts the Boltzmann weights and, with them, all 74 ensemble-averaged features. See [Step 3](#step-3-boltzmann-weighted-descriptor-calculation).
+
 **Forward-looking upgrades** (evidence-backed; not yet implemented):
 
-1. **Single-point xTB / tblite re-ranking** of MMFF-optimized conformers before Boltzmann weighting. Kong et al. (*ChemPhysChem* 2025) show GFN2-xTB is currently the most suitable energy filter for drug-like conformer ranking. Pip-installable via `tblite-python`, deterministic.
-2. **CONFORGE as alternative embedder** for macrocycles and very-flexible scaffolds. Seidel et al. (*JCIM* 2023, CDPKit) — open source, slightly outperforms RDKit on small molecules and matches it on macrocycles where ETKDGv3 sampling plateaus.
-3. **Replace Gasteiger partial charges in CPSA** with AM1-BCC or an ML charge model (DASH; Mahmoud et al. 2023). Gasteiger is documented as the least accurate common partial-charge method, and CPSA accounts for 43 of our 52 Mordred 3D features — the highest-leverage upgrade for the existing feature set.
+1. **CONFORGE as alternative embedder** for macrocycles and very-flexible scaffolds. Seidel et al. (*JCIM* 2023, CDPKit) — open source, slightly outperforms RDKit on small molecules and matches it on macrocycles where ETKDGv3 sampling plateaus.
+2. **Replace Gasteiger partial charges in CPSA** with AM1-BCC or an ML charge model (DASH; Mahmoud et al. 2023). Gasteiger is documented as the least accurate common partial-charge method, and CPSA accounts for 43 of our 52 Mordred 3D features — the highest-leverage upgrade for the existing feature set.
 
 Deliberately *not* on this list: ML conformer generators (ETFlow, GeoMol, Lyrebird) — research-stage with no proven ADMET benefit; MACE-OFF / ANI-2x routine optimization — too heavy for production throughput; tautomer/protomer ensemble enumeration — mature in research, niche in production. We may revisit any of these as the surrounding tooling matures.
 
@@ -304,6 +313,11 @@ Deliberately *not* on this list: ML conformer generators (ETFlow, GeoMol, Lyrebi
 **Force Fields**
 
 - Tosco, P., Stiefl, N. & Landrum, G. *"Bringing the MMFF force field to the RDKit: implementation and validation."* J. Cheminform. 6, 37 (2014). [DOI: 10.1186/s13321-014-0037-3](https://doi.org/10.1186/s13321-014-0037-3)
+
+**Conformer Energy Ranking (GFN2-xTB)**
+
+- Bannwarth, C., Ehlert, S. & Grimme, S. *"GFN2-xTB—An Accurate and Broadly Parametrized Self-Consistent Tight-Binding Quantum Chemical Method."* J. Chem. Theory Comput. 15, 1652-1671 (2019). [DOI: 10.1021/acs.jctc.8b01176](https://doi.org/10.1021/acs.jctc.8b01176)
+- `tblite` — light-weight tight-binding framework providing the GFN2-xTB Python bindings. [GitHub](https://github.com/tblite/tblite)
 - Kong, Z., et al. *"Discriminating High from Low Energy Conformers of Druglike Molecules."* ChemPhysChem (2025). [DOI: 10.1002/cphc.202400992](https://doi.org/10.1002/cphc.202400992)
 
 **Descriptors**

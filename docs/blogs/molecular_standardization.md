@@ -80,7 +80,7 @@ In addition to the 2D descriptors above, Workbench offers a separate 3D descript
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">RDKit 3D Shape</td><td style="padding: 8px 16px;">10</td><td style="padding: 8px 16px;">Principal moments of inertia, normalized PMI ratios, asphericity, eccentricity, spherocity, radius of gyration</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Mordred 3D</td><td style="padding: 8px 16px;">52</td><td style="padding: 8px 16px;">Charged partial surface area (CPSA), geometrical indices, gravitational indices, plane of best fit</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Pharmacophore 3D</td><td style="padding: 8px 16px;">8</td><td style="padding: 8px 16px;">Molecular axis/volume, amphiphilic moment, charge centroid distance, intramolecular H-bond potential</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformer Ensemble</td><td style="padding: 8px 16px;">5</td><td style="padding: 8px 16px;">MMFF94s energy statistics (min, range, std), conformer count, conformational flexibility index</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformer Ensemble</td><td style="padding: 8px 16px;">5</td><td style="padding: 8px 16px;">GFN2-xTB energy statistics (min, range, std), conformer count, conformational flexibility index</td></tr>
   </tbody>
 </table>
 

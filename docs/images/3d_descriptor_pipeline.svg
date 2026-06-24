@@ -68,7 +68,7 @@
   <!-- Conformers -->
   <rect x="382" y="80" width="158" height="64" rx="8" fill="url(#d3-conf)" filter="url(#d3-shadow)"/>
   <text x="461" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">Conformers</text>
-  <text x="461" y="128" text-anchor="middle" font-size="12" fill="#B2DFDB">ETKDGv3 + MMFF94s</text>
+  <text x="461" y="128" text-anchor="middle" font-size="11.5" fill="#B2DFDB">ETKDGv3 + MMFF94s + xTB</text>
 
   <!-- Arrow 3 -->
   <line x1="540" y1="112" x2="572" y2="112" stroke="#666" stroke-width="1.5"/>

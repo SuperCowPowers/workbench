@@ -178,7 +178,7 @@ Most Feature Endpoints run a full molecular processing pipeline.
 3. **Mordred descriptors** (~85): Five ADMET-focused modules — AcidBase, Aromatic, Constitutional, Chi connectivity, and CarbonTypes
 4. **Stereochemistry features** (10): R/S center counts, E/Z bond counts, stereo complexity, fraction-defined metrics
 
-Our [3D endpoints](3d_descriptors.md) use RDKit's ETKDGv3 algorithm for conformer generation and compute 74 Boltzmann-weighted ensemble descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics. A fast realtime endpoint and a Boltzmann async endpoint are available for different throughput/quality tradeoffs.
+Our [3D endpoint](3d_descriptors.md) (`smiles-to-3d-full-v1`) uses RDKit's ETKDGv3 algorithm for conformer generation, ranks the conformers with **GFN2-xTB** semi-empirical quantum energies, and computes 74 Boltzmann-weighted ensemble descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics. (An older realtime `smiles-to-3d-fast-v1` endpoint is deprecated in favor of the async full endpoint.)
 
 
 ## References
