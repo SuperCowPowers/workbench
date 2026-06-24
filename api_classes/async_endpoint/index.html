@@ -919,6 +919,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#async-meta-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Meta Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#full-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4594,6 +4605,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#async-meta-endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async Meta Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#full-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4645,6 +4667,15 @@
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">async_endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">,</span> <span class="s2">&quot;3d descriptors&quot;</span><span class="p">,</span> <span class="s2">&quot;full&quot;</span><span class="p">])</span>
 </span></code></pre></div>
+<h2 id="async-meta-endpoints">Async Meta Endpoints</h2>
+<p>An async endpoint can itself be a <em>composition</em> of other endpoints. <strong><a href="../../models/meta_endpoints/#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call"><code>smiles-to-2d-3d-v1</code></a></strong> is a <a href="../../models/meta_endpoints/">MetaEndpoint</a> that fans out to the sync 2D descriptor endpoint and the async 3D descriptor endpoint, then concatenates the results into one ~387-feature DataFrame:</p>
+<div class="language-py highlight"><span class="filename">meta_async.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetaEndpoint</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Sync 2D + async 3D, composed into a single async endpoint</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">end</span> <span class="o">=</span> <span class="n">MetaEndpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-2d-3d-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">results_df</span> <span class="o">=</span> <span class="n">end</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>   <span class="c1"># input cols + ~313 2D + 74 3D features</span>
+</span></code></pre></div>
+<p>Because one child (<code>smiles-to-3d-full-v1</code>) is async, the whole MetaEndpoint is <strong>auto-deployed async</strong> — the caller sees a single endpoint and a single <code>inference()</code> call, with the S3 round-trip and per-child sync/async dispatch handled server-side.</p>
 <h2 id="full-reference">Full Reference</h2>
 <p>For the full method list, deployment options, scaling configuration, and advanced usage, see <strong><a href="../../core_classes/artifacts/async_endpoint_core/">AsyncEndpointCore</a></strong>.</p>
 

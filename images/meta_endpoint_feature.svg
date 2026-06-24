@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 262" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="mf-input" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#455A64"/><stop offset="100%" stop-color="#607D8B"/>
+    </linearGradient>
+    <linearGradient id="mf-2d" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/><stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <linearGradient id="mf-3d" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/><stop offset="100%" stop-color="#26A69A"/>
+    </linearGradient>
+    <linearGradient id="mf-agg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/><stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="mf-out" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/><stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <filter id="mf-shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.18"/></filter>
+  </defs>
+
+  <text x="380" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#E0E0E0">Feature MetaEndpoint &#8212; smiles-to-2d-3d-v1</text>
+  <text x="380" y="54" text-anchor="middle" font-size="13" fill="#999">Fan out to the 2D + 3D feature endpoints, concatenate the columns &#8594; one async endpoint</text>
+
+  <!-- dashed MetaEndpoint frame -->
+  <rect x="158" y="92" width="430" height="158" rx="14" fill="#FFFFFF" fill-opacity="0.04" stroke="#4DB6AC" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="172" y="111" font-size="12" font-weight="600" fill="#80CBC4">MetaEndpoint &#183; async</text>
+
+  <!-- input -->
+  <rect x="34" y="150" width="96" height="50" rx="9" fill="url(#mf-input)" filter="url(#mf-shadow)"/>
+  <text x="82" y="180" text-anchor="middle" font-size="13" font-weight="600" fill="white">SMILES df</text>
+
+  <!-- children -->
+  <rect x="188" y="122" width="236" height="48" rx="8" fill="url(#mf-2d)" filter="url(#mf-shadow)"/>
+  <text x="306" y="148" text-anchor="middle" font-size="14" font-weight="600" fill="white">smiles-to-2d-v1</text>
+  <text x="306" y="164" text-anchor="middle" font-size="12" fill="#BBDEFB">2D &#183; sync</text>
+
+  <rect x="188" y="184" width="236" height="48" rx="8" fill="url(#mf-3d)" filter="url(#mf-shadow)"/>
+  <text x="306" y="206" text-anchor="middle" font-size="13.5" font-weight="600" fill="white">smiles-to-3d-full-v1</text>
+  <text x="306" y="222" text-anchor="middle" font-size="12" fill="#B2DFDB">3D &#183; async</text>
+
+  <!-- concat -->
+  <rect x="470" y="148" width="92" height="56" rx="8" fill="url(#mf-agg)" filter="url(#mf-shadow)"/>
+  <text x="516" y="181" text-anchor="middle" font-size="15" font-weight="700" fill="white">Concat</text>
+
+  <!-- output -->
+  <rect x="620" y="150" width="104" height="52" rx="9" fill="url(#mf-out)" filter="url(#mf-shadow)"/>
+  <text x="672" y="173" text-anchor="middle" font-size="14" font-weight="700" fill="white">df + 387</text>
+  <text x="672" y="189" text-anchor="middle" font-size="12" fill="#C8E6C9">features</text>
+
+  <!-- edges -->
+  <line x1="130" y1="175" x2="188" y2="146" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="130" y1="175" x2="188" y2="208" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="424" y1="146" x2="470" y2="166" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="424" y1="208" x2="470" y2="188" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="562" y1="176" x2="620" y2="176" stroke="#78909C" stroke-width="1.6"/>
+  <polygon points="614,172 621,176 614,180" fill="#78909C"/>
+</svg>

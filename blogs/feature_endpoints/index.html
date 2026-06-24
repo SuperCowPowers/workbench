@@ -5013,7 +5013,7 @@
   </tbody>
 </table>
 
-<p>The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~388-feature descriptor set covering topological, electronic, and geometric properties. See the <a href="../3d_descriptors/">3D Descriptors</a> blog for details on the fast and full pipelines.</p>
+<p>The 2D and 3D endpoints come pre-combined as <strong><code>smiles-to-2d-3d-v1</code></strong>, a <a href="../../models/meta_endpoints/#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call">MetaEndpoint</a> that fans out to both and concatenates the results into a single ~387-feature descriptor set covering topological, electronic, and geometric properties — one <code>inference()</code> call, no juggling two endpoints. See the <a href="../3d_descriptors/">3D Descriptors</a> blog for the underlying pipeline.</p>
 <h3 id="fingerprint-endpoints">Fingerprint Endpoints</h3>
 <p>In addition to molecular descriptor endpoints, Workbench supports <strong>fingerprint endpoints</strong> that compute Morgan count fingerprints (ECFP4 equivalent) from SMILES. These are particularly useful for substructure-based modeling and molecular similarity searches.</p>
 <p>The fingerprint endpoint computes <strong>count fingerprints</strong> rather than binary — each position holds the number of times a substructure occurs (0–255), providing richer information than simple presence/absence. Parameters:</p>
@@ -5076,7 +5076,7 @@
 <h2 id="under-the-hood-feature-endpoint-details">Under the Hood: Feature Endpoint Details</h2>
 <div class="admonition tip inline end">
 <p class="admonition-title">Combine 2D + 3D</p>
-<p>Run both the 2D and 3D endpoints and concatenate the results for a ~390-feature descriptor set covering topological, electronic, and geometric properties.</p>
+<p>Use the pre-deployed <strong><code>smiles-to-2d-3d-v1</code></strong> <a href="../../models/meta_endpoints/#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call">MetaEndpoint</a> — it fans out to both endpoints and concatenates the results into a single ~387-feature descriptor set covering topological, electronic, and geometric properties.</p>
 </div>
 <p>Most Feature Endpoints run a full molecular processing pipeline.</p>
 <ol>
