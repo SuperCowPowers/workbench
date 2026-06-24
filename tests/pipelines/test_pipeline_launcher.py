@@ -106,6 +106,28 @@ class TestLoadPipelinesConfig:
         nodes = load_pipelines_config(tmp_path)["p"]
         assert nodes[0].script == tmp_path / "subdir_script.py"
 
+    def test_plugin_ref_resolves_to_discovery_root(self, tmp_path):
+        """plugin: resolves to <root>/plugins/, not the nested config dir.
+
+        Mirrors PipelineManager._discover_local so a nested pipelines.json and a
+        root-level run agree on where the shared arbiter lives.
+        """
+        leaf = tmp_path / "Binding" / "ppb_mouse"
+        leaf.mkdir(parents=True)
+        config = {
+            "pipelines": {
+                "p": [
+                    {"script": "m.py", "outputs": ["model:m-dt"]},
+                    {"script": "plugin:models/model_promotion.py", "inputs": ["model:m-dt"], "outputs": ["endpoint:m"]},
+                ]
+            }
+        }
+        (leaf / "pipelines.json").write_text(json.dumps(config))
+        nodes = load_pipelines_config(leaf, root=tmp_path)["p"]
+        scripts = {n.script for n in nodes}
+        assert leaf / "m.py" in scripts  # bare -> config dir
+        assert tmp_path / "plugins" / "models" / "model_promotion.py" in scripts  # plugin -> discovery root
+
 
 class TestJobGraph:
     """Tests for the bipartite dependency DAG the launcher orders on (PipelineManager.graph)."""

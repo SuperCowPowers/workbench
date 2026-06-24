@@ -117,6 +117,77 @@ class TestLocalDiscovery:
         # Scripts resolve relative to the config's own directory.
         assert {j.script for j in mgr.jobs} == {leaf / "fs.py", leaf / "m.py"}
 
+    def test_plugin_ref_resolves_to_discovery_root(self, tmp_path):
+        # A plugin: ref resolves to <discovery-root>/plugins/<path>, NOT the nested
+        # config's own dir -- a shared arbiter lives once at the root, not per-pipeline.
+        leaf = tmp_path / "Binding" / "ppb_mouse"
+        leaf.mkdir(parents=True)
+        config = {
+            "pipelines": {
+                "ppb": [
+                    {"script": "m.py", "mode": "dt", "inputs": ["fs:x"], "outputs": ["model:m-dt"]},
+                    {"script": "plugin:models/model_promotion.py", "inputs": ["model:m-dt"], "outputs": ["endpoint:m"]},
+                ]
+            }
+        }
+        (leaf / "pipelines.json").write_text(json.dumps(config))
+
+        mgr = PipelineManager(tmp_path)
+        scripts = {j.script for j in mgr.jobs}
+        assert leaf / "m.py" in scripts  # bare ref -> config dir
+        assert tmp_path / "plugins" / "models" / "model_promotion.py" in scripts  # plugin -> discovery root
+
+
+class _FakeS3:
+    """Minimal s3 client stub for _discover_s3: serves one pipelines.json per key."""
+
+    def __init__(self, objects: dict):
+        self._objects = objects  # key -> bytes
+
+    def get_paginator(self, _op):
+        objects = self._objects
+
+        class _Pag:
+            def paginate(self, Bucket, Prefix):  # noqa: N803 (boto3 kwarg casing)
+                contents = [{"Key": k} for k in objects if k.startswith(Prefix)]
+                return [{"Contents": contents}]
+
+        return _Pag()
+
+    def get_object(self, Bucket, Key):  # noqa: N803
+        import io
+
+        return {"Body": io.BytesIO(self._objects[Key])}
+
+
+class _FakeSession:
+    def __init__(self, s3):
+        self._s3 = s3
+
+    def client(self, _name):
+        return self._s3
+
+
+class TestS3Discovery:
+    def test_plugin_ref_resolves_relative_to_prefix(self):
+        # The nightly DT Lambda's path: discovery at s3://bucket/ml_pipelines/, a plugin:
+        # ref must resolve under that same prefix's plugins/ dir (where the GitHub Action
+        # syncs it), and a bare ref under its own config dir.
+        config = {
+            "pipelines": {
+                "ppb": [
+                    {"script": "m.py", "mode": "dt", "inputs": ["fs:x"], "outputs": ["model:m-dt"]},
+                    {"script": "plugin:models/model_promotion.py", "inputs": ["model:m-dt"], "outputs": ["endpoint:m"]},
+                ]
+            }
+        }
+        s3 = _FakeS3({"ml_pipelines/Binding/pipelines.json": json.dumps(config).encode()})
+        mgr = PipelineManager("s3://my-bucket/ml_pipelines/", session=_FakeSession(s3))
+        scripts = {j.script for j in mgr.jobs}
+        assert "s3://my-bucket/ml_pipelines/Binding/m.py" in scripts  # bare -> config dir
+        # plugin -> {bucket}/{discovery-prefix}/plugins/...  (NOT bucket root)
+        assert "s3://my-bucket/ml_pipelines/plugins/models/model_promotion.py" in scripts
+
 
 class TestPipelinesAPI:
     def _mgr(self):
