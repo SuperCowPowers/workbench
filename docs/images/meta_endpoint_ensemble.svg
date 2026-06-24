@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 304" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="men-input" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#455A64"/><stop offset="100%" stop-color="#607D8B"/>
+    </linearGradient>
+    <linearGradient id="men-pred" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E65100"/><stop offset="100%" stop-color="#FB8C00"/>
+    </linearGradient>
+    <linearGradient id="men-agg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/><stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="men-out" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/><stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <filter id="men-shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.18"/></filter>
+  </defs>
+
+  <text x="380" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#E0E0E0">Ensemble MetaEndpoint &#8212; logd-meta</text>
+  <text x="380" y="54" text-anchor="middle" font-size="13" fill="#999">Fan out to predictor endpoints, aggregate (mean / vote / weighted) &#8594; one prediction</text>
+
+  <!-- dashed MetaEndpoint frame -->
+  <rect x="158" y="86" width="430" height="192" rx="14" fill="#FFFFFF" fill-opacity="0.04" stroke="#FFB74D" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="172" y="105" font-size="12" font-weight="600" fill="#FFCC80">MetaEndpoint</text>
+
+  <!-- input -->
+  <rect x="34" y="160" width="96" height="50" rx="9" fill="url(#men-input)" filter="url(#men-shadow)"/>
+  <text x="82" y="190" text-anchor="middle" font-size="13" font-weight="600" fill="white">feature df</text>
+
+  <!-- predictors -->
+  <rect x="188" y="112" width="236" height="40" rx="8" fill="url(#men-pred)" filter="url(#men-shadow)"/>
+  <text x="306" y="137" text-anchor="middle" font-size="14" font-weight="600" fill="white">logd-reg-xgb</text>
+  <rect x="188" y="164" width="236" height="40" rx="8" fill="url(#men-pred)" filter="url(#men-shadow)"/>
+  <text x="306" y="189" text-anchor="middle" font-size="14" font-weight="600" fill="white">logd-reg-pytorch</text>
+  <rect x="188" y="216" width="236" height="40" rx="8" fill="url(#men-pred)" filter="url(#men-shadow)"/>
+  <text x="306" y="241" text-anchor="middle" font-size="14" font-weight="600" fill="white">logd-reg-chemprop</text>
+
+  <!-- aggregate -->
+  <rect x="470" y="156" width="92" height="56" rx="8" fill="url(#men-agg)" filter="url(#men-shadow)"/>
+  <text x="516" y="189" text-anchor="middle" font-size="15" font-weight="700" fill="white">Mean</text>
+
+  <!-- output -->
+  <rect x="620" y="150" width="104" height="68" rx="9" fill="url(#men-out)" filter="url(#men-shadow)"/>
+  <text x="672" y="178" text-anchor="middle" font-size="13.5" font-weight="700" fill="white">prediction</text>
+  <text x="672" y="195" text-anchor="middle" font-size="12" fill="#C8E6C9">&#177; std</text>
+  <text x="672" y="210" text-anchor="middle" font-size="12" fill="#C8E6C9">confidence</text>
+
+  <!-- edges -->
+  <line x1="130" y1="185" x2="188" y2="132" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="130" y1="185" x2="188" y2="184" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="130" y1="185" x2="188" y2="236" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="424" y1="132" x2="470" y2="174" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="424" y1="184" x2="470" y2="184" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="424" y1="236" x2="470" y2="194" stroke="#78909C" stroke-width="1.6"/>
+  <line x1="562" y1="184" x2="620" y2="184" stroke="#78909C" stroke-width="1.6"/>
+  <polygon points="614,180 621,184 614,188" fill="#78909C"/>
+
+  <text x="380" y="296" text-anchor="middle" font-size="12.5" fill="#9aa7ad">A MetaEndpoint is itself an Endpoint &#8212; reuse any DAG as a node inside a larger one.</text>
+</svg>

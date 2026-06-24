@@ -29,6 +29,20 @@ model = Model("smiles-to-3d-full-v1")
 model.to_endpoint(async_endpoint=True, tags=["smiles", "3d descriptors", "full"])
 ```
 
+## Async Meta Endpoints
+
+An async endpoint can itself be a *composition* of other endpoints. **[`smiles-to-2d-3d-v1`](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call)** is a [MetaEndpoint](../models/meta_endpoints.md) that fans out to the sync 2D descriptor endpoint and the async 3D descriptor endpoint, then concatenates the results into one ~387-feature DataFrame:
+
+```py title="meta_async.py"
+from workbench.api import MetaEndpoint
+
+# Sync 2D + async 3D, composed into a single async endpoint
+end = MetaEndpoint("smiles-to-2d-3d-v1")
+results_df = end.inference(df)   # input cols + ~313 2D + 74 3D features
+```
+
+Because one child (`smiles-to-3d-full-v1`) is async, the whole MetaEndpoint is **auto-deployed async** — the caller sees a single endpoint and a single `inference()` call, with the S3 round-trip and per-child sync/async dispatch handled server-side.
+
 ## Full Reference
 
 For the full method list, deployment options, scaling configuration, and advanced usage, see **[AsyncEndpointCore](../core_classes/artifacts/async_endpoint_core.md)**.

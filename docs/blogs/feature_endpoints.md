@@ -83,7 +83,7 @@ Most clients use variants similar to those listed below but we have the flexibil
   </tbody>
 </table>
 
-The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~388-feature descriptor set covering topological, electronic, and geometric properties. See the [3D Descriptors](3d_descriptors.md) blog for details on the fast and full pipelines.
+The 2D and 3D endpoints come pre-combined as **`smiles-to-2d-3d-v1`**, a [MetaEndpoint](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call) that fans out to both and concatenates the results into a single ~387-feature descriptor set covering topological, electronic, and geometric properties — one `inference()` call, no juggling two endpoints. See the [3D Descriptors](3d_descriptors.md) blog for the underlying pipeline.
 
 ### Fingerprint Endpoints
 
@@ -169,7 +169,7 @@ Databricks (Unity Catalog) and Tecton (On-Demand Feature Views) let you register
 
 ## Under the Hood: Feature Endpoint Details
 !!! tip inline end "Combine 2D + 3D"
-    Run both the 2D and 3D endpoints and concatenate the results for a ~390-feature descriptor set covering topological, electronic, and geometric properties.
+    Use the pre-deployed **`smiles-to-2d-3d-v1`** [MetaEndpoint](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call) — it fans out to both endpoints and concatenates the results into a single ~387-feature descriptor set covering topological, electronic, and geometric properties.
 
 Most Feature Endpoints run a full molecular processing pipeline.
 
