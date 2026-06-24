@@ -22,9 +22,16 @@ LOG_GROUP = "/aws/sagemaker/TrainingJobs"
 METRIC_NS = "/aws/sagemaker/TrainingJobs"
 
 
-def latest_job(sm, prefix: str):
-    """Most recent training job whose name contains `prefix` (None if none)."""
-    resp = sm.list_training_jobs(NameContains=prefix, SortBy="CreationTime", SortOrder="Descending", MaxResults=5)
+def latest_job(sm, name: str):
+    """Resolve `name` to a training job. Tries an exact job-name lookup first
+    (SageMaker's NameContains search is unreliable for recent jobs), then falls
+    back to the most recent job whose name contains `name`. Returns None if neither."""
+    try:
+        d = sm.describe_training_job(TrainingJobName=name)
+        return {"TrainingJobName": d["TrainingJobName"], "TrainingJobStatus": d["TrainingJobStatus"]}
+    except sm.exceptions.ClientError:
+        pass
+    resp = sm.list_training_jobs(NameContains=name, SortBy="CreationTime", SortOrder="Descending", MaxResults=5)
     summaries = resp.get("TrainingJobSummaries", [])
     return summaries[0] if summaries else None
 
