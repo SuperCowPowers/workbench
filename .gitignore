@@ -152,7 +152,10 @@ workbench_lambda_layer_output/
 test_evaluation_data.csv
 
 # PyTorch checkpoint/tmp directories
-.pt_tmp/ 
+.pt_tmp/
+
+# Local scratch / throwaway experiments
+scratch/
 
 # Pull public data outputs
 data/public_data/output/
