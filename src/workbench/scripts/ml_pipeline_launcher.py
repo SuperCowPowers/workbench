@@ -176,7 +176,7 @@ def build_pipeline_meta(job: Job, serverless: bool) -> str:
     return json.dumps({"mode": mode, "serverless": serverless})
 
 
-def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
+def load_pipelines_config(directory: Path, root: Path | None = None) -> dict[str, list[Job]] | None:
     """Load pipelines.json from a directory.
 
     The JSON maps each pipeline name to a flat list of nodes. A node runs a
@@ -185,6 +185,10 @@ def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
 
     Args:
         directory (Path): Directory to check for pipelines.json
+        root (Path | None): Discovery root for ``plugin:`` refs (shared scripts live
+            in ``<root>/plugins/``). Defaults to ``directory`` -- mirrors
+            PipelineManager._discover_local, where plugins resolve to the discovery
+            root, not each nested config's dir.
 
     Returns:
         dict | None: {pipeline_name: [Job]}, or None if no JSON config found
@@ -192,14 +196,16 @@ def load_pipelines_config(directory: Path) -> dict[str, list[Job]] | None:
     json_path = directory / "pipelines.json"
     if not json_path.exists():
         return None
+    root = root or directory
     with open(json_path) as f:
         config = json.load(f)
-    # Resolve each node's script relative to this config's directory (schemed refs
-    # like workbench:/plugin: pass through), then group into {pipeline_name: [nodes]}.
+    # Resolve each node's script: bare refs against this config's directory, plugin:
+    # against the discovery root's plugins/ dir, other schemed refs (workbench:/s3:)
+    # pass through. Then group into {pipeline_name: [nodes]}.
     nodes = parse_spec(
         config,
         script_resolver=lambda s: (
-            directory / "plugins" / s[len("plugin:") :]  # client plugin, discovery root
+            root / "plugins" / s[len("plugin:") :]  # client plugin, discovery root
             if s.startswith("plugin:")
             else s if is_schemed_script(s) else directory / s
         ),
@@ -563,7 +569,7 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[Job]]]:
     # Discover scripts from pipelines.json files
     for config_path in cwd.rglob("pipelines.json"):
         directory = config_path.parent
-        dag_defs = load_pipelines_config(directory)
+        dag_defs = load_pipelines_config(directory, root=cwd)
         if dag_defs:
             all_dags.update(dag_defs)
             for nodes in dag_defs.values():
@@ -641,7 +647,9 @@ def select_pipelines(
         # All modes of matched scripts are targets; the closure adds each target's
         # transitive upstream producer *jobs* (specific (script, mode)).
         target_nodes = [n for n in all_nodes if n.script in matched_set]
-        closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes)
+        # Forward closure (deps + downstream consumers) for Batch planning; --local runs
+        # exactly one script, so keep it upstream-only (descendants would trip its guard).
+        closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes, downstream=not args.local)
         selected_keys = {n.key for n in closure}
         force_keys = {n.key for n in target_nodes}  # matched scripts run regardless of freshness
         wanted = matched_set | {n.script for n in closure}  # matched_set keeps loose (non-DAG) matches
@@ -870,6 +878,24 @@ def main():
             f"No pipelines.json found under {Path.cwd()} -- running scripts standalone "
             f"(no DAG ordering or modes). To run DAG nodes, cd to a directory with the relevant pipelines.json."
         )
+
+    # Fail fast on a pipelines.json that references a script that isn't on disk (a
+    # mistyped path, or a plugin: ref whose file is missing from <root>/plugins/).
+    # Only local Path refs are checkable; schemed refs (workbench:/s3:) resolve at runtime.
+    missing = sorted(
+        {
+            str(n.script)
+            for nodes in all_dags.values()
+            for n in nodes
+            if isinstance(n.script, Path) and not n.script.exists()
+        }
+    )
+    if missing:
+        print("ERROR: pipelines.json references scripts not found on disk:")
+        for m in missing:
+            print(f"   {m}")
+        print("\n(plugin: refs resolve to <discovery-root>/plugins/<path> -- verify the file exists there)")
+        sys.exit(1)
 
     # Freshness simulation: show what a modified source would submit (no launch).
     if args.sim_mod:
