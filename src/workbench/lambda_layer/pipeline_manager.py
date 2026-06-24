@@ -504,12 +504,19 @@ class PipelineManager:
 
     # -- orchestration (internal; launcher + DT Lambda) ----------------------
 
-    def _select(self, targets: list[Job]) -> list[Job]:
-        """``targets`` plus their transitive upstream producer jobs."""
+    def _select(self, targets: list[Job], downstream: bool = False) -> list[Job]:
+        """``targets`` plus their transitive upstream producer jobs.
+
+        With ``downstream=True`` the transitive *consumer* jobs are included too --
+        so a forward closure pulls in e.g. a promote node that runs after a named
+        challenger. Freshness still decides which of those actually run.
+        """
         keys = set()
         for job in targets:
             keys.add(job.key)
             keys |= {n for n in nx.ancestors(self.graph, job.key) if self.graph.nodes[n].get("kind") == "job"}
+            if downstream:
+                keys |= {n for n in nx.descendants(self.graph, job.key) if self.graph.nodes[n].get("kind") == "job"}
         return [self.graph.nodes[k]["job"] for k in keys]
 
     def _job_order(self) -> list[Job]:
