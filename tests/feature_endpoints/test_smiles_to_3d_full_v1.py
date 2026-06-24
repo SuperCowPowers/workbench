@@ -98,6 +98,43 @@ def test_adaptive_conformer_count(result_df):
     print(f"Conformer counts used: {sorted(int(n) for n in requested)}")
 
 
+def test_energy_method_is_xtb(result_df):
+    """Every reference compound is Boltzmann-weighted with GFN2-xTB energies.
+
+    This is the guard against the silent xTB→MMFF fallback: if the deployed
+    image is missing tblite or pins a stale workbench, get_conformer_energies
+    quietly falls back to MMFF and features look valid but are wrongly
+    weighted. The curated reference compounds all score cleanly under xTB, so
+    anything other than 'GFN2-xTB' here means the energy path is broken in the
+    deployed endpoint.
+    """
+    ok = result_df[result_df["desc3d_status"] == "ok"]
+    bad = ok[ok["desc3d_energy_method"] != "GFN2-xTB"]
+    if not bad.empty:
+        print(bad[["name", "smiles", "desc3d_energy_method"]].to_string(index=False))
+    assert bad.empty, (
+        f"{len(bad)} compounds not weighted by GFN2-xTB "
+        f"(fell back to: {sorted(bad['desc3d_energy_method'].unique())}) — "
+        "check tblite is installed and WORKBENCH_VERSION is current in the deployed image"
+    )
+
+
+def test_compute_time_reported(result_df):
+    """desc3d_compute_time_s is populated and positive; report the distribution.
+
+    Not a threshold assertion (wall time is instance- and molecule-dependent),
+    but surfaces the xTB cost so regressions/baselines are visible in CI logs.
+    """
+    ok = result_df[result_df["desc3d_status"] == "ok"].copy()
+    times = ok["desc3d_compute_time_s"].astype(float)
+    assert (times > 0).all(), "desc3d_compute_time_s should be positive for successful rows"
+
+    slowest = ok.nlargest(5, "desc3d_compute_time_s")[["name", "desc3d_conf_count", "desc3d_compute_time_s"]]
+    print(f"compute_time_s — median={times.median():.2f}s max={times.max():.2f}s")
+    print("slowest compounds:")
+    print(slowest.to_string(index=False))
+
+
 def test_all_features_finite(result_df):
     """All 74 feature columns present and non-NaN for every reference compound."""
     feature_names = get_3d_feature_names()
@@ -221,6 +258,8 @@ if __name__ == "__main__":
     test_all_reference_compounds_succeed(res_df)
     test_full_mode_declared(res_df)
     test_adaptive_conformer_count(res_df)
+    test_energy_method_is_xtb(res_df)
+    test_compute_time_reported(res_df)
     test_all_features_finite(res_df)
     test_pmi_ordering(res_df)
     test_npr_bounds(res_df)
