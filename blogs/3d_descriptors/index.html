@@ -5323,7 +5323,7 @@
 <tbody>
 <tr>
 <td><code>desc3d_status</code></td>
-<td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>, <code>skip:rings</code>, <code>skip:ring_complexity</code>, <code>skip:embed</code>, <code>skip:empty</code></td>
+<td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>, <code>skip:rings</code>, <code>skip:ring_complexity</code>, <code>skip:cost</code>, <code>skip:embed</code>, <code>skip:empty</code></td>
 </tr>
 <tr>
 <td><code>desc3d_mode</code></td>
@@ -5405,9 +5405,14 @@
 <td>&gt; 15</td>
 <td>Backstop for highly constrained polycyclic cages</td>
 </tr>
+<tr>
+<td>xTB cost (heavy atoms × conformers)</td>
+<td>&gt; 24000</td>
+<td>Backstop for molecules too expensive to score with GFN2-xTB</td>
+</tr>
 </tbody>
 </table>
-<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. Molecules that exceed these thresholds get a specific <code>desc3d_status</code> (e.g. <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, <code>standardize()</code> independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.</p>
+<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. The <strong>xTB cost</strong> backstop catches molecules that pass the size guards but are pathologically expensive for the quantum energy step: GFN2-xTB scores every conformer, so cost scales as <code>heavy atoms × conformers</code>, and a large, very flexible molecule (e.g. a long-chain sulfonated azo dye at 56 heavy atoms × 500 conformers) would otherwise blow the invocation budget and return all-NaN. It only bites the 500-conformer tier (≥13 rotatable bonds) at roughly ≥49 heavy atoms — the large-and-very-flexible corner. Molecules that exceed any threshold get a specific <code>desc3d_status</code> (e.g. <code>skip:heavy_atoms</code>, <code>skip:cost</code>) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, <code>standardize()</code> independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.</p>
 <p>Molecules exceeding any threshold receive NaN features and a specific <code>desc3d_status</code> explaining the skip reason. These guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
 <h2 id="deploying-the-endpoints">Deploying the Endpoints</h2>
 <h3 id="fast-endpoint-realtime">Fast Endpoint (Realtime)</h3>
