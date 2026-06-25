@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Response
+from starlette.concurrency import run_in_threadpool
 from contextlib import asynccontextmanager
 import os
 import sys
@@ -142,7 +143,12 @@ async def invoke(request: Request):
     try:
         body = await request.body()
         data = inference_module.input_fn(body, content_type)
-        result = inference_module.predict_fn(data, model)
+        # Offload the (potentially multi-minute) blocking predict to a worker
+        # thread so the single uvicorn event loop stays free to answer SageMaker
+        # /ping health checks. A long block here (xTB compute, or a meta endpoint
+        # polling an async child) otherwise freezes pings and SageMaker kills the
+        # invocation with "could not get a response from the endpoint".
+        result = await run_in_threadpool(inference_module.predict_fn, data, model)
         output_data, output_content_type = inference_module.output_fn(result, accept_type)
         return Response(content=output_data, media_type=output_content_type)
     except Exception as e:
