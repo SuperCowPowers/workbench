@@ -71,7 +71,7 @@ def test_threshold_is_the_boundary():
     """cost == MAX passes; cost > MAX skips (boundary is exclusive)."""
     mol = Chem.MolFromSmiles(IRGANOX_1010)
     n_heavy = mol.GetNumHeavyAtoms()
-    at_limit = MAX_CONFORMER_ATOM_COST // n_heavy           # heavy * this <= MAX
+    at_limit = MAX_CONFORMER_ATOM_COST // n_heavy  # heavy * this <= MAX
     over_limit = at_limit + 1
     assert check_complexity(mol, n_conformers=at_limit) is None
     assert check_complexity(mol, n_conformers=over_limit) == "skip:cost"
