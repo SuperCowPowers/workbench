@@ -653,8 +653,11 @@ def select_pipelines(
         # guard). The matched set, jobs and all, is the selection.
         if args.local:
             selected_keys = {n.key for n in target_nodes}
-            return [p for p in all_pipelines if p in matched_set], selected_keys, set(selected_keys), (
-                f"matching {args.patterns}"
+            return (
+                [p for p in all_pipelines if p in matched_set],
+                selected_keys,
+                set(selected_keys),
+                (f"matching {args.patterns}"),
             )
 
         # SQS/Batch: forward closure (transitive upstream producers + downstream
