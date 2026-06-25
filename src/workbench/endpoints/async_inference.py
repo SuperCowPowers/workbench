@@ -17,6 +17,7 @@ This module owns the protocol-level invocation. Workbench's
 (``workbench_meta`` knobs, capture, monitoring).
 """
 
+import hashlib
 import logging
 import os
 import time
@@ -59,6 +60,7 @@ def async_inference(
     s3_input_prefix: Optional[str] = None,
     instances_str_fn: Optional[Callable[[], str]] = None,
     progress_str_fn: Optional[Callable[[], str]] = None,
+    idempotent: bool = False,
 ) -> pd.DataFrame:
     """Run async inference on a SageMaker endpoint and return a DataFrame.
 
@@ -94,6 +96,14 @@ def async_inference(
             invocation fans out server-side; the callable reports the child
             queue drain. When ``None`` (default), heartbeats show elapsed
             time only.
+        idempotent: When True, each chunk is keyed on a hash of its content
+            (not a fresh uuid) and child invocations are deduplicated via an
+            S3 leader/follower lock, so concurrent identical requests share a
+            single compute and result. Used by MetaEndpoints, whose blocking
+            server-side invocation can be redelivered by SageMaker — without
+            this, each redelivery stages a duplicate child job and the work
+            never converges. Safe only for deterministic endpoints (same input
+            → same output), which all Workbench feature/predictor endpoints are.
 
     Returns:
         DataFrame containing the endpoint's response, with rows in input
@@ -155,6 +165,7 @@ def async_inference(
                 chunk_df,
                 s3_bucket,
                 s3_input_prefix,
+                idempotent,
             ): idx
             for idx, chunk_df in chunks
         }
@@ -257,12 +268,19 @@ def _invoke_one_async(
     chunk_df: pd.DataFrame,
     s3_bucket: str,
     s3_input_prefix: str,
+    idempotent: bool = False,
 ) -> Optional[pd.DataFrame]:
     """Upload one chunk, invoke async, poll for output, download result.
 
     Cleans up both input and output S3 objects in a finally block so we
-    don't leak CSVs on failure.
+    don't leak CSVs on failure. When ``idempotent`` is set, concurrent
+    identical requests are deduplicated — see :func:`_invoke_one_async_idempotent`.
     """
+    if idempotent:
+        return _invoke_one_async_idempotent(
+            runtime_client, s3_client, endpoint_name, chunk_df, s3_bucket, s3_input_prefix
+        )
+
     request_id = uuid.uuid4().hex
     t_start = time.time()
 
@@ -315,6 +333,99 @@ def _invoke_one_async(
         _cleanup_s3(s3_client, input_s3_uri)
         if output_location is not None:
             _cleanup_s3(s3_client, output_location)
+
+
+def _request_hash(endpoint_name: str, chunk_csv: str) -> str:
+    """Deterministic id for an (endpoint, chunk-content) pair — same input → same id."""
+    return hashlib.sha256((endpoint_name + "\n" + chunk_csv).encode()).hexdigest()[:40]
+
+
+def _fetch_async_result(s3_client, output_location: str) -> Optional[pd.DataFrame]:
+    """Poll an OutputLocation to completion and parse it; None on any failure."""
+    try:
+        return pd.read_csv(StringIO(_poll_s3_output(s3_client, output_location)))
+    except Exception as e:
+        log.error(f"async output {output_location}: {e}")
+        return None
+
+
+def _poll_lock_for_output(s3_client, bucket: str, lock_key: str, grace_s: float = 120.0) -> Optional[str]:
+    """Wait for the leader to record the child OutputLocation in the lock.
+
+    Returns it, or None if the lock vanished (leader done) or stayed empty past
+    ``grace_s`` (leader died first) — both mean the follower should take over.
+    """
+    deadline = time.time() + grace_s
+    while time.time() < deadline:
+        try:
+            body = s3_client.get_object(Bucket=bucket, Key=lock_key)["Body"].read().decode().strip()
+            if body:
+                return body
+        except s3_client.exceptions.NoSuchKey:
+            return None
+        time.sleep(2)
+    return None
+
+
+def _invoke_one_async_idempotent(
+    runtime_client, s3_client, endpoint_name, chunk_df, s3_bucket, s3_input_prefix
+) -> Optional[pd.DataFrame]:
+    """Deduplicated async invoke: concurrent identical requests share one compute.
+
+    Keyed on chunk content. The leader (wins an S3 create-if-absent lock) invokes
+    the child once and records its OutputLocation in the lock; followers (e.g. a
+    redelivered MetaEndpoint invocation) poll that same output instead of staging
+    a duplicate child job, so the result survives the leader being killed after
+    recording. Coordination failures fall back to a fresh invoke.
+
+    Cleanup: the leader's ``finally`` deletes the lock, input, and output on every
+    successful run. A leader killed before its ``finally`` leaves an orphan — but
+    it's bounded (one per distinct input, content-keyed, not per redelivery) and
+    harmless: a later identical request reuses the orphaned result (deterministic
+    endpoint → same answer). This is the same rare orphaning the non-idempotent
+    path already has for input CSVs, so no extra GC is required.
+    """
+    from botocore.exceptions import ClientError
+
+    chunk_csv = chunk_df.to_csv(index=False)
+    req_hash = _request_hash(endpoint_name, chunk_csv)
+    input_key = f"{s3_input_prefix}/{req_hash}.csv"
+    lock_key = f"{s3_input_prefix.rsplit('/', 1)[0]}/async-idem/{req_hash}.lock"
+    lock_uri = f"s3://{s3_bucket}/{lock_key}"
+
+    def _fresh():
+        return _invoke_one_async(runtime_client, s3_client, endpoint_name, chunk_df, s3_bucket, s3_input_prefix)
+
+    # Leader election: atomic create-if-absent on the lock.
+    try:
+        s3_client.put_object(Bucket=s3_bucket, Key=lock_key, Body=b"", IfNoneMatch="*")
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") not in ("PreconditionFailed", "412"):
+            log.warning(f"idem {req_hash[:8]} lock error ({e}); fresh invoke")
+            return _fresh()
+        # Follower: share the leader's child output, or take over if it never recorded one.
+        loc = _poll_lock_for_output(s3_client, s3_bucket, lock_key)
+        if loc is None:
+            _cleanup_s3(s3_client, lock_uri)  # clear stale lock
+            return _fresh()
+        return _fetch_async_result(s3_client, loc)
+
+    # Leader: stage input, invoke once, publish OutputLocation for followers, fetch.
+    output_location = None
+    try:
+        s3_client.put_object(Bucket=s3_bucket, Key=input_key, Body=chunk_csv, ContentType="text/csv")
+        resp = runtime_client.invoke_endpoint_async(
+            EndpointName=endpoint_name,
+            InputLocation=f"s3://{s3_bucket}/{input_key}",
+            ContentType="text/csv",
+            Accept="text/csv",
+        )
+        output_location = resp["OutputLocation"]
+        s3_client.put_object(Bucket=s3_bucket, Key=lock_key, Body=output_location.encode())  # publish for followers
+        return _fetch_async_result(s3_client, output_location)
+    finally:
+        outputs = [output_location] if output_location else []
+        _cleanup_s3(s3_client, f"s3://{s3_bucket}/{input_key}", lock_uri, *outputs)
 
 
 def _poll_s3_output(s3_client, output_location: str) -> str:

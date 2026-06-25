@@ -95,7 +95,11 @@ def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
 
     def server_invoker(endpoint_name: str, eval_df: pd.DataFrame) -> pd.DataFrame:
         if async_flags.get(endpoint_name):
-            return async_inference(endpoint_name, eval_df, s3_bucket=s3_bucket)
+            # idempotent=True: this meta invocation can be redelivered by SageMaker
+            # (it blocks on the slow async child). Dedup child jobs on content hash
+            # so redeliveries share one compute instead of snowballing duplicate,
+            # never-completing child submissions.
+            return async_inference(endpoint_name, eval_df, s3_bucket=s3_bucket, idempotent=True)
         return fast_inference(endpoint_name, eval_df)
 
     return dag.run(df, endpoint_invoker=server_invoker)
