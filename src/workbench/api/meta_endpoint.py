@@ -146,14 +146,16 @@ class MetaEndpoint(Endpoint):
             max_instances=max_instances if is_async else None,
         )
 
-        # inference_batch_size is large so callers send big batches in a
-        # single invocation — the meta delegates row-level batching to the
-        # children, who already know how to saturate their own fleets. 500
-        # rows leaves comfortable headroom under SageMaker async's 60-minute
-        # per-invocation cap.
+        # The meta delegates row-level batching to its children, who saturate
+        # their own fleets; size the meta batch so one invocation finishes well
+        # under SageMaker async's 60-minute cap. Async children can be slow per
+        # row (e.g. GFN2-xTB 3D descriptors), so async metas use a smaller batch:
+        # with an 8-worker child fleet at batch_size 5, 200 rows is a 40-job
+        # queue the workers drain in a few rounds. All-sync metas stay large
+        # (rows are cheap, so a single big invocation is fine).
         endpoint.upsert_workbench_meta(
             {
-                "inference_batch_size": 500,
+                "inference_batch_size": 200 if is_async else 500,
                 "meta_endpoint_dag": dag.to_dict(),
             }
         )
