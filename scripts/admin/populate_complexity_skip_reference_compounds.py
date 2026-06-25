@@ -99,6 +99,24 @@ REFERENCE_COMPOUNDS = [
         "expected_status": "skip:embed",
         "notes": "Dense strained cage — passes complexity check but ETKDGv3 can't embed",
     },
+    # skip:cost (passes size/topology guards but pathologically expensive for xTB)
+    {
+        "name": "irganox_1010",
+        "smiles": (
+            "O=C(OCC(COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)(COC(=O)CCc1cc(C(C)(C)C)"
+            "c(O)c(C(C)(C)C)c1)COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)CCc1cc(C(C)(C)C)"
+            "c(O)c(C(C)(C)C)c1"
+        ),
+        "expected_status": "skip:cost",
+        "notes": (
+            "Irganox 1010 (CAS 6683-19-8) — a large, very flexible commercial "
+            "antioxidant: 85 heavy atoms × 500-conformer tier (20 rot bonds) = "
+            "cost 42500 > 24000. Passes the heavy-atom/rot-bond size guards but is "
+            "pathologically expensive for the GFN2-xTB energy step, so it's caught "
+            "by the skip:cost backstop instead of timing out the endpoint into NaNs. "
+            "Public, IP-free surrogate for proprietary large-flexible-dye inputs."
+        ),
+    },
 ]
 
 COLUMN_ORDER = ["id", "name", "smiles", "expected_status", "notes"]
@@ -119,7 +137,7 @@ DESCRIPTION = {
         "SMILES with the expected value of desc3d_status produced by "
         "workbench.utils.chem_utils.mol_descriptors_3d.compute_descriptors_3d, "
         "designed to exercise each specific skip path (heavy_atoms, rot_bonds, "
-        "rings, ring_complexity, embed) plus 'ok' controls."
+        "rings, ring_complexity, embed, cost) plus 'ok' controls."
     ),
     "columns": {
         "id": "Integer row index",
@@ -128,7 +146,7 @@ DESCRIPTION = {
         "expected_status": (
             "Expected value of the desc3d_status diagnostic column. Possible "
             "values: 'ok', 'skip:heavy_atoms', 'skip:rot_bonds', 'skip:rings', "
-            "'skip:ring_complexity', 'skip:embed'."
+            "'skip:ring_complexity', 'skip:embed', 'skip:cost'."
         ),
         "notes": "Why this compound exercises the named skip path",
     },

@@ -2,8 +2,8 @@
 
 Pulls a curated set of SMILES designed to exercise each specific skip path
 (skip:heavy_atoms, skip:rot_bonds, skip:rings, skip:ring_complexity,
-skip:embed) plus 'ok' controls, then hits the endpoint and asserts every
-compound's desc3d_status matches the expected value.
+skip:embed, skip:cost) plus 'ok' controls, then hits the endpoint and asserts
+every compound's desc3d_status matches the expected value.
 
 Changes to complexity thresholds in mol_descriptors_3d.py would shift these
 expected values — update the reference set rather than the thresholds alone.

@@ -206,20 +206,44 @@ MAX_ROTATABLE_BONDS = 50
 MAX_RING_SYSTEMS = 10
 MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop for polycyclic cages)
 
+# Cost backstop for the GFN2-xTB energy step. A molecule can pass the size/
+# topology guards above yet still be pathologically expensive: xTB scores every
+# conformer, and per-conformer cost grows with atom count, so endpoint cost
+# scales as (heavy atoms × conformers). A large, very flexible molecule — e.g. a
+# long-chain sulfonated azo dye at 56 heavy atoms × 500 conformers — blows the
+# async invocation budget and the row comes back all-NaN. We cap the product so
+# these get a clean skip:cost instead of a silent timeout.
+#
+# Calibration (heavy × conformers): docosane 22×500=11k passes; the 56-heavy
+# dye 28k and Irganox 1010 52×500=26k are skipped. Only bites the 500-conformer
+# tier (≥13 rot bonds) at ≥49 heavy atoms — i.e. the large-and-very-flexible
+# corner (PROTAC/peptide scale). Those time out under xTB anyway; a clean skip
+# is the honest outcome. (An alternative to skipping — capping conformer count
+# for large molecules — trades feature quality and is not done here.)
+MAX_CONFORMER_ATOM_COST = 24000
 
-def check_complexity(mol: Chem.Mol) -> Optional[str]:
+
+def check_complexity(mol: Chem.Mol, n_conformers: Optional[int] = None) -> Optional[str]:
     """Check if a molecule is too complex for 3D conformer generation.
 
     Screens against size and topology thresholds (heavy atoms, rotatable bonds,
     ring count, ring complexity). Molecules that exceed any threshold get NaN
     features instead of risking excessive compute time.
 
+    When ``n_conformers`` is supplied (the conformer count that will actually be
+    generated for this molecule), an additional cost backstop catches molecules
+    that pass the size guards but are pathologically expensive for the GFN2-xTB
+    energy step — see ``MAX_CONFORMER_ATOM_COST``.
+
     Args:
         mol: RDKit molecule object
+        n_conformers: Planned conformer count for this molecule. When given,
+            enables the ``skip:cost`` backstop. Omit to skip the cost check
+            (e.g. callers that only want the size/topology guards).
 
     Returns:
         None if the molecule passes all checks, or a status string describing
-        the specific failure (e.g. ``"skip:heavy_atoms"``).
+        the specific failure (e.g. ``"skip:heavy_atoms"``, ``"skip:cost"``).
     """
     if mol is None:
         return "skip:parse"
@@ -252,6 +276,18 @@ def check_complexity(mol: Chem.Mol) -> Optional[str]:
             f"> {MAX_RING_COMPLEXITY}"
         )
         return "skip:ring_complexity"
+
+    # Cost backstop for the xTB energy step (only when the planned conformer
+    # count is known). Catches large + very flexible molecules that pass the
+    # size guards but would time out scoring hundreds of conformers.
+    if n_conformers is not None:
+        cost = n_heavy * n_conformers
+        if cost > MAX_CONFORMER_ATOM_COST:
+            logger.warning(
+                f"Skipping molecule: xTB cost={cost} "
+                f"({n_heavy} heavy × {n_conformers} conformers) > {MAX_CONFORMER_ATOM_COST}"
+            )
+            return "skip:cost"
 
     return None
 
@@ -1481,8 +1517,13 @@ def compute_descriptors_3d(
                 result.at[idx, "desc3d_status"] = "skip:parse"
                 continue
 
+            # Conformer count that will actually be generated — mode only
+            # affects count. Computed before the complexity check so the cost
+            # backstop can weigh it (xTB cost ≈ heavy atoms × conformers).
+            n_confs = adaptive_n_conformers(mol) if is_full else n_conformers
+
             if complexity_check:
-                complexity_status = check_complexity(mol)
+                complexity_status = check_complexity(mol, n_conformers=n_confs)
                 if complexity_status is not None:
                     result.at[idx, "desc3d_status"] = complexity_status
                     continue
@@ -1496,9 +1537,6 @@ def compute_descriptors_3d(
             )
 
             mol = Chem.AddHs(mol)
-
-            # Conformer generation — mode only affects count
-            n_confs = adaptive_n_conformers(mol) if is_full else n_conformers
             result.at[idx, "desc3d_confs_requested"] = n_confs
 
             mol, gen_info = generate_conformers(
