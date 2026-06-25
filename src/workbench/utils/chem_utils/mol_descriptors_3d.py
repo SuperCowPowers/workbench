@@ -1471,7 +1471,7 @@ def compute_descriptors_3d(
 
     n_molecules = len(df)
 
-    n_confs_desc = "adaptive (50/200/300)" if is_full else f"{n_conformers}"
+    n_confs_desc = "adaptive (50/300/500)" if is_full else f"{n_conformers}"
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
     logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
