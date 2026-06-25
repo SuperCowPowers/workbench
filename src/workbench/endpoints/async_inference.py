@@ -41,8 +41,13 @@ _POLL_INITIAL_S = 3
 _POLL_MAX_S = 10
 _POLL_BACKOFF = 1.5
 
-# SageMaker async endpoints support up to 60-minute invocations.
-_POLL_DEADLINE_S = 3600
+# SageMaker async endpoints process each invocation for at most 60 minutes.
+# We claim the full ceiling explicitly: left unset, InvocationTimeoutSeconds
+# defaults well below 60 min, so a heavy (e.g. xTB) batch silently expires —
+# SageMaker discards the computed result to the failure path. Poll client-side
+# for the same window so we wait exactly as long as SageMaker will work.
+_INVOCATION_TIMEOUT_S = 3600
+_POLL_DEADLINE_S = _INVOCATION_TIMEOUT_S
 
 # Heartbeat cadence for the chunk-completion loop. When no chunk finishes
 # within this window, emit a liveness line so long quiet polls (e.g. a
@@ -304,6 +309,7 @@ def _invoke_one_async(
                 InputLocation=input_s3_uri,
                 ContentType="text/csv",
                 Accept="text/csv",
+                InvocationTimeoutSeconds=_INVOCATION_TIMEOUT_S,
             )
             output_location = response["OutputLocation"]
         except Exception as e:
@@ -419,6 +425,7 @@ def _invoke_one_async_idempotent(
             InputLocation=f"s3://{s3_bucket}/{input_key}",
             ContentType="text/csv",
             Accept="text/csv",
+            InvocationTimeoutSeconds=_INVOCATION_TIMEOUT_S,
         )
         output_location = resp["OutputLocation"]
         s3_client.put_object(Bucket=s3_bucket, Key=lock_key, Body=output_location.encode())  # publish for followers
@@ -435,7 +442,13 @@ def _poll_s3_output(s3_client, output_location: str) -> str:
     The deadline matches SageMaker's max async invocation timeout (60 minutes).
     """
     bucket, key = _parse_s3_uri(output_location)
+    # SageMaker names the failure object <inference-id>-error.out under the
+    # failure prefix (NOT the same basename as the success output), so swap
+    # both the directory and the suffix — otherwise the check never matches
+    # and a dropped request polls silently until the deadline.
     failure_key = key.replace("/async-output/", "/async-failures/", 1)
+    if failure_key.endswith(".out"):
+        failure_key = failure_key[:-len(".out")] + "-error.out"
 
     deadline = time.time() + _POLL_DEADLINE_S
     interval = _POLL_INITIAL_S

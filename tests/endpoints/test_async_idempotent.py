@@ -43,6 +43,27 @@ def _s3_with_objects(objects):
 DF = pd.DataFrame({"smiles": ["CCO", "c1ccccc1"]})
 
 
+def test_dropped_request_detected_via_error_file():
+    """A SageMaker-dropped request must fail fast off its ``-error.out`` file.
+
+    Regression: SageMaker writes failures as ``<id>-error.out`` (not ``<id>.out``)
+    under the failure prefix. Swapping only the directory missed it, so a dropped
+    request polled silently until the 60-min deadline instead of erroring.
+    """
+    inference_id = "d7542415-6e01-4884-a12c-4fb450c67bd6"
+    output_location = f"s3://b/endpoints/ep/async-output/{inference_id}.out"
+    failure_key = f"endpoints/ep/async-failures/{inference_id}-error.out"
+    s3 = _s3_with_objects({failure_key: b"InternalFailure: invocation expired"})
+
+    raised = None
+    try:
+        ai._poll_s3_output(s3, output_location)
+    except RuntimeError as e:
+        raised = str(e)
+    assert raised is not None, "dropped request should raise, not poll until deadline"
+    assert "invocation expired" in raised  # surfaces the real SageMaker reason
+
+
 def test_request_hash_is_deterministic():
     h1 = ai._request_hash("ep", DF.to_csv(index=False))
     h2 = ai._request_hash("ep", DF.to_csv(index=False))
