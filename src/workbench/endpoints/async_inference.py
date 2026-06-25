@@ -448,7 +448,7 @@ def _poll_s3_output(s3_client, output_location: str) -> str:
     # and a dropped request polls silently until the deadline.
     failure_key = key.replace("/async-output/", "/async-failures/", 1)
     if failure_key.endswith(".out"):
-        failure_key = failure_key[:-len(".out")] + "-error.out"
+        failure_key = failure_key[: -len(".out")] + "-error.out"
 
     deadline = time.time() + _POLL_DEADLINE_S
     interval = _POLL_INITIAL_S
