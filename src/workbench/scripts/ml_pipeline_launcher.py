@@ -644,12 +644,23 @@ def select_pipelines(
             print(f"No pipelines matching patterns: {args.patterns}")
             exit(1)
         matched_set = set(matched)
-        # All modes of matched scripts are targets; the closure adds each target's
-        # transitive upstream producer *jobs* (specific (script, mode)).
+        # All modes of matched scripts are targets.
         target_nodes = [n for n in all_nodes if n.script in matched_set]
-        # Forward closure (deps + downstream consumers) for Batch planning; --local runs
-        # exactly one script, so keep it upstream-only (descendants would trip its guard).
-        closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes, downstream=not args.local)
+
+        # --local runs exactly the named script(s) -- upstream artifacts are assumed
+        # already built, so don't expand the closure (its transitive upstream
+        # producers would otherwise inflate the selection and trip the single-script
+        # guard). The matched set, jobs and all, is the selection.
+        if args.local:
+            selected_keys = {n.key for n in target_nodes}
+            return [p for p in all_pipelines if p in matched_set], selected_keys, set(selected_keys), (
+                f"matching {args.patterns}"
+            )
+
+        # SQS/Batch: forward closure (transitive upstream producers + downstream
+        # consumers) so dependencies run first and a named challenger pulls in its
+        # promote node. Freshness still decides which actually run.
+        closure = PipelineManager.from_jobs(all_nodes)._select(target_nodes, downstream=True)
         selected_keys = {n.key for n in closure}
         force_keys = {n.key for n in target_nodes}  # matched scripts run regardless of freshness
         wanted = matched_set | {n.script for n in closure}  # matched_set keeps loose (non-DAG) matches

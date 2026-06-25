@@ -13,6 +13,7 @@ from workbench.scripts.ml_pipeline_launcher import (
     parse_script_name,
     run_label,
     run_simulation,
+    select_pipelines,
     sort_pipelines,
 )
 from workbench.lambda_layer.pipeline_manager import PipelineManager
@@ -478,6 +479,36 @@ class TestGetAllPipelines:
         names = {p.name for p in pipelines}
         assert "real_script.py" in names
         assert "__init__.py" not in names
+
+
+class TestSelectPipelines:
+    """Tests for select_pipelines -- pattern matching and closure expansion."""
+
+    @staticmethod
+    def _args(patterns, local=False, all=False):
+        import argparse
+
+        return argparse.Namespace(patterns=patterns, local=local, all=all)
+
+    @staticmethod
+    def _dags():
+        # model consumes a feature set produced by an upstream fs node.
+        fs = node("fs.py", "dt", outputs=["fs:x"])
+        model = node("model.py", "dt", outputs=["model:m"], inputs=["fs:x"])
+        return [Path("fs.py"), Path("model.py")], {"p": [fs, model]}
+
+    def test_local_excludes_upstream_closure(self):
+        """--local on a script with upstream producers selects only that script,
+        not its dependencies -- so the single-script guard isn't tripped."""
+        all_pipelines, all_dags = self._dags()
+        selected, _, _, _ = select_pipelines(all_pipelines, all_dags, self._args(["model.py"], local=True))
+        assert selected == [Path("model.py")]
+
+    def test_sqs_includes_upstream_closure(self):
+        """Without --local, the same selection pulls in upstream producers."""
+        all_pipelines, all_dags = self._dags()
+        selected, _, _, _ = select_pipelines(all_pipelines, all_dags, self._args(["model.py"]))
+        assert set(selected) == {Path("fs.py"), Path("model.py")}
 
 
 class TestRunLabel:
