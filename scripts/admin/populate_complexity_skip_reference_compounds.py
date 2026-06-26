@@ -59,6 +59,42 @@ REFERENCE_COMPOUNDS = [
             "NOT block macrocycles; that's a separate design decision."
         ),
     },
+    # 'ok' regression controls — stereochemically rich fused-ring glycosides that
+    # MUST embed. These collapsed to skip:embed (0-1 conformers) when ETKDG ran with
+    # useSmallRingTorsions=True; that flag is now off (mol_descriptors_3d.py). If it
+    # is ever re-enabled these flip to skip:embed and this test catches it.
+    {
+        "name": "digitoxin",
+        "smiles": (
+            "C[C@@H]1[C@H]([C@H](C[C@@H](O1)O[C@@H]2[C@H](O[C@H](C[C@@H]2O)O[C@@H]3[C@H]"
+            "(O[C@H](C[C@@H]3O)O[C@H]4CC[C@]5([C@@H](C4)CC[C@@H]6[C@@H]5CC[C@]7([C@@]6"
+            "(CC[C@@H]7C8=CC(=O)OC8)O)C)C)C)C)O)O"
+        ),
+        "expected_status": "ok",
+        "notes": (
+            "Cardiac glycoside (20 stereocenters, fused steroid + trisaccharide). "
+            "Embeds in <2s with the flag off; false skip:embed with it on."
+        ),
+    },
+    {
+        "name": "glycyrrhizin",
+        "smiles": (
+            "C[C@]12CC[C@](C[C@H]1C3=CC(=O)[C@@H]4[C@]5(CC[C@@H](C([C@@H]5CC[C@]4([C@@]3"
+            "(CC2)C)C)(C)C)O[C@@H]6[C@@H]([C@H]([C@@H]([C@H](O6)C(=O)O)O)O)O[C@H]7[C@@H]"
+            "([C@H]([C@@H]([C@H](O7)C(=O)O)O)O)O)C)(C)C(=O)O"
+        ),
+        "expected_status": "ok",
+        "notes": "Triterpene saponin (19 stereocenters, fused pentacyclic + diglucuronide) — same class of false skip.",
+    },
+    {
+        "name": "rutin",
+        "smiles": (
+            "C[C@H]1[C@@H]([C@H]([C@H]([C@@H](O1)OC[C@@H]2[C@H]([C@@H]([C@H]([C@@H](O2)"
+            "OC3=C(OC4=CC(=CC(=C4C3=O)O)O)C5=CC(=C(C=C5)O)O)O)O)O)O)O)O"
+        ),
+        "expected_status": "ok",
+        "notes": "Flavonoid glycoside (rutinoside) — fused-ring + disaccharide, same false-skip class.",
+    },
     # skip:rot_bonds (>50 rotatable bonds)
     {
         "name": "linear_c60",

@@ -353,7 +353,11 @@ def generate_conformers(
         for tier_idx, (tier_name, overrides) in enumerate(embedding_tiers, start=1):
             params = AllChem.ETKDGv3()
             params.randomSeed = random_seed
-            params.useSmallRingTorsions = True
+            # NOTE: useSmallRingTorsions stays OFF. Enabling it over-constrains
+            # ETKDG on stereochemically rich fused-ring scaffolds (cardiac
+            # glycosides, saponins, flavonoid glycosides), collapsing yield to
+            # 0-1 conformers → false skip:embed / degraded features. Its only
+            # benefit is 3-4 membered ring torsions, which are rare in our data.
             params.numThreads = 0  # all available cores
             params.pruneRmsThresh = 0.5
             params.trackFailures = True
