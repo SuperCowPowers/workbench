@@ -4719,7 +4719,7 @@
 <p>The <code>smiles-to-3d-full-v1</code> endpoint now ranks conformers with <strong>GFN2-xTB</strong> semi-empirical quantum energies (via the <code>tblite</code> library) instead of MMFF94s force-field energies. MMFF94s rankings are known to be poor for flexible and polar molecules — we measured near-zero rank correlation against GFN2-xTB on common drug-like compounds — which biased the Boltzmann-weighted averages toward the wrong conformers. Geometry is still MMFF94s-optimized; only the <strong>energies that set the Boltzmann weights</strong> now come from xTB, which improves all 74 ensemble-averaged 3D features at once.</p>
 <ul>
 <li><strong>Transparent fallback.</strong> If <code>tblite</code> is unavailable or a molecule fails to converge, the pipeline falls back to MMFF94s/UFF. The new <code>desc3d_energy_method</code> diagnostic column records which model actually produced the weights (<code>GFN2-xTB</code>, <code>MMFF94s</code>, or <code>UFF</code>) so a fallback is never silent.</li>
-<li><strong>Full endpoint only.</strong> xTB adds ~0.1–0.5 s per conformer; it runs on the async full endpoint where the per-molecule budget accommodates it. The <code>smiles-to-3d-fast-v1</code> endpoint is now <strong>deprecated</strong> — use the full endpoint.</li>
+<li><strong>Full endpoint only.</strong> xTB adds ~0.1–0.5 s per conformer; it runs on the async full endpoint where the per-molecule budget accommodates it.</li>
 </ul>
 <p>Full write-up: <a href="../../blogs/3d_descriptors/">3D Molecular Descriptors</a>.</p>
 <h2 id="plugin-ml-pipeline-scripts">Plugin &amp; ML-Pipeline Scripts</h2>

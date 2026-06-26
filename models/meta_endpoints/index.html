@@ -6030,11 +6030,11 @@ from workbench.utils.aggregation_nodes import Concat
 
 dag = MetaEndpointDAG()
 dag.add_endpoint(&quot;smiles-to-2d-v1&quot;)
-dag.add_endpoint(&quot;smiles-to-3d-fast-v1&quot;)
+dag.add_endpoint(&quot;smiles-to-3d-full-v1&quot;)
 dag.add_aggregation(Concat(name=&quot;combine&quot;))
 dag.add_edge(&quot;smiles-to-2d-v1&quot;, &quot;combine&quot;)
-dag.add_edge(&quot;smiles-to-3d-fast-v1&quot;, &quot;combine&quot;)
-dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-fast-v1&quot;)
+dag.add_edge(&quot;smiles-to-3d-full-v1&quot;, &quot;combine&quot;)
+dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-full-v1&quot;)
 dag.set_output_node(&quot;combine&quot;)
 
 end = MetaEndpoint.create(name=&quot;my-features-meta&quot;, dag=dag)
@@ -7182,11 +7182,11 @@ aggregation nodes describing an inference-time data flow.</p>
 <p>DAG construction is explicit::</p>
 <div class="language-text highlight"><pre><span></span><code>dag = MetaEndpointDAG()
 dag.add_endpoint(&quot;smiles-to-2d-v1&quot;)
-dag.add_endpoint(&quot;smiles-to-3d-fast-v1&quot;)
+dag.add_endpoint(&quot;smiles-to-3d-full-v1&quot;)
 dag.add_aggregation(Concat(name=&quot;combine&quot;))
 dag.add_edge(&quot;smiles-to-2d-v1&quot;, &quot;combine&quot;)
-dag.add_edge(&quot;smiles-to-3d-fast-v1&quot;, &quot;combine&quot;)
-dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-fast-v1&quot;)
+dag.add_edge(&quot;smiles-to-3d-full-v1&quot;, &quot;combine&quot;)
+dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-full-v1&quot;)
 dag.set_output_node(&quot;combine&quot;)
 dag.validate()
 </code></pre></div>

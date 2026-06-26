@@ -1949,15 +1949,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-pipeline-modes-fast-and-full" class="md-nav__link">
+  <a href="#the-3d-descriptor-pipeline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Pipeline Modes: Fast and Full
+        The 3D Descriptor Pipeline
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Two Pipeline Modes: Fast and Full">
+    <nav class="md-nav" aria-label="The 3D Descriptor Pipeline">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2127,44 +2127,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploying-the-endpoints" class="md-nav__link">
+  <a href="#deploying-the-endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deploying the Endpoints
+        Deploying the Endpoint
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Deploying the Endpoints">
+    <nav class="md-nav" aria-label="Deploying the Endpoint">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fast-endpoint-realtime" class="md-nav__link">
+  <a href="#using-the-endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fast Endpoint (Realtime)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#full-endpoint-async" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Full Endpoint (Async)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-the-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the Endpoints
+        Using the Endpoint
       
     </span>
   </a>
@@ -4856,15 +4834,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-pipeline-modes-fast-and-full" class="md-nav__link">
+  <a href="#the-3d-descriptor-pipeline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Pipeline Modes: Fast and Full
+        The 3D Descriptor Pipeline
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Two Pipeline Modes: Fast and Full">
+    <nav class="md-nav" aria-label="The 3D Descriptor Pipeline">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5034,44 +5012,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploying-the-endpoints" class="md-nav__link">
+  <a href="#deploying-the-endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deploying the Endpoints
+        Deploying the Endpoint
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Deploying the Endpoints">
+    <nav class="md-nav" aria-label="Deploying the Endpoint">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fast-endpoint-realtime" class="md-nav__link">
+  <a href="#using-the-endpoint" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fast Endpoint (Realtime)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#full-endpoint-async" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Full Endpoint (Async)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-the-endpoints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using the Endpoints
+        Using the Endpoint
       
     </span>
   </a>
@@ -5139,7 +5095,7 @@
 <p>On most TDC ADMET endpoints, careful 2D fingerprints + learned graph representations are highly competitive on their own. Use the 3D endpoint when you need shape-aware features for geometry-sensitive endpoints (passive permeability, P-gp / BCRP interactions, conformer-dependent solubility), typically alongside the 2D feature set, not as a replacement for it.</p>
 </div>
 <p>2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. Some ADMET properties have geometric components that 2D descriptors capture only indirectly through their correlations with the molecular graph: how a molecule fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface. The 3D endpoint exposes these directly as engineered features -- whether they help on a given task is an empirical question, not a foregone conclusion.</p>
-<p>Workbench's 3D descriptor endpoints compute <strong>74 conformer-based features</strong> from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: <strong>send a DataFrame, get a DataFrame back</strong> -- the input DataFrame comes back with 74 descriptor columns appended. Two pipeline modes are available -- a <strong>fast</strong> endpoint for realtime inference and a <strong>Boltzmann</strong> endpoint for high-quality batch processing. Both produce the same 74 features so downstream models can consume either interchangeably.</p>
+<p>Workbench's 3D descriptor endpoints compute <strong>74 conformer-based features</strong> from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: <strong>send a DataFrame, get a DataFrame back</strong> -- the input DataFrame comes back with 74 descriptor columns appended. The pipeline runs as the <strong><code>smiles-to-3d-full-v1</code></strong> async endpoint, using an adaptive, Boltzmann-weighted conformer ensemble for high-quality features.</p>
 <h2 id="when-3d-descriptors-help-and-when-they-dont">When 3D Descriptors Help (and When They Don't)</h2>
 <p>2D descriptors treat molecules as graphs -- atoms are nodes, bonds are edges. There are ADMET-relevant properties whose geometric components 2D captures only indirectly:</p>
 <ul>
@@ -5158,31 +5114,25 @@
 <li><strong>Bahia et al.</strong> (<em>Mol. Inform.</em> 2023) report a 2D + 3D advantage over 2D alone -- but the delta is low single-digit AUC / R², not transformative.</li>
 </ul>
 <p>So treat the 3D feature stream honestly: a <em>complementary</em> set that may give modest, endpoint-dependent gains (most plausibly on passive permeability, P-gp / BCRP recognition, conformer-dependent solubility) on top of a strong 2D + learned-representation baseline. It is not a foregone conclusion that 3D features improve any specific ADMET model -- run an ablation. See the <a href="#limitations-future-work">Limitations &amp; Future Work</a> section for forward-looking upgrades and a fuller honest accounting.</p>
-<h2 id="two-pipeline-modes-fast-and-full">Two Pipeline Modes: Fast and Full</h2>
-<p>Workbench provides two 3D descriptor endpoints that share the same computation core but differ in conformer sampling depth:</p>
+<h2 id="the-3d-descriptor-pipeline">The 3D Descriptor Pipeline</h2>
+<p>Workbench provides the <code>smiles-to-3d-full-v1</code> endpoint for 3D descriptors:</p>
 <table style="width: 100%;">
   <thead>
     <tr>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;"></th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Fast</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Full</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">smiles-to-3d-full-v1</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Endpoint</td><td style="padding: 8px 16px;">smiles-to-3d-fast-v1</td><td style="padding: 8px 16px;">smiles-to-3d-full-v1</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">10 (fixed)</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Realtime SageMaker endpoint</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Synchronous inference from training pipelines</td><td style="padding: 8px 16px;">Overnight batch processing (10k-100k compounds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 12 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 12 diagnostic columns</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble (GFN2-xTB energies)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Training pipelines and overnight batch processing (10k-100k compounds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td></tr>
   </tbody>
 </table>
 
-<div class="admonition warning">
-<p class="admonition-title">The fast endpoint is deprecated</p>
-<p><code>smiles-to-3d-fast-v1</code> traded feature quality for latency (a single lowest-energy conformer, force-field energies) and is no longer maintained. <strong>Use <code>smiles-to-3d-full-v1</code>.</strong> The full endpoint is async with no practical per-molecule latency ceiling, which is what lets it run the higher-quality GFN2-xTB energy ranking described below. The fast/full comparison is retained here for historical context; new work should target the full endpoint exclusively.</p>
-</div>
-<p>Both modes use <strong>Boltzmann-weighted ensemble averaging</strong> -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the lowest-energy conformer, then combined using normalized Boltzmann weights:</p>
+<p>The pipeline uses <strong>Boltzmann-weighted ensemble averaging</strong> -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the lowest-energy conformer, then combined using normalized Boltzmann weights:</p>
 <div class="arithmatex">\[\Large w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i\]</div>
 <p>where <span class="arithmatex">\(\Delta E_i = E_i - E_{\min}\)</span> is the energy above the minimum conformer, <span class="arithmatex">\(k_BT\)</span> is the thermal energy at 298 K (0.592 kcal/mol), and <span class="arithmatex">\(d_i\)</span> is the descriptor value for conformer <span class="arithmatex">\(i\)</span>. This is more reproducible than single-conformer descriptors, which can vary significantly with random seed, especially for flexible molecules. The MARCEL benchmark and Nikonenko et al. have shown that ensemble approaches produce more stable QSAR models.</p>
 <p>The energies <span class="arithmatex">\(E_i\)</span> that drive these weights come from <strong>GFN2-xTB</strong> (a fast semi-empirical quantum method), not the MMFF94s force field used to build the geometries. MMFF94s energy rankings are known to be unreliable for flexible and polar molecules -- the conformers it ranks lowest are frequently not the ones a quantum method favors, which biases the weighted average toward the wrong geometries. Decoupling the two -- MMFF94s for <em>geometry</em>, GFN2-xTB for the <em>energy ranking</em> that sets the weights -- is the single highest-leverage accuracy lever for the ensemble, since every one of the 74 features is a Boltzmann average over these weights. See <a href="#step-3-boltzmann-weighted-descriptor-calculation">Step 3</a> for the mechanics and fallback behavior.</p>
@@ -5312,7 +5262,7 @@
 </ul>
 <p>Highly flexible molecules tend to have larger energy ranges and higher flexibility indices. These features correlate with permeability (flexible molecules pay higher entropic penalties for binding) and metabolic stability.</p>
 <h3 id="diagnostic-columns">Diagnostic Columns</h3>
-<p>In addition to the 74 model features, both endpoints produce 12 <code>desc3d_*</code> diagnostic columns that track pipeline status, conformer generation quality, energy model, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:</p>
+<p>In addition to the 74 model features, the endpoint produces 11 <code>desc3d_*</code> diagnostic columns that track pipeline status, conformer generation quality, energy model, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:</p>
 <table>
 <thead>
 <tr>
@@ -5324,10 +5274,6 @@
 <tr>
 <td><code>desc3d_status</code></td>
 <td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>, <code>skip:rings</code>, <code>skip:ring_complexity</code>, <code>skip:cost</code>, <code>skip:embed</code>, <code>skip:empty</code></td>
-</tr>
-<tr>
-<td><code>desc3d_mode</code></td>
-<td><code>fast</code> or <code>full</code></td>
 </tr>
 <tr>
 <td><code>desc3d_conf_count</code></td>
@@ -5414,33 +5360,21 @@
 </table>
 <p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. The <strong>xTB cost</strong> backstop catches molecules that pass the size guards but are pathologically expensive for the quantum energy step: GFN2-xTB scores every conformer, so cost scales as <code>heavy atoms × conformers</code>, and a large, very flexible molecule (e.g. a long-chain sulfonated azo dye at 56 heavy atoms × 500 conformers) would otherwise blow the invocation budget and return all-NaN. It only bites the 500-conformer tier (≥13 rotatable bonds) at roughly ≥49 heavy atoms — the large-and-very-flexible corner. Molecules that exceed any threshold get a specific <code>desc3d_status</code> (e.g. <code>skip:heavy_atoms</code>, <code>skip:cost</code>) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, <code>standardize()</code> independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.</p>
 <p>Molecules exceeding any threshold receive NaN features and a specific <code>desc3d_status</code> explaining the skip reason. These guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
-<h2 id="deploying-the-endpoints">Deploying the Endpoints</h2>
-<h3 id="fast-endpoint-realtime">Fast Endpoint (Realtime)</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Realtime instance (recommended for 3D)</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">SERVERLESS</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>python<span class="w"> </span>feature_endpoints/smiles_to_3d_fast_v1.py
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Serverless (lower cost, but slower)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_fast_v1.py
-</span></code></pre></div>
-<h3 id="full-endpoint-async">Full Endpoint (Async)</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_full_v1.py
+<h2 id="deploying-the-endpoint">Deploying the Endpoint</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_full_v1.py
 </span></code></pre></div>
 <p>The full endpoint deploys as an <a href="../../api_classes/async_endpoint/">async endpoint</a> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
-<h3 id="using-the-endpoints">Using the Endpoints</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Fast endpoint — synchronous, for realtime inference</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">end_fast</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-fast-v1&quot;</span><span class="p">)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df_3d</span> <span class="o">=</span> <span class="n">end_fast</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Full endpoint — async deployment, same Endpoint API (auto-routes through async core)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">end_full</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">df_3d_full</span> <span class="o">=</span> <span class="n">end_full</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># Both work with InferenceCache for persistent S3-backed caching</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api.inference_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceCache</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">cached_endpoint</span> <span class="o">=</span> <span class="n">InferenceCache</span><span class="p">(</span><span class="n">end_fast</span><span class="p">,</span> <span class="n">cache_key_column</span><span class="o">=</span><span class="s2">&quot;smiles&quot;</span><span class="p">)</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">df_cached</span> <span class="o">=</span> <span class="n">cached_endpoint</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">big_df</span><span class="p">)</span>  <span class="c1"># Only computes uncached rows</span>
+<h3 id="using-the-endpoint">Using the Endpoint</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Async deployment, standard Endpoint API (auto-routes through async core)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">end_full</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">df_3d_full</span> <span class="o">=</span> <span class="n">end_full</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Works with InferenceCache for persistent S3-backed caching</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api.inference_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceCache</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">cached_endpoint</span> <span class="o">=</span> <span class="n">InferenceCache</span><span class="p">(</span><span class="n">end_full</span><span class="p">,</span> <span class="n">cache_key_column</span><span class="o">=</span><span class="s2">&quot;smiles&quot;</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">df_cached</span> <span class="o">=</span> <span class="n">cached_endpoint</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">big_df</span><span class="p">)</span>  <span class="c1"># Only computes uncached rows</span>
 </span></code></pre></div>
 <h2 id="limitations-future-work">Limitations &amp; Future Work</h2>
 <p>The pipeline is conservative by design — production ADMET targets stable, deterministic features over the latest research methods. A few areas worth flagging for downstream users and future iterations:</p>
