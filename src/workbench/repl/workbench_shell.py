@@ -283,6 +283,7 @@ class WorkbenchShell:
             ).PandasToFeatures
             self.commands["Meta"] = importlib.import_module("workbench.api").Meta
             self.commands["CachedMeta"] = importlib.import_module("workbench.cached.cached_meta").CachedMeta
+            self.commands["InferenceCache"] = importlib.import_module("workbench.api.inference_cache").InferenceCache
             self.commands["View"] = importlib.import_module("workbench.core.views.view").View
             self.commands["DisplayView"] = importlib.import_module("workbench.core.views.display_view").DisplayView
             self.commands["ComputationView"] = importlib.import_module(
