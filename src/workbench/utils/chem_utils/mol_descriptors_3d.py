@@ -117,9 +117,14 @@ except ImportError:
     XTBCalculator = None
     TBLITE_AVAILABLE = False
 
-# Per-conformer wall-clock timeout (seconds, int) enforced inside RDKit's
-# EmbedMultipleConfs. Requires RDKit >= 2025.03.1.
-CONFORMER_TIMEOUT_SECONDS = 10
+# Embed timeout (seconds) enforced inside RDKit's EmbedMultipleConfs. NOTE: this
+# is the *total* budget for the whole multi-conformer call, not per-conformer, so
+# it must scale with the requested count — a flat value collapses the high tiers
+# (e.g. a 300-conformer macrocycle times out and returns ~1 conformer → false
+# skip:embed). The actual budget is max(floor, PER_CONFORMER_TIMEOUT_S × n_conf).
+# Requires RDKit >= 2025.03.1.
+CONFORMER_TIMEOUT_SECONDS = 10  # floor (also the budget for low-count embeds)
+PER_CONFORMER_TIMEOUT_S = 0.5  # per-conformer headroom; normal molecules finish well under
 
 # ---------------------------------------------------------------------------
 # Boltzmann-mode constants
@@ -351,7 +356,9 @@ def generate_conformers(
             params.numThreads = 0  # all available cores
             params.pruneRmsThresh = 0.5
             params.trackFailures = True
-            params.timeout = CONFORMER_TIMEOUT_SECONDS  # per-conformer, C++-enforced
+            # Total embed budget scales with the requested count (see constant):
+            # a flat timeout starves the high tiers and collapses them to ~1 conf.
+            params.timeout = max(CONFORMER_TIMEOUT_SECONDS, int(PER_CONFORMER_TIMEOUT_S * n_conformers))
             if force_tol is not None:
                 params.optimizerForceTol = force_tol
             for attr, value in overrides.items():
