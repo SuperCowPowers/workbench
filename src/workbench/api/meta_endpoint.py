@@ -100,8 +100,7 @@ class MetaEndpoint(Endpoint):
 
         log.important(f"Validating DAG for MetaEndpoint '{name}'...")
         dag.validate()
-        dag.populate_async_flags()
-        dag.populate_batch_sizes()
+        dag.populate_child_metadata()
         is_async = dag.has_async_endpoint()
         log.important(
             f"DAG: {len(dag.endpoints)} endpoints, {len(dag.aggregations)} aggregation nodes "

@@ -21,12 +21,16 @@ and concurrency, capture/monitoring, S3 path resolution).
 """
 
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 
 from workbench.core.artifacts.endpoint_core import EndpointCore
 from workbench.endpoints.async_inference import async_inference
 from workbench.utils.async_endpoint_utils import (
+    EndpointWarmingError,
+    _async_children,
     build_meta_instances_str_fn,
     build_meta_progress_str_fn,
     purge_async_queue,
@@ -34,6 +38,13 @@ from workbench.utils.async_endpoint_utils import (
 )
 
 log = logging.getLogger("workbench")
+
+# Cold-start warm-up: how long to wait for scale-from-zero before giving up, and
+# how often to re-check the live instance count while waiting. The poll is
+# deliberately coarse — scale-from-zero takes minutes, and each poll is a
+# DescribeEndpoint call (throttle-prone when several children warm in parallel).
+WARM_UP_CAP_S = 900  # 15 min — async fleet cold start plus headroom
+WARM_UP_POLL_S = 20
 
 # Pandas option applied once at import — avoid mutating global state per call.
 pd.set_option("future.no_silent_downcasting", True)
@@ -84,6 +95,120 @@ class AsyncEndpointCore(EndpointCore):
         return self._async_batch_invoke(eval_df)
 
     # -----------------------------------------------------------------
+    # Cold-start warm-up
+    # -----------------------------------------------------------------
+    def _ensure_warm(self) -> None:
+        """Block until this endpoint — async children first — is serving an instance.
+
+        Reactive: a no-op once at least one instance is up (the common warm case,
+        and always true when ``min_instances >= 1``). For a MetaEndpoint the async
+        children are warmed *before* the meta itself, because the meta's invocation
+        can't complete until its children can respond (cascading cold start). The
+        children are independent, so they warm in parallel.
+
+        Raises :class:`EndpointWarmingError` if warm-up exceeds ``WARM_UP_CAP_S``.
+        """
+        children = _async_children(self.workbench_meta() or {})
+        if children:
+            with ThreadPoolExecutor(max_workers=len(children)) as pool:
+                futures = [pool.submit(AsyncEndpointCore(c)._ensure_warm) for c in children]
+                for fut in futures:
+                    fut.result()  # propagate a child's EndpointWarmingError
+        self._warm_self()
+
+    def _warm_self(self) -> None:
+        """Warm just this endpoint: trigger scale-from-zero, then poll until up."""
+        if self.is_serverless():
+            return  # serverless scales per-request — no instances to warm, no count to poll
+        if self._current_instances() >= 1:
+            return  # already serving (warm, or min_instances >= 1)
+
+        log.important(f"Endpoint '{self.name}' is cold — warming up (this can take a few minutes)...")
+
+        # Queue a trivial job so SageMaker scales the fleet up. If we can't even
+        # queue it (perms, bad payload, missing bucket), that's a hard, non-retryable
+        # error — fail fast with the real cause instead of polling a fleet that will
+        # never scale for the full cap and then reporting a misleading "retry shortly".
+        fire_error = self._fire_warmer()
+        if fire_error is not None:
+            raise EndpointWarmingError(
+                f"Endpoint '{self.name}' could not be warmed — failed to queue a warm-up request: {fire_error}"
+            )
+
+        deadline = time.time() + WARM_UP_CAP_S
+        while time.time() < deadline:
+            time.sleep(WARM_UP_POLL_S)
+            if self._current_instances() >= 1:
+                log.important(f"Endpoint '{self.name}' is warm.")
+                return
+
+        counts = self._live_instance_counts()
+        raise EndpointWarmingError(
+            f"Endpoint '{self.name}' still warming after {WARM_UP_CAP_S // 60}m "
+            f"(instances {counts.get('current', '?')}/{counts.get('desired', '?')} up) — retry shortly."
+        )
+
+    def _live_instance_counts(self) -> dict:
+        """Fresh ``{'current', 'desired'}`` instance counts (refreshes meta first)."""
+        self.refresh_meta()
+        return self._read_instance_counts()
+
+    def _current_instances(self) -> int:
+        return self._live_instance_counts().get("current", 0)
+
+    def _fire_warmer(self) -> "str | None":
+        """Queue one trivial async invocation to trigger scale-from-zero.
+
+        Non-blocking: stages a 1-row input and calls ``invoke_endpoint_async``,
+        ignoring the result. Its only purpose is to create queue backlog so
+        SageMaker scales the fleet; readiness is judged by the live instance count,
+        never by this call's output (which would itself block behind the cold start
+        we're waiting on). Returns ``None`` on success, or an error string if the
+        request could not be queued (so the caller can fail fast).
+        """
+        try:
+            warmer_csv = self._warmer_df().to_csv(index=False)
+            # Stage under a dedicated 'async-warmup' prefix (NOT 'async-input') so the
+            # fixed warmer file never counts toward the queue-depth that the meta
+            # progress reporter reads from the async-input prefix.
+            key = f"endpoints/{self.name}/async-warmup/_warmup.csv"
+            self.boto3_session.client("s3").put_object(
+                Bucket=self.workbench_bucket, Key=key, Body=warmer_csv, ContentType="text/csv"
+            )
+            self.boto3_session.client("sagemaker-runtime").invoke_endpoint_async(
+                EndpointName=self.endpoint_name,
+                InputLocation=f"s3://{self.workbench_bucket}/{key}",
+                ContentType="text/csv",
+                Accept="text/csv",
+            )
+            return None
+        except Exception as e:
+            log.warning(f"Warmer invoke for '{self.name}' failed: {e}")
+            return str(e)
+
+    def _warmer_df(self) -> pd.DataFrame:
+        """One trivial row to exercise the endpoint — just enough to queue a job.
+
+        Uses the endpoint's declared input columns when available (``smiles`` →
+        a real molecule so feature endpoints don't error; other columns → 0),
+        falling back to a lone ``smiles`` column. Reads the columns via the cached
+        lookup on ``self`` (no fresh ``Endpoint`` construction on the cold path).
+        """
+        try:
+            from workbench.utils.endpoint_utils import (
+                input_columns_key,
+                lookup_cached_columns,
+                register_input_columns,
+            )
+
+            cols = lookup_cached_columns(self, input_columns_key(self.name), register_input_columns, "input columns")
+            cols = cols or ["smiles"]
+        except Exception:
+            cols = ["smiles"]
+        row = {c: ("CCO" if "smiles" in c.lower() else 0) for c in cols}
+        return pd.DataFrame([row])
+
+    # -----------------------------------------------------------------
     # Queue management
     # -----------------------------------------------------------------
     def purge_async_queue(self) -> int:
@@ -131,6 +256,8 @@ class AsyncEndpointCore(EndpointCore):
         field) and ``progress_str_fn`` (per-child queue drain, surfaced in the
         heartbeat). Both are ``None`` for non-meta endpoints.
         """
+        self._ensure_warm()
+
         meta = self.workbench_meta() or {}
         batch_size, max_in_flight = resolve_batch_sizing(meta, len(eval_df))
 

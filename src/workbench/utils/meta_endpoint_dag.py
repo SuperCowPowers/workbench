@@ -53,8 +53,8 @@ class MetaEndpointDAG:
 
     def __init__(self):
         self._endpoints: Dict[str, str] = {}  # node_name → endpoint_name
-        self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_async_flags()
-        self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_batch_sizes()
+        self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_child_metadata()
+        self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._aggregations: Dict[str, AggregationNode] = {}
         self._edges: List[tuple[str, str]] = []  # (from_node, to_node)
         self._input_nodes: List[str] = []
@@ -148,12 +148,12 @@ class MetaEndpointDAG:
 
     @property
     def endpoint_async_flags(self) -> Dict[str, bool]:
-        """Mapping of endpoint_name → is_async (populated by :meth:`populate_async_flags`)."""
+        """Mapping of endpoint_name → is_async (populated by :meth:`populate_child_metadata`)."""
         return self._endpoint_async_flags
 
     @property
     def endpoint_batch_sizes(self) -> Dict[str, int]:
-        """Mapping of endpoint_name → inference_batch_size (populated by :meth:`populate_batch_sizes`)."""
+        """Mapping of endpoint_name → inference_batch_size (populated by :meth:`populate_child_metadata`)."""
         return self._endpoint_batch_sizes
 
     def _all_nodes(self) -> List[str]:
@@ -385,7 +385,7 @@ class MetaEndpointDAG:
         importable.
 
         Per-endpoint ``is_async`` flags are included only if
-        :meth:`populate_async_flags` has been called. The deployed
+        :meth:`populate_child_metadata` has been called. The deployed
         inference container relies on these flags to dispatch invocations
         to ``fast_inference`` or ``async_inference``.
         """
@@ -402,49 +402,40 @@ class MetaEndpointDAG:
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2)
 
-    def populate_async_flags(self) -> None:
-        """Look up each endpoint's async flag via ``workbench_meta`` and store it.
+    def populate_child_metadata(self) -> None:
+        """Look up each child's async flag and ``inference_batch_size`` and store both.
 
-        Flags are keyed by endpoint name (not node name) so the deployed
-        invoker can dispatch directly on the value passed by the walker.
+        Keyed by endpoint name (not node name) so the deployed invoker can both
+        dispatch (``async_inference`` vs ``fast_inference``) and size each child's
+        batch to what that child is configured for — a slow GFN2-xTB child wants a
+        small batch so one chunk doesn't exceed the per-invocation timeout. A child
+        with no/invalid ``inference_batch_size`` is omitted, leaving the invoker on
+        ``async_inference``'s default.
 
-        Called by :meth:`MetaEndpoint.create` before serializing the DAG
-        for deployment. Hits AWS once per unique endpoint name, so isolated
-        as an explicit step rather than running implicitly in :meth:`to_dict`.
+        One AWS round-trip per unique endpoint name (reads the meta once for both
+        values); called by :meth:`MetaEndpoint.create` before serializing the DAG.
         """
         from workbench.api import Endpoint
 
         for endpoint_name in set(self._endpoints.values()):
             meta = Endpoint(endpoint_name).workbench_meta() or {}
             self._endpoint_async_flags[endpoint_name] = bool(meta.get("async_endpoint"))
-
-    def populate_batch_sizes(self) -> None:
-        """Look up each child's ``inference_batch_size`` via ``workbench_meta`` and store it.
-
-        Keyed by endpoint name so the deployed invoker can size each child's batch
-        to what that child is actually configured for (e.g. a slow GFN2-xTB child
-        wants a small batch so one chunk doesn't exceed the per-invocation timeout).
-        A child with no configured size is omitted, leaving the invoker to fall
-        back to ``async_inference``'s default. Mirrors :meth:`populate_async_flags`;
-        called by :meth:`MetaEndpoint.create` before serializing the DAG.
-        """
-        from workbench.api import Endpoint
-
-        for endpoint_name in set(self._endpoints.values()):
-            meta = Endpoint(endpoint_name).workbench_meta() or {}
             batch_size = meta.get("inference_batch_size")
-            if batch_size is not None:
-                self._endpoint_batch_sizes[endpoint_name] = int(batch_size)
+            try:
+                if batch_size is not None and int(batch_size) > 0:
+                    self._endpoint_batch_sizes[endpoint_name] = int(batch_size)
+            except (TypeError, ValueError):
+                pass  # non-numeric / bogus → leave unset, invoker uses its default
 
     def has_async_endpoint(self) -> bool:
         """Return True if any endpoint in the DAG is deployed as async.
 
         Used by :meth:`MetaEndpoint.create` to decide whether the meta
         endpoint itself must be deployed as async. Lazily calls
-        :meth:`populate_async_flags` if not yet populated.
+        :meth:`populate_child_metadata` if not yet populated.
         """
         if not self._endpoint_async_flags and self._endpoints:
-            self.populate_async_flags()
+            self.populate_child_metadata()
         return any(self._endpoint_async_flags.values())
 
     def terminal_target(self) -> Optional[str]:

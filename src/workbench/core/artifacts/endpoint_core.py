@@ -123,6 +123,22 @@ class EndpointCore(Artifact):
         """Refresh the Artifact's metadata"""
         self.endpoint_meta = self.meta.endpoint(self.endpoint_name)
 
+    def _read_instance_counts(self) -> dict:
+        """Read current/desired instance counts from the cached ``endpoint_meta``.
+
+        No AWS refresh — for callers that already have fresh metadata (via
+        ``__init__`` or an explicit ``refresh_meta``). Returns ``{}`` when the
+        variant carries no instance counts (e.g. a serverless endpoint).
+        """
+        try:
+            variant = self.endpoint_meta["ProductionVariants"][0]
+            return {
+                "current": int(variant["CurrentInstanceCount"]),
+                "desired": int(variant["DesiredInstanceCount"]),
+            }
+        except (KeyError, TypeError, IndexError):
+            return {}
+
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:

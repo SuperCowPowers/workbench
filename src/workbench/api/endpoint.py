@@ -236,22 +236,6 @@ class Endpoint(EndpointCore):
             result[child_name] = Endpoint(child_name)._read_instance_counts()
         return result
 
-    def _read_instance_counts(self) -> dict:
-        """Read current/desired from the cached ``endpoint_meta`` (no refresh).
-
-        Internal helper for callers that have already obtained fresh
-        metadata (e.g. via ``__init__`` or an explicit ``refresh_meta``)
-        and want to avoid a redundant AWS round-trip.
-        """
-        try:
-            variant = self.endpoint_meta["ProductionVariants"][0]
-            return {
-                "current": int(variant["CurrentInstanceCount"]),
-                "desired": int(variant["DesiredInstanceCount"]),
-            }
-        except (KeyError, TypeError):
-            return {}
-
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""

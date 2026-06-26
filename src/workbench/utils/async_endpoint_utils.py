@@ -27,6 +27,16 @@ DEFAULT_BATCH_SIZE = 10
 MAX_IN_FLIGHT_CAP = 64
 
 
+class EndpointWarmingError(Exception):
+    """An async endpoint (or one of its async children) is still cold-starting
+    past the warm-up cap.
+
+    Retryable by design: the cluster is scaling, it just isn't serving yet.
+    Raised so callers that treat async endpoints like regular ones get a clear,
+    catchable signal to retry shortly rather than a hung or silently-NaN batch.
+    """
+
+
 def resolve_batch_sizing(meta: dict, n_rows: int) -> tuple[int, int]:
     """Resolve ``(batch_size, max_in_flight)`` for one async batch invoke.
 
