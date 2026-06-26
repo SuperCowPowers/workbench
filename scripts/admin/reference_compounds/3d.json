@@ -1,0 +1,282 @@
+{
+  "csv_key": "comp_chem/reference_compounds/reference_compounds_3d.csv",
+  "columns": [
+    "id",
+    "name",
+    "smiles",
+    "shape_class",
+    "npr1_min",
+    "npr1_max",
+    "npr2_min",
+    "npr2_max",
+    "imhb_min",
+    "imhb_max",
+    "axis_min",
+    "axis_max",
+    "nitrogen_span_min",
+    "nitrogen_span_max",
+    "undefined_chiral_centers_expected",
+    "stereo_preserved_expected",
+    "notes"
+  ],
+  "description": {
+    "description": "Curated public compounds with known expected 3D molecular descriptor values. Used by the workbench feature_endpoints tests to validate the 3D descriptor pipeline (smiles-to-3d-fast-v1, smiles-to-3d-full-v1). Expected ranges are intentionally wide — the purpose is to catch gross errors, not nitpick numeric accuracy.",
+    "columns": {
+      "id": "Integer row index (0 to N-1)",
+      "name": "Compound common name",
+      "smiles": "Canonical SMILES",
+      "shape_class": "Expected NPR-plot shape — 'rod', 'disc', 'sphere', or empty",
+      "npr1_min": "Expected lower bound on npr1 (null = not asserted)",
+      "npr1_max": "Expected upper bound on npr1",
+      "npr2_min": "Expected lower bound on npr2",
+      "npr2_max": "Expected upper bound on npr2",
+      "imhb_min": "Expected lower bound on pharm3d_imhb_potential (count)",
+      "imhb_max": "Expected upper bound on pharm3d_imhb_potential",
+      "axis_min": "Expected lower bound on pharm3d_molecular_axis (Angstroms, heavy atoms)",
+      "axis_max": "Expected upper bound on pharm3d_molecular_axis",
+      "nitrogen_span_min": "Expected lower bound on pharm3d_nitrogen_span (Angstroms)",
+      "nitrogen_span_max": "Expected upper bound on pharm3d_nitrogen_span",
+      "undefined_chiral_centers_expected": "Expected value of the undefined_chiral_centers column produced by standardize() — count of chiral centers in the ORIGINAL input SMILES that have no stereo flag",
+      "stereo_preserved_expected": "Expected value of desc3d_stereo_preserved — True if the input's assigned stereo should survive 3D embedding (True for compounds with no chiral centers as well)",
+      "notes": "Why this compound is in the reference table"
+    },
+    "references": [
+      "https://www.rdkit.org/docs/source/rdkit.Chem.Descriptors3D.html",
+      "https://doi.org/10.1021/acs.jmedchem.5b00911 (IMHB / chameleonicity)"
+    ]
+  },
+  "compounds": [
+    {
+      "name": "benzene",
+      "smiles": "c1ccccc1",
+      "shape_class": "disc",
+      "npr1_min": 0.4,
+      "npr1_max": 0.6,
+      "npr2_min": 0.4,
+      "npr2_max": 0.6,
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "axis_min": 2.4,
+      "axis_max": 3.2,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Flat symmetric aromatic — textbook disc shape, no polar groups"
+    },
+    {
+      "name": "naphthalene",
+      "smiles": "c1ccc2ccccc2c1",
+      "shape_class": "disc",
+      "npr1_min": 0.2,
+      "npr1_max": 0.45,
+      "npr2_min": 0.55,
+      "npr2_max": 0.8,
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Planar bicyclic aromatic, elongated — off-corner disc"
+    },
+    {
+      "name": "anthracene",
+      "smiles": "c1ccc2cc3ccccc3cc2c1",
+      "shape_class": "disc",
+      "npr1_min": 0.1,
+      "npr1_max": 0.3,
+      "npr2_min": 0.7,
+      "npr2_max": 0.9,
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Three-ring linear acene — stretches NPR range further toward rod-like"
+    },
+    {
+      "name": "decane",
+      "smiles": "CCCCCCCCCC",
+      "shape_class": "rod",
+      "npr1_min": 0.0,
+      "npr1_max": 0.25,
+      "npr2_min": 0.8,
+      "npr2_max": 1.01,
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "axis_min": 9.5,
+      "axis_max": 13.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Extended all-trans alkane chain — textbook rod shape"
+    },
+    {
+      "name": "adamantane",
+      "smiles": "C1C2CC3CC1CC(C2)C3",
+      "shape_class": "sphere",
+      "npr1_min": 0.9,
+      "npr1_max": 1.01,
+      "npr2_min": 0.9,
+      "npr2_max": 1.01,
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "T_d-symmetric diamondoid cage — textbook sphere shape. RDKit's CIP detector flags the 4 bridgehead carbons as 'potentially chiral' but each is in 3 rings, so the ring-junction filter in standardize() excludes them. Net count is 0, which also reflects the chemistry (T_d symmetry means adamantane has no stereoisomers)."
+    },
+    {
+      "name": "biphenyl",
+      "smiles": "c1ccc(-c2ccccc2)cc1",
+      "shape_class": "",
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Two aromatic rings with rotational freedom — twisted-disc torsion case"
+    },
+    {
+      "name": "salicylic_acid",
+      "smiles": "O=C(O)c1ccccc1O",
+      "shape_class": "",
+      "imhb_min": 0.3,
+      "imhb_max": 3.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Canonical IMHB former: ortho-OH donates to COOH carbonyl"
+    },
+    {
+      "name": "2_hydroxybenzaldehyde",
+      "smiles": "O=Cc1ccccc1O",
+      "shape_class": "",
+      "imhb_min": 0.3,
+      "imhb_max": 3.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Canonical IMHB former: ortho-OH donates to aldehyde O"
+    },
+    {
+      "name": "ethylenediamine",
+      "smiles": "NCCN",
+      "shape_class": "",
+      "nitrogen_span_min": 2.8,
+      "nitrogen_span_max": 4.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "H2N-CH2-CH2-NH2, 4-bond N-to-N — short aliphatic diamine"
+    },
+    {
+      "name": "p_phenylenediamine",
+      "smiles": "Nc1ccc(N)cc1",
+      "shape_class": "",
+      "nitrogen_span_min": 5.3,
+      "nitrogen_span_max": 6.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Para-diamine on benzene — medium N-span (ring diameter + 2× C-N)"
+    },
+    {
+      "name": "pyridine",
+      "smiles": "c1ccncc1",
+      "shape_class": "",
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Aromatic N as pure H-bond acceptor — exercises hba_centroid_distance"
+    },
+    {
+      "name": "nitrobenzene",
+      "smiles": "[O-][N+](=O)c1ccccc1",
+      "shape_class": "",
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Regression gate: nitro N/O must NOT be counted as HBA. Expected pharm3d_hba_centroid_dist=0 (the nitro group is the only heteroatom and is excluded from the acceptor filter)."
+    },
+    {
+      "name": "tetramethylammonium",
+      "smiles": "C[N+](C)(C)C",
+      "shape_class": "",
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Regression gate: quaternary N+ must be counted as a charge site (formal_charge > 0 clause) but NOT as an HBA (no lone pair available). Td-symmetric — charge centroid coincides with COM."
+    },
+    {
+      "name": "morpholine",
+      "smiles": "C1COCCN1",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Aliphatic heterocycle with both O acceptor and N-H donor in a ring"
+    },
+    {
+      "name": "fluorobenzene",
+      "smiles": "Fc1ccccc1",
+      "shape_class": "",
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Halogen + aromatic — exercises amphiphilic_moment C-F classification"
+    },
+    {
+      "name": "l_alanine",
+      "smiles": "N[C@@H](C)C(=O)O",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Smallest chiral reference — tests stereo preservation round-trip"
+    },
+    {
+      "name": "s_ibuprofen",
+      "smiles": "CC(C)Cc1ccc([C@H](C)C(=O)O)cc1",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Real drug with explicit stereo — tests stereo preservation on larger molecule"
+    },
+    {
+      "name": "cis_stilbene",
+      "smiles": "C(=C\\c1ccccc1)\\c1ccccc1",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "E/Z bond stereo (complements sp3 stereo checks elsewhere)"
+    },
+    {
+      "name": "ethanol",
+      "smiles": "CCO",
+      "shape_class": "",
+      "imhb_min": 0.0,
+      "imhb_max": 0.0,
+      "axis_min": 1.8,
+      "axis_max": 3.5,
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Smallest drug-like molecule with a polar group"
+    },
+    {
+      "name": "caffeine",
+      "smiles": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Rigid planar drug — general sanity check"
+    },
+    {
+      "name": "aspirin",
+      "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 0,
+      "stereo_preserved_expected": true,
+      "notes": "Standard drug-like reference"
+    },
+    {
+      "name": "testosterone",
+      "smiles": "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",
+      "shape_class": "",
+      "undefined_chiral_centers_expected": 1,
+      "stereo_preserved_expected": true,
+      "notes": "Steroid SMILES with no stereo markers. The fused-ring scaffold has 6 potential stereocenters, but 5 are ring-junction atoms (in 2 rings each) and excluded by the ring-junction filter in standardize(); only C17 (bearing -OH, in a single ring) is counted. Exercises undefined_chiral_centers=1 reporting."
+    }
+  ]
+}

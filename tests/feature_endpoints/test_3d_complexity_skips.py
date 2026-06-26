@@ -11,7 +11,7 @@ expected values — update the reference set rather than the thresholds alone.
 The reference compounds are loaded from:
     s3://workbench-public-data/comp_chem/reference_compounds/complexity_skips
 
-Populated by: scripts/admin/populate_complexity_skip_reference_compounds.py
+Populated by: scripts/admin/populate_reference_compounds.py --dataset complexity_skips
 """
 
 import pytest
