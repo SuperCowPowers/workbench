@@ -56,6 +56,7 @@ def model_fn(model_dir: str) -> dict:
         "dag": dag,
         "s3_bucket": config["s3_bucket"],
         "async_flags": dag.endpoint_async_flags,
+        "batch_sizes": dag.endpoint_batch_sizes,
     }
 
 
@@ -92,6 +93,7 @@ def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
     dag: MetaEndpointDAG = loaded["dag"]
     s3_bucket: str = loaded["s3_bucket"]
     async_flags: dict = loaded["async_flags"]
+    batch_sizes: dict = loaded["batch_sizes"]
 
     def server_invoker(endpoint_name: str, eval_df: pd.DataFrame) -> pd.DataFrame:
         if async_flags.get(endpoint_name):
@@ -99,7 +101,13 @@ def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
             # (it blocks on the slow async child). Dedup child jobs on content hash
             # so redeliveries share one compute instead of snowballing duplicate,
             # never-completing child submissions.
-            return async_inference(endpoint_name, eval_df, s3_bucket=s3_bucket, idempotent=True)
+            # Size the batch to the child's own inference_batch_size so one chunk
+            # doesn't exceed the child's per-invocation timeout (a slow child wants
+            # a small batch). Omit when unconfigured → async_inference's default.
+            kwargs = {"s3_bucket": s3_bucket, "idempotent": True}
+            if endpoint_name in batch_sizes:
+                kwargs["batch_size"] = batch_sizes[endpoint_name]
+            return async_inference(endpoint_name, eval_df, **kwargs)
         return fast_inference(endpoint_name, eval_df)
 
     return dag.run(df, endpoint_invoker=server_invoker)

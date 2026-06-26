@@ -156,6 +156,7 @@ def async_inference(
         fields.append(f"instances={instances_label}")
     log.info("async_inference: " + ", ".join(fields))
 
+    chunk_dfs: dict[int, pd.DataFrame] = dict(chunks)  # idx → input rows, for failure passthrough
     results: dict[int, pd.DataFrame] = {}
     failed_indices: list[int] = []
     completed = 0
@@ -198,13 +199,16 @@ def async_inference(
                     result_df = fut.result()
                 except Exception as e:
                     log.error(f"Chunk {idx} raised unexpectedly: {e}")
-                    failed_indices.append(idx)
                     result_df = None
+                if result_df is None or result_df.empty:
+                    # Chunk failed (transport or compute). Pass its input rows
+                    # through — the concat below NaN-fills the endpoint's output
+                    # columns — so N rows in == N rows out. Never silently drop;
+                    # failed rows are identifiable downstream by their NaN outputs.
+                    failed_indices.append(idx)
+                    results[idx] = chunk_dfs[idx]
                 else:
-                    if result_df is None or result_df.empty:
-                        failed_indices.append(idx)
-                    else:
-                        results[idx] = result_df
+                    results[idx] = result_df
 
                 completed += 1
                 if completed % 25 == 0 or completed == total:
@@ -217,11 +221,12 @@ def async_inference(
                     progress_msg += ")"
                     log.info(progress_msg)
 
-    if not results:
+    if len(failed_indices) == total:
         raise RuntimeError(f"All {total} async invocations failed for endpoint '{endpoint_name}'")
     if failed_indices:
         log.warning(
-            f"{len(failed_indices)} of {total} chunks failed for '{endpoint_name}' "
+            f"{len(failed_indices)} of {total} chunks failed for '{endpoint_name}' — "
+            f"their rows returned with NaN outputs "
             f"(indices: {sorted(failed_indices)[:10]}{'...' if len(failed_indices) > 10 else ''})"
         )
 
