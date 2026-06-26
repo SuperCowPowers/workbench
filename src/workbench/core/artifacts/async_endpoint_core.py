@@ -98,23 +98,28 @@ class AsyncEndpointCore(EndpointCore):
     # Cold-start warm-up
     # -----------------------------------------------------------------
     def _ensure_warm(self) -> None:
-        """Block until this endpoint — async children first — is serving an instance.
+        """Block until this endpoint and all its async children are serving an instance.
 
         Reactive: a no-op once at least one instance is up (the common warm case,
-        and always true when ``min_instances >= 1``). For a MetaEndpoint the async
-        children are warmed *before* the meta itself, because the meta's invocation
-        can't complete until its children can respond (cascading cold start). The
-        children are independent, so they warm in parallel.
+        and always true when ``min_instances >= 1``). For a MetaEndpoint, the meta's
+        own self-warm runs *in parallel* with its children rather than after them —
+        scale-from-zero of the meta instance is independent of the children, so
+        warming every level at once roughly halves the cascading cold-start wall
+        clock. Correctness is preserved by joining on *all* warmers before returning:
+        the real batch only fires once every level is confirmed warm. (A meta warmer
+        fired while a child is still cold may churn or time out cascading into the
+        cold child, but that's harmless — readiness is judged by instance count, not
+        by the throwaway warmer's result.)
 
         Raises :class:`EndpointWarmingError` if warm-up exceeds ``WARM_UP_CAP_S``.
         """
         children = _async_children(self.workbench_meta() or {})
-        if children:
-            with ThreadPoolExecutor(max_workers=len(children)) as pool:
-                futures = [pool.submit(AsyncEndpointCore(c)._ensure_warm) for c in children]
-                for fut in futures:
-                    fut.result()  # propagate a child's EndpointWarmingError
-        self._warm_self()
+        warmers = [AsyncEndpointCore(c)._ensure_warm for c in children]
+        warmers.append(self._warm_self)  # always >= 1 warmer, so max_workers >= 1
+        with ThreadPoolExecutor(max_workers=len(warmers)) as pool:
+            futures = [pool.submit(w) for w in warmers]
+            for fut in futures:
+                fut.result()  # propagate any EndpointWarmingError
 
     def _warm_self(self) -> None:
         """Warm just this endpoint: trigger scale-from-zero, then poll until up."""
