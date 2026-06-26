@@ -1,0 +1,58 @@
+{
+  "csv_key": "comp_chem/reference_compounds/corner_cases.csv",
+  "columns": [
+    "id",
+    "name",
+    "smiles",
+    "expected_status",
+    "notes"
+  ],
+  "description": {
+    "description": "Reference compounds for pipeline corner-case tests. Each row pairs an edge-case SMILES input with the expected desc3d_status value produced by the full endpoint pipeline (standardize + compute_descriptors_3d). Covers empty input, invalid parses, overly-long strings, isotopes, and unusual atoms.",
+    "columns": {
+      "id": "Integer row index",
+      "name": "Short identifier for the corner case",
+      "smiles": "Edge-case SMILES input fed to the pipeline",
+      "expected_status": "Expected value of desc3d_status after the full endpoint pipeline (standardize + compute_descriptors_3d). 'ok' means the molecule computes successfully; 'skip:empty' means it was rejected before descriptor computation.",
+      "notes": "Why this corner case is in the reference set"
+    }
+  },
+  "compounds": [
+    {
+      "name": "empty_string",
+      "smiles": "",
+      "expected_status": "skip:empty",
+      "notes": "Empty SMILES — handled gracefully by skip:empty branch"
+    },
+    {
+      "name": "invalid_parse",
+      "smiles": "THIS_IS_NOT_VALID_SMILES",
+      "expected_status": "skip:empty",
+      "notes": "Unparseable SMILES — standardize rejects (None); 3D endpoint sees empty"
+    },
+    {
+      "name": "too_long",
+      "smiles": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "expected_status": "skip:empty",
+      "notes": ">1000 char guard — standardize rejects before RDKit sees it"
+    },
+    {
+      "name": "deuterated_methanol",
+      "smiles": "[2H]C([2H])([2H])O",
+      "expected_status": "ok",
+      "notes": "Deuterium labels preserved; 3D pipeline handles isotopes transparently"
+    },
+    {
+      "name": "phenylboronic_acid",
+      "smiles": "OB(O)c1ccccc1",
+      "expected_status": "ok",
+      "notes": "Boron is a supported atom type — phenylboronic acid parses and embeds"
+    },
+    {
+      "name": "thioether",
+      "smiles": "CSC",
+      "expected_status": "ok",
+      "notes": "Sulfur heteroatom control — simple thioether computes normally"
+    }
+  ]
+}

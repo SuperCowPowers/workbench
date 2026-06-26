@@ -13,7 +13,7 @@ values by 10-20%.
 The reference compounds are loaded from:
     s3://workbench-public-data/comp_chem/reference_compounds/reference_compounds_3d
 
-Populated by: scripts/admin/populate_3d_reference_compounds.py
+Populated by: scripts/admin/populate_reference_compounds.py --dataset 3d
 """
 
 import pandas as pd
