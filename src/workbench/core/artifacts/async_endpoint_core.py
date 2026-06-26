@@ -122,13 +122,17 @@ class AsyncEndpointCore(EndpointCore):
                 fut.result()  # propagate any EndpointWarmingError
 
     def _warm_self(self) -> None:
-        """Warm just this endpoint: trigger scale-from-zero, then poll until up."""
+        """Fire a warm-up request, then poll until an instance is serving.
+
+        Always fires the warmer (one trivial async job) rather than checking first:
+        simpler, and it covers fresh deploys where a transient instance would no-op a
+        reactive check and then decay — the in-flight warmer keeps the endpoint alive.
+        Serverless short-circuits (no instance count to poll).
+        """
         if self.is_serverless():
             return  # serverless scales per-request — no instances to warm, no count to poll
-        if self._current_instances() >= 1:
-            return  # already serving (warm, or min_instances >= 1)
 
-        log.important(f"Endpoint '{self.name}' is cold — warming up (this can take a few minutes)...")
+        log.important(f"Endpoint '{self.name}': sending warm-up request (scale-up can take a few minutes)...")
 
         # Queue a trivial job so SageMaker scales the fleet up. If we can't even
         # queue it (perms, bad payload, missing bucket), that's a hard, non-retryable
@@ -140,12 +144,13 @@ class AsyncEndpointCore(EndpointCore):
                 f"Endpoint '{self.name}' could not be warmed — failed to queue a warm-up request: {fire_error}"
             )
 
+        # Check before sleeping so an already-warm instance returns immediately.
         deadline = time.time() + WARM_UP_CAP_S
         while time.time() < deadline:
-            time.sleep(WARM_UP_POLL_S)
             if self._current_instances() >= 1:
                 log.important(f"Endpoint '{self.name}' is warm.")
                 return
+            time.sleep(WARM_UP_POLL_S)
 
         counts = self._live_instance_counts()
         raise EndpointWarmingError(
