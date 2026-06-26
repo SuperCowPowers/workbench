@@ -77,8 +77,7 @@ Most clients use variants similar to those listed below but we have the flexibil
   <tbody>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-fast</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Realtime 3D shape/pharmacophore features (10 conformers)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-full</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Batch 3D features with adaptive conformers (50-500), async endpoint</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-full</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">3D shape/pharmacophore features with adaptive Boltzmann conformers (50-500), async endpoint</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints</td><td style="padding: 8px 16px;">2048-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
   </tbody>
 </table>
@@ -178,7 +177,7 @@ Most Feature Endpoints run a full molecular processing pipeline.
 3. **Mordred descriptors** (~85): Five ADMET-focused modules — AcidBase, Aromatic, Constitutional, Chi connectivity, and CarbonTypes
 4. **Stereochemistry features** (10): R/S center counts, E/Z bond counts, stereo complexity, fraction-defined metrics
 
-Our [3D endpoint](3d_descriptors.md) (`smiles-to-3d-full-v1`) uses RDKit's ETKDGv3 algorithm for conformer generation, ranks the conformers with **GFN2-xTB** semi-empirical quantum energies, and computes 74 Boltzmann-weighted ensemble descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics. (An older realtime `smiles-to-3d-fast-v1` endpoint is deprecated in favor of the async full endpoint.)
+Our [3D endpoint](3d_descriptors.md) (`smiles-to-3d-full-v1`) uses RDKit's ETKDGv3 algorithm for conformer generation, ranks the conformers with **GFN2-xTB** semi-empirical quantum energies, and computes 74 Boltzmann-weighted ensemble descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics.
 
 
 ## References

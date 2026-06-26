@@ -8,8 +8,7 @@ SMILES-based molecular descriptor endpoints deployed on AWS SageMaker via Workbe
 |--------|--------------|-------------|
 | `smiles_to_2d_v1.py` | `smiles-to-2d-v1` | RDKit + Mordred 2D descriptors (salts removed) |
 | `smiles_to_2d_keep_salts_v1.py` | `smiles-to-2d-keep-salts-v1` | RDKit + Mordred 2D descriptors (salts kept) |
-| `smiles_to_3d_fast_v1.py` | `smiles-to-3d-fast-v1` | 3D conformer-based descriptors, fast realtime mode — 10 conformers (74 features) |
-| `smiles_to_3d_full_v1.py` | `smiles-to-3d-full-v1` | 3D conformer-based descriptors, full async mode — 50-500 adaptive conformers (74 features, same set) |
+| `smiles_to_3d_full_v1.py` | `smiles-to-3d-full-v1` | 3D conformer-based descriptors, async — 50-500 adaptive conformers, Boltzmann-weighted (74 features) |
 
 ## Deployment
 
@@ -21,12 +20,6 @@ python smiles_to_2d_v1.py
 
 # 2D Descriptors (salts kept) --> endpoint: smiles-to-2d-keep-salts-v1
 python smiles_to_2d_keep_salts_v1.py
-
-# 3D Fast (realtime) --> endpoint: smiles-to-3d-fast-v1
-# Default instance is ml.c7i.xlarge. Override with INSTANCE=ml.c7i.2xlarge for more vCPUs.
-# Batch size is auto-tuned by config: serverless=3, xlarge=5, 2xlarge=10
-SERVERLESS=false python smiles_to_3d_fast_v1.py
-SERVERLESS=false INSTANCE=ml.c7i.2xlarge python smiles_to_3d_fast_v1.py
 
 # 3D Full (async) --> endpoint: smiles-to-3d-full-v1
 python smiles_to_3d_full_v1.py

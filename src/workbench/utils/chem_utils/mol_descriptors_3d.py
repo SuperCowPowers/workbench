@@ -57,16 +57,13 @@ Pipeline Integration:
         df = compute_descriptors_3d(df)  # 3D features (slower)
 
 Performance Notes:
-    - Conformer generation: ~100-500ms per molecule (dominates runtime)
-    - Single conformer mode: ~100ms per molecule
-    - Multi-conformer mode (n=10): ~300-500ms per molecule
+    - Conformer generation dominates runtime and scales with the adaptive
+      conformer count (50/300/500 by rotatable-bond tier)
+    - GFN2-xTB energy ranking: ~0.1-0.5s per conformer
     - Descriptor calculation: ~1-5ms per conformer
     - Memory: ~10MB per 1000 molecules with conformers
-
-    For high-throughput screening, consider:
-    - Using single conformer mode (n_conformers=1)
-    - Skipping MMFF optimization (optimize=False)
-    - Using serverless endpoint with higher memory
+    - Runs on the async endpoint, whose 60-minute invocation budget
+      accommodates the full ensemble + xTB ranking
 
 Special Considerations:
     - Molecules that fail conformer generation get NaN values
@@ -77,14 +74,11 @@ Special Considerations:
 Example Usage:
     from mol_descriptors_3d import compute_descriptors_3d
 
-    # Standard usage (10 conformers, optimized)
+    # Adaptive Boltzmann ensemble (50/300/500 conformers by flexibility)
     df = compute_descriptors_3d(df)
 
-    # Fast mode (single conformer, no optimization)
-    df = compute_descriptors_3d(df, n_conformers=1, optimize=False)
-
-    # High-accuracy mode (more conformers)
-    df = compute_descriptors_3d(df, n_conformers=50)
+    # Skip force-field optimization (faster, lower geometry quality)
+    df = compute_descriptors_3d(df, optimize=False)
 
     # Get feature names
     from mol_descriptors_3d import get_3d_feature_names
@@ -131,8 +125,7 @@ CONFORMER_TIMEOUT_SECONDS = 10
 # Boltzmann-mode constants
 # ---------------------------------------------------------------------------
 # Greg Landrum's RDKit blog: tighter force tolerance gives ~20% speedup
-# with negligible geometry loss.  Used only in Boltzmann mode so fast mode
-# stays bit-for-bit identical.
+# with negligible geometry loss.
 BOLTZMANN_FORCE_TOL = 0.0135
 
 # Only conformers within this window of the MMFF minimum are included in
@@ -193,10 +186,7 @@ logger = logging.getLogger("workbench")
 # =============================================================================
 
 # Thresholds for skipping 3D computation. Sized for the async endpoint's
-# 60-minute invocation budget in Boltzmann mode (adaptive 50-300 conformers);
-# the realtime endpoint's own 60s SageMaker timeout is the tighter practical
-# ceiling for fast-mode calls, so we size these for the async/batch case
-# and let realtime fail its own timeout on pathological inputs.
+# 60-minute invocation budget (adaptive 50/300/500 conformers).
 #
 # Per-conformer wall-clock is still capped by CONFORMER_TIMEOUT_SECONDS
 # (10s), so worst-case per-molecule = 10s × n_conformers. In practice most
@@ -1312,7 +1302,6 @@ def get_3d_diagnostic_names() -> List[str]:
     """
     return [
         "desc3d_status",
-        "desc3d_mode",
         "desc3d_conf_count",
         "desc3d_confs_requested",
         "desc3d_confs_in_window",
@@ -1365,12 +1354,6 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
     3D, and pharmacophore descriptors. Conformer ensemble statistics are
     computed over the *full* generated ensemble (not just the window).
 
-    This is the single descriptor-aggregation path used by both fast and
-    Boltzmann modes. With few conformers (fast mode, n=10) the Boltzmann
-    window typically includes all of them and the weighting naturally
-    emphasizes the lowest-energy geometry. With many conformers (Boltzmann
-    mode, n=50-300) it gives a proper ensemble average.
-
     Args:
         mol: RDKit molecule with conformer(s) and explicit Hs
 
@@ -1421,8 +1404,6 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
 
 def compute_descriptors_3d(
     df: pd.DataFrame,
-    mode: str = "fast",
-    n_conformers: int = 10,
     optimize: bool = True,
     random_seed: int = 42,
     complexity_check: bool = True,
@@ -1430,24 +1411,14 @@ def compute_descriptors_3d(
     """
     Compute 3D molecular descriptors for ADMET modeling.
 
-    Two modes:
-        - ``"fast"`` (default): Fixed n_conformers (default 10), Boltzmann-
-          weighted descriptors across the generated ensemble. Designed for
-          realtime SageMaker endpoints.
-        - ``"full"``: Adaptive n_conformers (50-300 based on rotatable
-          bonds), same Boltzmann-weighted descriptors. Designed for overnight
-          batch processing where higher conformer counts improve reproducibility.
-
-    Both modes use the same descriptor aggregation (Boltzmann-weighted
-    ensemble average over a 5 kcal/mol energy window) and produce the same
-    74 output features, so downstream models can consume either pipeline's
-    output interchangeably.
+    Generates an adaptive conformer ensemble (50/300/500 conformers by
+    rotatable-bond tier — see :func:`adaptive_n_conformers`) and returns
+    Boltzmann-weighted descriptors averaged over a 5 kcal/mol energy window.
+    Designed for the async SageMaker endpoint, whose 60-minute invocation
+    budget accommodates the GFN2-xTB energy ranking.
 
     Args:
         df: Input DataFrame with SMILES column
-        mode: ``"fast"`` or ``"full"`` (default ``"fast"``)
-        n_conformers: Number of conformers to generate (default 10, fast mode only;
-                      Boltzmann mode uses adaptive counts and ignores this)
         optimize: Whether to run MMFF optimization (default True)
         random_seed: Random seed for conformer generation (default 42)
         complexity_check: Whether to skip molecules that exceed complexity thresholds
@@ -1461,13 +1432,8 @@ def compute_descriptors_3d(
         - 4 Conformer ensemble statistics
 
     Example:
-        df = compute_descriptors_3d(df)                       # Fast (default)
-        df = compute_descriptors_3d(df, mode="full")     # Boltzmann ensemble
+        df = compute_descriptors_3d(df)
     """
-    if mode not in ("fast", "full"):
-        raise ValueError(f"mode must be 'fast' or 'full', got '{mode}'")
-    is_full = mode == "full"
-
     # Find SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
     if smiles_column is None:
@@ -1475,9 +1441,8 @@ def compute_descriptors_3d(
 
     n_molecules = len(df)
 
-    n_confs_desc = "adaptive (50/300/500)" if is_full else f"{n_conformers}"
-    logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
-    logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
+    logger.info(f"Computing 3D descriptors for {n_molecules} molecules...")
+    logger.info(f"Parameters: n_conformers=adaptive (50/300/500), optimize={optimize}, force_tol={BOLTZMANN_FORCE_TOL}")
 
     # Build all output columns up front in one DataFrame and concat once.
     # Inserting 80+ columns one at a time on the input DataFrame triggers
@@ -1488,7 +1453,6 @@ def compute_descriptors_3d(
     diag_names = get_3d_diagnostic_names()
     object_dtype_diagnostics = {
         "desc3d_status",
-        "desc3d_mode",
         "desc3d_force_field",
         "desc3d_energy_method",
         "desc3d_stereo_preserved",
@@ -1503,7 +1467,6 @@ def compute_descriptors_3d(
             new_columns[col] = pd.Series(np.full(n_molecules, np.nan, dtype=np.float64), index=df.index)
     result = pd.concat([df.copy(), pd.DataFrame(new_columns, index=df.index)], axis=1)
     result["desc3d_status"] = "skipped"
-    result["desc3d_mode"] = mode
 
     start_time = time.time()
 
@@ -1521,10 +1484,10 @@ def compute_descriptors_3d(
                 result.at[idx, "desc3d_status"] = "skip:parse"
                 continue
 
-            # Conformer count that will actually be generated — mode only
-            # affects count. Computed before the complexity check so the cost
-            # backstop can weigh it (xTB cost ≈ heavy atoms × conformers).
-            n_confs = adaptive_n_conformers(mol) if is_full else n_conformers
+            # Conformer count that will actually be generated, by rotatable-bond
+            # tier. Computed before the complexity check so the cost backstop can
+            # weigh it (xTB cost ≈ heavy atoms × conformers).
+            n_confs = adaptive_n_conformers(mol)
 
             if complexity_check:
                 complexity_status = check_complexity(mol, n_conformers=n_confs)
@@ -1566,7 +1529,7 @@ def compute_descriptors_3d(
             # with no chiral centers are trivially preserved (True).
             result.at[idx, "desc3d_stereo_preserved"] = _stereo_preserved(mol, input_chirality)
 
-            # Both modes: Boltzmann-weighted ensemble descriptors
+            # Boltzmann-weighted ensemble descriptors
             features, confs_in_window, energy_method = _compute_descriptors_boltzmann(mol)
 
             for name, value in features.items():
@@ -1649,7 +1612,7 @@ if __name__ == "__main__":
     print(f"  - Pharmacophore 3D: {len(get_pharmacophore_3d_feature_names())}")
     print("  - Conformer stats: 5")
 
-    result = compute_descriptors_3d(test_data, n_conformers=5, optimize=True)
+    result = compute_descriptors_3d(test_data, optimize=True)
 
     # Test 2: RDKit Shape Descriptors
     print("\n" + "-" * 40)
@@ -1722,8 +1685,8 @@ if __name__ == "__main__":
     print("-" * 40)
 
     configs = [
-        ("Fast mode (n=1, no opt)", {"n_conformers": 1, "optimize": False}),
-        ("Standard mode (n=10, opt)", {"n_conformers": 10, "optimize": True}),
+        ("No optimization", {"optimize": False}),
+        ("MMFF optimization", {"optimize": True}),
     ]
 
     bench_data = test_data[test_data["name"].isin(["Ethanol", "Caffeine", "Aspirin", "Testosterone"])].copy()

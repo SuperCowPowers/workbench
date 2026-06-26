@@ -20,7 +20,7 @@
     "notes"
   ],
   "description": {
-    "description": "Curated public compounds with known expected 3D molecular descriptor values. Used by the workbench feature_endpoints tests to validate the 3D descriptor pipeline (smiles-to-3d-fast-v1, smiles-to-3d-full-v1). Expected ranges are intentionally wide — the purpose is to catch gross errors, not nitpick numeric accuracy.",
+    "description": "Curated public compounds with known expected 3D molecular descriptor values. Used by the workbench feature_endpoints tests to validate the 3D descriptor pipeline (smiles-to-3d-full-v1). Expected ranges are intentionally wide — the purpose is to catch gross errors, not nitpick numeric accuracy.",
     "columns": {
       "id": "Integer row index (0 to N-1)",
       "name": "Compound common name",

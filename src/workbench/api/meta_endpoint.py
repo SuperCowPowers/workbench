@@ -15,11 +15,11 @@ Common usage::
 
     dag = MetaEndpointDAG()
     dag.add_endpoint("smiles-to-2d-v1")
-    dag.add_endpoint("smiles-to-3d-fast-v1")
+    dag.add_endpoint("smiles-to-3d-full-v1")
     dag.add_aggregation(Concat(name="combine"))
     dag.add_edge("smiles-to-2d-v1", "combine")
-    dag.add_edge("smiles-to-3d-fast-v1", "combine")
-    dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-fast-v1")
+    dag.add_edge("smiles-to-3d-full-v1", "combine")
+    dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-full-v1")
     dag.set_output_node("combine")
 
     end = MetaEndpoint.create(name="my-features-meta", dag=dag)
@@ -285,11 +285,11 @@ if __name__ == "__main__":
 
     sample_dag = MetaEndpointDAG()
     sample_dag.add_endpoint("smiles-to-2d-v1")
-    sample_dag.add_endpoint("smiles-to-3d-fast-v1")
+    sample_dag.add_endpoint("smiles-to-3d-full-v1")
     sample_dag.add_aggregation(Concat(name="combine"))
     sample_dag.add_edge("smiles-to-2d-v1", "combine")
-    sample_dag.add_edge("smiles-to-3d-fast-v1", "combine")
-    sample_dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-fast-v1")
+    sample_dag.add_edge("smiles-to-3d-full-v1", "combine")
+    sample_dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-full-v1")
     sample_dag.set_output_node("combine")
 
     sample_end = MetaEndpoint.create(

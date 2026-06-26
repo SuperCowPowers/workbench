@@ -14,7 +14,11 @@ import pytest
 
 from workbench.api import Endpoint, PublicData
 
-ENDPOINT_NAME = "smiles-to-3d-fast-v1"
+# Hits the async full endpoint (real conformer ensembles + cold-start warm-up):
+# long tier, excluded from quick runs.
+pytestmark = pytest.mark.long
+
+ENDPOINT_NAME = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/corner_cases"
 
 

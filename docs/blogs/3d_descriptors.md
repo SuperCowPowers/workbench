@@ -4,7 +4,7 @@
 
 2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. Some ADMET properties have geometric components that 2D descriptors capture only indirectly through their correlations with the molecular graph: how a molecule fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface. The 3D endpoint exposes these directly as engineered features -- whether they help on a given task is an empirical question, not a foregone conclusion.
 
-Workbench's 3D descriptor endpoints compute **74 conformer-based features** from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: **send a DataFrame, get a DataFrame back** -- the input DataFrame comes back with 74 descriptor columns appended. Two pipeline modes are available -- a **fast** endpoint for realtime inference and a **Boltzmann** endpoint for high-quality batch processing. Both produce the same 74 features so downstream models can consume either interchangeably.
+Workbench's 3D descriptor endpoints compute **74 conformer-based features** from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: **send a DataFrame, get a DataFrame back** -- the input DataFrame comes back with 74 descriptor columns appended. The pipeline runs as the **`smiles-to-3d-full-v1`** async endpoint, using an adaptive, Boltzmann-weighted conformer ensemble for high-quality features.
 
 ## When 3D Descriptors Help (and When They Don't)
 
@@ -29,32 +29,27 @@ The evidence:
 
 So treat the 3D feature stream honestly: a *complementary* set that may give modest, endpoint-dependent gains (most plausibly on passive permeability, P-gp / BCRP recognition, conformer-dependent solubility) on top of a strong 2D + learned-representation baseline. It is not a foregone conclusion that 3D features improve any specific ADMET model -- run an ablation. See the [Limitations & Future Work](#limitations-future-work) section for forward-looking upgrades and a fuller honest accounting.
 
-## Two Pipeline Modes: Fast and Full
+## The 3D Descriptor Pipeline
 
-Workbench provides two 3D descriptor endpoints that share the same computation core but differ in conformer sampling depth:
+Workbench provides the `smiles-to-3d-full-v1` endpoint for 3D descriptors:
 
 <table style="width: 100%;">
   <thead>
     <tr>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;"></th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Fast</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Full</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">smiles-to-3d-full-v1</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Endpoint</td><td style="padding: 8px 16px;">smiles-to-3d-fast-v1</td><td style="padding: 8px 16px;">smiles-to-3d-full-v1</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">10 (fixed)</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Realtime SageMaker endpoint</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Synchronous inference from training pipelines</td><td style="padding: 8px 16px;">Overnight batch processing (10k-100k compounds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 12 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 12 diagnostic columns</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble (GFN2-xTB energies)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Training pipelines and overnight batch processing (10k-100k compounds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td></tr>
   </tbody>
 </table>
 
-!!! warning "The fast endpoint is deprecated"
-    `smiles-to-3d-fast-v1` traded feature quality for latency (a single lowest-energy conformer, force-field energies) and is no longer maintained. **Use `smiles-to-3d-full-v1`.** The full endpoint is async with no practical per-molecule latency ceiling, which is what lets it run the higher-quality GFN2-xTB energy ranking described below. The fast/full comparison is retained here for historical context; new work should target the full endpoint exclusively.
-
-Both modes use **Boltzmann-weighted ensemble averaging** -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the lowest-energy conformer, then combined using normalized Boltzmann weights:
+The pipeline uses **Boltzmann-weighted ensemble averaging** -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the lowest-energy conformer, then combined using normalized Boltzmann weights:
 
 $$\Large w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i$$
 
@@ -197,12 +192,11 @@ Highly flexible molecules tend to have larger energy ranges and higher flexibili
 
 ### Diagnostic Columns
 
-In addition to the 74 model features, both endpoints produce 12 `desc3d_*` diagnostic columns that track pipeline status, conformer generation quality, energy model, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:
+In addition to the 74 model features, the endpoint produces 11 `desc3d_*` diagnostic columns that track pipeline status, conformer generation quality, energy model, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:
 
 | Column | Description |
 |--------|-------------|
 | `desc3d_status` | `ok`, `skip:parse`, `skip:heavy_atoms`, `skip:rot_bonds`, `skip:rings`, `skip:ring_complexity`, `skip:cost`, `skip:embed`, `skip:empty` |
-| `desc3d_mode` | `fast` or `full` |
 | `desc3d_conf_count` | Conformers after RMSD pruning |
 | `desc3d_confs_requested` | Target conformer count |
 | `desc3d_confs_in_window` | Conformers in the Boltzmann energy window |
@@ -235,19 +229,7 @@ The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a perm
 
 Molecules exceeding any threshold receive NaN features and a specific `desc3d_status` explaining the skip reason. These guards can be disabled for local analysis (`complexity_check=False`).
 
-## Deploying the Endpoints
-
-### Fast Endpoint (Realtime)
-
-```bash
-# Realtime instance (recommended for 3D)
-SERVERLESS=false python feature_endpoints/smiles_to_3d_fast_v1.py
-
-# Serverless (lower cost, but slower)
-python feature_endpoints/smiles_to_3d_fast_v1.py
-```
-
-### Full Endpoint (Async)
+## Deploying the Endpoint
 
 ```bash
 python feature_endpoints/smiles_to_3d_full_v1.py
@@ -255,22 +237,18 @@ python feature_endpoints/smiles_to_3d_full_v1.py
 
 The full endpoint deploys as an [async endpoint](../api_classes/async_endpoint.md) with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
 
-### Using the Endpoints
+### Using the Endpoint
 
 ```python
 from workbench.api import Endpoint
 
-# Fast endpoint — synchronous, for realtime inference
-end_fast = Endpoint("smiles-to-3d-fast-v1")
-df_3d = end_fast.inference(df)
-
-# Full endpoint — async deployment, same Endpoint API (auto-routes through async core)
+# Async deployment, standard Endpoint API (auto-routes through async core)
 end_full = Endpoint("smiles-to-3d-full-v1")
 df_3d_full = end_full.inference(df)
 
-# Both work with InferenceCache for persistent S3-backed caching
+# Works with InferenceCache for persistent S3-backed caching
 from workbench.api.inference_cache import InferenceCache
-cached_endpoint = InferenceCache(end_fast, cache_key_column="smiles")
+cached_endpoint = InferenceCache(end_full, cache_key_column="smiles")
 df_cached = cached_endpoint.inference(big_df)  # Only computes uncached rows
 ```
 

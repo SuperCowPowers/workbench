@@ -11,7 +11,7 @@
     "notes"
   ],
   "description": {
-    "description": "Public drug analogs used for 3D fast-endpoint performance profiling. Ten compounds spanning the complexity spectrum: small NSAID baseline through large HIV protease inhibitor. Includes a bridged-bicyclic amine (maraviroc/tropane) that stresses ETKDGv3 embedding the same way many pharma-scale inputs do. Consumed by profile_3d_fast.py to measure per-stage wall-clock (embed, optimize, energy, descriptor families) on representative inputs.",
+    "description": "Public drug analogs used for 3D endpoint performance profiling. Ten compounds spanning the complexity spectrum: small NSAID baseline through large HIV protease inhibitor. Includes a bridged-bicyclic amine (maraviroc/tropane) that stresses ETKDGv3 embedding the same way many pharma-scale inputs do. Consumed by tests/feature_endpoints/test_3d_timing.py to measure per-molecule wall-clock and project async batch throughput on representative inputs.",
     "columns": {
       "id": "Integer row index",
       "name": "Public drug name (lowercase)",

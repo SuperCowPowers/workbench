@@ -6,7 +6,7 @@ Shape:
 
     [smiles-to-2d-v1] ──┐
                         ├── Concat ── output
-    [smiles-to-3d-fast-v1] ──┘
+    [smiles-to-3d-full-v1] ──┘
 
 The deployed MetaEndpoint accepts a SMILES DataFrame and returns one row
 per input id with the 2D + 3D feature columns merged. If any child were
@@ -36,11 +36,11 @@ recreate = True
 # ─── Build the DAG ──────────────────────────────────────────────────────
 dag = MetaEndpointDAG()
 dag.add_endpoint("smiles-to-2d-v1")
-dag.add_endpoint("smiles-to-3d-fast-v1")
+dag.add_endpoint("smiles-to-3d-full-v1")
 dag.add_aggregation(Concat(name="combine"))
 dag.add_edge("smiles-to-2d-v1", "combine")
-dag.add_edge("smiles-to-3d-fast-v1", "combine")
-dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-fast-v1")
+dag.add_edge("smiles-to-3d-full-v1", "combine")
+dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-full-v1")
 dag.set_output_node("combine")
 dag.validate()
 
@@ -49,7 +49,7 @@ if recreate or not Endpoint(NAME).exists():
     end = MetaEndpoint.create(
         name=NAME,
         dag=dag,
-        description="Combined 2D RDKit/Mordred + 3D-fast molecular descriptors",
+        description="Combined 2D RDKit/Mordred + 3D molecular descriptors",
         tags=TAGS,
     )
     end.set_owner("BW")

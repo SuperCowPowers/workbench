@@ -86,7 +86,7 @@ def run_diagnostics(df: pd.DataFrame, smiles_col: str = "smiles"):
     # Step 2: Run full 3D descriptor computation and track results
     print("[2/3] Computing 3D descriptors (this may take a while)...")
     start = time.time()
-    result = compute_descriptors_3d(df_std, n_conformers=10, optimize=True)
+    result = compute_descriptors_3d(df_std, optimize=True)
     total_time = time.time() - start
 
     feature_names = get_3d_feature_names()
@@ -241,7 +241,7 @@ def run_corner_case_tests():
         single_df = pd.DataFrame({"smiles": [smiles]})
         try:
             std_df = standardize(single_df, extract_salts=True)
-            result = compute_descriptors_3d(std_df, n_conformers=10, optimize=True)
+            result = compute_descriptors_3d(std_df, optimize=True)
             feature_names = get_3d_feature_names()
             has_values = result[feature_names[0]].notna().iloc[0]
 

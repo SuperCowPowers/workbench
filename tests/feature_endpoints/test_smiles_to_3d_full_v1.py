@@ -1,10 +1,9 @@
 """Validation tests for the async Boltzmann 3D descriptor endpoint (smiles-to-3d-full-v1).
 
-Pulls the same curated reference compounds used by test_smiles_to_3d_fast_v1.py and runs
-them through the async (Boltzmann-ensemble) endpoint. Validates the same
-invariants and compound-specific expected ranges — the two endpoints are
-expected to produce numerically similar (though not identical) results because
-Boltzmann mode uses adaptive conformer counts (50-300) vs the fast mode's 10.
+Pulls a curated set of public reference compounds and runs them through the
+async (Boltzmann-ensemble) endpoint, validating geometric invariants and
+compound-specific expected ranges. The endpoint uses adaptive conformer
+counts (50/300/500 by rotatable-bond tier).
 
 The reference compounds are loaded from:
     s3://workbench-public-data/comp_chem/reference_compounds/reference_compounds_3d
@@ -82,17 +81,11 @@ def test_all_reference_compounds_succeed(result_df):
     assert bad.empty, f"{len(bad)} reference compounds did not compute successfully"
 
 
-def test_full_mode_declared(result_df):
-    """Every row reports desc3d_mode == 'full'."""
-    modes = result_df["desc3d_mode"].unique().tolist()
-    assert modes == ["full"], f"Expected desc3d_mode='full', got {modes}"
-
-
 def test_adaptive_conformer_count(result_df):
-    """Boltzmann mode should use adaptive conformer counts (50 / 200 / 300)."""
+    """Endpoint should use adaptive conformer counts (50 / 300 / 500)."""
     requested = result_df["desc3d_confs_requested"].dropna().unique().tolist()
     # Adaptive tiers per mol_descriptors_3d.adaptive_n_conformers
-    allowed = {50, 200, 300}
+    allowed = {50, 300, 500}
     bad = [n for n in requested if int(n) not in allowed]
     assert not bad, f"Unexpected conformer counts requested: {bad} (allowed: {sorted(allowed)})"
     print(f"Conformer counts used: {sorted(int(n) for n in requested)}")
@@ -256,7 +249,6 @@ if __name__ == "__main__":
     test_endpoint_exists(ep)
     test_reference_compounds_loadable(ref_df)
     test_all_reference_compounds_succeed(res_df)
-    test_full_mode_declared(res_df)
     test_adaptive_conformer_count(res_df)
     test_energy_method_is_xtb(res_df)
     test_compute_time_reported(res_df)
