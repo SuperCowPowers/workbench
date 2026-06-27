@@ -91,7 +91,7 @@ These standardization and descriptor computations run inside Workbench **feature
 
 - **`smiles-to-2d-v1`**: Standard 2D pipeline with salt extraction (ChEMBL default)
 - **`smiles-to-2d-keep-salts-v1`**: 2D pipeline that preserves salt forms for salt-sensitive modeling
-- **`smiles-to-3d-full-v1`**: 3D conformer-based descriptors (74 features), async mode with adaptive Boltzmann conformers (50-500)
+- **`smiles-to-3d-full-v1`**: 3D conformer-based descriptors (74 features), async mode with adaptive Boltzmann conformers (50-200)
 
 All three endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.
 

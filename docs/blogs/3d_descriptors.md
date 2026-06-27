@@ -41,7 +41,7 @@ Workbench provides the `smiles-to-3d-full-v1` endpoint for 3D descriptors:
     </tr>
   </thead>
   <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">50-200 (adaptive by rotatable bonds)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble (GFN2-xTB energies)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Training pipelines and overnight batch processing (10k-100k compounds)</td></tr>
@@ -59,15 +59,14 @@ The energies $E_i$ that drive these weights come from **GFN2-xTB** (a fast semi-
 
 ### Adaptive Conformer Counts (Boltzmann Mode)
 
-The full endpoint uses a datamol-style adaptive tiering, with the upper tiers bumped above the community-standard 200/300 to reduce single-seed stochastic variance observed on flexible molecules:
+The full endpoint scales conformer count to molecular flexibility:
 
-| Rotatable Bonds | Conformers | Rationale |
-|-----------------|------------|-----------|
-| < 8 | 50 | Low flexibility, few distinct conformers |
-| 8-12 | 300 | Moderate flexibility, needs broader sampling |
-| ≥ 13 | 500 | High flexibility, large conformational space |
+| Rotatable Bonds | Conformers |
+|-----------------|------------|
+| < 8 | 50 |
+| ≥ 8 | 200 |
 
-This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules. On 300-conformer runs at 13+ rotatable bonds we measured ~20% NPR1 variance across random seeds; bumping to 500 conformers reduces *within-seed* variance by roughly √(500/300) ≈ 1.29× via the documented "more samples" path. It does not eliminate *cross-seed* variance — different random seeds will still produce slightly different Boltzmann averages on highly flexible molecules — but for most ADMET endpoints this residual is below downstream model noise.
+The count is capped at 200 because GFN2-xTB scores every conformer (cost ≈ heavy atoms × conformers), while for heavy/flexible molecules only a handful of conformers fall inside the 5 kcal/mol Boltzmann window regardless of how many are generated — so beyond ~200 the extra compute buys little usable ensemble. For molecules whose features are genuinely seed-sensitive, the effective lever is seed-diversity or a wider energy window rather than raw conformer count (see [Limitations](#limitations-future-work)).
 
 ## The Computation Pipeline
 
@@ -223,9 +222,9 @@ Before attempting conformer generation, molecules are screened against size and 
 | Rotatable bonds | > 50 | Combinatorial explosion of conformer space |
 | Ring systems | > 10 | Extreme ring counts indicate cage structures |
 | Ring complexity score | > 15 | Backstop for highly constrained polycyclic cages |
-| xTB cost (heavy atoms × conformers) | > 24000 | Backstop for molecules too expensive to score with GFN2-xTB |
+| xTB cost (heavy atoms × conformers) | > 14000 | Backstop for molecules too expensive to score with GFN2-xTB |
 
-The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. The **xTB cost** backstop catches molecules that pass the size guards but are pathologically expensive for the quantum energy step: GFN2-xTB scores every conformer, so cost scales as `heavy atoms × conformers`, and a large, very flexible molecule (e.g. a long-chain sulfonated azo dye at 56 heavy atoms × 500 conformers) would otherwise blow the invocation budget and return all-NaN. It only bites the 500-conformer tier (≥13 rotatable bonds) at roughly ≥49 heavy atoms — the large-and-very-flexible corner. Molecules that exceed any threshold get a specific `desc3d_status` (e.g. `skip:heavy_atoms`, `skip:cost`) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, `standardize()` independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.
+The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. The **xTB cost** backstop catches molecules that pass the size guards but are pathologically expensive for the quantum energy step: GFN2-xTB scores every conformer, so cost scales as `heavy atoms × conformers`, and a large, very flexible molecule (e.g. Irganox 1010 at 85 heavy atoms × 200 conformers = 17000) would otherwise spend many minutes of xTB to keep only a handful of in-window conformers. It only bites molecules with ≥8 rotatable bonds and more than ~70 heavy atoms — the large-and-very-flexible corner — leaving normal drug-likes (including heavy fused-ring natural products at the 50-conformer tier) untouched. Molecules that exceed any threshold get a specific `desc3d_status` (e.g. `skip:heavy_atoms`, `skip:cost`) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, `standardize()` independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.
 
 Molecules exceeding any threshold receive NaN features and a specific `desc3d_status` explaining the skip reason. These guards can be disabled for local analysis (`complexity_check=False`).
 
@@ -258,7 +257,7 @@ The pipeline is conservative by design — production ADMET targets stable, dete
 
 **3D vs 2D in ADMET reality.** As noted in the introduction, top reproducible TDC ADMET models lean on 2D fingerprints + learned graph representations. The published evidence (PharmaBench *Sci. Data* 2024; Bahia *Mol. Inform.* 2023) is that 3D descriptors give marginal-but-real gains on geometry-sensitive endpoints and roughly neutral effects on most others. The 3D feature stream complements rather than replaces a strong 2D + learned-representation baseline.
 
-**Cross-seed variance on highly flexible molecules.** The 500-conformer top tier reduces within-seed stochastic variance, but different random seeds will still produce slightly different Boltzmann averages on 13+ rotatable-bond molecules. For most ADMET endpoints this residual is below downstream model noise; for tasks that genuinely depend on a single conformer geometry it is not.
+**Cross-seed variance on highly flexible molecules.** For heavy/flexible molecules only a handful of conformers land inside the 5 kcal/mol Boltzmann window regardless of how many are generated, so raw conformer count is a weak lever there — the 200-conformer cap reflects that. Different random seeds still produce slightly different Boltzmann averages on highly flexible molecules; for most ADMET endpoints this residual is below downstream model noise, but for tasks that genuinely depend on a single conformer geometry it is not. The more effective levers for that regime — seed-diversity ensembles or a wider energy window — are candidate future upgrades.
 
 **Recently shipped:** **single-point GFN2-xTB re-ranking** of MMFF-optimized conformers before Boltzmann weighting (via the `tblite` library, deterministic). Kong et al. (*ChemPhysChem* 2025) show GFN2-xTB is currently the most suitable energy filter for drug-like conformer ranking, and we measured near-zero rank correlation between MMFF94s and GFN2-xTB orderings on flexible/polar molecules — so this materially shifts the Boltzmann weights and, with them, all 74 ensemble-averaged features. See [Step 3](#step-3-boltzmann-weighted-descriptor-calculation).
 
