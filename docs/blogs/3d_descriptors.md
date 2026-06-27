@@ -1,6 +1,6 @@
 # 3D Molecular Descriptors: Shape, Surface, and Pharmacophore Features
 !!! tip inline end "When to reach for 3D"
-    On most TDC ADMET endpoints, careful 2D fingerprints + learned graph representations are highly competitive on their own. Use the 3D endpoint when you need shape-aware features for geometry-sensitive endpoints (passive permeability, P-gp / BCRP interactions, conformer-dependent solubility), typically alongside the 2D feature set, not as a replacement for it.
+    For most ADMET endpoints, 2D fingerprints + learned graph representations are competitive on their own. Reach for 3D on geometry-sensitive endpoints (passive permeability, P-gp/BCRP, conformer-dependent solubility) — as a complement to the 2D set, not a replacement.
 
 2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. Some ADMET properties have geometric components that 2D descriptors capture only indirectly through their correlations with the molecular graph: how a molecule fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface. The 3D endpoint exposes these directly as engineered features -- whether they help on a given task is an empirical question, not a foregone conclusion.
 
@@ -72,9 +72,16 @@ The count is capped at 200 because GFN2-xTB scores every conformer (cost ≈ hea
 
 The 3D descriptor endpoint runs a multi-step pipeline for each molecule:
 
-<figure style="margin: 20px auto; text-align: center;">
+<figure style="margin: 10px auto; text-align: center;">
 <img src="../../images/3d_descriptor_pipeline.svg" alt="3D descriptor pipeline: SMILES to Standardize to Conformers to 74 Descriptors" style="width: 100%; min-height: 300px;">
 <figcaption><em>The 3D descriptor pipeline: standardization, tiered conformer generation with MMFF94s geometry optimization, GFN2-xTB energy ranking, and Boltzmann-weighted ensemble descriptors across four categories.</em></figcaption>
+</figure>
+
+The **Conformers** box above is the engine of the pipeline (marked *details ▾*). It expands into two decoupled stages, and the order matters: **geometry** is built first (ETKDGv3 → MMFF94s), then **energy** ranking runs GFN2-xTB on *all* conformers before the 5 kcal/mol window narrows the ensemble down to the few that get Boltzmann-averaged.
+
+<figure style="margin: 10px auto; text-align: center;">
+<img src="../../images/3d_descriptor_pipeline_detail.svg" alt="Inside the Conformers stage: embed and MMFF94s-optimize N conformers, score all N with GFN2-xTB, keep k within a 5 kcal/mol window, compute Boltzmann weights" style="width: 100%; height: auto;">
+<figcaption><em>Expansion of the Conformers stage: GFN2-xTB scores all N conformers, then the 5 kcal/mol window keeps the k that get Boltzmann-weighted. xTB only scores, so the 74 descriptors are computed on the MMFF94s geometry.</em></figcaption>
 </figure>
 
 ### Step 1: Standardization
