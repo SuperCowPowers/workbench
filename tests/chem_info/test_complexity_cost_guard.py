@@ -15,7 +15,7 @@ from workbench.utils.chem_utils.mol_descriptors_3d import (
 )
 
 # Irganox 1010 (CAS 6683-19-8): public, IP-free large/flexible surrogate for the
-# proprietary dye that motivated this guard. 85 heavy × 500 conformers = 42500.
+# proprietary dye that motivated this guard. 85 heavy × 200 conformers = 17000.
 IRGANOX_1010 = (
     "O=C(OCC(COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)(COC(=O)CCc1cc(C(C)(C)C)"
     "c(O)c(C(C)(C)C)c1)COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)CCc1cc(C(C)(C)C)"
@@ -52,12 +52,12 @@ def test_fast_mode_never_skips_on_cost():
 
 
 def test_flexible_but_small_passes():
-    """High flexibility alone is fine — docosane (C22, tier 500) stays OK.
+    """High flexibility alone is fine — docosane (C22, tier 200) stays OK.
 
     Guards against an over-aggressive threshold that would break the existing
     flexibility reference set.
     """
-    assert _check_full("CCCCCCCCCCCCCCCCCCCCCC") is None  # docosane: 22 heavy × 500 = 11k
+    assert _check_full("CCCCCCCCCCCCCCCCCCCCCC") is None  # docosane: 22 heavy × 200 = 4.4k
 
 
 def test_large_but_rigid_passes():

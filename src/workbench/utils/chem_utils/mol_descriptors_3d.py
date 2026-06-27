@@ -57,9 +57,11 @@ Pipeline Integration:
         df = compute_descriptors_3d(df)  # 3D features (slower)
 
 Performance Notes:
-    - Conformer generation dominates runtime and scales with the adaptive
-      conformer count (50/300/500 by rotatable-bond tier)
-    - GFN2-xTB energy ranking: ~0.1-0.5s per conformer
+    - The GFN2-xTB energy ranking dominates runtime: it scores every conformer,
+      so cost ≈ (heavy atoms × conformers). Per-conformer ~0.1-0.5s for small/
+      moderate molecules, rising steeply (~heavy^1.7) for large ones. Conformer
+      count is adaptive (50/200 by rotatable-bond tier).
+    - Embedding (ETKDGv3) + MMFF optimization is secondary (a few seconds).
     - Descriptor calculation: ~1-5ms per conformer
     - Memory: ~10MB per 1000 molecules with conformers
     - Runs on the async endpoint, whose 60-minute invocation budget
@@ -74,7 +76,7 @@ Special Considerations:
 Example Usage:
     from mol_descriptors_3d import compute_descriptors_3d
 
-    # Adaptive Boltzmann ensemble (50/300/500 conformers by flexibility)
+    # Adaptive Boltzmann ensemble (50/200 conformers by flexibility)
     df = compute_descriptors_3d(df)
 
     # Skip force-field optimization (faster, lower geometry quality)
@@ -155,16 +157,14 @@ BOHR_PER_ANGSTROM = 1.0 / 0.529177210903
 # Adaptive conformer counts keyed by rotatable-bond thresholds.
 # The tier is selected by the first (threshold, n_confs) whose threshold is
 # strictly greater than the molecule's rotatable-bond count.
-# rot < 8 → 50, 8 ≤ rot ≤ 12 → 300, rot ≥ 13 → 500.
+# rot < 8 → 50, rot ≥ 8 → 200.
 #
-# The upper tiers are bumped above the datamol-style 200/300 to reduce the
-# stochastic seed variance we measured on very flexible molecules (~20%
-# NPR1 spread across seeds at 300 conformers for 13+ rot-bond chains).
-# More samples from a single seed reduces *within-seed* variance by sqrt(N).
-# It does not eliminate cross-seed variance — different random seeds will
-# still produce slightly different Boltzmann averages on highly flexible
-# molecules. For most ADMET endpoints this residual is below downstream
-# model noise and not worth chasing further.
+# Capped at 200 because xTB cost scales as (heavy atoms × conformers) while, for
+# heavy/flexible molecules, only a handful of conformers fall inside the 5
+# kcal/mol Boltzmann window no matter how many are generated (e.g. simeprevir
+# ~10 in-window). Beyond that point extra conformers add cost without improving
+# the ensemble; the lever for unstable cases is seed-diversity or a wider
+# window, not raw conformer count.
 #
 # Forward-looking notes (evidence-backed):
 #   - Single-point xTB / tblite re-ranking of MMFF-optimized conformers
@@ -180,8 +180,8 @@ BOHR_PER_ANGSTROM = 1.0 / 0.529177210903
 #     as the least accurate common partial-charge method, and CPSA
 #     accounts for 43 of our 52 Mordred 3D features — highest-leverage
 #     upgrade for the existing feature set.
-ADAPTIVE_CONFORMER_TIERS = [(8, 50), (13, 300)]
-ADAPTIVE_CONFORMER_DEFAULT = 500
+ADAPTIVE_CONFORMER_TIERS = [(8, 50)]
+ADAPTIVE_CONFORMER_DEFAULT = 200
 
 logger = logging.getLogger("workbench")
 
@@ -191,7 +191,7 @@ logger = logging.getLogger("workbench")
 # =============================================================================
 
 # Thresholds for skipping 3D computation. Sized for the async endpoint's
-# 60-minute invocation budget (adaptive 50/300/500 conformers).
+# 60-minute invocation budget (adaptive 50/200 conformers).
 #
 # Per-conformer wall-clock is still capped by CONFORMER_TIMEOUT_SECONDS
 # (10s), so worst-case per-molecule = 10s × n_conformers. In practice most
@@ -203,19 +203,22 @@ MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop for polyc
 
 # Cost backstop for the GFN2-xTB energy step. A molecule can pass the size/
 # topology guards above yet still be pathologically expensive: xTB scores every
-# conformer, and per-conformer cost grows with atom count, so endpoint cost
-# scales as (heavy atoms × conformers). A large, very flexible molecule — e.g. a
-# long-chain sulfonated azo dye at 56 heavy atoms × 500 conformers — blows the
-# async invocation budget and the row comes back all-NaN. We cap the product so
-# these get a clean skip:cost instead of a silent timeout.
+# conformer, and per-conformer cost grows steeply with atom count (~heavy^1.7
+# measured), so endpoint cost scales roughly as (heavy atoms × conformers). A
+# large, very flexible molecule like Irganox 1010 (85 heavy × 200 conformers)
+# would spend many minutes of xTB to keep only a handful of in-window
+# conformers — wasteful and a drag on the child chunk. We cap the product so
+# these get a clean skip:cost.
 #
-# Calibration (heavy × conformers): docosane 22×500=11k passes; the 56-heavy
-# dye 28k and Irganox 1010 52×500=26k are skipped. Only bites the 500-conformer
-# tier (≥13 rot bonds) at ≥49 heavy atoms — i.e. the large-and-very-flexible
-# corner (PROTAC/peptide scale). Those time out under xTB anyway; a clean skip
-# is the honest outcome. (An alternative to skipping — capping conformer count
-# for large molecules — trades feature quality and is not done here.)
-MAX_CONFORMER_ATOM_COST = 24000
+# Calibration (heavy × conformers, current 50/200 tiers): only bites molecules
+# with rot ≥ 8 AND > 70 heavy atoms (the only way to exceed the cap at tier
+# 200). Irganox 1010 85×200=17000 is skipped; real drugs stay under — ritonavir
+# 50×200=10000, simeprevir 58×200=11600, cyclosporin 63×200=12600 all compute.
+# Tier-50 molecules (rot < 8, incl. the heavy glycosides at 54-58 heavy) never
+# reach it. NOTE: the product under-weights heavy atoms vs the ~heavy^1.7 cost
+# growth — a predicted-time guard would be more principled if the corner ever
+# needs tightening.
+MAX_CONFORMER_ATOM_COST = 14000
 
 
 def check_complexity(mol: Chem.Mol, n_conformers: Optional[int] = None) -> Optional[str]:
@@ -500,7 +503,7 @@ def _forcefield_conformer_energies(mol: Chem.Mol) -> List[float]:
     return [np.nan] * n_confs
 
 
-def conformer_energies_and_method(mol: Chem.Mol) -> Tuple[List[float], str]:
+def conformer_energies_and_method(mol: Chem.Mol, energy_method: str = "GFN2-xTB") -> Tuple[List[float], str]:
     """Per-conformer energies plus the energy model actually used.
 
     GFN2-xTB gives physically reliable conformer rankings; it falls back to
@@ -513,6 +516,11 @@ def conformer_energies_and_method(mol: Chem.Mol) -> Tuple[List[float], str]:
 
     Args:
         mol: RDKit molecule with conformers and explicit Hs
+        energy_method: Ranking model to use. ``"GFN2-xTB"`` (default) scores
+            with xTB and falls back to MMFF94s/UFF only if tblite is
+            unavailable or yields no usable energies. ``"MMFF94s"`` forces the
+            force-field path (MMFF94s preferred, UFF fallback), skipping xTB
+            entirely — for xTB-vs-force-field comparison studies.
 
     Returns:
         Tuple of (energies in kcal/mol with NaN for failures, method name).
@@ -520,10 +528,13 @@ def conformer_energies_and_method(mol: Chem.Mol) -> Tuple[List[float], str]:
     if mol is None or mol.GetNumConformers() == 0:
         return [], "none"
 
-    energies = xtb_conformer_energies(mol)
-    if not np.all(np.isnan(energies)):
-        return energies, "GFN2-xTB"
-    logger.debug("GFN2-xTB produced no usable energies, falling back to MMFF/UFF")
+    if energy_method == "GFN2-xTB":
+        energies = xtb_conformer_energies(mol)
+        if not np.all(np.isnan(energies)):
+            return energies, "GFN2-xTB"
+        logger.debug("GFN2-xTB produced no usable energies, falling back to MMFF/UFF")
+    elif energy_method != "MMFF94s":
+        raise ValueError(f"energy_method must be 'GFN2-xTB' or 'MMFF94s', got {energy_method!r}")
 
     energies = _forcefield_conformer_energies(mol)
     if AllChem.MMFFGetMoleculeProperties(mol, mmffVariant="MMFF94s") is not None:
@@ -553,12 +564,9 @@ def get_conformer_energies(mol: Chem.Mol) -> List[float]:
 def adaptive_n_conformers(mol: Chem.Mol) -> int:
     """Return the conformer count for Boltzmann mode based on rotatable bonds.
 
-    Tiering follows the datamol-style ladder but with bumped upper tiers
-    (300 / 500 instead of 200 / 300) to reduce the stochastic seed variance
-    observed in single-seed Boltzmann runs on flexible molecules:
+    Two tiers (see ADAPTIVE_CONFORMER_TIERS for the rationale):
         rot_bonds < 8        → 50
-        rot_bonds 8..12      → 300
-        rot_bonds ≥ 13       → 500
+        rot_bonds ≥ 8        → 200
 
     Args:
         mol: RDKit molecule (Hs not required for this calculation)
@@ -1215,11 +1223,19 @@ def get_pharmacophore_3d_feature_names() -> List[str]:
 # =============================================================================
 
 
-def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
+def compute_conformer_statistics(mol: Chem.Mol, energies: Optional[List[float]] = None) -> Dict[str, float]:
     """
     Compute statistics across the conformer ensemble.
 
     These capture conformational flexibility which affects binding and permeability.
+
+    Args:
+        mol: RDKit molecule with conformer(s)
+        energies: Optional precomputed per-conformer energies (kcal/mol, NaN for
+            failures). The Boltzmann path already scores every conformer with
+            GFN2-xTB for weighting — passing those in here avoids a second
+            full-ensemble xTB pass (~2x cost for no change in output). When
+            None, energies are computed on demand.
     """
     if mol is None or mol.GetNumConformers() == 0:
         return {
@@ -1229,7 +1245,8 @@ def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
             "conformational_flexibility": np.nan,
         }
 
-    energies = get_conformer_energies(mol)
+    if energies is None:
+        energies = get_conformer_energies(mol)
     valid_energies = [e for e in energies if not np.isnan(e)]
 
     if not valid_energies:
@@ -1353,7 +1370,7 @@ def _stereo_preserved(mol_with_conf: Chem.Mol, input_chirality: frozenset) -> bo
         return False
 
 
-def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int, str]:
+def _compute_descriptors_boltzmann(mol: Chem.Mol, energy_method: str = "GFN2-xTB") -> Tuple[Dict[str, float], int, str]:
     """Compute Boltzmann-weighted ensemble descriptors.
 
     Computes energies for all conformers, selects those within the energy
@@ -1363,6 +1380,8 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
 
     Args:
         mol: RDKit molecule with conformer(s) and explicit Hs
+        energy_method: Ranking model passed to conformer_energies_and_method
+            ("GFN2-xTB" default, or "MMFF94s" to force the force-field path).
 
     Returns:
         Tuple of (features_dict, confs_in_window, energy_method) where
@@ -1370,7 +1389,7 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
         Boltzmann average and energy_method is the energy model that produced
         the weights (e.g. ``"GFN2-xTB"`` or ``"MMFF94s"``).
     """
-    energies, energy_method = conformer_energies_and_method(mol)
+    energies, energy_method = conformer_energies_and_method(mol, energy_method=energy_method)
     conf_ids, weights = boltzmann_weights(energies)
 
     # Collect per-conformer descriptors for all conformers in the window
@@ -1404,8 +1423,9 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int
                 features[key] = np.nan
 
     # Conformer ensemble stats are computed over the full generated ensemble,
-    # not just the Boltzmann window.
-    features.update(compute_conformer_statistics(mol))
+    # not just the Boltzmann window. Reuse the energies already computed above
+    # for the Boltzmann weights instead of re-running xTB on every conformer.
+    features.update(compute_conformer_statistics(mol, energies=energies))
     return features, len(conf_ids), energy_method
 
 
@@ -1414,11 +1434,12 @@ def compute_descriptors_3d(
     optimize: bool = True,
     random_seed: int = 42,
     complexity_check: bool = True,
+    energy_method: str = "GFN2-xTB",
 ) -> pd.DataFrame:
     """
     Compute 3D molecular descriptors for ADMET modeling.
 
-    Generates an adaptive conformer ensemble (50/300/500 conformers by
+    Generates an adaptive conformer ensemble (50/200 conformers by
     rotatable-bond tier — see :func:`adaptive_n_conformers`) and returns
     Boltzmann-weighted descriptors averaged over a 5 kcal/mol energy window.
     Designed for the async SageMaker endpoint, whose 60-minute invocation
@@ -1430,6 +1451,9 @@ def compute_descriptors_3d(
         random_seed: Random seed for conformer generation (default 42)
         complexity_check: Whether to skip molecules that exceed complexity thresholds
                          (default True). Set False for local analysis of complex molecules.
+        energy_method: Conformer-ranking energy model — "GFN2-xTB" (default) or
+                         "MMFF94s" to force the force-field path (skips xTB). For
+                         xTB-vs-MMFF comparison studies. Surfaces as desc3d_energy_method.
 
     Returns:
         DataFrame with 74 additional 3D descriptor columns:
@@ -1441,6 +1465,9 @@ def compute_descriptors_3d(
     Example:
         df = compute_descriptors_3d(df)
     """
+    if energy_method not in ("GFN2-xTB", "MMFF94s"):
+        raise ValueError(f"energy_method must be 'GFN2-xTB' or 'MMFF94s', got {energy_method!r}")
+
     # Find SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
     if smiles_column is None:
@@ -1449,7 +1476,7 @@ def compute_descriptors_3d(
     n_molecules = len(df)
 
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules...")
-    logger.info(f"Parameters: n_conformers=adaptive (50/300/500), optimize={optimize}, force_tol={BOLTZMANN_FORCE_TOL}")
+    logger.info(f"Parameters: n_conformers=adaptive (50/200), optimize={optimize}, force_tol={BOLTZMANN_FORCE_TOL}")
 
     # Build all output columns up front in one DataFrame and concat once.
     # Inserting 80+ columns one at a time on the input DataFrame triggers
@@ -1537,7 +1564,7 @@ def compute_descriptors_3d(
             result.at[idx, "desc3d_stereo_preserved"] = _stereo_preserved(mol, input_chirality)
 
             # Boltzmann-weighted ensemble descriptors
-            features, confs_in_window, energy_method = _compute_descriptors_boltzmann(mol)
+            features, confs_in_window, energy_method = _compute_descriptors_boltzmann(mol, energy_method=energy_method)
 
             for name, value in features.items():
                 if name in result.columns:
