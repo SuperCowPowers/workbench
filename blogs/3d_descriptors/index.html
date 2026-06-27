@@ -5092,7 +5092,7 @@
 <h1 id="3d-molecular-descriptors-shape-surface-and-pharmacophore-features">3D Molecular Descriptors: Shape, Surface, and Pharmacophore Features</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">When to reach for 3D</p>
-<p>On most TDC ADMET endpoints, careful 2D fingerprints + learned graph representations are highly competitive on their own. Use the 3D endpoint when you need shape-aware features for geometry-sensitive endpoints (passive permeability, P-gp / BCRP interactions, conformer-dependent solubility), typically alongside the 2D feature set, not as a replacement for it.</p>
+<p>For most ADMET endpoints, 2D fingerprints + learned graph representations are competitive on their own. Reach for 3D on geometry-sensitive endpoints (passive permeability, P-gp/BCRP, conformer-dependent solubility) — as a complement to the 2D set, not a replacement.</p>
 </div>
 <p>2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. Some ADMET properties have geometric components that 2D descriptors capture only indirectly through their correlations with the molecular graph: how a molecule fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface. The 3D endpoint exposes these directly as engineered features -- whether they help on a given task is an empirical question, not a foregone conclusion.</p>
 <p>Workbench's 3D descriptor endpoints compute <strong>74 conformer-based features</strong> from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: <strong>send a DataFrame, get a DataFrame back</strong> -- the input DataFrame comes back with 74 descriptor columns appended. The pipeline runs as the <strong><code>smiles-to-3d-full-v1</code></strong> async endpoint, using an adaptive, Boltzmann-weighted conformer ensemble for high-quality features.</p>
@@ -5159,9 +5159,15 @@
 <p>The count is capped at 200 because GFN2-xTB scores every conformer (cost ≈ heavy atoms × conformers), while for heavy/flexible molecules only a handful of conformers fall inside the 5 kcal/mol Boltzmann window regardless of how many are generated — so beyond ~200 the extra compute buys little usable ensemble. For molecules whose features are genuinely seed-sensitive, the effective lever is seed-diversity or a wider energy window rather than raw conformer count (see <a href="#limitations-future-work">Limitations</a>).</p>
 <h2 id="the-computation-pipeline">The Computation Pipeline</h2>
 <p>The 3D descriptor endpoint runs a multi-step pipeline for each molecule:</p>
-<figure style="margin: 20px auto; text-align: center;">
+<figure style="margin: 10px auto; text-align: center;">
 <img src="../../images/3d_descriptor_pipeline.svg" alt="3D descriptor pipeline: SMILES to Standardize to Conformers to 74 Descriptors" style="width: 100%; min-height: 300px;">
 <figcaption><em>The 3D descriptor pipeline: standardization, tiered conformer generation with MMFF94s geometry optimization, GFN2-xTB energy ranking, and Boltzmann-weighted ensemble descriptors across four categories.</em></figcaption>
+</figure>
+
+<p>The <strong>Conformers</strong> box above is the engine of the pipeline (marked <em>details ▾</em>). It expands into two decoupled stages, and the order matters: <strong>geometry</strong> is built first (ETKDGv3 → MMFF94s), then <strong>energy</strong> ranking runs GFN2-xTB on <em>all</em> conformers before the 5 kcal/mol window narrows the ensemble down to the few that get Boltzmann-averaged.</p>
+<figure style="margin: 10px auto; text-align: center;">
+<img src="../../images/3d_descriptor_pipeline_detail.svg" alt="Inside the Conformers stage: embed and MMFF94s-optimize N conformers, score all N with GFN2-xTB, keep k within a 5 kcal/mol window, compute Boltzmann weights" style="width: 100%; height: auto;">
+<figcaption><em>Expansion of the Conformers stage: GFN2-xTB scores all N conformers, then the 5 kcal/mol window keeps the k that get Boltzmann-weighted. xTB only scores, so the 74 descriptors are computed on the MMFF94s geometry.</em></figcaption>
 </figure>
 
 <h3 id="step-1-standardization">Step 1: Standardization</h3>
