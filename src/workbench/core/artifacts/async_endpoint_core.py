@@ -132,7 +132,7 @@ class AsyncEndpointCore(EndpointCore):
         if self.is_serverless():
             return  # serverless scales per-request — no instances to warm, no count to poll
 
-        log.important(f"Endpoint '{self.name}': sending warm-up request (scale-up can take a few minutes)...")
+        log.important(f"Endpoint '{self.name}': sending warm-up request (scale-up can take 10-15 minutes)...")
 
         # Queue a trivial job so SageMaker scales the fleet up. If we can't even
         # queue it (perms, bad payload, missing bucket), that's a hard, non-retryable

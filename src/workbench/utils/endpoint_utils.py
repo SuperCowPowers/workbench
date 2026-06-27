@@ -229,7 +229,7 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
         endpoint_modified = None
 
     if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
-        endpoint.log.important(
+        endpoint.log.info(
             f"Endpoint[{endpoint.name}]: cached {kind} are stale "
             f"(endpoint modified {endpoint_modified} > param modified {param_modified}) — re-deriving."
         )
