@@ -1018,15 +1018,30 @@ class ModelCore(Artifact):
         # Overwrite-safe: no-op if dst is absent, else clears the group + its S3 dir
         ModelCore.managed_delete(dst_name)
 
-        # Freeze the artifact under the copy's own group dir (immune to the source's
+        # Freeze the artifact under the copy's own training dir (immune to the source's
         # delete-then-create churn, which wipes the source's training path)
-        frozen_url = f"{self.models_s3_path}/training/{dst_name}/model.tar.gz"
+        dst_training_path = f"{self.models_s3_path}/{dst_name}/training"
+        frozen_url = f"{dst_training_path}/model.tar.gz"
         wr.s3.copy_objects(
             [src_url],
             source_path=src_url.rsplit("/", 1)[0],
             target_path=frozen_url.rsplit("/", 1)[0],
             boto3_session=self.boto3_session,
         )
+
+        # Carry the training-capture artifacts (validation_predictions.csv + SHAP files)
+        # into the copy's own training dir so the model_training capture / cross_fold_inference
+        # resolve on the copy just like the source. Top-level files only -- skip the source's
+        # timestamped training-job output subdirs (not needed by the copy).
+        prefix = self.model_training_path + "/"
+        training_objs = [o for o in wr.s3.list_objects(path=prefix) if "/" not in o[len(prefix):]]
+        if training_objs:
+            wr.s3.copy_objects(
+                training_objs,
+                source_path=self.model_training_path,
+                target_path=dst_training_path,
+                boto3_session=self.boto3_session,
+            )
 
         # Rebuild the container from create-valid fields only, repointing the artifact
         # URL to the frozen copy. Skip describe's read-only fields (ModelDataETag,
@@ -1113,10 +1128,14 @@ class ModelCore(Artifact):
         cls.log.info(f"Deleting Model Group {model_group_name}...")
         model_group.delete()
 
-        # Delete S3 training artifacts
-        s3_delete_path = f"{cls.models_s3_path}/training/{model_group_name}/"
-        cls.log.info(f"Deleting S3 Objects at {s3_delete_path}...")
-        wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
+        # Delete S3 training artifacts (the model's entire dir; trailing slash keeps it
+        # prefix-safe). Also clear the legacy copy location used by older model.copy()s.
+        for s3_delete_path in (
+            f"{cls.models_s3_path}/{model_group_name}/",
+            f"{cls.models_s3_path}/training/{model_group_name}/",
+        ):
+            cls.log.info(f"Deleting S3 Objects at {s3_delete_path}...")
+            wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
         # Delete any dataframes that were stored in the Dataframe Cache
         cls.log.info("Deleting Dataframe Cache Entries...")
