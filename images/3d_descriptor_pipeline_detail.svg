@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="276" viewBox="0 0 960 276" role="img"
+     font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <title>Inside the Conformers stage</title>
+  <desc>Expansion of the Conformers meta-box. Geometry stage: ETKDGv3 embeds 50 or 200 conformers by rotatable
+  bonds, MMFF94s optimizes them. Energy stage: GFN2-xTB scores all N conformers, a 5 kcal/mol window keeps k,
+  Boltzmann weights are computed. xTB only scores, so the 74 descriptors use the MMFF94s geometry.</desc>
+
+  <defs>
+    <linearGradient id="d3x-geo" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00796B"/><stop offset="100%" stop-color="#26A69A"/>
+    </linearGradient>
+    <linearGradient id="d3x-nrg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E65100"/><stop offset="100%" stop-color="#FB8C00"/>
+    </linearGradient>
+    <filter id="d3x-shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.18"/></filter>
+  </defs>
+
+  <rect x="4" y="4" width="952" height="268" rx="14" fill="#1b2026"/>
+
+  <text x="480" y="48" text-anchor="middle" font-size="25" font-weight="700" fill="#ECEFF1">Inside the Conformers Stage</text>
+  <text x="480" y="73" text-anchor="middle" font-size="15" fill="#90A4AE">expansion of the “Conformers” meta-box</text>
+
+  <!-- grouping brackets (double as the color legend) -->
+  <text x="206" y="112" text-anchor="middle" font-size="15" font-weight="700" fill="#4DB6AC">①  GEOMETRY  ·  ETKDGv3 → MMFF94s</text>
+  <path d="M36,122 L36,130 L376,130 L376,122" fill="none" stroke="#4DB6AC" stroke-width="1.5"/>
+  <text x="661" y="112" text-anchor="middle" font-size="15" font-weight="700" fill="#FFB74D">②  ENERGY  ·  GFN2-xTB → Boltzmann</text>
+  <path d="M400,122 L400,130 L922,130 L922,122" fill="none" stroke="#FFB74D" stroke-width="1.5"/>
+
+  <!-- Box 1: Embed -->
+  <rect x="36" y="150" width="158" height="106" rx="9" fill="url(#d3x-geo)" filter="url(#d3x-shadow)"/>
+  <text x="115" y="200" text-anchor="middle" font-size="19" font-weight="700" fill="white">Embed</text>
+  <text x="115" y="228" text-anchor="middle" font-size="15" fill="#E0F2F1">50 / 200 confs</text>
+  <line x1="194" y1="203" x2="216" y2="203" stroke="#90A4AE" stroke-width="2"/>
+  <polygon points="215,197 224,203 215,209" fill="#90A4AE"/>
+
+  <!-- Box 2: Optimize -->
+  <rect x="218" y="150" width="158" height="106" rx="9" fill="url(#d3x-geo)" filter="url(#d3x-shadow)"/>
+  <text x="297" y="200" text-anchor="middle" font-size="19" font-weight="700" fill="white">Optimize</text>
+  <text x="297" y="228" text-anchor="middle" font-size="15" fill="#E0F2F1">MMFF94s geometry</text>
+  <line x1="376" y1="203" x2="398" y2="203" stroke="#90A4AE" stroke-width="2"/>
+  <polygon points="397,197 406,203 397,209" fill="#90A4AE"/>
+
+  <!-- Box 3: Energies -->
+  <rect x="400" y="150" width="158" height="106" rx="9" fill="url(#d3x-nrg)" filter="url(#d3x-shadow)"/>
+  <text x="479" y="200" text-anchor="middle" font-size="19" font-weight="700" fill="white">Energies</text>
+  <text x="479" y="228" text-anchor="middle" font-size="15" fill="#FFF3E0">all N conformers</text>
+  <line x1="558" y1="203" x2="580" y2="203" stroke="#90A4AE" stroke-width="2"/>
+  <polygon points="579,197 588,203 579,209" fill="#90A4AE"/>
+
+  <!-- Box 4: Energy window -->
+  <rect x="582" y="150" width="158" height="106" rx="9" fill="url(#d3x-nrg)" filter="url(#d3x-shadow)"/>
+  <text x="661" y="200" text-anchor="middle" font-size="18" font-weight="700" fill="white">Energy window</text>
+  <text x="661" y="228" text-anchor="middle" font-size="15" fill="#FFF3E0">≤ 5 kcal/mol</text>
+  <line x1="740" y1="203" x2="762" y2="203" stroke="#90A4AE" stroke-width="2"/>
+  <polygon points="761,197 770,203 761,209" fill="#90A4AE"/>
+
+  <!-- Box 5: Boltzmann -->
+  <rect x="764" y="150" width="158" height="106" rx="9" fill="url(#d3x-nrg)" filter="url(#d3x-shadow)"/>
+  <text x="843" y="200" text-anchor="middle" font-size="19" font-weight="700" fill="white">Boltzmann</text>
+  <text x="843" y="228" text-anchor="middle" font-size="15" fill="#FFF3E0">wᵢ ∝ e^(−ΔE/kT)</text>
+</svg>
