@@ -1034,7 +1034,7 @@ class ModelCore(Artifact):
         # resolve on the copy just like the source. Top-level files only -- skip the source's
         # timestamped training-job output subdirs (not needed by the copy).
         prefix = self.model_training_path + "/"
-        training_objs = [o for o in wr.s3.list_objects(path=prefix) if "/" not in o[len(prefix):]]
+        training_objs = [o for o in wr.s3.list_objects(path=prefix) if "/" not in o[len(prefix) :]]
         if training_objs:
             wr.s3.copy_objects(
                 training_objs,
