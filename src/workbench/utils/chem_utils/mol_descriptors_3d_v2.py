@@ -93,7 +93,7 @@ _XTB_KEYS_LOGGED = False
 # =============================================================================
 
 
-def _electronic_from_result(res, n_atoms: int) -> Tuple[Dict[str, float], Optional[np.ndarray]]:
+def _electronic_from_result(res) -> Tuple[Dict[str, float], Optional[np.ndarray]]:
     """Pull electronic descriptors from one tblite Result, defensively.
 
     Every property is read in its own try/except so a missing/renamed tblite
@@ -191,7 +191,6 @@ def xtb_singlepoint_properties(
 
     numbers = np.array([a.GetAtomicNum() for a in mol.GetAtoms()])
     charge = Chem.GetFormalCharge(mol)
-    n_atoms = mol.GetNumAtoms()
 
     energies: List[float] = []
     props: List[Dict[str, float]] = []
@@ -203,7 +202,7 @@ def xtb_singlepoint_properties(
             calc.set("verbosity", 0)
             res = calc.singlepoint()
             energies.append(float(res.get("energy")) * HARTREE_TO_KCAL)
-            prop, q = _electronic_from_result(res, n_atoms)
+            prop, q = _electronic_from_result(res)
             props.append(prop)
             charges.append(q)
         except Exception as e:
