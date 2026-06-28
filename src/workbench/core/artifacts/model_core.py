@@ -24,7 +24,11 @@ from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
-from workbench.utils.model_utils import published_proximity_model, get_model_hyperparameters
+from workbench.utils.model_utils import (
+    published_proximity_model,
+    get_model_hyperparameters,
+    copy_model_artifacts,
+)
 
 
 class ModelType(Enum):
@@ -1010,38 +1014,16 @@ class ModelCore(Artifact):
         if self.latest_model is None:
             raise ValueError(f"Cannot copy {self.model_name}: no registered model package")
 
-        # Capture source artifact/container before any dst mutations
-        src_url = self.model_data_url()
+        # Capture source container/metadata before any dst mutations
         src_spec = self.latest_model["InferenceSpecification"]
         src_meta = self.workbench_meta() or {}
 
         # Overwrite-safe: no-op if dst is absent, else clears the group + its S3 dir
         ModelCore.managed_delete(dst_name)
 
-        # Freeze the artifact under the copy's own training dir (immune to the source's
-        # delete-then-create churn, which wipes the source's training path)
-        dst_training_path = f"{self.models_s3_path}/{dst_name}/training"
-        frozen_url = f"{dst_training_path}/model.tar.gz"
-        wr.s3.copy_objects(
-            [src_url],
-            source_path=src_url.rsplit("/", 1)[0],
-            target_path=frozen_url.rsplit("/", 1)[0],
-            boto3_session=self.boto3_session,
-        )
-
-        # Carry the training-capture artifacts (validation_predictions.csv + SHAP files)
-        # into the copy's own training dir so the model_training capture / cross_fold_inference
-        # resolve on the copy just like the source. Top-level files only -- skip the source's
-        # timestamped training-job output subdirs (not needed by the copy).
-        prefix = self.model_training_path + "/"
-        training_objs = [o for o in wr.s3.list_objects(path=prefix) if "/" not in o[len(prefix) :]]
-        if training_objs:
-            wr.s3.copy_objects(
-                training_objs,
-                source_path=self.model_training_path,
-                target_path=dst_training_path,
-                boto3_session=self.boto3_session,
-            )
+        # Stage the copy's S3 artifacts (frozen model.tar.gz + training-capture files)
+        # under the copy's own training dir; returns the frozen artifact URL.
+        frozen_url = copy_model_artifacts(self, dst_name)
 
         # Rebuild the container from create-valid fields only, repointing the artifact
         # URL to the frozen copy. Skip describe's read-only fields (ModelDataETag,

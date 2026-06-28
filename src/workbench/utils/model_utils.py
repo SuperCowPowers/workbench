@@ -102,6 +102,48 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
+def copy_model_artifacts(model: "Model", dst_name: str) -> str:
+    """Stage a model copy's S3 artifacts under the destination's training dir.
+
+    Copies the frozen model.tar.gz plus the top-level training-capture files
+    (validation_predictions.csv, shap_*) into {models_s3_path}/{dst_name}/training/.
+    The frozen artifact lives in the copy's own dir so it's immune to the source's
+    delete-then-create churn. Top-level files only -- the source's timestamped
+    training-job output subdirs aren't needed by the copy.
+
+    Args:
+        model (Model): The source model being copied
+        dst_name (str): Name of the destination model group
+
+    Returns:
+        str: The frozen model.tar.gz S3 URL for the copy's container spec
+    """
+    src_url = model.model_data_url()
+    dst_training_path = f"{model.models_s3_path}/{dst_name}/training"
+    session = model.boto3_session
+
+    # Freeze the artifact under the copy's own training dir
+    wr.s3.copy_objects(
+        [src_url],
+        source_path=src_url.rsplit("/", 1)[0],
+        target_path=dst_training_path,
+        boto3_session=session,
+    )
+
+    # Carry the top-level training-capture files (skip timestamped job-output subdirs)
+    prefix = model.model_training_path + "/"
+    training_objs = [o for o in wr.s3.list_objects(path=prefix) if "/" not in o[len(prefix) :]]
+    if training_objs:
+        wr.s3.copy_objects(
+            training_objs,
+            source_path=model.model_training_path,
+            target_path=dst_training_path,
+            boto3_session=session,
+        )
+
+    return f"{dst_training_path}/model.tar.gz"
+
+
 def proximity_model_local(model: Model, include_all_columns: bool = False) -> FeatureSpaceProximity:
     """Create a FeatureSpaceProximity Model for this Model
 
