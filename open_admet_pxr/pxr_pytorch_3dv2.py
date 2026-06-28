@@ -1,58 +1,48 @@
-"""PXR 2D+3D activity models — XGBoost UQ + PyTorch UQ on the combined descriptor set.
+"""PXR PyTorch UQ models on 2D + curated xTB 3D-v2 features (the openadmet_pxr_f2 set).
 
-Consumes fs:openadmet_pxr_activity_2d_3d (built by pxr_feature_sets.py): RDKit/Mordred
-2D concatenated with Boltzmann-ensemble 3D features.
+Pulled from storage and updated for the v2 3D descriptors. Consumes the shared
+`openadmet_pxr_f2` FeatureSet (train + revealed phase-1, featurized through
+`smiles-to-2d-3d-v2` = RDKit/Mordred 2D + curated xTB 3D). An XGBoost UQ model is
+built first to supply SHAP rankings for the reduced PyTorch variants:
 
-Models / Endpoints:
-    - pxr-2d-3d-reg-xgb           XGBoost UQ, full 2D+3D feature list
-    - pxr-2d-3d-reg-pytorch-<N>   PyTorch UQ, all N features
-    - pxr-2d-3d-reg-pytorch-100   PyTorch UQ, top-100 non-zero SHAP (from the XGB model)
-    - pxr-2d-3d-reg-pytorch-50    PyTorch UQ, top-50 non-zero SHAP
+    - pxr-2d-3dv2-reg-xgb           XGBoost UQ, full 2D+3D-v2 feature list (SHAP source)
+    - pxr-2d-3dv2-reg-pytorch-<N>   PyTorch UQ, all N features
+    - pxr-2d-3dv2-reg-pytorch-100   PyTorch UQ, top-100 non-zero SHAP
+    - pxr-2d-3dv2-reg-pytorch-50    PyTorch UQ, top-50 non-zero SHAP
 
-For a model that doesn't exist yet, the endpoint is created and test / full /
-cross-fold inference is run. Then — whether the endpoint is new or already
-deployed — a 'pxr_phase1_test' capture is run on the held-out Analog Set 1
-(pxr_test_phase1_unblinded, revealed pEC50). The held-out 3D features are
-computed through an InferenceCache so they are not recomputed across runs.
+f2 already CONTAINS the phase-1 rows (split == "phase1_test"), so each model
+zero-weights them via `sample_weights` (held-out never trains the model), then a
+`pxr_phase1_test` capture is run on exactly those rows — pulled straight from the
+FeatureSet (features already computed; no re-inference) — for honest held-out RAE.
 
-Self-contained for AWS Batch (the launcher uploads only this script).
+Run after the FeatureSet exists:  python ../pxr_feature_sets.py  (builds f2)
 """
 
 import logging
 
-from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType, PublicData
-from workbench.api.inference_cache import InferenceCache
+from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType
+from workbench.utils.chem_utils.mol_descriptors_3d_v2 import get_3d_v2_feature_names
 
 log = logging.getLogger("workbench")
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-FS_NAME = "openadmet_pxr_activity_2d_3d"
-VARIANT = "2d-3d"  # used in model/endpoint names: pxr-2d-3d-reg-*
-ENDPOINT_2D = "smiles-to-2d-v1"
-ENDPOINT_3D = "smiles-to-3d-full-v1"
+FS_NAME = "openadmet_pxr_f2"
+VARIANT = "2d-3dv2"  # used in model/endpoint names: pxr-2d-3dv2-reg-*
+ENDPOINT_2D = "smiles-to-2d-v1"  # 2D feature columns; 3D-v2 columns come from get_3d_v2_feature_names()
 
 TARGET_COL = "pec50"
 SMILES_COL = "smiles"
 ID_COL = "molecule_name"
-TAGS = ["openadmet_pxr", "activity", "regression"]
-
-PHASE1_KEY = "comp_chem/openadmet_pxr/pxr_test_phase1_unblinded"
+SPLIT_COL = "split"
+TAGS = ["openadmet_pxr", "activity", "regression", "3dv2"]
 CAPTURE_NAME = "pxr_phase1_test"
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
-def feature_list() -> list[str]:
-    """Full feature list = 2D columns concatenated with 3D columns."""
-    return list(Endpoint(ENDPOINT_2D).output_columns()) + list(Endpoint(ENDPOINT_3D).output_columns())
-
-
-def phase1_test_df():
-    """Held-out Analog Set 1, featurized through the 2D endpoint then the cached 3D endpoint."""
-    df = PublicData().get(PHASE1_KEY)
-    df = df[[ID_COL, SMILES_COL, TARGET_COL]].dropna(subset=[TARGET_COL]).reset_index(drop=True)
-    df = Endpoint(ENDPOINT_2D).inference(df)
-    cached_3d = InferenceCache(Endpoint(ENDPOINT_3D), cache_key_column=SMILES_COL)
-    return cached_3d.inference(df)
+def feature_list(df) -> list[str]:
+    """2D columns + curated 3D-v2 columns, restricted to those present in the FeatureSet."""
+    cols = list(Endpoint(ENDPOINT_2D).output_columns()) + list(get_3d_v2_feature_names())
+    return [c for c in cols if c in df.columns]
 
 
 def top_n_shap(model_name: str, n: int) -> list[str]:
@@ -60,8 +50,11 @@ def top_n_shap(model_name: str, n: int) -> list[str]:
     return [feat for feat, imp in Model(model_name).shap_importance() if imp != 0.0][:n]
 
 
-def build_if_missing(fs, name: str, framework, feats: list[str], extra_tags: list[str], desc: str) -> None:
-    """Create the model + endpoint and run the standard validation captures, if missing."""
+def build_if_missing(fs, name, framework, feats, sample_weights, extra_tags, desc) -> None:
+    """Create the model + endpoint and run the standard validation captures, if missing.
+
+    `sample_weights` zero-weights the held-out phase1_test rows so they never train.
+    """
     if Model(name).exists():
         log.info(f"Model '{name}' already exists — skipping build")
         return
@@ -74,12 +67,12 @@ def build_if_missing(fs, name: str, framework, feats: list[str], extra_tags: lis
         feature_list=feats,
         description=desc,
         tags=TAGS + extra_tags,
+        sample_weights=sample_weights,
     )
     model.set_owner("open_admet_pxr")
     end = model.to_endpoint(tags=TAGS + extra_tags, max_concurrency=1)
     end.set_owner("open_admet_pxr")
     end.test_inference()
-    end.full_inference()
     end.cross_fold_inference()
 
 
@@ -101,19 +94,18 @@ if __name__ == "__main__":
     if not fs.exists():
         raise RuntimeError(f"FeatureSet '{FS_NAME}' not found. Run pxr_feature_sets.py first.")
 
-    feats = feature_list()
-    test_df = phase1_test_df()
+    df = fs.pull_dataframe()
+    feats = feature_list(df)
+    phase1 = df[df[SPLIT_COL] == "phase1_test"]
+    sample_weights = {mid: 0.0 for mid in phase1[ID_COL]}  # held-out rows don't train
+    test_df = phase1[[ID_COL, SMILES_COL, TARGET_COL] + feats]  # features already present — no re-inference
     log.info(f"=== {VARIANT} — {FS_NAME}  ({len(feats)} features, {len(test_df)} held-out rows) ===")
 
-    # XGBoost UQ — full feature list.
+    # XGBoost UQ — full feature list (also the SHAP source for the reduced PyTorch variants).
     xgb_name = f"pxr-{VARIANT}-reg-xgb"
     build_if_missing(
-        fs,
-        xgb_name,
-        ModelFramework.XGBOOST,
-        feats,
-        [VARIANT, "xgboost"],
-        f"PXR pEC50 XGBoost UQ model on {VARIANT} features",
+        fs, xgb_name, ModelFramework.XGBOOST, feats, sample_weights,
+        [VARIANT, "xgboost"], f"PXR pEC50 XGBoost UQ on {VARIANT} features (phase1_test zero-weighted)",
     )
     capture_phase1(xgb_name, test_df)
 
@@ -126,12 +118,8 @@ if __name__ == "__main__":
         name = f"pxr-{VARIANT}-reg-pytorch-{count}"
         selected = preset if preset is not None else top_n_shap(xgb_name, count)
         build_if_missing(
-            fs,
-            name,
-            ModelFramework.PYTORCH,
-            selected,
-            [VARIANT, "pytorch", f"feat{count}"],
-            f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}",
+            fs, name, ModelFramework.PYTORCH, selected, sample_weights,
+            [VARIANT, "pytorch", f"feat{count}"], f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}",
         )
         capture_phase1(name, test_df)
 
