@@ -1,9 +1,12 @@
 {
   "pipelines": {
     "openadmet_pxr": [
-      {"script": "pxr_feature_sets.py", "outputs": ["fs:openadmet_pxr_f1"]},
+      {"script": "pxr_feature_sets.py",
+       "inputs": ["public:comp_chem/openadmet_pxr/pxr_train", "public:comp_chem/openadmet_pxr/pxr_test_phase1_unblinded"],
+       "outputs": ["fs:openadmet_pxr_f1", "fs:openadmet_pxr_f2"]},
       {"script": "phase1/pxr_chemprop_phase1.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-phase1"]},
-      {"script": "phase2/pxr_chemprop_phase2.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-phase2"]}
+      {"script": "phase2/pxr_chemprop_phase2.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-phase2"]},
+      {"script": "pxr_pytorch_3dv2.py", "inputs": ["fs:openadmet_pxr_f2"], "outputs": ["model:pxr-2d-3dv2-reg-xgb", "model:pxr-2d-3dv2-reg-pytorch-339", "model:pxr-2d-3dv2-reg-pytorch-100", "model:pxr-2d-3dv2-reg-pytorch-50"]}
     ]
   }
 }
