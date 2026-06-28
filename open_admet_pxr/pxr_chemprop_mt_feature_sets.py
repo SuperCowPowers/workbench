@@ -48,8 +48,8 @@ if recreate or not FeatureSet(MT_FS).exists():
         dataframes=[pxr, logp, logd],
         target_columns=[["pec50"], ["logp"], ["logd"]],
         id_column="molecule_name",
-        merge_on_smiles=True,      # public sources share no ids; collapse by canonical SMILES
-        standardize_smiles=True,   # ChEMBL pipeline so cross-source SMILES actually match
+        merge_on_smiles=True,  # public sources share no ids; collapse by canonical SMILES
+        standardize_smiles=True,  # ChEMBL pipeline so cross-source SMILES actually match
         passthrough_columns=[["split"], [], []],  # carry PXR split through the merge
     )
     validate_multi_task_data(df, TARGETS, id_column="molecule_name")
