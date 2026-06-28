@@ -999,8 +999,10 @@ class ModelCore(Artifact):
         """Copy this model to a new model group (no retraining).
 
         Clones the model package (container spec + a frozen copy of the model
-        artifact) plus workbench metadata. Used to snapshot a winning challenger
-        into a stable, date-stamped promoted model. Overwrites dst if it exists.
+        artifact), the workbench metadata, and the training-capture files
+        (validation_predictions.csv + SHAP) so cross_fold_inference resolves on
+        the copy. Used to snapshot a winning challenger into a stable, date-stamped
+        promoted model. Overwrites dst if it exists.
 
         Args:
             dst_name (str): Name of the new model group
