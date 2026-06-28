@@ -6,6 +6,8 @@
        "outputs": ["fs:openadmet_pxr_f1", "fs:openadmet_pxr_f2"]},
       {"script": "phase1/pxr_chemprop_phase1.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-phase1"]},
       {"script": "phase2/pxr_chemprop_phase2.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-phase2"]},
+      {"script": "phase1/pxr_chemprop_chemeleon_phase1.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-chemeleon-phase1-frz0", "model:pxr-reg-chemprop-chemeleon-phase1-frz10", "model:pxr-reg-chemprop-chemeleon-phase1-frz20"]},
+      {"script": "phase2/pxr_chemprop_chemeleon_phase2.py", "inputs": ["fs:openadmet_pxr_f1"], "outputs": ["model:pxr-reg-chemprop-chemeleon-phase2"]},
       {"script": "pxr_pytorch_3dv2.py", "inputs": ["fs:openadmet_pxr_f2"], "outputs": ["model:pxr-2d-3dv2-reg-xgb", "model:pxr-2d-3dv2-reg-pytorch-339", "model:pxr-2d-3dv2-reg-pytorch-100", "model:pxr-2d-3dv2-reg-pytorch-50"]}
     ]
   }
