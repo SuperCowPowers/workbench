@@ -83,6 +83,12 @@
       "smiles": "O=C(OCC(COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)(COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)COC(=O)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1)CCc1cc(C(C)(C)C)c(O)c(C(C)(C)C)c1",
       "expected_status": "skip:cost",
       "notes": "Irganox 1010 (CAS 6683-19-8) — a large, very flexible commercial antioxidant: 85 heavy atoms × 500-conformer tier (20 rot bonds) = cost 42500 > 24000. Passes the heavy-atom/rot-bond size guards but is pathologically expensive for the GFN2-xTB energy step, so it's caught by the skip:cost backstop instead of timing out the endpoint into NaNs. Public commercial additive — exercises the skip:cost path with a large, flexible real-world molecule."
+    },
+    {
+      "name": "cyclosporin_a_full",
+      "smiles": "C/C=C/C[C@@H](C)[C@@H](O)[C@H]1C(=O)N[C@@H](CC)C(=O)N(C)CC(=O)N(C)[C@@H](CC(C)C)C(=O)N[C@@H](C(C)C)C(=O)N(C)[C@@H](CC(C)C)C(=O)N[C@@H](C)C(=O)N[C@H](C)C(=O)N(C)[C@@H](CC(C)C)C(=O)N(C)[C@@H](CC(C)C)C(=O)N(C)[C@@H](C(C)C)C(=O)N1C",
+      "expected_status": "skip:cost",
+      "notes": "Full cyclosporin A (C62H111N11O12, 85 heavy atoms x 200-conformer tier (15 rot bonds) = cost 17000 > 14000). A real cyclic-peptide drug from the public OpenADMET PXR set (OADMET-0003803) — exercises skip:cost with a clinically relevant molecule (complements the industrial irganox_1010). Note: the smaller 'cyclosporin_a' entry above (63 heavy, cost 12600) stays under the cap and computes."
     }
   ]
 }
