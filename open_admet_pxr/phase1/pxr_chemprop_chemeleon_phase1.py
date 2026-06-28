@@ -1,12 +1,13 @@
-"""PXR phase-1 CheMeleon freeze sweep — pick freeze_mpnn_epochs on held-out RAE.
+"""PXR phase-1 CheMeleon freeze sweep — NEGATIVE result (kept for the record).
 
-Chemprop warm-started from the CheMeleon foundation model. CheMeleon's validated
-protocol is full fine-tune (freeze=0); a short freeze (linear-probe-then-
-fine-tune, Kumar et al. 2022) is theoretically better for our small + OOD regime
-but unproven here — so we sweep it rather than guess. For each freeze value a
-model is built, the phase1_test rows are zero-weighted out of training, and a
-'pxr_phase1_test' capture is run on exactly those rows for an honest held-out
-comparison. Lock the phase-2 submission model to the winner.
+Chemprop warm-started from the CheMeleon foundation model, sweeping the freeze
+length (full fine-tune vs linear-probe-then-fine-tune, Kumar et al. 2022). Held-
+out phase1_test RAE: frz0 0.696, frz10 0.704, frz20 0.706 — all ~0.12 worse than
+from-scratch chemprop (0.577). Even frz0 (CheMeleon's validated full fine-tune)
+loses badly, so it's not a freeze-tuning problem: `from_foundation` pins the MPNN
+to CheMeleon's pretrained dims, replacing our tuned depth=6/hidden_dim=700, and on
+this small assay the from-scratch tuned MPNN wins. So CheMeleon is NOT used for
+the phase-2 submission (that script was deleted); this file documents why.
 
 Build the FeatureSet first: python ../pxr_feature_sets.py
 """

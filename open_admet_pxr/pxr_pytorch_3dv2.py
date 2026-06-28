@@ -8,7 +8,6 @@ built first to supply SHAP rankings for the reduced PyTorch variants:
     - pxr-2d-3dv2-reg-xgb           XGBoost UQ, full 2D+3D-v2 feature list (SHAP source)
     - pxr-2d-3dv2-reg-pytorch-<N>   PyTorch UQ, all N features
     - pxr-2d-3dv2-reg-pytorch-100   PyTorch UQ, top-100 non-zero SHAP
-    - pxr-2d-3dv2-reg-pytorch-50    PyTorch UQ, top-50 non-zero SHAP
 
 f2 already CONTAINS the phase-1 rows (split == "phase1_test"), so each model
 zero-weights them via `sample_weights` (held-out never trains the model), then a
@@ -114,11 +113,10 @@ if __name__ == "__main__":
     )
     capture_phase1(xgb_name, test_df)
 
-    # PyTorch UQ — all features, top-100 SHAP, top-50 SHAP.
+    # PyTorch UQ — all features, top-100 SHAP.
     for count, preset, label in [
         (len(feats), feats, f"all {len(feats)} features"),
         (100, None, "top-100 non-zero SHAP"),
-        (50, None, "top-50 non-zero SHAP"),
     ]:
         name = f"pxr-{VARIANT}-reg-pytorch-{count}"
         selected = preset if preset is not None else top_n_shap(xgb_name, count)

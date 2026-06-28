@@ -52,7 +52,7 @@ nav:
     - AWS Endpoint Architecture: blogs/aws_endpoint_architecture.md
     - Molecular Standardization: blogs/molecular_standardization.md
     - 3D Molecular Descriptors: blogs/3d_descriptors.md
-    - 2D vs 3D (PXR Case Study): blogs/pxr_2d_vs_3d.md
+    - A Weekend on the PXR Challenge: blogs/pxr_weekend_experiments.md
     - Feature Endpoints: blogs/feature_endpoints.md
   - Core Classes: 
     - OverView: core_classes/overview.md
