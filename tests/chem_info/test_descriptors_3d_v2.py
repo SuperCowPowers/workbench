@@ -39,9 +39,13 @@ def test_all_molecules_ok(result):
 
 
 def test_all_features_present_and_finite(result):
-    """Every declared v2 feature exists and is finite for these well-behaved molecules."""
+    """Every declared v2 feature exists; non-xTB features are finite for these
+    well-behaved molecules. The xTB electronic block (elec_*, surf_psa_charge)
+    is NaN by design when tblite is unavailable, so it's only checked then."""
     feats = get_3d_v2_feature_names()
     assert set(feats).issubset(result.columns)
+    if not TBLITE_AVAILABLE:
+        feats = [f for f in feats if not f.startswith("elec_") and f != "surf_psa_charge"]
     block = result[feats].astype(float)
     assert np.isfinite(block.to_numpy()).all(), block.isna().sum()[lambda s: s > 0].to_dict()
 
@@ -51,8 +55,9 @@ def test_surface_polar_split_is_sane(result):
     assert result.loc["benzene", "surf_sasa_polar"] == pytest.approx(0.0, abs=1.0)
     assert result.loc["decane", "surf_sasa_polar"] == pytest.approx(0.0, abs=1.0)
     assert result.loc["aspirin", "surf_sasa_polar"] > 20.0
-    # fraction apolar in [0, 1]
-    assert (result["surf_frac_apolar"].between(0.0, 1.0)).all()
+    # fraction apolar in [0, 1] (tolerate float error from the weighted average)
+    frac = result["surf_frac_apolar"]
+    assert ((frac >= -1e-9) & (frac <= 1.0 + 1e-9)).all()
 
 
 def test_shape_npr_classifies_rod_vs_disc(result):
