@@ -104,8 +104,13 @@ if __name__ == "__main__":
     # XGBoost UQ — full feature list (also the SHAP source for the reduced PyTorch variants).
     xgb_name = f"pxr-{VARIANT}-reg-xgb"
     build_if_missing(
-        fs, xgb_name, ModelFramework.XGBOOST, feats, sample_weights,
-        [VARIANT, "xgboost"], f"PXR pEC50 XGBoost UQ on {VARIANT} features (phase1_test zero-weighted)",
+        fs,
+        xgb_name,
+        ModelFramework.XGBOOST,
+        feats,
+        sample_weights,
+        [VARIANT, "xgboost"],
+        f"PXR pEC50 XGBoost UQ on {VARIANT} features (phase1_test zero-weighted)",
     )
     capture_phase1(xgb_name, test_df)
 
@@ -118,8 +123,13 @@ if __name__ == "__main__":
         name = f"pxr-{VARIANT}-reg-pytorch-{count}"
         selected = preset if preset is not None else top_n_shap(xgb_name, count)
         build_if_missing(
-            fs, name, ModelFramework.PYTORCH, selected, sample_weights,
-            [VARIANT, "pytorch", f"feat{count}"], f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}",
+            fs,
+            name,
+            ModelFramework.PYTORCH,
+            selected,
+            sample_weights,
+            [VARIANT, "pytorch", f"feat{count}"],
+            f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}",
         )
         capture_phase1(name, test_df)
 
