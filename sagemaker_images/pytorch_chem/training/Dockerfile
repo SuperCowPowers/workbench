@@ -34,6 +34,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Layer 2: Workbench + bridges — rebuilds per version bump, ~20 MB delta.
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
-ARG WORKBENCH_VERSION=0.8.391
+ARG WORKBENCH_VERSION=0.8.392
 RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-deps "workbench-bridges==0.2.10"
