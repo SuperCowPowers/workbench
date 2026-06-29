@@ -49,14 +49,11 @@ def top_n_shap(model_name: str, n: int) -> list[str]:
     return [feat for feat, imp in Model(model_name).shap_importance() if imp != 0.0][:n]
 
 
-def build_if_missing(fs, name, framework, feats, sample_weights, extra_tags, desc) -> None:
-    """Create the model + endpoint and run the standard validation captures, if missing.
+def build(fs, name, framework, feats, sample_weights, extra_tags, desc) -> None:
+    """Create the model + endpoint and run the standard validation captures.
 
     `sample_weights` zero-weights the held-out phase1_test rows so they never train.
     """
-    if Model(name).exists():
-        log.info(f"Model '{name}' already exists — skipping build")
-        return
     log.info(f"Creating {framework.name} model: {name}  ({len(feats)} features)")
     model = fs.to_model(
         name=name,
@@ -102,7 +99,7 @@ if __name__ == "__main__":
 
     # XGBoost UQ — full feature list (also the SHAP source for the reduced PyTorch variants).
     xgb_name = f"pxr-{VARIANT}-reg-xgb"
-    build_if_missing(
+    build(
         fs,
         xgb_name,
         ModelFramework.XGBOOST,
@@ -120,7 +117,7 @@ if __name__ == "__main__":
     ]:
         name = f"pxr-{VARIANT}-reg-pytorch-{count}"
         selected = preset if preset is not None else top_n_shap(xgb_name, count)
-        build_if_missing(
+        build(
             fs,
             name,
             ModelFramework.PYTORCH,

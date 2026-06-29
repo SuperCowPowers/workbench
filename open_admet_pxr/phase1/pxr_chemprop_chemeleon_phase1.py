@@ -12,9 +12,8 @@ the phase-2 submission (that script was deleted); this file documents why.
 Build the FeatureSet first: python ../pxr_feature_sets.py
 """
 
-from workbench.api import FeatureSet, Model, Endpoint, ModelType, ModelFramework
+from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework
 
-recreate = False
 fs_name = "openadmet_pxr_f1"
 FREEZE_EPOCHS = [0, 10, 20]  # 0 = CheMeleon's validated full fine-tune; >0 = LP-FT bet for OOD
 base_tags = ["openadmet_pxr", "chemprop", "chemeleon", "phase1"]
@@ -27,22 +26,21 @@ weights = {mid: 0.0 for mid in phase1["molecule_name"]}  # held-out rows don't t
 for frz in FREEZE_EPOCHS:
     model_name = f"pxr-reg-chemprop-chemeleon-phase1-frz{frz}"
     tags = base_tags + [f"frz{frz}"]
-    if recreate or not Model(model_name).exists():
-        m = fs.to_model(
-            name=model_name,
-            model_type=ModelType.UQ_REGRESSOR,
-            model_framework=ModelFramework.CHEMPROP,
-            feature_list=["smiles"],
-            target_column="pec50",
-            description=f"PXR phase-1 Chemprop, CheMeleon warm-start, freeze={frz} (phase1_test zero-weighted)",
-            tags=tags,
-            hyperparameters={"uq_version": "v1", "from_foundation": "CheMeleon", "freeze_mpnn_epochs": frz},
-            sample_weights=weights,
-        )
-        m.set_owner("open_admet_pxr")
-        end = m.to_endpoint(tags=tags)
-        end.set_owner("open_admet_pxr")
-        end.test_inference()
-        end.cross_fold_inference()
+    m = fs.to_model(
+        name=model_name,
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.CHEMPROP,
+        feature_list=["smiles"],
+        target_column="pec50",
+        description=f"PXR phase-1 Chemprop, CheMeleon warm-start, freeze={frz} (phase1_test zero-weighted)",
+        tags=tags,
+        hyperparameters={"uq_version": "v1", "from_foundation": "CheMeleon", "freeze_mpnn_epochs": frz},
+        sample_weights=weights,
+    )
+    m.set_owner("open_admet_pxr")
+    end = m.to_endpoint(tags=tags)
+    end.set_owner("open_admet_pxr")
+    end.test_inference()
+    end.cross_fold_inference()
     # Held-out capture on the phase1_test rows (the model never trained on them)
     Endpoint(model_name).inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")

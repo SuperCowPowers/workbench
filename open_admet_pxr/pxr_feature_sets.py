@@ -14,17 +14,14 @@ A `split` column marks each row ("train" or "phase1_test"):
     held-out set never trains it — then evaluates on exactly those rows.
   - phase-2 model trains on everything (train + phase-1) and predicts the blinded set.
 
-Builds only the missing FeatureSets (flip `recreate` to rebuild all). f2 requires
-the smiles-to-2d-3d-v2 endpoint to be deployed first.
+f2 requires the smiles-to-2d-3d-v2 endpoint to be deployed first.
 
 Run once before the phase models:  python pxr_feature_sets.py
 """
 
 import pandas as pd
-from workbench.api import DataSource, Endpoint, FeatureSet, PublicData
+from workbench.api import DataSource, Endpoint, PublicData
 from workbench.api.inference_cache import InferenceCache
-
-recreate = False
 
 # FeatureSet name -> the (Meta)Endpoint that produces its 2D+3D features.
 FEATURE_SETS = {
@@ -52,19 +49,13 @@ def build_feature_set(fs_name: str, feature_endpoint: str, df: pd.DataFrame) -> 
     )
 
 
-needed = {name: ep for name, ep in FEATURE_SETS.items() if recreate or not FeatureSet(name).exists()}
-if needed:
-    train = PublicData().get("comp_chem/openadmet_pxr/pxr_train")[["molecule_name", "smiles", "pec50"]].copy()
-    train["split"] = "train"
-    phase1 = (
-        PublicData()
-        .get("comp_chem/openadmet_pxr/pxr_test_phase1_unblinded")[["molecule_name", "smiles", "pec50"]]
-        .copy()
-    )
-    phase1["split"] = "phase1_test"
-    df = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)
+train = PublicData().get("comp_chem/openadmet_pxr/pxr_train")[["molecule_name", "smiles", "pec50"]].copy()
+train["split"] = "train"
+phase1 = (
+    PublicData().get("comp_chem/openadmet_pxr/pxr_test_phase1_unblinded")[["molecule_name", "smiles", "pec50"]].copy()
+)
+phase1["split"] = "phase1_test"
+df = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)
 
-    for name, ep in needed.items():
-        build_feature_set(name, ep, df)
-else:
-    print("All PXR FeatureSets exist — skipping (set recreate=True to rebuild)")
+for name, ep in FEATURE_SETS.items():
+    build_feature_set(name, ep, df)

@@ -18,10 +18,10 @@ self-contained:
         └─ ...
 
 Each per-cliff CSV holds the cliff compound + its unique fingerprint
-neighbors with measured values pulled live from the source Model's UQ
-proximity index and FeatureSet. The shared metadata (assay, source model,
-chemistry rationale) lives both in-row (for portability) and in the
-top-level descriptions.json entry keyed by the filename.
+neighbors with measured values pulled live from the source Model's
+fingerprint-proximity index and FeatureSet. The shared metadata (assay,
+source model, chemistry rationale) lives both in-row (for portability) and
+in the top-level descriptions.json entry keyed by the filename.
 
 Access (read-only, unsigned):
     from workbench.api import PublicData
@@ -98,14 +98,14 @@ def build_cliff_dataframe(cliff: dict) -> pd.DataFrame:
     """Pull the cliff compound + its unique fingerprint neighbors from the live model."""
     log.info(f"  Loading model '{cliff['source_model']}' ...")
     model = Model(cliff["source_model"])
-    uq = model.uq_model()
+    prox = model.fp_prox_model()  # Morgan r=2, 2048-bit count fingerprints
 
     # Over-request neighbors to absorb FeatureSet replicate rows (same molecule
     # appearing multiple times), then dedup to unique neighbor IDs. Replicate
     # count varies by dataset; 4x is a safe overshoot for current open_admet.
     raw_k = max(cliff["n_neighbors"] * 4, 20)
     log.info(f"  Pulling {raw_k} raw neighbors for '{cliff['compound_id']}' (will dedup) ...")
-    nbrs = uq.prox.neighbors(cliff["compound_id"], n_neighbors=raw_k, include_self=False)
+    nbrs = prox.neighbors(cliff["compound_id"], n_neighbors=raw_k, include_self=False)
     unique_nbrs = (
         nbrs.drop_duplicates(subset="neighbor_id", keep="first").head(cliff["n_neighbors"]).reset_index(drop=True)
     )

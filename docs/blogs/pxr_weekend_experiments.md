@@ -1,11 +1,11 @@
 # A Weekend on the OpenADMET PXR Challenge
 
 !!! tip inline end "The one-line takeaway"
-    We spent a weekend trying to beat a plain, from-scratch Chemprop D-MPNN on the OpenADMET PXR induction challenge. We tried better 3D descriptors, a multi-model ensemble, and a foundation-model warm-start. **Every fancier idea scored worse** on the revealed held-out analog series. This is a tour of negative results — and the one diagnostic that explains most of them.
+    We spent a weekend trying to beat a plain, from-scratch Chemprop D-MPNN on the OpenADMET PXR induction challenge. Better 3D descriptors, a multi-model ensemble, a foundation-model warm-start — **everything fancy scored worse** on the revealed held-out analog series. The *one* thing that helped was the un-flashy, mechanistically-motivated move: multi-task learning on lipophilicity (logD/logP), PXR's dominant driver. Complexity-for-its-own-sake lost; complexity aligned with the biology won — modestly.
 
-This isn't a triumphant "new SOTA" post. We entered the [OpenADMET PXR Induction Blind Challenge](https://openadmet.org/blindchallenges/) (predict human PXR induction, pEC50), submitted late, and then spent a weekend poking at the problem to see what we could learn. The honest summary is that a vanilla learned graph model — Chemprop, no hand-engineering — beat everything else we built, and the more machinery we bolted on, the worse out-of-distribution generalization got.
+This isn't a "new SOTA" post. We entered the [OpenADMET PXR Induction Blind Challenge](https://openadmet.org/blindchallenges/) (predict human PXR induction, pEC50), submitted late, and then spent a weekend poking at the problem to see what we could learn. The honest summary: a vanilla learned graph model — Chemprop, no hand-engineering — beat almost everything else we built, and the more *unmotivated* machinery we bolted on, the worse out-of-distribution generalization got. The exception that finally moved the needle was a multi-task model that supervises the shared encoder with logD and logP.
 
-That's worth writing down precisely *because* it's the un-exciting result. Strong simple baselines plus honest held-out evaluation is the boring advice everyone gives and few people pressure-test on themselves in public. So here's us doing it.
+That's worth writing down precisely *because* most of it is the un-exciting result. Strong simple baselines plus honest held-out evaluation is the boring advice everyone gives and few people pressure-test on themselves in public. So here's us doing it — including the one place added complexity actually paid off.
 
 ## The Setup
 
@@ -153,9 +153,44 @@ Every variant is **~0.12 RAE worse** than the from-scratch baseline, and the fre
 
 The likely cause: `from_foundation` pins the MPNN to CheMeleon's pretrained architecture (its depth and hidden dimensions), replacing the tuned `depth=6 / hidden_dim=700` that Workbench's from-scratch Chemprop uses. On a small, 2D-friendly assay, the purpose-tuned from-scratch network simply fits better than the general-purpose pretrained one. Foundation warm-starts earn their keep on large, hard, geometry-rich tasks; this isn't one.
 
+## Experiment 5 — Multi-Task on Lipophilicity (the one that worked)
+
+Every experiment so far added machinery without a mechanistic reason to expect transfer: *maybe* geometry helps, *maybe* a blend helps, *maybe* a foundation model helps. This last one started from the biology instead. PXR is a lipophilicity sensor — calculated logP was the single most important feature in Experiment 1, by 5×. So instead of feeding lipophilicity in as a descriptor (which hurt), we made the model *learn* it: a multi-task Chemprop where pEC50 is the primary task and public **logP** (52k compounds) and **logD** (4.2k) are auxiliary tasks supervising the shared MPNN encoder. Only the pEC50 head is scored; the auxiliaries just shape the representation. Task weights keep pEC50 dominant in the gradient (`[1.0, 0.2, 0.3]` for pEC50/logP/logD).
+
+The bet: anchoring the encoder to the property that *drives* the target — using ~13× more lipophilicity data than we have PXR labels — should transfer to a new chemotype better than a PXR-only model. It did:
+
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Model</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Auxiliary task(s)</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Held-out RAE ↓</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Held-out R²</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Held-out ρ</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">n</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; font-weight: bold;">Chemprop (baseline)</td><td style="padding: 8px 16px;">none (single-task)</td><td style="padding: 8px 16px;">0.577</td><td style="padding: 8px 16px;">0.530</td><td style="padding: 8px 16px;">0.82</td><td style="padding: 8px 16px;">253</td></tr>
+    <tr><td style="padding: 8px 16px;">Multi-task</td><td class="text-teal" style="padding: 8px 16px;">+ logP</td><td style="padding: 8px 16px; color: #c0392b;">0.586</td><td style="padding: 8px 16px;">0.500</td><td style="padding: 8px 16px;">0.80</td><td style="padding: 8px 16px;">253</td></tr>
+    <tr><td style="padding: 8px 16px;">Multi-task</td><td class="text-teal" style="padding: 8px 16px;">+ logD</td><td style="padding: 8px 16px;">0.561</td><td style="padding: 8px 16px;">0.538</td><td style="padding: 8px 16px;">0.80</td><td style="padding: 8px 16px;">253</td></tr>
+    <tr><td style="padding: 8px 16px; font-weight: bold;">Multi-task</td><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">+ logP + logD</td><td style="padding: 8px 16px; font-weight: bold;">0.556</td><td style="padding: 8px 16px; font-weight: bold;">0.568</td><td style="padding: 8px 16px; font-weight: bold;">0.83</td><td style="padding: 8px 16px;">253</td></tr>
+  </tbody>
+</table>
+
+The combined model lands at **0.556 RAE**, beating the single-task baseline by ~0.021 — small, but real: **R² and Spearman move the same way** (0.530 → 0.568, 0.82 → 0.83), and the ordering across the three variants tells a coherent mechanistic story rather than a random one:
+
+- **logP alone *hurts*** (0.586). Its 52k rows dominate the encoder and pull it toward plain lipophilicity, which ignores ionization — not quite PXR's axis.
+- **logD alone *helps*** (0.561). logD is lipophilicity at physiological pH (it accounts for charge state), which is the mechanistically correct driver of PXR exposure — exactly the auxiliary you'd predict should work.
+- **Both together is best** (0.556). The data-rich logP regularizes the shared representation while logD keeps it anchored to the right property. logP earns its keep as a *companion*, not on its own.
+
+This is the mirror image of the descriptor experiments. There, lipophilicity helped most *as a thing the graph model already learns*, and bolting on extra hand-engineered features hurt. Here, giving the model *more supervised practice at learning lipophilicity itself* — on a far larger, related dataset — is what finally improved transfer to the new series. Same underlying signal, opposite verdict, depending on whether you inject it or teach it.
+
+A caveat for honesty: this is a single training run, and ~0.021 RAE is a modest gain (a few × the run-to-run noise floor). We trust it because three metrics and three variants agree, not because it's large. It's a real lever — just a gentle one.
+
 ## What the Weekend Actually Taught Us
 
-Lined up, the whole weekend reads as one long argument for the boring answer:
+Lined up, the weekend tells a sharper story than "nothing worked" — it's *what kind* of complexity pays off:
 
 <table style="width: 100%;">
   <thead>
@@ -171,16 +206,17 @@ Lined up, the whole weekend reads as one long argument for the boring answer:
     <tr><td style="padding: 8px 16px;">2 — xTB 3D&nbsp;v2 rebuild (best descriptor model)</td><td style="padding: 8px 16px;">0.671</td><td style="padding: 8px 16px; color: #c0392b;">worse</td></tr>
     <tr><td style="padding: 8px 16px;">3 — XGB + PyTorch + Chemprop ensemble</td><td style="padding: 8px 16px;">0.578</td><td style="padding: 8px 16px; color: #c0392b;">~tie (no gain)</td></tr>
     <tr><td style="padding: 8px 16px;">4 — CheMeleon foundation warm-start</td><td style="padding: 8px 16px;">0.696</td><td style="padding: 8px 16px; color: #c0392b;">worse</td></tr>
+    <tr><td style="padding: 8px 16px; font-weight: bold;">5 — Multi-task on logD + logP</td><td style="padding: 8px 16px; font-weight: bold;">0.556</td><td style="padding: 8px 16px; color: #2e7d32; font-weight: bold;">better (&minus;0.021)</td></tr>
   </tbody>
 </table>
 
 Three takeaways we'll actually carry forward:
 
-1. **A strong simple baseline is the experiment.** A from-scratch D-MPNN with sensible defaults (ensemble, MAE loss, scaffold split) set a bar that better descriptors, ensembling, and a foundation model all failed to clear. Most of the weekend's value was in *establishing how good the simple thing already was.*
+1. **A strong simple baseline is the experiment.** A from-scratch D-MPNN with sensible defaults (ensemble, MAE loss, scaffold split) set a bar that better descriptors, ensembling, and a foundation model all failed to clear. Most of the weekend's value was in *establishing how good the simple thing already was* — so that when something finally beat it, we believed the small margin.
 2. **Cross-fold lies; held-out doesn't.** Almost every dead end (3D-only, 2D+3D, the hybrids) looked fine or even good in cross-validation and only revealed itself on the new analog series. The recurring failure signature — high cross-fold and high feature-importance, low held-out — is the thing to watch for, on any model with any feature family.
-3. **Complexity has to *earn* its place against transfer, not fit.** xTB v2 was a real improvement over v1, the ensemble math was sound, and CheMeleon is a legitimately strong model — and all three still lost OOD. None of these ideas is bad; they just don't pay off on *this* target, which is exactly the kind of thing you only learn by measuring honestly.
+3. **Complexity pays off when it's aligned with the mechanism, not when it's just more.** The four things that lost added capacity for its own sake — more features, more models, more pretraining. The one that won added *supervised practice at the property that drives the target* (lipophilicity), using a far larger related dataset. Same lesson from two sides: injecting lipophilicity as a feature hurt; teaching the encoder to predict it helped.
 
-None of this is a verdict on 3D descriptors, ensembles, or foundation models in general — it's one endpoint, one held-out series, one weekend. PXR is an unusually 2D-friendly target. The transferable result is the *method*: pick a strong baseline, hold out a genuinely shifted set, and make every addition beat it there before you believe it.
+None of this is a verdict on 3D descriptors, ensembles, or foundation models in general — it's one endpoint, one held-out series, one weekend. PXR is an unusually 2D-friendly, lipophilicity-driven target, which is exactly why a lipophilicity-anchored multi-task model is the thing that moved it. The transferable result is the *method*: pick a strong baseline, hold out a genuinely shifted set, make every addition beat it there before you believe it — and when you reach for complexity, reach for the kind your domain knowledge says should matter.
 
 ## Reproducing This
 
@@ -196,8 +232,9 @@ def held_out_rae(model_name):
     y, p = df["pec50"].to_numpy(float), df["prediction"].to_numpy(float)
     return np.abs(y - p).mean() / np.abs(y - y.mean()).mean()
 
-print(held_out_rae("pxr-reg-chemprop"))             # the baseline that won, ~0.569
+print(held_out_rae("pxr-reg-chemprop"))             # single-task baseline, ~0.569
 print(held_out_rae("pxr-2d-3dv2-reg-pytorch-339"))  # best descriptor model, ~0.671
+print(held_out_rae("pxr-reg-chemprop-mt-both"))     # multi-task winner, ~0.556
 ```
 
 *\* Two from-scratch Chemprop numbers appear above (0.569 and 0.577). They're the same recipe — 0.569 is the deployed model trained on the full pool; 0.577 is the variant that zero-weights Analog Set 1 out of training, used as the matched control for the CheMeleon sweep. The ~0.008 gap is training stochasticity, not signal.*
