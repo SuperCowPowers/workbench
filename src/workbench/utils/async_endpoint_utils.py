@@ -202,10 +202,14 @@ def build_meta_progress_str_fn(meta: dict, sm_session, s3_bucket: str):
 
     A meta invocation is opaque to the client (one chunk), but each async child
     drains its own staged-input queue as the server-side fan-out runs. This
-    callable polls the child queue depth and reports per-child ``<done>/<peak>
-    chunks`` — a rising ``done`` proves progress, a flat one means stuck. ``peak``
-    is the largest depth seen so far, which approximates the child's total chunk
-    count once the fan-out is fully staged.
+    callable polls the child queue depth and reports per-child ``<done>/<total>
+    chunks`` — a rising ``done`` proves progress, a flat one means stuck.
+
+    The producer stages work in waves (one per meta-batch), so the queue depth
+    both rises (new arrivals) and falls (workers finishing) over the run. We
+    accumulate the per-poll deltas — arrivals into ``total``, departures into
+    ``done`` — so both counters are monotonic and survive across waves, rather
+    than resetting each time a new wave pushes the depth past its prior peak.
 
     Returns ``None`` for non-meta endpoints or metas with no async children.
     """
@@ -213,7 +217,9 @@ def build_meta_progress_str_fn(meta: dict, sm_session, s3_bucket: str):
     if not children:
         return None
 
-    peak: dict[str, int] = {}
+    prev_depth: dict[str, int] = {}
+    total: dict[str, int] = {}  # cumulative arrivals (chunks ever staged)
+    done: dict[str, int] = {}  # cumulative departures (chunks drained)
 
     def fn() -> str:
         parts = []
@@ -224,11 +230,18 @@ def build_meta_progress_str_fn(meta: dict, sm_session, s3_bucket: str):
                 # A progress readout must never break the inference it reports on.
                 log.debug(f"progress poll failed for {child_name}: {e}")
                 continue
-            peak[child_name] = max(peak.get(child_name, 0), depth)
-            if peak[child_name] == 0:
+            if child_name in prev_depth:
+                delta = depth - prev_depth[child_name]
+                total[child_name] = total.get(child_name, 0) + max(0, delta)  # arrivals
+                done[child_name] = done.get(child_name, 0) + max(0, -delta)  # departures
+            else:
+                total[child_name] = depth  # first poll: seed total with the standing queue
+                done[child_name] = 0
+            prev_depth[child_name] = depth
+            if total[child_name] == 0:
                 parts.append(f"{child_name}: queued")  # fan-out not started yet
             else:
-                parts.append(f"{child_name}: {peak[child_name] - depth}/{peak[child_name]} chunks")
+                parts.append(f"{child_name}: {done[child_name]}/{total[child_name]} chunks")
         return " | ".join(parts)
 
     return fn
