@@ -4,7 +4,7 @@ Salts are KEPT. Takes a SMILES string and computes RDKit + Mordred 2D
 molecular descriptors. Use the salt-removing variant ``smiles-to-2d-v1``
 unless you specifically want salt-form descriptors.
 
-Created artifacts:  Model/Endpoint ``smiles-to-2d-keep-salts-v1``
+Created artifacts:  Model/Endpoint ``smiles-to-2d-salt-v1``
 """
 
 import os
@@ -15,7 +15,7 @@ from _common import ensure_featureset
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
 # comes from workbench defaults.
-ENDPOINT_NAME = "smiles-to-2d-keep-salts-v1"
+ENDPOINT_NAME = "smiles-to-2d-salt-v1"
 SERVERLESS = os.environ.get("SERVERLESS", "True").lower() == "true"
 MEM_SIZE = 4096  # MB — serverless memory ceiling.
 MAX_CONCURRENCY = 5  # serverless concurrent invocations.

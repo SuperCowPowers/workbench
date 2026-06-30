@@ -11,7 +11,7 @@ Boltzmann-weighted ensemble averaging. Deployed as an async endpoint
 (up to 60-minute invocations) for overnight batch processing of 10k–100k
 compound libraries.
 
-Created artifacts:  Model/Endpoint ``smiles-to-3d-full-v1``
+Created artifacts:  Model/Endpoint ``smiles-to-3d-v1``
 """
 
 from workbench.api import ModelType, ModelFramework
@@ -20,7 +20,7 @@ from _common import ensure_featureset
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
 # comes from workbench defaults.
-ENDPOINT_NAME = "smiles-to-3d-full-v1"
+ENDPOINT_NAME = "smiles-to-3d-v1"
 INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async). Set
 #        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
 MIN_INSTANCES = 0  # Autoscaler floor. 0 in dev (scale to zero); set to 1 in
