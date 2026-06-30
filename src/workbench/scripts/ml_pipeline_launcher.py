@@ -666,17 +666,20 @@ def select_pipelines(
         # All modes of matched scripts are targets.
         target_nodes = [n for n in all_nodes if n.script in matched_set]
 
-        # --local runs exactly the named script(s) -- upstream artifacts are assumed
-        # already built, so don't expand the closure (its transitive upstream
-        # producers would otherwise inflate the selection and trip the single-script
-        # guard). The matched set, jobs and all, is the selection.
-        if args.local:
+        # Run exactly the named script(s), no dependency closure, when either: the
+        # user gave a full ".py" filename ("just launch this one"), or --local (which
+        # also assumes upstream artifacts are already built). Expanding the closure
+        # would otherwise pull in transitive producers/consumers. The matched set,
+        # all its modes, is the selection and runs regardless of freshness.
+        exact_only = all(p.lower().endswith(".py") for p in args.patterns)
+        if args.local or exact_only:
             selected_keys = {n.key for n in target_nodes}
+            desc = f"matching {args.patterns}" if args.local else f"matching {args.patterns} (exact, no dependencies)"
             return (
                 [p for p in all_pipelines if p in matched_set],
                 selected_keys,
                 set(selected_keys),
-                (f"matching {args.patterns}"),
+                desc,
             )
 
         # SQS/Batch: forward closure (transitive upstream producers + downstream
