@@ -26,7 +26,7 @@ from _common import ensure_featureset
 ENDPOINT_NAME = "smiles-to-3d-v2"
 INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async).
 MIN_INSTANCES = 0  # Autoscaler floor. 0 in dev (scale to zero); 1 in prod.
-MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
+MAX_INSTANCES = 16  # Autoscaler ceiling. Bump for bigger batch jobs.
 BATCH_SIZE = 4  # Rows per invocation. Smaller = steadier under load (shorter jobs,
 #                 finer failure granularity); a MetaEndpoint wrapping this sizes its
 #                 own batch off BATCH_SIZE × MAX_INSTANCES.
