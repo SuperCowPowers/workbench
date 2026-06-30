@@ -1,0 +1,12 @@
+# Gitleaks config. Extends defaults; allowlists only the public open-source license tokens.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public open-source WORKBENCH license tokens (real/paid license_id stays flagged)"
+regexes = [
+  # base64 of {"license_id": "Open Source"...}  — legacy token
+  '''eyJsaWNlbnNlX2lkIjogIk9wZW4gU291cmNl[A-Za-z0-9+/=_-]+''',
+  # base64 of {"license_id": "Open_Source_License"...} — current token
+  '''eyJsaWNlbnNlX2lkIjogIk9wZW5fU291cmNl[A-Za-z0-9+/=_-]+''',
+]
