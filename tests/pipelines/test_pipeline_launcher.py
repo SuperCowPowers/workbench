@@ -505,10 +505,16 @@ class TestSelectPipelines:
         assert selected == [Path("model.py")]
 
     def test_sqs_includes_upstream_closure(self):
-        """Without --local, the same selection pulls in upstream producers."""
+        """A substring pattern (not a full filename) pulls in upstream producers."""
+        all_pipelines, all_dags = self._dags()
+        selected, _, _, _ = select_pipelines(all_pipelines, all_dags, self._args(["model"]))
+        assert set(selected) == {Path("fs.py"), Path("model.py")}
+
+    def test_exact_filename_excludes_upstream_closure(self):
+        """A full ".py" filename selects only that script, no dependencies, even on SQS."""
         all_pipelines, all_dags = self._dags()
         selected, _, _, _ = select_pipelines(all_pipelines, all_dags, self._args(["model.py"]))
-        assert set(selected) == {Path("fs.py"), Path("model.py")}
+        assert selected == [Path("model.py")]
 
 
 class TestRunLabel:
