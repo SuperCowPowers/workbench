@@ -550,6 +550,21 @@ def _build_dag_plan(
     return plan
 
 
+def find_discovery_root(start: Path, max_up: int = 4) -> Path:
+    """Locate the pipeline discovery root: the nearest directory holding a ``plugins/`` dir.
+
+    ``plugin:`` refs resolve against ``<root>/plugins/``, so the root must be the dir
+    that owns the shared ``plugins/`` tree -- not necessarily the cwd. Search order:
+    cwd, then ancestors (up to ``max_up``), then the shallowest ``plugins/`` below cwd
+    (for when you're sitting just above the tree). Falls back to cwd if no marker found.
+    """
+    for d in [start, *list(start.parents)[:max_up]]:
+        if (d / "plugins").is_dir():
+            return d
+    below = sorted((p for p in start.rglob("plugins") if p.is_dir()), key=lambda p: len(p.parts))
+    return below[0].parent if below else start
+
+
 def get_all_pipelines() -> tuple[list[Path], dict[str, list[Job]]]:
     """Get all ML pipeline scripts from subdirectories.
 
@@ -562,14 +577,18 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[Job]]]:
             - all_dags: {pipeline_name: [Job]} from pipelines.json files
     """
     cwd = Path.cwd()
+    root = find_discovery_root(cwd)  # where plugins/ lives; may be an ancestor of cwd
+    if root != cwd:
+        log.info(f"Resolving plugin: refs against discovery root {root}")
     pipelines = []
     all_dags = {}
     seen_scripts = set()
 
-    # Discover scripts from pipelines.json files
+    # Discover scripts from pipelines.json files (scanned from cwd -- run what's here --
+    # but plugin: refs resolve against the discovery root that owns plugins/).
     for config_path in cwd.rglob("pipelines.json"):
         directory = config_path.parent
-        dag_defs = load_pipelines_config(directory, root=cwd)
+        dag_defs = load_pipelines_config(directory, root=root)
         if dag_defs:
             all_dags.update(dag_defs)
             for nodes in dag_defs.values():
@@ -908,7 +927,8 @@ def main():
         print("ERROR: pipelines.json references scripts not found on disk:")
         for m in missing:
             print(f"   {m}")
-        print("\n(plugin: refs resolve to <discovery-root>/plugins/<path> -- verify the file exists there)")
+        root = find_discovery_root(Path.cwd())
+        print(f"\n(plugin: refs resolve to {root}/plugins/<path> -- verify the file exists there)")
         sys.exit(1)
 
     # Freshness simulation: show what a modified source would submit (no launch).
