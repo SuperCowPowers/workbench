@@ -1,4 +1,4 @@
-# Model: smiles_to_3d_full_model_script
+# Model: smiles_to_3d_v1_model_script
 #
 # Description: Computes Boltzmann-weighted 3D conformer-based molecular descriptors
 #     from SMILES strings. Uses adaptive conformer counts (50-300 based on
@@ -91,7 +91,7 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
     logger = logging.getLogger("workbench")
-    logger.info(f"smiles_to_3d_full_model_script v{SCRIPT_VERSION} — processing {len(df)} molecules")
+    logger.info(f"smiles_to_3d_v1_model_script v{SCRIPT_VERSION} — processing {len(df)} molecules")
 
     # Standardize the molecule (extract salts) first
     df = standardize(df, extract_salts=True)

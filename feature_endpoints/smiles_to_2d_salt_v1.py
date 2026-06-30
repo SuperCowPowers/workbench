@@ -33,7 +33,7 @@ if __name__ == "__main__":
         feature_list=["smiles"],
         description="SMILES to RDKit + Mordred 2D Molecular Descriptors (salts kept)",
         tags=tags,
-        custom_script="model_scripts/smiles_to_2d_keep_salts_model_script.py",
+        custom_script="model_scripts/smiles_to_2d_salt_model_script.py",
     )
     model.set_owner("BW")
 

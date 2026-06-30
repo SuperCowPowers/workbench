@@ -41,7 +41,7 @@ if __name__ == "__main__":
         feature_list=["smiles"],
         description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (74 features)",
         tags=tags,
-        custom_script="model_scripts/smiles_to_3d_full_model_script.py",
+        custom_script="model_scripts/smiles_to_3d_v1_model_script.py",
     )
     model.set_owner("BW")
 
