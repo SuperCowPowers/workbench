@@ -27,7 +27,9 @@ ENDPOINT_NAME = "smiles-to-3d-v2"
 INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async).
 MIN_INSTANCES = 0  # Autoscaler floor. 0 in dev (scale to zero); 1 in prod.
 MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
-BATCH_SIZE = 5  # Rows per invocation (matches v1 on ml.c7i.xlarge).
+BATCH_SIZE = 4  # Rows per invocation. Smaller = steadier under load (shorter jobs,
+#                 finer failure granularity); a MetaEndpoint wrapping this sizes its
+#                 own batch off BATCH_SIZE × MAX_INSTANCES.
 
 
 if __name__ == "__main__":
@@ -54,5 +56,7 @@ if __name__ == "__main__":
         max_instances=MAX_INSTANCES,
     )
 
-    # Per-invocation batch size (overrides the workbench default of 10).
-    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE})
+    # Per-invocation batch size (overrides the workbench default of 10). Also stamp
+    # the fleet ceiling so a MetaEndpoint wrapping this child can size its batch to
+    # the fleet (smallest async batch × max_instances × 4).
+    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE, "max_instances": MAX_INSTANCES})

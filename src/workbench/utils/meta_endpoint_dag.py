@@ -55,6 +55,7 @@ class MetaEndpointDAG:
         self._endpoints: Dict[str, str] = {}  # node_name → endpoint_name
         self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_child_metadata()
         self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_child_metadata()
+        self._endpoint_max_instances: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._aggregations: Dict[str, AggregationNode] = {}
         self._edges: List[tuple[str, str]] = []  # (from_node, to_node)
         self._input_nodes: List[str] = []
@@ -155,6 +156,11 @@ class MetaEndpointDAG:
     def endpoint_batch_sizes(self) -> Dict[str, int]:
         """Mapping of endpoint_name → inference_batch_size (populated by :meth:`populate_child_metadata`)."""
         return self._endpoint_batch_sizes
+
+    @property
+    def endpoint_max_instances(self) -> Dict[str, int]:
+        """Mapping of endpoint_name → max_instances fleet ceiling (populated by :meth:`populate_child_metadata`)."""
+        return self._endpoint_max_instances
 
     def _all_nodes(self) -> List[str]:
         return list(self._endpoints.keys()) + list(self._aggregations.keys())
@@ -426,6 +432,12 @@ class MetaEndpointDAG:
                     self._endpoint_batch_sizes[endpoint_name] = int(batch_size)
             except (TypeError, ValueError):
                 pass  # non-numeric / bogus → leave unset, invoker uses its default
+            max_instances = meta.get("max_instances")
+            try:
+                if max_instances is not None and int(max_instances) > 0:
+                    self._endpoint_max_instances[endpoint_name] = int(max_instances)
+            except (TypeError, ValueError):
+                pass  # non-numeric / bogus → leave unset; meta batch falls back to its default
 
     def has_async_endpoint(self) -> bool:
         """Return True if any endpoint in the DAG is deployed as async.

@@ -26,8 +26,8 @@ INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async). Set
 MIN_INSTANCES = 0  # Autoscaler floor. 0 in dev (scale to zero); set to 1 in
 #         production to keep one instance warm.
 MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
-BATCH_SIZE = 5  # Rows per invocation. 5 fits ml.c7i.xlarge; bump to 10
-#         when running on ml.c7i.2xlarge (twice the CPU/mem).
+BATCH_SIZE = 4  # Rows per invocation. Smaller = steadier under load (shorter jobs,
+#         finer failure granularity). Fits ml.c7i.xlarge; bump on ml.c7i.2xlarge.
 
 
 if __name__ == "__main__":
@@ -54,5 +54,7 @@ if __name__ == "__main__":
         max_instances=MAX_INSTANCES,
     )
 
-    # Per-invocation batch size (overrides the workbench default of 10).
-    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE})
+    # Per-invocation batch size (overrides the workbench default of 10). Also stamp
+    # the fleet ceiling so a MetaEndpoint wrapping this child can size its batch to
+    # the fleet (smallest async batch × max_instances × 4).
+    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE, "max_instances": MAX_INSTANCES})
