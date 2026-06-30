@@ -11,12 +11,22 @@ jobs:
     steps:
     - uses: actions/checkout@v7
       with:
-        fetch-depth: 0  # full history so the scan covers all commits in the push/PR
+        fetch-depth: 0  # need history to diff the pushed/PR commit range
 
     - name: Install gitleaks
       run: |
         curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz \
           | tar -xz -C /usr/local/bin gitleaks
 
-    - name: Run gitleaks
-      run: gitleaks git --no-banner -c .gitleaks.toml .
+    - name: Scan new commits for secrets
+      run: |
+        # Only scan commits introduced by this push/PR, not all of history.
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          RANGE="origin/${{ github.base_ref }}..HEAD"
+        elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+          RANGE="HEAD~1..HEAD"   # new branch: before-sha is empty, scan the tip
+        else
+          RANGE="${{ github.event.before }}..${{ github.event.after }}"
+        fi
+        echo "Scanning range: $RANGE"
+        gitleaks git --no-banner -c .gitleaks.toml --log-opts="$RANGE" .
