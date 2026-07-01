@@ -17,7 +17,7 @@ import time
 
 # Template revision marker — bump on edits so log output identifies the script
 # version independent of the training image's installed workbench version.
-TEMPLATE_REVISION = "2026-06-21d (GPU post-training inference)"
+TEMPLATE_REVISION = "2026-07-01a (chemprop 2.2.4: LR knobs + per-layer FFN dims)"
 
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
@@ -67,9 +67,18 @@ DEFAULT_HYPERPARAMETERS = {
     "hidden_dim": 700,
     "depth": 6,
     "dropout": 0.1,  # Lower dropout - ensemble provides regularization
-    # FFN
+    # FFN. ffn_hidden_dim accepts a single int (uniform width, repeated
+    # ffn_num_layers times) or a list of ints for a tapered head, e.g.
+    # [1024, 256, 64]. When a list is given, ffn_num_layers is ignored and
+    # depth is taken from the list length.
     "ffn_hidden_dim": 2000,
     "ffn_num_layers": 2,
+    # Optimizer schedule (Noam-style warmup then decay). Defaults match
+    # chemprop's own defaults, so behavior is unchanged unless overridden.
+    "warmup_epochs": 2,
+    "init_lr": 1e-4,
+    "max_lr": 1e-3,
+    "final_lr": 1e-4,
     # Loss function for regression (mae, mse)
     "criterion": "mae",
     # Bounded loss for censored targets. When True, the trainer reads
@@ -558,7 +567,14 @@ if __name__ == "__main__":
             task, ffn_input_dim, hyperparameters, num_classes, n_targets,
             output_transform, task_weights, use_bounded_loss=use_bounded_loss,
         )
-        return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
+        return models.MPNN(
+            message_passing=mp, agg=agg, predictor=ffn, batch_norm=True,
+            metrics=None, X_d_transform=x_d_transform,
+            warmup_epochs=hyperparameters["warmup_epochs"],
+            init_lr=hyperparameters["init_lr"],
+            max_lr=hyperparameters["max_lr"],
+            final_lr=hyperparameters["final_lr"],
+        )
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
