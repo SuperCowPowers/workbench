@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../pytorch_models/">
+        <link rel="prev" href="../../road_maps/0_9_5/">
       
       
-        <link rel="next" href="../chemprop_models/">
+        <link rel="next" href="../0_8_384/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Fingerprint - ADMET Workbench</title>
+        <title>0.8.396 - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fingerprint-models" class="md-skip">
+        <a href="#release-08396" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fingerprint
+              0.8.396
             
           </span>
         </div>
@@ -339,20 +339,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -373,7 +371,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -391,7 +389,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../models/" class="md-nav__link">
         
   
   
@@ -419,7 +417,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../xgboost_models/" class="md-nav__link">
+      <a href="../../models/xgboost_models/" class="md-nav__link">
         
   
   
@@ -447,7 +445,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sklearn_models/" class="md-nav__link">
+      <a href="../../models/sklearn_models/" class="md-nav__link">
         
   
   
@@ -475,7 +473,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pytorch_models/" class="md-nav__link">
+      <a href="../../models/pytorch_models/" class="md-nav__link">
         
   
   
@@ -500,37 +498,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Fingerprint
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../models/fingerprint_models/" class="md-nav__link">
         
   
   
@@ -546,120 +517,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pipeline-overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pipeline Overview
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pipeline Overview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-the-fingerprint-endpoint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create the Fingerprint Endpoint
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-1-compute-fingerprints-and-create-a-featureset" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 1: Compute Fingerprints and Create a FeatureSet
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-train-a-model-on-fingerprints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 2: Train a Model on Fingerprints
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fingerprints-descriptors" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Fingerprints + Descriptors
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-pytorch-with-fingerprints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Using PyTorch with Fingerprints
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#how-count-fingerprints-work" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How Count Fingerprints Work
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Questions?
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -672,7 +529,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chemprop_models/" class="md-nav__link">
+      <a href="../../models/chemprop_models/" class="md-nav__link">
         
   
   
@@ -700,7 +557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cleanlab_models/" class="md-nav__link">
+      <a href="../../models/cleanlab_models/" class="md-nav__link">
         
   
   
@@ -728,7 +585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../meta_endpoints/" class="md-nav__link">
+      <a href="../../models/meta_endpoints/" class="md-nav__link">
         
   
   
@@ -4029,18 +3886,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_24" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_24" checked>
         
           
           <label class="md-nav__link" for="__nav_24" id="__nav_24_label" tabindex="0">
@@ -4061,7 +3920,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_24_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_24_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_24">
             <span class="md-nav__icon md-icon"></span>
             
@@ -4076,10 +3935,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../release_notes/0_8_396/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.396
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -4095,6 +3981,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#chemprop-224" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chemprop 2.2.4
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipelines-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipelines &amp; Plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -4107,7 +4068,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_384/" class="md-nav__link">
+      <a href="../0_8_384/" class="md-nav__link">
         
   
   
@@ -4135,7 +4096,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_358/" class="md-nav__link">
+      <a href="../0_8_358/" class="md-nav__link">
         
   
   
@@ -4163,7 +4124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_339/" class="md-nav__link">
+      <a href="../0_8_339/" class="md-nav__link">
         
   
   
@@ -4191,7 +4152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_158/" class="md-nav__link">
+      <a href="../0_8_158/" class="md-nav__link">
         
   
   
@@ -4661,60 +4622,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pipeline-overview" class="md-nav__link">
+  <a href="#chemprop-224" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pipeline Overview
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pipeline Overview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create-the-fingerprint-endpoint" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Create the Fingerprint Endpoint
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-1-compute-fingerprints-and-create-a-featureset" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 1: Compute Fingerprints and Create a FeatureSet
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-train-a-model-on-fingerprints" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Step 2: Train a Model on Fingerprints
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fingerprints-descriptors" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Fingerprints + Descriptors
+        Chemprop 2.2.4
       
     </span>
   </a>
@@ -4722,10 +4633,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pytorch-with-fingerprints" class="md-nav__link">
+  <a href="#endpoints" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Using PyTorch with Fingerprints
+        Endpoints
       
     </span>
   </a>
@@ -4733,10 +4644,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-count-fingerprints-work" class="md-nav__link">
+  <a href="#pipelines-plugins" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How Count Fingerprints Work
+        Pipelines &amp; Plugins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tooling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tooling
       
     </span>
   </a>
@@ -4771,123 +4693,37 @@
 
 
 
-<h1 id="fingerprint-models">Fingerprint Models</h1>
-<p>Workbench supports training models on Morgan count fingerprints — a powerful molecular representation that captures substructure occurrence counts. Fingerprint models work with any framework (XGBoost, PyTorch) and can be combined with RDKit descriptors.</p>
-<h2 id="pipeline-overview">Pipeline Overview</h2>
-<p>Fingerprint models use a two-step pipeline:</p>
-<ol>
-<li><strong>Generate fingerprints</strong> — A transformer endpoint computes Morgan count fingerprints from SMILES</li>
-<li><strong>Train a model</strong> — Use the <code>"fingerprint"</code> column as a feature (stored as a compressed column)</li>
-</ol>
-<h3 id="create-the-fingerprint-endpoint">Create the Fingerprint Endpoint</h3>
-<p>Note: This 'feature endpoint' only needs to be created once. It can then be reused across multiple models and FeatureSets. Please see our blog post <a href="../../blogs/feature_endpoints/">Feature Endpoints: Reusable Data Transformations</a> for more details.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.model_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_custom_script_path</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">tags</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan fingerprints&quot;</span><span class="p">]</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">script_path</span> <span class="o">=</span> <span class="n">get_custom_script_path</span><span class="p">(</span><span class="s2">&quot;chem_info&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan_fingerprints.py&quot;</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">feature_set</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;aqsol_features&quot;</span><span class="p">)</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;smiles-to-fingerprints-v0&quot;</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">TRANSFORMER</span><span class="p">,</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Smiles to Morgan Fingerprints&quot;</span><span class="p">,</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">custom_script</span><span class="o">=</span><span class="n">script_path</span><span class="p">,</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">)</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1"># Create the endpoint for the model</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">end</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
-</span></code></pre></div>
-<h3 id="step-1-compute-fingerprints-and-create-a-featureset">Step 1: Compute Fingerprints and Create a FeatureSet</h3>
-<p>Run your data through the fingerprint endpoint, then create a FeatureSet and mark the fingerprint column as compressed:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">Endpoint</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.transforms.pandas_transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">PandasToFeatures</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">ds</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span><span class="s2">&quot;aqsol_data&quot;</span><span class="p">)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">pull_dataframe</span><span class="p">()</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Run the data through our Smiles to Fingerprints Endpoint</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">fp_end</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-fingerprints-v0&quot;</span><span class="p">)</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">df_with_fp</span> <span class="o">=</span> <span class="n">fp_end</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># Create a Feature Set</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">to_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="s2">&quot;aqsol_fingerprints&quot;</span><span class="p">)</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">to_features</span><span class="o">.</span><span class="n">set_input</span><span class="p">(</span><span class="n">df_with_fp</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">&quot;id&quot;</span><span class="p">)</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">to_features</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;aqsol&quot;</span><span class="p">,</span> <span class="s2">&quot;fingerprints&quot;</span><span class="p">])</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">to_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1"># Set our compressed features for this FeatureSet</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;aqsol_fingerprints&quot;</span><span class="p">)</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="n">fs</span><span class="o">.</span><span class="n">set_compressed_features</span><span class="p">([</span><span class="s2">&quot;fingerprint&quot;</span><span class="p">])</span>
-</span></code></pre></div>
-<h3 id="step-2-train-a-model-on-fingerprints">Step 2: Train a Model on Fingerprints</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;aqsol_fingerprints&quot;</span><span class="p">)</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;aqsol-fingerprint-reg-v0&quot;</span><span class="p">,</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;solubility&quot;</span><span class="p">,</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fingerprint&quot;</span><span class="p">],</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Model for Aqueous Solubility using Morgan Fingerprints&quot;</span><span class="p">,</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;aqsol&quot;</span><span class="p">,</span> <span class="s2">&quot;fingerprints&quot;</span><span class="p">,</span> <span class="s2">&quot;regression&quot;</span><span class="p">],</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;aqsol&quot;</span><span class="p">,</span> <span class="s2">&quot;fingerprints&quot;</span><span class="p">,</span> <span class="s2">&quot;regression&quot;</span><span class="p">])</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">end</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
-</span></code></pre></div>
-<h2 id="fingerprints-descriptors">Fingerprints + Descriptors</h2>
-<p>Combine fingerprints with RDKit molecular descriptors for richer feature sets:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Grab features from an existing descriptor model and add fingerprints</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">descriptor_features</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;sol-xgb-reg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">features</span><span class="p">()</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">combined_features</span> <span class="o">=</span> <span class="n">descriptor_features</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;fingerprint&quot;</span><span class="p">]</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sol-fingerprints-plus&quot;</span><span class="p">,</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;solubility&quot;</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">combined_features</span><span class="p">,</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Fingerprints + Molecular Descriptors&quot;</span><span class="p">,</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fingerprints&quot;</span><span class="p">,</span> <span class="s2">&quot;descriptors&quot;</span><span class="p">],</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">)</span>
-</span></code></pre></div>
-<h2 id="using-pytorch-with-fingerprints">Using PyTorch with Fingerprints</h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">fs</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;aqsol_fingerprints&quot;</span><span class="p">)</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sol-fp-pytorch&quot;</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">PYTORCH</span><span class="p">,</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;solubility&quot;</span><span class="p">,</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fingerprint&quot;</span><span class="p">],</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;PyTorch model on Morgan Fingerprints&quot;</span><span class="p">,</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fingerprints&quot;</span><span class="p">,</span> <span class="s2">&quot;pytorch&quot;</span><span class="p">],</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">)</span>
-</span></code></pre></div>
-<h2 id="how-count-fingerprints-work">How Count Fingerprints Work</h2>
-<p>Morgan count fingerprints (ECFP4 equivalent) encode substructure occurrence counts rather than binary presence/absence:</p>
-<ul>
-<li><strong>Radius 2</strong> (ECFP4) — captures local chemical environments up to 2 bonds from each atom</li>
-<li><strong>2048 bits</strong> — hashed into a fixed-length vector</li>
-<li><strong>Count values (0–255)</strong> — how many times each substructure occurs, providing richer information than binary fingerprints</li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Examples</p>
-<p>Full code listing: <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/smiles_to_fingerprints.py"><code>examples/models/smiles_to_fingerprints.py</code></a></p>
+<h1 id="release-08396">Release 0.8.396</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">Need Help?</p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 </div>
-<hr />
+<p>The headline of this release is the move to <strong>Chemprop 2.2.4</strong>, which also brings a handful of new model-tuning knobs to the Chemprop template. The rest of the release is a concise batch of endpoint, pipeline, and tooling improvements.</p>
+<h2 id="chemprop-224">Chemprop 2.2.4</h2>
+<p>Both the PyTorch/Chem <strong>training and inference images</strong> are rebuilt on Chemprop 2.2.4 (training + inference parity), and the model template now exposes new tuning options that come with it:</p>
+<ul>
+<li><strong>Learning-rate schedule</strong> — <code>warmup_epochs</code>, <code>init_lr</code>, <code>max_lr</code>, and <code>final_lr</code> are now settable hyperparameters. Defaults match Chemprop's, so existing models are unchanged.</li>
+<li><strong>Per-layer FFN dimensions</strong> — <code>ffn_hidden_dim</code> now accepts a list (e.g. <code>[1024, 256, 64]</code>) for a tapered prediction head, in addition to a single fixed width.</li>
+<li><strong>CheMeleon foundation-model fine-tuning</strong> — initialize the message-passing layers from the CheMeleon foundation model via <code>from_foundation</code>, with <code>freeze_mpnn_epochs</code> to stabilize the FFN head before unfreezing the encoder.</li>
+</ul>
+<h2 id="endpoints">Endpoints</h2>
+<ul>
+<li><strong>New 2D (salt-keeping) + 3D feature endpoint</strong>, plus clearer endpoint naming.</li>
+<li><strong>Dynamic batch sizing</strong> for meta endpoints, and async child endpoints now inherit <code>max_instances</code>.</li>
+</ul>
+<h2 id="pipelines-plugins">Pipelines &amp; Plugins</h2>
+<ul>
+<li>The <strong>ml_pipeline launcher</strong> can now run a single script by its full filename.</li>
+<li>Refined <strong>plugin resolution</strong>.</li>
+</ul>
+<h2 id="tooling">Tooling</h2>
+<ul>
+<li><strong>Secret-leak detection</strong> — a pre-commit config plus a CI workflow (PR-scoped, local binary) to catch accidental credential commits.</li>
+<li>Improved chunk-progress display for long-running operations.</li>
+</ul>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
-<p>The SuperCowPowers team is happy to answer any questions you may have about AWS® and Workbench.</p>
-<ul>
-<li><strong>Support:</strong> <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a></li>
-<li><strong>Discord:</strong> <a href="https://discord.gg/WHAJuz8sw8">Join us on Discord</a></li>
-<li><strong>Website:</strong> <a href="https://www.supercowpowers.com">supercowpowers.com</a></li>
-</ul>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 
