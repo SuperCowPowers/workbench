@@ -64,6 +64,7 @@ def fit_regression_uq(
     id_column: str,
     target: str,
     active_version: str = "v0",
+    y_aleatoric=None,
 ) -> dict:
     """Fit the regression UQ models on the validation predictions.
 
@@ -79,8 +80,11 @@ def fit_regression_uq(
     Args:
         y_true: True target values for the validation set, shape (n,).
         y_pred: Predicted values (ensemble mean), shape (n,).
-        y_std: Ensemble standard deviation, shape (n,).
+        y_std: Ensemble (epistemic) standard deviation, shape (n,).
         val_ids: List of compound IDs aligned with the above arrays.
+        y_aleatoric: Optional per-prediction aleatoric std (chemprop MVE), shape
+            (n,). When provided, it becomes an extra V1 error-model feature. V0/V2
+            ignore it. None (default) fits V1 on the base feature set.
         prox_df: DataFrame for the V1/V2 FingerprintProximity reference set, or
             None. When provided, must contain ``id_column``, a ``smiles`` column,
             and the target column (CV rows marked ``in_model=True``). When None,
@@ -108,7 +112,7 @@ def fit_regression_uq(
 
         log.info("Fitting UQModelV1 (proximity-augmented RF error model) ...")
         uq_model_v1 = UQModelV1(prox)
-        uq_model_v1.fit(val_ids, y_true, y_pred, y_std)
+        uq_model_v1.fit(val_ids, y_true, y_pred, y_std, aleatoric_std=y_aleatoric)
 
         log.info("Fitting UQModelV2 (applicability-domain from proximity) ...")
         uq_model_v2 = UQModelV2.fit(prox)

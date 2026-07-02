@@ -64,7 +64,20 @@ class UQModelV1:
     """
 
     DEFAULT_CONFIDENCE_LEVELS = [0.50, 0.68, 0.80, 0.90, 0.95]
+    # Base feature set. prediction_std is the ensemble (epistemic) std.
     FEATURE_ORDER = ["prediction", "prediction_std", "knn_distance", "knn_target_std", "local_pred_gap"]
+    # Extended set for models that also supply a per-prediction aleatoric std
+    # (e.g. chemprop MVE heads). aleatoric_std sits next to prediction_std so the
+    # two model-intrinsic uncertainty signals are adjacent. Chosen at fit time
+    # based on whether aleatoric_std is passed; recorded in metadata.
+    FEATURE_ORDER_MVE = [
+        "prediction",
+        "prediction_std",
+        "aleatoric_std",
+        "knn_distance",
+        "knn_target_std",
+        "local_pred_gap",
+    ]
 
     def __init__(
         self,
@@ -98,6 +111,14 @@ class UQModelV1:
         self.error_model: Optional[RandomForestRegressor] = None
         self.scale_factors: Optional[dict] = None
         self.residual_percentiles: Optional[np.ndarray] = None
+        # Feature set actually used; upgraded to FEATURE_ORDER_MVE in fit() when
+        # an aleatoric_std is supplied. load() restores it from metadata.
+        self.feature_order: List[str] = list(self.FEATURE_ORDER)
+
+    @property
+    def uses_aleatoric(self) -> bool:
+        """True when the fitted error model expects an aleatoric_std feature."""
+        return "aleatoric_std" in self.feature_order
 
     # ------------------------------------------------------------------
     # Training
@@ -109,6 +130,7 @@ class UQModelV1:
         y_true: Union[np.ndarray, pd.Series],
         predictions: Union[np.ndarray, pd.Series],
         prediction_std: Union[np.ndarray, pd.Series],
+        aleatoric_std: Optional[Union[np.ndarray, pd.Series]] = None,
     ) -> "UQModelV1":
         """Fit the error model and conformal calibration on validation predictions.
 
@@ -116,7 +138,11 @@ class UQModelV1:
             ids: Validation row IDs (must exist in the proximity reference set).
             y_true: True target values for those rows.
             predictions: Model predictions (ensemble mean).
-            prediction_std: Ensemble standard deviation (post log-compression if used upstream).
+            prediction_std: Ensemble (epistemic) standard deviation (post log-compression if used upstream).
+            aleatoric_std: Optional per-prediction aleatoric std from a model-intrinsic
+                UQ head (chemprop MVE). When provided, it becomes an extra error-model
+                feature. When None, the base feature set is used — this is how non-MVE
+                models (e.g. XGBoost) fit the same UQModelV1.
 
         Returns:
             self (fitted)
@@ -126,13 +152,26 @@ class UQModelV1:
         predictions = np.asarray(predictions, dtype=float).ravel()
         prediction_std = np.asarray(prediction_std, dtype=float).ravel()
 
-        if not (len(ids) == len(y_true) == len(predictions) == len(prediction_std)):
+        if aleatoric_std is not None:
+            aleatoric_std = np.asarray(aleatoric_std, dtype=float).ravel()
+            self.feature_order = list(self.FEATURE_ORDER_MVE)
+        else:
+            self.feature_order = list(self.FEATURE_ORDER)
+
+        lengths = [len(ids), len(y_true), len(predictions), len(prediction_std)]
+        if aleatoric_std is not None:
+            lengths.append(len(aleatoric_std))
+        if len(set(lengths)) != 1:
             raise ValueError(
                 f"Length mismatch: ids={len(ids)}, y_true={len(y_true)}, "
                 f"predictions={len(predictions)}, prediction_std={len(prediction_std)}"
+                + (f", aleatoric_std={len(aleatoric_std)}" if aleatoric_std is not None else "")
             )
 
-        log.info(f"Fitting UQModelV1 on {len(ids)} validation samples (k={self.k})")
+        log.info(
+            f"Fitting UQModelV1 on {len(ids)} validation samples "
+            f"(k={self.k}, aleatoric={'yes' if self.uses_aleatoric else 'no'})"
+        )
 
         # 1. Compute neighborhood features
         feat = self.features.compute(
@@ -142,7 +181,7 @@ class UQModelV1:
             training_only=self.training_only_features,
         )
 
-        X_cal = self._stack_features(predictions, prediction_std, feat)
+        X_cal = self._stack_features(predictions, prediction_std, feat, aleatoric_std)
         y_cal = np.abs(y_true - predictions)
 
         # 2. Fit error model
@@ -204,7 +243,7 @@ class UQModelV1:
 
         # Feature importance
         print("\n  Feature importance (Random Forest):")
-        for feat_name, importance in zip(self.FEATURE_ORDER, self.error_model.feature_importances_):
+        for feat_name, importance in zip(self.feature_order, self.error_model.feature_importances_):
             print(f"    {feat_name:<20s} {importance:.4f}")
         print()
 
@@ -217,6 +256,7 @@ class UQModelV1:
         query: Union[List, pd.Series, np.ndarray, pd.DataFrame],
         predictions: Union[np.ndarray, pd.Series],
         prediction_std: Union[np.ndarray, pd.Series],
+        aleatoric_std: Optional[Union[np.ndarray, pd.Series]] = None,
     ) -> pd.DataFrame:
         """Compute UQ outputs (expected residual, confidence, intervals) for queries.
 
@@ -229,6 +269,8 @@ class UQModelV1:
             query: IDs already in the proximity reference, or a DataFrame of novel inputs.
             predictions: Model predictions (ensemble mean), same length as `query`.
             prediction_std: Ensemble standard deviation, same length as `query`.
+            aleatoric_std: Per-prediction aleatoric std. Required iff the model was
+                fit with aleatoric (``uses_aleatoric``); ignored otherwise.
 
         Returns:
             DataFrame with columns:
@@ -241,6 +283,15 @@ class UQModelV1:
 
         predictions = np.asarray(predictions, dtype=float).ravel()
         prediction_std = np.asarray(prediction_std, dtype=float).ravel()
+
+        if self.uses_aleatoric:
+            if aleatoric_std is None:
+                raise ValueError(
+                    "This UQModelV1 was fit with an aleatoric_std feature; " "predict() requires aleatoric_std."
+                )
+            aleatoric_std = np.asarray(aleatoric_std, dtype=float).ravel()
+        else:
+            aleatoric_std = None  # ignore any passed value for base-feature models
 
         # Auto-dispatch
         if isinstance(query, pd.DataFrame):
@@ -258,7 +309,7 @@ class UQModelV1:
         # that would look like a real prediction.
         nan_mask = feat[["knn_distance", "knn_target_std"]].isna().any(axis=1).to_numpy()
 
-        X_test = self._stack_features(predictions, prediction_std, feat)
+        X_test = self._stack_features(predictions, prediction_std, feat, aleatoric_std)
         expected_residual = self.error_model.predict(X_test)
 
         # Confidence: percentile rank of expected residual against cal-set distribution
@@ -341,7 +392,7 @@ class UQModelV1:
             "training_only_features": self.training_only_features,
             "n_estimators": self.n_estimators,
             "max_depth": self.max_depth,
-            "feature_order": self.FEATURE_ORDER,
+            "feature_order": self.feature_order,
             "proximity_saved": save_proximity,
         }
         with open(os.path.join(model_dir, self.METADATA_FILENAME), "w") as fp:
@@ -389,6 +440,7 @@ class UQModelV1:
         instance.error_model = joblib.load(os.path.join(model_dir, "uq_model.joblib"))
         instance.scale_factors = metadata["scale_factors"]
         instance.residual_percentiles = np.asarray(metadata["residual_percentiles"])
+        instance.feature_order = list(metadata.get("feature_order", cls.FEATURE_ORDER))
         return instance
 
     # ------------------------------------------------------------------
@@ -396,13 +448,27 @@ class UQModelV1:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _stack_features(predictions: np.ndarray, prediction_std: np.ndarray, feat: pd.DataFrame) -> np.ndarray:
-        """Build the (n, 5) feature matrix in canonical column order."""
+    def _stack_features(
+        predictions: np.ndarray,
+        prediction_std: np.ndarray,
+        feat: pd.DataFrame,
+        aleatoric_std: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        """Build the feature matrix in canonical column order.
+
+        Columns are (prediction, prediction_std, [aleatoric_std], knn_distance,
+        knn_target_std, local_pred_gap) — aleatoric_std is included only when
+        provided, matching FEATURE_ORDER / FEATURE_ORDER_MVE.
+        """
         # NaN-fill: queries with no valid neighbors (rare) get neutral values
         knn_distance = np.nan_to_num(feat["knn_distance"].values, nan=0.5)
         knn_target_std = np.nan_to_num(feat["knn_target_std"].values, nan=0.0)
         local_pred_gap = np.nan_to_num(feat.get("local_pred_gap", pd.Series(0.0, index=feat.index)).values, nan=0.0)
-        return np.column_stack([predictions, prediction_std, knn_distance, knn_target_std, local_pred_gap])
+        columns = [predictions, prediction_std]
+        if aleatoric_std is not None:
+            columns.append(np.nan_to_num(np.asarray(aleatoric_std, dtype=float).ravel(), nan=0.0))
+        columns += [knn_distance, knn_target_std, local_pred_gap]
+        return np.column_stack(columns)
 
     @staticmethod
     def _slim_proximity(prox: Proximity) -> Proximity:
