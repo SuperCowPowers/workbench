@@ -246,13 +246,12 @@ class UQModelV2:
         query: Union[List, pd.Series, np.ndarray, pd.DataFrame],
         predictions: Optional[Union[np.ndarray, pd.Series]] = None,
         prediction_std: Optional[Union[np.ndarray, pd.Series]] = None,
-        aleatoric_std: Optional[Union[np.ndarray, pd.Series]] = None,
     ) -> pd.DataFrame:
         """Compute V2 UQ outputs (AD confidence + neighbor-derived intervals).
 
-        The ``predictions``, ``prediction_std`` and ``aleatoric_std`` arguments are
-        accepted for signature compatibility with V0/V1 but **ignored** in V2's
-        math. V2 derives everything from the query's k nearest neighbors.
+        The ``predictions`` and ``prediction_std`` arguments are accepted for
+        signature compatibility with V0/V1 but **ignored** in V2's math. V2
+        derives everything from the query's k nearest neighbors.
 
         Args:
             query: IDs already in the proximity reference set (list/Series/array),
@@ -260,7 +259,6 @@ class UQModelV2:
                 'fingerprint' for FingerprintProximity).
             predictions: Ignored. Accepted for V0/V1 compatibility.
             prediction_std: Ignored. Accepted for V0/V1 compatibility.
-            aleatoric_std: Ignored. Accepted for V0/V1 compatibility.
 
         Returns:
             DataFrame indexed by query id (or query_id for novel queries) with columns:

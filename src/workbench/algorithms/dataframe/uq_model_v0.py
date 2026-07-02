@@ -261,12 +261,8 @@ class UQModelV0:
         query: Optional[Union[List, pd.Series, np.ndarray, pd.DataFrame]],
         predictions: Union[np.ndarray, pd.Series],
         prediction_std: Union[np.ndarray, pd.Series],
-        aleatoric_std: Optional[Union[np.ndarray, pd.Series]] = None,
     ) -> pd.DataFrame:
         """Compute v0 UQ outputs (expected residual, confidence, intervals).
-
-        ``aleatoric_std`` is accepted for signature parity with UQModelV1 (so a
-        caller can pass it uniformly) but ignored — v0 uses only (prediction, std).
 
         The ``query`` argument is accepted for signature compatibility with
         :class:`UQModelV1` but used only to derive the result DataFrame's index

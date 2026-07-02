@@ -17,7 +17,7 @@ import time
 
 # Template revision marker — bump on edits so log output identifies the script
 # version independent of the training image's installed workbench version.
-TEMPLATE_REVISION = "2026-07-01b (chemprop 2.2.4: LR knobs, per-layer FFN, MVE aleatoric UQ)"
+TEMPLATE_REVISION = "2026-07-01a (chemprop 2.2.4: LR knobs + per-layer FFN dims)"
 
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
@@ -81,16 +81,6 @@ DEFAULT_HYPERPARAMETERS = {
     "final_lr": 1e-4,
     # Loss function for regression (mae, mse)
     "criterion": "mae",
-    # Mean-variance estimation (MVE) head. When True, the regression FFN emits a
-    # per-prediction aleatoric variance (Gaussian NLL loss) in addition to the
-    # mean. Across the ensemble this yields an aleatoric/epistemic split (Deep
-    # Ensembles): epistemic = std of fold means (our existing prediction_std),
-    # aleatoric = sqrt(mean of fold variances). The aleatoric std is surfaced as
-    # a column and fed to UQ v1 as an extra error-model feature.
-    # Mutually exclusive with `bounded_loss` and overrides `criterion` (MVE has
-    # its own loss). Opt-in: MVE optimizes NLL, which can shift the point
-    # prediction vs pure MAE/MSE — validate accuracy parity before enabling.
-    "mve": False,
     # Bounded loss for censored targets. When True, the trainer reads
     # per-target boolean columns "{target}_gt" / "{target}_lt" from the
     # FeatureSet and swaps the criterion for its Bounded* variant so that
@@ -242,20 +232,6 @@ def model_fn(model_dir: str) -> dict:
     }
 
 
-def _extract_mean_var(arr: np.ndarray, is_mve: bool):
-    """Split a chemprop regression output into (mean, variance).
-
-    MVE heads emit shape (n, n_tasks, 2) with (mean, var) on the last axis; the
-    mean is returned with its native leading shape so the existing squeeze/reshape
-    logic downstream is unchanged. For non-MVE heads, variance is None and the
-    array passes through untouched. Gated on the caller's ``is_mve`` flag, never
-    on shape — a 2-task non-MVE output is also (n, 2) and must not be split.
-    """
-    if is_mve:
-        return arr[..., 0], arr[..., 1]
-    return arr, None
-
-
 # =============================================================================
 # Inference (for SageMaker inference)
 # =============================================================================
@@ -269,11 +245,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     ensemble_models = model_dict["ensemble_models"]
     target_columns = model_dict["target_columns"]
-
-    # MVE head emits (mean, variance); regression-only. Read from the bundle's
-    # baked-in hyperparameters so inference matches how the model was trained.
-    _hp = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
-    is_mve = bool(_hp.get("mve", False)) and model_type != "classifier"
 
     # Load artifacts
     label_encoder = None
@@ -302,8 +273,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         for tc in target_columns:
             df[f"{tc}_pred"] = np.nan
             df[f"{tc}_pred_std"] = np.nan
-            if is_mve:
-                df[f"{tc}_pred_aleatoric_std"] = np.nan
 
     if sum(valid_mask) == 0:
         return df
@@ -336,7 +305,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     # Ensemble predictions using direct PyTorch inference (no Lightning Trainer)
     all_preds = []
-    all_vars = []  # MVE only: per-fold aleatoric variances
     for model in ensemble_models:
         model_preds = []
         model.eval()
@@ -352,15 +320,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             print(f"Warning: No predictions generated. Dataset size: {len(datapoints)}")
             continue
 
-        raw = np.concatenate(model_preds, axis=0)
-        preds, var = _extract_mean_var(raw, is_mve)
+        preds = np.concatenate(model_preds, axis=0)
         if preds.ndim == 3 and preds.shape[1] == 1:
             preds = preds.squeeze(axis=1)
         all_preds.append(preds)
-        if var is not None:
-            if var.ndim == 3 and var.shape[1] == 1:
-                var = var.squeeze(axis=1)
-            all_vars.append(var)
 
     if len(all_preds) == 0:
         print("Error: No ensemble predictions generated")
@@ -368,12 +331,8 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     preds = np.mean(np.stack(all_preds), axis=0)
     preds_std = np.std(np.stack(all_preds), axis=0)
-    # Aleatoric std = sqrt(mean of per-fold variances); epistemic is preds_std.
-    preds_aleatoric = np.sqrt(np.mean(np.stack(all_vars), axis=0)) if all_vars else None
     if preds.ndim == 1:
         preds, preds_std = preds.reshape(-1, 1), preds_std.reshape(-1, 1)
-        if preds_aleatoric is not None:
-            preds_aleatoric = preds_aleatoric.reshape(-1, 1)
     preds_std = compress_std_outliers(preds_std)
 
     print(f"Inference complete: {preds.shape[0]} predictions")
@@ -417,8 +376,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         for t_idx, tc in enumerate(target_columns):
             df.loc[valid_mask, f"{tc}_pred"] = preds[:, t_idx]
             df.loc[valid_mask, f"{tc}_pred_std"] = preds_std[:, t_idx]
-            if preds_aleatoric is not None:
-                df.loc[valid_mask, f"{tc}_pred_aleatoric_std"] = preds_aleatoric[:, t_idx]
         # FIXME: Multi-target models don't have a "primary target" — aliasing to the first
         #  target here is a shortcut so the web UI (which expects a single "prediction" column)
         #  continues to work. Per-target columns ({target}_pred, {target}_pred_std) are the
@@ -428,17 +385,15 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
         # UQModel UQ for the primary target. Multi-target UQ is not yet supported
         # in the new pipeline — only the primary target gets full UQ treatment.
-        primary = target_columns[0]
-        primary_aleatoric = preds_aleatoric[:, 0] if preds_aleatoric is not None else None
         uq_model = model_dict.get("uq_model")
         if uq_model is not None:
             if "smiles" in df.columns:
                 query_df = df.loc[valid_mask, ["smiles"]]
+                primary = target_columns[0]
                 uq_out = uq_model.predict(
                     query_df,
                     df.loc[valid_mask, f"{primary}_pred"].values,
                     df.loc[valid_mask, f"{primary}_pred_std"].values,
-                    aleatoric_std=primary_aleatoric,
                 )
                 for col in uq_out.columns:
                     df[col] = np.nan
@@ -570,17 +525,6 @@ if __name__ == "__main__":
                 hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
             )
 
-        # MVE head: mean + aleatoric variance via Gaussian NLL. Uses its own loss,
-        # so criterion/bounded_loss don't apply (guarded upstream in build_mpnn_model).
-        if hyperparameters.get("mve", False):
-            from chemprop.nn.metrics import MVELoss
-            criterion_kwargs = {"task_weights": task_weights} if task_weights is not None else {}
-            return nn.MveFFN(
-                input_dim=input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
-                dropout=dropout, n_tasks=n_targets, output_transform=output_transform,
-                criterion=MVELoss(**criterion_kwargs),
-            )
-
         from chemprop.nn.metrics import MAE, MSE, BoundedMAE, BoundedMSE
         if use_bounded_loss:
             criterion_map = {"mae": BoundedMAE, "mse": BoundedMSE}
@@ -648,11 +592,6 @@ if __name__ == "__main__":
     id_column = TEMPLATE_PARAMS["id_column"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
-
-    # MVE has its own Gaussian-NLL loss; bounded-loss censoring has no MVE variant.
-    if hyperparameters.get("mve", False) and hyperparameters.get("bounded_loss", False):
-        raise ValueError("'mve' and 'bounded_loss' are mutually exclusive (MVE uses its own loss).")
-    is_mve = bool(hyperparameters.get("mve", False)) and model_type != "classifier"
 
     if not target_columns or not isinstance(target_columns, list):
         raise ValueError("'targets' must be a non-empty list of target column names")
@@ -943,9 +882,6 @@ if __name__ == "__main__":
             fold_preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, val_loader_pred)], axis=0)
         print(f"[timing] fold {fold_idx + 1} OOF predict: {time.time() - _oof_t0:.1f}s", flush=True)
         print(f"Fold {fold_idx + 1} OOF predictions complete.", flush=True)
-        # OOF point predictions use the mean only; aleatoric is aggregated across
-        # the full ensemble later (in the prediction_std block).
-        fold_preds, _ = _extract_mean_var(fold_preds, is_mve)
         if fold_preds.ndim == 3 and fold_preds.shape[1] == 1:
             fold_preds = fold_preds.squeeze(axis=1)
 
@@ -1050,7 +986,6 @@ if __name__ == "__main__":
         classification_uq = None
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
-        preds_aleatoric = None  # MVE only: aleatoric std over the full ensemble
         if len(ensemble_models) > 1:
             _std_t0 = time.time()
             print("Computing prediction_std from ensemble...", flush=True)
@@ -1066,7 +1001,6 @@ if __name__ == "__main__":
             print(f"  Dataset ready ({len(std_dataset)} samples), running {len(ensemble_models)} models...", flush=True)
 
             all_ens_preds = []
-            all_ens_vars = []  # MVE only: per-fold aleatoric variances
             for m in ensemble_models:
                 m.eval().to(device)
                 model_preds = []
@@ -1078,25 +1012,15 @@ if __name__ == "__main__":
                         X_d = X_d.to(device) if X_d is not None else None
                         output = m(bmg, V_d, X_d)
                         model_preds.append(output.detach().cpu().numpy())
-                raw = np.concatenate(model_preds, axis=0)
-                ens_preds, ens_var = _extract_mean_var(raw, is_mve)
+                ens_preds = np.concatenate(model_preds, axis=0)
                 if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
                     ens_preds = ens_preds.squeeze(axis=1)
                 all_ens_preds.append(ens_preds)
-                if ens_var is not None:
-                    if ens_var.ndim == 3 and ens_var.shape[1] == 1:
-                        ens_var = ens_var.squeeze(axis=1)
-                    all_ens_vars.append(ens_var)
             print(f"[timing] prediction_std (ensemble inference): {time.time() - _std_t0:.1f}s", flush=True)
             preds_std = np.std(np.stack(all_ens_preds), axis=0)
             if preds_std.ndim == 1:
                 preds_std = preds_std.reshape(-1, 1)
             preds_std = compress_std_outliers(preds_std)
-            # Aleatoric std = sqrt(mean of per-fold variances); epistemic is preds_std.
-            if all_ens_vars:
-                preds_aleatoric = np.sqrt(np.mean(np.stack(all_ens_vars), axis=0))
-                if preds_aleatoric.ndim == 1:
-                    preds_aleatoric = preds_aleatoric.reshape(-1, 1)
 
         print(f"[timing] post-training elapsed before metrics: {time.time() - _post_t0:.1f}s", flush=True)
         print("\n--- Per-target metrics ---")
@@ -1108,8 +1032,6 @@ if __name__ == "__main__":
 
             df_val[f"{t_name}_pred"] = preds[:, t_idx]
             df_val[f"{t_name}_pred_std"] = preds_std[:, t_idx] if preds_std is not None else 0.0
-            if preds_aleatoric is not None:
-                df_val[f"{t_name}_pred_aleatoric_std"] = preds_aleatoric[:, t_idx]
 
         # Fit both UQ models on the primary target's validation predictions.
         # Multi-target UQ is not yet supported — only the primary target gets
@@ -1132,10 +1054,6 @@ if __name__ == "__main__":
             val_y = df_val.loc[valid, primary].values
             val_pred = df_val.loc[valid, f"{primary}_pred"].values
             val_std = df_val.loc[valid, f"{primary}_pred_std"].values
-            val_aleatoric = (
-                df_val.loc[valid, f"{primary}_pred_aleatoric_std"].values
-                if preds_aleatoric is not None else None
-            )
 
             all_df = pd.concat([df_train, df_val], ignore_index=True)
 
@@ -1154,11 +1072,10 @@ if __name__ == "__main__":
                 val_ids=val_ids, prox_df=prox_df,
                 id_column=id_column, target=primary,
                 active_version=hyperparameters.get("uq_version", "v0"),
-                y_aleatoric=val_aleatoric,
             )
 
             # Apply active UQ to df_val columns for validation_predictions.csv
-            uq_out = uq_dict["uq_model"].predict(val_ids, val_pred, val_std, aleatoric_std=val_aleatoric)
+            uq_out = uq_dict["uq_model"].predict(val_ids, val_pred, val_std)
             for col in uq_out.columns:
                 df_val[col] = np.nan
                 df_val.loc[valid, col] = uq_out[col].values
@@ -1186,7 +1103,6 @@ if __name__ == "__main__":
         extra_descriptors=val_extra_features if use_extra_features else None,
         extra_feature_names=extra_feature_cols if use_extra_features else None,
         is_classifier=model_type == "classifier",
-        is_mve=is_mve,
     )
     sample_ids = df_val.iloc[shap_indices][id_column].reset_index(drop=True) if id_column in df_val.columns else None
 

@@ -211,7 +211,7 @@ def _analyze_molecules(smiles_list: list[str], atom_feat, bond_feat) -> tuple[np
 # =============================================================================
 # Batched inference helper
 # =============================================================================
-def _batched_predict(model, molgraphs, x_d_array=None, batch_size=128, is_mve=False):
+def _batched_predict(model, molgraphs, x_d_array=None, batch_size=128):
     """Run model inference on a list of MolGraphs in sub-batches.
 
     Args:
@@ -244,10 +244,6 @@ def _batched_predict(model, molgraphs, x_d_array=None, batch_size=128, is_mve=Fa
         all_preds.append(output.detach().cpu().numpy())
     preds = np.concatenate(all_preds, axis=0)
 
-    # MVE head emits (n, n_tasks, 2) = (mean, var); SHAP explains the mean only.
-    if is_mve:
-        preds = preds[..., 0]
-
     # Squeeze single-task classification: (n, 1, n_classes) -> (n, n_classes)
     if preds.ndim == 3 and preds.shape[1] == 1:
         preds = preds[:, 0, :]
@@ -266,7 +262,6 @@ def compute_chemprop_shap(
     sample_size: int = 500,
     seed: int = 42,
     is_classifier: bool = False,
-    is_mve: bool = False,
 ) -> tuple[np.ndarray, list[str], np.ndarray, np.ndarray]:
     """Compute per-bit feature importance for a chemprop MPNN via ablation.
 
@@ -358,7 +353,7 @@ def compute_chemprop_shap(
     atom_feat.keep_mask = all_on[:n_atom_bits]
     bond_feat.keep_mask = all_on[n_atom_bits:]
     baseline_graphs = [mg_feat(mol) for mol in mols]
-    baseline_preds = _batched_predict(model, baseline_graphs, sampled_x_d, is_mve=is_mve)
+    baseline_preds = _batched_predict(model, baseline_graphs, sampled_x_d)
 
     # --- Leave-one-out ablation for each active feature ---
     print(f"  Running leave-one-out ablation for {n_active} features...", flush=True)
@@ -382,7 +377,7 @@ def compute_chemprop_shap(
 
         # Build ablated MolGraphs for all molecules
         ablated_graphs = [mg_feat(mol) for mol in mols]
-        ablated_preds = _batched_predict(model, ablated_graphs, sampled_x_d, is_mve=is_mve)
+        ablated_preds = _batched_predict(model, ablated_graphs, sampled_x_d)
 
         # Importance = baseline - ablated (positive means feature increases prediction)
         if is_multiclass:
@@ -442,7 +437,7 @@ def compute_chemprop_shap(
         for desc_idx in range(n_extra):
             ablated_x_d = sampled_x_d.copy()
             ablated_x_d[:, desc_idx] = extra_means[desc_idx]
-            ablated_preds = _batched_predict(model, baseline_graphs, ablated_x_d, is_mve=is_mve)
+            ablated_preds = _batched_predict(model, baseline_graphs, ablated_x_d)
             if is_multiclass:
                 extra_ablation[:, :, desc_idx] = baseline_preds - ablated_preds
             else:
