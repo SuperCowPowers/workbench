@@ -591,6 +591,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#new-in-chemprop-224" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New in ChemProp 2.2.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="New in ChemProp 2.2.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learning-rate-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning-Rate Schedule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-layer-ffn-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Layer FFN Dimensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#single-task-chemprop" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4761,6 +4800,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#new-in-chemprop-224" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New in ChemProp 2.2.4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="New in ChemProp 2.2.4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learning-rate-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Learning-Rate Schedule
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-layer-ffn-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Layer FFN Dimensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#single-task-chemprop" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5008,38 +5086,71 @@
 </tr>
 </tbody>
 </table>
+<h2 id="new-in-chemprop-224">New in ChemProp 2.2.4</h2>
+<p>Workbench's ChemProp training and inference images now run <strong>ChemProp 2.2.4</strong>, which adds two new tuning knobs to the model template. Both are optional — the defaults match ChemProp's, so existing models are unchanged.</p>
+<h3 id="learning-rate-schedule">Learning-Rate Schedule</h3>
+<p>ChemProp trains with a Noam-style <em>warmup-then-decay</em> schedule. You can now tune every part of it directly:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-lr&quot;</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="s2">&quot;warmup_epochs&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>   <span class="c1"># epochs to ramp the LR up to max_lr</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">&quot;init_lr&quot;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>      <span class="c1"># starting LR (where the warmup ramp begins)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="s2">&quot;max_lr&quot;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>       <span class="c1"># peak LR reached after warmup</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="s2">&quot;final_lr&quot;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>     <span class="c1"># LR at the end of training</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="p">},</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><strong>When to tune:</strong> larger datasets or unstable training often benefit from a longer warmup or a lower <code>max_lr</code>. Leave the defaults for most cases.</p>
+<h3 id="per-layer-ffn-dimensions">Per-Layer FFN Dimensions</h3>
+<p>The feed-forward head can now <strong>taper</strong> across layers instead of using one fixed width — just pass a list to <code>ffn_hidden_dim</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-taper&quot;</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="s2">&quot;ffn_hidden_dim&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span>  <span class="c1"># tapered 3-layer head</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="p">},</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>A single int (e.g. <code>"ffn_hidden_dim": 2000</code>) still works and applies that width to every layer, with <code>ffn_num_layers</code> setting the count. When you pass a <strong>list</strong>, its length sets the number of layers and <code>ffn_num_layers</code> is ignored.</p>
 <h2 id="single-task-chemprop">Single-Task ChemProp</h2>
 <p>The standard ChemProp model trains a D-MPNN (Directed Message Passing Neural Network) on molecular graphs to predict a single target property.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">feature_set</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;open_admet_all&quot;</span><span class="p">)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop&quot;</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp model for LogD prediction&quot;</span><span class="p">,</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">],</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">)</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Deploy and run inference</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">])</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">endpoint</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">feature_set</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;open_admet_all&quot;</span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop&quot;</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp model for LogD prediction&quot;</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">],</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># Deploy and run inference</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">])</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="n">endpoint</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
 </span></code></pre></div>
 <p><strong>How it works:</strong> The MPNN reads the molecular graph directly — atoms are nodes, bonds are edges. Through multiple rounds of message passing, each atom aggregates information from its neighbors to build a learned molecular representation. This representation feeds into a feedforward network (FFN) that outputs the prediction.</p>
 <h3 id="classification">Classification</h3>
 <p>ChemProp also supports classification for single-target models:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solubility-class-chemprop&quot;</span><span class="p">,</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLASSIFIER</span><span class="p">,</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;solubility_class&quot;</span><span class="p">,</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp classifier for solubility classes&quot;</span><span class="p">,</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;classification&quot;</span><span class="p">],</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">)</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">model</span><span class="o">.</span><span class="n">set_class_labels</span><span class="p">([</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">])</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solubility-class-chemprop&quot;</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLASSIFIER</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;solubility_class&quot;</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp classifier for solubility classes&quot;</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;classification&quot;</span><span class="p">],</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="p">)</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">model</span><span class="o">.</span><span class="n">set_class_labels</span><span class="p">([</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -5047,20 +5158,20 @@
 </div>
 <h2 id="multi-task-chemprop">Multi-Task ChemProp</h2>
 <p>Multi-task models train a single MPNN that predicts multiple endpoints simultaneously. The MPNN learns a shared molecular representation, while each target gets its own FFN head. This is especially effective when targets share underlying molecular features (e.g., multiple ADMET endpoints).</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ADMET_TARGETS</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">&quot;logd&quot;</span><span class="p">,</span> <span class="s2">&quot;ksol&quot;</span><span class="p">,</span> <span class="s2">&quot;hlm_clint&quot;</span><span class="p">,</span> <span class="s2">&quot;mlm_clint&quot;</span><span class="p">,</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">&quot;caco_2_papp_a_b&quot;</span><span class="p">,</span> <span class="s2">&quot;caco_2_efflux&quot;</span><span class="p">,</span> <span class="s2">&quot;mppb&quot;</span><span class="p">,</span> <span class="s2">&quot;mbpb&quot;</span><span class="p">,</span> <span class="s2">&quot;mgmb&quot;</span><span class="p">,</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">]</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;admet-chemprop-mt&quot;</span><span class="p">,</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">target_column</span><span class="o">=</span><span class="n">ADMET_TARGETS</span><span class="p">,</span>  <span class="c1"># Pass a list for multi-task</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Multi-task ChemProp for 9 ADMET endpoints&quot;</span><span class="p">,</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;multitask&quot;</span><span class="p">],</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">ADMET_TARGETS</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">&quot;logd&quot;</span><span class="p">,</span> <span class="s2">&quot;ksol&quot;</span><span class="p">,</span> <span class="s2">&quot;hlm_clint&quot;</span><span class="p">,</span> <span class="s2">&quot;mlm_clint&quot;</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">&quot;caco_2_papp_a_b&quot;</span><span class="p">,</span> <span class="s2">&quot;caco_2_efflux&quot;</span><span class="p">,</span> <span class="s2">&quot;mppb&quot;</span><span class="p">,</span> <span class="s2">&quot;mbpb&quot;</span><span class="p">,</span> <span class="s2">&quot;mgmb&quot;</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">]</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;admet-chemprop-mt&quot;</span><span class="p">,</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">target_column</span><span class="o">=</span><span class="n">ADMET_TARGETS</span><span class="p">,</span>  <span class="c1"># Pass a list for multi-task</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Multi-task ChemProp for 9 ADMET endpoints&quot;</span><span class="p">,</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;multitask&quot;</span><span class="p">],</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>Key differences from single-task:</strong></p>
 <ul>
@@ -5076,24 +5187,24 @@
   <img src="../images/hybrid_architecture.svg" alt="Hybrid ChemProp Architecture" style="height: 250px;">
 </figure>
 
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Top SHAP features from an XGBoost model (complementary to MPNN)</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">TOP_FEATURES</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="s2">&quot;mollogp&quot;</span><span class="p">,</span> <span class="s2">&quot;fr_halogen&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa6&quot;</span><span class="p">,</span> <span class="s2">&quot;nbase&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa7&quot;</span><span class="p">,</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="s2">&quot;peoe_vsa9&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa1&quot;</span><span class="p">,</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span> <span class="s2">&quot;bcut2d_mrlow&quot;</span><span class="p">,</span> <span class="s2">&quot;slogp_vsa1&quot;</span><span class="p">,</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">]</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># Hybrid mode: just add descriptor columns to feature_list</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">hybrid_features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-hybrid&quot;</span><span class="p">,</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">hybrid_features</span><span class="p">,</span>  <span class="c1"># SMILES + descriptors</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hybrid ChemProp with top SHAP molecular descriptors&quot;</span><span class="p">,</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">],</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Top SHAP features from an XGBoost model (complementary to MPNN)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">TOP_FEATURES</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="s2">&quot;mollogp&quot;</span><span class="p">,</span> <span class="s2">&quot;fr_halogen&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa6&quot;</span><span class="p">,</span> <span class="s2">&quot;nbase&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa7&quot;</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">&quot;peoe_vsa9&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa1&quot;</span><span class="p">,</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span> <span class="s2">&quot;bcut2d_mrlow&quot;</span><span class="p">,</span> <span class="s2">&quot;slogp_vsa1&quot;</span><span class="p">,</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">]</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Hybrid mode: just add descriptor columns to feature_list</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">hybrid_features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-hybrid&quot;</span><span class="p">,</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">hybrid_features</span><span class="p">,</span>  <span class="c1"># SMILES + descriptors</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hybrid ChemProp with top SHAP molecular descriptors&quot;</span><span class="p">,</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">],</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>How it works:</strong> Any features beyond <code>"smiles"</code> in <code>feature_list</code> are automatically treated as extra descriptors. They are scaled (zero mean, unit variance) during training and concatenated with the MPNN output vector before feeding into the FFN.</p>
 <p><strong>When to use hybrid:</strong> When you have domain-specific descriptors that capture information the MPNN might miss. A common pattern is to train an XGBoost model first, extract the top SHAP features, and use those as extra descriptors for the hybrid model.</p>
@@ -5101,78 +5212,78 @@
 <p>Foundation models start from pretrained MPNN weights instead of random initialization. This gives the model a strong prior for molecular representation learning, which is especially beneficial for small datasets.</p>
 <h3 id="chemeleon">CheMeleon</h3>
 <p>Workbench supports <a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a>, a foundation model pretrained on 1M PubChem molecules to predict Mordred molecular descriptors. The pretrained weights are automatically downloaded on first use.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd&quot;</span><span class="p">,</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon foundation model for LogD&quot;</span><span class="p">,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;chemeleon&quot;</span><span class="p">,</span> <span class="s2">&quot;foundation&quot;</span><span class="p">],</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="p">},</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd&quot;</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon foundation model for LogD&quot;</span><span class="p">,</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;chemeleon&quot;</span><span class="p">,</span> <span class="s2">&quot;foundation&quot;</span><span class="p">],</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="p">},</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="two-phase-training-recommended">Two-Phase Training (Recommended)</h3>
 <p>For more stable fine-tuning, freeze the MPNN for an initial warmup period and train only the FFN head. After the warmup, unfreeze everything and fine-tune end-to-end:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-frozen&quot;</span><span class="p">,</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon with frozen MPNN warmup&quot;</span><span class="p">,</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;chemeleon&quot;</span><span class="p">,</span> <span class="s2">&quot;foundation&quot;</span><span class="p">],</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># Phase 1: train FFN only</span>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>         <span class="c1"># Total (10 frozen + 90 fine-tuning)</span>
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="p">},</span>
-</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-frozen&quot;</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon with frozen MPNN warmup&quot;</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;chemeleon&quot;</span><span class="p">,</span> <span class="s2">&quot;foundation&quot;</span><span class="p">],</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># Phase 1: train FFN only</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>         <span class="c1"># Total (10 frozen + 90 fine-tuning)</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    <span class="p">},</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>Phase 1 (epochs 1–10):</strong> MPNN weights are frozen. Only the FFN learns to map the pretrained representations to your target.</p>
 <p><strong>Phase 2 (epochs 11–100):</strong> MPNN is unfrozen. The entire model fine-tunes end-to-end, adapting the molecular representations to your specific task.</p>
 <h3 id="foundation-multi-task">Foundation + Multi-Task</h3>
 <p>Foundation models combine naturally with multi-task learning:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-mt&quot;</span><span class="p">,</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="n">ADMET_TARGETS</span><span class="p">,</span>  <span class="c1"># Multi-task</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon multi-task ADMET model&quot;</span><span class="p">,</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="p">},</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-mt&quot;</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="n">ADMET_TARGETS</span><span class="p">,</span>  <span class="c1"># Multi-task</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon multi-task ADMET model&quot;</span><span class="p">,</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="p">},</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="foundation-hybrid">Foundation + Hybrid</h3>
 <p>And with hybrid descriptors:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-hybrid&quot;</span><span class="p">,</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span><span class="p">,</span>  <span class="c1"># Hybrid</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon hybrid with molecular descriptors&quot;</span><span class="p">,</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="p">},</span>
-</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-hybrid&quot;</span><span class="p">,</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span><span class="p">,</span>  <span class="c1"># Hybrid</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon hybrid with molecular descriptors&quot;</span><span class="p">,</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    <span class="p">},</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="custom-pretrained-weights">Custom Pretrained Weights</h3>
 <p>You can also provide your own pretrained ChemProp model:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/my_pretrained_model.pt&quot;</span><span class="p">,</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/my_pretrained_model.pt&quot;</span><span class="p">,</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <p>All ChemProp model types share a common set of tunable hyperparameters:</p>
@@ -5203,7 +5314,7 @@
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">ffn_hidden_dim</td>
       <td style="padding: 8px 16px;">2000</td>
-      <td style="padding: 8px 16px;">FFN hidden layer dimension</td>
+      <td style="padding: 8px 16px;">FFN hidden layer dimension. A single int (uniform width) or a list like [1024, 256, 64] for a tapered head</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">ffn_num_layers</td>
@@ -5224,6 +5335,26 @@
       <td style="padding: 8px 16px; font-weight: bold;">patience</td>
       <td style="padding: 8px 16px;">50</td>
       <td style="padding: 8px 16px;">Early stopping patience</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">warmup_epochs</td>
+      <td style="padding: 8px 16px;">2</td>
+      <td style="padding: 8px 16px;">Epochs to ramp the learning rate up to max_lr</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">init_lr</td>
+      <td style="padding: 8px 16px;">1e-4</td>
+      <td style="padding: 8px 16px;">Starting learning rate (warmup ramp begins here)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">max_lr</td>
+      <td style="padding: 8px 16px;">1e-3</td>
+      <td style="padding: 8px 16px;">Peak learning rate reached after warmup</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">final_lr</td>
+      <td style="padding: 8px 16px;">1e-4</td>
+      <td style="padding: 8px 16px;">Learning rate at the end of training</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">n_folds</td>
@@ -5255,17 +5386,17 @@
 <li><strong>scaffold</strong> — Groups molecules by Bemis-Murcko scaffold. Ensures no scaffold appears in both train and validation. Tests generalization to new chemical series.</li>
 <li><strong>butina</strong> — Clusters molecules using Morgan fingerprint similarity (Tanimoto distance). Recommended for ADMET datasets where scaffold splits may be too aggressive.</li>
 </ul>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-butina&quot;</span><span class="p">,</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>        <span class="s2">&quot;split_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;butina&quot;</span><span class="p">,</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        <span class="s2">&quot;butina_cutoff&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>  <span class="c1"># Tanimoto distance threshold</span>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    <span class="p">},</span>
-</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-butina&quot;</span><span class="p">,</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>        <span class="s2">&quot;split_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;butina&quot;</span><span class="p">,</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>        <span class="s2">&quot;butina_cutoff&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>  <span class="c1"># Tanimoto distance threshold</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>    <span class="p">},</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="confidence-and-uncertainty">Confidence and Uncertainty</h2>
 <p>All ChemProp models include built-in uncertainty quantification:</p>
