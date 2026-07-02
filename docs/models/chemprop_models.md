@@ -12,6 +12,51 @@ Workbench supports four types of ChemProp models, each suited for different use 
 | **Hybrid** | SMILES + molecular descriptors | Combining graph learning with domain features |
 | **Foundation** | Pretrained MPNN weights | Small datasets, transfer learning |
 
+## New in ChemProp 2.2.4
+
+Workbench's ChemProp training and inference images now run **ChemProp 2.2.4**, which adds two new tuning knobs to the model template. Both are optional — the defaults match ChemProp's, so existing models are unchanged.
+
+### Learning-Rate Schedule
+
+ChemProp trains with a Noam-style *warmup-then-decay* schedule. You can now tune every part of it directly:
+
+```python
+model = feature_set.to_model(
+    name="logd-chemprop-lr",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.CHEMPROP,
+    target_column="logd",
+    feature_list=["smiles"],
+    hyperparameters={
+        "warmup_epochs": 2,   # epochs to ramp the LR up to max_lr
+        "init_lr": 1e-4,      # starting LR (where the warmup ramp begins)
+        "max_lr": 1e-3,       # peak LR reached after warmup
+        "final_lr": 1e-4,     # LR at the end of training
+    },
+)
+```
+
+**When to tune:** larger datasets or unstable training often benefit from a longer warmup or a lower `max_lr`. Leave the defaults for most cases.
+
+### Per-Layer FFN Dimensions
+
+The feed-forward head can now **taper** across layers instead of using one fixed width — just pass a list to `ffn_hidden_dim`:
+
+```python
+model = feature_set.to_model(
+    name="logd-chemprop-taper",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.CHEMPROP,
+    target_column="logd",
+    feature_list=["smiles"],
+    hyperparameters={
+        "ffn_hidden_dim": [1024, 256, 64],  # tapered 3-layer head
+    },
+)
+```
+
+A single int (e.g. `"ffn_hidden_dim": 2000`) still works and applies that width to every layer, with `ffn_num_layers` setting the count. When you pass a **list**, its length sets the number of layers and `ffn_num_layers` is ignored.
+
 ## Single-Task ChemProp
 
 The standard ChemProp model trains a D-MPNN (Directed Message Passing Neural Network) on molecular graphs to predict a single target property.
@@ -252,7 +297,7 @@ All ChemProp model types share a common set of tunable hyperparameters:
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">ffn_hidden_dim</td>
       <td style="padding: 8px 16px;">2000</td>
-      <td style="padding: 8px 16px;">FFN hidden layer dimension</td>
+      <td style="padding: 8px 16px;">FFN hidden layer dimension. A single int (uniform width) or a list like [1024, 256, 64] for a tapered head</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">ffn_num_layers</td>
@@ -273,6 +318,26 @@ All ChemProp model types share a common set of tunable hyperparameters:
       <td style="padding: 8px 16px; font-weight: bold;">patience</td>
       <td style="padding: 8px 16px;">50</td>
       <td style="padding: 8px 16px;">Early stopping patience</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">warmup_epochs</td>
+      <td style="padding: 8px 16px;">2</td>
+      <td style="padding: 8px 16px;">Epochs to ramp the learning rate up to max_lr</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">init_lr</td>
+      <td style="padding: 8px 16px;">1e-4</td>
+      <td style="padding: 8px 16px;">Starting learning rate (warmup ramp begins here)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">max_lr</td>
+      <td style="padding: 8px 16px;">1e-3</td>
+      <td style="padding: 8px 16px;">Peak learning rate reached after warmup</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">final_lr</td>
+      <td style="padding: 8px 16px;">1e-4</td>
+      <td style="padding: 8px 16px;">Learning rate at the end of training</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">n_folds</td>
