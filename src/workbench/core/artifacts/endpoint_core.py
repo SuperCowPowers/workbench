@@ -1123,6 +1123,11 @@ class EndpointCore(Artifact):
         if "confidence" in cols:
             output_columns.append("confidence")
 
+        # Add aleatoric std column (chemprop MVE) — always include if present, like confidence.
+        # +1 column, only for models that emit it; non-MVE models are unaffected.
+        if f"{target}_pred_aleatoric_std" in cols:
+            output_columns.append(f"{target}_pred_aleatoric_std")
+
         # Add quantile columns (q_*) only if requested
         if include_quantiles:
             output_columns += [c for c in cols if c.startswith("q_")]
