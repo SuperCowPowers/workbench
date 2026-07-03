@@ -64,6 +64,7 @@ def build(fs, name, framework, feats, sample_weights, extra_tags, desc) -> None:
         description=desc,
         tags=TAGS + extra_tags,
         sample_weights=sample_weights,
+        hyperparameters={"uq_version": "v1"},  # v1 = proximity-augmented RF error model
     )
     model.set_owner("open_admet_pxr")
     end = model.to_endpoint(tags=TAGS + extra_tags, max_concurrency=1)
