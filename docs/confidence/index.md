@@ -24,6 +24,43 @@ Every Workbench model — XGBoost, PyTorch, or ChemProp — is a **5-model ensem
   </tbody>
 </table>
 
+## UQ Versions (v0 / v1 / v2)
+
+The regression confidence calibrator comes in **three versions**, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the `uq_version` hyperparameter (default `"v0"`), and any can be loaded offline via `Model.uq_model(version=...)`.
+
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Version</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Status</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Approach</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Best for</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">v0</td>
+      <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span></td>
+      <td style="padding: 8px 16px;">Isotonic calibrator on <code>(prediction, std)</code> — no neighborhood, no SMILES needed</td>
+      <td style="padding: 8px 16px;">Lightweight default; no-SMILES models; audit-simple</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">v1</td>
+      <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span> <span style="background:#2e7d32; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">RECOMMENDED</span></td>
+      <td style="padding: 8px 16px;">RandomForest error model on neighborhood features + normalized conformal (needs SMILES)</td>
+      <td style="padding: 8px 16px;">Structure-aware confidence that catches dense-region failures</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">v2</td>
+      <td style="padding: 8px 16px;"><span style="background:#8e44ad; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">EXPERIMENTAL</span></td>
+      <td style="padding: 8px 16px;">Pure applicability-domain score from fingerprint proximity — no model fitting</td>
+      <td style="padding: 8px 16px;">Interpretable "how well-supported is this query?" + cliff diagnostics</td>
+    </tr>
+  </tbody>
+</table>
+
+**v1** is the recommended version; **v0** is the current default (needs no molecular structure); **v2** is an experimental applicability-domain diagnostic. See the [Model Confidence Blog](../blogs/model_confidence.md) for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.
+
 ## Three-Step Pipeline
 
 ### 1. Ensemble Disagreement
@@ -44,15 +81,16 @@ The scaling factors are computed once during training and stored as metadata. At
 
 The result: prediction intervals that vary per-compound (based on ensemble disagreement) but are calibrated to achieve correct coverage. An 80% interval really does contain ~80% of true values.
 
-### 3. Percentile-Rank Confidence
+### 3. Residual-Aware Confidence
 
-Confidence is the **percentile rank** of each prediction's `prediction_std` within the training set's std distribution:
+Rather than ranking raw std, v0 and v1 first map each prediction to an **expected residual** (v0 via a binned isotonic on `(prediction, std)`; v1 via a RandomForest error model on neighborhood features), then take its percentile rank against the calibration-set distribution:
 
 ```
-confidence = 1 - percentile_rank(prediction_std)
+expected_residual = calibrator(prediction, prediction_std [, neighbors])
+confidence = 1 - percentile_rank(expected_residual)
 ```
 
-- **Confidence 0.7** means this prediction's ensemble disagreement is lower than 70% of the training set — a relatively tight prediction.
+- **Confidence 0.7** means this prediction's expected error is lower than 70% of the calibration set — a relatively reliable prediction.
 - **Confidence 0.1** means 90% of training predictions had lower uncertainty — this compound is an outlier.
 
 This approach gives scores that spread across the full 0–1 range, are directly interpretable, and require no arbitrary parameters.
