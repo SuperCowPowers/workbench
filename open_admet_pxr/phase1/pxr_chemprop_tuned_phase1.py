@@ -31,9 +31,9 @@ m = fs.to_model(
     hyperparameters={
         "uq_version": "v1",
         "ffn_hidden_dim": [1024, 256, 64],  # tapered head (vs default 2000x2)
-        "dropout": 0.2,                      # vs default 0.1
-        "warmup_epochs": 5,                  # gentler schedule
-        "max_lr": 5e-4,                      # vs default 1e-3
+        "dropout": 0.2,  # vs default 0.1
+        "warmup_epochs": 5,  # gentler schedule
+        "max_lr": 5e-4,  # vs default 1e-3
     },
     sample_weights={mid: 0.0 for mid in phase1["molecule_name"]},  # held-out rows don't train
 )
