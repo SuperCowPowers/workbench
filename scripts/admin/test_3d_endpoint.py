@@ -1,7 +1,7 @@
 """Endpoint integration test for the 3D descriptor feature endpoint.
 
 Sends a DataFrame of public compounds (including known corner cases) directly
-to the deployed smiles-to-3d-full-v1 endpoint and validates the response.
+to the deployed smiles-to-3d-v1 endpoint and validates the response.
 
 This tests the full deployed stack: SageMaker container, model script, standardization,
 conformer generation, and descriptor computation.
@@ -16,7 +16,7 @@ import pandas as pd
 from workbench.api import Endpoint
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
-DEFAULT_ENDPOINT = "smiles-to-3d-full-v1"
+DEFAULT_ENDPOINT = "smiles-to-3d-v1"
 
 # All public compounds with known expected behavior
 TEST_COMPOUNDS = pd.DataFrame(

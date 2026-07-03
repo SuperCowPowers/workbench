@@ -22,7 +22,7 @@ The examples below use the [Endpoint](../../api_classes/endpoint.md) API class â
 from workbench.api import Endpoint
 
 # Endpoint detects async deployment and routes through AsyncEndpointCore internally
-endpoint = Endpoint("smiles-to-3d-full-v1")
+endpoint = Endpoint("smiles-to-3d-v1")
 results_df = endpoint.inference(df)
 ```
 
@@ -32,7 +32,7 @@ results_df = endpoint.inference(df)
 from workbench.api import Endpoint
 from workbench.api.inference_cache import InferenceCache
 
-endpoint = Endpoint("smiles-to-3d-full-v1")
+endpoint = Endpoint("smiles-to-3d-v1")
 cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
 # Only uncached rows are sent to the endpoint
@@ -44,7 +44,7 @@ results_df = cached_endpoint.inference(big_df)
 ```py title="deploy_async_endpoint.py"
 from workbench.api import Model
 
-model = Model("smiles-to-3d-full-v1")
+model = Model("smiles-to-3d-v1")
 end = model.to_endpoint(
     async_endpoint=True,
     tags=["smiles", "3d descriptors", "full"],

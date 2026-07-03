@@ -1,4 +1,4 @@
-"""Validation tests for the async Boltzmann 3D descriptor endpoint (smiles-to-3d-full-v1).
+"""Validation tests for the async Boltzmann 3D descriptor endpoint (smiles-to-3d-v1).
 
 Pulls a curated set of public reference compounds and runs them through the
 async (Boltzmann-ensemble) endpoint, validating geometric invariants and
@@ -20,7 +20,7 @@ from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 # Heavy validation study (~6 min): medium tier, excluded from quick runs
 pytestmark = pytest.mark.medium
 
-ENDPOINT_NAME = "smiles-to-3d-full-v1"
+ENDPOINT_NAME = "smiles-to-3d-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
 

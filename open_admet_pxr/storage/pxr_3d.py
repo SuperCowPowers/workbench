@@ -27,7 +27,7 @@ log = logging.getLogger("workbench")
 # ─── Config ───────────────────────────────────────────────────────────────────
 FS_NAME = "openadmet_pxr_activity_3d"
 VARIANT = "3d"  # used in model/endpoint names: pxr-3d-reg-*
-ENDPOINT_3D = "smiles-to-3d-full-v1"
+ENDPOINT_3D = "smiles-to-3d-v1"
 
 TARGET_COL = "pec50"
 SMILES_COL = "smiles"

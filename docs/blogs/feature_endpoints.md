@@ -77,12 +77,13 @@ Most clients use variants similar to those listed below but we have the flexibil
   <tbody>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-full</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">3D shape/pharmacophore features with adaptive Boltzmann conformers (50-200), async endpoint</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-v1</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Full first-gen 3D set — shape, CPSA, pharmacophore, ensemble stats; adaptive Boltzmann conformers (50-200), async</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-v2</td><td style="padding: 8px 16px;">26 3D descriptors</td><td style="padding: 8px 16px;">Curated GFN2-xTB set (electronic, surface, shape, pharmacophore) chosen orthogonal to 2D — recommended, async</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints</td><td style="padding: 8px 16px;">2048-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
   </tbody>
 </table>
 
-The 2D and 3D endpoints come pre-combined as **`smiles-to-2d-3d-v1`**, a [MetaEndpoint](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call) that fans out to both and concatenates the results into a single ~387-feature descriptor set covering topological, electronic, and geometric properties — one `inference()` call, no juggling two endpoints. See the [3D Descriptors](3d_descriptors.md) blog for the underlying pipeline.
+The 2D and 3D endpoints come pre-combined as [MetaEndpoints](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call) — **`smiles-to-2d-3d-v2`** (2D + curated 3D v2, ~339 features) and **`smiles-to-2d-3d-v1`** (2D + full 3D v1, ~387 features) — each fanning out to both children and concatenating the results into a single descriptor set covering topological, electronic, and geometric properties, in one `inference()` call with no juggling two endpoints. See the [3D Descriptors](3d_descriptors.md) blog for the underlying pipeline and the v1-vs-v2 tradeoff.
 
 ### Fingerprint Endpoints
 
@@ -168,7 +169,7 @@ Databricks (Unity Catalog) and Tecton (On-Demand Feature Views) let you register
 
 ## Under the Hood: Feature Endpoint Details
 !!! tip inline end "Combine 2D + 3D"
-    Use the pre-deployed **`smiles-to-2d-3d-v1`** [MetaEndpoint](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call) — it fans out to both endpoints and concatenates the results into a single ~387-feature descriptor set covering topological, electronic, and geometric properties.
+    Use a pre-deployed [MetaEndpoint](../models/meta_endpoints.md#featured-smiles-to-2d-3d-v1-2d-3d-in-one-call) — **`smiles-to-2d-3d-v2`** (2D + curated 3D v2, ~339 features) or **`smiles-to-2d-3d-v1`** (2D + full 3D v1, ~387 features) — each fans out to both endpoints and concatenates the results in a single `inference()` call.
 
 Most Feature Endpoints run a full molecular processing pipeline.
 
@@ -177,7 +178,7 @@ Most Feature Endpoints run a full molecular processing pipeline.
 3. **Mordred descriptors** (~85): Five ADMET-focused modules — AcidBase, Aromatic, Constitutional, Chi connectivity, and CarbonTypes
 4. **Stereochemistry features** (10): R/S center counts, E/Z bond counts, stereo complexity, fraction-defined metrics
 
-Our [3D endpoint](3d_descriptors.md) (`smiles-to-3d-full-v1`) uses RDKit's ETKDGv3 algorithm for conformer generation, ranks the conformers with **GFN2-xTB** semi-empirical quantum energies, and computes 74 Boltzmann-weighted ensemble descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics.
+Our [3D endpoints](3d_descriptors.md) share one conformer engine — RDKit's ETKDGv3 generation, **GFN2-xTB** semi-empirical quantum energy ranking, and Boltzmann-weighted ensemble averaging — and differ only in the descriptor layer computed on top of it. **`smiles-to-3d-v1`** emits the full 74-feature set (shape, CPSA, pharmacophore, ensemble statistics). **`smiles-to-3d-v2`** emits a curated 26-feature set that harvests quantum electronic descriptors (dipole, frontier orbitals, xTB partial charges) from the same ranking single-point and drops v1's collinear Gasteiger CPSA columns — every feature chosen to add signal orthogonal to 2D. See the [3D Descriptors](3d_descriptors.md) blog for the full v1-vs-v2 breakdown.
 
 
 ## References

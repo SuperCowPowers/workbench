@@ -16,7 +16,7 @@ Async endpoints support long-running inference (up to 60 minutes per invocation)
 from workbench.api import Endpoint
 
 # Endpoint auto-detects the async deployment and routes accordingly
-endpoint = Endpoint("smiles-to-3d-full-v1")
+endpoint = Endpoint("smiles-to-3d-v1")
 results_df = endpoint.inference(df)
 ```
 
@@ -25,7 +25,7 @@ results_df = endpoint.inference(df)
 ```py title="deploy_async.py"
 from workbench.api import Model
 
-model = Model("smiles-to-3d-full-v1")
+model = Model("smiles-to-3d-v1")
 model.to_endpoint(async_endpoint=True, tags=["smiles", "3d descriptors", "full"])
 ```
 
@@ -41,7 +41,7 @@ end = MetaEndpoint("smiles-to-2d-3d-v1")
 results_df = end.inference(df)   # input cols + ~313 2D + 74 3D features
 ```
 
-Because one child (`smiles-to-3d-full-v1`) is async, the whole MetaEndpoint is **auto-deployed async** — the caller sees a single endpoint and a single `inference()` call, with the S3 round-trip and per-child sync/async dispatch handled server-side.
+Because one child (`smiles-to-3d-v1`) is async, the whole MetaEndpoint is **auto-deployed async** — the caller sees a single endpoint and a single `inference()` call, with the S3 round-trip and per-child sync/async dispatch handled server-side.
 
 ## Full Reference
 

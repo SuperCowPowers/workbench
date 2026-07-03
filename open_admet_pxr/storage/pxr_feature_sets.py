@@ -11,7 +11,7 @@ into three FeatureSets that the model scripts consume:
           │
     feature endpoints:
       • smiles-to-2d-v1        RDKit + Mordred 2D (direct call)
-      • smiles-to-3d-full-v1   Boltzmann-ensemble 3D, wrapped in InferenceCache
+      • smiles-to-3d-v1   Boltzmann-ensemble 3D, wrapped in InferenceCache
                                (SMILES-keyed, persists in S3 — never recompute)
           │
      ┌────┴────┬──────────────┐
@@ -54,7 +54,7 @@ META_COLS = ["ocnt_id", "pec50_std_error"]  # passthrough for uncertainty-weight
 
 # Feature endpoints
 ENDPOINT_2D = "smiles-to-2d-v1"  # RDKit + Mordred 2D (salts removed) — fast, no cache needed
-ENDPOINT_3D = "smiles-to-3d-full-v1"  # Boltzmann-weighted 3D ensemble (74 features) — cached
+ENDPOINT_3D = "smiles-to-3d-v1"  # Boltzmann-weighted 3D ensemble (74 features) — cached
 
 TAGS = ["openadmet_pxr", "activity"]
 

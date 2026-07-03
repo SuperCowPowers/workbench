@@ -12,7 +12,7 @@ a deliberately small set chosen to add signal orthogonal to the 2D descriptors
   - Pharmacophore geom  amphiphilic moment, charge/HBA centroid offsets
   - Flexibility         conformational-flexibility index, confs in window
 
-Same conformer engine as smiles-to-3d-full-v1 (ETKDGv3 → MMFF opt → GFN2-xTB
+Same conformer engine as smiles-to-3d-v1 (ETKDGv3 → MMFF opt → GFN2-xTB
 ranking → Boltzmann weighting); only the descriptor layer differs. Deployed as
 an async endpoint (up to 60-minute invocations) for batch processing.
 

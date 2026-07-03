@@ -8,7 +8,7 @@ SMILES-based molecular descriptor endpoints deployed on AWS SageMaker via Workbe
 |--------|--------------|-------------|
 | `smiles_to_2d_v1.py` | `smiles-to-2d-v1` | RDKit + Mordred 2D descriptors (salts removed) |
 | `smiles_to_2d_keep_salts_v1.py` | `smiles-to-2d-keep-salts-v1` | RDKit + Mordred 2D descriptors (salts kept) |
-| `smiles_to_3d_full_v1.py` | `smiles-to-3d-full-v1` | 3D conformer-based descriptors, async — 50-500 adaptive conformers, Boltzmann-weighted (74 features) |
+| `smiles_to_3d_v1.py` | `smiles-to-3d-v1` | 3D conformer-based descriptors, async — 50-500 adaptive conformers, Boltzmann-weighted (74 features) |
 
 ## Deployment
 
@@ -21,8 +21,8 @@ python smiles_to_2d_v1.py
 # 2D Descriptors (salts kept) --> endpoint: smiles-to-2d-keep-salts-v1
 python smiles_to_2d_keep_salts_v1.py
 
-# 3D Full (async) --> endpoint: smiles-to-3d-full-v1
-python smiles_to_3d_full_v1.py
+# 3D Full (async) --> endpoint: smiles-to-3d-v1
+python smiles_to_3d_v1.py
 
 # 2D endpoints support serverless or dedicated instance:
 SERVERLESS=false python smiles_to_2d_v1.py
@@ -40,7 +40,7 @@ Each script will:
 |------------|---------|
 | Serverless | AWS-managed via `max_concurrency` (scale to zero when idle) |
 | Realtime (`SERVERLESS=false`) | Fixed at 1 instance, unless `max_instances` is set |
-| Async (`smiles-to-3d-full-v1`) | Step-scales `0 → 8` on queue backlog |
+| Async (`smiles-to-3d-v1`) | Step-scales `0 → 8` on queue backlog |
 
 Realtime endpoints default to a single fixed instance. Only `smiles_to_2d_v1.py`
 opts into scaling (`MAX_INSTANCES=4`), since it's hit by many batch jobs at once;

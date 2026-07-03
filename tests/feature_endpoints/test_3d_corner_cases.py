@@ -18,7 +18,7 @@ from workbench.api import Endpoint, PublicData
 # long tier, excluded from quick runs.
 pytestmark = pytest.mark.long
 
-ENDPOINT_NAME = "smiles-to-3d-full-v1"
+ENDPOINT_NAME = "smiles-to-3d-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/corner_cases"
 
 

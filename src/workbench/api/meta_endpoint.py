@@ -15,18 +15,18 @@ Common usage::
 
     dag = MetaEndpointDAG()
     dag.add_endpoint("smiles-to-2d-v1")
-    dag.add_endpoint("smiles-to-3d-full-v1")
+    dag.add_endpoint("smiles-to-3d-v1")
     dag.add_aggregation(Concat(name="combine"))
     dag.add_edge("smiles-to-2d-v1", "combine")
-    dag.add_edge("smiles-to-3d-full-v1", "combine")
-    dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-full-v1")
+    dag.add_edge("smiles-to-3d-v1", "combine")
+    dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-v1")
     dag.set_output_node("combine")
 
     end = MetaEndpoint.create(name="my-features-meta", dag=dag)
     # Input does not need any id column — the DAG handles row alignment internally.
     df = end.inference(input_df)
 
-If any child endpoint in the DAG is async (e.g. ``smiles-to-3d-full-v1``),
+If any child endpoint in the DAG is async (e.g. ``smiles-to-3d-v1``),
 the MetaEndpoint is automatically deployed as async too — its invocation
 budget needs to accommodate the slowest child.
 """
@@ -312,11 +312,11 @@ if __name__ == "__main__":
 
     sample_dag = MetaEndpointDAG()
     sample_dag.add_endpoint("smiles-to-2d-v1")
-    sample_dag.add_endpoint("smiles-to-3d-full-v1")
+    sample_dag.add_endpoint("smiles-to-3d-v1")
     sample_dag.add_aggregation(Concat(name="combine"))
     sample_dag.add_edge("smiles-to-2d-v1", "combine")
-    sample_dag.add_edge("smiles-to-3d-full-v1", "combine")
-    sample_dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-full-v1")
+    sample_dag.add_edge("smiles-to-3d-v1", "combine")
+    sample_dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-v1")
     sample_dag.set_output_node("combine")
 
     sample_end = MetaEndpoint.create(

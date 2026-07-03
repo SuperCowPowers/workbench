@@ -13,7 +13,7 @@ Usage::
         python scripts/admin/compact_inference_cache.py
 
     # Subset:
-    python scripts/admin/compact_inference_cache.py --endpoint smiles-to-3d-full-v1
+    python scripts/admin/compact_inference_cache.py --endpoint smiles-to-3d-v1
 """
 
 import argparse
@@ -26,7 +26,7 @@ log = logging.getLogger("workbench")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 DEFAULT_ENDPOINTS = [
-    "smiles-to-3d-full-v1",
+    "smiles-to-3d-v1",
 ]
 
 

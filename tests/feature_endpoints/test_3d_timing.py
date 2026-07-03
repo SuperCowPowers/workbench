@@ -1,6 +1,6 @@
 """Timing / throughput profile for the async 3D descriptor endpoint.
 
-Long-marked: runs a representative drug-like set through smiles-to-3d-full-v1,
+Long-marked: runs a representative drug-like set through smiles-to-3d-v1,
 collects per-molecule ``desc3d_compute_time_s``, and projects whether a
 MetaEndpoint batch of ``META_BATCH`` rows clears SageMaker async's 60-minute
 per-invocation cap on a ``WORKERS``-instance child fleet.
@@ -22,7 +22,7 @@ from workbench.api import Endpoint, PublicData
 
 pytestmark = pytest.mark.long
 
-ENDPOINT_NAME = "smiles-to-3d-full-v1"
+ENDPOINT_NAME = "smiles-to-3d-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/3d_perf"
 
 # Irganox 1010 (CAS 6683-19-8) — the public skip:cost surrogate. Included so the

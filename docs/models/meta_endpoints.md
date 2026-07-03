@@ -13,7 +13,7 @@ The same DAG abstraction covers both.
 Every endpoint is a df-in → df-out unit, so the same DAG abstraction expresses both canonical shapes. A **feature pipeline** fans out to feature endpoints and concatenates their columns:
 
 <figure style="margin: 20px auto; text-align: center;">
-<img src="../../images/meta_endpoint_feature.svg" alt="Feature MetaEndpoint: SMILES df fans out to smiles-to-2d-v1 (sync) and smiles-to-3d-full-v1 (async), a Concat node merges the columns, returning one df with 387 features. The whole thing is a single async endpoint." style="width: 100%; min-height: 360px;">
+<img src="../../images/meta_endpoint_feature.svg" alt="Feature MetaEndpoint: SMILES df fans out to smiles-to-2d-v1 (sync) and smiles-to-3d-v1 (async), a Concat node merges the columns, returning one df with 387 features. The whole thing is a single async endpoint." style="width: 100%; min-height: 360px;">
 <figcaption><em>Feature pipeline — fan out to the 2D + 3D endpoints, Concat the columns. One async endpoint, ~387 features.</em></figcaption>
 </figure>
 
@@ -29,7 +29,7 @@ An **ensemble** fans out to predictor endpoints and aggregates their predictions
 !!! success inline end "One endpoint, ~387 features"
     `smiles-to-2d-3d-v1` is a deployed MetaEndpoint that fans out to the **2D** descriptor endpoint and the **3D** descriptor endpoint in parallel and concatenates the results — ~313 RDKit/Mordred 2D features + 74 GFN2-xTB Boltzmann 3D features, merged per molecule. Callers just do `endpoint.inference(df)`; the fan-out and merge happen server-side.
 
-Our flagship feature MetaEndpoint combines the 2D and 3D descriptor endpoints into a single inference target. Because one of its children (`smiles-to-3d-full-v1`) is **async**, the whole MetaEndpoint is automatically deployed async (see [Async Auto-Detection](#async-auto-detection)) — so a single call returns the complete 2D + 3D feature set without the caller juggling two endpoints or two invocation modes.
+Our flagship feature MetaEndpoint combines the 2D and 3D descriptor endpoints into a single inference target. Because one of its children (`smiles-to-3d-v1`) is **async**, the whole MetaEndpoint is automatically deployed async (see [Async Auto-Detection](#async-auto-detection)) — so a single call returns the complete 2D + 3D feature set without the caller juggling two endpoints or two invocation modes.
 
 ```python
 import pandas as pd
@@ -51,11 +51,11 @@ from workbench.utils.aggregation_nodes import Concat
 
 dag = MetaEndpointDAG()
 dag.add_endpoint("smiles-to-2d-v1")        # sync, RDKit + Mordred 2D
-dag.add_endpoint("smiles-to-3d-full-v1")   # async, GFN2-xTB Boltzmann 3D
+dag.add_endpoint("smiles-to-3d-v1")   # async, GFN2-xTB Boltzmann 3D
 dag.add_aggregation(Concat(name="combine"))
 dag.add_edge("smiles-to-2d-v1", "combine")
-dag.add_edge("smiles-to-3d-full-v1", "combine")
-dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-full-v1")
+dag.add_edge("smiles-to-3d-v1", "combine")
+dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-v1")
 dag.set_output_node("combine")
 
 end = MetaEndpoint.create(
@@ -95,7 +95,7 @@ The output has the standard `prediction` / `prediction_std` (ensemble disagreeme
 
 ## Async Auto-Detection
 
-If any child endpoint in the DAG is deployed as async (e.g. `smiles-to-3d-full-v1`), the MetaEndpoint is automatically deployed as async too — its 60-minute invocation budget needs to accommodate the slowest child. You don't specify this; `MetaEndpoint.create()` detects it via `dag.has_async_endpoint()` and chooses the deploy mode. This is exactly why `smiles-to-2d-3d-v1` above is async: its sync 2D child and async 3D child are composed transparently, and the container dispatches each to `fast_inference` (sync) or `async_inference` (async) as appropriate.
+If any child endpoint in the DAG is deployed as async (e.g. `smiles-to-3d-v1`), the MetaEndpoint is automatically deployed as async too — its 60-minute invocation budget needs to accommodate the slowest child. You don't specify this; `MetaEndpoint.create()` detects it via `dag.has_async_endpoint()` and chooses the deploy mode. This is exactly why `smiles-to-2d-3d-v1` above is async: its sync 2D child and async 3D child are composed transparently, and the container dispatches each to `fast_inference` (sync) or `async_inference` (async) as appropriate.
 
 ## DAG Building Blocks
 

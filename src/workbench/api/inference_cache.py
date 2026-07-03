@@ -6,7 +6,7 @@ Wraps an ``Endpoint`` and stores inference results in a shared S3-backed
 are served from S3, and only the remaining rows are sent to the underlying
 endpoint. Newly computed rows are written back to the cache.
 
-Motivating use case: the ``smiles-to-3d-full-v1`` feature endpoint is
+Motivating use case: the ``smiles-to-3d-v1`` feature endpoint is
 slow (conformer generation + FF optimization), and the same SMILES is
 frequently re-computed across calls.
 
@@ -34,7 +34,7 @@ class InferenceCache:
         from workbench.api import Endpoint
         from workbench.api.inference_cache import InferenceCache
 
-        endpoint = Endpoint("smiles-to-3d-full-v1")
+        endpoint = Endpoint("smiles-to-3d-v1")
         cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
         # Drop-in replacement for endpoint.inference()
@@ -558,7 +558,7 @@ if __name__ == "__main__":
     """Exercise the InferenceCache class against the 3D descriptors endpoint."""
     from workbench.api import Endpoint, FeatureSet
 
-    endpoint = Endpoint("smiles-to-3d-full-v1")
+    endpoint = Endpoint("smiles-to-3d-v1")
     cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
     # Start clean so the timing comparison is meaningful

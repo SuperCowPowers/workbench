@@ -35,7 +35,7 @@
   <text x="306" y="164" text-anchor="middle" font-size="12" fill="#BBDEFB">2D &#183; sync</text>
 
   <rect x="188" y="184" width="236" height="48" rx="8" fill="url(#mf-3d)" filter="url(#mf-shadow)"/>
-  <text x="306" y="206" text-anchor="middle" font-size="13.5" font-weight="600" fill="white">smiles-to-3d-full-v1</text>
+  <text x="306" y="206" text-anchor="middle" font-size="13.5" font-weight="600" fill="white">smiles-to-3d-v1</text>
   <text x="306" y="222" text-anchor="middle" font-size="12" fill="#B2DFDB">3D &#183; async</text>
 
   <!-- concat -->

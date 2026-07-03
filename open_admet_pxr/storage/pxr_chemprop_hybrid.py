@@ -42,7 +42,7 @@ log = logging.getLogger("workbench")
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 FS_NAME = "openadmet_pxr_activity_2d_3d"
-ENDPOINT_3D = "smiles-to-3d-full-v1"
+ENDPOINT_3D = "smiles-to-3d-v1"
 SHAP_MODEL = "pxr-2d-3d-reg-xgb"  # deployed XGB UQ model — source of the SHAP ranking
 
 TARGET_COL = "pec50"

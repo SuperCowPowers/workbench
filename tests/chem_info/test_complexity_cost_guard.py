@@ -45,8 +45,8 @@ def test_irganox_passes_size_guards():
     assert check_complexity(mol) is None  # no n_conformers => no cost check
 
 
-def test_fast_mode_never_skips_on_cost():
-    """Fast mode (10 conformers) is cheap, so cost never trips even for Irganox."""
+def test_low_conformer_count_never_skips_on_cost():
+    """A low conformer count (10) is cheap, so cost never trips even for Irganox."""
     mol = Chem.MolFromSmiles(IRGANOX_1010)
     assert check_complexity(mol, n_conformers=10) is None
 
