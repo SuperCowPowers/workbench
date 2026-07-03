@@ -5888,7 +5888,7 @@
 <p>The same DAG abstraction covers both.</p>
 <p>Every endpoint is a df-in → df-out unit, so the same DAG abstraction expresses both canonical shapes. A <strong>feature pipeline</strong> fans out to feature endpoints and concatenates their columns:</p>
 <figure style="margin: 20px auto; text-align: center;">
-<img src="../../images/meta_endpoint_feature.svg" alt="Feature MetaEndpoint: SMILES df fans out to smiles-to-2d-v1 (sync) and smiles-to-3d-full-v1 (async), a Concat node merges the columns, returning one df with 387 features. The whole thing is a single async endpoint." style="width: 100%; min-height: 360px;">
+<img src="../../images/meta_endpoint_feature.svg" alt="Feature MetaEndpoint: SMILES df fans out to smiles-to-2d-v1 (sync) and smiles-to-3d-v1 (async), a Concat node merges the columns, returning one df with 387 features. The whole thing is a single async endpoint." style="width: 100%; min-height: 360px;">
 <figcaption><em>Feature pipeline — fan out to the 2D + 3D endpoints, Concat the columns. One async endpoint, ~387 features.</em></figcaption>
 </figure>
 
@@ -5903,7 +5903,7 @@
 <p class="admonition-title">One endpoint, ~387 features</p>
 <p><code>smiles-to-2d-3d-v1</code> is a deployed MetaEndpoint that fans out to the <strong>2D</strong> descriptor endpoint and the <strong>3D</strong> descriptor endpoint in parallel and concatenates the results — ~313 RDKit/Mordred 2D features + 74 GFN2-xTB Boltzmann 3D features, merged per molecule. Callers just do <code>endpoint.inference(df)</code>; the fan-out and merge happen server-side.</p>
 </div>
-<p>Our flagship feature MetaEndpoint combines the 2D and 3D descriptor endpoints into a single inference target. Because one of its children (<code>smiles-to-3d-full-v1</code>) is <strong>async</strong>, the whole MetaEndpoint is automatically deployed async (see <a href="#async-auto-detection">Async Auto-Detection</a>) — so a single call returns the complete 2D + 3D feature set without the caller juggling two endpoints or two invocation modes.</p>
+<p>Our flagship feature MetaEndpoint combines the 2D and 3D descriptor endpoints into a single inference target. Because one of its children (<code>smiles-to-3d-v1</code>) is <strong>async</strong>, the whole MetaEndpoint is automatically deployed async (see <a href="#async-auto-detection">Async Auto-Detection</a>) — so a single call returns the complete 2D + 3D feature set without the caller juggling two endpoints or two invocation modes.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetaEndpoint</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -5920,11 +5920,11 @@
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">dag</span> <span class="o">=</span> <span class="n">MetaEndpointDAG</span><span class="p">()</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-2d-v1&quot;</span><span class="p">)</span>        <span class="c1"># sync, RDKit + Mordred 2D</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>   <span class="c1"># async, GFN2-xTB Boltzmann 3D</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-v1&quot;</span><span class="p">)</span>   <span class="c1"># async, GFN2-xTB Boltzmann 3D</span>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_aggregation</span><span class="p">(</span><span class="n">Concat</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;combine&quot;</span><span class="p">))</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;smiles-to-2d-v1&quot;</span><span class="p">,</span> <span class="s2">&quot;combine&quot;</span><span class="p">)</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">,</span> <span class="s2">&quot;combine&quot;</span><span class="p">)</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">dag</span><span class="o">.</span><span class="n">set_input_node</span><span class="p">(</span><span class="s2">&quot;smiles-to-2d-v1&quot;</span><span class="p">,</span> <span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">dag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-v1&quot;</span><span class="p">,</span> <span class="s2">&quot;combine&quot;</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">dag</span><span class="o">.</span><span class="n">set_input_node</span><span class="p">(</span><span class="s2">&quot;smiles-to-2d-v1&quot;</span><span class="p">,</span> <span class="s2">&quot;smiles-to-3d-v1&quot;</span><span class="p">)</span>
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">dag</span><span class="o">.</span><span class="n">set_output_node</span><span class="p">(</span><span class="s2">&quot;combine&quot;</span><span class="p">)</span>
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">end</span> <span class="o">=</span> <span class="n">MetaEndpoint</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
@@ -5957,7 +5957,7 @@
 </span></code></pre></div>
 <p>The output has the standard <code>prediction</code> / <code>prediction_std</code> (ensemble disagreement) / <code>confidence</code> columns alongside whatever pass-through columns the input had.</p>
 <h2 id="async-auto-detection">Async Auto-Detection</h2>
-<p>If any child endpoint in the DAG is deployed as async (e.g. <code>smiles-to-3d-full-v1</code>), the MetaEndpoint is automatically deployed as async too — its 60-minute invocation budget needs to accommodate the slowest child. You don't specify this; <code>MetaEndpoint.create()</code> detects it via <code>dag.has_async_endpoint()</code> and chooses the deploy mode. This is exactly why <code>smiles-to-2d-3d-v1</code> above is async: its sync 2D child and async 3D child are composed transparently, and the container dispatches each to <code>fast_inference</code> (sync) or <code>async_inference</code> (async) as appropriate.</p>
+<p>If any child endpoint in the DAG is deployed as async (e.g. <code>smiles-to-3d-v1</code>), the MetaEndpoint is automatically deployed as async too — its 60-minute invocation budget needs to accommodate the slowest child. You don't specify this; <code>MetaEndpoint.create()</code> detects it via <code>dag.has_async_endpoint()</code> and chooses the deploy mode. This is exactly why <code>smiles-to-2d-3d-v1</code> above is async: its sync 2D child and async 3D child are composed transparently, and the container dispatches each to <code>fast_inference</code> (sync) or <code>async_inference</code> (async) as appropriate.</p>
 <h2 id="dag-building-blocks">DAG Building Blocks</h2>
 <h3 id="endpoint-nodes">Endpoint nodes</h3>
 <p>Every endpoint node refers to a deployed Workbench endpoint by name. Endpoint nodes can be:</p>
@@ -6080,18 +6080,18 @@ from workbench.utils.aggregation_nodes import Concat
 
 dag = MetaEndpointDAG()
 dag.add_endpoint(&quot;smiles-to-2d-v1&quot;)
-dag.add_endpoint(&quot;smiles-to-3d-full-v1&quot;)
+dag.add_endpoint(&quot;smiles-to-3d-v1&quot;)
 dag.add_aggregation(Concat(name=&quot;combine&quot;))
 dag.add_edge(&quot;smiles-to-2d-v1&quot;, &quot;combine&quot;)
-dag.add_edge(&quot;smiles-to-3d-full-v1&quot;, &quot;combine&quot;)
-dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-full-v1&quot;)
+dag.add_edge(&quot;smiles-to-3d-v1&quot;, &quot;combine&quot;)
+dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-v1&quot;)
 dag.set_output_node(&quot;combine&quot;)
 
 end = MetaEndpoint.create(name=&quot;my-features-meta&quot;, dag=dag)
 # Input does not need any id column — the DAG handles row alignment internally.
 df = end.inference(input_df)
 </code></pre></div>
-<p>If any child endpoint in the DAG is async (e.g. <code>smiles-to-3d-full-v1</code>),
+<p>If any child endpoint in the DAG is async (e.g. <code>smiles-to-3d-v1</code>),
 the MetaEndpoint is automatically deployed as async too — its invocation
 budget needs to accommodate the slowest child.</p>
 
@@ -7340,11 +7340,11 @@ aggregation nodes describing an inference-time data flow.</p>
 <p>DAG construction is explicit::</p>
 <div class="language-text highlight"><pre><span></span><code>dag = MetaEndpointDAG()
 dag.add_endpoint(&quot;smiles-to-2d-v1&quot;)
-dag.add_endpoint(&quot;smiles-to-3d-full-v1&quot;)
+dag.add_endpoint(&quot;smiles-to-3d-v1&quot;)
 dag.add_aggregation(Concat(name=&quot;combine&quot;))
 dag.add_edge(&quot;smiles-to-2d-v1&quot;, &quot;combine&quot;)
-dag.add_edge(&quot;smiles-to-3d-full-v1&quot;, &quot;combine&quot;)
-dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-full-v1&quot;)
+dag.add_edge(&quot;smiles-to-3d-v1&quot;, &quot;combine&quot;)
+dag.set_input_node(&quot;smiles-to-2d-v1&quot;, &quot;smiles-to-3d-v1&quot;)
 dag.set_output_node(&quot;combine&quot;)
 dag.validate()
 </code></pre></div>

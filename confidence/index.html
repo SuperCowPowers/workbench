@@ -1654,6 +1654,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#uq-versions-v0-v1-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UQ Versions (v0 / v1 / v2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#three-step-pipeline" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1688,10 +1699,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-percentile-rank-confidence" class="md-nav__link">
+  <a href="#3-residual-aware-confidence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Percentile-Rank Confidence
+        3. Residual-Aware Confidence
       
     </span>
   </a>
@@ -4772,6 +4783,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#uq-versions-v0-v1-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UQ Versions (v0 / v1 / v2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#three-step-pipeline" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4806,10 +4828,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-percentile-rank-confidence" class="md-nav__link">
+  <a href="#3-residual-aware-confidence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Percentile-Rank Confidence
+        3. Residual-Aware Confidence
       
     </span>
   </a>
@@ -4995,6 +5017,40 @@
   </tbody>
 </table>
 
+<h2 id="uq-versions-v0-v1-v2">UQ Versions (v0 / v1 / v2)</h2>
+<p>The regression confidence calibrator comes in <strong>three versions</strong>, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the <code>uq_version</code> hyperparameter (default <code>"v0"</code>), and any can be loaded offline via <code>Model.uq_model(version=...)</code>.</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Version</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Status</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Approach</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Best for</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">v0</td>
+      <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span></td>
+      <td style="padding: 8px 16px;">Isotonic calibrator on <code>(prediction, std)</code> — no neighborhood, no SMILES needed</td>
+      <td style="padding: 8px 16px;">Lightweight default; no-SMILES models; audit-simple</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">v1</td>
+      <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span> <span style="background:#2e7d32; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">RECOMMENDED</span></td>
+      <td style="padding: 8px 16px;">RandomForest error model on neighborhood features + normalized conformal (needs SMILES)</td>
+      <td style="padding: 8px 16px;">Structure-aware confidence that catches dense-region failures</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">v2</td>
+      <td style="padding: 8px 16px;"><span style="background:#8e44ad; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">EXPERIMENTAL</span></td>
+      <td style="padding: 8px 16px;">Pure applicability-domain score from fingerprint proximity — no model fitting</td>
+      <td style="padding: 8px 16px;">Interpretable "how well-supported is this query?" + cliff diagnostics</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>v1</strong> is the recommended version; <strong>v0</strong> is the current default (needs no molecular structure); <strong>v2</strong> is an experimental applicability-domain diagnostic. See the <a href="../blogs/model_confidence/">Model Confidence Blog</a> for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.</p>
 <h2 id="three-step-pipeline">Three-Step Pipeline</h2>
 <h3 id="1-ensemble-disagreement">1. Ensemble Disagreement</h3>
 <p>Each fold of the 5-fold cross-validation produces a model trained on a different slice of the data. At inference time, all 5 models make a prediction and we take the average. The <strong>standard deviation</strong> across the 5 predictions (<code>prediction_std</code>) is the raw uncertainty signal.</p>
@@ -5008,12 +5064,13 @@
 </ol>
 <p>The scaling factors are computed once during training and stored as metadata. At inference, building intervals is a simple multiply.</p>
 <p>The result: prediction intervals that vary per-compound (based on ensemble disagreement) but are calibrated to achieve correct coverage. An 80% interval really does contain ~80% of true values.</p>
-<h3 id="3-percentile-rank-confidence">3. Percentile-Rank Confidence</h3>
-<p>Confidence is the <strong>percentile rank</strong> of each prediction's <code>prediction_std</code> within the training set's std distribution:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>confidence = 1 - percentile_rank(prediction_std)
+<h3 id="3-residual-aware-confidence">3. Residual-Aware Confidence</h3>
+<p>Rather than ranking raw std, v0 and v1 first map each prediction to an <strong>expected residual</strong> (v0 via a binned isotonic on <code>(prediction, std)</code>; v1 via a RandomForest error model on neighborhood features), then take its percentile rank against the calibration-set distribution:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>expected_residual = calibrator(prediction, prediction_std [, neighbors])
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>confidence = 1 - percentile_rank(expected_residual)
 </span></code></pre></div>
 <ul>
-<li><strong>Confidence 0.7</strong> means this prediction's ensemble disagreement is lower than 70% of the training set — a relatively tight prediction.</li>
+<li><strong>Confidence 0.7</strong> means this prediction's expected error is lower than 70% of the calibration set — a relatively reliable prediction.</li>
 <li><strong>Confidence 0.1</strong> means 90% of training predictions had lower uncertainty — this compound is an outlier.</li>
 </ul>
 <p>This approach gives scores that spread across the full 0–1 range, are directly interpretable, and require no arbitrary parameters.</p>

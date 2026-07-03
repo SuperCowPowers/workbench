@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="v2-input" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#455A64"/>
+      <stop offset="100%" stop-color="#607D8B"/>
+    </linearGradient>
+    <linearGradient id="v2-std" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#1E88E5"/>
+    </linearGradient>
+    <linearGradient id="v2-conf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="v2-xtb" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4527A0"/>
+      <stop offset="100%" stop-color="#7E57C2"/>
+    </linearGradient>
+    <linearGradient id="v2-desc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="v2-out" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="v2-elec" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4527A0"/>
+      <stop offset="100%" stop-color="#9575CD"/>
+    </linearGradient>
+    <linearGradient id="v2-surf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00838F"/>
+      <stop offset="100%" stop-color="#26C6DA"/>
+    </linearGradient>
+    <linearGradient id="v2-shape" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <linearGradient id="v2-pharm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#66BB6A"/>
+    </linearGradient>
+    <linearGradient id="v2-flex" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E65100"/>
+      <stop offset="100%" stop-color="#FF9800"/>
+    </linearGradient>
+    <filter id="v2-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="480" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#E0E0E0">3D Descriptors v2 — Curated xTB Pipeline</text>
+  <text x="480" y="56" text-anchor="middle" font-size="15" fill="#999">Same conformer engine as v1 · 26 features chosen to be orthogonal to 2D</text>
+
+  <!-- ===== Row 1: Main pipeline ===== -->
+
+  <!-- SMILES Input -->
+  <rect x="24" y="80" width="120" height="64" rx="8" fill="url(#v2-input)" filter="url(#v2-shadow)"/>
+  <text x="84" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">SMILES</text>
+  <text x="84" y="128" text-anchor="middle" font-size="12" fill="#B0BEC5">Raw Input</text>
+
+  <line x1="144" y1="112" x2="168" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="166,107 178,112 166,117" fill="#666"/>
+
+  <!-- Standardize -->
+  <rect x="178" y="80" width="120" height="64" rx="8" fill="url(#v2-std)" filter="url(#v2-shadow)"/>
+  <text x="238" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">Standardize</text>
+  <text x="238" y="128" text-anchor="middle" font-size="12" fill="#BBDEFB">Salts + Tautomers</text>
+
+  <line x1="298" y1="112" x2="322" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="320,107 332,112 320,117" fill="#666"/>
+
+  <!-- Conformer Engine (shared) -->
+  <rect x="332" y="80" width="150" height="64" rx="8" fill="url(#v2-conf)" filter="url(#v2-shadow)"/>
+  <text x="407" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="white">Conformer Engine</text>
+  <text x="407" y="126" text-anchor="middle" font-size="11.5" fill="#B2DFDB">ETKDGv3 + MMFF94s</text>
+  <rect x="360" y="150" width="94" height="18" rx="9" fill="#00695C" stroke="#1b2026" stroke-width="1"/>
+  <text x="407" y="163" text-anchor="middle" font-size="12" font-weight="600" fill="#B2DFDB">shared with v1</text>
+
+  <line x1="482" y1="112" x2="506" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="504,107 516,112 504,117" fill="#666"/>
+
+  <!-- GFN2-xTB single point (headline) -->
+  <rect x="516" y="80" width="176" height="64" rx="8" fill="url(#v2-xtb)" filter="url(#v2-shadow)" stroke="#B39DDB" stroke-width="1.5"/>
+  <text x="604" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="white">GFN2-xTB single point</text>
+  <text x="604" y="126" text-anchor="middle" font-size="11.5" fill="#D1C4E9">energy ranking + electronics</text>
+
+  <line x1="692" y1="112" x2="716" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="714,107 726,112 714,117" fill="#666"/>
+
+  <!-- Descriptors -->
+  <rect x="726" y="80" width="120" height="64" rx="8" fill="url(#v2-desc)" filter="url(#v2-shadow)"/>
+  <text x="786" y="106" text-anchor="middle" font-size="15" font-weight="700" fill="white">Descriptors</text>
+  <text x="786" y="126" text-anchor="middle" font-size="12" fill="#B2EBF2">26 curated</text>
+
+  <line x1="846" y1="112" x2="870" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="868,107 880,112 868,117" fill="#666"/>
+
+  <!-- Output -->
+  <rect x="856" y="80" width="88" height="64" rx="8" fill="url(#v2-out)" filter="url(#v2-shadow)"/>
+  <text x="900" y="106" text-anchor="middle" font-size="14" font-weight="700" fill="white">DataFrame</text>
+  <text x="900" y="126" text-anchor="middle" font-size="12" fill="#C8E6C9">+ 26 cols</text>
+
+  <!-- "one pass, two products" callout under the xTB box -->
+  <text x="604" y="188" text-anchor="middle" font-size="12" font-style="italic" fill="#B39DDB">one single point → Boltzmann energies AND the electronic block (essentially free)</text>
+
+  <!-- ===== Row 2: Descriptor blocks ===== -->
+  <line x1="786" y1="144" x2="786" y2="206" stroke="#555" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="112" y1="206" x2="852" y2="206" stroke="#555" stroke-width="1"/>
+  <line x1="112" y1="206" x2="112" y2="226" stroke="#555" stroke-width="1"/>
+  <line x1="298" y1="206" x2="298" y2="226" stroke="#555" stroke-width="1"/>
+  <line x1="482" y1="206" x2="482" y2="226" stroke="#555" stroke-width="1"/>
+  <line x1="666" y1="206" x2="666" y2="226" stroke="#555" stroke-width="1"/>
+  <line x1="852" y1="206" x2="852" y2="226" stroke="#555" stroke-width="1"/>
+
+  <!-- Electronic (xTB) — headline block -->
+  <rect x="20" y="226" width="184" height="176" rx="8" fill="url(#v2-elec)" filter="url(#v2-shadow)" stroke="#B39DDB" stroke-width="1.5"/>
+  <text x="112" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="white">Electronic (xTB)</text>
+  <text x="112" y="280" text-anchor="middle" font-size="13" fill="#EDE7F6">dipole, quadrupole</text>
+  <text x="112" y="302" text-anchor="middle" font-size="13" fill="#EDE7F6">HOMO / LUMO / gap</text>
+  <text x="112" y="324" text-anchor="middle" font-size="13" fill="#EDE7F6">hardness, electrophilicity</text>
+  <text x="112" y="346" text-anchor="middle" font-size="13" fill="#EDE7F6">partial-charge summaries</text>
+  <text x="112" y="384" text-anchor="middle" font-size="14" font-weight="700" fill="#D1C4E9">10 features</text>
+
+  <!-- Surface -->
+  <rect x="212" y="226" width="160" height="176" rx="8" fill="url(#v2-surf)" filter="url(#v2-shadow)"/>
+  <text x="292" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="white">Surface</text>
+  <text x="292" y="284" text-anchor="middle" font-size="13" fill="#E0F7FA">SASA total / polar /</text>
+  <text x="292" y="304" text-anchor="middle" font-size="13" fill="#E0F7FA">apolar / fraction</text>
+  <text x="292" y="332" text-anchor="middle" font-size="13" fill="#E0F7FA">charge-weighted PSA</text>
+  <text x="292" y="384" text-anchor="middle" font-size="14" font-weight="700" fill="#B2EBF2">5 features</text>
+
+  <!-- Shape -->
+  <rect x="380" y="226" width="160" height="176" rx="8" fill="url(#v2-shape)" filter="url(#v2-shadow)"/>
+  <text x="460" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="white">Shape</text>
+  <text x="460" y="284" text-anchor="middle" font-size="13" fill="#E3F2FD">NPR1 / NPR2</text>
+  <text x="460" y="304" text-anchor="middle" font-size="13" fill="#E3F2FD">asphericity, Rg</text>
+  <text x="460" y="332" text-anchor="middle" font-size="13" fill="#E3F2FD">spherocity, PBF</text>
+  <text x="460" y="384" text-anchor="middle" font-size="14" font-weight="700" fill="#BBDEFB">6 features</text>
+
+  <!-- Pharmacophore -->
+  <rect x="548" y="226" width="164" height="176" rx="8" fill="url(#v2-pharm)" filter="url(#v2-shadow)"/>
+  <text x="630" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="white">Pharmacophore</text>
+  <text x="630" y="284" text-anchor="middle" font-size="13" fill="#E8F5E9">amphiphilic moment</text>
+  <text x="630" y="306" text-anchor="middle" font-size="13" fill="#E8F5E9">charge-centroid offset</text>
+  <text x="630" y="328" text-anchor="middle" font-size="13" fill="#E8F5E9">HBA-centroid offset</text>
+  <text x="630" y="384" text-anchor="middle" font-size="14" font-weight="700" fill="#C8E6C9">3 features</text>
+
+  <!-- Flexibility -->
+  <rect x="720" y="226" width="220" height="176" rx="8" fill="url(#v2-flex)" filter="url(#v2-shadow)"/>
+  <text x="830" y="254" text-anchor="middle" font-size="15" font-weight="700" fill="white">Flexibility</text>
+  <text x="830" y="290" text-anchor="middle" font-size="13" fill="#FFF3E0">conformational</text>
+  <text x="830" y="310" text-anchor="middle" font-size="13" fill="#FFF3E0">flexibility index</text>
+  <text x="830" y="338" text-anchor="middle" font-size="13" fill="#FFF3E0">confs in window</text>
+  <text x="830" y="384" text-anchor="middle" font-size="14" font-weight="700" fill="#FFE0B2">2 features</text>
+</svg>
