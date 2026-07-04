@@ -1157,11 +1157,11 @@ class ModelCore(Artifact):
 
             base_table = fs.data_source.table
             model_view_table = f"{base_table}___{model_view_name}"
-            model_weights_table = f"_{base_table}___{model_view_name}_weights"
+            model_roles_table = f"_{base_table}___{model_view_name}_roles"
 
-            # Delete the model's weights table
-            cls.log.info(f"Deleting model weights table: {model_weights_table}")
-            delete_table(model_weights_table, fs.data_source.database, cls.boto3_session)
+            # Delete the model's per-row roles table
+            cls.log.info(f"Deleting model roles table: {model_roles_table}")
+            delete_table(model_roles_table, fs.data_source.database, cls.boto3_session)
 
             # Delete the model's training view
             cls.log.info(f"Deleting model training view: {model_view_table}")

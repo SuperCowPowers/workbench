@@ -97,6 +97,8 @@ class FeaturesToModel(Transform):
         description: str = None,
         feature_list: list = None,
         sample_weights: Union[dict, pd.DataFrame] = None,
+        validation_ids: list = None,
+        exclude_ids: list = None,
         **kwargs,
     ):
         """Generic Features to Model: Note you should create a new class and inherit from
@@ -106,9 +108,15 @@ class FeaturesToModel(Transform):
             description (str): Description of the model (optional)
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             sample_weights (dict | pd.DataFrame): Sparse per-id sample weights as a
-                ``{id: weight}`` dict or a ``[id_column, "sample_weight"]`` DataFrame.
-                Any id not listed defaults to weight 1.0; rows with weight 0 are
-                excluded from training (default None: all rows weight 1.0).
+                ``{id: weight}`` dict or a ``[id_column, "sample_weight"]`` DataFrame. A pure
+                framework weight forwarded as-is to the model script; ids not listed default to
+                1.0. It no longer encodes any role (default None: all rows weight 1.0).
+            validation_ids (list): Ids designated as a held-out validation set — kept in the
+                training view and marked, but routed out of training and scored as an honest
+                held-out set by the model script (default None: no validation rows).
+            exclude_ids (list): Ids to drop from the training view entirely (outliers/anomalies);
+                no model ever sees them. Takes precedence over ``validation_ids`` on overlap
+                (default None: nothing excluded).
         """
         # Set our model description
         self.model_description = description if description is not None else f"Model created from {self.input_name}"
@@ -118,7 +126,9 @@ class FeaturesToModel(Transform):
         short_id = uuid.uuid4().hex[:6]
         self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training_{short_id}".lower()
         self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
-        self._create_model_training_view(feature_set, self.model_training_view_name, sample_weights)
+        self._create_model_training_view(
+            feature_set, self.model_training_view_name, sample_weights, validation_ids, exclude_ids
+        )
 
         # Delete the existing model (if it exists)
         self.log.important(f"Trying to delete existing model {self.output_name}...")
@@ -329,21 +339,27 @@ class FeaturesToModel(Transform):
         self.create_and_register_model(**kwargs)
 
     def _create_model_training_view(
-        self, feature_set: FeatureSetCore, model_view_name: str, sample_weights: Union[dict, pd.DataFrame] = None
+        self,
+        feature_set: FeatureSetCore,
+        model_view_name: str,
+        sample_weights: Union[dict, pd.DataFrame] = None,
+        validation_ids: list = None,
+        exclude_ids: list = None,
     ):
-        """Create a model-owned training view of the FeatureSet's features plus a sample_weight column.
+        """Create a model-owned training view of the FeatureSet's features plus per-row role columns.
 
-        When sample_weights are provided, they're stored in a sparse model-scoped weights table
-        (only ids whose weight differs from the 1.0 default). The view left-joins that table and
-        coalesces missing ids to 1.0. Rows with sample_weight == 0 are excluded from the view, so
-        every model (including custom models) trains only on the retained rows without repeating
-        exclusion logic.
+        The view always exposes ``sample_weight`` (framework weight), ``validation`` (held-out
+        marker), and ``exclude`` (drop marker). When any role input is provided, the non-default
+        rows are stored in a sparse model-scoped roles table that the view left-joins; excluded
+        rows are filtered out. See ``view_utils.create_model_training_view`` for the SQL.
 
         Args:
             feature_set (FeatureSetCore): The source FeatureSet
             model_view_name (str): The model training view name (e.g. "my_model_training")
-            sample_weights (dict | pd.DataFrame): Sparse per-id weights as a ``{id: weight}`` dict
-                or a ``[id_column, "sample_weight"]`` DataFrame. None means all rows weight 1.0.
+            sample_weights (dict | pd.DataFrame): Sparse per-id weights (``{id: weight}`` or a
+                ``[id_column, "sample_weight"]`` DataFrame). None means all rows weight 1.0.
+            validation_ids (list): Ids marked as held-out validation rows (kept, not trained).
+            exclude_ids (list): Ids dropped from the view entirely (precedence over validation).
         """
         from workbench.core.views.view_utils import create_model_training_view
 
@@ -353,33 +369,56 @@ class FeaturesToModel(Transform):
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         feature_columns = [c for c in feature_set.columns if c not in aws_cols]
 
-        # Normalize to a sparse [id_column, sample_weight] DataFrame (or None), then build the view
-        weights_df = self._normalize_sample_weights(sample_weights, id_column)
-        create_model_training_view(feature_set.data_source, model_view_name, feature_columns, id_column, weights_df)
+        # Normalize the three role inputs into one sparse roles DataFrame (or None), then build the view
+        roles_df = self._normalize_row_roles(sample_weights, validation_ids, exclude_ids, id_column)
+        create_model_training_view(feature_set.data_source, model_view_name, feature_columns, id_column, roles_df)
 
     @staticmethod
-    def _normalize_sample_weights(
-        sample_weights: Union[dict, pd.DataFrame, None], id_column: str
+    def _normalize_row_roles(
+        sample_weights: Union[dict, pd.DataFrame, None],
+        validation_ids: Union[list, None],
+        exclude_ids: Union[list, None],
+        id_column: str,
     ) -> Union[pd.DataFrame, None]:
-        """Normalize sample_weights into a sparse [id_column, sample_weight] DataFrame.
+        """Normalize the three role inputs into a sparse roles DataFrame.
+
+        Produces columns ``[id_column, "sample_weight", "validation", "exclude"]`` containing only
+        ids that differ from the defaults (weight 1.0, not validation, not excluded).
 
         Args:
             sample_weights (dict | pd.DataFrame | None): A ``{id: weight}`` dict or a
                 ``[id_column, "sample_weight"]`` DataFrame.
+            validation_ids (list | None): Ids to mark as held-out validation.
+            exclude_ids (list | None): Ids to drop from the view.
             id_column (str): The FeatureSet id column name.
 
         Returns:
-            pd.DataFrame | None: A two-column DataFrame, or None when there are no weights.
+            pd.DataFrame | None: The sparse roles frame, or None when everything is at defaults.
         """
-        if sample_weights is None:
-            return None
+        # Normalize weights into a plain {id: weight} mapping
+        weights: dict = {}
         if isinstance(sample_weights, dict):
-            if not sample_weights:
-                return None
-            return pd.DataFrame(list(sample_weights.items()), columns=[id_column, "sample_weight"])
-        if sample_weights.empty:
+            weights = dict(sample_weights)
+        elif isinstance(sample_weights, pd.DataFrame) and not sample_weights.empty:
+            weights = dict(zip(sample_weights[id_column], sample_weights["sample_weight"]))
+
+        validation_set = set(validation_ids or [])
+        exclude_set = set(exclude_ids or [])
+
+        all_ids = set(weights) | validation_set | exclude_set
+        if not all_ids:
             return None
-        return sample_weights[[id_column, "sample_weight"]].copy()
+
+        rows = [
+            {
+                id_column: i,
+                "sample_weight": float(weights.get(i, 1.0)),
+                "validation": i in validation_set,
+                "exclude": i in exclude_set,
+            }
+            for i in all_ids
+        ]
+        return pd.DataFrame(rows, columns=[id_column, "sample_weight", "validation", "exclude"])
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() on the Model"""

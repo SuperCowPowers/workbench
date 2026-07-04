@@ -156,21 +156,30 @@ def create_model_training_view(
     model_view_name: str,
     feature_columns: list,
     id_column: str,
-    weights_df: pd.DataFrame = None,
+    roles_df: pd.DataFrame = None,
 ) -> str:
-    """Create a model-owned training view: the feature columns plus a sample_weight column.
+    """Create a model-owned training view: the feature columns plus per-row role columns.
 
-    When weights_df is provided, it's stored in a sparse model-scoped weights table (only ids
-    whose weight differs from the 1.0 default). The view left-joins that table and coalesces
-    missing ids to 1.0. Rows with sample_weight == 0 are excluded from the view, so every model
-    (including custom models) trains only on the retained rows without repeating exclusion logic.
+    The view always exposes three orthogonal role columns alongside the features:
+
+    * ``sample_weight`` (float, default 1.0) — a pure framework weight, forwarded as-is to the
+      model script. It no longer encodes any role (train/validate/exclude).
+    * ``validation`` (bool, default false) — held-out rows: kept in the view and marked, but
+      routed out of training and scored as an honest held-out set by the model script.
+    * ``exclude`` (bool, default false) — outlier/anomaly rows: filtered out of the view
+      entirely (a ``WHERE NOT exclude``), so no model ever sees them.
+
+    When roles_df is provided, it's stored in a sparse model-scoped roles table (only ids that
+    differ from the defaults). The view left-joins that table and coalesces missing ids to the
+    defaults. If an id is both validation and exclude, exclude wins (the row is dropped).
 
     Args:
         data_source (DataSource): The FeatureSet's DataSource.
         model_view_name (str): The model training view name (e.g. "my_model_training").
         feature_columns (list): Feature columns to include (AWS-generated columns already excluded).
-        id_column (str): The id column used for the weights join.
-        weights_df (pd.DataFrame): Sparse [id_column, "sample_weight"] frame, or None for all 1.0.
+        id_column (str): The id column used for the roles join.
+        roles_df (pd.DataFrame): Sparse [id_column, "sample_weight", "validation", "exclude"] frame,
+            or None for all-defaults (weight 1.0, not validation, not excluded).
 
     Returns:
         str: The created view's table name.
@@ -179,24 +188,27 @@ def create_model_training_view(
     model_view_table = f"{base_table}___{model_view_name}"
     sql_columns = ", ".join([f't."{c}"' for c in feature_columns])
 
-    if weights_df is None or weights_df.empty:
-        # No exceptions: every row gets the default weight of 1.0
+    if roles_df is None or roles_df.empty:
+        # No exceptions: every row gets the default role (weight 1.0, not validation/excluded)
         create_view_sql = f"""
         CREATE OR REPLACE VIEW "{model_view_table}" AS
-        SELECT {sql_columns}, 1.0 AS sample_weight
+        SELECT {sql_columns}, 1.0 AS sample_weight, false AS validation, false AS exclude
         FROM "{base_table}" t
         """
     else:
-        # Sparse weights table; ids absent from it coalesce to 1.0, weight 0 is excluded
-        model_weights_table = f"_{base_table}___{model_view_name}_weights"
-        log.info(f"Creating model weights table: {model_weights_table} ({len(weights_df)} rows)")
-        dataframe_to_table(data_source, weights_df, model_weights_table)
+        # Sparse roles table; ids absent from it coalesce to defaults, excluded rows are dropped
+        model_roles_table = f"_{base_table}___{model_view_name}_roles"
+        log.info(f"Creating model roles table: {model_roles_table} ({len(roles_df)} rows)")
+        dataframe_to_table(data_source, roles_df, model_roles_table)
         create_view_sql = f"""
         CREATE OR REPLACE VIEW "{model_view_table}" AS
-        SELECT {sql_columns}, COALESCE(w."sample_weight", 1.0) AS sample_weight
+        SELECT {sql_columns},
+               COALESCE(r."sample_weight", 1.0) AS sample_weight,
+               COALESCE(r."validation", false) AS validation,
+               COALESCE(r."exclude", false) AS exclude
         FROM "{base_table}" t
-        LEFT JOIN "{model_weights_table}" w ON t."{id_column}" = w."{id_column}"
-        WHERE COALESCE(w."sample_weight", 1.0) > 0
+        LEFT JOIN "{model_roles_table}" r ON t."{id_column}" = r."{id_column}"
+        WHERE NOT COALESCE(r."exclude", false)
         """
 
     data_source.execute_statement(create_view_sql)

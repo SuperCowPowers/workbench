@@ -326,6 +326,14 @@ if __name__ == "__main__":
     all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
     check_dataframe(all_df, "training_df")
 
+    # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
+    # scaler, category mappings, and downstream CV/UQ/SHAP never see them. Scored held-out below.
+    from workbench.training.validation import split_validation_set
+
+    all_df, holdout_df = split_validation_set(all_df)
+    if len(holdout_df):
+        print(f"Held-out validation set: {len(holdout_df)} rows (excluded from training/CV/UQ)")
+
     # Drop rows with missing target (required for training)
     initial_count = len(all_df)
     all_df = all_df.dropna(subset=[target])
@@ -703,6 +711,59 @@ if __name__ == "__main__":
     print(f"Saved SHAP importance ({len(shap_importance)} features)")
 
     # -------------------------------------------------------------------------
+    # Score the held-out validation set (honest, never-trained rows)
+    # -------------------------------------------------------------------------
+    # The CV rows above are the model's standard metrics; the held-out set is an
+    # independent read. Rows are marked with a `validation` column so downstream
+    # tooling can separate the two; held-out MAE is printed as `holdout_mae`.
+    df_val["validation"] = False
+    if len(holdout_df):
+        print("\n" + "=" * 50)
+        print(f"Scoring held-out validation set ({len(holdout_df)} rows)")
+        print("=" * 50)
+
+        # Preprocess held-out rows through the SAME fitted objects used for training
+        h_df, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
+        if compressed_features:
+            h_df, _ = decompress_features(h_df, orig_features, compressed_features)
+        for col in categorical_cols:
+            if h_df[col].isna().any():
+                h_df[col] = h_df[col].fillna(cat_impute_values[col])
+        h_cont, h_cat, _, _, _ = prepare_data(
+            h_df, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
+        )
+        all_preds = np.stack([predict(m, h_cont, h_cat) for m in ensemble_models])
+        y_h_true = holdout_df[target].values
+
+        if model_type == "classifier":
+            avg_probs = np.mean(all_preds, axis=0)
+            h_pred = label_encoder.inverse_transform(np.argmax(avg_probs, axis=1))
+            score_df = compute_classification_metrics(y_h_true, h_pred, label_encoder.classes_, target)
+            print_classification_metrics(score_df, target, label_encoder.classes_)
+            h_out = pd.DataFrame({id_column: holdout_df[id_column].values, target: y_h_true, "prediction": h_pred})
+        else:
+            fold_preds = np.stack([p.flatten() for p in all_preds])
+            h_pred = np.mean(fold_preds, axis=0)
+            h_std = (
+                compress_std_outliers(np.std(fold_preds, axis=0)) if len(ensemble_models) > 1 else np.zeros(len(h_pred))
+            )
+            metrics = compute_regression_metrics(y_h_true, h_pred)
+            print("Held-out validation metrics:")
+            print_regression_metrics(metrics)
+            print(f"holdout_mae: {metrics['mae']:.3f}")
+            h_out = pd.DataFrame(
+                {
+                    id_column: holdout_df[id_column].values,
+                    target: y_h_true,
+                    "prediction": h_pred,
+                    "prediction_std": h_std,
+                }
+            )
+
+        h_out["validation"] = True
+        df_val = pd.concat([df_val, h_out], ignore_index=True)
+
+    # -------------------------------------------------------------------------
     # Save validation predictions to S3
     # -------------------------------------------------------------------------
     output_columns = []
@@ -715,6 +776,7 @@ if __name__ == "__main__":
     output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
 
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
+    output_columns += ["validation"]
 
     wr.s3.to_csv(df_val[output_columns], f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
 

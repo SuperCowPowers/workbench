@@ -92,7 +92,10 @@ class FeatureSet(FeatureSetCore):
             model_class (str, optional): Model class to use (e.g. "KMeans", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
-            kwargs (dict, optional): Additional keyword arguments to pass to the model
+            kwargs (dict, optional): Additional keyword arguments to pass to the model. Notably:
+                ``sample_weights`` (dict|DataFrame): pure per-id framework weight, forwarded as-is;
+                ``validation_ids`` (list): ids held out as a scored in-training validation set;
+                ``exclude_ids`` (list): ids dropped from the training view entirely.
 
         Returns:
             Model: The Model created from the FeatureSet (or None if the Model could not be created)

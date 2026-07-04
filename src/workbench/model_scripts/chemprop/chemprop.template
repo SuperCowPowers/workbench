@@ -656,6 +656,14 @@ if __name__ == "__main__":
     for tc in target_columns:
         print(f"  {tc}: {all_df[tc].notna().sum()} samples")
 
+    # Route held-out validation rows out of training BEFORE label encoding / feature-mean fitting,
+    # so nothing downstream (CV/UQ/SHAP) sees them. They're scored held-out just before save.
+    from workbench.training.validation import split_validation_set
+
+    all_df, holdout_df = split_validation_set(all_df)
+    if len(holdout_df):
+        print(f"Held-out validation set: {len(holdout_df)} rows (excluded from training/CV/UQ)")
+
     # -------------------------------------------------------------------------
     # Classification setup
     # -------------------------------------------------------------------------
@@ -1243,6 +1251,86 @@ if __name__ == "__main__":
     print(f"[timing] SHAP: {time.time() - _shap_t0:.1f}s", flush=True)
 
     # -------------------------------------------------------------------------
+    # Score the held-out validation set (honest, never-trained rows)
+    # -------------------------------------------------------------------------
+    # The OOF rows above are the model's standard metrics; the held-out set is an
+    # independent read. Rows are marked with a `validation` column so downstream
+    # tooling can separate the two; primary-target held-out MAE prints as `holdout_mae`.
+    df_val["validation"] = False
+    if len(holdout_df):
+        print("\n" + "=" * 50)
+        print(f"Scoring held-out validation set ({len(holdout_df)} rows)")
+        print("=" * 50)
+
+        # Clean held-out rows the same way training data was cleaned
+        h_df = holdout_df.dropna(subset=[smiles_column]).copy()
+        h_df = h_df[h_df[target_columns].notna().any(axis=1)]
+
+        # Extra features: raw + imputed with TRAINING col_means (model's x_d_transform scales)
+        h_extra = None
+        if use_extra_features:
+            h_extra = h_df[extra_feature_cols].values.astype(np.float32)
+            for i in range(h_extra.shape[1]):
+                h_extra[np.isnan(h_extra[:, i]), i] = col_means[i]
+
+        h_dps, h_valid = _create_molecule_datapoints(h_df[smiles_column].tolist(), None, h_extra)
+        h_df = h_df.iloc[h_valid].reset_index(drop=True)
+
+        if len(h_dps):
+            h_dataset = data.MoleculeDataset(h_dps)
+            h_loader = data.build_dataloader(
+                h_dataset, batch_size=_safe_batch_size(len(h_dataset), min(len(h_dataset), 4096)), shuffle=False
+            )
+            all_ens = []
+            for m in ensemble_models:
+                m.eval().to(device)
+                mp = []
+                with torch.inference_mode():
+                    for batch in h_loader:
+                        bmg, V_d, X_d, *_ = batch
+                        bmg.to(device)
+                        V_d = V_d.to(device) if V_d is not None else None
+                        X_d = X_d.to(device) if X_d is not None else None
+                        mp.append(m(bmg, V_d, X_d).detach().cpu().numpy())
+                ep = np.concatenate(mp, axis=0)
+                if ep.ndim == 3 and ep.shape[1] == 1:
+                    ep = ep.squeeze(axis=1)
+                all_ens.append(ep)
+            h_preds = np.mean(np.stack(all_ens), axis=0)
+            h_std = np.std(np.stack(all_ens), axis=0)
+            if h_preds.ndim == 1:
+                h_preds, h_std = h_preds.reshape(-1, 1), h_std.reshape(-1, 1)
+            h_std = compress_std_outliers(h_std)
+
+            if model_type == "classifier":
+                avg_probs = h_preds if h_preds.shape[1] > 1 else np.column_stack([1 - h_preds[:, 0], h_preds[:, 0]])
+                h_pred = label_encoder.inverse_transform(np.argmax(avg_probs, axis=1))
+                y_h_true = h_df[target_columns[0]].values
+                score_df = compute_classification_metrics(y_h_true, h_pred, label_encoder.classes_, target_columns[0])
+                print_classification_metrics(score_df, target_columns[0], label_encoder.classes_)
+                h_out = pd.DataFrame(
+                    {id_column: h_df[id_column].values, target_columns[0]: y_h_true, "prediction": h_pred}
+                )
+            else:
+                h_out = pd.DataFrame({id_column: h_df[id_column].values})
+                print("Held-out validation metrics (per target):")
+                for t_idx, t_name in enumerate(target_columns):
+                    h_out[t_name] = h_df[t_name].values
+                    h_out[f"{t_name}_pred"] = h_preds[:, t_idx]
+                    h_out[f"{t_name}_pred_std"] = h_std[:, t_idx]
+                    mask = h_df[t_name].notna().values
+                    if mask.sum() > 0:
+                        metrics = compute_regression_metrics(h_df[t_name].values[mask], h_preds[mask, t_idx])
+                        print_regression_metrics(metrics)
+                        if t_idx == 0:
+                            print(f"holdout_mae: {metrics['mae']:.3f}")
+                h_out["prediction"] = h_out[f"{target_columns[0]}_pred"]
+                h_out["prediction_std"] = h_out[f"{target_columns[0]}_pred_std"]
+
+            h_out["validation"] = True
+            df_val = pd.concat([df_val, h_out], ignore_index=True)
+
+    # -------------------------------------------------------------------------
     # Save validation predictions to S3
     # -------------------------------------------------------------------------
     output_columns = [id_column] if id_column in df_val.columns else []
@@ -1253,6 +1341,7 @@ if __name__ == "__main__":
         c for c in df_val.columns if c.startswith("q_") or c.endswith("_confidence") or c == "confidence"
     ]
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
+    output_columns += ["validation"]
 
     output_columns = [c for c in output_columns if c in df_val.columns]
 

@@ -128,11 +128,57 @@ that don't call the util are unaffected — they just see the extra columns.
 
 ## First pass vs. later
 
-- **First pass:** eval-only — route validation rows out of train/CV and score
-  them held-out. This is the minimal honest-validation capability and unblocks
-  HPO's `holdout_mae` objective.
-- **Later (per template):** use the validation set as the early-stopping monitor
-  (chemprop/pytorch) instead of a CV fold.
+**First pass:** eval-only — route validation rows out of train/CV, score them
+held-out, mark them with a `validation` column in `validation_predictions.csv`,
+print `holdout_mae`. Minimal honest-validation capability; unblocks HPO's
+`holdout_mae` objective. Additive and a no-op when nothing is marked.
+
+### Deferred / follow-on (TODO)
+
+Formalizing `validation` opens broader template-script cleanups that should NOT
+ride along with this pass (each touches downstream consumers):
+
+- **Rename `validation_predictions.csv` → `oof_predictions.csv`.** That file is
+  really the CV out-of-fold predictions; the held-out rows are the true
+  validation. Renaming touches the web UI, `Model.get_inference_predictions()`,
+  and plotting — do it as its own change.
+- **Early-stopping on the validation set** (chemprop/pytorch) instead of a CV
+  fold, when a validation set is designated.
+- **Forward `sample_weight` in pytorch/chemprop** (xgb already does) now that it
+  is a clean framework-weight axis.
+- **Migrate client pipeline scripts** (`ideaya/promoted_ml_pipelines/ml_pipelines`)
+  from weight-0 designation to the explicit `exclude_ids` / `validation_ids` roles.
+  The matched pair (`temporal_split()` at the top, `ts_inference()` at the bottom)
+  still holds — `temporal_split()` now feeds `validation_ids` for the in-training
+  read, and `ts_inference()` stays as the endpoint-side read. Example:
+
+  ```python
+  # before: both anomalies and the temporal holdout smuggled through weight-0
+  sample_weights = compute_sample_weights(...)          # {id: 0.0} anomalies
+  exclude_ids = list(sample_weights)
+  if mode == "ts":
+      sample_weights = {**sample_weights, **fs.temporal_split("udm_asy_date", end_date="2025-10-17")}
+  model = fs.to_model(..., sample_weights=sample_weights)
+  ...
+  if mode == "ts":
+      end.ts_inference("udm_asy_date", after_date="2025-10-17", exclude_ids=exclude_ids)
+
+  # after: explicit roles
+  exclude_ids = list(compute_sample_weights(...))       # anomalies → dropped
+  validation_ids = fs.temporal_split("udm_asy_date", end_date="2025-10-17") if mode == "ts" else None
+  model = fs.to_model(..., exclude_ids=exclude_ids, validation_ids=validation_ids)
+  ...
+  if mode == "ts":
+      end.ts_inference("udm_asy_date", after_date="2025-10-17", exclude_ids=exclude_ids)  # unchanged
+  ```
+
+  Anomalies overlapping the post-date window get `exclude` precedence (dropped from
+  both training and the held-out eval), matching today's behavior. A natural extra
+  cleanup: have `compute_sample_weights` return a list directly.
+
+`FeatureSetCore.temporal_split()` now returns a **list of holdout ids** (was a
+`{id: 0.0}` dict) to feed `to_model(validation_ids=...)` — done as part of this
+pass, since weight-0 no longer holds anything out.
 
 ## Constraints
 

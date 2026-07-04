@@ -508,23 +508,24 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.get_name()} successfully deleted")
 
-    def temporal_split(self, date_column: str, end_date: str) -> dict:
-        """Compute a temporal split as sample weights that exclude rows after end_date.
+    def temporal_split(self, date_column: str, end_date: str) -> list:
+        """Compute a temporal holdout: the ids of rows strictly after end_date.
 
         Args:
             date_column (str): The name of the date/datetime column to split on.
-            end_date (str): Rows strictly after this date become the holdout set (weight 0).
+            end_date (str): Rows strictly after this date become the holdout set.
 
         Returns:
-            dict: Sparse ``{id: 0.0}`` for each holdout row (rows after end_date). Pass to
-                ``FeaturesToModel.transform(sample_weights=...)``; ids not listed default to 1.0.
-                Compose with other weight sources via dict merge.
+            list: The ids of the holdout rows (rows after end_date). Pass to
+                ``to_model(validation_ids=...)`` — those rows are held out of training and
+                scored as an honest OOD validation set. Pair with
+                ``endpoint.ts_inference(..., after_date=end_date)`` for the endpoint-side read.
         """
 
         # Validate the date column
         if date_column not in self.columns:
             self.log.error(f"Date column '{date_column}' not found in columns: {self.columns}")
-            return {}
+            return []
 
         # Pull the ID and date columns, then delegate to pandas_utils.temporal_split
         from workbench.utils.pandas_utils import temporal_split
@@ -533,7 +534,7 @@ class FeatureSetCore(Artifact):
         _train_df, holdout_df = temporal_split(df, date_column, end_date=end_date)
         holdout_ids = holdout_df[self.id_column].tolist()
         self.log.important(f"Temporal Split: end_date={end_date} ({len(holdout_ids)} holdout rows)")
-        return {hid: 0.0 for hid in holdout_ids}
+        return holdout_ids
 
     @classmethod
     def delete_views(cls, table: str, database: str):
