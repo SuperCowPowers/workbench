@@ -80,7 +80,9 @@ if __name__ == "__main__":
     check_dataframe(all_df, "training_df")
 
     # Create the FeatureSpaceProximity model
-    model = FeatureSpaceProximity(all_df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns)
+    model = FeatureSpaceProximity(
+        all_df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns
+    )
 
     # Now serialize the model
     model.serialize(args.model_dir)

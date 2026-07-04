@@ -41,10 +41,9 @@ from chemprop import data, models
 from workbench.endpoints.inference import (
     compress_std_outliers,
     expand_proba_column,
-    input_fn,
-    output_fn,
     save_to_s3,
 )
+from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
 from workbench.endpoints.uq_harness import (
     apply_classification_confidence,
     compute_vgmu_confidence,
@@ -219,10 +218,7 @@ def model_fn(model_dir: str) -> dict:
         classification_uq = load_classification_uq(model_dir)
 
     active_uq = uq_model.UQ_VERSION if uq_model is not None else "none"
-    print(
-        f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}, "
-        f"active_uq={active_uq}"
-    )
+    print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}, " f"active_uq={active_uq}")
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
@@ -363,13 +359,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             all_probs_stack = np.stack(all_preds, axis=0)
             if all_probs_stack.shape[2] == 1:
                 # Binary sigmoid → expand to 2-class for each model
-                all_probs_stack = np.concatenate(
-                    [1 - all_probs_stack, all_probs_stack], axis=2
-                )
+                all_probs_stack = np.concatenate([1 - all_probs_stack, all_probs_stack], axis=2)
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
-            conf_values = apply_classification_confidence(
-                raw_conf, classification_uq["classification_confidence"]
-            )
+            conf_values = apply_classification_confidence(raw_conf, classification_uq["classification_confidence"])
             df["confidence"] = np.nan
             df.loc[valid_mask, "confidence"] = conf_values
     else:
@@ -437,15 +429,12 @@ if __name__ == "__main__":
         compute_classification_metrics,
         compute_regression_metrics,
         get_split_indices,
-
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
     )
     from workbench.endpoints.uq_harness import (
-        apply_classification_confidence,
         calibrate_classification_confidence,
-        compute_vgmu_confidence,
         save_classification_uq,
     )
     from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
@@ -475,9 +464,7 @@ if __name__ == "__main__":
 
             if not chemeleon_path.exists():
                 print("  Downloading CheMeleon weights from Zenodo...")
-                urllib.request.urlretrieve(
-                    "https://zenodo.org/records/15460715/files/chemeleon_mp.pt", chemeleon_path
-                )
+                urllib.request.urlretrieve("https://zenodo.org/records/15460715/files/chemeleon_mp.pt", chemeleon_path)
                 print(f"  Downloaded to {chemeleon_path}")
 
             ckpt = torch.load(chemeleon_path, weights_only=True)
@@ -503,8 +490,11 @@ if __name__ == "__main__":
         return pretrained.message_passing, pretrained.agg
 
     def _build_ffn(
-        task: str, input_dim: int, hyperparameters: dict,
-        num_classes: int | None, n_targets: int,
+        task: str,
+        input_dim: int,
+        hyperparameters: dict,
+        num_classes: int | None,
+        n_targets: int,
         output_transform: nn.UnscaleTransform | None,
         task_weights: np.ndarray | None,
         use_bounded_loss: bool = False,
@@ -521,11 +511,15 @@ if __name__ == "__main__":
 
         if task == "classification" and num_classes is not None:
             return nn.MulticlassClassificationFFN(
-                n_classes=num_classes, input_dim=input_dim,
-                hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
+                n_classes=num_classes,
+                input_dim=input_dim,
+                hidden_dim=ffn_hidden_dim,
+                n_layers=ffn_num_layers,
+                dropout=dropout,
             )
 
         from chemprop.nn.metrics import MAE, MSE, BoundedMAE, BoundedMSE
+
         if use_bounded_loss:
             criterion_map = {"mae": BoundedMAE, "mse": BoundedMSE}
         else:
@@ -536,14 +530,21 @@ if __name__ == "__main__":
 
         criterion_kwargs = {"task_weights": task_weights} if task_weights is not None else {}
         return nn.RegressionFFN(
-            input_dim=input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
-            dropout=dropout, n_tasks=n_targets, output_transform=output_transform,
+            input_dim=input_dim,
+            hidden_dim=ffn_hidden_dim,
+            n_layers=ffn_num_layers,
+            dropout=dropout,
+            n_tasks=n_targets,
+            output_transform=output_transform,
             criterion=criterion_map[criterion_name](**criterion_kwargs),
         )
 
     def build_mpnn_model(
-        hyperparameters: dict, task: str = "regression", num_classes: int | None = None,
-        n_targets: int = 1, n_extra_descriptors: int = 0,
+        hyperparameters: dict,
+        task: str = "regression",
+        num_classes: int | None = None,
+        n_targets: int = 1,
+        n_extra_descriptors: int = 0,
         x_d_transform: nn.ScaleTransform | None = None,
         output_transform: nn.UnscaleTransform | None = None,
         task_weights: np.ndarray | None = None,
@@ -557,19 +558,30 @@ if __name__ == "__main__":
             ffn_input_dim = mp.output_dim + n_extra_descriptors
         else:
             mp = nn.BondMessagePassing(
-                d_h=hyperparameters["hidden_dim"], depth=hyperparameters["depth"],
+                d_h=hyperparameters["hidden_dim"],
+                depth=hyperparameters["depth"],
                 dropout=hyperparameters["dropout"],
             )
             agg = nn.NormAggregation()
             ffn_input_dim = hyperparameters["hidden_dim"] + n_extra_descriptors
 
         ffn = _build_ffn(
-            task, ffn_input_dim, hyperparameters, num_classes, n_targets,
-            output_transform, task_weights, use_bounded_loss=use_bounded_loss,
+            task,
+            ffn_input_dim,
+            hyperparameters,
+            num_classes,
+            n_targets,
+            output_transform,
+            task_weights,
+            use_bounded_loss=use_bounded_loss,
         )
         return models.MPNN(
-            message_passing=mp, agg=agg, predictor=ffn, batch_norm=True,
-            metrics=None, X_d_transform=x_d_transform,
+            message_passing=mp,
+            agg=agg,
+            predictor=ffn,
+            batch_norm=True,
+            metrics=None,
+            X_d_transform=x_d_transform,
             warmup_epochs=hyperparameters["warmup_epochs"],
             init_lr=hyperparameters["init_lr"],
             max_lr=hyperparameters["max_lr"],
@@ -582,7 +594,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
     parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
-    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
     args = parser.parse_args()
 
     # Extract template parameters
@@ -735,9 +749,7 @@ if __name__ == "__main__":
         user_weights = hyperparameters.get("task_weights")
         if user_weights is not None:
             if len(user_weights) != n_targets:
-                raise ValueError(
-                    f"task_weights length ({len(user_weights)}) must match n_targets ({n_targets})"
-                )
+                raise ValueError(f"task_weights length ({len(user_weights)}) must match n_targets ({n_targets})")
             task_weights = np.asarray(user_weights, dtype=np.float32)
             print(f"Task weights: {dict(zip(target_columns, task_weights.round(3).tolist()))}")
 
@@ -772,7 +784,11 @@ if __name__ == "__main__":
     # Training loop
     # -------------------------------------------------------------------------
     oof_predictions = np.full((len(all_df), n_targets), np.nan, dtype=np.float64)
-    oof_proba = np.full((len(all_df), num_classes), np.nan, dtype=np.float64) if model_type == "classifier" and num_classes else None
+    oof_proba = (
+        np.full((len(all_df), num_classes), np.nan, dtype=np.float64)
+        if model_type == "classifier" and num_classes
+        else None
+    )
 
     ensemble_models = []
     for fold_idx, (train_idx, val_idx) in enumerate(folds):
@@ -793,12 +809,18 @@ if __name__ == "__main__":
 
         # Create datasets
         train_dps, _ = _create_molecule_datapoints(
-            df_train[smiles_column].tolist(), train_targets, train_extra,
-            gt_mask=train_gt, lt_mask=train_lt,
+            df_train[smiles_column].tolist(),
+            train_targets,
+            train_extra,
+            gt_mask=train_gt,
+            lt_mask=train_lt,
         )
         val_dps, _ = _create_molecule_datapoints(
-            df_val[smiles_column].tolist(), val_targets, val_extra,
-            gt_mask=val_gt, lt_mask=val_lt,
+            df_val[smiles_column].tolist(),
+            val_targets,
+            val_extra,
+            gt_mask=val_gt,
+            lt_mask=val_lt,
         )
         train_dataset, val_dataset = data.MoleculeDataset(train_dps), data.MoleculeDataset(val_dps)
 
@@ -821,19 +843,43 @@ if __name__ == "__main__":
         _cache_t0 = time.time()
         train_dataset.cache = True
         val_dataset.cache = True
-        print(f"[cache] featurization cache ENABLED — {len(train_dataset)} train + {len(val_dataset)} val "
-              f"MolGraphs precomputed in {time.time() - _cache_t0:.1f}s", flush=True)
+        print(
+            f"[cache] featurization cache ENABLED — {len(train_dataset)} train + {len(val_dataset)} val "
+            f"MolGraphs precomputed in {time.time() - _cache_t0:.1f}s",
+            flush=True,
+        )
 
         num_workers = min(os.cpu_count() or 4, 8)  # Scale with CPUs, cap at 8
-        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=num_workers > 0, pin_memory=True, prefetch_factor=2)
-        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, persistent_workers=num_workers > 0, pin_memory=True, prefetch_factor=2)
+        train_loader = data.build_dataloader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            persistent_workers=num_workers > 0,
+            pin_memory=True,
+            prefetch_factor=2,
+        )
+        val_loader = data.build_dataloader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            persistent_workers=num_workers > 0,
+            pin_memory=True,
+            prefetch_factor=2,
+        )
 
         # Build model
         pl.seed_everything(hyperparameters["seed"] + fold_idx)
         mpnn = build_mpnn_model(
-            hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
-            n_extra_descriptors=n_extra, x_d_transform=x_d_transform,
-            output_transform=output_transform, task_weights=task_weights,
+            hyperparameters,
+            task=task,
+            num_classes=num_classes,
+            n_targets=n_targets,
+            n_extra_descriptors=n_extra,
+            x_d_transform=x_d_transform,
+            output_transform=output_transform,
+            task_weights=task_weights,
             use_bounded_loss=use_bounded_loss,
         )
 
@@ -848,12 +894,27 @@ if __name__ == "__main__":
                 param.requires_grad = not frozen
 
         def _make_trainer(max_epochs: int, save_checkpoint: bool = False):
-            callbacks = [pl.callbacks.EarlyStopping(monitor="val_loss", patience=hyperparameters["patience"], mode="min")]
+            callbacks = [
+                pl.callbacks.EarlyStopping(monitor="val_loss", patience=hyperparameters["patience"], mode="min")
+            ]
             if save_checkpoint:
-                callbacks.append(pl.callbacks.ModelCheckpoint(
-                    dirpath=args.model_dir, filename=f"best_{fold_idx}", monitor="val_loss", mode="min", save_top_k=1
-                ))
-            return pl.Trainer(accelerator="auto", max_epochs=max_epochs, precision="16-mixed", logger=False, enable_progress_bar=True, callbacks=callbacks)
+                callbacks.append(
+                    pl.callbacks.ModelCheckpoint(
+                        dirpath=args.model_dir,
+                        filename=f"best_{fold_idx}",
+                        monitor="val_loss",
+                        mode="min",
+                        save_top_k=1,
+                    )
+                )
+            return pl.Trainer(
+                accelerator="auto",
+                max_epochs=max_epochs,
+                precision="16-mixed",
+                logger=False,
+                enable_progress_bar=True,
+                callbacks=callbacks,
+            )
 
         _fit_t0 = time.time()
         if use_two_phase:
@@ -886,7 +947,13 @@ if __name__ == "__main__":
         # Out-of-fold predictions (using unscaled features - model's x_d_transform handles scaling)
         val_dps_raw, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra_raw)
         oof_dataset = data.MoleculeDataset(val_dps_raw)
-        val_loader_pred = data.build_dataloader(oof_dataset, batch_size=_safe_batch_size(len(oof_dataset), batch_size), shuffle=False, num_workers=num_workers, pin_memory=True)
+        val_loader_pred = data.build_dataloader(
+            oof_dataset,
+            batch_size=_safe_batch_size(len(oof_dataset), batch_size),
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=True,
+        )
 
         _oof_t0 = time.time()
         with torch.inference_mode():
@@ -948,9 +1015,7 @@ if __name__ == "__main__":
 
         # Calibrate VGMU classification confidence from ensemble probabilities
         if len(ensemble_models) > 1:
-            val_dps, _ = _create_molecule_datapoints(
-                df_val[smiles_column].tolist(), None, val_extra_features
-            )
+            val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), None, val_extra_features)
             cal_dataset = data.MoleculeDataset(val_dps)
             infer_batch = min(len(cal_dataset), 4096)
             cal_loader = data.build_dataloader(
@@ -979,9 +1044,7 @@ if __name__ == "__main__":
             all_probs_stack = np.stack(all_model_probs)  # (n_models, n_samples, n_classes)
             if all_probs_stack.shape[2] == 1:
                 # Binary sigmoid → expand to 2-class for each model
-                all_probs_stack = np.concatenate(
-                    [1 - all_probs_stack, all_probs_stack], axis=2
-                )
+                all_probs_stack = np.concatenate([1 - all_probs_stack, all_probs_stack], axis=2)
             avg_probs = np.mean(all_probs_stack, axis=0)
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
             classification_uq = calibrate_classification_confidence(raw_conf, y_true_decoded, preds_decoded)
@@ -1006,8 +1069,11 @@ if __name__ == "__main__":
             infer_batch = min(len(std_dataset), 4096)
             infer_workers = min(os.cpu_count() or 4, 8)
             val_loader = data.build_dataloader(
-                std_dataset, batch_size=_safe_batch_size(len(std_dataset), infer_batch), shuffle=False,
-                num_workers=infer_workers, pin_memory=True,
+                std_dataset,
+                batch_size=_safe_batch_size(len(std_dataset), infer_batch),
+                shuffle=False,
+                num_workers=infer_workers,
+                pin_memory=True,
             )
             print(f"  Dataset ready ({len(std_dataset)} samples), running {len(ensemble_models)} models...", flush=True)
 
@@ -1079,9 +1145,13 @@ if __name__ == "__main__":
                 print(f"No '{smiles_column}' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
             uq_dict = fit_regression_uq(
-                y_true=val_y, y_pred=val_pred, y_std=val_std,
-                val_ids=val_ids, prox_df=prox_df,
-                id_column=id_column, target=primary,
+                y_true=val_y,
+                y_pred=val_pred,
+                y_std=val_std,
+                val_ids=val_ids,
+                prox_df=prox_df,
+                id_column=id_column,
+                target=primary,
                 active_version=hyperparameters.get("uq_version", "v0"),
             )
 
@@ -1106,6 +1176,7 @@ if __name__ == "__main__":
     print("Computing SHAP Values", flush=True)
     print("=" * 50, flush=True)
     from workbench.endpoints.chemprop_shap_utils import compute_chemprop_shap, format_shap_results
+
     print("[timing] SHAP imports loaded", flush=True)
 
     shap_values_array, shap_feature_names, shap_indices, shap_fractions = compute_chemprop_shap(
@@ -1130,7 +1201,8 @@ if __name__ == "__main__":
         mean_abs_shap = np.mean(np.abs(shap_values_array), axis=(0, 1))
         shap_importance = sorted(
             [(shap_feature_names[i], round(float(mean_abs_shap[i]), 6)) for i in range(len(shap_feature_names))],
-            key=lambda x: x[1], reverse=True,
+            key=lambda x: x[1],
+            reverse=True,
         )
         print(f"Top 5 SHAP features: {shap_importance[:5]}")
 
@@ -1155,8 +1227,12 @@ if __name__ == "__main__":
         wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
     else:
         shap_importance, shap_values_df, feature_vals_df = format_shap_results(
-            shap_values_array, shap_feature_names, shap_fractions,
-            sample_ids=sample_ids, id_column=id_column, top_n=shap_top_n,
+            shap_values_array,
+            shap_feature_names,
+            shap_fractions,
+            sample_ids=sample_ids,
+            id_column=id_column,
+            top_n=shap_top_n,
         )
         print(f"Top 5 SHAP features: {shap_importance[:5]}")
         wr.s3.to_csv(shap_values_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
@@ -1173,7 +1249,9 @@ if __name__ == "__main__":
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns] + [f"{t}_pred_std" for t in target_columns]
     output_columns += ["prediction", "prediction_std"]
-    output_columns += [c for c in df_val.columns if c.startswith("q_") or c.endswith("_confidence") or c == "confidence"]
+    output_columns += [
+        c for c in df_val.columns if c.startswith("q_") or c.endswith("_confidence") or c == "confidence"
+    ]
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
 
     output_columns = [c for c in output_columns if c in df_val.columns]
@@ -1218,7 +1296,10 @@ if __name__ == "__main__":
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     if use_extra_features:
-        joblib.dump({"extra_feature_cols": extra_feature_cols, "col_means": col_means.tolist()}, os.path.join(args.model_dir, "feature_metadata.joblib"))
+        joblib.dump(
+            {"extra_feature_cols": extra_feature_cols, "col_means": col_means.tolist()},
+            os.path.join(args.model_dir, "feature_metadata.joblib"),
+        )
         print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
 
     print(f"[timing] total post-training: {time.time() - _post_t0:.1f}s", flush=True)

@@ -13,7 +13,6 @@ import joblib
 import os
 import pandas as pd
 
-
 # Template Placeholders
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
@@ -108,7 +107,7 @@ if __name__ == "__main__":
     ngb_model.fit(X_train, y_train, X_val=X_val, Y_val=y_val)
 
     # Make Predictions on the Validation Set
-    print(f"Making Predictions on Validation Set...")
+    print("Making Predictions on Validation Set...")
     y_validate = df_val[target]
     X_validate = df_val[features]
     preds = ngb_model.predict(X_validate)

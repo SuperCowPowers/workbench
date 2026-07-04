@@ -1,6 +1,11 @@
 [flake8]
 extend-ignore = E203
 max-line-length = 120
+# Lint the model-script .template files too — they are valid Python (jinja
+# placeholders live inside string literals). E402 is ignored for them because
+# templates intentionally run startup prints before their (deferred) imports.
+filename = *.py,*.template
+per-file-ignores = *.template:E402
 # Skip the in-repo virtualenv and generated/build dirs. extend-exclude is
 # additive, so it applies even when --exclude is passed on the command line.
 extend-exclude = .venv,venv,*generated*,.tox,build,dist

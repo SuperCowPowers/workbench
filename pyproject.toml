@@ -119,6 +119,9 @@ line-length = 120
 # Supported Python versions; keeps black from auto-targeting a newer one and
 # warning when run under an older interpreter.
 target-version = ["py310", "py311", "py312", "py313"]
+# Also format the model-script .template files (valid Python; jinja placeholders
+# live inside string literals). Default include is (\.pyi?)$.
+include = '(\.pyi?|\.template)$'
 
 [tool.pytest.ini_options]
 addopts = "-v --cov=workbench --cov-report term-missing"

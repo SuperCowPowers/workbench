@@ -27,11 +27,10 @@ from workbench.endpoints.inference import (
     convert_categorical_types,
     decompress_features,
     expand_proba_column,
-    input_fn,
     match_features_case_insensitive,
-    output_fn,
     save_to_s3,
 )
+from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
 from workbench.endpoints.uq_harness import (
     apply_classification_confidence,
     compute_vgmu_confidence,
@@ -165,7 +164,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     uq_model = model_dict.get("uq_model")
     classification_uq = model_dict.get("classification_uq")
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
-    id_column = TEMPLATE_PARAMS["id_column"]
 
     # Prepare features
     matched_df = match_features_case_insensitive(df, features)
@@ -199,9 +197,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         # VGMU classification confidence
         if classification_uq and "classification_confidence" in classification_uq:
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
-            df["confidence"] = apply_classification_confidence(
-                raw_conf, classification_uq["classification_confidence"]
-            )
+            df["confidence"] = apply_classification_confidence(raw_conf, classification_uq["classification_confidence"])
     else:
         # Regression: average predictions
         df["prediction"] = np.mean(ensemble_preds, axis=0)
@@ -240,7 +236,6 @@ if __name__ == "__main__":
     import argparse
 
     import awswrangler as wr
-    from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
     from sklearn.preprocessing import LabelEncoder
 
     from workbench.endpoints.inference import (
@@ -248,15 +243,12 @@ if __name__ == "__main__":
         compute_classification_metrics,
         compute_regression_metrics,
         get_split_indices,
-
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
     )
     from workbench.endpoints.uq_harness import (
-        apply_classification_confidence,
         calibrate_classification_confidence,
-        compute_vgmu_confidence,
         save_classification_uq,
     )
     from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
@@ -267,7 +259,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
     parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
-    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
     args = parser.parse_args()
 
     # Extract template parameters
@@ -455,7 +449,9 @@ if __name__ == "__main__":
         if n_folds > 1:
             all_preds = np.stack([m.predict(all_df[features]) for m in ensemble_models])
             df_val["prediction_std"] = compress_std_outliers(np.std(all_preds, axis=0))
-            print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
+            print(
+                f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}"
+            )
         else:
             df_val["prediction_std"] = 0.0
 
@@ -480,9 +476,13 @@ if __name__ == "__main__":
             print("No 'smiles' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
         uq_dict = fit_regression_uq(
-            y_true=y_true, y_pred=y_pred, y_std=val_std,
-            val_ids=val_ids, prox_df=prox_df,
-            id_column=id_column, target=target,
+            y_true=y_true,
+            y_pred=y_pred,
+            y_std=val_std,
+            val_ids=val_ids,
+            prox_df=prox_df,
+            id_column=id_column,
+            target=target,
             active_version=hyperparameters.get("uq_version", "v0"),
         )
 

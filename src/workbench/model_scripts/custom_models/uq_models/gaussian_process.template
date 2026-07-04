@@ -1,6 +1,6 @@
 # Model: Gaussian Process Regressor with Standard Deviation output
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, Matern, WhiteKernel, ConstantKernel
+from sklearn.gaussian_process.kernels import Matern, WhiteKernel
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
