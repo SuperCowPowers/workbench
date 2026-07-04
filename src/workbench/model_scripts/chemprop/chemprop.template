@@ -17,7 +17,7 @@ import time
 
 # Template revision marker — bump on edits so log output identifies the script
 # version independent of the training image's installed workbench version.
-TEMPLATE_REVISION = "2026-07-01a (chemprop 2.2.4: LR knobs + per-layer FFN dims)"
+TEMPLATE_REVISION = "2026-07-04a"
 
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
@@ -592,6 +592,17 @@ if __name__ == "__main__":
     id_column = TEMPLATE_PARAMS["id_column"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
+
+    # A list-valued ffn_hidden_dim sets the FFN layer count directly (chemprop
+    # ignores ffn_num_layers in that case). Keep ffn_num_layers consistent so the
+    # recorded/printed hyperparameters reflect the actual model.
+    if isinstance(hyperparameters.get("ffn_hidden_dim"), list):
+        hyperparameters["ffn_num_layers"] = len(hyperparameters["ffn_hidden_dim"])
+
+    # butina_cutoff only applies to the butina split; null it otherwise so the
+    # recorded hyperparameters don't imply an inactive knob is in effect.
+    if hyperparameters.get("split_strategy") != "butina":
+        hyperparameters["butina_cutoff"] = None
 
     if not target_columns or not isinstance(target_columns, list):
         raise ValueError("'targets' must be a non-empty list of target column names")
