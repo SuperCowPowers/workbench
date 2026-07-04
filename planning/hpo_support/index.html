@@ -19,7 +19,7 @@
     
     
       
-        <title>Remove the Shared Training View + Sample-Weight State - ADMET Workbench</title>
+        <title>First-Class Hyperparameter Optimization (HPO) Support - ADMET Workbench</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#remove-the-shared-training-view-sample-weight-state" class="md-skip">
+        <a href="#first-class-hyperparameter-optimization-hpo-support" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Remove the Shared Training View + Sample-Weight State
+              First-Class Hyperparameter Optimization (HPO) Support
             
           </span>
         </div>
@@ -4514,22 +4514,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#motivation" class="md-nav__link">
+  <a href="#principle-why-this-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Motivation
+        Principle (why this exists)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Motivation">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#converged-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Converged design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Converged design">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#root-cause" class="md-nav__link">
+  <a href="#hpo-block-schema-draft" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Root cause
+        hpo block schema (draft)
       
     </span>
   </a>
@@ -4537,10 +4548,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#compounding-the-split-has-aged-out" class="md-nav__link">
+  <a href="#objective-split" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Compounding: the split has aged out
+        Objective + split
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-space-chemprop-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search space (chemprop defaults)
       
     </span>
   </a>
@@ -4553,44 +4575,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#design-principles" class="md-nav__link">
+  <a href="#compute-vehicle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Design Principles
+        Compute vehicle
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#background-aws-feature-store-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Background: AWS Feature Store types
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-changes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What Changes
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="What Changes">
+    <nav class="md-nav" aria-label="Compute vehicle">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#shared-vs-per-model-the-core-distinction" class="md-nav__link">
+  <a href="#local-vs-offload-same-script" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Shared vs per-model (the core distinction)
+        Local vs offload — same script
       
     </span>
   </a>
@@ -4598,10 +4598,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#sample-weights-new-flow" class="md-nav__link">
+  <a href="#instance-sizing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sample weights: new flow
+        Instance sizing
       
     </span>
   </a>
@@ -4609,43 +4609,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#holdout-evaluation" class="md-nav__link">
+  <a href="#artifacts-written" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Holdout / evaluation
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#metrics-unified-default_inference_run" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Metrics: unified default_inference_run()
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#test_inference-test_inference" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        test_inference -&gt; test_inference
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#model-templates" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Model templates
+        Artifacts written
       
     </span>
   </a>
@@ -4658,10 +4625,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#decisions-log" class="md-nav__link">
+  <a href="#module-dependency-architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Decisions Log
+        Module + dependency architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Module + dependency architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#staged-plan-multi-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staged plan (multi-step)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
       
     </span>
   </a>
@@ -4669,32 +4664,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#implementation-plan-ordered-to-keep-the-tree-runnable" class="md-nav__link">
+  <a href="#defaults-chosen" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Implementation Plan (ordered to keep the tree runnable)
+        Defaults (chosen)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Defaults (chosen)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#search-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search space
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#out-of-scope-deferred-downstream-consumers" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#budget-compute" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Out of Scope (deferred — downstream consumers)
+        Budget / compute
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#risks-notes" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#objective-prefer-ood-fall-back-to-cv" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Risks / Notes
+        Objective (prefer OOD, fall back to CV)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#baseline-this-doesnt-need-to-beat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Baseline this doesn't need to beat
       
     </span>
   </a>
@@ -4718,247 +4741,250 @@
 
 
 
-<h1 id="remove-the-shared-training-view-sample-weight-state">Remove the Shared Training View + Sample-Weight State</h1>
-<h2 id="motivation">Motivation</h2>
-<p>Workbench batch jobs intermittently fail (~1 in 50 overnight) with:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>INVALID_VIEW: Failed analyzing stored view &#39;...___training&#39;:
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Table &#39;..._...___sample_weights&#39; does not exist
-</span></code></pre></div>
-<h3 id="root-cause">Root cause</h3>
-<p>Sample weights and the train/holdout split live as <strong>shared mutable state on the
-FeatureSet</strong>:</p>
-<ul>
-<li><code>_&lt;base&gt;___sample_weights</code> — a supplemental weights table</li>
-<li><code>&lt;base&gt;___training</code> — a view that JOINs the base table against that weights table</li>
-</ul>
-<p><code>set_sample_weights()</code> mutates this state by <strong>delete-then-recreate</strong> with a
-<code>time.sleep(3)</code> gap (<code>_delete_weights_table</code>). Promoted models (xgb, pytorch,
-chemprop) all train off the <em>same</em> FeatureSet and each call <code>set_sample_weights()</code>
-at startup. When two jobs run concurrently, one job's delete/recreate window
-overlaps another job's read of the shared <code>___training</code> view → <code>INVALID_VIEW</code>.</p>
-<p>The crash is the visible symptom. The deeper problem: <strong>sample weights and the
-holdout split are per-model-training concerns modeled as shared FeatureSet state.</strong>
-A silent failure mode also exists — Job B overwriting Job A's weights between A's
-write and A's read means A can train on the wrong weights with no error.</p>
-<h3 id="compounding-the-split-has-aged-out">Compounding: the split has aged out</h3>
-<p>The <code>training</code> view was an 80/20 split from when "the split" was a single global
-property of a dataset. Modern models do their own internal scaffold/butina/random
-split via <code>get_split_indices()</code>. The FeatureSet's <code>training</code> flag and the model's
-actual internal split have <strong>already diverged</strong>, so any "holdout" metrics derived
-from the shared view are already partially leaked.</p>
-<h2 id="design-principles">Design Principles</h2>
+<h1 id="first-class-hyperparameter-optimization-hpo-support">First-Class Hyperparameter Optimization (HPO) Support</h1>
+<h2 id="principle-why-this-exists">Principle (why this exists)</h2>
+<p>HPO is <strong>ephemeral search</strong>, not model publishing. <code>to_model()</code>/<code>to_endpoint()</code>
+<em>publish</em> shared artifacts — discoverable by coworkers, in the model registry,
+eligible for promotion. <strong>HPO trials must never become Workbench
+models/endpoints.</strong> The correct shape: <em>search produces a config → Workbench
+publishes only the one winner.</em> The search itself creates zero Workbench
+artifacts.</p>
+<h2 id="converged-design">Converged design</h2>
+<p>HPO runs as <strong>two phases inside a single training job</strong>:</p>
 <ol>
-<li><strong>FeatureSet = pure data abstraction.</strong> Columns, rows, types, id, event_time.
-   No training/holdout/weight state.</li>
-<li><strong>Splits and weights are per-model-training concerns.</strong> They belong to a
-   specific training run, owned by <code>FeaturesToModel</code>, materialized as per-model
-   artifacts (<code>_&lt;base&gt;___&lt;model&gt;_*</code>).</li>
-<li><strong>Holdouts are computed on demand, not persisted.</strong> Either user-managed or
-   temporal (<code>ts_inference</code> already recomputes the temporal split statelessly).</li>
-<li><strong>Minimize API surface.</strong> Backward compatibility is secondary to simplification.</li>
+<li><strong>Phase 1 — search.</strong> Ray Tune / Optuna run many chemprop candidates
+   <em>in-process</em>. Trials never call <code>to_model()</code>, never register. Objective is a
+   held-out/OOD metric (below).</li>
+<li><strong>Phase 2 — publish.</strong> The winning config is trained as the final model and
+   published through the normal <code>to_model()</code> path. Only the winner becomes an
+   artifact.</li>
 </ol>
-<h2 id="background-aws-feature-store-types">Background: AWS Feature Store types</h2>
-<p>Feature Store supports only three scalar types — <code>Integral</code>, <code>Fractional</code>,
-<code>String</code> (plus <code>List</code>/<code>Set</code>/<code>Vector</code> collections). No native bool or datetime.
-Irrelevant to this change directly, but context for why the supplemental-table
-pattern exists.</p>
-<hr />
-<h2 id="what-changes">What Changes</h2>
-<h3 id="shared-vs-per-model-the-core-distinction">Shared vs per-model (the core distinction)</h3>
+<p>This means <strong>no new client API primitive.</strong> HPO is just <code>to_model()</code> with an
+<code>hpo</code> hyperparameter block:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;pec50&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>        <span class="c1"># optuna (local) | ray (offload) | auto</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            <span class="s2">&quot;max_parallel&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>        <span class="c1"># concurrent trials (Ray, offload)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>            <span class="s2">&quot;metric&quot;</span><span class="p">:</span> <span class="s2">&quot;holdout_mae&quot;</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>            <span class="s2">&quot;search_space&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">},</span>  <span class="c1"># see below</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="p">},</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="p">},</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">sample_weights</span><span class="o">=</span><span class="p">{</span><span class="n">mid</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">mid</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">},</span>  <span class="c1"># held-out rows don&#39;t train</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><code>pipelines.json</code> structure is <strong>unchanged</strong> (<code>fs → model:</code>). The non-negotiable
+holds <em>by construction</em> — the trials are ephemeral and in-process; only phase 2
+publishes.</p>
+<h3 id="hpo-block-schema-draft"><code>hpo</code> block schema (draft)</h3>
 <table>
 <thead>
 <tr>
-<th>Artifact</th>
-<th>Status</th>
+<th>key</th>
+<th>default</th>
+<th>meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>&lt;base&gt;___training</code> (shared view)</td>
-<td><strong>REMOVE</strong></td>
+<td><code>backend</code></td>
+<td><code>auto</code></td>
+<td><code>optuna</code> serial (local), <code>ray</code> parallel + ASHA (offload), <code>auto</code> picks by env</td>
 </tr>
 <tr>
-<td><code>_&lt;base&gt;___sample_weights</code> (shared table)</td>
-<td><strong>REMOVE</strong></td>
+<td><code>n_trials</code></td>
+<td><code>40</code></td>
+<td>search budget</td>
 </tr>
 <tr>
-<td>FeatureSet weight-mutation methods</td>
-<td><strong>REMOVE</strong></td>
+<td><code>max_parallel</code></td>
+<td>node GPUs</td>
+<td>concurrent trials (Ray only)</td>
 </tr>
 <tr>
-<td>Per-model training view (<code>workbench_training_view</code>)</td>
-<td><strong>KEEP</strong> — rebuilt from <code>transform(sample_weights=...)</code></td>
+<td><code>metric</code></td>
+<td><code>holdout_mae</code></td>
+<td>objective; minimized</td>
 </tr>
 <tr>
-<td>Per-model weights table</td>
-<td><strong>KEEP</strong> — now <strong>sparse</strong></td>
+<td><code>search_space</code></td>
+<td>built-in</td>
+<td>knob → range/choices (below)</td>
 </tr>
 </tbody>
 </table>
-<h3 id="sample-weights-new-flow">Sample weights: new flow</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">sample_weights</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">temporal_split</span><span class="p">(</span><span class="n">date_col</span><span class="p">,</span> <span class="n">end_date</span><span class="p">)</span>   <span class="c1"># pure, returns {id: weight}</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># compose freely from multiple producers:</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">#   {**outlier_weights, **temporal_weights, ...}</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">transform</span><span class="p">(</span><span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">)</span>
-</span></code></pre></div>
+<p><code>uq_version</code> stays fixed at <code>v1</code> per repo convention.</p>
+<h3 id="objective-split">Objective + split</h3>
+<p>Default objective is <strong>held-out / OOD MAE</strong> — the PXR pattern: zero-weight the
+held-out rows (<code>split == "phase1_test"</code>) out of training, then score MAE on
+exactly those rows. Because we write our own objective function (chemprop's
+current hpopt is a Python pattern, not a fixed-<code>val_loss</code> CLI), this drops in
+directly. <code>holdout</code> rows are designated the same way models already do it —
+via <code>sample_weights</code> zeroing.</p>
+<h3 id="search-space-chemprop-defaults">Search space (chemprop defaults)</h3>
+<p><code>depth</code>, <code>message_hidden_dim</code>, <code>ffn_hidden_dim</code> (incl. <strong>tapered lists</strong> — the
+reason we own the loop rather than use SageMaker AMT's scalar-only space),
+<code>ffn_num_layers</code>, <code>dropout</code>, and the LR schedule (<code>warmup_epochs</code>, <code>init_lr</code>,
+<code>max_lr</code>, <code>final_lr</code>), <code>max_epochs</code>. Ranges overridable per call.</p>
+<h2 id="compute-vehicle">Compute vehicle</h2>
+<p><strong>One SageMaker training job</strong>, reusing the existing <code>pytorch_chem</code> training
+image (already pins chemprop 2.2.4 + CUDA). Rationale:</p>
 <ul>
-<li><code>sample_weights</code> is a <strong>sparse</strong> dict (or <code>[id, weight]</code> DataFrame): default
-  weight is <code>1.0</code>, only exceptions are stored.</li>
-<li><code>FeaturesToModel.transform(sample_weights=...)</code> writes the per-model weights
-  table and builds the per-model view directly — no shared state, no race.</li>
-<li>Per-model weights table columns: <code>[id, sample_weight]</code> (the old <code>training</code>
-  column is dropped; the model does its own internal split).</li>
-<li>Per-model view: <code>base LEFT JOIN weights ... COALESCE(w.sample_weight, 1.0)</code>.</li>
+<li>A raw training job is <strong>not</strong> a Workbench model — <code>FeaturesToModel</code> launches
+  the job <em>then</em> calls <code>create_and_register_model()</code>; HPO does the launch only.
+  Registry-free by construction.</li>
+<li>chemprop stays pinned in <strong>one</strong> image (training-inference parity), and the
+  winning config transfers faithfully because search ran in the identical env.</li>
+<li><strong>Parallelism = Ray Tune</strong> across the node's GPUs, with <strong>ASHA early-stopping</strong>
+  (kill weak trials early). Bounded by the instance's GPUs today; Ray Tune scales
+  to a multi-node cluster later without changing the objective.</li>
 </ul>
-<h3 id="holdout-evaluation">Holdout / evaluation</h3>
-<ul>
-<li><strong>User-managed:</strong> user splits their data, trains on train, calls
-  <code>end.inference(test_df)</code>.</li>
-<li><strong>Temporal:</strong> <code>fs.temporal_split()</code> produces weights for the cutoff;
-  <code>end.ts_inference()</code> recomputes the temporal holdout statelessly at eval time
-  (already implemented — no change).</li>
-</ul>
-<h3 id="metrics-unified-default_inference_run">Metrics: unified <code>default_inference_run()</code></h3>
-<p>The "auto" capture priority is currently implemented three inconsistent ways
-(<code>model_details</code> plugin, <code>confusion_matrix</code>, <code>performance_metrics</code>). Consolidate
-into one resolver on <code>ModelCore</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>default_inference_run() -&gt; str | None
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    priority: full_cross_fold -&gt; test_inference -&gt; first inference run -&gt; None
-</span></code></pre></div>
-<ul>
-<li><code>confusion_matrix</code>, <code>performance_metrics</code>, and the web plugins all call it.</li>
-<li><code>model_training</code> (regexp-scraped from AWS logs, effectively unused) is <strong>not</strong>
-  in the chain.</li>
-<li>Rename the <code>"auto"</code> capture sentinel to <code>"default"</code> to match the resolver name.</li>
-</ul>
-<h3 id="test_inference-test_inference"><code>test_inference</code> -&gt; <code>test_inference</code></h3>
-<ul>
-<li>Method <code>endpoint.auto_inference()</code> -&gt; <code>endpoint.test_inference()</code>; body changes
-  to pull N random rows from the FeatureSet (smoke test that the endpoint serves),
-  captured under <code>"test_inference"</code>.</li>
-<li>All capture-name lookups <code>"test_inference"</code> -&gt; <code>"test_inference"</code>.</li>
-</ul>
-<h3 id="model-templates">Model templates</h3>
-<p>Remove the <code>if n_folds == 1 and "training" in df.columns:</code> branch in all six
-templates (chemprop, xgb, scikit_learn, ngboost, bayesian_ridge,
-gaussian_process). They fall through to <code>get_split_indices()</code>, which already
-handles <code>n_splits=1</code> for random / scaffold / butina (verified).</p>
-<hr />
-<h2 id="decisions-log">Decisions Log</h2>
+<p>Rejected: SageMaker Automatic Model Tuning (unbounded horizontal fan-out, but
+scalar-only search space + emitted-metric objective — loses tapered-FFN search
+and full chemprop-ecosystem embrace). Also rejected (per task): a local Optuna
+loop that calls <code>to_model()</code> per trial.</p>
+<h3 id="local-vs-offload-same-script">Local vs offload — same script</h3>
+<p><code>backend: auto</code> → <strong>Optuna serial</strong> on a laptop <code>--local</code> run, <strong>Ray Tune
+parallel</strong> on the AWS offload. Same objective function; the runtime picks the
+backend. Maps exactly onto the existing ml_pipeline "one script, runs local or
+Batch" model.</p>
+<h3 id="instance-sizing">Instance sizing</h3>
+<p><code>FeaturesToModel</code> bumps the chemprop training instance to <strong>multi-GPU</strong> (+ longer
+max-runtime) <em>when <code>hpo</code> is set</em>, so Ray Tune has real parallel trials. This is a
+training-instance selection keyed on <code>hpo</code> — <strong>not</strong> a new Batch tier. (The
+CPU/Fargate Batch tiers only host the lightweight orchestration; the GPU work is
+the training job.)</p>
+<h3 id="artifacts-written">Artifacts written</h3>
+<p>Alongside the published model, persist <code>best_config.json</code> and the trials
+dataframe to S3 — an audit trail and a <strong>deterministic re-publish escape hatch</strong>
+(rerun <code>to_model()</code> with the frozen config and no <code>hpo</code> block).</p>
+<h2 id="module-dependency-architecture">Module + dependency architecture</h2>
+<p>The generated model script runs in <strong>two</strong> containers — training <em>and</em> the
+(leaner) inference endpoint. <code>workbench.endpoints</code> is a <strong>CI-enforced dependency
+contract</strong> (<code>endpoint-import-smoke</code>): every module must import against the lean
+endpoint manifest, and no heavy dep may be reachable from that surface.
+<code>ray[tune]</code>/<code>optuna</code> are heavy and HPO never runs in an endpoint — so HPO code
+<strong>cannot</strong> live under <code>endpoints</code>.</p>
+<p>New surface: <strong><code>workbench.training</code></strong> — the heavy counterpart (torch/chemprop/
+ray/optuna; no lean constraint). It gets <strong>no parallel import-smoke</strong>: the training
+image is heavy and we control it, so there's no lean manifest to enforce, and a
+smoke would have to install the full stack just to import. The two guards that
+actually matter are cheaper: the endpoint smoke's forbidden-list (armed by the
+<code>training</code> extra) catches any leak of training deps into <code>endpoints</code>, and a static
+template-import lint enforces the deferred-import invariant below.</p>
+<p><strong>Invariant:</strong> the endpoint imports the whole model script at load time and calls
+<code>model_fn</code>/<code>predict_fn</code>; it never runs <code>__main__</code>. Therefore <strong>top-level imports
+must be endpoint-safe, and every <code>workbench.training.*</code> import must be deferred
+inside the template's <code>__main__</code>.</strong> The chemprop template already follows this
+pattern (its training-only <code>fit_regression_uq</code>/<code>save_regression_uq</code> imports are
+deferred inside <code>__main__</code>).</p>
+<h3 id="staged-plan-multi-step">Staged plan (multi-step)</h3>
+<p><strong>Track A — stand up the <code>workbench.training</code> surface (DONE):</strong></p>
+<ol>
+<li>✅ Stood up <code>workbench.training</code> with its contract docstring (deferred-import
+   invariant spelled out).</li>
+<li>✅ Added <code>ray[tune]</code>/<code>optuna</code> as the pyproject <strong><code>training</code> extra</strong> → the
+   existing endpoint smoke auto-adds them to its forbidden list, catching any
+   leak into <code>endpoints</code> for free.</li>
+<li>✅ Moved <code>training_harness</code> → <code>workbench.training.training_harness</code>;
+   canonicalized both copy sites (<code>script_generation</code>, <code>features_to_model</code>),
+   which also fixed a latent bug (the <code>features_to_model</code> path pointed at a
+   non-existent <code>model_script_utils/</code>).</li>
+<li>✅ Added the template-import lint (<code>ci/template_import_check.py</code>, tox env
+   <code>template-import-check</code>, wired into the Python-lint workflow): a template may
+   import <code>workbench.training.*</code> only inside <code>__main__</code>. Replaces the rejected
+   parallel training-smoke.</li>
+<li>✅ <strong>Left <code>uq_harness</code> in <code>endpoints</code></strong> — verified dual-use: imported at
+   top-level by all three deployed templates (xgb/chemprop/pytorch) for the
+   endpoint UQ <em>apply</em> path. Moving it whole would break every endpoint.</li>
+</ol>
+<p><strong>Track B — the HPO harness (next):</strong></p>
+<ol>
+<li>Add <code>workbench.training.chemprop_hpo</code> (Ray-Tune/Optuna harness + OOD
+   objective), imported <strong>inside <code>__main__</code></strong> of the chemprop template.</li>
+<li>Add ray/optuna to the <code>pytorch_chem</code> training image requirements; make
+   <code>FeaturesToModel</code> pick a multi-GPU instance (+ longer runtime) when <code>hpo</code> is set.</li>
+<li>Wire the <code>hpo</code> block through the template's phase-1/phase-2 flow.</li>
+</ol>
+<p>The rule for any future move: <strong>"training-only" = not on any endpoint import
+surface</strong> (no top-level import in any deployed template). Dual-use modules stay
+lean in <code>endpoints</code>.</p>
+<h2 id="scope">Scope</h2>
+<p><strong>Chemprop-first.</strong> It's the framework with a native search ecosystem and the PXR
+motivation. The <code>hpo</code> block + <code>workbench.training</code> surface are designed so
+XGBoost/PyTorch can slot in later (each needs its own objective/search harness),
+but they are <strong>out of scope for the first pass</strong>.</p>
+<h2 id="defaults-chosen">Defaults (chosen)</h2>
+<p>Grounded in chemprop's own <code>basic</code>/<code>learning_rate</code> search groups and our
+ensemble-tuned template defaults (<code>depth=6</code>, <code>hidden_dim=700</code>, <code>dropout=0.1</code>,
+<code>ffn_hidden_dim=2000</code>).</p>
+<h3 id="search-space">Search space</h3>
+<p>Default group = <code>basic</code>, adapted (dropout narrowed because the 5-fold ensemble
+already regularizes; <code>ffn_hidden_dim</code> a categorical that encodes width <em>and</em> the
+tapered heads — the reason we own the loop — folding in <code>ffn_num_layers</code>):</p>
 <table>
 <thead>
 <tr>
-<th>#</th>
-<th>Decision</th>
-<th>Resolution</th>
+<th>knob</th>
+<th>default search</th>
+<th>dist</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>D1</td>
-<td><code>temporal_split</code> location/shape</td>
-<td>Stays on FeatureSet, <strong>pure</strong>, returns <code>{id: weight}</code> dict (was <code>list</code> of holdout ids); no persistence</td>
+<td><code>depth</code></td>
+<td>2–6</td>
+<td>int, step 1</td>
 </tr>
 <tr>
-<td>D2</td>
-<td>Sample weights ownership</td>
-<td>Per-model input to <code>transform(sample_weights=...)</code>; FeatureSet weight-mutation methods removed</td>
+<td><code>hidden_dim</code></td>
+<td>300–2400</td>
+<td>int, step 100</td>
 </tr>
 <tr>
-<td>D3</td>
-<td><code>test_inference</code></td>
-<td>Rename method -&gt; <code>test_inference()</code> (N random rows); rename capture string everywhere</td>
+<td><code>dropout</code></td>
+<td>0.0–0.3</td>
+<td>float, step 0.05</td>
 </tr>
 <tr>
-<td>D4</td>
-<td><code>full_inference</code></td>
-<td><strong>Unchanged</strong> — uses <code>model.training_view()</code> (per-model view), which legitimately reflects outlier removal</td>
-</tr>
-<tr>
-<td>D5</td>
-<td><code>model_training</code> metrics scrape</td>
-<td><strong>Leave for now</strong>; just keep it out of <code>default_inference_run()</code></td>
-</tr>
-<tr>
-<td>M1</td>
-<td><code>model.training_view()</code> fallback</td>
-<td>If per-model view missing: log <strong>error</strong> + create a default per-model view (all rows, weight 1.0); drop the shared-view fallback</td>
-</tr>
-<tr>
-<td>M2</td>
-<td>Weight data structure</td>
-<td><strong>Sparse</strong> — default 1.0, store only exceptions; sparse per-model table; <code>LEFT JOIN ... COALESCE(., 1.0)</code></td>
+<td><code>ffn_hidden_dim</code></td>
+<td><code>2000</code>, <code>1000</code>, <code>500</code>, <code>[1024,256,64]</code>, <code>[512,128]</code></td>
+<td>categorical</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="implementation-plan-ordered-to-keep-the-tree-runnable">Implementation Plan (ordered to keep the tree runnable)</h2>
-<ol>
-<li>
-<p><strong><code>FeaturesToModel.transform(sample_weights=...)</code></strong> — add the parameter; write
-   the sparse per-model weights table from it; build the per-model view via
-   <code>LEFT JOIN ... COALESCE</code>. Stop snapshotting <code>fs.view("training")</code>. Drop the
-   <code>training</code> column references (features_to_model.py 138, 159, 346, 372).</p>
-</li>
-<li>
-<p><strong><code>fs.temporal_split()</code></strong> — make pure: return <code>{id: weight}</code> dict, remove the
-   <code>set_sample_weights</code>/<code>add_filter</code> persistence.</p>
-</li>
-<li>
-<p><strong><code>model.training_view()</code></strong> — M1 fallback (error + create default per-model
-   view); remove the line-710 shared-view fallback.</p>
-</li>
-<li>
-<p><strong>Metrics consolidation</strong> — add <code>ModelCore.default_inference_run()</code>; route
-   <code>confusion_matrix</code>/<code>performance_metrics</code> "auto" -&gt; "default" through it;
-   repoint web plugins (<code>model_details</code>, <code>model_plot</code>, <code>confusion_explorer</code>).</p>
-</li>
-<li>
-<p><strong><code>test_inference</code> -&gt; <code>test_inference</code></strong> — rename method + capture string in
-   <code>endpoint_core</code>, <code>async_endpoint_core</code>, <code>model_core</code> defaults,
-   <code>shapley_values</code>, and the web plugins.</p>
-</li>
-<li>
-<p><strong>Model templates</strong> — remove the <code>"training"</code>-column split branch in all six.</p>
-</li>
-<li>
-<p><strong><code>pandas_to_features</code></strong> — remove the <code>incoming_hold_out_ids</code> flow
-   (319-325, 431-432) and the <code>set_training_holdouts</code> call.</p>
-</li>
-<li>
-<p><strong>Delete <code>TrainingView</code></strong> — <code>views/training_view.py</code>, the export in
-   <code>views/__init__.py</code>, the <code>view_name == "training"</code> auto-create case in
-   <code>view.py</code> (288-293), and the shell registration in <code>workbench_shell.py:287</code>.</p>
-</li>
-<li>
-<p><strong>Delete FeatureSet methods</strong> — <code>set_sample_weights</code>, <code>get_sample_weights</code>,
-   <code>add_filter</code>, <code>set_training_holdouts</code>, <code>get_training_holdouts</code>,
-   <code>_create_weights_table</code>, <code>_delete_weights_table</code>, the <code>pull_training_data</code>
-   helper (line 374), and the <code>view("training")</code> usages.</p>
-</li>
-<li>
-<p><strong>Stragglers</strong> — <code>endpoint_utils.get_training_data</code> / <code>get_evaluation_data</code>
-    (remove; they read <code>fs.view("training")</code>); <code>api/endpoint.py:270</code>.</p>
-</li>
-</ol>
-<p>After step 6 no library code reads the shared training view; after step 7 no
-ingest path writes it; steps 8-10 are pure deletion.</p>
-<h2 id="out-of-scope-deferred-downstream-consumers">Out of Scope (deferred — downstream consumers)</h2>
+<p>Opt-in <code>learning_rate</code> group (<code>search_space="basic+lr"</code>): <code>max_lr</code> 1e-4–5e-3 log ·
+<code>warmup_epochs</code> 2–10 step 2 · <code>init_lr</code>/<code>final_lr</code> as ratios of <code>max_lr</code>. Off by
+default to keep the search 4-D and well-conditioned.</p>
+<p><strong>Never searched</strong> (fixed at configured values): <code>uq_version</code> (v1), <code>max_epochs</code>,
+<code>patience</code>, <code>batch_size</code>, <code>split_strategy</code>, <code>criterion</code>, <code>seed</code>, foundation settings.</p>
+<h3 id="budget-compute">Budget / compute</h3>
 <ul>
-<li>Updating downstream model pipelines (~40 call sites using <code>fs.set_sample_weights</code>).</li>
-<li>Downstream eval taxonomy / capture-name conventions for nightly vs promoted holdouts.</li>
-<li>Whether nightly eval should move to temporal (<code>ts_inference</code>) as canonical.</li>
-<li>D5 full removal of the <code>model_training</code> metrics scrape.</li>
+<li><code>n_trials = 40</code> (TPE + ASHA; ASHA kills weak trials early).</li>
+<li>Instance <code>ml.g6.12xlarge</code> (4× L4/24GB) — multi-GPU sibling of the current
+  chemprop <code>ml.g6.2xlarge</code>. Overridable (<code>g6.24/48xlarge</code> for bigger sweeps).</li>
+<li><code>max_parallel = num_gpus</code> (→ 4, one trial/GPU). Fractional-GPU (2/GPU) is a
+  documented lever, not the default.</li>
+<li><code>max_runtime = 24h</code> (matches the Batch job-def ceiling).</li>
 </ul>
-<h2 id="risks-notes">Risks / Notes</h2>
+<h3 id="objective-prefer-ood-fall-back-to-cv">Objective (prefer OOD, fall back to CV)</h3>
 <ul>
-<li>Existing FeatureSets in production have a shared <code>___sample_weights</code> table and
-  <code>___training</code> view. New code ignores them; they become orphaned until the
-  FeatureSet is recreated or cleaned up. <code>list_supplemental_data_tables</code> enumerates
-  by <code>_&lt;base&gt;___*</code> prefix, so FeatureSet deletion still sweeps them.</li>
-<li>Per-model weights tables/views are swept by the same prefix mechanism on
-  FeatureSet delete and by model deletion — verify both paths.</li>
+<li>Held-out rows designated (zero-weighted via <code>sample_weights</code>) → objective =
+  <strong>MAE on those rows</strong> (<code>holdout_mae</code>) — the honest OOD read.</li>
+<li>None designated → <strong>mean 5-fold CV MAE</strong> (<code>cv_mae</code>), using the existing
+  <code>n_folds</code>. No extra user setup.</li>
+<li>Minimized either way; the active objective is <strong>logged</strong> so it's never ambiguous.</li>
 </ul>
+<h2 id="baseline-this-doesnt-need-to-beat">Baseline this doesn't need to beat</h2>
+<p>The hand-picked "deliberate variant" pattern
+(<code>open_admet_pxr/phase1/pxr_chemprop_tuned_phase1.py</code>) remains the pragmatic
+choice for a small knob space. Automated HPO is for wider searches, not casual
+tuning.</p>
 
 
 
