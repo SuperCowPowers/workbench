@@ -178,12 +178,48 @@ motivation. The `hpo` block + `workbench.training` surface are designed so
 XGBoost/PyTorch can slot in later (each needs its own objective/search harness),
 but they are **out of scope for the first pass**.
 
-## Defaults still to confirm
+## Defaults (chosen)
 
-- Search-space default ranges per knob.
-- `n_trials` / `max_parallel` defaults and the multi-GPU instance type for HPO.
-- Metric name/direction (`holdout_mae`, minimize) and how `holdout` is designated
-  when a caller has no explicit held-out split (fall back to CV, or require it?).
+Grounded in chemprop's own `basic`/`learning_rate` search groups and our
+ensemble-tuned template defaults (`depth=6`, `hidden_dim=700`, `dropout=0.1`,
+`ffn_hidden_dim=2000`).
+
+### Search space
+
+Default group = `basic`, adapted (dropout narrowed because the 5-fold ensemble
+already regularizes; `ffn_hidden_dim` a categorical that encodes width *and* the
+tapered heads — the reason we own the loop — folding in `ffn_num_layers`):
+
+| knob | default search | dist |
+|---|---|---|
+| `depth` | 2–6 | int, step 1 |
+| `hidden_dim` | 300–2400 | int, step 100 |
+| `dropout` | 0.0–0.3 | float, step 0.05 |
+| `ffn_hidden_dim` | `2000`, `1000`, `500`, `[1024,256,64]`, `[512,128]` | categorical |
+
+Opt-in `learning_rate` group (`search_space="basic+lr"`): `max_lr` 1e-4–5e-3 log ·
+`warmup_epochs` 2–10 step 2 · `init_lr`/`final_lr` as ratios of `max_lr`. Off by
+default to keep the search 4-D and well-conditioned.
+
+**Never searched** (fixed at configured values): `uq_version` (v1), `max_epochs`,
+`patience`, `batch_size`, `split_strategy`, `criterion`, `seed`, foundation settings.
+
+### Budget / compute
+
+- `n_trials = 40` (TPE + ASHA; ASHA kills weak trials early).
+- Instance `ml.g6.12xlarge` (4× L4/24GB) — multi-GPU sibling of the current
+  chemprop `ml.g6.2xlarge`. Overridable (`g6.24/48xlarge` for bigger sweeps).
+- `max_parallel = num_gpus` (→ 4, one trial/GPU). Fractional-GPU (2/GPU) is a
+  documented lever, not the default.
+- `max_runtime = 24h` (matches the Batch job-def ceiling).
+
+### Objective (prefer OOD, fall back to CV)
+
+- Held-out rows designated (zero-weighted via `sample_weights`) → objective =
+  **MAE on those rows** (`holdout_mae`) — the honest OOD read.
+- None designated → **mean 5-fold CV MAE** (`cv_mae`), using the existing
+  `n_folds`. No extra user setup.
+- Minimized either way; the active objective is **logged** so it's never ambiguous.
 
 ## Baseline this doesn't need to beat
 
