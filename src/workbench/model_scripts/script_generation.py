@@ -137,7 +137,7 @@ def generate_model_script(template_params: dict) -> str:
             log.info(f"Copied supporting file: {entry}")
 
     # Copy the training_harness.py wrapper (handles post-training inference bundling)
-    entrypoint_path = package_dir.parent / "endpoints" / "training_harness.py"
+    entrypoint_path = package_dir.parent / "training" / "training_harness.py"
     if entrypoint_path.exists():
         shutil.copy(entrypoint_path, output_dir)
         log.info("Copied training_harness.py")

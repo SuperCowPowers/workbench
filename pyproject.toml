@@ -68,6 +68,13 @@ ui = [
     "dash-bootstrap-components >= 1.6.0",
     "dash_ag_grid >= 33.3.3",
 ]
+# Training-container-only deps (the workbench.training surface). Never installed
+# in endpoint containers — being a non-dev extra, these auto-extend the
+# endpoint-import-smoke forbidden list, so any leak into workbench.endpoints fails CI.
+training = [
+    "ray[tune]",
+    "optuna",
+]
 dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black"]
 all = [
     "workbench[ui]",

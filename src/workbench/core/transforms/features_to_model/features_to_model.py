@@ -217,7 +217,7 @@ class FeaturesToModel(Transform):
             source_dir = Path(script_path).parent
             harness_dst = source_dir / "training_harness.py"
             if not harness_dst.exists():
-                harness_src = pkg_resources.files("workbench") / "model_script_utils" / "training_harness.py"
+                harness_src = pkg_resources.files("workbench") / "training" / "training_harness.py"
                 shutil.copy(str(harness_src), harness_dst)
                 self.log.info(f"Copied training_harness.py into {source_dir}")
 

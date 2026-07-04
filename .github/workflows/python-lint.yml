@@ -27,3 +27,7 @@ jobs:
     - name: Run Flake8 (Linting)
       run: |
         flake8 --exclude '*generated*' src/workbench applications tests
+
+    - name: Template import invariant (no top-level workbench.training imports)
+      run: |
+        python ci/template_import_check.py
