@@ -37,7 +37,7 @@ dependencies = [
     # sagemaker/core/utils/utils.py, marked "TODO: Remove post-launch").
     # Breaks assumed-role runs: FeatureGroup offline stores get provisioned
     # with the caller's SSO creds and fail on glue:GetDatabase. Cap both
-    # until the shim is removed upstream.
+    # until fixed: https://github.com/aws/sagemaker-python-sdk/issues/5986
     "sagemaker >= 3.6.0, < 3.13",
     "sagemaker-core >= 2.12.0, < 2.13",
     "redis >= 5.0.1",
