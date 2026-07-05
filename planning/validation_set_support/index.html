@@ -4599,6 +4599,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="First pass vs. later">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deferred-follow-on-todo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred / follow-on (TODO)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4756,13 +4773,52 @@ Existing models keep their current script + view until they retrain; a retrain
 regenerates both together from the current template + view code. Custom scripts
 that don't call the util are unaffected — they just see the extra columns.</p>
 <h2 id="first-pass-vs-later">First pass vs. later</h2>
+<p><strong>First pass:</strong> eval-only — route validation rows out of train/CV, score them
+held-out, mark them with a <code>validation</code> column in <code>validation_predictions.csv</code>,
+print <code>holdout_mae</code>. Minimal honest-validation capability; unblocks HPO's
+<code>holdout_mae</code> objective. Additive and a no-op when nothing is marked.</p>
+<h3 id="deferred-follow-on-todo">Deferred / follow-on (TODO)</h3>
+<p>Formalizing <code>validation</code> opens broader template-script cleanups that should NOT
+ride along with this pass (each touches downstream consumers):</p>
 <ul>
-<li><strong>First pass:</strong> eval-only — route validation rows out of train/CV and score
-  them held-out. This is the minimal honest-validation capability and unblocks
-  HPO's <code>holdout_mae</code> objective.</li>
-<li><strong>Later (per template):</strong> use the validation set as the early-stopping monitor
-  (chemprop/pytorch) instead of a CV fold.</li>
+<li><strong>Rename <code>validation_predictions.csv</code> → <code>oof_predictions.csv</code>.</strong> That file is
+  really the CV out-of-fold predictions; the held-out rows are the true
+  validation. Renaming touches the web UI, <code>Model.get_inference_predictions()</code>,
+  and plotting — do it as its own change.</li>
+<li><strong>Early-stopping on the validation set</strong> (chemprop/pytorch) instead of a CV
+  fold, when a validation set is designated.</li>
+<li><strong>Forward <code>sample_weight</code> in pytorch/chemprop</strong> (xgb already does) now that it
+  is a clean framework-weight axis.</li>
+<li><strong>Migrate client pipeline scripts</strong> (<code>ideaya/promoted_ml_pipelines/ml_pipelines</code>)
+  from weight-0 designation to the explicit <code>exclude_ids</code> / <code>validation_ids</code> roles.
+  The matched pair (<code>temporal_split()</code> at the top, <code>ts_inference()</code> at the bottom)
+  still holds — <code>temporal_split()</code> now feeds <code>validation_ids</code> for the in-training
+  read, and <code>ts_inference()</code> stays as the endpoint-side read. Example:</li>
 </ul>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># before: both anomalies and the temporal holdout smuggled through weight-0</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">sample_weights</span> <span class="o">=</span> <span class="n">compute_sample_weights</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>          <span class="c1"># {id: 0.0} anomalies</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">exclude_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_weights</span><span class="p">)</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;ts&quot;</span><span class="p">:</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">sample_weights</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">sample_weights</span><span class="p">,</span> <span class="o">**</span><span class="n">fs</span><span class="o">.</span><span class="n">temporal_split</span><span class="p">(</span><span class="s2">&quot;udm_asy_date&quot;</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="s2">&quot;2025-10-17&quot;</span><span class="p">)}</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="o">...</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;ts&quot;</span><span class="p">:</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">end</span><span class="o">.</span><span class="n">ts_inference</span><span class="p">(</span><span class="s2">&quot;udm_asy_date&quot;</span><span class="p">,</span> <span class="n">after_date</span><span class="o">=</span><span class="s2">&quot;2025-10-17&quot;</span><span class="p">,</span> <span class="n">exclude_ids</span><span class="o">=</span><span class="n">exclude_ids</span><span class="p">)</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="c1"># after: explicit roles</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="n">exclude_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">compute_sample_weights</span><span class="p">(</span><span class="o">...</span><span class="p">))</span>       <span class="c1"># anomalies → dropped</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="n">validation_ids</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">temporal_split</span><span class="p">(</span><span class="s2">&quot;udm_asy_date&quot;</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="s2">&quot;2025-10-17&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;ts&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">exclude_ids</span><span class="o">=</span><span class="n">exclude_ids</span><span class="p">,</span> <span class="n">validation_ids</span><span class="o">=</span><span class="n">validation_ids</span><span class="p">)</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="o">...</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;ts&quot;</span><span class="p">:</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">end</span><span class="o">.</span><span class="n">ts_inference</span><span class="p">(</span><span class="s2">&quot;udm_asy_date&quot;</span><span class="p">,</span> <span class="n">after_date</span><span class="o">=</span><span class="s2">&quot;2025-10-17&quot;</span><span class="p">,</span> <span class="n">exclude_ids</span><span class="o">=</span><span class="n">exclude_ids</span><span class="p">)</span>  <span class="c1"># unchanged</span>
+</span></code></pre></div>
+<p>Anomalies overlapping the post-date window get <code>exclude</code> precedence (dropped from
+  both training and the held-out eval), matching today's behavior. A natural extra
+  cleanup: have <code>compute_sample_weights</code> return a list directly.</p>
+<p><code>FeatureSetCore.temporal_split()</code> now returns a <strong>list of holdout ids</strong> (was a
+<code>{id: 0.0}</code> dict) to feed <code>to_model(validation_ids=...)</code> — done as part of this
+pass, since weight-0 no longer holds anything out.</p>
 <h2 id="constraints">Constraints</h2>
 <ul>
 <li>Keep <code>uq_version</code> conventions and existing behavior intact for models that
