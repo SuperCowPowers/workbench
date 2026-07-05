@@ -56,6 +56,13 @@ if os.getenv("WORKBENCH_SKIP_LOGGING", "False").lower() != "true":
 try:
     import awswrangler as wr
 
+    # Pin awswrangler to its single-node Python/pandas engine. If `ray` is
+    # importable (e.g. HPO's `training` extra), awswrangler auto-switches to its
+    # distributed RAY engine, which rejects the per-call `boto3_session` Workbench
+    # passes on every Athena query. Our data path is single-node boto3.
+    wr.engine.set("python")
+    wr.memory_format.set("pandas")
+
     wr.config.workgroup = "workbench-workgroup"
 except ImportError:
     # awswrangler is optional in minimal installs (e.g. the workbench.lambda_layer

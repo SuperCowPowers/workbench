@@ -31,3 +31,16 @@ Modules:
   source dir and run as ``python training_harness.py <entry_point>`` (a copied
   script, not an imported symbol).
 """
+
+# Pin awswrangler to its single-node Python/pandas engine (see workbench/__init__.py).
+# This surface owns the pin for the training container — where `ray` lives (HPO's
+# `ray[tune]`) and would flip awswrangler to its distributed engine — since model
+# scripts import only `workbench.endpoints.*`/`workbench.training.*`, never a global
+# `workbench`.
+try:
+    import awswrangler as wr
+
+    wr.engine.set("python")
+    wr.memory_format.set("pandas")
+except ImportError:
+    pass
