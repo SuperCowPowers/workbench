@@ -6,9 +6,10 @@ instance in a private subnet of the Workbench VPC, registers it with AWS Systems
 Manager (SSM), and opens a port-forwarding tunnel from a local port to the private
 Redis endpoint — **no SSH key, no public IP, no inbound security-group rule**.
 
-The tunnel runs in the foreground; **press Ctrl-C to close it, and the instance is
-stopped automatically** (no standing cost, nothing left running). Run it again to
-reconnect (it restarts the same instance).
+The tunnel runs in the foreground and reopens the session automatically if it drops
+(e.g. the SSM idle timeout); **press Ctrl-C to close it, and the instance is stopped
+automatically** (no standing cost, nothing left running). Run it again to reconnect
+(it restarts the same instance).
 
 Everything is discovered, not hardcoded: the VPC and private subnets come from the
 active Workbench config (``WORKBENCH_VPC_ID`` / ``WORKBENCH_SUBNET_IDS``) and the
@@ -177,7 +178,8 @@ def wait_ssm_registered(ssm, instance_id: str, timeout: int = 180) -> None:
 
 
 def open_tunnel(instance_id: str, endpoint: str, local_port: int, region: str) -> None:
-    """Run `aws ssm start-session` port-forwarding in the foreground (blocks until Ctrl-C)."""
+    """Run `aws ssm start-session` port-forwarding in the foreground, reconnecting whenever
+    the session drops (SSM idle timeout, network blip). Blocks until Ctrl-C."""
     cmd = [
         "aws",
         "ssm",
@@ -195,9 +197,24 @@ def open_tunnel(instance_id: str, endpoint: str, local_port: int, region: str) -
     print("\n" + "=" * 70)
     print(f"Tunnel open:  localhost:{local_port}  →  {endpoint}:{REDIS_PORT}")
     print(f"In another terminal:  redis-cli -h localhost -p {local_port}")
+    print("Sessions that drop (SSM idle timeout, etc.) are reopened automatically.")
     print("Press Ctrl-C here to close the tunnel (the instance is stopped automatically).")
     print("=" * 70 + "\n")
-    subprocess.run(cmd)
+
+    rapid_failures = 0
+    while True:
+        started = time.monotonic()
+        subprocess.run(cmd)
+        # Session ended on its own (Ctrl-C raises KeyboardInterrupt out of run()).
+        if time.monotonic() - started < 30:
+            rapid_failures += 1
+            if rapid_failures >= 3:
+                print("Session keeps failing immediately — giving up.")
+                return
+        else:
+            rapid_failures = 0
+        print("\nSession dropped — reconnecting …\n")
+        time.sleep(2)
 
 
 def terminate(ec2, instance_id: str, vpc_id: str) -> None:
