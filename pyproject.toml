@@ -32,7 +32,14 @@ dependencies = [
     "boto3 >= 1.42.2",
     "botocore >= 1.42.2",
     "awswrangler >= 3.4.0",
-    "sagemaker >= 3.6.0, < 4.0",
+    # sagemaker-core 2.13+ builds its main SageMaker client from the default
+    # credential chain, ignoring the passed boto3 session (pre-GA shim in
+    # sagemaker/core/utils/utils.py, marked "TODO: Remove post-launch").
+    # Breaks assumed-role runs: FeatureGroup offline stores get provisioned
+    # with the caller's SSO creds and fail on glue:GetDatabase. Cap both
+    # until the shim is removed upstream.
+    "sagemaker >= 3.6.0, < 3.13",
+    "sagemaker-core >= 2.12.0, < 2.13",
     "redis >= 5.0.1",
     "cryptography >= 46.0.0",
     "requests >= 2.26.0",

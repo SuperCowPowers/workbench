@@ -612,7 +612,6 @@ pydantic==2.13.4
     #   mlflow-tracing
     #   pyiceberg
     #   sagemaker-core
-    #   sagemaker-train
 pydantic-core==2.46.4
     # via
     #   -c ci/.uv-constraints.txt
@@ -702,7 +701,6 @@ requests==2.34.2
     #   mlflow-skinny
     #   pyiceberg
     #   sagemaker-core
-    #   sagemaker-train
 retrying==1.4.2
     # via
     #   -c ci/.uv-constraints.txt
@@ -725,13 +723,14 @@ s3transfer==0.17.1
     # via
     #   -c ci/.uv-constraints.txt
     #   boto3
-sagemaker==3.13.1
+sagemaker==3.12.0
     # via
     #   -c ci/.uv-constraints.txt
     #   workbench (pyproject.toml)
-sagemaker-core==2.13.1
+sagemaker-core==2.12.0
     # via
     #   -c ci/.uv-constraints.txt
+    #   workbench (pyproject.toml)
     #   sagemaker
     #   sagemaker-mlops
     #   sagemaker-serve
@@ -740,7 +739,7 @@ sagemaker-mlflow==0.4.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-train
-sagemaker-mlops==1.13.1
+sagemaker-mlops==1.12.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker
@@ -748,12 +747,12 @@ sagemaker-schema-inference-artifacts==0.0.5
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
-sagemaker-serve==1.13.1
+sagemaker-serve==1.12.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker
     #   sagemaker-mlops
-sagemaker-train==1.13.1
+sagemaker-train==1.12.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker
