@@ -469,11 +469,12 @@ class FeatureSetCore(Artifact):
         remove_fg = cls.aws_feature_group_delete(feature_set_name)
         cls.ensure_feature_group_deleted(remove_fg)
 
-        # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
-        AthenaSource.managed_delete(data_source_name, database=database)
-
-        # Delete any views associated with this FeatureSet
-        cls.delete_views(offline_table, database)
+        # Delete our underlying DataSource and views (skip if the offline store never materialized)
+        if data_source_name and database:
+            AthenaSource.managed_delete(data_source_name, database=database)
+            cls.delete_views(offline_table, database)
+        else:
+            cls.log.warning(f"FeatureSet {feature_set_name} has no offline store config, skipping DataSource delete")
 
         # Feature Sets can often have a lot of cruft so delete the entire bucket/prefix
         s3_delete_path = cls.feature_sets_s3_path + f"/{feature_set_name}/"
