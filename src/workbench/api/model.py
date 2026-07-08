@@ -55,7 +55,7 @@ class Model(ModelCore):
         tags: list = None,
         serverless: bool = True,
         mem_size: int = 2048,
-        max_concurrency: int = 5,
+        max_concurrency: int = 2,
         instance: str = None,
         data_capture: bool = False,
         async_endpoint: bool = False,
@@ -72,7 +72,7 @@ class Model(ModelCore):
             tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.
             serverless (bool): Set the endpoint to be serverless (default: True)
             mem_size (int): The memory size for the Endpoint in MB (default: 2048)
-            max_concurrency (int): The maximum concurrency for the Endpoint (default: 5)
+            max_concurrency (int): The maximum concurrency for the Endpoint (default: 2)
             instance (str): The instance type for Realtime Endpoints (default: None = auto-select based on model)
             data_capture (bool): Enable data capture for the Endpoint (default: False)
             async_endpoint (bool): Deploy as an async endpoint (default: False). Async

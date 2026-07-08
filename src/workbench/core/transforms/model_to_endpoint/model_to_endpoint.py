@@ -161,7 +161,7 @@ class ModelToEndpoint(Transform):
         self,
         workbench_model: ModelCore,
         mem_size: int = 2048,
-        max_concurrency: int = 5,
+        max_concurrency: int = 2,
         data_capture: bool = False,
         capture_percentage: int = 100,
     ):
