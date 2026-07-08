@@ -588,11 +588,21 @@ if __name__ == "__main__":
 
         if model_type == "classifier":
             all_probs = np.stack([m.predict_proba(X_h) for m in ensemble_models])
-            h_pred = label_encoder.inverse_transform(np.argmax(np.mean(all_probs, axis=0), axis=1))
+            avg_probs = np.mean(all_probs, axis=0)
+            h_pred = label_encoder.inverse_transform(np.argmax(avg_probs, axis=1))
             y_h_true = holdout_df[target].values
             score_df = compute_classification_metrics(y_h_true, h_pred, label_encoder.classes_, target)
             print_classification_metrics(score_df, target, label_encoder.classes_)
             h_out = pd.DataFrame({id_column: holdout_df[id_column].values, target: y_h_true, "prediction": h_pred})
+            # Carry per-class probabilities (+ confidence) so held-out rows aren't NaN in the
+            # proba columns after the concat below — the downstream ROC-AUC read requires them.
+            h_out["pred_proba"] = [p.tolist() for p in avg_probs]
+            h_out = expand_proba_column(h_out, label_encoder.classes_)
+            if classification_uq and "classification_confidence" in classification_uq:
+                raw_conf = compute_vgmu_confidence(avg_probs, all_probs)
+                h_out["confidence"] = apply_classification_confidence(
+                    raw_conf, classification_uq["classification_confidence"]
+                )
         else:
             all_preds = np.stack([m.predict(X_h) for m in ensemble_models])
             h_pred = np.mean(all_preds, axis=0)

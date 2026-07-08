@@ -741,6 +741,15 @@ if __name__ == "__main__":
             score_df = compute_classification_metrics(y_h_true, h_pred, label_encoder.classes_, target)
             print_classification_metrics(score_df, target, label_encoder.classes_)
             h_out = pd.DataFrame({id_column: holdout_df[id_column].values, target: y_h_true, "prediction": h_pred})
+            # Carry per-class probabilities (+ confidence) so held-out rows aren't NaN in the
+            # proba columns after the concat below — the downstream ROC-AUC read requires them.
+            h_out["pred_proba"] = [p.tolist() for p in avg_probs]
+            h_out = expand_proba_column(h_out, label_encoder.classes_)
+            if classification_uq and "classification_confidence" in classification_uq:
+                raw_conf = compute_vgmu_confidence(avg_probs, all_preds)
+                h_out["confidence"] = apply_classification_confidence(
+                    raw_conf, classification_uq["classification_confidence"]
+                )
         else:
             fold_preds = np.stack([p.flatten() for p in all_preds])
             h_pred = np.mean(fold_preds, axis=0)
