@@ -134,6 +134,11 @@ def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: st
 # Tag-safe values are stored plain (no marker); only unsafe values get the marker.
 B64_MARKER = "b64:"
 
+# AWS Partner Revenue Measurement (PRM) product code for the ADMET Workbench Marketplace
+# listing. Applied as tag `aws-apn-id`=`pc:<code>` on deployed resources so AWS attributes
+# the driven service consumption to the listing (see PRM onboarding guide).
+AWS_MARKETPLACE_PRODUCT_CODE = "41c7xn73mrdq90y6g5ktdo7ye"
+
 # AWS resource tag values allow letters, numbers, spaces, and _ . : / = + - @
 _TAG_SAFE_RE = re.compile(r"^[A-Za-z0-9 _.:/=+@-]*$")
 
