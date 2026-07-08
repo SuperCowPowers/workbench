@@ -82,7 +82,7 @@ training = [
     "ray[tune]",
     "optuna",
 ]
-dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black"]
+dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black", "aws-cdk-lib"]
 all = [
     "workbench[ui]",
     "workbench[dev]",
