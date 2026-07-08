@@ -395,6 +395,7 @@ class WorkbenchCoreStack(Stack):
                 "batch:SubmitJob",
                 "batch:TerminateJob",
                 "batch:CancelJob",
+                "batch:TagResource",  # SubmitJob with Tags (PRM attribution) requires TagResource
             ],
             resources=read_statement.resources,
         )

@@ -20,6 +20,8 @@ JOB_DEFINITIONS = {
     "medium": os.environ["JOB_DEF_MEDIUM"],
     "large": os.environ["JOB_DEF_LARGE"],
 }
+# PRM attribution: tag the job and propagate to the Fargate/ECS task (the billable resource)
+PRODUCT_CODE = os.environ["AWS_MARKETPLACE_PRODUCT_CODE"]
 
 
 def find_active_jobs_with_output(output_name: str) -> list[str]:
@@ -97,6 +99,8 @@ def lambda_handler(event, context):
                 "jobQueue": JOB_QUEUE,
                 "jobDefinition": job_def_name,
                 "containerOverrides": {"environment": env_vars},
+                "propagateTags": True,
+                "tags": {"aws-apn-id": f"pc:{PRODUCT_CODE}"},
             }
 
             # If this job has inputs, look for jobs that produce those outputs
