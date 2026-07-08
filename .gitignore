@@ -169,3 +169,6 @@ open_admet_pxr/phase2/phase2_chemprop_submission.csv
 
 # Marketing drafts (local only, not for repo)
 docs/marketing/
+
+# Understand Anything
+src/workbench/.understand-anything/
