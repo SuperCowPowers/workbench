@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 from typing import Union
 from sagemaker.core.resources import ModelPackageGroup
-from sagemaker.core.shapes.shapes import MetricDefinition
+from sagemaker.core.shapes.shapes import MetricDefinition, Tag
 from sagemaker.train.model_trainer import ModelTrainer
 from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition, OutputDataConfig
 import awswrangler as wr
@@ -21,6 +21,7 @@ from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFrame
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.workbench_logging import _suppress_sagemaker_logging
+from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE
 
 
 class FeaturesToModel(Transform):
@@ -300,6 +301,9 @@ class FeaturesToModel(Transform):
         # Convert metric definitions to V3 MetricDefinition objects
         v3_metric_definitions = [MetricDefinition(name=m["Name"], regex=m["Regex"]) for m in metric_definitions]
 
+        # PRM attribution tag: connects the training-job compute to our Marketplace listing
+        prm_tag = Tag(key="aws-apn-id", value=f"pc:{AWS_MARKETPLACE_PRODUCT_CODE}")
+
         # Create ModelTrainer (V3 replacement for Estimator)
         # Use command= to run our entrypoint wrapper, which executes the model script
         # and then bundles inference code/metadata into the model artifacts
@@ -315,6 +319,7 @@ class FeaturesToModel(Transform):
             base_job_name=self.output_name,
             role=self.workbench_role_arn,
             sagemaker_session=self.sm_session,
+            tags=[prm_tag],
         )
         self.model_trainer.with_metric_definitions(v3_metric_definitions)
 
