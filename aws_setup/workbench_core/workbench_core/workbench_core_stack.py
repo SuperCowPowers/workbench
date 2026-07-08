@@ -710,7 +710,13 @@ class WorkbenchCoreStack(Stack):
             iam.PolicyStatement: The policy statement for SageMaker model training.
         """
         return iam.PolicyStatement(
-            actions=["sagemaker:CreateTrainingJob", "sagemaker:DescribeTrainingJob"],
+            # AddTags/DeleteTags: CreateTrainingJob with Tags (PRM attribution) requires AddTags
+            actions=[
+                "sagemaker:CreateTrainingJob",
+                "sagemaker:DescribeTrainingJob",
+                "sagemaker:AddTags",
+                "sagemaker:DeleteTags",
+            ],
             resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:training-job/*"],
         )
 
