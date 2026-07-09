@@ -38,8 +38,14 @@ dependencies = [
     # Breaks assumed-role runs: FeatureGroup offline stores get provisioned
     # with the caller's SSO creds and fail on glue:GetDatabase. Cap both
     # until fixed: https://github.com/aws/sagemaker-python-sdk/issues/5986
+    # The whole family is pinned (not just sagemaker-core): the sub-packages
+    # declare only floors on sagemaker-core, so without caps pip can mix
+    # generations (e.g. mlops 1.15 + core 2.12) and break at import time.
     "sagemaker >= 3.6.0, < 3.13",
     "sagemaker-core >= 2.12.0, < 2.13",
+    "sagemaker-mlops >= 1.12.0, < 1.13",
+    "sagemaker-serve >= 1.12.0, < 1.13",
+    "sagemaker-train >= 1.12.0, < 1.13",
     "redis >= 5.0.1",
     "cryptography >= 46.0.0",
     "requests >= 2.26.0",
