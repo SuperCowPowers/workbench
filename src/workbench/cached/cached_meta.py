@@ -241,6 +241,28 @@ class CachedMeta(CloudMeta):
             return super().endpoints(details=False)
         return self._refresh_details("endpoints")
 
+    @cache_result
+    def pipelines(self) -> list:
+        """Get all ML Pipelines defined under ML_PIPELINES_ROOT (cached)
+
+        Returns:
+            list: Top-level groups, each {name, subgroups, pipelines}, nesting the
+                pipelines by their directory grouping.
+        """
+        return super().pipelines()
+
+    @cache_result
+    def pipeline(self, pipeline_name: str) -> dict:
+        """Get the graph for a specific ML Pipeline (cached)
+
+        Args:
+            pipeline_name (str): The name of the Pipeline
+
+        Returns:
+            dict: The pipeline's node_link_dict graph (None if not found)
+        """
+        return super().pipeline(pipeline_name=pipeline_name)
+
     def get_modified_registry(self, list_method: str = None) -> dict:
         """Get the Modified timestamp registry
 
