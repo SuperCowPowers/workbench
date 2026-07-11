@@ -109,6 +109,10 @@ class Job:
         inputs (list[str]): Artifact refs this job depends on
         pipeline (str | None): The pipelines.json key that declared this job -- the
             human grouping (list_pipelines / get_pipeline). Set by parse_spec.
+        relative_dir (str | None): The job's pipelines.json directory, relative to
+            the discovery root (POSIX, "" for a root-level pipelines.json). The
+            organizing hierarchy above the file -- consumers use it to group
+            pipelines. Set by parse_spec; see :meth:`PipelineManager.get_pipeline_relative_dir`.
         group (str | None): The SQS FIFO MessageGroupId for Batch submission -- the
             job's dependency group. Set by PipelineManager; see
             :meth:`PipelineManager._assign_dependency_groups`.
@@ -119,6 +123,7 @@ class Job:
     outputs: list[str] = field(default_factory=list)
     inputs: list[str] = field(default_factory=list)
     pipeline: str | None = None
+    relative_dir: str | None = None
     group: str | None = None
 
     @property
@@ -175,7 +180,9 @@ class Job:
         return meta
 
 
-def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) -> list[Job]:
+def parse_spec(
+    spec: dict, script_resolver: Callable[[str], Any] | None = None, relative_dir: str | None = None
+) -> list[Job]:
     """Parse one pipelines.json dict into Jobs, tagged by pipeline name.
 
     Args:
@@ -183,9 +190,11 @@ def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) 
         script_resolver (callable | None): Maps a raw "script" string to the
             identity this context wants (e.g. an S3 URI or a local Path).
             Identity when omitted.
+        relative_dir (str | None): The pipelines.json directory relative to the
+            discovery root (see Job.relative_dir). Stamped onto every Job.
 
     Returns:
-        list[Job]: One job per declared entry, with ``pipeline`` set.
+        list[Job]: One job per declared entry, with ``pipeline`` and ``relative_dir`` set.
     """
     jobs: list[Job] = []
     for pipeline_name, raw_jobs in spec.get("pipelines", {}).items():
@@ -200,6 +209,7 @@ def parse_spec(spec: dict, script_resolver: Callable[[str], Any] | None = None) 
                     outputs=list(raw.get("outputs", [])),
                     inputs=list(raw.get("inputs", [])),
                     pipeline=pipeline_name,
+                    relative_dir=relative_dir,
                 )
             )
     return jobs
@@ -271,6 +281,7 @@ class PipelineManager:
         for cfg in sorted(root.rglob("pipelines.json")):
             spec = json.loads(cfg.read_text())
             d = cfg.parent
+            rel = d.relative_to(root).as_posix()  # "." at the root -> ""
             jobs += parse_spec(
                 spec,
                 script_resolver=lambda s, d=d: (
@@ -278,6 +289,7 @@ class PipelineManager:
                     if s.startswith("plugin:")
                     else s if is_schemed_script(s) else d / s
                 ),
+                relative_dir="" if rel == "." else rel,
             )
         return jobs
 
@@ -297,6 +309,14 @@ class PipelineManager:
                     continue
                 spec = json.loads(s3.get_object(Bucket=bucket, Key=key)["Body"].read())
                 d = key.rsplit("/", 1)[0]
+                # Dir below the root prefix ("" when the pipelines.json sits at the root).
+                # Strip on the "/" boundary so a sibling prefix (ml_pipelines_v2) can't alias.
+                if not disc_root:
+                    rel = d.strip("/")
+                elif d == disc_root:
+                    rel = ""
+                else:
+                    rel = d.removeprefix(f"{disc_root}/").strip("/")
                 jobs += parse_spec(
                     spec,
                     script_resolver=lambda s, d=d: (
@@ -304,6 +324,7 @@ class PipelineManager:
                         if s.startswith("plugin:")
                         else s if is_schemed_script(s) else f"s3://{bucket}/{d}/{s}"
                     ),
+                    relative_dir=rel,
                 )
         return jobs
 
@@ -424,6 +445,19 @@ class PipelineManager:
         nodes = {job.key for job in pipeline_jobs}
         nodes |= {ref for job in pipeline_jobs for ref in (*job.inputs, *job.outputs)}
         return self.graph.subgraph(nodes).copy()
+
+    def get_pipeline_relative_dir(self, name: str) -> str:
+        """The pipeline's ``pipelines.json`` directory, relative to the discovery root.
+
+        POSIX subpath (e.g. ``"physchem/logd"``), ``""`` for a root-level pipelines.json.
+        The organizing hierarchy above the file -- consumers use it to group pipelines.
+        The jobs of one pipeline share a pipelines.json, so this is single-valued.
+        Raises KeyError for an unknown name.
+        """
+        for job in self.jobs:
+            if job.pipeline == name:
+                return job.relative_dir or ""
+        raise KeyError(f"no pipeline named {name!r}")
 
     def validate_pipeline(self, name: str):
         """FUTURE: cross-check declared wiring against real artifact lineage."""

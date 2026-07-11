@@ -80,6 +80,14 @@ class ConfigManager:
             else:
                 return plugin_dir
 
+        # Special logic for ML_PIPELINES_ROOT (S3 prefix or local directory)
+        if key == "ML_PIPELINES_ROOT":
+            pipelines_root = self.config.get(key)
+            if pipelines_root in ["", None]:
+                bucket = self.config.get("WORKBENCH_BUCKET")
+                return f"s3://{bucket}/ml_pipelines" if bucket else default_value
+            return pipelines_root
+
         # Normal logic
         return self.config.get(key, default_value)
 
@@ -117,6 +125,7 @@ class ConfigManager:
             "WORKBENCH_API_KEY",
             "WORKBENCH_PLUGINS",
             "WORKBENCH_THEMES",
+            "ML_PIPELINES_ROOT",
             "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD",
@@ -388,7 +397,7 @@ class ConfigManager:
             "WORKBENCH_API_KEY": self.open_source_api_key(),
         }
         for key, value in os.environ.items():
-            if key.startswith("WORKBENCH_") or key.startswith("REDIS_") or key == "AWS_PROFILE":
+            if key.startswith(("WORKBENCH_", "REDIS_")) or key in ["AWS_PROFILE", "ML_PIPELINES_ROOT"]:
                 config[key] = value
         return config
 

@@ -89,6 +89,13 @@ def main_layout(
                     )
                 ]
             ),
+            # Core page links (ML Pipelines lives outside the plugin-pages list)
+            dbc.Row(
+                html.Div(
+                    html.A("ML Pipelines", href="/ml_pipelines", style={"fontSize": 18, "fontWeight": "bold"}),
+                ),
+                style={"padding": "20px 0px 0px 0px"},
+            ),
             # Plugin Page Links
             dbc.Row(
                 html.Div(
