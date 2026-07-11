@@ -309,7 +309,14 @@ class PipelineManager:
                     continue
                 spec = json.loads(s3.get_object(Bucket=bucket, Key=key)["Body"].read())
                 d = key.rsplit("/", 1)[0]
-                rel = d[len(disc_root) :].strip("/") if disc_root else d.strip("/")  # dir below the root prefix
+                # Dir below the root prefix ("" when the pipelines.json sits at the root).
+                # Strip on the "/" boundary so a sibling prefix (ml_pipelines_v2) can't alias.
+                if not disc_root:
+                    rel = d.strip("/")
+                elif d == disc_root:
+                    rel = ""
+                else:
+                    rel = d.removeprefix(f"{disc_root}/").strip("/")
                 jobs += parse_spec(
                     spec,
                     script_resolver=lambda s, d=d: (
