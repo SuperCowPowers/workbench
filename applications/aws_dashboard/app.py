@@ -151,6 +151,7 @@ dashboard_page_paths = [
     "/feature_sets",
     "/models",
     "/endpoints",
+    "/ml_pipelines",
     "/license",
     "/status",
 ]

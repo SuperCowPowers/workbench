@@ -122,6 +122,15 @@ class Meta(CloudMeta):
         """
         return super().endpoints(details=details)
 
+    def pipelines(self) -> list:
+        """Get all ML Pipelines defined under ML_PIPELINES_ROOT
+
+        Returns:
+            list: Top-level groups, each {name, subgroups, pipelines}, nesting the
+                pipelines by their directory grouping.
+        """
+        return super().pipelines()
+
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job
 
@@ -177,6 +186,17 @@ class Meta(CloudMeta):
             dict: The details of the Endpoint (None if not found)
         """
         return super().endpoint(endpoint_name=endpoint_name)
+
+    def pipeline(self, pipeline_name: str) -> Union[dict, None]:
+        """Get the graph for a specific ML Pipeline
+
+        Args:
+            pipeline_name (str): The name of the Pipeline
+
+        Returns:
+            dict: The pipeline's node_link_dict graph (None if not found)
+        """
+        return super().pipeline(pipeline_name=pipeline_name)
 
     def __repr__(self):
         return f"Meta()\n\t{super().__repr__()}"

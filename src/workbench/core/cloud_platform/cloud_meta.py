@@ -131,6 +131,20 @@ class CloudMeta(AWSMeta):
         """
         return super().endpoints(details=details)
 
+    def pipelines(self) -> list:
+        """Get all ML Pipelines defined under ML_PIPELINES_ROOT
+
+        Returns:
+            list: Top-level groups, each {name, subgroups, pipelines}, nesting the
+                pipelines by their directory grouping. Each pipeline is a node_link_dict
+                (its ds -> fs -> model -> endpoint graph). See pipeline_serializer.
+        """
+        from workbench.utils.pipeline_serializer import pipeline_hierarchy
+        from workbench.utils.config_manager import ConfigManager
+
+        root = ConfigManager().get_config("ML_PIPELINES_ROOT")
+        return pipeline_hierarchy(root, session=self.boto3_session)
+
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job
 
@@ -186,6 +200,21 @@ class CloudMeta(AWSMeta):
             dict: The details of the Endpoint (None if not found)
         """
         return super().endpoint(endpoint_name=endpoint_name)
+
+    def pipeline(self, pipeline_name: str) -> Union[dict, None]:
+        """Get the graph for a specific ML Pipeline
+
+        Args:
+            pipeline_name (str): The name of the Pipeline
+
+        Returns:
+            dict: The pipeline's node_link_dict graph (None if not found)
+        """
+        from workbench.utils.pipeline_serializer import single_pipeline
+        from workbench.utils.config_manager import ConfigManager
+
+        root = ConfigManager().get_config("ML_PIPELINES_ROOT")
+        return single_pipeline(root, pipeline_name, session=self.boto3_session)
 
     def __repr__(self):
         return f"CloudMeta()\n\t{super().__repr__()}"
