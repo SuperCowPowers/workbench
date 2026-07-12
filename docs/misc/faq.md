@@ -29,15 +29,10 @@ You may notice that DataSource and FeatureSet names have underscores but the mod
 
 
 ## Additional information on the lower case issue
-We’ve tried to create a glue table with Mixed Case column names and haven’t had any luck. We’ve bypassed wrangler and used the boto3 low level calls directly. In all cases when it shows up in the Glue Table the columns have always been converted to lower case. We've also tried uses the Athena DDL directly, that also doesn't work. Here's the relevant AWS documentation and the two scripts that reproduce the issue.
+We’ve tried to create a glue table with Mixed Case column names and haven’t had any luck. We’ve bypassed wrangler and used the boto3 low level calls directly. In all cases when it shows up in the Glue Table the columns have always been converted to lower case. We've also tried uses the Athena DDL directly, that also doesn't work. Here's the relevant AWS documentation.
 
 **AWS Docs**
 
 - [Athena Naming Restrictions](https://docs.aws.amazon.com/athena/latest/ug/tables-databases-columns-names.html)
 - [Glue Best Practices](https://docs.aws.amazon.com/athena/latest/ug/glue-best-practices.html#schema-names)
-
-**Scripts to Reproduce**
-
-- [scripts/athena\_ddl\_mixed_case.py](https://github.com/SuperCowPowers/workbench/blob/main/scripts/athena_ddl_mixed_case.py)
-- [scripts/glue\_mixed_case.py](https://github.com/SuperCowPowers/workbench/blob/main/scripts/glue_mixed_case.py)
 

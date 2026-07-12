@@ -7,7 +7,6 @@ Classes:
     - View: Base class for representing a database view.
     - DisplayView: Creates a view with a subset of columns for display purposes.
     - ComputationView: Creates a view with a subset of columns for computation purposes.
-    - MDQView: Creates a view with model data quality metrics.
     - ColumnSubsetView: Creates a view with a specified subset of columns.
 """
 

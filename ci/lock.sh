@@ -126,13 +126,5 @@ uv pip compile sagemaker_images/pytorch_chem/training/requirements.in \
     $FRESH \
     -o sagemaker_images/pytorch_chem/training/requirements.lock
 
-# compound_explorer: full workbench + [misc] + [ui] + shap + uvicorn/asgiref overlay, CPU torch
-# Mirrors aws_dashboard (same uvicorn+asgiref serving stack) plus shap for the explorer's SHAP plots.
-compile applications/compound_explorer/requirements.lock \
-    applications/compound_explorer/requirements.in \
-    --extra misc --extra ui \
-    --extra-index-url "$PYTORCH_CPU" \
-    --index-strategy unsafe-best-match
-
 echo
 echo "Done. Verify with: git diff sagemaker_images/*/requirements.lock applications/*/requirements.lock"
