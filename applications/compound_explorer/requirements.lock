@@ -469,7 +469,7 @@ omegaconf==2.3.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-core
-onnx==1.21.0
+onnx==1.22.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
