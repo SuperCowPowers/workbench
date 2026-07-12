@@ -43,4 +43,5 @@ try:
     wr.engine.set("python")
     wr.memory_format.set("pandas")
 except ImportError:
+    # awswrangler is optional; engine tuning only applies when it's installed
     pass

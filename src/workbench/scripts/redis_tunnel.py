@@ -76,12 +76,14 @@ def ensure_instance_profile(iam) -> str:
             Description="Workbench SSM Redis tunnel instance role",
         )
     except iam.exceptions.EntityAlreadyExistsException:
+        # Role already exists — idempotent
         pass
     iam.attach_role_policy(RoleName=ROLE_NAME, PolicyArn=SSM_MANAGED_POLICY)
     try:
         iam.create_instance_profile(InstanceProfileName=PROFILE_NAME)
         iam.add_role_to_instance_profile(InstanceProfileName=PROFILE_NAME, RoleName=ROLE_NAME)
     except iam.exceptions.EntityAlreadyExistsException:
+        # Profile already exists — idempotent
         pass
     return PROFILE_NAME
 
@@ -272,6 +274,7 @@ def main() -> None:
     try:
         open_tunnel(instance_id, endpoint, args.local_port, region)
     except KeyboardInterrupt:
+        # Ctrl-C: fall through to instance cleanup
         pass
     finally:
         print(f"\nStopping tunnel instance {instance_id} …")

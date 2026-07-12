@@ -54,6 +54,9 @@ except ImportError:
 
 log = logging.getLogger("workbench")
 
+# Re-exported so model bundles can unpickle Proximity backends via this module
+__all__ = ["UQModelV2", "Proximity", "FingerprintProximity"]
+
 
 # All neighbor-target quantiles V2 emits (numeric percentile → column name)
 _NEIGHBOR_QUANTILES = {

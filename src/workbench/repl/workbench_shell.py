@@ -4,7 +4,8 @@ import sys
 import logging
 import importlib
 import webbrowser
-import readline  # noqa: F401
+
+importlib.import_module("readline")  # side effect: enables line editing/history
 
 # Disable OpenMP parallelism to avoid segfaults with PyTorch in iPython
 # This is a known issue on macOS where libomp crashes during thread synchronization
@@ -33,6 +34,7 @@ try:
 
     pio.renderers.default = "browser"
 except ImportError:
+    # plotly is optional ([ui] extra)
     pass
 
 
@@ -44,9 +46,7 @@ from workbench.utils.log_utils import silence_logs, log_theme
 
 # If we have RDKIT/Mordred let's pull in our cheminformatics utils
 try:
-    import rdkit  # noqa
-    import mordred  # noqa
-    from workbench.utils.chem_utils import vis
+    from workbench.utils.chem_utils import vis  # needs rdkit
 
     HAVE_CHEM_UTILS = True
 except ImportError:

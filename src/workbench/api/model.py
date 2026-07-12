@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
+
+# Re-exported for the public API (from workbench.api.model import Model, ModelType, ModelFramework)
+__all__ = ["Model", "ModelType", "ModelFramework"]
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
 from workbench.utils.model_utils import (

@@ -63,6 +63,7 @@ class DataDetailsMarkdown(ComponentInterface):
                 try:
                     value = value.replace(".000Z", "").replace("T", " ")
                 except AttributeError:
+                    # Value isn't a string — leave as-is
                     pass
             markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
 

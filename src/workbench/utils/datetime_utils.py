@@ -140,6 +140,7 @@ def concise_timestamps(df) -> pd.DataFrame:
                 if parsed.notna().sum() > len(df) * 0.5:
                     df[col] = parsed.dt.strftime("%Y-%m-%d %H:%M").where(parsed.notna(), df[col])
             except Exception:
+                # Unparseable column — leave values as-is
                 pass
     return df
 

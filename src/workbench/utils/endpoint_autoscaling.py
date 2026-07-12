@@ -123,6 +123,7 @@ def deregister_autoscaling(boto3_session, endpoint_name: str) -> None:
                     ScalableDimension=_SCALABLE_DIM,
                 )
             except aas.exceptions.ObjectNotFoundException:
+                # No policy to delete
                 pass
 
         try:

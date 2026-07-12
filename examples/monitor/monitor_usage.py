@@ -4,6 +4,9 @@ from workbench.api.endpoint import Endpoint
 
 # Construct a Monitor Class in one of Two Ways
 mon = Endpoint("abalone-regression-end-rt").monitor()
+print(mon)
+
+# Or create the Monitor directly by name
 mon = Monitor("abalone-regression-end-rt")
 
 # Check the summary and details of the monitoring class

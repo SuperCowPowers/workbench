@@ -133,6 +133,7 @@ class CloudWatchHandler(logging.Handler):
                 logGroupName=self.log_group_name, logStreamName=self.log_stream_name
             )
         except self.cloudwatch_client.exceptions.ResourceAlreadyExistsException:
+            # Log stream already exists — fine
             pass
 
     def determine_log_stream(self):

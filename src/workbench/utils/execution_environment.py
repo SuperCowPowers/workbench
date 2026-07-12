@@ -65,6 +65,7 @@ def running_on_docker() -> bool:
             if any("docker" in line for line in f):
                 return True
     except (FileNotFoundError, PermissionError):
+        # No cgroup info — not docker
         pass
 
     return running_on_ecs()

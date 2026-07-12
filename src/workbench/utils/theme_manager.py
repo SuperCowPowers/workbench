@@ -90,6 +90,7 @@ class ThemeManager:
                 if has_request_context():
                     theme_name = request.cookies.get("wb_theme")
             except Exception:
+                # Outside Flask/request context — fall through to ParameterStore
                 pass
 
             # 2. Fall back to ParameterStore

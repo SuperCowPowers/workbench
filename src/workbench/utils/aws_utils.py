@@ -166,6 +166,7 @@ def decode_value(value):
     try:
         value = json.loads(value)
     except Exception:
+        # Not JSON — keep the raw string value
         pass
 
     # Okay, just return whatever we have
