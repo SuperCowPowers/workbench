@@ -3,6 +3,7 @@
 Loads the repo's abalone.csv into a DataSource, builds a FeatureSet, and a regression
 model + endpoint. Split out of the old test_artifacts/create_basic_test_artifacts.py.
 """
+
 import sys
 import logging
 from pathlib import Path
@@ -50,7 +51,9 @@ def main():
         )
         m.set_owner("test")
     if RECREATE or not Endpoint("abalone-regression").exists():
-        Model("abalone-regression").to_endpoint(name="abalone-regression", tags=["abalone", "regression"]).test_inference()
+        Model("abalone-regression").to_endpoint(
+            name="abalone-regression", tags=["abalone", "regression"]
+        ).test_inference()
 
 
 if __name__ == "__main__":

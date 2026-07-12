@@ -4,6 +4,7 @@ Builds one DataSource of synthetic person data, a FeatureSet, and a regression +
 classification model (each with an endpoint). Split out of the old
 test_artifacts/create_basic_test_artifacts.py.
 """
+
 import logging
 import pandas as pd
 from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint
