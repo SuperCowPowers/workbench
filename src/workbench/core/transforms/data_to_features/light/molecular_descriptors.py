@@ -46,8 +46,6 @@ if __name__ == "__main__":
     """Exercise the MolecularDescriptors Class"""
     from workbench.api.data_source import DataSource
 
-    full_test = False
-
     # Unit Test: Create the class with inputs
     unit_test = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
     unit_test.input_df = DataSource("aqsol_data").pull_dataframe()[:100]
@@ -57,8 +55,7 @@ if __name__ == "__main__":
     print(output_df.head())
 
     # Full Test: Create the class with inputs and outputs and invoke the transform
-    if full_test:
-        data_to_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
-        data_to_features.set_output_tags(["logS", "public"])
-        query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
-        data_to_features.transform(id_column="id", query=query)
+    data_to_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
+    data_to_features.set_output_tags(["logS", "public"])
+    query = 'SELECT id, "group", solubility, smiles FROM aqsol_data'
+    data_to_features.transform(id_column="id", query=query)

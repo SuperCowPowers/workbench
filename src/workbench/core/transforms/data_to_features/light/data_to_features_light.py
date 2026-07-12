@@ -56,7 +56,7 @@ class DataToFeaturesLight(Transform):
         # This is a reference implementation that should be overridden by the subclass
         self.output_df = self.input_df
 
-    def post_transform(self, id_column, event_time_column=None, one_hot_columns=None, **kwargs):
+    def post_transform(self, id_column=None, event_time_column=None, one_hot_columns=None, **kwargs):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set
 
         Args:
@@ -64,6 +64,9 @@ class DataToFeaturesLight(Transform):
             event_time_column (str, optional): The name of the event time column (default: None).
             one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
+        if id_column is None:
+            raise ValueError('id_column is required (use "auto" for auto-generated IDs)')
+
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_name)
         output_features.set_input(

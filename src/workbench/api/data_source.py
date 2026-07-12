@@ -181,9 +181,6 @@ if __name__ == "__main__":
     from pprint import pprint
     from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
-    # Test to Run
-    long_tests = False
-
     # Check logic for creating a new DataSource with DataFrame (without name)
     df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
     try:
@@ -208,19 +205,19 @@ if __name__ == "__main__":
     pprint(my_data.outliers().head())
 
     # Long Tests
-    if long_tests:
-        # Create a new Data Source from a CSV file
-        abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
-        my_data = DataSource(abalone_data_path)
-        pprint(my_data.summary())
-        pprint(my_data.details())
 
-        # Create a new Data Source from an S3 Path
-        my_data = DataSource("s3://workbench-public-data/common/abalone.csv")
-        pprint(my_data.summary())
-        pprint(my_data.details())
+    # Create a new Data Source from a CSV file
+    abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    my_data = DataSource(abalone_data_path)
+    pprint(my_data.summary())
+    pprint(my_data.details())
 
-        # Convert the Data Source to a Feature Set
-        my_features = test_data.to_features()
-        pprint(my_features.summary())
-        pprint(my_features.details())
+    # Create a new Data Source from an S3 Path
+    my_data = DataSource("s3://workbench-public-data/common/abalone.csv")
+    pprint(my_data.summary())
+    pprint(my_data.details())
+
+    # Convert the Data Source to a Feature Set
+    my_features = test_data.to_features()
+    pprint(my_features.summary())
+    pprint(my_features.details())

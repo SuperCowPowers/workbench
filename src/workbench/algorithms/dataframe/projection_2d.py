@@ -194,21 +194,20 @@ if __name__ == "__main__":
     # Okay now for a real test with real data
     model = Model("aqsol-ensemble")
 
-    # Pull a FeatureSet and run inference on it
-    recreate = False
-    if recreate:
+    # Check if the full inference DataFrame is already cached
+    df_store = DFStore()
+    df = df_store.get("/workbench/models/aqsol-ensemble/full_inference")
+    if df is not None:
+        print("Using cached inference DataFrame.")
+    else:
+        # Pull a FeatureSet and run inference on it
         fs = FeatureSet(model.get_input())
         df = fs.pull_dataframe()
         end = Endpoint(model.endpoints()[0])
         df = end.inference(df)
 
         # Store the inference dataframe
-        DFStore().upsert("/workbench/models/aqsol-ensemble/full_inference", df)
-    else:
-        # Retrieve the cached inference dataframe
-        df = DFStore().get("/workbench/models/aqsol-ensemble/full_inference")
-        if df is None:
-            raise ValueError("No cached inference DataFrame found.")
+        df_store.upsert("/workbench/models/aqsol-ensemble/full_inference", df)
 
     # Compute SHAP values and get the top 10 features
     shap_importances = shap_feature_importance(model)[:10]

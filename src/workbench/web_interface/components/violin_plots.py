@@ -22,16 +22,18 @@ class ViolinPlots(ComponentInterface):
         """
         return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."))
 
-    def update_properties(self, df: pd.DataFrame, figure_args: dict, max_plots: int = 40) -> go.Figure:
+    def update_properties(self, df: pd.DataFrame, figure_args: dict = None, max_plots: int = 40) -> go.Figure:
         """Create a set of violin plots for the numeric columns in the dataframe.
         Args:
             df (pd.DataFrame): The dataframe containing the data.
-            figure_args (dict): A dictionary of arguments to pass to the plot object.
+            figure_args (dict, optional): A dictionary of arguments to pass to the plot object (default: None).
                 For violin plot arguments, refer to: https://plotly.com/python/reference/violin/
             max_plots (int): The maximum number of plots to create (default: 40).
         Returns:
             go.Figure: A Figure object containing the generated plots.
         """
+
+        figure_args = figure_args or {}
 
         # Sanity check the dataframe
         if df is None or df.empty or list(df.columns) == ["name", "status"]:

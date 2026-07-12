@@ -5,28 +5,25 @@ from workbench.api import DataSource, FeatureSet, ModelType, ModelFramework, End
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.model_utils import get_custom_script_path
 
-RECREATE_FP_ENDPOINT = False
-
 if __name__ == "__main__":
 
     # An Transformer Model/Endpoint that computes Fingerprints
-    if RECREATE_FP_ENDPOINT:
-        tags = ["smiles", "morgan fingerprints"]
-        script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
-        feature_set = FeatureSet("aqsol_features")
-        model = feature_set.to_model(
-            name="smiles-to-fingerprints-v0",
-            model_type=ModelType.TRANSFORMER,
-            model_framework=ModelFramework.TRANSFORMER,
-            feature_list=["smiles"],
-            description="Smiles to Morgan Fingerprints",
-            tags=tags,
-            custom_script=script_path,
-        )
+    tags = ["smiles", "morgan fingerprints"]
+    script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
+    feature_set = FeatureSet("aqsol_features")
+    model = feature_set.to_model(
+        name="smiles-to-fingerprints-v0",
+        model_type=ModelType.TRANSFORMER,
+        model_framework=ModelFramework.TRANSFORMER,
+        feature_list=["smiles"],
+        description="Smiles to Morgan Fingerprints",
+        tags=tags,
+        custom_script=script_path,
+    )
 
-        # Create the endpoint for the model
-        end = model.to_endpoint(tags=tags)
-        end.test_inference()
+    # Create the endpoint for the model
+    end = model.to_endpoint(tags=tags)
+    end.test_inference()
 
     # Now we take a DataSource, compute the fingerprints, and create a new Model/Endpoint for solubility prediction
     ds = DataSource("aqsol_data")
