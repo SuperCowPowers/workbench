@@ -92,7 +92,9 @@
 /* Padding + matching negative margin gives the card hover-lift room so its accent
    outline/shadow isn't clipped by the inner's overflow. */
 #ml-pipelines-root .mlp-cat-body-inner { overflow: hidden; min-height: 0; padding: 10px 8px; margin: -10px -8px; }
-#ml-pipelines-root .mlp-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+/* Card min width sets how many fit per row (auto-fill); 240px is ~20% narrower than
+   the old 300px, so a row that held 4 now holds ~5 at the same container width. */
+#ml-pipelines-root .mlp-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 
 /* Nested sections: no full-width divider, an indent rail instead, smaller heading. */
 #ml-pipelines-root .mlp-cat-body-inner > .mlp-cat { margin: 10px 0 0; padding: 0 0 0 16px; border-bottom: 0; border-left: 2px solid var(--mlp-border-soft); }
@@ -132,17 +134,23 @@
 #ml-pipelines-root .mlp-metric .mv { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; line-height: 1; }
 #ml-pipelines-root .mlp-metric .ml { font-size: 10.5px; color: var(--mlp-text-faint); text-transform: uppercase; letter-spacing: .05em; margin-top: 4px; }
 
-#ml-pipelines-root .mlp-canvas { background: var(--mlp-panel); border: 1px solid var(--mlp-border); border-radius: var(--mlp-radius); padding: 14px 18px 22px; overflow: auto; min-height: 520px; }
+#ml-pipelines-root .mlp-canvas { background: var(--mlp-panel); border: 1px solid var(--mlp-border); border-radius: var(--mlp-radius); padding: 14px 18px 22px; overflow: auto; min-height: 800px; display: flex; flex-direction: column; }
 #ml-pipelines-root .mlp-canvas-top { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; flex-wrap: wrap; }
+/* Center the DAG vertically in the leftover canvas height (grows + scrolls if taller) */
+/* `safe` centering: center when the DAG fits, but fall back to start-align when it's
+   wider/taller than the canvas so the overflow stays scrollable instead of clipping. */
+#ml-pipelines-root .mlp-detail-dag { flex: 1; display: flex; align-items: safe center; justify-content: safe center; }
 #ml-pipelines-root .mlp-group-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 #ml-pipelines-root .mlp-group-tab { font-family: var(--mlp-mono); font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--mlp-border); color: var(--mlp-text-dim); background: var(--mlp-panel-2); display: inline-flex; gap: 7px; align-items: center; }
 #ml-pipelines-root .mlp-group-tab b { color: var(--mlp-text); font-weight: 600; }
 #ml-pipelines-root .mlp-gt-kind { width: 7px; height: 7px; border-radius: 50%; }
 
 /* dag */
-#ml-pipelines-root .mlp-dag { position: relative; margin: 4px auto 0; }
+#ml-pipelines-root .mlp-dag { position: relative; }
+/* Wrapper carries the scaled footprint (transform doesn't affect layout); flex-centered. */
+#ml-pipelines-root .mlp-dag-scaler { position: relative; flex: none; }
 #ml-pipelines-root .mlp-dag svg.mlp-edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-#ml-pipelines-root .mlp-node { position: absolute; min-height: 36px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; background: var(--mlp-panel-2); border: 1px solid var(--mlp-border); border-left-width: 3px; border-right-width: 3px; border-radius: 8px; padding: 0 11px; font-family: var(--mlp-mono); font-size: 11px; line-height: 1.25; box-shadow: 0 2px 10px rgba(0,0,0,.28); transition: transform .14s, box-shadow .14s; }
+#ml-pipelines-root .mlp-node { position: absolute; min-height: 36px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; background: var(--mlp-panel-2); border: 1px solid var(--mlp-border); border-left-width: 6px; border-right-width: 6px; border-top-width: 0.5px; border-bottom-width: 0.5px; border-radius: 12px; padding: 0 11px; font-family: var(--mlp-mono); font-size: 11px; line-height: 1.25; box-shadow: 0 2px 10px rgba(0,0,0,.28); transition: transform .14s, box-shadow .14s; }
 :root[data-bs-theme="light"] #ml-pipelines-root .mlp-node { box-shadow: 0 2px 8px rgba(30,50,70,.08); }
 #ml-pipelines-root .mlp-node { transition: transform .14s, box-shadow .14s, opacity .15s; }
 #ml-pipelines-root .mlp-edges path { transition: opacity .15s, stroke .15s, stroke-width .15s; }
@@ -157,10 +165,11 @@
 /* Drill-down: linkable artifact nodes signal clickability + underline the name on hover */
 #ml-pipelines-root .mlp-node-link { cursor: pointer; }
 #ml-pipelines-root .mlp-node-link:hover .n-name { text-decoration: underline; text-decoration-color: var(--nc); text-underline-offset: 2px; }
-#ml-pipelines-root .mlp-node.n-ds { border-left-color: var(--mlp-t-ds); border-right-color: var(--mlp-t-ds); }
-#ml-pipelines-root .mlp-node.n-fs { border-left-color: var(--mlp-t-fs); border-right-color: var(--mlp-t-fs); }
-#ml-pipelines-root .mlp-node.n-model { border-left-color: var(--mlp-t-model); border-right-color: var(--mlp-t-model); }
-#ml-pipelines-root .mlp-node.n-endpoint { border-left-color: var(--mlp-t-endpoint); border-right-color: var(--mlp-t-endpoint); }
+/* Type color frames all four sides (thicker left/right bars, lighter top/bottom lines) */
+#ml-pipelines-root .mlp-node.n-ds { border-color: var(--mlp-t-ds); }
+#ml-pipelines-root .mlp-node.n-fs { border-color: var(--mlp-t-fs); }
+#ml-pipelines-root .mlp-node.n-model { border-color: var(--mlp-t-model); }
+#ml-pipelines-root .mlp-node.n-endpoint { border-color: var(--mlp-t-endpoint); }
 
 #ml-pipelines-root .mlp-hidden { display: none !important; }
 

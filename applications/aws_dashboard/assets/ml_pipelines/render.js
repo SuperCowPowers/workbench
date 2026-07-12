@@ -234,7 +234,9 @@
 
   // Node box width sized to its name (monospace char width estimate), clamped
   function nodeWidthFor(name) {
-    return Math.max(140, Math.min(320, Math.ceil((name || "").length * 7.0) + 22));
+    // +30 = 11px padding each side + 4px endcap border each side (a bit of slack so
+    // names don't ellipsize); *7.0 approximates the 11px mono char advance.
+    return Math.max(140, Math.min(320, Math.ceil((name || "").length * 7.0) + 30));
   }
 
   function renderDAG(graph, availWidth) {
@@ -361,13 +363,17 @@
       p.setAttribute("stroke-width", "1");
       svg.appendChild(p);
     });
+    const nw = 15, nh = 7;  // pill: fully rounded (rx = nh/2); nh ~ old dot diameter to avoid stacking overlap
     nodes.forEach((n) => {
-      const c = document.createElementNS(SVGNS, "circle");
-      c.setAttribute("cx", pos[n.id].x);
-      c.setAttribute("cy", pos[n.id].y);
-      c.setAttribute("r", 3.4);
-      c.setAttribute("fill", `var(--mlp-t-${n.type})`);
-      svg.appendChild(c);
+      const r = document.createElementNS(SVGNS, "rect");
+      r.setAttribute("x", pos[n.id].x - nw / 2);
+      r.setAttribute("y", pos[n.id].y - nh / 2);
+      r.setAttribute("width", nw);
+      r.setAttribute("height", nh);
+      r.setAttribute("rx", nh / 2);
+      r.setAttribute("ry", nh / 2);
+      r.setAttribute("fill", `var(--mlp-t-${n.type})`);
+      svg.appendChild(r);
     });
     return svg;
   }
@@ -497,7 +503,9 @@
         </div>
         <div class="mlp-detail-dag"></div>
       </div>`;
-    detail.querySelector(".mlp-back").onclick = () => showGrid(root, data);
+    // Both the "< Pipelines" button and the browser back button route through
+    // history.back() -> popstate -> showGrid, so muscle memory works either way.
+    detail.querySelector(".mlp-back").onclick = () => history.back();
 
     root.replaceChildren(detail);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -505,9 +513,18 @@
     // Track the open pipeline so a browser resize can re-fill the canvas
     activeDetail = { detail, merged };
     layoutDetailDag();
+    detailResizeObserver.observe(detail.querySelector(".mlp-canvas"));  // re-fit on any resize
+
+    // Push a history entry (URL unchanged, so Dash's router is untouched) so the
+    // browser back button returns to the grid instead of leaving the page.
+    history.pushState({ mlpDetail: name }, "", window.location.href);
   }
 
-  // (Re)lay the active detail DAG to fill the currently-measurable canvas
+  // (Re)lay the active detail DAG so it fits the canvas like the card thumbnails do:
+  // render at natural size, then uniformly scale the whole graph to fit the available
+  // box (width AND height). Capped at 1x so wide screens keep normal-size nodes (the
+  // column layout already spreads to fill width) while narrow/short ones shrink to fit
+  // -- no clipping, no scrolling.
   function layoutDetailDag() {
     if (!activeDetail) return;
     const { detail, merged } = activeDetail;
@@ -515,19 +532,42 @@
     const host = detail.querySelector(".mlp-detail-dag");
     if (!canvas || !host) return;
     const availW = canvas.clientWidth - 36;
-    host.replaceChildren(renderDAG(merged, availW));
+    const dag = renderDAG(merged, availW);
+    const natW = parseFloat(dag.style.width), natH = parseFloat(dag.style.height);
+    if (!natW || !natH) { host.replaceChildren(dag); return; }
+    // Fit within the box (contain); never upscale past 1x.
+    const scale = Math.min(1, availW / natW, host.clientHeight / natH);
+    dag.style.transformOrigin = "top left";
+    dag.style.transform = `scale(${scale})`;
+    // Wrapper reserves the *scaled* footprint so flex centering positions it correctly
+    // (a CSS transform doesn't change the element's layout box).
+    const scaler = document.createElement("div");
+    scaler.className = "mlp-dag-scaler";
+    scaler.style.width = natW * scale + "px";
+    scaler.style.height = natH * scale + "px";
+    scaler.appendChild(dag);
+    host.replaceChildren(scaler);
   }
 
   function showGrid(root, data) {
     activeDetail = null;
+    detailResizeObserver.disconnect();
     root.replaceChildren(buildGrid(root, data));
   }
 
-  // Responsive: re-fill the detail DAG on resize (the grid view self-sizes via CSS)
-  let activeDetail = null, resizeTimer = null;
-  window.addEventListener("resize", () => {
+  // Responsive: re-fit the detail DAG whenever its canvas changes size -- window resize,
+  // sidebar toggle, or any layout shift. A ResizeObserver on the element catches size
+  // changes a window 'resize' listener misses; the grid view self-sizes via CSS.
+  let activeDetail = null, resizeTimer = null, currentRoot = null, currentData = null;
+  const detailResizeObserver = new ResizeObserver(() => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { if (activeDetail) layoutDetailDag(); }, 150);
+    resizeTimer = setTimeout(() => { if (activeDetail) layoutDetailDag(); }, 120);
+  });
+
+  // Browser back (or the "< Pipelines" button): if a detail is open, pop back to
+  // the grid. When no detail is open, let the back navigation leave the page.
+  window.addEventListener("popstate", () => {
+    if (activeDetail && currentRoot && currentData) showGrid(currentRoot, currentData);
   });
 
   /* Render entrypoint: called by the Dash clientside callback. Skips a re-render when
@@ -536,6 +576,8 @@
   function mlpRender(data) {
     const root = document.getElementById("ml-pipelines-root");
     if (!root || !data) return "";
+    currentRoot = root;
+    currentData = data;
     const sig = JSON.stringify(data);
     if (root.dataset.sig === sig) return root.dataset.sig;
     root.dataset.sig = sig;
