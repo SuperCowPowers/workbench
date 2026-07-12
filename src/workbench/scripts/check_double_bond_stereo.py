@@ -127,7 +127,7 @@ if __name__ == "__main__":
         "C1=CCCCC1",  # cyclohexene (no stereochemistry possible)
         # Compare with chiral centers
         "C[C@H](Cl)Br",  # chiral molecule
-        "CC(Cl)Br"  # non-chiral notation
+        "CC(Cl)Br",  # non-chiral notation
         "N[C@H]1CC[C@@H](CC1)[NH2+]CCF",  # From RDKIT/Github discussion example
     ]
 

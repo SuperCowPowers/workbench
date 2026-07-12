@@ -62,9 +62,6 @@ def aws_throttle(func=None, retry_intervals=None):
     def wrapper(*args, **kwargs):
         for attempt, delay in enumerate(intervals, start=1):
             try:
-                # Add sleep before calling AWS func if running as a service
-                # if cm.running_as_service:
-                #    time.sleep(service_hold_time)
                 return func(*args, **kwargs)
             except ClientError as e:
                 if e.response["Error"]["Code"] == "ThrottlingException":
@@ -433,7 +430,6 @@ if __name__ == "__main__":
 
     # Grab out SageMaker Session from the AWS Account Clamp
     sm_session = AWSAccountClamp().sagemaker_session()
-    boto3_session = AWSAccountClamp().boto3_session
 
     # Get the Sagemaker client from the AWS Account Clamp
     sm_client = AWSAccountClamp().sagemaker_client()
@@ -484,7 +480,7 @@ if __name__ == "__main__":
 
     # Test the newest files in an S3 folder method
     s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression"
-    most_recent = newest_path([s3_path], sm_session)
+    print(newest_path([s3_path], sm_session))
 
     # Add a health tag
     my_features.add_health_tag("needs_onboard")

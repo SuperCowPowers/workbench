@@ -46,7 +46,7 @@ if __name__ == "__main__":
         type=str,
         default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"),
     )
-    args = parser.parse_args()
+    parser.parse_args()
 
     # This model doesn't get trained, it's just a feature creation 'model'
     # So we don't need to do anything here

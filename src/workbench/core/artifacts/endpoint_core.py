@@ -888,7 +888,6 @@ class EndpointCore(Artifact):
                 # This typically means a duplicated column name, so confirm duplicate (more than 1) and log it
                 column_count = (converted_df.columns == column).sum()
                 self.log.critical(f"{column} occurs {column_count} times in the DataFrame.")
-                pass
 
         # Soft Conversion
         # Convert columns to the best possible dtype that supports the pd.NA missing value.
@@ -1489,14 +1488,14 @@ if __name__ == "__main__":
     # Note: This dataframe could be from a FeatureSet or any other source
     print("Running Inference...")
     my_eval_df = get_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(my_eval_df)
+    my_endpoint.inference(my_eval_df)
 
     # Now set capture=True to save inference results and metrics
     my_eval_df = get_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(my_eval_df, capture_name="holdout_xyz")
+    my_endpoint.inference(my_eval_df, capture_name="holdout_xyz")
 
     # Run predictions using the fast_inference method
-    fast_results = my_endpoint.fast_inference(my_eval_df)
+    my_endpoint.fast_inference(my_eval_df)
 
     # Test the cross_fold_inference method
     print("Running Cross-Fold Inference...")

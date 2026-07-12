@@ -348,7 +348,7 @@ if __name__ == "__main__":
     my_df["random2"] = np.random.rand(len(my_df))
 
     # Create a view with a PandasToView class
-    df_view = PandasToView.create("test_view", fs, df=my_df, id_column="id")
+    PandasToView.create("test_view", fs, df=my_df, id_column="id")
 
     # Test supplemental data tables deletion
     view = View(fs, "test_view")

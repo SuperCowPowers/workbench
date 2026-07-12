@@ -541,16 +541,6 @@ if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
-    # Create a fake dataframe with 3 numeric columns and 2 categorical columns
-    data = {
-        "x": [1, 2, 3, 4, 5],
-        "y": [2, 3, 4, 5, 6],
-        "z": [3, 4, 5, 6, 7],
-        "class": ["A", "C", "B", "B", "A"],
-        "label": ["good", "bad", "okay", "good", "bad"],
-    }
-    df = pd.DataFrame(data)
-
     # Get a UQ regressor model
     from workbench.api import Model
 

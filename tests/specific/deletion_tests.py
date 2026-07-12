@@ -1,5 +1,4 @@
 import pytest
-import workbench  # noqa: F401
 import logging
 from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 from workbench.api import DataSource, FeatureSet, Model, Endpoint, ModelType, ModelFramework

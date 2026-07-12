@@ -55,15 +55,6 @@ except ImportError:
 log = logging.getLogger("workbench")
 
 
-# Coverage levels → quantile column names (matched to V0/V1 output schema)
-_QUANTILE_COLUMNS = {
-    0.50: ("q_25", "q_75"),
-    0.68: ("q_16", "q_84"),
-    0.80: ("q_10", "q_90"),
-    0.90: ("q_05", "q_95"),
-    0.95: ("q_025", "q_975"),
-}
-
 # All neighbor-target quantiles V2 emits (numeric percentile → column name)
 _NEIGHBOR_QUANTILES = {
     2.5: "q_025",

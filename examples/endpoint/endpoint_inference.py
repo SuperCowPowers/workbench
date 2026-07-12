@@ -10,9 +10,12 @@ df = get_evaluation_data(endpoint)
 
 # Run inference/predictions on the Endpoint
 results_df = endpoint.inference(df)
+print(results_df.head())
 
 # Run inference/predictions and capture the results
 results_df = endpoint.inference(df, capture_name="test_inference")
+print(results_df.head())
 
 # Run inference/predictions using the FeatureSet evaluation data
 results_df = endpoint.test_inference()
+print(results_df.head())

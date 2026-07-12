@@ -392,9 +392,7 @@ class Artifact(ABC):
         health_issues = []
         if not self.ready():
             return ["needs_onboard"]
-        # FIXME: Revisit AWS URL check
-        # if "unknown" in self.aws_url():
-        #    health_issues.append("aws_url_unknown")
+        # FIXME: Revisit AWS URL check ("unknown" in aws_url() -> "aws_url_unknown" health issue)
         return health_issues
 
     def summary(self) -> dict:
@@ -475,7 +473,7 @@ if __name__ == "__main__":
     from workbench.api import DataSource, FeatureSet, Endpoint
 
     # Grab an Endpoint (which is a subclass of Artifact)
-    end = Endpoint("wine-classification")
+    Endpoint("wine-classification")
 
     # Grab a DataSource (which is a subclass of Artifact)
     data_source = DataSource("test_data")

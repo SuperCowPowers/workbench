@@ -86,7 +86,7 @@ class AGTable(PluginInterface):
 
         # Add Health Symbols
         if "Health" in table_df.columns:
-            table_df["Health"] = table_df["Health"].map(lambda x: tag_symbols(x))
+            table_df["Health"] = table_df["Health"].map(tag_symbols)
 
         # Convert the DataFrame to a list of dictionaries for AG Grid
         table_data = table_df.to_dict("records")

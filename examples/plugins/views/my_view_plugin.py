@@ -34,8 +34,6 @@ class MyViewPlugin(PageView):
 
 if __name__ == "__main__":
     # Exercising the MyViewPlugin
-    import pandas as pd
-
     pd.options.display.max_columns = None
     pd.options.display.width = 1000
 

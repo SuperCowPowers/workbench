@@ -469,7 +469,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Temp
-    fs = FeatureSetCore("test_features")
+    FeatureSetCore("test_features")
 
     # Grab the test_data DataSource
     ds = DataSource("test_data")
@@ -482,7 +482,7 @@ if __name__ == "__main__":
     df_to_features.transform()
 
     # Test non-compliant output Name
-    df_to_features = PandasToFeatures("test_features-123")
+    PandasToFeatures("test_features-123")
 
     #
     # Individual Tests

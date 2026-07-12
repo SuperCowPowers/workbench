@@ -663,7 +663,7 @@ if __name__ == "__main__":
         for extract in [True, False]:
             print(f"Performance test with AQSol dataset: tautomer={tautomer} extract_salts={extract}:")
             start_time = time.time()
-            std_df = standardize(df, canonicalize_tautomer=tautomer, extract_salts=extract)
+            standardize(df, canonicalize_tautomer=tautomer, extract_salts=extract)
             elapsed = time.time() - start_time
             mol_per_sec = len(df) / elapsed
             print(f"{elapsed:.2f}s ({mol_per_sec:.0f} mol/s)")

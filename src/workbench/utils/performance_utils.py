@@ -41,7 +41,7 @@ if __name__ == "__main__":
         def __init__(self):
             print("OldClass initialized")
 
-    instance = OldClass()
+    OldClass()
 
     class MyClass:
         @performance

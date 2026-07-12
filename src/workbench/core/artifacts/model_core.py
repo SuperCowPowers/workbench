@@ -1469,7 +1469,6 @@ if __name__ == "__main__":
     print(f"Workbench Meta: {my_model.workbench_meta()}")
 
     # Get the latest model object (sagemaker.model.Model)
-    sagemaker_model = my_model.sagemaker_model_object()
     print(f"Latest Model Object: {my_model.sagemaker_model_object()}")
 
     # Get the Class Labels (if it's a classifier)
@@ -1489,4 +1488,4 @@ if __name__ == "__main__":
     print(f"Training View Name: {training_view.name}")
 
     # Check for a model that doesn't exist
-    my_model = ModelCore("empty-model-group")
+    ModelCore("empty-model-group")

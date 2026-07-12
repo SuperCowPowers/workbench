@@ -662,7 +662,7 @@ def select_pipelines(
         matched = filter_pipelines_by_patterns(all_pipelines, args.patterns)
         if not matched:
             print(f"No pipelines matching patterns: {args.patterns}")
-            exit(1)
+            sys.exit(1)
         matched_set = set(matched)
         # All modes of matched scripts are targets.
         target_nodes = [n for n in all_nodes if n.script in matched_set]
@@ -698,7 +698,7 @@ def select_pipelines(
         return selected, None, None, "ALL"
 
     print("Specify pipeline patterns or use --all to launch all pipelines.")
-    exit(1)
+    sys.exit(1)
 
 
 def resolve_mode(args: argparse.Namespace) -> str | None:

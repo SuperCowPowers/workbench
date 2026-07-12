@@ -260,4 +260,4 @@ if __name__ == "__main__":
     pprint(test_results[[target, "prediction"]])
 
     # Run predictions using the fast_inference method
-    fast_results = my_endpoint.fast_inference(df)
+    my_endpoint.fast_inference(df)

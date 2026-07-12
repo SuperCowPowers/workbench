@@ -165,8 +165,6 @@ def analyze_toxicity_patterns(df: pd.DataFrame) -> None:
 if __name__ == "__main__":
     # Load the training and test sets
     training = "/Users/briford/data/workbench/tox21/training/tox21_10k_data_all.sdf"
-    test = "/Users/briford/data/workbench/tox21/testing/tox21_10k_challenge_test.sdf"
-    final_test = "/Users/briford/data/workbench/tox21/testing/tox21_10k_challenge_score.sdf"
 
     # Process the training data
     print("Processing training data...")

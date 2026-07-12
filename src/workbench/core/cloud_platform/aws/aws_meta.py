@@ -281,7 +281,6 @@ class AWSMeta:
 
         model_details = {}
         aws_tags = {}
-        status = "Unknown"
         health_tags = ""
 
         latest_model = self.get_latest_model_package_info(name)

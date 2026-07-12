@@ -285,4 +285,4 @@ if __name__ == "__main__":
     print(f"Dataset shape: {df.shape}")
 
     # Run diagnostics (use sample_size=None for full dataset, or set a number for testing)
-    result = run_diagnostics(df[270:280])
+    run_diagnostics(df[270:280])

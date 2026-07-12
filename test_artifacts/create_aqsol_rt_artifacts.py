@@ -75,4 +75,4 @@ if __name__ == "__main__":
     if recreate or not Endpoint("aqsol-mol-class-rt").exists():
         m = Model("aqsol-mol-class")
         m.set_owner("BW")
-        end = m.to_endpoint(name="aqsol-mol-class-rt", tags=["aqsol", "class", "realtime"], serverless=False)
+        m.to_endpoint(name="aqsol-mol-class-rt", tags=["aqsol", "class", "realtime"], serverless=False)

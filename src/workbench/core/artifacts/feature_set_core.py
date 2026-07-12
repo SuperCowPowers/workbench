@@ -672,7 +672,6 @@ class FeatureSetCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise for FeatureSet Class"""
-    from workbench.core.artifacts.feature_set_core import FeatureSetCore as LocalFeatureSetCore  # noqa: F811
     from pprint import pprint
 
     # Setup Pandas output options
@@ -681,7 +680,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = LocalFeatureSetCore("abalone_features")
+    my_features = FeatureSetCore("abalone_features")
     if not my_features.exists():
         print("FeatureSet not found!")
         sys.exit(1)

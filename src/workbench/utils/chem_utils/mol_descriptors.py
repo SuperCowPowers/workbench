@@ -481,6 +481,6 @@ if __name__ == "__main__":
 
     # Run tests
     run_basic_tests()
-    timing_results = run_performance_tests()
+    run_performance_tests()
 
     print("\n✅ All tests completed!")

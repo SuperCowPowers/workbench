@@ -318,7 +318,6 @@ def seaborn_to_plotly_colorscale(seaborn_palette: str) -> list:
         list: A Plotly-compatible colorscale as a list of [position, rgba color] pairs.
     """
     import seaborn as sns
-    import numpy as np
     import json
 
     # Get the seaborn color palette (default discrete colors)

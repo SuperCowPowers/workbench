@@ -30,7 +30,7 @@ class EndpointsPageView(PageView):
         self.endpoints_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         # Add Health Symbols to the Model Group Name
         if "Health" in self.endpoints_df.columns:
-            self.endpoints_df["Health"] = self.endpoints_df["Health"].map(lambda x: tag_symbols(x))
+            self.endpoints_df["Health"] = self.endpoints_df["Health"].map(tag_symbols)
 
     def endpoints(self) -> pd.DataFrame:
         """Get all the data that's useful for this view

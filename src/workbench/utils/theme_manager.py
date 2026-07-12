@@ -255,7 +255,6 @@ class ThemeManager:
         """Get the plot background for the current theme."""
 
         # We have 2 background options (paper_bgcolor and plot_bgcolor)
-        background = cls.current_template["layout"]["paper_bgcolor"]
         background = cls.current_template["layout"]["plot_bgcolor"]
         return color_to_rgba(background)
 

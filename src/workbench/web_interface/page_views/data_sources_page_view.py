@@ -28,7 +28,7 @@ class DataSourcesPageView(PageView):
 
         # Add Health Symbols to the Model Group Name
         if "Health" in self.data_sources_df.columns:
-            self.data_sources_df["Health"] = self.data_sources_df["Health"].map(lambda x: tag_symbols(x))
+            self.data_sources_df["Health"] = self.data_sources_df["Health"].map(tag_symbols)
 
     def data_sources(self) -> pd.DataFrame:
         """Get a list of all the DataSources

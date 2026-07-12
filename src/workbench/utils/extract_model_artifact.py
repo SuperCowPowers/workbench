@@ -212,7 +212,7 @@ if __name__ == "__main__":
     model_uri, script_uri = ema.get_artifact_uris()
     print(f"Model Data URI: {model_uri}")
     print(f"Script URI: {script_uri}")
-    my_model = ema.download_and_extract_model(model_uri)
+    ema.download_and_extract_model(model_uri)
 
     # Unpack the artifacts
     ema.unpack_artifacts(model_uri, script_uri)

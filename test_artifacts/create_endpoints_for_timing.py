@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     # Create the two Endpoints
     if not Endpoint("test-timing-serverless").exists():
-        end = model.to_endpoint("test-timing-serverless", tags=["test", "timing"])
+        model.to_endpoint("test-timing-serverless", tags=["test", "timing"])
 
     if not Endpoint("test-timing-realtime").exists():
-        end = model.to_endpoint("test-timing-realtime", tags=["test", "timing"], serverless=False)
+        model.to_endpoint("test-timing-realtime", tags=["test", "timing"], serverless=False)

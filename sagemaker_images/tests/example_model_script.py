@@ -134,7 +134,6 @@ if __name__ == "__main__":
     target = TEMPLATE_PARAMS["target_column"]
     feature_list = TEMPLATE_PARAMS["feature_list"]
     model_type = TEMPLATE_PARAMS["model_type"]
-    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     validation_split = 0.2
 
     # Script arguments for input/output directories

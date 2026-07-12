@@ -1076,9 +1076,8 @@ if __name__ == "__main__":
         index=["bad_low", "okay_low", "good", "okay_high", "bad_high"],
     )
 
-    # Define Positive and Negative Classes
+    # Define Positive Classes
     positive_classes = ["okay_low", "good", "okay_high"]
-    negative_classes = ["bad_low", "bad_high"]
 
     # Compute Binary Accuracy
     accuracy = binary_accuracy(conf_matrix, positive_classes)

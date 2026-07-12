@@ -31,7 +31,6 @@ if __name__ == "__main__":
 
     # Get the path to the dataset in the repository data directory
     abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
-    karate_graph = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "karate_graph.json"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False

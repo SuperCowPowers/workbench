@@ -301,16 +301,16 @@ if __name__ == "__main__":
     manager = PluginManager()
 
     # Get web components for the model page
-    model_plugin = manager.get_list_of_web_plugins(PluginPage.MODEL)
+    manager.get_list_of_web_plugins(PluginPage.MODEL)
 
     # Get web components for the endpoint page
-    endpoint_plugin = manager.get_list_of_web_plugins(PluginPage.ENDPOINT)
+    manager.get_list_of_web_plugins(PluginPage.ENDPOINT)
 
     # Get view plugin
-    my_view = manager.get_view("ModelPluginView")
+    manager.get_view("ModelPluginView")
 
     # Get plugin pages
-    plugin_pages = manager.get_pages()
+    manager.get_pages()
 
     # Get all the plugins
     pprint(manager.get_all_plugins())
@@ -341,16 +341,16 @@ if __name__ == "__main__":
     manager = PluginManager()
 
     # Get web components for the model view
-    model_plugin = manager.get_list_of_web_plugins(PluginPage.MODEL)
+    manager.get_list_of_web_plugins(PluginPage.MODEL)
 
     # Get web components for the endpoint view
-    endpoint_plugin = manager.get_list_of_web_plugins(PluginPage.ENDPOINT)
+    manager.get_list_of_web_plugins(PluginPage.ENDPOINT)
 
     # Get view plugin
-    my_view = manager.get_view("ModelPluginView")
+    manager.get_view("ModelPluginView")
 
     # Get plugin pages
-    plugin_pages = manager.get_pages()
+    manager.get_pages()
 
     # Get all the plugins
     pprint(manager.get_all_plugins())

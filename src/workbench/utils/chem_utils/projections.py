@@ -199,7 +199,7 @@ if __name__ == "__main__":
     small_df = test_df.head(2).copy()
     if len(small_df) > 0:
         try:
-            proj_small = project_fingerprints(small_df, projection="TSNE")
+            project_fingerprints(small_df, projection="TSNE")
             print("   Note: Small dataset projection handled")
         except Exception as e:
             print(f"   Note: Small dataset appropriately failed: {type(e).__name__}")

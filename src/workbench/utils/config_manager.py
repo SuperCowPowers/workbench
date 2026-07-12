@@ -462,4 +462,4 @@ if __name__ == "__main__":
     os.environ.pop("WORKBENCH_BUCKET", None)
 
     # This will fail with a FatalConfigError (which is good)
-    cm = ConfigManager()
+    ConfigManager()

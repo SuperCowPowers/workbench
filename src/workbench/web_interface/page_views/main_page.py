@@ -145,7 +145,7 @@ class MainPage(PageView):
 
         # Add Health Symbols to the Model Group Name
         if "Health" in model_df.columns:
-            model_df["Health"] = model_df["Health"].map(lambda x: tag_symbols(x))
+            model_df["Health"] = model_df["Health"].map(tag_symbols)
 
         return self.concise_timestamps(model_df)
 
@@ -175,7 +175,7 @@ class MainPage(PageView):
 
         # Add Health Symbols to the Endpoint Name
         if "Health" in endpoint_df.columns:
-            endpoint_df["Health"] = endpoint_df["Health"].map(lambda x: tag_symbols(x))
+            endpoint_df["Health"] = endpoint_df["Health"].map(tag_symbols)
 
         return self.concise_timestamps(endpoint_df)
 

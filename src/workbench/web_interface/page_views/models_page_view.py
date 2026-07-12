@@ -31,7 +31,7 @@ class ModelsPageView(PageView):
 
         # Add Health Symbols to the Model Group Name
         if "Health" in self.models_df.columns:
-            self.models_df["Health"] = self.models_df["Health"].map(lambda x: tag_symbols(x))
+            self.models_df["Health"] = self.models_df["Health"].map(tag_symbols)
 
     def models(self) -> pd.DataFrame:
         """Get all the data that's useful for this view

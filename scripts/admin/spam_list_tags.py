@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     # Test on an ARN that doesn't exist
     log.info("Testing on an ARN that doesn't exist")
-    tags = list_tags_with_throttle("arn:aws:sagemaker:us-west-2:123456789012:fake-arn", sm_session)
+    list_tags_with_throttle("arn:aws:sagemaker:us-west-2:123456789012:fake-arn", sm_session)
 
     # Run spamming in parallel to induce throttling
     log.info("Spamming list_tags_with_throttle")
@@ -33,6 +33,6 @@ if __name__ == "__main__":
         # Collect results
         for future in as_completed(futures):
             try:
-                tags = future.result()
+                future.result()
             except Exception as e:
                 log.error(f"Encountered an error: {e}")

@@ -8,10 +8,8 @@ Endpoints:
     - abalone-regression-end-100
 """
 
-import sys
 import time
 import logging
-from pathlib import Path
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType
 from workbench.core.artifacts.endpoint_core import EndpointCore
@@ -23,9 +21,6 @@ log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
-
-    # Get the path to the dataset in the repository data directory
-    abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False

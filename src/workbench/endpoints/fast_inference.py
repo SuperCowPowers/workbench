@@ -149,7 +149,6 @@ def df_type_conversions(df: pd.DataFrame) -> pd.DataFrame:
             # This typically means a duplicated column name, so confirm duplicate (more than 1) and log it
             column_count = (df.columns == column).sum()
             log.critical(f"{column} occurs {column_count} times in the DataFrame.")
-            pass
 
     # Soft Conversion
     # Convert columns to the best possible dtype that supports the pd.NA missing value.

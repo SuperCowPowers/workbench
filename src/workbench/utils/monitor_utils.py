@@ -244,4 +244,4 @@ if __name__ == "__main__":
     # Test preprocessing script
     script = preprocessing_script(["feature1", "feature2", "feature3"])
     print("\nPreprocessing Script:")
-    # print(script)
+    print(script)

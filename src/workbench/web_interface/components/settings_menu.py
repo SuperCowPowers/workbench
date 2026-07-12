@@ -140,7 +140,7 @@ class SettingsMenu:
 if __name__ == "__main__":
     # Quick test to verify component creation
     menu = SettingsMenu()
-    component = menu.create_component("test-settings-menu")
+    menu.create_component("test-settings-menu")
     print("SettingsMenu component created successfully")
     print(f"Available themes: {menu.tm.list_themes()}")
     print(f"Current theme: {menu.tm.current_theme()}")

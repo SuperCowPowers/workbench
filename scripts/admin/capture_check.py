@@ -69,8 +69,6 @@ def main():
         if max_diff > 1e-6:
             all_match = False
             # Show worst mismatches
-            worst = merged.nlargest(5, diff.name if hasattr(diff, "name") else 0)
-            # Re-compute for display
             merged["_diff"] = diff
             worst = merged.nlargest(5, "_diff")
             print("  Top mismatches:")
