@@ -94,6 +94,10 @@ class ModelImages:
         return uri
 
 
+# Sentinel: endpoint_inference_path not computed yet (None is a valid computed value)
+_UNSET = object()
+
+
 class ModelCore(Artifact):
     """ModelCore: Workbench ModelCore Class
 
@@ -122,7 +126,7 @@ class ModelCore(Artifact):
         self.latest_model = None
         self.model_type = ModelType.UNKNOWN
         self.model_training_path = None
-        self.endpoint_inference_path = None
+        self._endpoint_inference_path = None
 
         # Grab an Cloud Platform Meta object and pull information for this Model
         self.model_name = model_name
@@ -151,8 +155,8 @@ class ModelCore(Artifact):
         # Set the Model Training S3 Path
         self.model_training_path = f"{self.models_s3_path}/{self.model_name}/training"
 
-        # Get our Endpoint Inference Path (might be None)
-        self.endpoint_inference_path = self.get_endpoint_inference_path()
+        # Endpoint Inference Path is computed lazily on first access (see property)
+        self._endpoint_inference_path = _UNSET
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -458,9 +462,9 @@ class ModelCore(Artifact):
         # Remove any health tags
         self.remove_health_tag("no_endpoint")
 
-        # A new endpoint means we need to refresh our inference path
+        # A new endpoint means our inference path is stale; recompute on next access
         time.sleep(2)  # Give the AWS Metadata a chance to update
-        self.endpoint_inference_path = self.get_endpoint_inference_path()
+        self._endpoint_inference_path = _UNSET
 
     def remove_endpoint(self, endpoint_name: str):
         """Remove this endpoint from the set of registered endpoints for the model
@@ -492,6 +496,13 @@ class ModelCore(Artifact):
             list[str]: List of registered endpoints
         """
         return self.workbench_meta().get("workbench_registered_endpoints", [])
+
+    @property
+    def endpoint_inference_path(self) -> Union[str, None]:
+        """S3 path for this model's endpoint inference data (lazy; None if no endpoints)"""
+        if self._endpoint_inference_path is _UNSET:
+            self._endpoint_inference_path = self.get_endpoint_inference_path()
+        return self._endpoint_inference_path
 
     def get_endpoint_inference_path(self) -> Union[str, None]:
         """Get the S3 Path for the Inference Data
