@@ -281,7 +281,7 @@ def view_details(
 
         # Check if the table is a view and extract the source table from the SQL query
         if response["Table"]["TableType"] != "VIRTUAL_VIEW":
-            return column_names, column_types, response["Table"]["Name"]
+            return column_names, column_types, response["Table"]["Name"], False
         elif "ViewOriginalText" in response["Table"]:
             view_sql_encoded = response["Table"]["ViewOriginalText"]
             view_sql_decoded = _decode_view_sql(view_sql_encoded)

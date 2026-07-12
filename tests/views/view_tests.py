@@ -6,9 +6,23 @@ import logging
 # Workbench Imports
 from workbench.api import DataSource, FeatureSet
 from workbench.core.views import View
+from workbench.core.views.view_utils import view_details
 
 # Show debug calls
 logging.getLogger("workbench").setLevel(logging.DEBUG)
+
+
+def test_view_details_on_base_table():
+    """view_details always returns a 4-tuple, including for base tables.
+
+    Regression: the base-table (non VIRTUAL_VIEW) branch returned 3 values,
+    blowing up the 4-variable unpack in View.__init__.
+    """
+    ds = DataSource("abalone_data")
+    columns, column_types, source_table, join_view = view_details(ds.table, ds.database, ds.boto3_session)
+    assert columns and column_types
+    assert source_table == ds.table
+    assert join_view is False
 
 
 def test_display_view_ds():

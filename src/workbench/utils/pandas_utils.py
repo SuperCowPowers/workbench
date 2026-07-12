@@ -1116,7 +1116,7 @@ if __name__ == "__main__":
 
     # Add a datetime column to our df and test temporal_split
     df["date"] = pd.date_range(start="1/1/2020", periods=len(df))
-    train_df, test_df = temporal_split(df, "date", test_split=0.2)
+    train_df, test_df = temporal_split(df, "date", end_date="2020-01-08")
     print("Train DataFrame:")
     print(train_df)
     print("\nTest DataFrame:")

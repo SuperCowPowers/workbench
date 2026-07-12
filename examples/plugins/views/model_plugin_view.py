@@ -4,7 +4,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.web_interface.page_views.page_view import PageView
-from workbench.cached.cached_model import CachedModel
+from workbench.cached.cached_meta import CachedMeta
 
 
 class ModelPluginView(PageView):
@@ -14,7 +14,7 @@ class ModelPluginView(PageView):
         super().__init__()
 
         # We're using the Workbench Meta class to get information about models
-        self.meta = CachedModel()
+        self.meta = CachedMeta()
 
         # Call Refresh
         self.models_df = None

@@ -500,21 +500,21 @@ if __name__ == "__main__":
     # Regression Model
     input_name = "abalone_features"
     output_name = "abalone-regression"
-    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.REGRESSOR)
+    to_model = FeaturesToModel(input_name, output_name, ModelType.REGRESSOR, ModelFramework.XGBOOST)
     to_model.set_output_tags(["test"])
     to_model.transform(target_column="class_number_of_rings", description="Test Abalone Regression")
 
     # Classification Model
     input_name = "wine_features"
     output_name = "wine-classification"
-    to_model = FeaturesToModel(input_name, output_name, ModelType.CLASSIFIER)
+    to_model = FeaturesToModel(input_name, output_name, ModelType.CLASSIFIER, ModelFramework.XGBOOST)
     to_model.set_output_tags(["wine", "public"])
     to_model.transform(target_column="wine_class", description="Wine Classification")
 
     # Quantile Regression Model (Abalone)
     input_name = "abalone_features"
     output_name = "abalone-regression-uq"
-    to_model = FeaturesToModel(input_name, output_name, ModelType.UQ_REGRESSOR)
+    to_model = FeaturesToModel(input_name, output_name, ModelType.UQ_REGRESSOR, ModelFramework.XGBOOST)
     to_model.set_output_tags(["abalone", "uq"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone UQ Regression")
 
@@ -527,6 +527,7 @@ if __name__ == "__main__":
         model_class="KMeans",  # Clustering algorithm
         model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
         model_type=ModelType.CLUSTERER,
+        model_framework=ModelFramework.SKLEARN,
     )
     to_model.set_output_tags(["wine", "clustering"])
     to_model.transform(target_column=None, description="Wine Clustering")
@@ -540,6 +541,7 @@ if __name__ == "__main__":
         model_class="HDBSCAN",  # Density-based clustering algorithm
         model_import_str="from sklearn.cluster import HDBSCAN",
         model_type=ModelType.CLUSTERER,
+        model_framework=ModelFramework.SKLEARN,
     )
     to_model.set_output_tags(["wine", "density-based clustering"])
     to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN")
@@ -553,6 +555,7 @@ if __name__ == "__main__":
         model_class="UMAP",
         model_import_str="from umap import UMAP",
         model_type=ModelType.PROJECTION,
+        model_framework=ModelFramework.SKLEARN,
     )
     to_model.set_output_tags(["wine", "2d-projection"])
     to_model.transform(target_column=None, description="Wine 2D Projection")
@@ -562,7 +565,9 @@ if __name__ == "__main__":
     my_custom_script = scripts_root / "custom_script_example" / "custom_model_script.py"
     input_name = "wine_features"
     output_name = "wine-custom"
-    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
+    to_model = FeaturesToModel(
+        input_name, output_name, ModelType.CLASSIFIER, ModelFramework.SKLEARN, custom_script=my_custom_script
+    )
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
 
@@ -571,7 +576,9 @@ if __name__ == "__main__":
     my_script = scripts_root / "custom_models" / "chem_info" / "molecular_descriptors.py"
     input_name = "aqsol_features"
     output_name = "test-smiles-to-2d"
-    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    to_model = FeaturesToModel(
+        input_name, output_name, ModelType.TRANSFORMER, ModelFramework.TRANSFORMER, custom_script=my_script
+    )
     to_model.set_output_tags(["smiles", "molecular descriptors"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
 
@@ -580,6 +587,8 @@ if __name__ == "__main__":
     my_script = scripts_root / "custom_models" / "chem_info" / "morgan_fingerprints.py"
     input_name = "aqsol_features"
     output_name = "smiles-to-fingerprints-v0"
-    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    to_model = FeaturesToModel(
+        input_name, output_name, ModelType.TRANSFORMER, ModelFramework.TRANSFORMER, custom_script=my_script
+    )
     to_model.set_output_tags(["smiles", "morgan fingerprints"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Morgan Fingerprints")

@@ -16,7 +16,7 @@ class CorrectPlugin(PluginInterface):
     plugin_input_type = PluginInputType.MODEL
 
     def __init__(self):
-        self.container = None
+        super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Confusion Matrix Component without any data.

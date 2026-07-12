@@ -163,7 +163,7 @@ class Meta(CloudMeta):
         Returns:
             dict: The details of the Feature Set (None if not found)
         """
-        return super().feature_set(feature_group_name=feature_set_name)
+        return super().feature_set(feature_set_name=feature_set_name)
 
     def model(self, model_name: str) -> Union[dict, None]:
         """Get the details of a specific Model
@@ -174,7 +174,7 @@ class Meta(CloudMeta):
         Returns:
             dict: The details of the Model (None if not found)
         """
-        return super().model(model_group_name=model_name)
+        return super().model(model_name=model_name)
 
     def endpoint(self, endpoint_name: str) -> Union[dict, None]:
         """Get the details of a specific Endpoint
