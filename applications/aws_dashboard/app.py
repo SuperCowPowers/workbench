@@ -22,7 +22,7 @@ log = logging.getLogger("workbench")
 tm = ThemeManager()
 tm.set_theme("auto")
 css_files = tm.css_files()
-print(css_files)
+log.info(f"CSS files: {css_files}")
 
 # Set the Dash App Title
 app_title = tm.branding().get("app_title", "Workbench Dashboard")
@@ -161,7 +161,7 @@ plugin_pages = {}
 for page_id, page_info in page_registry.items():
     if page_info["path"] not in dashboard_page_paths:
         plugin_pages[page_info["path"]] = page_info["name"]
-print(plugin_pages)
+log.info(f"Plugin pages: {plugin_pages}")
 
 # Update the plugin-pages-info store
 for component in app.layout.children:

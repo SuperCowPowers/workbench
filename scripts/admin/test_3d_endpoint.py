@@ -11,6 +11,7 @@ Usage:
     python scripts/admin/test_3d_endpoint.py smiles-to-3d-full-v2
 """
 
+import sys
 import argparse
 import pandas as pd
 from workbench.api import Endpoint
@@ -145,4 +146,4 @@ if __name__ == "__main__":
     parser.add_argument("endpoint", nargs="?", default=DEFAULT_ENDPOINT, help="Endpoint name")
     args = parser.parse_args()
     success = run_endpoint_test(args.endpoint)
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

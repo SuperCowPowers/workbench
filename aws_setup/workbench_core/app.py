@@ -1,3 +1,4 @@
+import sys
 import os
 import boto3
 import logging
@@ -30,7 +31,7 @@ print(f"Region: {aws_region}")
 workbench_bucket = (cm and cm.get_config("WORKBENCH_BUCKET")) or os.getenv("WORKBENCH_BUCKET")
 if not workbench_bucket:
     print("Error: WORKBENCH_BUCKET is required but not found in config or environment variables.")
-    exit(1)
+    sys.exit(1)
 
 # SSO Groups (Groups that can assume the Workbench roles)
 sso_groups_str = (cm and cm.get_config("WORKBENCH_SSO_GROUPS")) or os.getenv("WORKBENCH_SSO_GROUPS", "")

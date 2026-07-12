@@ -306,9 +306,6 @@ if __name__ == "__main__":
         my_log.error("This should be a bright color")
         my_log.critical("This should be an alert color")
 
-    # Test the exception handler
+    # Test the exception handler (raises, so this stays last)
     with exception_log_forward():
         raise ValueError("Testing the exception handler")
-
-    # Test the light theme
-    log_theme("light")

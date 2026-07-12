@@ -1,3 +1,4 @@
+import sys
 import argparse
 import logging
 import json
@@ -277,7 +278,7 @@ def main():
     except Exception as e:
         print(f"\n  ERROR: {e}")
         log.error(f"Error: {e}")
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

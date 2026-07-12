@@ -1,3 +1,4 @@
+import sys
 import argparse
 import logging
 import time
@@ -181,10 +182,10 @@ def main():
             temporal_split=args.ts,
             pipeline_meta=args.pipeline_meta,
         )
-        exit(exit_code)
+        sys.exit(exit_code)
     except Exception as e:
         log.error(f"Error: {e}")
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

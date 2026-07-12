@@ -1,5 +1,6 @@
 """Tests for the creation and comparison of Model Metrics"""
 
+import sys
 import pytest
 from pprint import pprint
 
@@ -68,11 +69,11 @@ def test_inference_predictions(model_class):
     model_reg = Model("abalone-regression")
     if model_reg.get_inference_predictions() is None:
         print(f"Model {model_reg.name} has no inference predictions!")
-        exit(1)
+        sys.exit(1)
     pprint(model_reg.get_inference_predictions().head())
     if model_class.get_inference_predictions() is None:
         print(f"Model {model_class.name} has no inference predictions!")
-        exit(1)
+        sys.exit(1)
     pprint(model_class.get_inference_predictions().head())
 
 

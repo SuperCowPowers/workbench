@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import os
 import json
 import time
@@ -366,4 +367,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

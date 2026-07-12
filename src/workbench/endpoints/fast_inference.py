@@ -1,5 +1,6 @@
 """Fast Inference on SageMaker Endpoints"""
 
+import sys
 import os
 import pandas as pd
 from io import StringIO
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     my_endpoint = Endpoint(my_endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {my_endpoint_name} does not exist.")
-        exit(1)
+        sys.exit(1)
 
     # Pull evaluation data
     print("Pulling Evaluation Data...")

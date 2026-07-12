@@ -168,17 +168,13 @@ def monitor_log_group(
                 message = event["message"].strip()
                 print(f"[{log_stream_name}] [{date_display(timestamp)}] {message}")
 
-        # Update the start time to just after the last event's timestamp
-        if end_time is None:
-            start_time = datetime.now(timezone.utc)
-        else:
+        # Historical query (end_time set): one pass and done
+        if end_time is not None:
             break
 
-        # Wait for the next poll if monitoring realtime logs
-        if end_time is None:
-            time.sleep(poll_interval)
-        else:
-            break
+        # Realtime monitoring: advance the window and wait for the next poll
+        start_time = datetime.now(timezone.utc)
+        time.sleep(poll_interval)
 
 
 # Function to handle SIGINT (Control-C)

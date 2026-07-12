@@ -3,6 +3,7 @@ Endpoints Monitors are set up and provisioned for deployment into AWS.
 Monitors can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional monitor details and performance metrics"""
 
+import sys
 import pandas as pd
 from typing import Union
 
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     my_endpoint = Endpoint(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
-        exit(1)
+        sys.exit(1)
     mm = Monitor(endpoint_name)
 
     # Check the summary and details of the monitoring class

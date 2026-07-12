@@ -1,3 +1,4 @@
+import sys
 import argparse
 import os
 import logging
@@ -235,10 +236,10 @@ def main():
             job_succeeded = job_result["state"] == "SUCCEEDED"
             cleanup_job_if_ephemeral(job_name, args.ephemeral, job_succeeded)
             # Exit with the job's exit code
-            exit(job_result["exit_code"])
+            sys.exit(job_result["exit_code"])
         except Exception as e:
             log.error(f"Error running job: {e}")
-            exit(1)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

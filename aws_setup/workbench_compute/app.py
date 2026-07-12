@@ -1,3 +1,4 @@
+import sys
 import boto3
 import aws_cdk as cdk
 from aws_cdk import Fn
@@ -24,7 +25,7 @@ print(f"Region: {aws_region}")
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 if not workbench_bucket:
     print("Error: WORKBENCH_BUCKET is required but not found in config.")
-    exit(1)
+    sys.exit(1)
 
 
 # Get the Batch and Lambda Roles from WorkbenchCore stack outputs

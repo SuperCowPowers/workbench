@@ -22,6 +22,7 @@ Read side (downstream model-training scripts):
 """
 
 from __future__ import annotations
+import sys
 
 import boto3
 from botocore.exceptions import ClientError
@@ -480,7 +481,7 @@ if __name__ == "__main__":
     my_endpoint = Endpoint(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
-        exit(1)
+        sys.exit(1)
 
     # Get the Model Data URL
     model_data_url = internal_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)

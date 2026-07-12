@@ -1,3 +1,4 @@
+import sys
 import json
 import numpy as np
 import pandas as pd
@@ -247,7 +248,7 @@ if __name__ == "__main__":
     my_redis_cache = RedisCache(prefix="test")
     if not my_redis_cache.check():
         print("Redis not available, exiting...")
-        exit(1)
+        sys.exit(1)
 
     # Test the REPR
     print(my_redis_cache)

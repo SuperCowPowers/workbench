@@ -1,5 +1,6 @@
 """MonitorCore class for monitoring SageMaker endpoints"""
 
+import sys
 import logging
 import json
 from typing import Union
@@ -584,7 +585,7 @@ if __name__ == "__main__":
     my_endpoint = EndpointCore(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
-        exit(1)
+        sys.exit(1)
     mm = MonitorCore(endpoint_name)
 
     # Check the summary of the monitoring class

@@ -138,18 +138,6 @@ class PluginUnitTest:
         else:
             raise ValueError(f"Invalid test type: {plugin_input_type}")
 
-        # Set up callbacks for displaying output signals
-        for component_id, property in self.plugin.signals:
-
-            @self.app.callback(
-                Output(f"test-output-{component_id}-{property}", "children"), Input(component_id, property)
-            )
-            def display_output_signal(signal_value):
-                return f"{signal_value}"
-
-        # Now register any internal callbacks
-        self.plugin.register_internal_callbacks()
-
     def run(self):
         """Run the Dash server for the plugin, handling common errors gracefully."""
         while self.is_port_in_use(self.port):

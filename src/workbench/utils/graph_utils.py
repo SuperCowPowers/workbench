@@ -14,7 +14,6 @@ import random
 try:
     import networkx as nx
 except ImportError:
-    print("NetworkX Python module not found! pip install networkx")
     raise ImportError("NetworkX Python module not found! pip install networkx")
 
 # Set up logging
