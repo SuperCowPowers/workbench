@@ -1,0 +1,23 @@
+{
+  "pipelines": {
+    "load_data": [
+      {
+        "script": "load_data.py",
+        "inputs": [
+          "ds:open_admet_xformed"
+        ],
+        "outputs": [
+          "fs:open_admet_caco_2_efflux",
+          "fs:open_admet_caco_2_papp_a_b",
+          "fs:open_admet_hlm_clint",
+          "fs:open_admet_ksol",
+          "fs:open_admet_logd",
+          "fs:open_admet_mbpb",
+          "fs:open_admet_mgmb",
+          "fs:open_admet_mlm_clint",
+          "fs:open_admet_mppb"
+        ]
+      }
+    ]
+  }
+}

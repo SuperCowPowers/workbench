@@ -1,0 +1,12 @@
+{
+  "pipelines": {
+    "wine_classifier": [
+      {"script": "wine_classifier.py", "inputs": ["ds:wine_data"],
+       "outputs": ["fs:wine_features", "model:wine-classification", "endpoint:wine-classification"]}
+    ],
+    "abalone_regression": [
+      {"script": "abalone_regression.py", "inputs": ["ds:abalone_data"],
+       "outputs": ["fs:abalone_features", "model:abalone-regression", "endpoint:abalone-regression"]}
+    ]
+  }
+}

@@ -2,12 +2,10 @@
  *
  * A Dash clientside callback (namespace "ml_pipelines", function "render") calls
  * mlpRender(data) whenever the server-side pipeline data changes. The data is the
- * {category: {assay: {pipeline: node_link_dict}}} hierarchy from CachedMeta.pipelines(),
- * where each node_link_dict is {nodes: [...], links: [{source, target}]} from
- * PipelineManager's bipartite (artifact + job) DAG.
- *
- * For the artifact-flow view we collapse job nodes into artifact -> artifact edges
- * (jobs stay implicit visually) while the wire format keeps them for fidelity.
+ * group tree from CachedMeta.pipelines(); each pipeline is an artifact-only lineage
+ * node-link {nodes: [{id, type}], links: [{source, target}]} already collapsed and
+ * threaded (ds -> fs -> model -> endpoint) by the server's linearize(). The renderer
+ * just lays it out and draws it -- no graph semantics live here.
  *
  * We render straight into #ml-pipelines-root via the DOM (rather than returning Dash
  * components) so the interactive card -> graph flow lives entirely in the browser.
@@ -43,11 +41,14 @@
   const COUNT_TYPES = ["ds", "fs", "model", "endpoint"];
   const TYPE_LABEL = { ds: "DataSource", fs: "FeatureSet", model: "Model", endpoint: "Endpoint" };
 
+  // Dashboard page a node type drills into: /<route>?name=<artifact name> (new tab).
+  const ARTIFACT_ROUTE = { ds: "data_sources", fs: "feature_sets", model: "models", endpoint: "endpoints" };
+
   // Unique artifact counts by type across one or more pipeline graphs
   function typeCounts(graphs) {
     const sets = { ds: new Set(), fs: new Set(), model: new Set(), endpoint: new Set() };
     graphs.forEach((g) => (g.nodes || []).forEach((n) => {
-      if (n.kind === "artifact" && sets[n.type]) sets[n.type].add(n.id);
+      if (sets[n.type]) sets[n.type].add(n.id);
     }));
     const out = {};
     COUNT_TYPES.forEach((t) => { out[t] = sets[t].size; });
@@ -76,32 +77,22 @@
     }).join("");
   }
 
-  /* Collapse a bipartite node-link graph into the artifact DAG:
-     {nodes: [{id, type, name}], edges: [[a, b]]}.
-     Jobs become implicit: each job's inputs are wired straight to its outputs. */
+  /* Shape the server's artifact-only lineage node-link for the layout engine:
+     {nodes: [{id, type, name}], edges: [[a, b]]}. The collapse + type-ladder threading
+     already happened in the server's linearize(); here we only derive display names and
+     turn links into edge pairs (dropping any dangling/self edges defensively). */
   function buildFromGraph(graph) {
-    const isJob = new Set();
-    (graph.nodes || []).forEach((n) => { if (n.kind === "job") isJob.add(n.id); });
-
     const artifacts = new Map();
     (graph.nodes || []).forEach((n) => {
-      if (n.kind !== "artifact") return;
       const i = n.id.indexOf(":");
-      const name = i >= 0 ? n.id.slice(i + 1) : n.id;
-      artifacts.set(n.id, { id: n.id, type: n.type, name });
-    });
-
-    const inbound = {}, outbound = {};
-    (graph.links || []).forEach(({ source, target }) => {
-      if (isJob.has(target)) (inbound[target] = inbound[target] || []).push(source);
-      if (isJob.has(source)) (outbound[source] = outbound[source] || []).push(target);
+      artifacts.set(n.id, { id: n.id, type: n.type, name: i >= 0 ? n.id.slice(i + 1) : n.id });
     });
     const seen = new Set(); const edges = [];
-    isJob.forEach((job) => {
-      (inbound[job] || []).forEach((a) => (outbound[job] || []).forEach((b) => {
-        const key = a + ">" + b;
-        if (a !== b && artifacts.has(a) && artifacts.has(b) && !seen.has(key)) { seen.add(key); edges.push([a, b]); }
-      }));
+    (graph.links || []).forEach(({ source, target }) => {
+      const key = source + ">" + target;
+      if (source !== target && artifacts.has(source) && artifacts.has(target) && !seen.has(key)) {
+        seen.add(key); edges.push([source, target]);
+      }
     });
     return { nodes: [...artifacts.values()], edges };
   }
@@ -311,9 +302,18 @@
       el.style.top = pos[n.id].y + "px";
       el.style.width = pos[n.id].w + "px";
       el.style.setProperty("--nc", `var(--mlp-t-${n.type})`);
-      el.innerHTML = `<div class="n-name" title="${n.id}">${n.name}</div>`;
       el.addEventListener("mouseenter", () => setHover(n.id, true));
       el.addEventListener("mouseleave", () => setHover(n.id, false));
+      // Drill-down: click opens the artifact's dashboard page in a new tab.
+      const route = ARTIFACT_ROUTE[n.type];
+      if (route) {
+        el.classList.add("mlp-node-link");
+        el.innerHTML = `<div class="n-name" title="${n.id} — open in new tab">${n.name}</div>`;
+        el.addEventListener("click", () =>
+          window.open(`/${route}?name=${encodeURIComponent(n.name)}`, "_blank", "noopener"));
+      } else {
+        el.innerHTML = `<div class="n-name" title="${n.id}">${n.name}</div>`;
+      }
       nodeEls.set(n.id, el);
       dag.appendChild(el);
     });
@@ -402,21 +402,23 @@
     return grid;
   }
 
-  /* Render a group's contents into `container`: leaf groups (and any own pipelines)
-     as cards in one grid, deeper groups as nested sections. Depth-agnostic. */
+  /* Render a group's contents into `container`: deeper groups as nested sections,
+     then leaf groups (and any own pipelines) as cards in one grid. Sections render
+     before cards (folders-first) so a loose top-level group like "Misc" sinks to the
+     bottom. Groups arrive name-sorted from the serializer. Depth-agnostic. */
   function renderContents(root, data, container, groups, path, depth, ownPipelines, ownName) {
     const cards = []; // {name, pipelines}
-    if (ownPipelines && Object.keys(ownPipelines).length) cards.push({ name: ownName, pipelines: ownPipelines });
     const sections = [];
     groups.forEach((g) => (isLeaf(g) ? cards.push({ name: g.name, pipelines: g.pipelines }) : sections.push(g)));
+    if (ownPipelines && Object.keys(ownPipelines).length) cards.push({ name: ownName, pipelines: ownPipelines });
 
+    sections.forEach((g) => container.appendChild(renderSection(root, data, g, path, depth)));
     if (cards.length) {
       const cardGrid = document.createElement("div");
       cardGrid.className = "mlp-card-grid";
       cards.forEach((c) => cardGrid.appendChild(makeCard(root, data, c.name, c.pipelines, path)));
       container.appendChild(cardGrid);
     }
-    sections.forEach((g) => container.appendChild(renderSection(root, data, g, path, depth)));
   }
 
   function renderSection(root, data, group, parentPath, depth) {

@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "hlm_clint": [
+      {
+        "script": "hlm_clint.py",
+        "inputs": [
+          "fs:open_admet_hlm_clint"
+        ],
+        "outputs": [
+          "model:hlm-clint-reg-xgb",
+          "endpoint:hlm-clint-reg-xgb",
+          "model:hlm-clint-reg-pytorch",
+          "endpoint:hlm-clint-reg-pytorch",
+          "model:hlm-clint-reg-chemprop",
+          "endpoint:hlm-clint-reg-chemprop",
+          "model:hlm-clint-reg-chemprop-hybrid",
+          "endpoint:hlm-clint-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

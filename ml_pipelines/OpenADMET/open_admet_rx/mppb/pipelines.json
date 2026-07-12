@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "mppb": [
+      {
+        "script": "mppb.py",
+        "inputs": [
+          "fs:open_admet_mppb"
+        ],
+        "outputs": [
+          "model:mppb-reg-xgb",
+          "endpoint:mppb-reg-xgb",
+          "model:mppb-reg-pytorch",
+          "endpoint:mppb-reg-pytorch",
+          "model:mppb-reg-chemprop",
+          "endpoint:mppb-reg-chemprop",
+          "model:mppb-reg-chemprop-hybrid",
+          "endpoint:mppb-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

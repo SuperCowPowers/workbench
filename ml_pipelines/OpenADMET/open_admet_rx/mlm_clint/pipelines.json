@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "mlm_clint": [
+      {
+        "script": "mlm_clint.py",
+        "inputs": [
+          "fs:open_admet_mlm_clint"
+        ],
+        "outputs": [
+          "model:mlm-clint-reg-xgb",
+          "endpoint:mlm-clint-reg-xgb",
+          "model:mlm-clint-reg-pytorch",
+          "endpoint:mlm-clint-reg-pytorch",
+          "model:mlm-clint-reg-chemprop",
+          "endpoint:mlm-clint-reg-chemprop",
+          "model:mlm-clint-reg-chemprop-hybrid",
+          "endpoint:mlm-clint-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

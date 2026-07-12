@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "caco_2_papp_a_b": [
+      {
+        "script": "caco_2_papp_a_b.py",
+        "inputs": [
+          "fs:open_admet_caco_2_papp_a_b"
+        ],
+        "outputs": [
+          "model:caco-2-papp-a-b-reg-xgb",
+          "endpoint:caco-2-papp-a-b-reg-xgb",
+          "model:caco-2-papp-a-b-reg-pytorch",
+          "endpoint:caco-2-papp-a-b-reg-pytorch",
+          "model:caco-2-papp-a-b-reg-chemprop",
+          "endpoint:caco-2-papp-a-b-reg-chemprop",
+          "model:caco-2-papp-a-b-reg-chemprop-hybrid",
+          "endpoint:caco-2-papp-a-b-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

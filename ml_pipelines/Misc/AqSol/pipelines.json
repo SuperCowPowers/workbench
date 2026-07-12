@@ -1,8 +1,5 @@
 {
   "pipelines": {
-    "wine_classifier": [
-      {"script": "wine_classifier.py", "inputs": ["fs:wine_features"], "outputs": ["model:wine-classification"]}
-    ],
     "aqsol": [
       {"script": "aqsol_feature_set.py", "inputs": ["ds:aqsol_data"], "outputs": ["fs:aqsol_features"]},
       {"script": "aqsol_class_1.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-class-1"]},

@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "ksol": [
+      {
+        "script": "ksol.py",
+        "inputs": [
+          "fs:open_admet_ksol"
+        ],
+        "outputs": [
+          "model:ksol-reg-xgb",
+          "endpoint:ksol-reg-xgb",
+          "model:ksol-reg-pytorch",
+          "endpoint:ksol-reg-pytorch",
+          "model:ksol-reg-chemprop",
+          "endpoint:ksol-reg-chemprop",
+          "model:ksol-reg-chemprop-hybrid",
+          "endpoint:ksol-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

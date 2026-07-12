@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "logd": [
+      {
+        "script": "logd.py",
+        "inputs": [
+          "fs:open_admet_logd"
+        ],
+        "outputs": [
+          "model:logd-reg-xgb",
+          "endpoint:logd-reg-xgb",
+          "model:logd-reg-pytorch",
+          "endpoint:logd-reg-pytorch",
+          "model:logd-reg-chemprop",
+          "endpoint:logd-reg-chemprop",
+          "model:logd-reg-chemprop-hybrid",
+          "endpoint:logd-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

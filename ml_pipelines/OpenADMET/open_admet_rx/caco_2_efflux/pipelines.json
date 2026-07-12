@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "caco_2_efflux": [
+      {
+        "script": "caco_2_efflux.py",
+        "inputs": [
+          "fs:open_admet_caco_2_efflux"
+        ],
+        "outputs": [
+          "model:caco-2-efflux-reg-xgb",
+          "endpoint:caco-2-efflux-reg-xgb",
+          "model:caco-2-efflux-reg-pytorch",
+          "endpoint:caco-2-efflux-reg-pytorch",
+          "model:caco-2-efflux-reg-chemprop",
+          "endpoint:caco-2-efflux-reg-chemprop",
+          "model:caco-2-efflux-reg-chemprop-hybrid",
+          "endpoint:caco-2-efflux-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "pipelines": {
+    "mgmb": [
+      {
+        "script": "mgmb.py",
+        "inputs": [
+          "fs:open_admet_mgmb"
+        ],
+        "outputs": [
+          "model:mgmb-reg-xgb",
+          "endpoint:mgmb-reg-xgb",
+          "model:mgmb-reg-pytorch",
+          "endpoint:mgmb-reg-pytorch",
+          "model:mgmb-reg-chemprop",
+          "endpoint:mgmb-reg-chemprop",
+          "model:mgmb-reg-chemprop-hybrid",
+          "endpoint:mgmb-reg-chemprop-hybrid"
+        ]
+      }
+    ]
+  }
+}

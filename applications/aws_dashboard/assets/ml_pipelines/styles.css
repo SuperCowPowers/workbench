@@ -154,6 +154,9 @@
 #ml-pipelines-root .mlp-node.mlp-hl { z-index: 6; box-shadow: 0 0 0 2px var(--nc), 0 6px 18px rgba(0,0,0,.45); }
 #ml-pipelines-root .mlp-node:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 5px 16px rgba(0,0,0,.4); z-index: 5; }
 #ml-pipelines-root .mlp-node .n-name { color: var(--mlp-text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Drill-down: linkable artifact nodes signal clickability + underline the name on hover */
+#ml-pipelines-root .mlp-node-link { cursor: pointer; }
+#ml-pipelines-root .mlp-node-link:hover .n-name { text-decoration: underline; text-decoration-color: var(--nc); text-underline-offset: 2px; }
 #ml-pipelines-root .mlp-node.n-ds { border-left-color: var(--mlp-t-ds); border-right-color: var(--mlp-t-ds); }
 #ml-pipelines-root .mlp-node.n-fs { border-left-color: var(--mlp-t-fs); border-right-color: var(--mlp-t-fs); }
 #ml-pipelines-root .mlp-node.n-model { border-left-color: var(--mlp-t-model); border-right-color: var(--mlp-t-model); }
