@@ -21,6 +21,7 @@
   --mlp-t-fs: #d4b158;
   --mlp-t-model: #6bd08a;
   --mlp-t-endpoint: #5ba3d0;
+  --mlp-t-public: #ab8ad6;
   --mlp-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
   --mlp-radius: 12px;
   --mlp-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
@@ -47,6 +48,7 @@
   --mlp-t-fs: #b8942f;
   --mlp-t-model: #3a9d5c;
   --mlp-t-endpoint: #3a82b0;
+  --mlp-t-public: #7c5cc4;
   --mlp-shadow: 0 6px 24px rgba(30, 50, 70, 0.10);
 }
 
@@ -63,10 +65,12 @@
 #ml-pipelines-root .t-fs { color: var(--mlp-t-fs); background: color-mix(in srgb, var(--mlp-t-fs) 12%, transparent); border-color: color-mix(in srgb, var(--mlp-t-fs) 30%, transparent); }
 #ml-pipelines-root .t-model { color: var(--mlp-t-model); background: color-mix(in srgb, var(--mlp-t-model) 12%, transparent); border-color: color-mix(in srgb, var(--mlp-t-model) 30%, transparent); }
 #ml-pipelines-root .t-endpoint { color: var(--mlp-t-endpoint); background: color-mix(in srgb, var(--mlp-t-endpoint) 12%, transparent); border-color: color-mix(in srgb, var(--mlp-t-endpoint) 30%, transparent); }
+#ml-pipelines-root .t-public { color: var(--mlp-t-public); background: color-mix(in srgb, var(--mlp-t-public) 12%, transparent); border-color: color-mix(in srgb, var(--mlp-t-public) 30%, transparent); }
 #ml-pipelines-root .bg-ds { background: var(--mlp-t-ds); }
 #ml-pipelines-root .bg-fs { background: var(--mlp-t-fs); }
 #ml-pipelines-root .bg-model { background: var(--mlp-t-model); }
 #ml-pipelines-root .bg-endpoint { background: var(--mlp-t-endpoint); }
+#ml-pipelines-root .bg-public { background: var(--mlp-t-public); }
 #ml-pipelines-root .mlp-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; color: var(--mlp-text-dim); font-size: 12px; }
 
 /* ================= GRID VIEW ================= */
@@ -170,6 +174,7 @@
 #ml-pipelines-root .mlp-node.n-fs { border-color: var(--mlp-t-fs); }
 #ml-pipelines-root .mlp-node.n-model { border-color: var(--mlp-t-model); }
 #ml-pipelines-root .mlp-node.n-endpoint { border-color: var(--mlp-t-endpoint); }
+#ml-pipelines-root .mlp-node.n-public { border-color: var(--mlp-t-public); }
 
 #ml-pipelines-root .mlp-hidden { display: none !important; }
 

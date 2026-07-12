@@ -38,15 +38,16 @@
   }
 
   // Artifact-type counting. Types shown, in pipeline order, with display labels.
-  const COUNT_TYPES = ["ds", "fs", "model", "endpoint"];
-  const TYPE_LABEL = { ds: "DataSource", fs: "FeatureSet", model: "Model", endpoint: "Endpoint" };
+  const COUNT_TYPES = ["public", "ds", "fs", "model", "endpoint"];
+  const TYPE_LABEL = { public: "PublicData", ds: "DataSource", fs: "FeatureSet", model: "Model", endpoint: "Endpoint" };
 
   // Dashboard page a node type drills into: /<route>?name=<artifact name> (new tab).
+  // No route for `public` -- external public data has no dashboard page, so it isn't linked.
   const ARTIFACT_ROUTE = { ds: "data_sources", fs: "feature_sets", model: "models", endpoint: "endpoints" };
 
   // Unique artifact counts by type across one or more pipeline graphs
   function typeCounts(graphs) {
-    const sets = { ds: new Set(), fs: new Set(), model: new Set(), endpoint: new Set() };
+    const sets = { public: new Set(), ds: new Set(), fs: new Set(), model: new Set(), endpoint: new Set() };
     graphs.forEach((g) => (g.nodes || []).forEach((n) => {
       if (sets[n.type]) sets[n.type].add(n.id);
     }));
@@ -64,15 +65,18 @@
   const isLeaf = (group) => !group.subgroups || group.subgroups.length === 0;
 
   // Short labels for the compact card badges (avoid wrapping)
-  const SHORT_LABEL = { ds: "DS", fs: "FS", model: "Model", endpoint: "Endpoint" };
+  const SHORT_LABEL = { public: "Pub", ds: "DS", fs: "FS", model: "Model", endpoint: "End" };
+
+  // Long labels pluralize with "s" (except PublicData, a mass noun). Short labels are
+  // fixed abbreviations except "Model" -> "Models".
+  const longLabel = (t, n) => TYPE_LABEL[t] + (t !== "public" && n !== 1 ? "s" : "");
+  const shortLabel = (t, n) => SHORT_LABEL[t] + (t === "model" && n !== 1 ? "s" : "");
 
   // Count pills (skips any type with a zero count), number colored by type.
-  // short=true uses DS/FS abbreviations so the card badges fit on one row.
+  // short=true uses the compact abbreviations so the card badges fit on one row.
   function countPills(counts, short) {
     return COUNT_TYPES.filter((t) => counts[t] > 0).map((t) => {
-      const label = short
-        ? SHORT_LABEL[t] + (t === "ds" || t === "fs" || counts[t] === 1 ? "" : "s")
-        : TYPE_LABEL[t] + (counts[t] === 1 ? "" : "s");
+      const label = short ? shortLabel(t, counts[t]) : longLabel(t, counts[t]);
       return `<span class="mlp-stat-pill"><b style="color:var(--mlp-t-${t})">${counts[t]}</b> ${label}</span>`;
     }).join("");
   }
@@ -380,6 +384,7 @@
 
   function legendHTML() {
     return `<div class="mlp-legend">
+      <span class="mlp-type-chip t-public"><span class="mlp-dot bg-public"></span>PublicData</span>
       <span class="mlp-type-chip t-ds"><span class="mlp-dot bg-ds"></span>DataSource</span>
       <span class="mlp-type-chip t-fs"><span class="mlp-dot bg-fs"></span>FeatureSet</span>
       <span class="mlp-type-chip t-model"><span class="mlp-dot bg-model"></span>Model</span>
@@ -477,7 +482,7 @@
       return `<span class="mlp-group-tab"><span class="mlp-gt-kind" style="background:${KIND_COLOR[k]}"></span>${g}</span>`;
     }).join("");
     const metrics = COUNT_TYPES.filter((t) => counts[t] > 0).map((t) => {
-      const label = TYPE_LABEL[t] + (counts[t] === 1 ? "" : "s");
+      const label = longLabel(t, counts[t]);
       return `<div class="mlp-metric"><div class="mv" style="color:var(--mlp-t-${t})">${counts[t]}</div><div class="ml">${label}</div></div>`;
     }).join("");
     const eyebrow = path.length ? path.join(" / ") : "";
