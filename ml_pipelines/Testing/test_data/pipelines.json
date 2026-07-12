@@ -1,0 +1,18 @@
+{
+  "pipelines": {
+    "test_data": [
+      {
+        "script": "test_data.py",
+        "inputs": [],
+        "outputs": [
+          "ds:test_data",
+          "fs:test_features",
+          "model:test-regression",
+          "endpoint:test-regression",
+          "model:test-classification",
+          "endpoint:test-classification"
+        ]
+      }
+    ]
+  }
+}

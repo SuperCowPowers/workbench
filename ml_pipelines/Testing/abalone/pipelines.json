@@ -1,0 +1,16 @@
+{
+  "pipelines": {
+    "abalone": [
+      {
+        "script": "abalone.py",
+        "inputs": [],
+        "outputs": [
+          "ds:abalone_data",
+          "fs:abalone_features",
+          "model:abalone-regression",
+          "endpoint:abalone-regression"
+        ]
+      }
+    ]
+  }
+}
