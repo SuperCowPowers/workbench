@@ -4487,34 +4487,6 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../admin/explorer_docker_push/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Explorer Docker Push
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
     
     
     
@@ -4524,10 +4496,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_26_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_26_6" >
         
           
-          <label class="md-nav__link" for="__nav_26_7" id="__nav_26_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_26_6" id="__nav_26_6_label" tabindex="0">
             
   
   
@@ -4545,8 +4517,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_26_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_26_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_26_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_26_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -4696,16 +4668,11 @@ A column name cannot be longer than 255 characters.</p>
 <p><strong>DataSources and FeatureSet:</strong> Underscores. You cannot use a dash because both classes use Athena for Storage and Athena tables names cannot have a dash.</p>
 <p><strong>Models and Endpoints:</strong> Dashes. You cannot use an underscores because AWS imposes a restriction on the naming.</p>
 <h2 id="additional-information-on-the-lower-case-issue">Additional information on the lower case issue</h2>
-<p>We’ve tried to create a glue table with Mixed Case column names and haven’t had any luck. We’ve bypassed wrangler and used the boto3 low level calls directly. In all cases when it shows up in the Glue Table the columns have always been converted to lower case. We've also tried uses the Athena DDL directly, that also doesn't work. Here's the relevant AWS documentation and the two scripts that reproduce the issue.</p>
+<p>We’ve tried to create a glue table with Mixed Case column names and haven’t had any luck. We’ve bypassed wrangler and used the boto3 low level calls directly. In all cases when it shows up in the Glue Table the columns have always been converted to lower case. We've also tried uses the Athena DDL directly, that also doesn't work. Here's the relevant AWS documentation.</p>
 <p><strong>AWS Docs</strong></p>
 <ul>
 <li><a href="https://docs.aws.amazon.com/athena/latest/ug/tables-databases-columns-names.html">Athena Naming Restrictions</a></li>
 <li><a href="https://docs.aws.amazon.com/athena/latest/ug/glue-best-practices.html#schema-names">Glue Best Practices</a></li>
-</ul>
-<p><strong>Scripts to Reproduce</strong></p>
-<ul>
-<li><a href="https://github.com/SuperCowPowers/workbench/blob/main/scripts/athena_ddl_mixed_case.py">scripts/athena_ddl_mixed_case.py</a></li>
-<li><a href="https://github.com/SuperCowPowers/workbench/blob/main/scripts/glue_mixed_case.py">scripts/glue_mixed_case.py</a></li>
 </ul>
 
 
