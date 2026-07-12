@@ -624,7 +624,8 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
 
     results = []
     for p in pipelines:
-        stem = p.stem.lower()
+        # p may be a Path or a schemed ref string (workbench:/plugin:/s3://)
+        stem = os.path.basename(str(p)).removesuffix(".py").lower()
         if stem in exact:
             results.append(p)
         elif any(pat in stem for pat in substring):
