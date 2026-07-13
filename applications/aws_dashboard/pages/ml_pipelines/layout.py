@@ -28,6 +28,7 @@ def ml_pipelines_layout() -> html.Div:
                     className="mlp-spinner-wrap",
                 ),
                 id="ml-pipelines-root",
+                className="mlp-root",
             ),
             # Dummy output target for the clientside render callback
             html.Div(id="ml_pipelines_render_signal", style={"display": "none"}),

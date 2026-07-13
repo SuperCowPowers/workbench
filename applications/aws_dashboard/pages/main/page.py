@@ -4,6 +4,7 @@ from dash import register_page
 
 # Workbench Imports
 from workbench.web_interface.page_views.main_page import MainPage
+from workbench.web_interface.page_views.ml_pipelines_page_view import MLPipelinesPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 
 # Local Imports
@@ -43,6 +44,9 @@ main_page_view = MainPage()
 callbacks.last_updated()
 callbacks.plugin_page_info()
 callbacks.tables_refresh(main_page_view, tables)
+
+# ML Pipelines preview (top-4 most complex pipelines)
+callbacks.pipeline_preview(MLPipelinesPageView())
 
 # Set up our subpage navigation
 callbacks.navigate_to_subpage()

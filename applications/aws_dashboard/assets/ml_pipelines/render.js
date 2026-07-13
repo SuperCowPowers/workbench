@@ -64,6 +64,39 @@
   function groupCounts(group) { return typeCounts(allGraphs(group)); }
   const isLeaf = (group) => !group.subgroups || group.subgroups.length === 0;
 
+  /* The single rule for what a container renders as cards vs. nested sections:
+     every leaf child is a card; every non-leaf child is a section; the container's
+     own non-empty pipelines are one more card. All cards at a level share `path`.
+     Both the grid (renderContents) and the preview (collectCards) go through here so
+     the two can never disagree on what a "card" is. */
+  function splitLevel(groups, path, ownPipelines, ownName) {
+    const cards = [], sections = [];
+    (groups || []).forEach((g) => (isLeaf(g)
+      ? cards.push({ name: g.name, pipelines: g.pipelines, path })
+      : sections.push(g)));
+    if (ownPipelines && Object.keys(ownPipelines).length) {
+      cards.push({ name: ownName, pipelines: ownPipelines, path });
+    }
+    return { cards, sections };
+  }
+
+  // Flatten the whole tree to every card the grid would render, in the same order and
+  // with the same breadcrumbs. Mirrors renderContents' recursion (sections recurse with
+  // their name appended to the path and their own pipelines as this level's ownPipelines).
+  function collectCards(groups, path, ownPipelines, ownName, out) {
+    const { cards, sections } = splitLevel(groups, path, ownPipelines, ownName);
+    cards.forEach((c) => out.push(c));
+    sections.forEach((g) => collectCards(g.subgroups, path.concat(g.name), g.pipelines, g.name, out));
+    return out;
+  }
+
+  // Pipeline complexity: product of (count + 1) across all 5 lanes. The +1 keeps an
+  // empty lane from zeroing the product (most pipelines don't span all 5), and it
+  // rewards both breadth (using more lanes) and balance (2,2,2,2,2 beats 1,1,1,4,3).
+  function complexity(counts) {
+    return COUNT_TYPES.reduce((p, t) => p * (counts[t] + 1), 1);
+  }
+
   // Short labels for the compact card badges (avoid wrapping)
   const SHORT_LABEL = { public: "Pub", ds: "DS", fs: "FS", model: "Model", endpoint: "End" };
 
@@ -418,16 +451,12 @@
      before cards (folders-first) so a loose top-level group like "Misc" sinks to the
      bottom. Groups arrive name-sorted from the serializer. Depth-agnostic. */
   function renderContents(root, data, container, groups, path, depth, ownPipelines, ownName) {
-    const cards = []; // {name, pipelines}
-    const sections = [];
-    groups.forEach((g) => (isLeaf(g) ? cards.push({ name: g.name, pipelines: g.pipelines }) : sections.push(g)));
-    if (ownPipelines && Object.keys(ownPipelines).length) cards.push({ name: ownName, pipelines: ownPipelines });
-
+    const { cards, sections } = splitLevel(groups, path, ownPipelines, ownName);
     sections.forEach((g) => container.appendChild(renderSection(root, data, g, path, depth)));
     if (cards.length) {
       const cardGrid = document.createElement("div");
       cardGrid.className = "mlp-card-grid";
-      cards.forEach((c) => cardGrid.appendChild(makeCard(root, data, c.name, c.pipelines, path)));
+      cards.forEach((c) => cardGrid.appendChild(makeCard(root, data, c.name, c.pipelines, c.path)));
       container.appendChild(cardGrid);
     }
   }
@@ -453,7 +482,9 @@
     return section;
   }
 
-  function makeCard(root, data, name, pipelines, path) {
+  // Build the card DOM (title + breadcrumb + thumbnail + stat pills). The caller
+  // attaches the onclick (grid cards open the detail view; preview cards navigate).
+  function cardEl(name, pipelines, path, counts) {
     const card = document.createElement("div");
     card.className = "mlp-card";
     const sub = path.length ? path.join(" / ") : "";
@@ -468,8 +499,13 @@
     card.appendChild(miniThumb(pipelines));
     const stats = document.createElement("div");
     stats.className = "mlp-card-stats";
-    stats.innerHTML = countPills(typeCounts(Object.values(pipelines)), true);
+    stats.innerHTML = countPills(counts, true);
     card.appendChild(stats);
+    return card;
+  }
+
+  function makeCard(root, data, name, pipelines, path) {
+    const card = cardEl(name, pipelines, path, typeCounts(Object.values(pipelines)));
     card.onclick = () => openDetail(root, data, name, pipelines, path);
     return card;
   }
@@ -590,7 +626,32 @@
     return String(sig.length);
   }
 
+  /* Main-page preview: render the 4 most complex pipeline cards into #mlp-preview-root.
+     Cards look identical to the grid's, but clicking one navigates to the full
+     ML Pipelines page instead of drilling into a detail view. */
+  function mlpRenderPreview(data) {
+    const host = document.getElementById("mlp-preview-root");
+    if (!host || !data) return "";
+    const sig = JSON.stringify(data);
+    if (host.dataset.sig === sig) return host.dataset.sig;
+    host.dataset.sig = sig;
+
+    const cards = collectCards(data, [], null, null, []);
+    cards.forEach((c) => { c.counts = typeCounts(Object.values(c.pipelines)); c.score = complexity(c.counts); });
+    cards.sort((a, b) => b.score - a.score);
+
+    const grid = document.createElement("div");
+    grid.className = "mlp-card-grid mlp-preview-grid";
+    cards.slice(0, 4).forEach((c) => {
+      const card = cardEl(c.name, c.pipelines, c.path, c.counts);
+      card.onclick = () => window.location.assign("/ml_pipelines");
+      grid.appendChild(card);
+    });
+    host.replaceChildren(grid);
+    return String(sig.length);
+  }
+
   window.dash_clientside = Object.assign({}, window.dash_clientside, {
-    ml_pipelines: { render: mlpRender },
+    ml_pipelines: { render: mlpRender, renderPreview: mlpRenderPreview },
   });
 })();

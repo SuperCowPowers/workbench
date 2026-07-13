@@ -89,13 +89,6 @@ def main_layout(
                     )
                 ]
             ),
-            # Core page links (ML Pipelines lives outside the plugin-pages list)
-            dbc.Row(
-                html.Div(
-                    html.A("ML Pipelines", href="/ml_pipelines", style={"fontSize": 18, "fontWeight": "bold"}),
-                ),
-                style={"padding": "20px 0px 0px 0px"},
-            ),
             # Plugin Page Links
             dbc.Row(
                 html.Div(
@@ -106,6 +99,24 @@ def main_layout(
                     id="plugin-pages",
                 ),
                 style={"padding": "20px 0px"},
+            ),
+            # ML Pipelines preview: the 4 most complex pipelines (cards rendered by the
+            # shared ml_pipelines clientside renderer). The header + cards link to the page.
+            dbc.Row(
+                html.Div(
+                    [
+                        dcc.Store(id="mlp_preview_data"),
+                        html.A(
+                            html.H3("ML Pipelines", style={"textAlign": "left", "marginBottom": "20px", "marginTop": "20px"}),
+                            href="/ml_pipelines",
+                            style={"textDecoration": "none", "color": "inherit"},
+                        ),
+                        html.Div(id="mlp-preview-root", className="mlp-root"),
+                        # Dummy output target for the clientside preview render callback
+                        html.Div(id="mlp_preview_render_signal", style={"display": "none"}),
+                    ]
+                ),
+                style={"padding": "0px 0px 20px"},
             ),
             # 2x2 grid of artifact tables
             dbc.Row(

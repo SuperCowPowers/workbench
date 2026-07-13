@@ -2,11 +2,12 @@
 
 from concurrent.futures import ThreadPoolExecutor
 
-from dash import callback, Input, Output, State, no_update, html, clientside_callback
+from dash import callback, Input, Output, State, no_update, html, clientside_callback, ClientsideFunction
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.web_interface.page_views.main_page import MainPage
+from workbench.web_interface.page_views.ml_pipelines_page_view import MLPipelinesPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.pandas_utils import dataframe_delta
 
@@ -59,6 +60,24 @@ def plugin_page_info():
                 plugin_list,
             ]
         )
+
+
+# ML Pipelines preview: refresh the hierarchy into a Store, then the shared clientside
+# renderer draws the 4 most complex pipelines into #mlp-preview-root.
+def pipeline_preview(page_view: MLPipelinesPageView):
+    @callback(
+        Output("mlp_preview_data", "data"),
+        Input("main_page_refresh", "n_intervals"),
+    )
+    def _refresh(_n):
+        page_view.refresh()
+        return page_view.pipelines()
+
+    clientside_callback(
+        ClientsideFunction(namespace="ml_pipelines", function_name="renderPreview"),
+        Output("mlp_preview_render_signal", "children"),
+        Input("mlp_preview_data", "data"),
+    )
 
 
 # Update all of the artifact tables
