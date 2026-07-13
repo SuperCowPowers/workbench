@@ -145,9 +145,7 @@ class WorkbenchDashboardStack(Stack):
         # Were we given a subnet selection? (filter by ID so route tables resolve from the VPC lookup)
         subnet_selection = None
         if props.existing_subnet_ids:
-            subnet_selection = ec2.SubnetSelection(
-                subnet_filters=[ec2.SubnetFilter.by_ids(props.existing_subnet_ids)]
-            )
+            subnet_selection = ec2.SubnetSelection(subnet_filters=[ec2.SubnetFilter.by_ids(props.existing_subnet_ids)])
 
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
