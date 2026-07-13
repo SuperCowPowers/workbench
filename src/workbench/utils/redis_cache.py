@@ -50,8 +50,15 @@ class RedisCache:
         log.info(f"Opening Redis connection to: {self.host}:{self.port}...")
         self.redis_db = None
         try:
-            # Create a temporary connection to test the connection
-            _redis_db = redis.Redis(self.host, port=self.port, password=self.password, socket_timeout=1)
+            # Create a temporary connection to test the connection (single attempt, 1s timeout)
+            _redis_db = redis.Redis(
+                self.host,
+                port=self.port,
+                password=self.password,
+                socket_timeout=1,
+                socket_connect_timeout=1,
+                retry=redis.retry.Retry(redis.backoff.NoBackoff(), 0),
+            )
             _redis_db.ping()
 
             # Now create the actual connection
