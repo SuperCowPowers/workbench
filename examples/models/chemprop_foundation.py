@@ -190,21 +190,18 @@ if recreate or not Endpoint("chemeleon-logd-hybrid").exists():
 # =============================================================================
 # You can also use your own pretrained Chemprop model as a foundation.
 # This is useful if you have domain-specific pretrained weights.
-#
-# Example (uncomment to use):
-#
-# if recreate or not Model("my-custom-foundation-model").exists():
-#     feature_set = FeatureSet("my_dataset")
-#     m = feature_set.to_model(
-#         name="my-custom-foundation-model",
-#         model_type=ModelType.UQ_REGRESSOR,
-#         model_framework=ModelFramework.CHEMPROP,
-#         target_column="my_target",
-#         feature_list=["smiles"],
-#         description="Fine-tuned from custom pretrained model",
-#         hyperparameters={
-#             "from_foundation": "/path/to/my_pretrained_model.pt",  # Path to .pt file
-#             "freeze_mpnn_epochs": 5,
-#             "max_epochs": 50,
-#         },
-#     )
+if recreate or not Model("my-custom-foundation-model").exists():
+    feature_set = FeatureSet("my_dataset")
+    m = feature_set.to_model(
+        name="my-custom-foundation-model",
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.CHEMPROP,
+        target_column="my_target",
+        feature_list=["smiles"],
+        description="Fine-tuned from custom pretrained model",
+        hyperparameters={
+            "from_foundation": "/path/to/my_pretrained_model.pt",  # Path to .pt file
+            "freeze_mpnn_epochs": 5,
+            "max_epochs": 50,
+        },
+    )
