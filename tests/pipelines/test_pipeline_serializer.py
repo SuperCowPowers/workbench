@@ -8,6 +8,8 @@ dedups nodes by id, so job ids must be unique both within and across pipelines. 
 collision silently cross-wires inputs to outputs.
 """
 
+import pytest
+
 from workbench.lambda_layer.pipeline_manager import Job, PipelineManager
 from workbench.utils.pipeline_serializer import _serialize, linearize
 
@@ -113,6 +115,7 @@ def test_linearize_threads_a_mega_script_into_a_chain():
     nl, edges = _lin([_job("mega.py", inputs=["ds:d"], outputs=["fs:f", "model:m", "endpoint:e"], pipeline="p")], "p")
     assert {n["id"] for n in nl["nodes"]} == {"ds:d", "fs:f", "model:m", "endpoint:e"}  # artifact-only
     assert all("kind" not in n for n in nl["nodes"])  # no job nodes in the lineage view
+    assert all("type" in n for n in nl["nodes"])  # artifact nodes keep their type marker
     assert edges == {("ds:d", "fs:f"), ("fs:f", "model:m"), ("model:m", "endpoint:e")}
     assert ("ds:d", "model:m") not in edges and ("ds:d", "endpoint:e") not in edges  # no band-skips
 
@@ -154,6 +157,34 @@ def test_linearize_matches_models_to_endpoints_by_name():
     }
     # no band-skip: fs never wires straight to an endpoint
     assert not any(a.startswith("fs:") and b.startswith("endpoint:") for a, b in edges)
+
+
+def test_get_pipeline_unknown_name_raises():
+    """An unknown (or empty) pipeline name raises KeyError rather than returning an empty graph."""
+    with pytest.raises(KeyError):
+        PipelineManager.from_jobs([]).get_pipeline("p")
+
+
+def test_linearize_falls_back_to_fan_when_model_endpoint_counts_differ():
+    """Unequal model/endpoint counts (2 models, 3 endpoints) must also use the plain fan."""
+    jobs = [
+        _job(
+            "all_models.py",
+            inputs=["fs:f"],
+            outputs=["model:a", "model:b", "endpoint:x", "endpoint:y", "endpoint:z"],
+            pipeline="p",
+        )
+    ]
+    _, edges = _lin(jobs, "p")
+    assert edges == {
+        ("fs:f", "model:a"),
+        ("fs:f", "model:b"),
+        ("fs:f", "endpoint:x"),
+        ("fs:f", "endpoint:y"),
+        ("fs:f", "endpoint:z"),
+    }
+    # crucially, no invented model -> endpoint edges
+    assert not any(a.startswith("model:") and b.startswith("endpoint:") for a, b in edges)
 
 
 def test_linearize_falls_back_to_fan_when_names_do_not_pair():

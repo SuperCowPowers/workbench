@@ -42,7 +42,7 @@ class ModelsPageView(PageView):
         return self.concise_timestamps(self.models_df)
 
     @staticmethod
-    def model_details(self, model_name: str) -> (dict, None):
+    def model_details(model_name: str) -> (dict, None):
         """Get all the details for the given Model Name
         Args:
             model_name(str): The Name of the Model

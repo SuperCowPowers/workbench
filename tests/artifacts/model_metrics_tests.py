@@ -1,6 +1,5 @@
 """Tests for the creation and comparison of Model Metrics"""
 
-import sys
 import pytest
 from pprint import pprint
 
@@ -49,9 +48,12 @@ def test_retrieval_with_capture_name(model_class):
 
 def test_validation_predictions(model_reg, model_class):
     print("\n\n*** Validation Predictions ***")
-    reg_val_preds = model_reg._get_validation_predictions()
+    # "model_training" routes to the validation predictions through the public API
+    reg_val_preds = model_reg.get_inference_predictions("model_training")
+    assert reg_val_preds is not None, f"{model_reg.name} has no validation predictions"
     pprint(reg_val_preds.head())
-    class_val_preds = model_class._get_validation_predictions()
+    class_val_preds = model_class.get_inference_predictions("model_training")
+    assert class_val_preds is not None, f"{model_class.name} has no validation predictions"
     pprint(class_val_preds.head())
 
 
@@ -68,12 +70,10 @@ def test_inference_predictions(model_class):
     # Retrieve the inference predictions
     model_reg = Model("abalone-regression")
     if model_reg.get_inference_predictions() is None:
-        print(f"Model {model_reg.name} has no inference predictions!")
-        sys.exit(1)
+        pytest.fail(f"Model {model_reg.name} has no inference predictions!")
     pprint(model_reg.get_inference_predictions().head())
     if model_class.get_inference_predictions() is None:
-        print(f"Model {model_class.name} has no inference predictions!")
-        sys.exit(1)
+        pytest.fail(f"Model {model_class.name} has no inference predictions!")
     pprint(model_class.get_inference_predictions().head())
 
 

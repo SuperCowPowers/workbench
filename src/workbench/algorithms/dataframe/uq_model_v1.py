@@ -417,7 +417,7 @@ class UQModelV1:
         Everything else gets dropped:
             - `fingerprint` (count-FP strings, ~4 KB/row — the bulk of the artifact)
             - `smiles` (novel queries supply their own)
-            - `in_model` (always True at SageMaker training time, never read at inference)
+            - `in_model` (training-time neighbor eligibility, never read at inference)
             - `prediction` / `_proba` / `residual` pass-throughs (generic Proximity
               feature for other use cases, never consumed by ResidualFeatures)
 

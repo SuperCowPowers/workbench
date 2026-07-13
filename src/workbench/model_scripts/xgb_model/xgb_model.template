@@ -76,7 +76,7 @@ DEFAULT_HYPERPARAMETERS = {
 }
 
 # Workbench-specific parameters (not passed to XGBoost)
-WORKBENCH_PARAMS = {"n_folds", "split_strategy", "butina_cutoff"}
+WORKBENCH_PARAMS = {"n_folds", "split_strategy", "butina_cutoff", "uq_version"}
 
 # Regression-only parameters (filtered out for classifiers)
 REGRESSION_ONLY_PARAMS = {"objective"}
@@ -408,10 +408,12 @@ if __name__ == "__main__":
         predictions = oof_predictions[val_mask]
         if oof_proba is not None:
             oof_proba = oof_proba[val_mask]
+        in_model_mask = ~val_mask  # single split: val rows never trained the model
     else:
         # K-fold: all rows have out-of-fold predictions
         df_val = all_df.copy()
         predictions = oof_predictions
+        in_model_mask = np.ones(len(all_df), dtype=bool)  # CV: every row trained in k-1 folds
 
     # Decode labels for classification
     if model_type == "classifier":
@@ -478,7 +480,7 @@ if __name__ == "__main__":
         # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
         if "smiles" in all_df.columns:
             prox_df = all_df[[id_column, "smiles", target]].copy()
-            prox_df["in_model"] = True
+            prox_df["in_model"] = in_model_mask
         else:
             prox_df = None
             print("No 'smiles' column: fitting UQ V0 only (V1/V2 need fingerprints)")

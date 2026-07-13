@@ -995,11 +995,13 @@ if __name__ == "__main__":
         if oof_proba is not None:
             oof_proba = oof_proba[val_mask]
         val_extra_features = all_extra_features[val_mask] if all_extra_features is not None else None
+        in_model_mask = ~val_mask  # single split: val rows never trained the model
     else:
         df_val = all_df.copy()
         preds = oof_predictions
         y_validate = all_targets
         val_extra_features = all_extra_features
+        in_model_mask = np.ones(len(all_df), dtype=bool)  # CV: every row trained in k-1 folds
 
     # -------------------------------------------------------------------------
     # Compute metrics and prepare output
@@ -1140,14 +1142,12 @@ if __name__ == "__main__":
             val_pred = df_val.loc[valid, f"{primary}_pred"].values
             val_std = df_val.loc[valid, f"{primary}_pred_std"].values
 
-            all_df = pd.concat([df_train, df_val], ignore_index=True)
-
             # V1/V2 need a fingerprint proximity set (smiles); with smiles we fit all
             # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
             if smiles_column in all_df.columns:
                 prox_df = all_df[[id_column, smiles_column, primary]].copy()
                 prox_df = prox_df.rename(columns={smiles_column: "smiles"})
-                prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+                prox_df["in_model"] = in_model_mask  # see XGB template for rationale on CV folds
             else:
                 prox_df = None
                 print(f"No '{smiles_column}' column: fitting UQ V0 only (V1/V2 need fingerprints)")
@@ -1284,18 +1284,18 @@ if __name__ == "__main__":
             all_ens = []
             for m in ensemble_models:
                 m.eval().to(device)
-                mp = []
+                model_preds = []
                 with torch.inference_mode():
                     for batch in h_loader:
                         bmg, V_d, X_d, *_ = batch
                         bmg.to(device)
                         V_d = V_d.to(device) if V_d is not None else None
                         X_d = X_d.to(device) if X_d is not None else None
-                        mp.append(m(bmg, V_d, X_d).detach().cpu().numpy())
-                ep = np.concatenate(mp, axis=0)
-                if ep.ndim == 3 and ep.shape[1] == 1:
-                    ep = ep.squeeze(axis=1)
-                all_ens.append(ep)
+                        model_preds.append(m(bmg, V_d, X_d).detach().cpu().numpy())
+                ens_preds = np.concatenate(model_preds, axis=0)
+                if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
+                    ens_preds = ens_preds.squeeze(axis=1)
+                all_ens.append(ens_preds)
             h_preds = np.mean(np.stack(all_ens), axis=0)
             h_std = np.std(np.stack(all_ens), axis=0)
             if h_preds.ndim == 1:
