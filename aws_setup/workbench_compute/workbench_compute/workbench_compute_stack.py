@@ -16,6 +16,7 @@ from aws_cdk import (
     aws_cloudwatch as cloudwatch,
     aws_cloudwatch_actions as cw_actions,
     Duration,
+    RemovalPolicy,
     Size,
 )
 from constructs import Construct
@@ -100,14 +101,9 @@ class WorkbenchComputeStack(Stack):
             vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=self.existing_vpc_id)
             vpc_subnets = None
 
-            # Use specific subnets if provided
+            # Use specific subnets if provided (filter by ID so route tables resolve from the VPC lookup)
             if self.subnet_ids:
-                vpc_subnets = ec2.SubnetSelection(
-                    subnets=[
-                        ec2.Subnet.from_subnet_id(self, f"BatchSubnet{i}", subnet_id)
-                        for i, subnet_id in enumerate(self.subnet_ids)
-                    ]
-                )
+                vpc_subnets = ec2.SubnetSelection(subnet_filters=[ec2.SubnetFilter.by_ids(self.subnet_ids)])
         else:
             raise ValueError(
                 'Please provide the Workbench Config entry: "WORKBENCH_VPC_ID":"vpc-123456789abcdef0". '
@@ -249,7 +245,12 @@ class WorkbenchComputeStack(Stack):
             handler="handler.lambda_handler",
             code=lambda_.Code.from_asset(str(lambda_code_path)),
             timeout=Duration.minutes(5),
-            log_retention=logs.RetentionDays.ONE_WEEK,
+            log_group=logs.LogGroup(
+                self,
+                "BatchTriggerLogGroup",
+                retention=logs.RetentionDays.ONE_WEEK,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
             environment={
                 "WORKBENCH_BUCKET": self.workbench_bucket,
                 "JOB_QUEUE": self.batch_job_queue.job_queue_name,
@@ -309,7 +310,12 @@ class WorkbenchComputeStack(Stack):
             handler="handler.lambda_handler",
             code=lambda_.Code.from_asset(str(lambda_code_path)),
             timeout=Duration.minutes(1),
-            log_retention=logs.RetentionDays.ONE_WEEK,
+            log_group=logs.LogGroup(
+                self,
+                "BatchFailureLogGroup",
+                retention=logs.RetentionDays.ONE_WEEK,
+                removal_policy=RemovalPolicy.DESTROY,
+            ),
             environment={
                 "WORKBENCH_ENVIRONMENT": self.environment_name,
                 "BATCH_FAILURE_TOPIC_ARN": self.batch_failure_topic.topic_arn,
