@@ -139,14 +139,12 @@ class WorkbenchDashboardStack(Stack):
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
-        # Were we given a subnet selection?
+        # Were we given a subnet selection? (filter by ID so route tables resolve from the VPC lookup)
         subnet_selection = None
         if props.existing_subnet_ids:
-            subnets = [
-                ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id)
-                for i, subnet_id in enumerate(props.existing_subnet_ids)
-            ]
-            subnet_selection = ec2.SubnetSelection(subnets=subnets)
+            subnet_selection = ec2.SubnetSelection(
+                subnet_filters=[ec2.SubnetFilter.by_ids(props.existing_subnet_ids)]
+            )
 
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
@@ -193,6 +191,9 @@ class WorkbenchDashboardStack(Stack):
             open_listener=props.public,
             certificate=certificate,
             task_subnets=subnet_selection,
+            # Fail fast (and roll back) on bad deploys; keep old task running until new one is healthy
+            circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
+            min_healthy_percent=100,
         )
 
         # Remove all default security groups from the load balancer
