@@ -107,7 +107,9 @@ def main_layout(
                     [
                         dcc.Store(id="mlp_preview_data"),
                         html.A(
-                            html.H3("ML Pipelines", style={"textAlign": "left", "marginBottom": "20px", "marginTop": "20px"}),
+                            html.H3(
+                                "ML Pipelines", style={"textAlign": "left", "marginBottom": "20px", "marginTop": "20px"}
+                            ),
                             href="/ml_pipelines",
                             style={"textDecoration": "none", "color": "inherit"},
                         ),
