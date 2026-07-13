@@ -266,7 +266,7 @@ def exception_log_forward(call_on_exception=None):
 
         # Call the provided function if it exists
         if callable(call_on_exception):
-            return call_on_exception(e)
+            call_on_exception(e)  # return value is discarded by @contextmanager
         else:
             # Raise the exception if no function was provided
             raise

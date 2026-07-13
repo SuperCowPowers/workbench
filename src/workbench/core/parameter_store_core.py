@@ -179,16 +179,18 @@ class ParameterStoreCore:
         """Call AWS API with exponential backoff on throttling."""
         max_retries = 5
         base_delay = 1
-        for attempt in range(max_retries):
+        for attempt in range(max_retries - 1):
             try:
                 return func(**kwargs)
             except ClientError as e:
-                if e.response["Error"]["Code"] == "ThrottlingException" and attempt < max_retries - 1:
-                    delay = base_delay * (2**attempt)
-                    self.log.warning(f"Throttled, retrying in {delay}s...")
-                    time.sleep(delay)
-                else:
+                if e.response["Error"]["Code"] != "ThrottlingException":
                     raise
+                delay = base_delay * (2**attempt)
+                self.log.warning(f"Throttled, retrying in {delay}s...")
+                time.sleep(delay)
+
+        # Final attempt: let any exception propagate
+        return func(**kwargs)
 
     @staticmethod
     def _compress_value(value) -> str:
