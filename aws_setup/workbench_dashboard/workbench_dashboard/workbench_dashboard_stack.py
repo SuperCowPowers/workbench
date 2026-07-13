@@ -195,6 +195,8 @@ class WorkbenchDashboardStack(Stack):
             # Fail fast (and roll back) on bad deploys; keep old task running until new one is healthy
             circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
             min_healthy_percent=100,
+            # The app takes ~30s+ to boot (theme/plugin S3 pulls + meta refresh); give it room
+            health_check_grace_period=Duration.seconds(120),
         )
 
         # Remove all default security groups from the load balancer
@@ -202,6 +204,18 @@ class WorkbenchDashboardStack(Stack):
 
         # Add our custom security group
         fargate_service.load_balancer.add_security_group(lb_security_group)
+
+        # Health check hits the cheap /health route (not the heavy "/" page) with a generous
+        # timeout and unhealthy threshold, so a briefly-blocked request worker (heavy meta/
+        # pipeline refresh) doesn't trip false failures and get the task killed.
+        fargate_service.target_group.configure_health_check(
+            path="/health",
+            healthy_http_codes="200",
+            interval=Duration.seconds(30),
+            timeout=Duration.seconds(15),
+            healthy_threshold_count=2,
+            unhealthy_threshold_count=4,
+        )
 
         # Enable sticky sessions so users stay on the same container (preserves in-memory state)
         fargate_service.target_group.enable_cookie_stickiness(Duration.hours(1))

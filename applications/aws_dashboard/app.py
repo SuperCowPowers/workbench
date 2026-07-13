@@ -72,6 +72,14 @@ app.index_string = """
 # Note: The 'server' object is required for running the app with WSGI servers
 server = app.server
 
+
+# Lightweight liveness endpoint for the ALB/ECS health check. Returns 200 without
+# touching Dash page routing or any callback machinery, so health checks stay cheap
+# and don't compete with heavy page renders/refreshes on the request worker.
+@server.route("/health")
+def health_check():
+    return "ok", 200
+
 # ASGI wrapper for Uvicorn (only needed in Docker/production)
 try:
     from asgiref.wsgi import WsgiToAsgi
