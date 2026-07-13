@@ -24,6 +24,8 @@ try:
     workbench_api_key = cm.get_config("WORKBENCH_API_KEY")
     workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
     workbench_themes = cm.get_config("WORKBENCH_THEMES")
+    # Resolves to the config value, or falls back to s3://<WORKBENCH_BUCKET>/ml_pipelines
+    ml_pipelines_root = cm.get_config("ML_PIPELINES_ROOT")
     existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
     existing_subnet_ids = cm.get_config("WORKBENCH_SUBNET_IDS")
     config_ips = cm.get_config("WORKBENCH_WHITELIST", "")
@@ -52,6 +54,7 @@ WorkbenchDashboardStack(
         workbench_api_key=workbench_api_key,
         workbench_plugins=workbench_plugins,
         workbench_themes=workbench_themes,
+        ml_pipelines_root=ml_pipelines_root,
         existing_vpc_id=existing_vpc_id,
         existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,

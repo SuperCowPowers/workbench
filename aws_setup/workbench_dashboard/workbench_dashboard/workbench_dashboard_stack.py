@@ -23,6 +23,7 @@ class WorkbenchDashboardStackProps(StackProps):
         workbench_api_key: str,
         workbench_plugins: str,
         workbench_themes: Optional[str] = None,
+        ml_pipelines_root: Optional[str] = None,
         existing_vpc_id: Optional[str] = None,
         existing_subnet_ids: Optional[List[str]] = None,
         whitelist_ips: Optional[List[str]] = None,
@@ -36,6 +37,7 @@ class WorkbenchDashboardStackProps(StackProps):
         self.workbench_api_key = workbench_api_key
         self.workbench_plugins = workbench_plugins
         self.workbench_themes = workbench_themes
+        self.ml_pipelines_root = ml_pipelines_root
         self.existing_vpc_id = existing_vpc_id
         self.existing_subnet_ids = existing_subnet_ids
         self.whitelist_ips = whitelist_ips
@@ -134,6 +136,7 @@ class WorkbenchDashboardStack(Stack):
                 "WORKBENCH_API_KEY": props.workbench_api_key,
                 "WORKBENCH_PLUGINS": props.workbench_plugins,
                 "WORKBENCH_THEMES": props.workbench_themes or "",
+                "ML_PIPELINES_ROOT": props.ml_pipelines_root or "",
             },
             logging=ecs.LogDriver.aws_logs(stream_prefix="WorkbenchDashboard", log_group=log_group),
         )
