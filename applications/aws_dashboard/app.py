@@ -80,6 +80,7 @@ server = app.server
 def health_check():
     return "ok", 200
 
+
 # ASGI wrapper for Uvicorn (only needed in Docker/production)
 try:
     from asgiref.wsgi import WsgiToAsgi
