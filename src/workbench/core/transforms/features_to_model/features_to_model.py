@@ -1,6 +1,7 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
 import importlib.resources as pkg_resources
+import logging
 import shutil
 from pathlib import Path
 from typing import Union
@@ -8,6 +9,7 @@ from sagemaker.core.resources import ModelPackageGroup
 from sagemaker.core.shapes.shapes import MetricDefinition, Tag
 from sagemaker.train.model_trainer import ModelTrainer
 from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition, OutputDataConfig
+from botocore.exceptions import ClientError
 import awswrangler as wr
 import pandas as pd
 
@@ -22,6 +24,10 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.workbench_logging import _suppress_sagemaker_logging
 from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE
+
+# Transient DescribeTrainingJob control-plane errors that botocore does not classify as
+# retryable, so a single blip under concurrent Batch load would otherwise kill the pipeline.
+TRANSIENT_DESCRIBE_ERRORS = {"HttpTimeoutException", "ThrottlingException", "ThrottledException"}
 
 
 class FeaturesToModel(Transform):
@@ -330,10 +336,17 @@ class FeaturesToModel(Transform):
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
         input_data = self.model_trainer.create_input_data_channel("train", s3_training_path)
         _suppress_sagemaker_logging()
-        self.model_trainer.train(input_data_config=[input_data], wait=True)
+
+        # Submit the job and own the poll loop ourselves. The SDK's wait=True polls via a
+        # global client singleton that bypasses our hardened session and never retries a
+        # transient HttpTimeoutException on DescribeTrainingJob (see _wait_for_training_job).
+        # Silence the SDK's stray "not displaying logs" warning that wait=False emits.
+        logging.getLogger("sagemaker.train.model_trainer").setLevel(logging.ERROR)
+        self.model_trainer.train(input_data_config=[input_data], wait=False)
 
         # Capture the actual training job name (ModelTrainer appends a timestamp to base_job_name)
         self.training_job_name = self.model_trainer._latest_training_job.training_job_name
+        self._wait_for_training_job()
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
@@ -345,6 +358,42 @@ class FeaturesToModel(Transform):
         # Create Model and officially Register
         self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
+
+    def _wait_for_training_job(self, poll_interval: int = 30):
+        """Poll the training job to completion using our hardened SageMaker client.
+
+        Retries transient DescribeTrainingJob control-plane errors (HttpTimeoutException,
+        throttling) that botocore won't retry on its own, so a blip doesn't fail the job.
+
+        Args:
+            poll_interval (int): Seconds between DescribeTrainingJob polls (default 30)
+
+        Raises:
+            RuntimeError: If the training job reaches a terminal status other than Completed
+        """
+        terminal = {"Completed", "Failed", "Stopped"}
+        last_status = None
+        while True:
+            try:
+                desc = self.sm_client.describe_training_job(TrainingJobName=self.training_job_name)
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if code in TRANSIENT_DESCRIBE_ERRORS:
+                    self.log.warning(f"Transient {code} polling {self.training_job_name}; retrying...")
+                    time.sleep(poll_interval)
+                    continue
+                raise
+
+            status = desc["TrainingJobStatus"]
+            if status != last_status:
+                self.log.info(f"Training job {self.training_job_name} status: {status}")
+                last_status = status
+            if status in terminal:
+                if status != "Completed":
+                    reason = desc.get("FailureReason", "(no reason provided)")
+                    raise RuntimeError(f"Training job {self.training_job_name} {status}: {reason}")
+                return
+            time.sleep(poll_interval)
 
     def _create_model_training_view(
         self,
