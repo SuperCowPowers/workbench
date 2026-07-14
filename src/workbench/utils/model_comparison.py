@@ -134,9 +134,7 @@ if __name__ == "__main__":
     from workbench.cached.cached_model import CachedModel
 
     print("*** Regression: aqsol-regression (champion) vs aqsol-regression-1 ***")
-    comparison = model_comparison(
-        CachedModel("aqsol-regression"), CachedModel("aqsol-regression-1"), "full_cross_fold"
-    )
+    comparison = model_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-1"), "full_cross_fold")
     print(comparison)
 
     print("\n*** Classification: aqsol-class (champion) vs aqsol-class-1 ***")
@@ -144,9 +142,7 @@ if __name__ == "__main__":
     print(comparison)
 
     print("\n*** Missing inference run returns None ***")
-    comparison = model_comparison(
-        CachedModel("aqsol-regression"), CachedModel("aqsol-regression-1"), "no-such-run"
-    )
+    comparison = model_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-1"), "no-such-run")
     print(comparison)
 
     print("\n*** Contest ranking: aqsol-regression challengers ***")
