@@ -27,7 +27,7 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 HF_REPO = "openadmet/pxr-challenge-train-test"
-OUTPUT_DIR = Path(__file__).parent / "output" / "openadmet_pxr"
+OUTPUT_DIR = Path(__file__).parent / "output" / "comp_chem" / "openadmet_pxr"
 
 # Map: output CSV basename (== descriptions.json key, sans .csv) -> HF CSV filename
 FILES = {

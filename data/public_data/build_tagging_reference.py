@@ -32,7 +32,7 @@ log = logging.getLogger("workbench")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 DATA_DIR = Path(__file__).parent
-OUTPUT_DIR = DATA_DIR / "output" / "reference_compounds"
+OUTPUT_DIR = DATA_DIR / "output" / "comp_chem" / "reference_compounds"
 CSV_PATH = OUTPUT_DIR / "tagging.csv"
 
 

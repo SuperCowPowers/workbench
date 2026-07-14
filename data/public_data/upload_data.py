@@ -4,8 +4,10 @@ Not for general/public use — write access to the public bucket is restricted
 to SuperCowPowers maintainers. Have a dataset you'd like to see published?
 We're happy to add additional public data — contact support@supercowpowers.com.
 
-Walks `output/<subdir>/*.csv` and uploads each file to:
-    s3://workbench-public-data/comp_chem/<subdir>/<filename>.csv
+Walks `output/**/*.csv` and uploads each file to the matching S3 key (the path
+under output/ is preserved, so the top-level dir is the category):
+    output/comp_chem/logd/logd_all.csv -> s3://workbench-public-data/comp_chem/logd/logd_all.csv
+    output/testing/abalone.csv         -> s3://workbench-public-data/testing/abalone.csv
 
 Then merges entries from the local `descriptions.json` into the top-level
 `s3://workbench-public-data/descriptions.json` (read-merge-write — existing
@@ -32,7 +34,6 @@ log = logging.getLogger("workbench")
 
 BUCKET = "workbench-public-data"
 DESCRIPTIONS_KEY = "descriptions.json"  # top-level (matches PublicData._load_descriptions)
-S3_PREFIX = "comp_chem"  # everything in this directory lives under comp_chem/
 
 DATA_DIR = Path(__file__).parent
 OUTPUT_DIR = DATA_DIR / "output"
@@ -45,9 +46,10 @@ def csv_files() -> list[Path]:
 
 
 def s3_key_for(local_path: Path) -> str:
-    """Map output/<subdir>/<file>.csv -> comp_chem/<subdir>/<file>.csv."""
-    rel = local_path.relative_to(OUTPUT_DIR)
-    return f"{S3_PREFIX}/{rel.as_posix()}"
+    """S3 key mirrors the path under output/, e.g. output/comp_chem/logd/x.csv ->
+    comp_chem/logd/x.csv, output/testing/abalone.csv -> testing/abalone.csv. The
+    top-level category (comp_chem, testing, ...) is the directory, not a forced prefix."""
+    return local_path.relative_to(OUTPUT_DIR).as_posix()
 
 
 def upload_csvs(dry_run: bool) -> list[str]:

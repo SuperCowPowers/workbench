@@ -7,8 +7,7 @@ test_artifacts/create_basic_test_artifacts.py.
 
 import logging
 import pandas as pd
-from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint
-from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint, PublicData
 
 log = logging.getLogger("workbench")
 
@@ -20,9 +19,10 @@ FEATURES = ["height", "weight", "age", "iq_score", "likes_dogs", "food"]
 
 
 def main():
-    # DataSource: synthetic person data with a binned salary_class column
+    # DataSource: public synthetic person data with a binned salary_class column
     if RECREATE or not DataSource("test_data").exists():
-        df = SyntheticDataGenerator().person_data()
+        df = PublicData().get("testing/test_data")
+        df["Date"] = pd.to_datetime(df["Date"])  # CSV round-trips dates as strings
         bins = [-float("inf"), 130000, 150000, float("inf")]
         df["salary_class"] = pd.cut(df["Salary"], bins=bins, labels=["low", "medium", "high"])
         DataSource(df, name="test_data")

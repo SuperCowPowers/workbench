@@ -3,7 +3,9 @@
     "test_data": [
       {
         "script": "test_data.py",
-        "inputs": [],
+        "inputs": [
+          "public:testing/test_data"
+        ],
         "outputs": [
           "ds:test_data",
           "fs:test_features",

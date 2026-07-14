@@ -28,7 +28,7 @@ from workbench.algorithms.dataframe import MultiTaskAlignment
 log = logging.getLogger("workbench")
 
 DATA_DIR = Path(__file__).parent
-OUTPUT_DIR = DATA_DIR / "output"
+OUTPUT_DIR = DATA_DIR / "output" / "comp_chem"
 LOGP_PATH = OUTPUT_DIR / "logp" / "logp_all.csv"
 LOGD_PATH = OUTPUT_DIR / "logd" / "logd_all.csv"
 SUMMARY_CSV = OUTPUT_DIR / "overlap_summary.csv"

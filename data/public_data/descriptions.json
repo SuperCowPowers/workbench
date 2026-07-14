@@ -1,360 +1,392 @@
 {
-    "logp_all.csv": {
-        "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. For compounds present in SangsterLogP (Cirino et al. 2026 \u2014 the most rigorously curated source), the `logp` value is taken from SangsterLogP; otherwise it is the cross-source mean (see `primary_source` column). Joinable on `smiles` to logd_all.csv.",
-        "columns": {
-            "id": "Integer row index (0 to N)",
-            "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
-            "logp": "Experimental logP \u2014 Sangster value if present, else cross-source mean",
-            "logp_std": "Standard deviation of logP across all reporting sources (0 if single source)",
-            "logp_count": "Number of sources reporting this compound",
-            "sources": "Pipe-delimited list of source names that reported this compound",
-            "primary_source": "Which source the `logp` value was taken from: 'sangster' or 'consensus' (mean across non-Sangster sources)",
-            "logp_values": "Pipe-delimited individual logP values from each source"
-        },
-        "num_compounds": null,
-        "references": [
-            "https://github.com/NIEHS/OPERA (PHYSPROP/OPERA)",
-            "https://github.com/cimm-kzn/GraphormerLogP (GLP dataset)",
-            "https://doi.org/10.5281/zenodo.19387551 (SangsterLogP dataset)",
-            "https://doi.org/10.1038/s41597-026-07357-2 (Cirino et al., SangsterLogP, Sci Data 2026)"
-        ]
+  "logp_all.csv": {
+    "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. For compounds present in SangsterLogP (Cirino et al. 2026 \u2014 the most rigorously curated source), the `logp` value is taken from SangsterLogP; otherwise it is the cross-source mean (see `primary_source` column). Joinable on `smiles` to logd_all.csv.",
+    "columns": {
+      "id": "Integer row index (0 to N)",
+      "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
+      "logp": "Experimental logP \u2014 Sangster value if present, else cross-source mean",
+      "logp_std": "Standard deviation of logP across all reporting sources (0 if single source)",
+      "logp_count": "Number of sources reporting this compound",
+      "sources": "Pipe-delimited list of source names that reported this compound",
+      "primary_source": "Which source the `logp` value was taken from: 'sangster' or 'consensus' (mean across non-Sangster sources)",
+      "logp_values": "Pipe-delimited individual logP values from each source"
     },
-    "logp_sangster.csv": {
-        "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + \u0394DP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via \u0394DP) from the main sheet of the source XLSX.",
-        "columns": {
-            "smiles": "Original SMILES from source",
-            "canon_smiles": "Standardized canonical SMILES",
-            "logp": "Experimental or adjusted logP (octanol-water partition coefficient)",
-            "source": "Source identifier (sangster)"
-        },
-        "num_compounds": null,
-        "references": [
-            "https://doi.org/10.5281/zenodo.19387551 (SangsterLogP dataset on Zenodo, v1.0)",
-            "https://doi.org/10.1038/s41597-026-07357-2 (Cirino, Caron, Ermondi, Charochkina, Tetko; SangsterLogP: the largest publicly available dataset of logP values, Sci Data 2026)",
-            "https://ochem.eu/article/161956 (OCHEM dataset article)",
-            "Sangster, J. Octanol-Water Partition Coefficients of Simple Organic Compounds. J. Phys. Chem. Ref. Data 18, 1111-1229 (1989). https://doi.org/10.1063/1.555833"
-        ]
+    "num_compounds": null,
+    "references": [
+      "https://github.com/NIEHS/OPERA (PHYSPROP/OPERA)",
+      "https://github.com/cimm-kzn/GraphormerLogP (GLP dataset)",
+      "https://doi.org/10.5281/zenodo.19387551 (SangsterLogP dataset)",
+      "https://doi.org/10.1038/s41597-026-07357-2 (Cirino et al., SangsterLogP, Sci Data 2026)"
+    ]
+  },
+  "logp_sangster.csv": {
+    "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + \u0394DP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via \u0394DP) from the main sheet of the source XLSX.",
+    "columns": {
+      "smiles": "Original SMILES from source",
+      "canon_smiles": "Standardized canonical SMILES",
+      "logp": "Experimental or adjusted logP (octanol-water partition coefficient)",
+      "source": "Source identifier (sangster)"
     },
-    "logp_opera_physprop.csv": {
-        "description": "PHYSPROP/OPERA experimental LogP training data (~4,200 compounds). Curated by the EPA from the PHYSPROP database, originally used to train the KOWWIN and OPERA LogP models. Extracted from OPERA_Data.zip in the NIEHS/OPERA GitHub repository.",
-        "columns": {
-            "smiles": "Original SMILES from source",
-            "canon_smiles": "Standardized canonical SMILES",
-            "logp": "Experimental logP (octanol-water partition coefficient)",
-            "source": "Source identifier (opera_physprop)"
-        },
-        "num_compounds": 4186,
-        "references": [
-            "https://github.com/NIEHS/OPERA",
-            "https://doi.org/10.1186/s13321-018-0263-1 (Mansouri et al., OPERA models, J Cheminform 2018)",
-            "https://comptox.epa.gov/dashboard (EPA CompTox Chemistry Dashboard)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "https://doi.org/10.5281/zenodo.19387551 (SangsterLogP dataset on Zenodo, v1.0)",
+      "https://doi.org/10.1038/s41597-026-07357-2 (Cirino, Caron, Ermondi, Charochkina, Tetko; SangsterLogP: the largest publicly available dataset of logP values, Sci Data 2026)",
+      "https://ochem.eu/article/161956 (OCHEM dataset article)",
+      "Sangster, J. Octanol-Water Partition Coefficients of Simple Organic Compounds. J. Phys. Chem. Ref. Data 18, 1111-1229 (1989). https://doi.org/10.1063/1.555833"
+    ]
+  },
+  "logp_opera_physprop.csv": {
+    "description": "PHYSPROP/OPERA experimental LogP training data (~4,200 compounds). Curated by the EPA from the PHYSPROP database, originally used to train the KOWWIN and OPERA LogP models. Extracted from OPERA_Data.zip in the NIEHS/OPERA GitHub repository.",
+    "columns": {
+      "smiles": "Original SMILES from source",
+      "canon_smiles": "Standardized canonical SMILES",
+      "logp": "Experimental logP (octanol-water partition coefficient)",
+      "source": "Source identifier (opera_physprop)"
     },
-    "logp_graphormer_logp.csv": {
-        "description": "GraphormerLogP (GLP) experimental LogP dataset (~42,000 compounds). Multi-source curation by the Chemoinformatics and Molecular Modeling Laboratory (CIMM) at Kazan Federal University. Aggregated from OpenChem, Huuskonen, SAMPL6/7, and other published datasets.",
-        "columns": {
-            "smiles": "Original SMILES from source",
-            "canon_smiles": "Standardized canonical SMILES",
-            "logp": "Experimental logP (octanol-water partition coefficient)",
-            "source": "Source identifier (graphormer_logp)"
-        },
-        "num_compounds": 42006,
-        "references": [
-            "https://github.com/cimm-kzn/GraphormerLogP",
-            "https://doi.org/10.1021/acs.jcim.4c00654 (Safin et al., GraphormerLogP, J Chem Inf Model 2024)"
-        ]
+    "num_compounds": 4186,
+    "references": [
+      "https://github.com/NIEHS/OPERA",
+      "https://doi.org/10.1186/s13321-018-0263-1 (Mansouri et al., OPERA models, J Cheminform 2018)",
+      "https://comptox.epa.gov/dashboard (EPA CompTox Chemistry Dashboard)"
+    ]
+  },
+  "logp_graphormer_logp.csv": {
+    "description": "GraphormerLogP (GLP) experimental LogP dataset (~42,000 compounds). Multi-source curation by the Chemoinformatics and Molecular Modeling Laboratory (CIMM) at Kazan Federal University. Aggregated from OpenChem, Huuskonen, SAMPL6/7, and other published datasets.",
+    "columns": {
+      "smiles": "Original SMILES from source",
+      "canon_smiles": "Standardized canonical SMILES",
+      "logp": "Experimental logP (octanol-water partition coefficient)",
+      "source": "Source identifier (graphormer_logp)"
     },
-    "logd_all.csv": {
-        "description": "Merged and deduplicated experimental LogD (octanol-water distribution coefficient at pH 7.4) dataset. Standardized using the ChEMBL pipeline so SMILES are joinable to logp_all.csv. Currently a single source; structured for additional sources to be merged in.",
-        "columns": {
-            "id": "Integer row index (0 to N)",
-            "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
-            "logd": "Mean experimental logD at pH 7.4 across sources",
-            "logd_std": "Standard deviation of logD across sources (0 if single source)",
-            "logd_count": "Number of sources reporting this compound",
-            "sources": "Pipe-delimited list of source names",
-            "logd_values": "Pipe-delimited individual logD values from each source"
-        },
-        "num_compounds": null,
-        "references": [
-            "https://moleculenet.org/datasets-1 (AstraZeneca logD via ChEMBL, MoleculeNet mirror)"
-        ]
+    "num_compounds": 42006,
+    "references": [
+      "https://github.com/cimm-kzn/GraphormerLogP",
+      "https://doi.org/10.1021/acs.jcim.4c00654 (Safin et al., GraphormerLogP, J Chem Inf Model 2024)"
+    ]
+  },
+  "logd_all.csv": {
+    "description": "Merged and deduplicated experimental LogD (octanol-water distribution coefficient at pH 7.4) dataset. Standardized using the ChEMBL pipeline so SMILES are joinable to logp_all.csv. Currently a single source; structured for additional sources to be merged in.",
+    "columns": {
+      "id": "Integer row index (0 to N)",
+      "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
+      "logd": "Mean experimental logD at pH 7.4 across sources",
+      "logd_std": "Standard deviation of logD across sources (0 if single source)",
+      "logd_count": "Number of sources reporting this compound",
+      "sources": "Pipe-delimited list of source names",
+      "logd_values": "Pipe-delimited individual logD values from each source"
     },
-    "logd_astrazeneca_chembl.csv": {
-        "description": "AstraZeneca experimental logD measurements at pH 7.4 (~4,200 compounds), originally published in ChEMBL. Fetched directly from the MoleculeNet S3 mirror; same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`).",
-        "columns": {
-            "smiles": "Original SMILES from source",
-            "canon_smiles": "Standardized canonical SMILES",
-            "logd": "Experimental logD at pH 7.4 (octanol-water distribution coefficient)",
-            "source": "Source identifier (astrazeneca_chembl)"
-        },
-        "num_compounds": null,
-        "references": [
-            "https://moleculenet.org/datasets-1",
-            "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/Lipophilicity.csv",
-            "https://www.ebi.ac.uk/chembl/ (original AstraZeneca measurements)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "https://moleculenet.org/datasets-1 (AstraZeneca logD via ChEMBL, MoleculeNet mirror)"
+    ]
+  },
+  "logd_astrazeneca_chembl.csv": {
+    "description": "AstraZeneca experimental logD measurements at pH 7.4 (~4,200 compounds), originally published in ChEMBL. Fetched directly from the MoleculeNet S3 mirror; same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`).",
+    "columns": {
+      "smiles": "Original SMILES from source",
+      "canon_smiles": "Standardized canonical SMILES",
+      "logd": "Experimental logD at pH 7.4 (octanol-water distribution coefficient)",
+      "source": "Source identifier (astrazeneca_chembl)"
     },
-    "logp_logd_overlap_07_10.csv": {
-        "description": "Multi-task LogD/LogP dataset, HIGH-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.7, 1.0]. The band includes Tanimoto = 1.0 (exact-SMILES matches), so a portion of rows have both `logp` and `logd` populated \u2014 these are the same compounds measured in both source datasets. Auxiliary chemistry is close to LogD's; this tier represents the 'duplicate / nearby supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
-        "columns": {
-            "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
-            "logp": "Experimental logP (NaN if not measured)",
-            "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
-        },
-        "num_compounds": null,
-        "references": [
-            "comp_chem/logp/logp_all (primary LogP source)",
-            "comp_chem/logd/logd_all (primary LogD source)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "https://moleculenet.org/datasets-1",
+      "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/Lipophilicity.csv",
+      "https://www.ebi.ac.uk/chembl/ (original AstraZeneca measurements)"
+    ]
+  },
+  "logp_logd_overlap_07_10.csv": {
+    "description": "Multi-task LogD/LogP dataset, HIGH-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.7, 1.0]. The band includes Tanimoto = 1.0 (exact-SMILES matches), so a portion of rows have both `logp` and `logd` populated \u2014 these are the same compounds measured in both source datasets. Auxiliary chemistry is close to LogD's; this tier represents the 'duplicate / nearby supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
+    "columns": {
+      "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
+      "logp": "Experimental logP (NaN if not measured)",
+      "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
     },
-    "logp_logd_overlap_03_07.csv": {
-        "description": "Multi-task LogD/LogP dataset, MEDIUM-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.3, 0.7). The band excludes Tanimoto = 1.0, so the auxiliary LogP rows share no SMILES with LogD \u2014 no rows have both columns populated. Auxiliary chemistry is similar to LogD's neighborhood without duplicating it; this tier represents the 'complementary supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
-        "columns": {
-            "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
-            "logp": "Experimental logP (NaN if not measured)",
-            "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
-        },
-        "num_compounds": null,
-        "references": [
-            "comp_chem/logp/logp_all (primary LogP source)",
-            "comp_chem/logd/logd_all (primary LogD source)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "comp_chem/logp/logp_all (primary LogP source)",
+      "comp_chem/logd/logd_all (primary LogD source)"
+    ]
+  },
+  "logp_logd_overlap_03_07.csv": {
+    "description": "Multi-task LogD/LogP dataset, MEDIUM-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.3, 0.7). The band excludes Tanimoto = 1.0, so the auxiliary LogP rows share no SMILES with LogD \u2014 no rows have both columns populated. Auxiliary chemistry is similar to LogD's neighborhood without duplicating it; this tier represents the 'complementary supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
+    "columns": {
+      "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
+      "logp": "Experimental logP (NaN if not measured)",
+      "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
     },
-    "logp_logd_overlap_00_03.csv": {
-        "description": "Multi-task LogD/LogP dataset, LOW-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.0, 0.3) \u2014 auxiliary chemistry the LogD set doesn't cover. Tests whether 'novel' auxiliary representation transfers to LogD prediction. Auxiliary LogP rows share no SMILES with LogD. Built by data/public_data/build_logp_logd_overlap.py.",
-        "columns": {
-            "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
-            "logp": "Experimental logP (NaN if not measured)",
-            "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
-        },
-        "num_compounds": null,
-        "references": [
-            "comp_chem/logp/logp_all (primary LogP source)",
-            "comp_chem/logd/logd_all (primary LogD source)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "comp_chem/logp/logp_all (primary LogP source)",
+      "comp_chem/logd/logd_all (primary LogD source)"
+    ]
+  },
+  "logp_logd_overlap_00_03.csv": {
+    "description": "Multi-task LogD/LogP dataset, LOW-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.0, 0.3) \u2014 auxiliary chemistry the LogD set doesn't cover. Tests whether 'novel' auxiliary representation transfers to LogD prediction. Auxiliary LogP rows share no SMILES with LogD. Built by data/public_data/build_logp_logd_overlap.py.",
+    "columns": {
+      "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
+      "logp": "Experimental logP (NaN if not measured)",
+      "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
     },
-    "tagging.csv": {
-        "description": "Reference compounds with known expected outputs of workbench.utils.chem_utils.mol_tagging.tag_molecules(). Each row pairs an input SMILES with the standardized SMILES, undefined-chiral count, and the curation-namespace tags that should be emitted after running standardize() then tag_molecules(). Complements the standardization reference set: that set exercises salt / charge / tautomer / stereo handling; this set exercises ADMET-curation tag derivation across composition, structure, physchem, liability, and curation categories. Used as a regression gate \u2014 changes that shift any expected tag are either intentional policy updates or bugs.",
-        "columns": {
-            "id": "Integer row index",
-            "name": "Short identifier for the test case",
-            "input_smiles": "Raw SMILES fed to standardize() then tag_molecules()",
-            "standardized_smiles": "Expected output of standardize() (canonical form)",
-            "expected_undefined_chiral_centers": "Expected value of the 'undefined_chiral_centers' column from standardize() \u2014 count of chiral centers in the original input SMILES with no stereo flag",
-            "expected_curation_tags": "Pipe-delimited list of curation:* tags expected from tag_molecules() (empty string means no curation flags expected)",
-            "notes": "Why this compound is in the reference set"
-        },
-        "num_compounds": null,
-        "references": [
-            "https://doi.org/10.1023/A:1008130001697 (Oprea 2000 \u2014 Ro5 \u2260 druglike)",
-            "https://doi.org/10.1021/jm901137j (Baell & Holloway 2010 \u2014 PAINS)",
-            "https://doi.org/10.1002/cmdc.200700139 (Brenk et al. 2008 \u2014 BRENK alerts)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "comp_chem/logp/logp_all (primary LogP source)",
+      "comp_chem/logd/logd_all (primary LogD source)"
+    ]
+  },
+  "tagging.csv": {
+    "description": "Reference compounds with known expected outputs of workbench.utils.chem_utils.mol_tagging.tag_molecules(). Each row pairs an input SMILES with the standardized SMILES, undefined-chiral count, and the curation-namespace tags that should be emitted after running standardize() then tag_molecules(). Complements the standardization reference set: that set exercises salt / charge / tautomer / stereo handling; this set exercises ADMET-curation tag derivation across composition, structure, physchem, liability, and curation categories. Used as a regression gate \u2014 changes that shift any expected tag are either intentional policy updates or bugs.",
+    "columns": {
+      "id": "Integer row index",
+      "name": "Short identifier for the test case",
+      "input_smiles": "Raw SMILES fed to standardize() then tag_molecules()",
+      "standardized_smiles": "Expected output of standardize() (canonical form)",
+      "expected_undefined_chiral_centers": "Expected value of the 'undefined_chiral_centers' column from standardize() \u2014 count of chiral centers in the original input SMILES with no stereo flag",
+      "expected_curation_tags": "Pipe-delimited list of curation:* tags expected from tag_molecules() (empty string means no curation flags expected)",
+      "notes": "Why this compound is in the reference set"
     },
-    "pxr_train.csv": {
-        "description": "Primary training set for the OpenADMET PXR Induction Blind Challenge (activity track). Dose-response pEC50 and Emax for human Pregnane-X Receptor (hPXR) induction, measured with OpenADMET's in-house high-fidelity cell-based assay. PXR is the master regulator of CYP3A4 (which metabolises ~50% of marketed drugs), so PXR induction is a primary driver of drug-drug interaction liability.",
-        "columns": {
-            "molecule_name": "Compound name / identifier",
-            "smiles": "Compound structure (SMILES)",
-            "ocnt_batch": "Octant batch identifier for the assayed material",
-            "pec50": "Dose-response potency, -log10(EC50 in M) — the challenge prediction target",
-            "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
-            "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
-            "pec50_std_error": "Standard error of pec50",
-            "emax_std_error": "Standard error of emax_estimate",
-            "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
-            "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
-            "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
-            "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
-            "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
-            "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
-            "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
-            "split": "Dataset split label (e.g. train)",
-            "ocnt_id": "Octant compound identifier",
-            "source": "Data source / assay identifier"
-        },
-        "num_compounds": 4139,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": null,
+    "references": [
+      "https://doi.org/10.1023/A:1008130001697 (Oprea 2000 \u2014 Ro5 \u2260 druglike)",
+      "https://doi.org/10.1021/jm901137j (Baell & Holloway 2010 \u2014 PAINS)",
+      "https://doi.org/10.1002/cmdc.200700139 (Brenk et al. 2008 \u2014 BRENK alerts)"
+    ]
+  },
+  "pxr_train.csv": {
+    "description": "Primary training set for the OpenADMET PXR Induction Blind Challenge (activity track). Dose-response pEC50 and Emax for human Pregnane-X Receptor (hPXR) induction, measured with OpenADMET's in-house high-fidelity cell-based assay. PXR is the master regulator of CYP3A4 (which metabolises ~50% of marketed drugs), so PXR induction is a primary driver of drug-drug interaction liability.",
+    "columns": {
+      "molecule_name": "Compound name / identifier",
+      "smiles": "Compound structure (SMILES)",
+      "ocnt_batch": "Octant batch identifier for the assayed material",
+      "pec50": "Dose-response potency, -log10(EC50 in M) \u2014 the challenge prediction target",
+      "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
+      "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
+      "pec50_std_error": "Standard error of pec50",
+      "emax_std_error": "Standard error of emax_estimate",
+      "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
+      "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
+      "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
+      "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
+      "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
+      "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+      "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+      "split": "Dataset split label (e.g. train)",
+      "ocnt_id": "Octant compound identifier",
+      "source": "Data source / assay identifier"
     },
-    "pxr_test_blinded.csv": {
-        "description": "Blinded activity-track test set (513 compounds) for the PXR challenge \u2014 SMILES only, ground-truth pEC50 withheld for scoring (Relative Absolute Error). Split into two analog sets: Analog Set 1 (scored on the Phase 1 live leaderboard, then unblinded on 2026-05-26 \u2014 see pxr_test_phase1_unblinded) and Analog Set 2 (held out for final scoring after 2026-07-01).",
-        "columns": {
-            "molecule_name": "Compound name / identifier",
-            "smiles": "Compound structure (SMILES)"
-        },
-        "num_compounds": 513,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 4139,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_test_blinded.csv": {
+    "description": "Blinded activity-track test set (513 compounds) for the PXR challenge \u2014 SMILES only, ground-truth pEC50 withheld for scoring (Relative Absolute Error). Split into two analog sets: Analog Set 1 (scored on the Phase 1 live leaderboard, then unblinded on 2026-05-26 \u2014 see pxr_test_phase1_unblinded) and Analog Set 2 (held out for final scoring after 2026-07-01).",
+    "columns": {
+      "molecule_name": "Compound name / identifier",
+      "smiles": "Compound structure (SMILES)"
     },
-    "pxr_test_phase1_unblinded.csv": {
-        "description": "Analog Set 1 of the activity-track test set with ground-truth pEC50 revealed at the Phase 1 to Phase 2 transition (2026-05-26). Serves as a held-out evaluation set and as additional training signal for Phase 2 submissions targeting Analog Set 2.",
-        "columns": {
-            "molecule_name": "Compound name / identifier",
-            "smiles": "Compound structure (SMILES)",
-            "ocnt_batch": "Octant batch identifier for the assayed material",
-            "pec50": "Revealed dose-response potency, -log10(EC50 in M)",
-            "pec50_std_error": "Standard error of pec50",
-            "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
-            "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
-            "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
-            "emax_std_error": "Standard error of emax_estimate",
-            "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
-            "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
-            "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
-            "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
-            "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
-            "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
-            "split": "Analog-set / split label",
-            "phase": "Challenge phase the compound belongs to"
-        },
-        "num_compounds": 253,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 513,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_test_phase1_unblinded.csv": {
+    "description": "Analog Set 1 of the activity-track test set with ground-truth pEC50 revealed at the Phase 1 to Phase 2 transition (2026-05-26). Serves as a held-out evaluation set and as additional training signal for Phase 2 submissions targeting Analog Set 2.",
+    "columns": {
+      "molecule_name": "Compound name / identifier",
+      "smiles": "Compound structure (SMILES)",
+      "ocnt_batch": "Octant batch identifier for the assayed material",
+      "pec50": "Revealed dose-response potency, -log10(EC50 in M)",
+      "pec50_std_error": "Standard error of pec50",
+      "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
+      "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
+      "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
+      "emax_std_error": "Standard error of emax_estimate",
+      "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
+      "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
+      "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
+      "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
+      "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+      "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+      "split": "Analog-set / split label",
+      "phase": "Challenge phase the compound belongs to"
     },
-    "pxr_counter_assay_train.csv": {
-        "description": "PXR-null counter-assay training data. Reports the null-line (non-PXR / off-target) response used to flag and discount assay artifacts, so apparent PXR activity can be separated from non-specific signal.",
-        "columns": {
-            "molecule_name": "Compound name / identifier",
-            "smiles": "Compound structure (SMILES)",
-            "ocnt_batch": "Octant batch identifier for the assayed material",
-            "pec50": "Counter-assay (PXR-null) potency, -log10(EC50 in M)",
-            "emax_estimate": "Counter-assay maximal efficacy (Emax)",
-            "emax_vs_pos_ctrl_estimate": "Counter-assay Emax relative to the positive-control agonist",
-            "pec50_std_error": "Standard error of pec50",
-            "emax_std_error": "Standard error of emax_estimate",
-            "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
-            "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
-            "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
-            "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
-            "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
-            "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
-            "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
-            "split": "Dataset split label",
-            "ocnt_id": "Octant compound identifier",
-            "source": "Data source / assay identifier"
-        },
-        "num_compounds": 2859,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 253,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_counter_assay_train.csv": {
+    "description": "PXR-null counter-assay training data. Reports the null-line (non-PXR / off-target) response used to flag and discount assay artifacts, so apparent PXR activity can be separated from non-specific signal.",
+    "columns": {
+      "molecule_name": "Compound name / identifier",
+      "smiles": "Compound structure (SMILES)",
+      "ocnt_batch": "Octant batch identifier for the assayed material",
+      "pec50": "Counter-assay (PXR-null) potency, -log10(EC50 in M)",
+      "emax_estimate": "Counter-assay maximal efficacy (Emax)",
+      "emax_vs_pos_ctrl_estimate": "Counter-assay Emax relative to the positive-control agonist",
+      "pec50_std_error": "Standard error of pec50",
+      "emax_std_error": "Standard error of emax_estimate",
+      "emax_vs_pos_ctrl_std_error": "Standard error of emax_vs_pos_ctrl_estimate",
+      "pec50_ci_lower": "Lower bound of the 95% CI for pec50",
+      "pec50_ci_upper": "Upper bound of the 95% CI for pec50",
+      "emax_ci_lower": "Lower bound of the 95% CI for emax_estimate",
+      "emax_ci_upper": "Upper bound of the 95% CI for emax_estimate",
+      "emax_vs_pos_ctrl_ci_lower": "Lower bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+      "emax_vs_pos_ctrl_ci_upper": "Upper bound of the 95% CI for emax_vs_pos_ctrl_estimate",
+      "split": "Dataset split label",
+      "ocnt_id": "Octant compound identifier",
+      "source": "Data source / assay identifier"
     },
-    "pxr_single_concentration_train.csv": {
-        "description": "Single-concentration primary-screen training data (log2 fold-change) \u2014 a large, lower-resolution screen useful for pretraining or as auxiliary signal before fine-tuning on the dose-response pEC50 set.",
-        "columns": {
-            "molecule_name": "Compound name / identifier",
-            "ocnt_batch": "Octant batch identifier for the assayed material",
-            "smiles": "Compound structure (SMILES)",
-            "plate_id": "Assay plate identifier",
-            "compound_class": "Compound category / class label",
-            "concentration_m": "Tested concentration (molar)",
-            "log2_fc_estimate": "Induction signal as log2 fold-change vs control",
-            "log2_fc_stderr": "Standard error of log2_fc_estimate",
-            "t_statistic": "t-statistic for the fold-change vs control",
-            "p_value": "p-value for the fold-change",
-            "fdr_bh": "Benjamini-Hochberg FDR-adjusted p-value",
-            "neg_log10_fdr": "-log10 of the BH-adjusted FDR",
-            "median_log2_fc": "Median log2 fold-change across replicates",
-            "n_replicates": "Number of replicate measurements",
-            "cohens_d": "Cohen's d effect size for the induction response",
-            "experiment_name": "Screening experiment identifier",
-            "ocnt_id": "Octant compound identifier",
-            "split": "Dataset split label",
-            "source": "Data source / assay identifier"
-        },
-        "num_compounds": 21003,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 2859,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_single_concentration_train.csv": {
+    "description": "Single-concentration primary-screen training data (log2 fold-change) \u2014 a large, lower-resolution screen useful for pretraining or as auxiliary signal before fine-tuning on the dose-response pEC50 set.",
+    "columns": {
+      "molecule_name": "Compound name / identifier",
+      "ocnt_batch": "Octant batch identifier for the assayed material",
+      "smiles": "Compound structure (SMILES)",
+      "plate_id": "Assay plate identifier",
+      "compound_class": "Compound category / class label",
+      "concentration_m": "Tested concentration (molar)",
+      "log2_fc_estimate": "Induction signal as log2 fold-change vs control",
+      "log2_fc_stderr": "Standard error of log2_fc_estimate",
+      "t_statistic": "t-statistic for the fold-change vs control",
+      "p_value": "p-value for the fold-change",
+      "fdr_bh": "Benjamini-Hochberg FDR-adjusted p-value",
+      "neg_log10_fdr": "-log10 of the BH-adjusted FDR",
+      "median_log2_fc": "Median log2 fold-change across replicates",
+      "n_replicates": "Number of replicate measurements",
+      "cohens_d": "Cohen's d effect size for the induction response",
+      "experiment_name": "Screening experiment identifier",
+      "ocnt_id": "Octant compound identifier",
+      "split": "Dataset split label",
+      "source": "Data source / assay identifier"
     },
-    "pxr_96_compound_semi_pure_train.csv": {
-        "description": "Supplementary 96-compound 'uscale' semi-pure training set, released during Phase 2 to augment the primary training data with additional measured compounds. Includes Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
-        "columns": {
-            "smiles": "Compound structure (SMILES)",
-            "ocnt_id": "Octant compound identifier",
-            "semi_pure_batch_id": "Batch identifier for the semi-pure material",
-            "semi_pure_ec50s": "EC50(s) measured on the semi-pure material (M)",
-            "semi_pure_pec50s": "pEC50(s) measured on the semi-pure material",
-            "semi_pure_emax_normalized": "Emax normalized to the positive control",
-            "semi_pure_emax_raw": "Raw (un-normalized) Emax",
-            "corrected_semi_pure_ec50": "EC50 corrected for measured compound concentration (M)",
-            "corrected_semi_pure_pec50": "pEC50 after concentration correction",
-            "semi_pure_drc_pec50_se": "Dose-response-curve pEC50 standard error",
-            "corrected_semi_pure_pec50_1_se": "Concentration-corrected pEC50 within 1 SE",
-            "semi_pure_pec50_95_ci": "95% CI for the semi-pure pEC50",
-            "corrected_semi_pure_pec50_95_ci": "95% CI for the concentration-corrected pEC50",
-            "volatility": "Compound volatility flag / measure",
-            "semi_pure_evapt": "Evaporation metric during sample handling",
-            "semi_pure_theoretical_mass_on_column": "Theoretical mass loaded on the LC column",
-            "semi_pure_peak_area": "CAD peak area",
-            "semi_pure_actual_mass_on_column": "Actual mass on column from CAD quantitation",
-            "semi_pure_product_yield": "Recovered product yield",
-            "semi_pure_correction_factor": "Concentration correction factor applied to potency",
-            "semi_pure_cad_peak_area_cv": "Coefficient of variation of the CAD peak area",
-            "semi_pure_cad_slope_cv": "Coefficient of variation of the CAD calibration slope",
-            "semi_pure_cad_yield_se": "Standard error of the CAD-derived yield"
-        },
-        "num_compounds": 96,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 21003,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_96_compound_semi_pure_train.csv": {
+    "description": "Supplementary 96-compound 'uscale' semi-pure training set, released during Phase 2 to augment the primary training data with additional measured compounds. Includes Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
+    "columns": {
+      "smiles": "Compound structure (SMILES)",
+      "ocnt_id": "Octant compound identifier",
+      "semi_pure_batch_id": "Batch identifier for the semi-pure material",
+      "semi_pure_ec50s": "EC50(s) measured on the semi-pure material (M)",
+      "semi_pure_pec50s": "pEC50(s) measured on the semi-pure material",
+      "semi_pure_emax_normalized": "Emax normalized to the positive control",
+      "semi_pure_emax_raw": "Raw (un-normalized) Emax",
+      "corrected_semi_pure_ec50": "EC50 corrected for measured compound concentration (M)",
+      "corrected_semi_pure_pec50": "pEC50 after concentration correction",
+      "semi_pure_drc_pec50_se": "Dose-response-curve pEC50 standard error",
+      "corrected_semi_pure_pec50_1_se": "Concentration-corrected pEC50 within 1 SE",
+      "semi_pure_pec50_95_ci": "95% CI for the semi-pure pEC50",
+      "corrected_semi_pure_pec50_95_ci": "95% CI for the concentration-corrected pEC50",
+      "volatility": "Compound volatility flag / measure",
+      "semi_pure_evapt": "Evaporation metric during sample handling",
+      "semi_pure_theoretical_mass_on_column": "Theoretical mass loaded on the LC column",
+      "semi_pure_peak_area": "CAD peak area",
+      "semi_pure_actual_mass_on_column": "Actual mass on column from CAD quantitation",
+      "semi_pure_product_yield": "Recovered product yield",
+      "semi_pure_correction_factor": "Concentration correction factor applied to potency",
+      "semi_pure_cad_peak_area_cv": "Coefficient of variation of the CAD peak area",
+      "semi_pure_cad_slope_cv": "Coefficient of variation of the CAD calibration slope",
+      "semi_pure_cad_yield_se": "Standard error of the CAD-derived yield"
     },
-    "pxr_htchem_libraries_train.csv": {
-        "description": "High-throughput chemistry (HT-chem) library screening data, released during Phase 2 \u2014 library-scale measurements that broaden training coverage of chemical space. Measured on crude library material, with Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
-        "columns": {
-            "smiles": "Compound structure (SMILES)",
-            "ocnt_id": "Octant compound identifier",
-            "crude_batch_id": "Batch identifier for the crude library material",
-            "crude_ec50s": "EC50(s) measured on the crude material (M)",
-            "crude_pec50s": "pEC50(s) measured on the crude material",
-            "crude_emax_normalized": "Emax normalized to the positive control",
-            "crude_emax_raw": "Raw (un-normalized) Emax",
-            "corrected_crude_ec50": "EC50 corrected for measured compound concentration (M)",
-            "corrected_crude_pec50": "pEC50 after concentration correction",
-            "crude_drc_pec50_se": "Dose-response-curve pEC50 standard error",
-            "corrected_crude_pec50_1_se": "Concentration-corrected pEC50 within 1 SE",
-            "crude_pec50_95_ci": "95% CI for the crude pEC50",
-            "corrected_crude_pec50_95_ci": "95% CI for the concentration-corrected pEC50",
-            "volatility": "Compound volatility flag / measure",
-            "cad_yield_volatility_note": "Note on CAD yield / volatility caveats for this compound",
-            "crude_evapt": "Evaporation metric during sample handling",
-            "crude_theoretical_mass_on_column": "Theoretical mass loaded on the LC column",
-            "crude_peak_area": "CAD peak area",
-            "crude_actual_mass_on_column": "Actual mass on column from CAD quantitation",
-            "crude_product_yield": "Recovered product yield",
-            "crude_correction_factor": "Concentration correction factor applied to potency",
-            "crude_cad_peak_area_cv": "Coefficient of variation of the CAD peak area",
-            "crude_cad_slope_cv": "Coefficient of variation of the CAD calibration slope",
-            "crude_cad_yield_se": "Standard error of the CAD-derived yield"
-        },
-        "num_compounds": 456,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 96,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_htchem_libraries_train.csv": {
+    "description": "High-throughput chemistry (HT-chem) library screening data, released during Phase 2 \u2014 library-scale measurements that broaden training coverage of chemical space. Measured on crude library material, with Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
+    "columns": {
+      "smiles": "Compound structure (SMILES)",
+      "ocnt_id": "Octant compound identifier",
+      "crude_batch_id": "Batch identifier for the crude library material",
+      "crude_ec50s": "EC50(s) measured on the crude material (M)",
+      "crude_pec50s": "pEC50(s) measured on the crude material",
+      "crude_emax_normalized": "Emax normalized to the positive control",
+      "crude_emax_raw": "Raw (un-normalized) Emax",
+      "corrected_crude_ec50": "EC50 corrected for measured compound concentration (M)",
+      "corrected_crude_pec50": "pEC50 after concentration correction",
+      "crude_drc_pec50_se": "Dose-response-curve pEC50 standard error",
+      "corrected_crude_pec50_1_se": "Concentration-corrected pEC50 within 1 SE",
+      "crude_pec50_95_ci": "95% CI for the crude pEC50",
+      "corrected_crude_pec50_95_ci": "95% CI for the concentration-corrected pEC50",
+      "volatility": "Compound volatility flag / measure",
+      "cad_yield_volatility_note": "Note on CAD yield / volatility caveats for this compound",
+      "crude_evapt": "Evaporation metric during sample handling",
+      "crude_theoretical_mass_on_column": "Theoretical mass loaded on the LC column",
+      "crude_peak_area": "CAD peak area",
+      "crude_actual_mass_on_column": "Actual mass on column from CAD quantitation",
+      "crude_product_yield": "Recovered product yield",
+      "crude_correction_factor": "Concentration correction factor applied to potency",
+      "crude_cad_peak_area_cv": "Coefficient of variation of the CAD peak area",
+      "crude_cad_slope_cv": "Coefficient of variation of the CAD calibration slope",
+      "crude_cad_yield_se": "Standard error of the CAD-derived yield"
     },
-    "pxr_structure_test_blinded.csv": {
-        "description": "Structure-track blinded test set: fragment-sized molecules for predicting protein-ligand complexes against PXR, scored by LDDT-PLI. Crystallographic data generated with the Fraser lab at UCSF. Distinct from the activity track.",
-        "columns": {
-            "structure": "Structure-track entry identifier (crystallographic target)",
-            "smiles": "Compound / fragment structure (SMILES)",
-            "molecule_name": "Compound name / identifier",
-            "ocnt_id": "Octant compound identifier"
-        },
-        "num_compounds": 184,
-        "references": [
-            "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
-            "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
-        ]
+    "num_compounds": 456,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "pxr_structure_test_blinded.csv": {
+    "description": "Structure-track blinded test set: fragment-sized molecules for predicting protein-ligand complexes against PXR, scored by LDDT-PLI. Crystallographic data generated with the Fraser lab at UCSF. Distinct from the activity track.",
+    "columns": {
+      "structure": "Structure-track entry identifier (crystallographic target)",
+      "smiles": "Compound / fragment structure (SMILES)",
+      "molecule_name": "Compound name / identifier",
+      "ocnt_id": "Octant compound identifier"
+    },
+    "num_compounds": 184,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
+      "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "abalone.csv": {
+    "description": "UCI Abalone dataset \u2014 physical measurements of abalone used to predict age (number of rings). A small, non-chemistry reference dataset for Workbench test pipelines.",
+    "columns": {
+      "Sex": "M, F, or I (infant)",
+      "Length": "Longest shell measurement (mm)",
+      "Diameter": "Perpendicular to length (mm)",
+      "Height": "With meat in shell (mm)",
+      "Whole_weight": "Whole abalone (grams)",
+      "Shucked_weight": "Weight of meat (grams)",
+      "Viscera_weight": "Gut weight after bleeding (grams)",
+      "Shell_weight": "After drying (grams)",
+      "Class_number_of_rings": "Rings + 1.5 gives age in years (prediction target)"
+    },
+    "references": [
+      "https://archive.ics.uci.edu/dataset/1/abalone (UCI ML Repository)"
+    ]
+  },
+  "test_data.csv": {
+    "description": "Synthetic person data (100 rows, seeded) for Workbench test pipelines \u2014 a fixed fixture with correlated numeric, categorical, boolean, and datetime columns.",
+    "columns": {
+      "Id": "Row id",
+      "Name": "Person label",
+      "Height": "Normal(68, 4)",
+      "Weight": "Loosely correlated with height",
+      "Salary": "80k-230k, correlated with height",
+      "Age": "Correlated with salary",
+      "IQ_Score": "100-150, neg. correlated with salary",
+      "Food": "Categorical (pizza/tacos/steak/sushi), some NaN",
+      "Likes_Dogs": "Boolean, correlated with IQ",
+      "Date": "Event time (2022, US/Mountain)"
     }
+  }
 }

@@ -3,7 +3,9 @@
     "abalone": [
       {
         "script": "abalone.py",
-        "inputs": [],
+        "inputs": [
+          "public:testing/abalone"
+        ],
         "outputs": [
           "ds:abalone_data",
           "fs:abalone_features",

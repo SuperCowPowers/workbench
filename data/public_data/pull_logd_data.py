@@ -29,7 +29,7 @@ from pull_common import download, merge_and_deduplicate, standardize_df
 
 log = logging.getLogger("workbench")
 
-OUTPUT_DIR = Path(__file__).parent / "output" / "logd"
+OUTPUT_DIR = Path(__file__).parent / "output" / "comp_chem" / "logd"
 VALUE_NAME = "logd"
 FILE_PREFIX = "logd"
 
@@ -103,7 +103,7 @@ def main():
     print("=" * 60)
 
     # Report overlap with LogP if it has been pulled
-    logp_path = Path(__file__).parent / "output" / "logp" / "logp_all.csv"
+    logp_path = Path(__file__).parent / "output" / "comp_chem" / "logp" / "logp_all.csv"
     if logp_path.exists():
         logp_smiles = set(pd.read_csv(logp_path, usecols=["smiles"])["smiles"])
         overlap = merged["smiles"].isin(logp_smiles).sum()

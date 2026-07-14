@@ -50,7 +50,7 @@ RDLogger.DisableLog("rdApp.*")
 log = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).parent
-OUTPUT_DIR = DATA_DIR / "output"
+OUTPUT_DIR = DATA_DIR / "output" / "comp_chem"
 MID_TIER_PATH = OUTPUT_DIR / "experiments" / "logp_logd_overlap_03_07.csv"
 LOGD_CORPUS_PATH = OUTPUT_DIR / "logd" / "logd_all.csv"
 SYNTH_DIR = OUTPUT_DIR / "synthetic" / "multi_task"

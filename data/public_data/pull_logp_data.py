@@ -23,7 +23,7 @@ from pull_common import download, merge_and_deduplicate, standardize_df
 
 log = logging.getLogger("workbench")
 
-OUTPUT_DIR = Path(__file__).parent / "output" / "logp"
+OUTPUT_DIR = Path(__file__).parent / "output" / "comp_chem" / "logp"
 VALUE_NAME = "logp"
 FILE_PREFIX = "logp"
 
