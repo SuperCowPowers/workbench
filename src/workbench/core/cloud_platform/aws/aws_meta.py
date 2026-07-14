@@ -384,6 +384,24 @@ class AWSMeta:
             "Monitored": is_monitored(name, self.sm_client),
         }
 
+    @aws_throttle
+    def _endpoint_input(self, endpoint_name: str) -> Union[str, None]:
+        """Internal: The input (model) for a single Endpoint, from its workbench_input tag.
+
+        Args:
+            endpoint_name (str): The endpoint name.
+
+        Returns:
+            str: The input model name (None if the endpoint doesn't exist or has no known input)
+        """
+        try:
+            endpoint_details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
+        except self.sm_client.exceptions.ClientError:
+            self.log.warning(f"Endpoint '{endpoint_name}' not found, skipping input lookup")
+            return None
+        input_model = self.get_aws_tags(endpoint_details["EndpointArn"]).get("workbench_input")
+        return input_model if input_model and input_model != "unknown" else None
+
     def _endpoint_config_info(self, endpoint_config_name: str) -> dict:
         """Internal: Get the Endpoint Configuration information for the given endpoint config name.
 

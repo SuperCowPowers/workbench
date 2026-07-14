@@ -81,6 +81,8 @@ class CachedMeta(CloudMeta):
        meta.feature_sets()
        meta.models()
        meta.endpoints()
+       meta.champion_models()
+       meta.challenger_models("my-endpoint")
        meta.views()
        ```
     """
@@ -262,6 +264,35 @@ class CachedMeta(CloudMeta):
             dict: The pipeline's node_link_dict graph (None if not found)
         """
         return super().pipeline(pipeline_name=pipeline_name)
+
+    @cache_result
+    def champion_models(self) -> pd.DataFrame:
+        """Get the champion models: the model serving each promotion endpoint (cached)
+
+        Returns:
+            pd.DataFrame: Champion models with columns [Model, Endpoint] (one row per endpoint)
+        """
+        return super().champion_models()
+
+    @cache_result
+    def challenger_models(self, endpoint_name: str) -> list:
+        """Get the challenger models for an endpoint (cached)
+
+        Args:
+            endpoint_name (str): The name of the Endpoint
+
+        Returns:
+            list: Challenger model names (empty if the endpoint has no promotion node)
+        """
+        return super().challenger_models(endpoint_name=endpoint_name)
+
+    @cache_result
+    def _promotion_map(self) -> dict:
+        """{endpoint_name: [challenger model names]} from model_promotion_* pipeline nodes (cached)
+
+        Backs champion_models()/challenger_models(), so both stay off S3 between refreshes.
+        """
+        return super()._promotion_map()
 
     def get_modified_registry(self, list_method: str = None) -> dict:
         """Get the Modified timestamp registry
@@ -447,6 +478,13 @@ if __name__ == "__main__":
 
     print("\n\n*** Endpoints ***")
     print(meta.endpoints())
+
+    print("\n\n*** Champions (uses cached endpoints) ***")
+    print(meta.champion_models())
+
+    print("\n\n*** Challengers (uses the cached promotion map) ***")
+    print(f"aqsol-regression: {meta.challenger_models('aqsol-regression')}")
+    print(f"aqsol-class: {meta.challenger_models('aqsol-class')}")
 
     # Check the Modified registry
     print("\n\n*** Modified Registry ***")

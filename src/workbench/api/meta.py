@@ -28,6 +28,8 @@ class Meta(CloudMeta):
        meta.feature_sets(details=True/False)
        meta.models(details=True/False)
        meta.endpoints(details=True/False)
+       meta.champion_models()
+       meta.challenger_models("my-endpoint")
        meta.views()
 
        # These are 'describe' methods
@@ -121,6 +123,27 @@ class Meta(CloudMeta):
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
         return super().endpoints(details=details)
+
+    def champion_models(self) -> pd.DataFrame:
+        """Get the champion models: the model serving each promotion endpoint
+        (an endpoint output by a model_promotion_* pipeline node).
+
+        Returns:
+            pd.DataFrame: Champion models with columns [Model, Endpoint] (one row per endpoint)
+        """
+        return super().champion_models()
+
+    def challenger_models(self, endpoint_name: str) -> list:
+        """Get the challenger models for an endpoint: the model inputs of the
+        model_promotion_* pipeline node that outputs it.
+
+        Args:
+            endpoint_name (str): The name of the Endpoint
+
+        Returns:
+            list: Challenger model names (empty if the endpoint has no promotion node)
+        """
+        return super().challenger_models(endpoint_name=endpoint_name)
 
     def pipelines(self) -> list:
         """Get all ML Pipelines defined under ML_PIPELINES_ROOT
@@ -265,6 +288,16 @@ if __name__ == "__main__":
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
+
+    # Get the Champion Models (model behind each live endpoint)
+    print("\n\n*** Champions ***")
+    print(meta.champion_models())
+
+    # Get the Challenger Models for the promotion endpoints
+    print("\n\n*** Challengers for 'aqsol-regression' ***")
+    print(meta.challenger_models("aqsol-regression"))
+    print("\n\n*** Challengers for 'aqsol-class' ***")
+    print(meta.challenger_models("aqsol-class"))
 
     # Test out the specific artifact details methods
     print("\n\n*** Glue Job Details ***")

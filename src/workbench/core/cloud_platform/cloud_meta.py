@@ -29,6 +29,8 @@ class CloudMeta(AWSMeta):
        meta.feature_sets(details=True/False)
        meta.models(details=True/False)
        meta.endpoints()
+       meta.champion_models()
+       meta.challenger_models("my-endpoint")
        meta.views()
        meta.pipelines()
 
@@ -130,6 +132,41 @@ class CloudMeta(AWSMeta):
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
         return super().endpoints(details=details)
+
+    def champion_models(self) -> pd.DataFrame:
+        """Get the champion models: the model serving each promotion endpoint
+        (an endpoint output by a model_promotion_* pipeline node).
+
+        Returns:
+            pd.DataFrame: Champion models with columns [Model, Endpoint] (one row per endpoint)
+        """
+        # Targeted lookups: only the promotion endpoints, not a full endpoint detail sweep
+        rows = []
+        for endpoint_name in sorted(self._promotion_map()):
+            model = self._endpoint_input(endpoint_name)
+            if model:
+                rows.append({"Model": model, "Endpoint": endpoint_name})
+        return pd.DataFrame(rows, columns=["Model", "Endpoint"])
+
+    def challenger_models(self, endpoint_name: str) -> list:
+        """Get the challenger models for an endpoint: the model inputs of the
+        model_promotion_* pipeline node that outputs it.
+
+        Args:
+            endpoint_name (str): The name of the Endpoint
+
+        Returns:
+            list: Challenger model names (empty if the endpoint has no promotion node)
+        """
+        return self._promotion_map().get(endpoint_name, [])
+
+    def _promotion_map(self) -> dict:
+        """{endpoint_name: [challenger model names]} from model_promotion_* pipeline nodes"""
+        from workbench.utils.pipeline_serializer import promotion_map
+        from workbench.utils.config_manager import ConfigManager
+
+        root = ConfigManager().get_config("ML_PIPELINES_ROOT")
+        return promotion_map(root, session=self.boto3_session)
 
     def pipelines(self) -> list:
         """Get all ML Pipelines defined under ML_PIPELINES_ROOT
@@ -283,6 +320,16 @@ if __name__ == "__main__":
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
+
+    # Get the Champion Models (model behind each live endpoint)
+    print("\n\n*** Champions ***")
+    print(meta.champion_models())
+
+    # Get the Challenger Models for the promotion endpoints
+    print("\n\n*** Challengers for 'aqsol-regression' ***")
+    print(meta.challenger_models("aqsol-regression"))
+    print("\n\n*** Challengers for 'aqsol-class' ***")
+    print(meta.challenger_models("aqsol-class"))
 
     # Test out the specific artifact details methods
     print("\n\n*** Glue Job Details ***")

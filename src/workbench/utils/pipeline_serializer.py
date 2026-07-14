@@ -18,7 +18,7 @@ the leaf dir holding a pipelines.json carries the pipelines, its ancestors are n
 import logging
 from typing import Optional
 
-from workbench.lambda_layer.pipeline_manager import PipelineManager
+from workbench.lambda_layer.pipeline_manager import PipelineManager, ref_name, ref_type
 
 log = logging.getLogger("workbench")
 
@@ -72,6 +72,37 @@ def single_pipeline(root: str, name: str, session=None) -> Optional[dict]:
     except KeyError:
         log.warning(f"No pipeline named {name!r} under {root}")
         return None
+
+
+def promotion_map(root: str, session=None) -> dict:
+    """Map each promotion endpoint to its challenger models.
+
+    A promotion job is any pipeline node whose script stem starts with
+    ``model_promotion`` (the core arbiter or a client override). Its endpoint
+    output is a champion endpoint; its model inputs are the challengers.
+    PipelineManager enforces one producer per artifact, so each endpoint maps
+    to exactly one promotion job.
+
+    Args:
+        root (str): ML_PIPELINES_ROOT -- a local directory or ``s3://`` prefix.
+        session: Optional boto3 session for S3 discovery.
+
+    Returns:
+        dict: ``{endpoint_name: [challenger model names]}``
+    """
+    pm = _load(root, session) if root else None
+    if pm is None:
+        return {}
+
+    promo: dict = {}
+    for job in pm.jobs:
+        if not job.stem.startswith("model_promotion"):
+            continue
+        challengers = sorted(ref_name(i) for i in job.inputs if ref_type(i) == "model")
+        for out in job.outputs:
+            if ref_type(out) == "endpoint":
+                promo[ref_name(out)] = challengers
+    return promo
 
 
 def _load(root: str, session) -> Optional[PipelineManager]:
