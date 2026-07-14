@@ -159,6 +159,47 @@ def test_linearize_matches_models_to_endpoints_by_name():
     assert not any(a.startswith("fs:") and b.startswith("endpoint:") for a, b in edges)
 
 
+def test_linearize_threads_public_into_the_datasource_not_parallel():
+    """abalone-shaped: a public INPUT feeds the ds it creates, then chains up the ladder.
+
+    ``DataSource(PublicData().get(...))`` -- public flows *into* the ds, so the lineage is
+    ``public -> ds -> fs -> model -> endpoint``, never public and ds both fanning to fs.
+    """
+    jobs = [
+        _job(
+            "abalone.py",
+            inputs=["public:testing/abalone"],
+            outputs=[
+                "ds:abalone_data",
+                "fs:abalone_features",
+                "model:abalone-regression",
+                "endpoint:abalone-regression",
+            ],
+            pipeline="p",
+        )
+    ]
+    _, edges = _lin(jobs, "p")
+    assert edges == {
+        ("public:testing/abalone", "ds:abalone_data"),
+        ("ds:abalone_data", "fs:abalone_features"),
+        ("fs:abalone_features", "model:abalone-regression"),
+        ("model:abalone-regression", "endpoint:abalone-regression"),
+    }
+    # the bug: public paralleling ds straight into the featureset
+    assert ("public:testing/abalone", "fs:abalone_features") not in edges
+
+
+def test_linearize_keeps_parallel_ds_and_public_inputs_into_one_featureset():
+    """The legitimate rare case: a ds INPUT and a public INPUT both feed a featureset.
+
+    Both are inputs (neither is an output that chains), so they stay parallel into fs --
+    this is why threading is role-aware rather than giving public its own band.
+    """
+    jobs = [_job("featurize.py", inputs=["ds:existing", "public:testing/extra"], outputs=["fs:combined"], pipeline="p")]
+    _, edges = _lin(jobs, "p")
+    assert edges == {("ds:existing", "fs:combined"), ("public:testing/extra", "fs:combined")}
+
+
 def test_get_pipeline_unknown_name_raises():
     """An unknown (or empty) pipeline name raises KeyError rather than returning an empty graph."""
     with pytest.raises(KeyError):

@@ -160,13 +160,16 @@ def _band(artifact_type) -> int:
 def linearize(subgraph) -> dict:
     """The lineage view the UI renders: an artifact-only DAG.
 
-    Collapses each job to artifact -> artifact edges, but instead of fanning the job's
-    input to every output, it threads the job's *own* artifacts up the type ladder
-    (ds -> fs -> model -> endpoint). So a single script that produces ds -> {fs, model,
-    endpoint} renders as the chain, not a fan -- with no cross-job inference and no
-    invented artifacts.
+    Collapses each job to artifact -> artifact edges *role-aware*: a job's outputs chain
+    up the type ladder among themselves (ds -> fs -> model -> endpoint), then its inputs
+    feed every artifact in its lowest output band. So a script that does
+    ``DataSource(PublicData().get(...))`` -- public(in), then ds -> fs -> model ->
+    endpoint(out) -- renders as one chain ``public -> ds -> fs -> model -> endpoint``,
+    with public flowing *into* the ds rather than paralleling it. A job whose two
+    *inputs* (a ds and a public source) both feed one featureset keeps them parallel,
+    because neither is an output that chains.
 
-    When one job produces several artifacts in *both* of two adjacent bands (e.g. 4
+    When a job produces several artifacts in *both* of two adjacent output bands (e.g. 4
     models + 4 endpoints), it pairs them by ref-name: an endpoint is named after its
     source model (``Model.to_endpoint``), so ``model:x -> endpoint:x`` is real identity,
     not a guess. If the names don't line up 1:1 (a genuinely ambiguous many-to-many),
@@ -188,13 +191,10 @@ def linearize(subgraph) -> dict:
     edges = set()
     for job in jobs:
         ins, outs = inbound.get(job, []), outbound.get(job, [])
-        by_band: dict = {}
-        for ref in ins + outs:
-            by_band.setdefault(_band(art_type.get(ref)), []).append(ref)
-        threaded = _thread_bands(by_band)
+        threaded = _thread_job(ins, outs, art_type)
         if threaded is not None:
             edges |= threaded
-        else:  # ambiguous or single-band job -> plain input->output fan
+        else:  # ambiguous outputs (or no outputs) -> plain input->output fan
             for a in ins:
                 for b in outs:
                     if a != b:
@@ -205,17 +205,41 @@ def linearize(subgraph) -> dict:
     return {"nodes": nodes, "links": links}
 
 
-def _thread_bands(by_band: dict) -> Optional[set]:
-    """Thread a job's artifacts up the type ladder, one adjacent band pair at a time.
+def _thread_job(ins: list, outs: list, art_type: dict) -> Optional[set]:
+    """Role-aware lineage threading for one job.
 
-    A pair with a singleton on either side is an unambiguous star. A many-to-many pair
-    is paired by ref-name (model:x -> endpoint:x). Returns the edge set, or None if the
-    job spans a single band or a many-to-many pair can't be name-paired 1:1 (the caller
-    then falls back to a plain fan).
+    A job's outputs chain up the type ladder among themselves; its inputs then feed
+    every artifact in its lowest output band. So a job that outputs ds -> fs -> model ->
+    endpoint with a ``public`` input yields ``public -> ds -> fs -> model -> endpoint``
+    (public flows into the ds), while a job with two *inputs* (ds + public) into one
+    featureset keeps them parallel -- neither input chains, both feed the featureset.
+
+    Returns the edge set, or None when the job has no outputs or its output chain is a
+    genuinely ambiguous many-to-many (the caller then falls back to a plain fan).
+    """
+    if not outs:
+        return None
+    out_by_band: dict = {}
+    for ref in outs:
+        out_by_band.setdefault(_band(art_type.get(ref)), []).append(ref)
+    edges = _chain_outputs(out_by_band)
+    if edges is None:
+        return None  # ambiguous outputs -> whole-job fallback
+    for a in ins:  # inputs feed every artifact in the lowest output band
+        for b in out_by_band[min(out_by_band)]:
+            if a != b:
+                edges.add((a, b))
+    return edges
+
+
+def _chain_outputs(by_band: dict) -> Optional[set]:
+    """Chain a job's outputs up the type ladder, one adjacent band pair at a time.
+
+    A pair with a singleton on either side is an unambiguous star; a many-to-many pair
+    is paired by ref-name (model:x -> endpoint:x). A single output band has no internal
+    chain (empty set). Returns None only when a many-to-many pair can't name-pair 1:1.
     """
     bands = sorted(by_band)
-    if len(bands) <= 1:
-        return None
     edges = set()
     for lo, hi in zip(bands, bands[1:]):
         los, his = by_band[lo], by_band[hi]

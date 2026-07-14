@@ -134,8 +134,9 @@
     return { nodes: [...artifacts.values()], edges };
   }
 
-  // Column band per artifact type: each column holds exactly one type, bands ordered
-  // ds -> fs -> model -> endpoint. A derived fs (fs -> fs) gets its own extra fs column.
+  // Column band per artifact type, ordered ds/public -> fs -> model -> endpoint. Bands
+  // may span >1 column: a same-band edge (a public source feeding the ds it creates, or
+  // a derived fs -> fs) splits into consecutive columns via same-type depth below.
   const TYPE_ORDER = { ds: 0, public: 0, fs: 1, model: 2, endpoint: 3 };
   const typeBand = (t) => (TYPE_ORDER[t] != null ? TYPE_ORDER[t] : 2);
 
