@@ -16,6 +16,18 @@
           "model:ksol-reg-chemprop-hybrid",
           "endpoint:ksol-reg-chemprop-hybrid"
         ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:ksol-reg-xgb",
+          "model:ksol-reg-pytorch",
+          "model:ksol-reg-chemprop",
+          "model:ksol-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:ksol-reg-v1"
+        ]
       }
     ]
   }

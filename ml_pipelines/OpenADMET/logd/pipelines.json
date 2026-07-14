@@ -16,6 +16,18 @@
           "model:logd-reg-chemprop-hybrid",
           "endpoint:logd-reg-chemprop-hybrid"
         ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:logd-reg-xgb",
+          "model:logd-reg-pytorch",
+          "model:logd-reg-chemprop",
+          "model:logd-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:logd-reg-v1"
+        ]
       }
     ]
   }

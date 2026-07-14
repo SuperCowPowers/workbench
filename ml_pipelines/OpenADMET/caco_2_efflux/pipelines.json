@@ -16,6 +16,18 @@
           "model:caco-2-efflux-reg-chemprop-hybrid",
           "endpoint:caco-2-efflux-reg-chemprop-hybrid"
         ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:caco-2-efflux-reg-xgb",
+          "model:caco-2-efflux-reg-pytorch",
+          "model:caco-2-efflux-reg-chemprop",
+          "model:caco-2-efflux-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:caco-2-efflux-reg-v1"
+        ]
       }
     ]
   }

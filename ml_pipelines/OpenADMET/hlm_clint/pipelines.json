@@ -16,6 +16,18 @@
           "model:hlm-clint-reg-chemprop-hybrid",
           "endpoint:hlm-clint-reg-chemprop-hybrid"
         ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:hlm-clint-reg-xgb",
+          "model:hlm-clint-reg-pytorch",
+          "model:hlm-clint-reg-chemprop",
+          "model:hlm-clint-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:hlm-clint-reg-v1"
+        ]
       }
     ]
   }

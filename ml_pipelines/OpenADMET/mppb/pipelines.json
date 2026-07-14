@@ -16,6 +16,18 @@
           "model:mppb-reg-chemprop-hybrid",
           "endpoint:mppb-reg-chemprop-hybrid"
         ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:mppb-reg-xgb",
+          "model:mppb-reg-pytorch",
+          "model:mppb-reg-chemprop",
+          "model:mppb-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:mppb-reg-v1"
+        ]
       }
     ]
   }

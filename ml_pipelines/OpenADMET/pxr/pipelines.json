@@ -26,7 +26,16 @@
       {"script": "pxr_pytorch_3dv2.py", "inputs": ["fs:openadmet_pxr_f2"],
        "outputs": ["model:pxr-2d-3dv2-reg-xgb", "endpoint:pxr-2d-3dv2-reg-xgb",
                    "model:pxr-2d-3dv2-reg-pytorch-339", "endpoint:pxr-2d-3dv2-reg-pytorch-339",
-                   "model:pxr-2d-3dv2-reg-pytorch-100", "endpoint:pxr-2d-3dv2-reg-pytorch-100"]}
+                   "model:pxr-2d-3dv2-reg-pytorch-100", "endpoint:pxr-2d-3dv2-reg-pytorch-100"]},
+      {"script": "workbench:models/model_promotion.py",
+       "inputs": ["model:pxr-reg-chemprop-phase1", "model:pxr-reg-chemprop-tuned-phase1",
+                  "model:pxr-reg-chemprop-phase2", "model:pxr-reg-chemprop-chemeleon-phase1-frz0",
+                  "model:pxr-reg-chemprop-chemeleon-phase1-frz10", "model:pxr-reg-chemprop-chemeleon-phase1-frz20",
+                  "model:pxr-reg-chemprop-mt-logp", "model:pxr-reg-chemprop-mt-logd",
+                  "model:pxr-reg-chemprop-mt-both", "model:pxr-reg-chemprop-mt-phase2",
+                  "model:pxr-2d-3dv2-reg-xgb", "model:pxr-2d-3dv2-reg-pytorch-339",
+                  "model:pxr-2d-3dv2-reg-pytorch-100"],
+       "outputs": ["endpoint:pxr-reg-v1"]}
     ]
   }
 }
