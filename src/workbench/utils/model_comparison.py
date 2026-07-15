@@ -58,6 +58,33 @@ def model_comparison(model_a: Model, model_b: Model, inference_run: str = "defau
     return pd.DataFrame([row_a, row_b, delta])
 
 
+def prediction_comparison(model_a: Model, model_b: Model, inference_run: str = "default") -> Optional[pd.DataFrame]:
+    """Concatenated inference predictions for two models, labeled by a 'model' column.
+
+    The shape the ComparisonPlot component expects: one row per (model, compound)
+    prediction, with the original prediction columns plus 'model' for color/dimming.
+
+    Args:
+        model_a (Model): The reference model (e.g. the champion)
+        model_b (Model): The model compared against it (e.g. a challenger)
+        inference_run (str, optional): The inference run to compare. Defaults to "default".
+
+    Returns:
+        pd.DataFrame: Both models' predictions stacked, with a 'model' column.
+            None if either model has no predictions for the inference run.
+    """
+    dfs = []
+    for model in (model_a, model_b):
+        df = model.get_inference_predictions(inference_run)
+        if df is None or df.empty:
+            log.warning(f"No inference predictions for {model.name} run '{inference_run}'")
+            return None
+        df = df.copy()
+        df["model"] = model.name
+        dfs.append(df)
+    return pd.concat(dfs, ignore_index=True)
+
+
 def rank_models(models: list, inference_run: str = "default") -> pd.DataFrame:
     """Rank models by their primary metric: rmse (low to high) for regressors,
     'all' row f1 (high to low) for classifiers.

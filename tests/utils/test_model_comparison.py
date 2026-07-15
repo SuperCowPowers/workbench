@@ -4,7 +4,7 @@ import pytest
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
-from workbench.utils.model_comparison import contest_ranking, model_comparison, rank_models
+from workbench.utils.model_comparison import contest_ranking, model_comparison, prediction_comparison, rank_models
 
 
 def test_regression_comparison():
@@ -52,10 +52,18 @@ def test_contest_ranking():
         assert row["Δrmse"] == pytest.approx(champ_rmse - row["rmse"])
 
 
+def test_prediction_comparison():
+    """prediction_comparison() stacks both models' predictions with a 'model' column"""
+    preds = prediction_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-2"), "full_cross_fold")
+    assert list(preds["model"].unique()) == ["aqsol-regression", "aqsol-regression-2"]
+    assert {"prediction", "solubility"} <= set(preds.columns)
+
+
 if __name__ == "__main__":
     test_regression_comparison()
     test_classification_comparison()
     test_missing_run_returns_none()
     test_rank_models()
     test_contest_ranking()
+    test_prediction_comparison()
     print("All model_comparison tests passed!")
