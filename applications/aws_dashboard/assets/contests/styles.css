@@ -11,7 +11,6 @@
   --ct-text-dim: #93a1b0;
   --ct-text-faint: #66727f;
   --ct-accent: #35d0ba;
-  --ct-accent-glow: rgba(53, 208, 186, 0.14);
   --ct-good: #57c96b;
   --ct-bad: #d97a6c;
   --ct-contested: #e0a63f;
@@ -43,7 +42,6 @@
   --ct-text-dim: #57646f;
   --ct-text-faint: #8592a0;
   --ct-accent: #12a892;
-  --ct-accent-glow: rgba(18, 168, 146, 0.12);
   --ct-good: #2f9d47;
   --ct-bad: #c05a4a;
   --ct-contested: #b57f1e;
@@ -113,23 +111,19 @@
 /* ---------- mini ranking ladder ---------- */
 .ct-root .ct-ladder { display: flex; flex-direction: column; gap: 3px; font-family: var(--ct-mono); font-size: 12px; }
 .ct-root .ct-lhead, .ct-root .ct-lrow {
-  display: grid; grid-template-columns: 14px minmax(0, 1.1fr) minmax(70px, 1fr) 52px 56px;
+  display: grid; grid-template-columns: 14px minmax(0, 1.4fr) 12px repeat(var(--ct-lcols, 2), 48px);
   gap: 8px; align-items: center;
 }
 .ct-root .ct-lhead { font-size: 10px; color: var(--ct-text-faint); text-transform: uppercase; letter-spacing: .06em; }
-.ct-root .ct-lhead span:nth-child(4), .ct-root .ct-lhead span:nth-child(5) { text-align: right; }
+.ct-root .ct-lhead span:nth-child(n+4) { text-align: center; }
 .ct-root .ct-lrow { padding: 4px 6px; border-radius: 6px; }
 .ct-root .ct-lrow.champ { background: var(--ct-panel-2); border: 1px solid var(--ct-border-soft); border-left: 3px solid var(--ct-accent); }
 .ct-root .ct-lname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ct-text); }
-.ct-root .ct-lval { text-align: right; font-variant-numeric: tabular-nums; color: var(--ct-text-dim); }
-.ct-root .ct-ldelta { text-align: right; font-variant-numeric: tabular-nums; font-size: 11px; }
-.ct-root .ct-ldelta.pos { color: var(--ct-good); }
-.ct-root .ct-ldelta.neg { color: var(--ct-text-faint); }
+.ct-root .ct-lval { text-align: right; font-variant-numeric: tabular-nums; color: var(--ct-text); }
 
-/* Value bar: length = goodness of the primary metric (best model = longest bar),
-   color = the model's framework hue. The ladder reads as a colored skyline. */
-.ct-root .ct-vbar { position: relative; height: 8px; background: var(--ct-panel-2); border-radius: 4px; overflow: hidden; }
-.ct-root .ct-vbar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; opacity: .9; }
+/* Metric values color by their Δ-vs-champion sign (cards and expanded table) */
+.ct-root .ct-pos { color: var(--ct-good); }
+.ct-root .ct-neg { color: var(--ct-bad); }
 
 /* Rank markers: gold crown (champion), then silver, bronze, open circles */
 .ct-root .ct-crown { color: var(--ct-medal-gold); display: inline-flex; justify-content: center; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ct-medal-gold) 55%, transparent)); }
@@ -144,18 +138,18 @@
 .ct-root .ct-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .ct-root .ct-legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-left: auto; }
 .ct-root .ct-legend-chip {
-  font-family: var(--ct-mono); font-size: 11px; font-weight: 500; color: var(--ct-text-dim);
-  display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 5px;
+  font-family: var(--ct-mono); font-size: 13px; font-weight: 500; color: var(--ct-text-dim);
+  display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; border-radius: 7px;
   background: var(--ct-panel); border: 1px solid var(--ct-border-soft);
 }
-.ct-root .ct-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
+.ct-root .ct-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
 .ct-root .ct-table .ct-dot { margin-right: 7px; }
 
 /* ---------- expand-in-place: full contest table ---------- */
 .ct-root .ct-detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .26s ease, opacity .2s ease; }
 .ct-root .ct-card.expanded .ct-detail { grid-template-rows: 1fr; opacity: 1; }
 .ct-root .ct-card.expanded { grid-column: 1 / -1; cursor: default; }
-/* Expanded card spans the row; keep the ladder at card-ish width so bars stay readable */
+/* Expanded card spans the row; keep the ladder at card-ish width */
 .ct-root .ct-card.expanded .ct-ladder { max-width: 640px; }
 .ct-root .ct-table-wrap { overflow-x: auto; min-height: 0; }
 .ct-root .ct-table { border-collapse: collapse; width: 100%; font-family: var(--ct-mono); font-size: 12px; }
@@ -170,9 +164,6 @@
 .ct-root .ct-table .ct-model { color: var(--ct-text); }
 .ct-root .ct-table .ct-type { color: var(--ct-text-faint); white-space: nowrap; }
 .ct-root .ct-table .ct-champ-row { background: var(--ct-panel-2); }
-.ct-root .ct-table .ct-pos { color: var(--ct-good); }
-.ct-root .ct-table .ct-neg { color: var(--ct-bad); }
-.ct-root .ct-table .ct-zero { color: var(--ct-text-faint); }
 
 /* ---------- footer ---------- */
 .ct-root .ct-card-foot { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }

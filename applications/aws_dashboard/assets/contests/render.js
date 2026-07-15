@@ -2,11 +2,11 @@
  *
  * A Dash clientside callback (namespace "contests", function "render") calls
  * ctRender(data) whenever the server-side contest data changes. The data is a list
- * of contest reports (from Reports() /contests/*): each contest is a list of row
- * dicts — the champion row first, then the challengers ranked best-first, with
- * metric columns interleaved with Δ-vs-champion columns (positive = challenger
- * better). The renderer derives everything else (primary metric, contested flag)
- * from the rows.
+ * of contests {group, rows} (from Reports() /contests/* plus the pipeline hierarchy
+ * group): rows are the report's row dicts — champion first, then challengers ranked
+ * best-first, with metric columns interleaved with Δ-vs-champion columns (positive =
+ * challenger better). The renderer derives the contested flag and all coloring from
+ * the rows.
  *
  * We render straight into #contests-root via the DOM so the card -> expand-in-place
  * interaction lives entirely in the browser (no server round-trips).
@@ -23,8 +23,7 @@
   const EPS = 1e-6;
 
   // Model framework: the report's `framework` column is authoritative (written by
-  // contest_report(), multi-task already resolved). Name inference is only a
-  // fallback for reports published before the column existed.
+  // contest_report(), multi-task already resolved). Unrecognized values map to "other".
   const FW_KEY = {
     "multi-task": "mt",
     chemprop: "chemprop",
@@ -38,14 +37,7 @@
     mt: "multi-task", chemprop: "chemprop", xgb: "xgboost", pytorch: "pytorch",
     transformer: "transformer", sklearn: "sklearn", meta: "meta", other: "other",
   };
-  function frameworkOf(row) {
-    if (row.framework) return FW_KEY[row.framework] || "other";
-    const n = (row.model || "").toLowerCase();
-    for (const [pat, fw] of [["-mt", "mt"], ["chemprop", "chemprop"], ["pytorch", "pytorch"], ["xgb", "xgb"]]) {
-      if (n.includes(pat)) return fw;
-    }
-    return "other";
-  }
+  const frameworkOf = (row) => FW_KEY[row.framework] || "other";
 
   const CROWN = '<svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M1.5 5.5l3.2 2.6L8 3.5l3.3 4.6 3.2-2.6-1.2 7H2.7l-1.2-7z"/></svg>';
 
@@ -73,7 +65,6 @@
       group,
       champion,
       challengers,
-      primary,
       endpoint: first.endpoint,
       run: first.inference_run,
       timestamp: first.timestamp,
@@ -88,10 +79,13 @@
     const n = Number(v);
     return Number.isInteger(n) ? String(n) : String(parseFloat(n.toPrecision(2)));
   };
-  // Deltas at 2 decimal places; anything that rounds to 0.00 displays (and colors) as 0
+  // Metric values color by their Δ-vs-champion sign; deltas this small count as a tie
   const zeroish = (v) => v == null || Math.abs(v) < 0.005;
-  const fmtDelta = (v) =>
-    v == null || Number.isNaN(v) ? "—" : zeroish(v) ? "0" : (v > 0 ? "+" : "") + Number(v).toFixed(2);
+  const deltaClass = (row, metric, isChampion) => {
+    const d = row["Δ" + metric];
+    if (isChampion || d == null || zeroish(d)) return "";
+    return d > 0 ? "ct-pos" : "ct-neg";
+  };
 
   function timeAgo(iso) {
     const t = new Date(iso);
@@ -105,61 +99,56 @@
   // ---------- ladder (mini ranking) ----------
   const LADDER_MAX = 3; // challengers shown on the collapsed card
 
-  /* Bar length encodes "goodness" of the primary metric across this contest's models:
-     the best model gets the longest bar (RMSE inverts: lower is better). Bar color is
-     the model's framework hue, so the ladder reads as a colored skyline. */
-  function goodness(c) {
-    const vals = c.rows.map((r) => r[c.primary]).filter((v) => v != null);
-    const min = Math.min(...vals), max = Math.max(...vals), span = max - min;
-    return (v) => {
-      if (v == null || !isFinite(v)) return 0;
-      const raw = span < 1e-12 ? 1 : c.primary === "rmse" ? (max - v) / span : (v - min) / span;
-      return 0.1 + raw * 0.9; // floor so the worst model still shows a stub
-    };
+  // Column titles: "precision" shortens to "prec" so the header fits its column
+  const metricLabel = (k) => k.replace("precision", "prec");
+
+  // The contest's top 2 metrics (report column order, support excluded) shown as
+  // numeric columns on each ladder row, colored by their Δ-vs-champion sign.
+  function ladderMetrics(c) {
+    return Object.keys(c.rows[0])
+      .filter((k) => !META_COLS.has(k) && !k.startsWith("Δ") && k !== "support")
+      .slice(0, 2);
   }
 
-  function ladderRow(row, value, delta, cls, good, marker) {
+  function ladderRow(row, cls, marker, cols) {
     const fw = frameworkOf(row);
-    const side = delta != null && !zeroish(delta) && delta > 0 ? "pos" : "neg";
+    const values = cols
+      .map((k) => `<span class="ct-lval ${deltaClass(row, k, cls === "champ")}">${fmt(row[k])}</span>`)
+      .join("");
     return `<div class="ct-lrow ${cls}">
       ${marker}
       <span class="ct-lname" title="${row.model}">${row.model}</span>
-      <span class="ct-vbar"><span class="ct-vbar-fill" style="width:${(good(value) * 100).toFixed(1)}%; background:var(--ct-f-${fw})"></span></span>
-      <span class="ct-lval">${fmt(value)}</span>
-      <span class="ct-ldelta ${side}">${cls === "champ" ? "" : fmtDelta(delta)}</span>
+      <span class="ct-dot" style="background:var(--ct-f-${fw})" title="${FRAMEWORK_LABEL[fw]}"></span>
+      ${values}
     </div>`;
   }
 
   function ladderHTML(c) {
-    const dKey = "Δ" + c.primary;
-    const good = goodness(c);
+    const cols = ladderMetrics(c);
     const rows = [];
-    if (c.champion) rows.push(ladderRow(c.champion, c.champion[c.primary], null, "champ", good, rankMarker("champion", 0)));
+    if (c.champion) rows.push(ladderRow(c.champion, "champ", rankMarker("champion", 0), cols));
     c.challengers.slice(0, LADDER_MAX).forEach((r, i) => {
-      rows.push(ladderRow(r, r[c.primary], r[dKey], "chall", good, rankMarker("challenger", i)));
+      rows.push(ladderRow(r, "chall", rankMarker("challenger", i), cols));
     });
     const extra = c.challengers.length - LADDER_MAX;
     const more = extra > 0 ? `<div class="ct-more">+${extra} more challenger${extra > 1 ? "s" : ""}</div>` : "";
-    return `<div class="ct-ladder"><div class="ct-lhead">
-        <span></span><span></span><span></span><span>${c.primary}</span><span>Δ</span>
+    const heads = cols.map((k) => `<span>${metricLabel(k)}</span>`).join("");
+    return `<div class="ct-ladder" style="--ct-lcols:${cols.length}"><div class="ct-lhead">
+        <span></span><span></span><span></span>${heads}
       </div>${rows.join("")}${more}</div>`;
   }
 
   // ---------- expanded table (full contest report) ----------
   function tableHTML(c) {
-    const cols = Object.keys(c.rows[0]).filter((k) => !META_COLS.has(k));
+    const cols = Object.keys(c.rows[0]).filter((k) => !META_COLS.has(k) && !k.startsWith("Δ"));
     const head = `<tr><th></th><th class="ct-ta-l">model</th><th class="ct-ta-l">type</th>${cols
-      .map((k) => `<th>${k}</th>`)
+      .map((k) => `<th>${metricLabel(k)}</th>`)
       .join("")}</tr>`;
     let challengerIdx = 0;
     const body = c.rows
       .map((r) => {
         const cells = cols
-          .map((k) => {
-            const isDelta = k.startsWith("Δ");
-            const cls = isDelta ? (zeroish(r[k]) ? "ct-zero" : r[k] > 0 ? "ct-pos" : "ct-neg") : "";
-            return `<td class="${cls}">${isDelta ? fmtDelta(r[k]) : fmt(r[k])}</td>`;
-          })
+          .map((k) => `<td class="${deltaClass(r, k, r.role === "champion")}">${fmt(r[k])}</td>`)
           .join("");
         const marker = rankMarker(r.role, r.role === "champion" ? 0 : challengerIdx++);
         const fw = frameworkOf(r);
@@ -240,7 +229,7 @@
     const legend = document.createElement("div");
     legend.className = "ct-legend";
     legend.innerHTML = order
-      .map((fw) => `<span class="ct-legend-chip f-${fw}"><span class="ct-dot" style="background:var(--ct-f-${fw})"></span>${FRAMEWORK_LABEL[fw]}</span>`)
+      .map((fw) => `<span class="ct-legend-chip"><span class="ct-dot" style="background:var(--ct-f-${fw})"></span>${FRAMEWORK_LABEL[fw]}</span>`)
       .join("");
     return legend;
   }
