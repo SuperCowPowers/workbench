@@ -345,21 +345,24 @@ class CachedMeta(CloudMeta):
         entries = self.modified_registry.get(registry_key) or {}
         return entries.get(artifact.name)
 
-    def update_modified_timestamp(self, artifact: "Artifact") -> None:
-        """Update an artifact's Modified timestamp to now.
+    def update_modified_timestamp(self, artifact: "Artifact", timestamp: Optional[datetime] = None) -> None:
+        """Update an artifact's Modified timestamp.
 
         Pokes the registry so the artifact is detected as stale on next access.
+        Never moves an existing entry backwards.
 
         Args:
             artifact (Artifact): Any Workbench artifact object (Model, CachedModel,
                 Endpoint, etc.)
+            timestamp (datetime, optional): Timestamp to record (defaults to now)
         """
         registry_key = self._resolve_registry_key(artifact)
         if registry_key is None:
             raise ValueError(f"Cannot determine registry key for {type(artifact).__name__}")
-        now = datetime.now(timezone.utc)
+        ts = timestamp or datetime.now(timezone.utc)
         entries = self.modified_registry.get(registry_key) or {}
-        entries[artifact.name] = now
+        existing = entries.get(artifact.name)
+        entries[artifact.name] = max(existing, ts) if existing else ts
         self.modified_registry.set(registry_key, entries)
 
     def _refresh_details(self, list_method: str) -> pd.DataFrame:

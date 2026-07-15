@@ -1,6 +1,7 @@
 """CachedArtifactMixin: Caching for Artifact subclasses using Modified timestamps for stale detection"""
 
 import logging
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from workbench.utils.workbench_cache import WorkbenchCache
 
@@ -33,6 +34,12 @@ class CachedArtifactMixin:
             from workbench.cached.cached_meta import CachedMeta
 
             current_modified = CachedMeta().get_modified_timestamp(self)
+
+            # No registry entry: seed one slightly in the past so this fetch caches as
+            # fresh, while a concurrent real poke (stamped now) still wins and refreshes
+            if current_modified is None:
+                current_modified = datetime.now(timezone.utc) - timedelta(seconds=10)
+                CachedMeta().update_modified_timestamp(self, timestamp=current_modified)
 
             # Check if cached value is fresh (cached timestamp >= registry timestamp)
             if cached_entry is not None and isinstance(cached_entry, dict) and "_result" in cached_entry:
