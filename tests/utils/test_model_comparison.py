@@ -4,7 +4,13 @@ import pytest
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
-from workbench.utils.model_comparison import contest_ranking, model_comparison, prediction_comparison, rank_models
+from workbench.utils.model_comparison import (
+    contest_ranking,
+    contest_report,
+    model_comparison,
+    prediction_comparison,
+    rank_models,
+)
 
 
 def test_regression_comparison():
@@ -52,6 +58,23 @@ def test_contest_ranking():
         assert row["Δrmse"] == pytest.approx(champ_rmse - row["rmse"])
 
 
+def test_contest_report():
+    """contest_report() has champion first (Δ=0), ranked challengers, and contest metadata columns"""
+    champion = CachedModel("aqsol-regression")
+    challengers = [CachedModel("aqsol-regression-1"), CachedModel("aqsol-regression-2")]
+    report = contest_report(champion, challengers, "aqsol-regression", "full_cross_fold")
+
+    assert list(report["role"]) == ["champion", "challenger", "challenger"]
+    assert report["model"].iloc[0] == "aqsol-regression"
+    assert report["endpoint"].eq("aqsol-regression").all()
+    assert report["inference_run"].eq("full_cross_fold").all()
+    assert report.loc[0, "Δrmse"] == 0.0  # champion delta vs itself
+
+    # Challengers ranked best-first (regressor: rmse low to high)
+    chall_rmse = list(report.loc[report["role"] == "challenger", "rmse"])
+    assert chall_rmse == sorted(chall_rmse)
+
+
 def test_prediction_comparison():
     """prediction_comparison() stacks both models' predictions with a 'model' column"""
     preds = prediction_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-2"), "full_cross_fold")
@@ -65,5 +88,6 @@ if __name__ == "__main__":
     test_missing_run_returns_none()
     test_rank_models()
     test_contest_ranking()
+    test_contest_report()
     test_prediction_comparison()
     print("All model_comparison tests passed!")

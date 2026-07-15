@@ -146,6 +146,42 @@ def contest_ranking(champion: Model, challengers: list, inference_run: str = "de
     return ranked[ordered]
 
 
+def contest_report(
+    champion: Model, challengers: list, endpoint_name: str, inference_run: str = "full_cross_fold"
+) -> Optional[pd.DataFrame]:
+    """The publishable contest report: champion + ranked challengers in one table.
+
+    Args:
+        champion (Model): The model currently serving the contested endpoint
+        challengers (list[Model]): The challenger models
+        endpoint_name (str): The contested endpoint (recorded in the report)
+        inference_run (str, optional): The inference run to compare. Defaults to "full_cross_fold".
+
+    Returns:
+        pd.DataFrame: One row per model (champion first, then challengers best-first) with
+            columns [model, role, endpoint, <metrics interleaved with Δ vs champion>,
+            inference_run, timestamp]. Champion Δ columns are 0 (delta vs itself).
+            Models without metrics are skipped; None if no model has metrics.
+    """
+    champ_row = rank_models([champion], inference_run)
+    chall_rows = contest_ranking(champion, challengers, inference_run)
+    if champ_row.empty and chall_rows.empty:
+        log.warning(f"No metrics for any model in the '{endpoint_name}' contest: no report")
+        return None
+
+    # Champion first, challengers best-first, columns in the interleaved metric/Δ order
+    cols = list(chall_rows.columns) if not chall_rows.empty else list(champ_row.columns)
+    report = pd.concat([champ_row, chall_rows])[cols]
+    report.insert(0, "model", report.index)
+    report.insert(1, "role", ["champion"] * len(champ_row) + ["challenger"] * len(chall_rows))
+    report.insert(2, "endpoint", endpoint_name)
+    delta_cols = [col for col in report.columns if col.startswith("Δ")]
+    report.loc[report["role"] == "champion", delta_cols] = 0.0
+    report["inference_run"] = inference_run
+    report["timestamp"] = pd.Timestamp.now(tz="UTC")
+    return report.reset_index(drop=True)
+
+
 def _metrics_row(df: pd.DataFrame, model_name: str) -> pd.Series:
     """The single metrics row to compare on: the 'all' summary row for classifiers
     (per-class label column dropped), the first row for regressors."""
@@ -184,3 +220,9 @@ if __name__ == "__main__":
     challengers = [CachedModel("aqsol-class-1"), CachedModel("aqsol-class-2")]
     ranking = contest_ranking(champion, challengers, "full_cross_fold")
     print(ranking)
+
+    print("\n*** Contest report: aqsol-regression ***")
+    champion = CachedModel("aqsol-regression")
+    challengers = [CachedModel("aqsol-regression-1"), CachedModel("aqsol-regression-2")]
+    report = contest_report(champion, challengers, "aqsol-regression")
+    print(report)
