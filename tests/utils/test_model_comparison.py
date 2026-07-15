@@ -4,9 +4,14 @@ import pytest
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
+import pandas as pd
+
+# Workbench Imports
+from workbench.api import Reports
 from workbench.utils.model_comparison import (
     contest_ranking,
     contest_report,
+    contest_summaries,
     model_comparison,
     prediction_comparison,
     rank_models,
@@ -75,6 +80,33 @@ def test_contest_report():
     assert chall_rmse == sorted(chall_rmse)
 
 
+def test_contest_summaries():
+    """contest_summaries() rolls each published /contests/* report into one card row"""
+    report = pd.DataFrame(
+        {
+            "model": ["champ", "chall-a", "chall-b"],
+            "role": ["champion", "challenger", "challenger"],
+            "endpoint": "zzz-test-contest",
+            "rmse": [0.50, 0.45, 0.60],
+            "Δrmse": [0.0, 0.05, -0.10],
+            "inference_run": "full_cross_fold",
+            "timestamp": pd.Timestamp.now(tz="UTC"),
+        }
+    )
+    reports = Reports()
+    reports.upsert("/contests/zzz-test-contest", report)
+    try:
+        summaries = contest_summaries()
+        row = summaries[summaries["endpoint"] == "zzz-test-contest"].iloc[0]
+        assert row["champion"] == "champ"
+        assert row["challengers"] == 2
+        assert row["top_challenger"] == "chall-a"
+        assert row["top_delta"] == pytest.approx(0.05)
+        assert bool(row["contested"]) is True
+    finally:
+        reports.delete("/contests/zzz-test-contest")
+
+
 def test_prediction_comparison():
     """prediction_comparison() stacks both models' predictions with a 'model' column"""
     preds = prediction_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-2"), "full_cross_fold")
@@ -89,5 +121,6 @@ if __name__ == "__main__":
     test_rank_models()
     test_contest_ranking()
     test_contest_report()
+    test_contest_summaries()
     test_prediction_comparison()
     print("All model_comparison tests passed!")

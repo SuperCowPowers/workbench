@@ -182,6 +182,53 @@ def contest_report(
     return report.reset_index(drop=True)
 
 
+def contest_summaries() -> pd.DataFrame:
+    """One row per published contest report (the card-grid view of /contests/*).
+
+    Returns:
+        pd.DataFrame: Columns [endpoint, champion, challengers, top_challenger,
+            primary_metric, top_delta, contested, inference_run, timestamp], newest
+            first. 'contested' means the top challenger beats the champion on the
+            primary metric (rmse for regressors, f1 for classifiers). Empty if no
+            contest reports are published.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    from workbench.api import Reports
+
+    reports = Reports()
+    locations = [loc for loc in reports.list() if loc.startswith("/contests/")]
+    if not locations:
+        return pd.DataFrame()
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        contests = pool.map(reports.get, locations)
+
+    rows = []
+    for df in contests:
+        if df is None or df.empty:
+            continue
+        champions = df[df["role"] == "champion"]
+        challengers = df[df["role"] == "challenger"]
+        primary = "rmse" if "rmse" in df.columns else "f1"
+        top = challengers.iloc[0] if not challengers.empty else None
+        top_delta = top[f"Δ{primary}"] if top is not None and f"Δ{primary}" in df.columns else None
+        rows.append(
+            {
+                "endpoint": df["endpoint"].iloc[0],
+                "champion": champions["model"].iloc[0] if not champions.empty else None,
+                "challengers": len(challengers),
+                "top_challenger": top["model"] if top is not None else None,
+                "primary_metric": primary,
+                "top_delta": top_delta,
+                "contested": bool(top_delta > 0) if top_delta is not None else None,
+                "inference_run": df["inference_run"].iloc[0],
+                "timestamp": df["timestamp"].iloc[0],
+            }
+        )
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values("timestamp", ascending=False, ignore_index=True)
+
+
 def _metrics_row(df: pd.DataFrame, model_name: str) -> pd.Series:
     """The single metrics row to compare on: the 'all' summary row for classifiers
     (per-class label column dropped), the first row for regressors."""
@@ -226,3 +273,7 @@ if __name__ == "__main__":
     challengers = [CachedModel("aqsol-regression-1"), CachedModel("aqsol-regression-2")]
     report = contest_report(champion, challengers, "aqsol-regression")
     print(report)
+
+    print("\n*** Contest summaries (published /contests/* reports) ***")
+    summaries = contest_summaries()
+    print(summaries)
