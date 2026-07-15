@@ -126,15 +126,16 @@ def contest_ranking(champion: Model, challengers: list, inference_run: str = "de
     Returns:
         pd.DataFrame: rank_models() of the challengers with a Δ column after each metric
             (positive = challenger better than champion, see LOWER_IS_BETTER; support has
-            no Δ). None if the champion has no metrics for the inference run.
+            no Δ). If the champion has no metrics for the inference run, the ranking is
+            returned without Δ columns.
     """
+    ranked = rank_models(challengers, inference_run)
+
     champ_df = champion.get_inference_metrics(inference_run)
     if champ_df is None or champ_df.empty:
-        log.warning(f"No inference metrics for champion {champion.name} run '{inference_run}'")
-        return None
+        log.warning(f"No inference metrics for champion {champion.name} run '{inference_run}': no Δ columns")
+        return ranked
     champ_row = _metrics_row(champ_df, champion.name)
-
-    ranked = rank_models(challengers, inference_run)
     ordered = []
     for col in ranked.columns:
         ordered.append(col)

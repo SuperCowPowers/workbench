@@ -81,7 +81,11 @@ def main():
     dated_name = f"{winner.name.removesuffix('-dt')}-{datetime.now().strftime('%y%m%d')}"
     log.important(f"Promoting {winner.name} -> {dated_name} on endpoint {endpoint_name}")
     frozen = winner.copy(dated_name, owner="Pro")
-    frozen.to_endpoint(endpoint_name)
+    end = frozen.to_endpoint(endpoint_name)
+
+    # Populate test and full_cross_fold metrics on the new endpoint
+    end.test_inference()
+    end.cross_fold_inference()
 
     if dethroned and dethroned not in ("unknown", dated_name):
         log.important(f"Retiring dethroned model {dethroned}")
