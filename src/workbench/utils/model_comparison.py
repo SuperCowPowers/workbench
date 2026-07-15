@@ -17,6 +17,10 @@ log = logging.getLogger("workbench")
 # b - a difference, which is what we want for a count.
 LOWER_IS_BETTER = {"rmse", "mae", "medae"}
 
+# Deltas below this are run-to-run float noise (a champion vs its own frozen copy),
+# not a real difference; used for the "contested" call in contest_summaries()
+CONTESTED_EPS = 1e-6
+
 
 def model_comparison(model_a: Model, model_b: Model, inference_run: str = "default") -> Optional[pd.DataFrame]:
     """Compare the inference metrics of two models.
@@ -159,9 +163,11 @@ def contest_report(
 
     Returns:
         pd.DataFrame: One row per model (champion first, then challengers best-first) with
-            columns [model, role, endpoint, <metrics interleaved with Δ vs champion>,
-            inference_run, timestamp]. Champion Δ columns are 0 (delta vs itself).
-            Models without metrics are skipped; None if no model has metrics.
+            columns [model, role, framework, endpoint, <metrics interleaved with Δ vs
+            champion>, inference_run, timestamp]. Champion Δ columns are 0 (delta vs
+            itself); framework is the model's framework, with multi-task models (list
+            target) reported as "multi-task". Models without metrics are skipped;
+            None if no model has metrics.
     """
     champ_row = rank_models([champion], inference_run)
     chall_rows = contest_ranking(champion, challengers, inference_run)
@@ -174,7 +180,8 @@ def contest_report(
     report = pd.concat([champ_row, chall_rows])[cols]
     report.insert(0, "model", report.index)
     report.insert(1, "role", ["champion"] * len(champ_row) + ["challenger"] * len(chall_rows))
-    report.insert(2, "endpoint", endpoint_name)
+    report.insert(2, "framework", report["model"].map({m.name: _framework(m) for m in [champion, *challengers]}))
+    report.insert(3, "endpoint", endpoint_name)
     delta_cols = [col for col in report.columns if col.startswith("Δ")]
     report.loc[report["role"] == "champion", delta_cols] = 0.0
     report["inference_run"] = inference_run
@@ -219,7 +226,7 @@ def contest_summaries() -> pd.DataFrame:
                 "top_challenger": top["model"] if top is not None else None,
                 "primary_metric": primary,
                 "top_delta": top_delta,
-                "contested": bool(top_delta > 0) if top_delta is not None else None,
+                "contested": bool(top_delta > CONTESTED_EPS) if top_delta is not None else None,
                 "inference_run": df["inference_run"].iloc[0],
                 "timestamp": df["timestamp"].iloc[0],
             }
@@ -227,6 +234,17 @@ def contest_summaries() -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
     return pd.DataFrame(rows).sort_values("timestamp", ascending=False, ignore_index=True)
+
+
+def _framework(model) -> str:
+    """The model's framework for report rows; a list target means multi-task"""
+    try:
+        if isinstance(model.target(), list):
+            return "multi-task"
+        return model.model_framework.value
+    except Exception as e:
+        log.warning(f"Could not determine framework for {model.name}: {e}")
+        return "unknown"
 
 
 def _metrics_row(df: pd.DataFrame, model_name: str) -> pd.Series:

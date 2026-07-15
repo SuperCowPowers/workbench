@@ -72,6 +72,7 @@ def test_contest_report():
     assert list(report["role"]) == ["champion", "challenger", "challenger"]
     assert report["model"].iloc[0] == "aqsol-regression"
     assert report["endpoint"].eq("aqsol-regression").all()
+    assert report["framework"].isin(["xgboost", "pytorch", "chemprop", "multi-task", "sklearn"]).all()
     assert report["inference_run"].eq("full_cross_fold").all()
     assert report.loc[0, "Δrmse"] == 0.0  # champion delta vs itself
 

@@ -1,0 +1,197 @@
+/* Model Contests page — all selectors scoped under .ct-root so nothing leaks into
+   other dashboard pages. Design tokens mirror the ml_pipelines page (dark defaults,
+   light overrides via the dashboard's data-bs-theme attribute). */
+
+.ct-root {
+  --ct-panel: #151a21;
+  --ct-panel-2: #1b222b;
+  --ct-border: #29333f;
+  --ct-border-soft: #1f2831;
+  --ct-text: #e7edf3;
+  --ct-text-dim: #93a1b0;
+  --ct-text-faint: #66727f;
+  --ct-accent: #35d0ba;
+  --ct-accent-glow: rgba(53, 208, 186, 0.14);
+  --ct-good: #57c96b;
+  --ct-bad: #d97a6c;
+  --ct-contested: #e0a63f;
+  --ct-contested-glow: rgba(224, 166, 63, 0.14);
+  --ct-f-chemprop: #6bd08a;
+  --ct-f-mt: #d06ba8;
+  --ct-f-pytorch: #d98a5c;
+  --ct-f-xgb: #d4b158;
+  --ct-f-transformer: #ab8ad6;
+  --ct-f-sklearn: #9fb4c7;
+  --ct-f-meta: #5bc8d0;
+  --ct-f-other: #5ba3d0;
+  --ct-medal-gold: #e8c35a;
+  --ct-medal-silver: #b9c2cd;
+  --ct-medal-bronze: #c98a5e;
+  --ct-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --ct-radius: 12px;
+  --ct-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  color: var(--ct-text);
+}
+
+:root[data-bs-theme="light"] .ct-root {
+  --ct-panel: #ffffff;
+  --ct-panel-2: #f0f3f6;
+  --ct-border: #d3dae1;
+  --ct-border-soft: #e4e9ee;
+  --ct-text: #1a232c;
+  --ct-text-dim: #57646f;
+  --ct-text-faint: #8592a0;
+  --ct-accent: #12a892;
+  --ct-accent-glow: rgba(18, 168, 146, 0.12);
+  --ct-good: #2f9d47;
+  --ct-bad: #c05a4a;
+  --ct-contested: #b57f1e;
+  --ct-contested-glow: rgba(181, 127, 30, 0.12);
+  --ct-f-chemprop: #3a9d5c;
+  --ct-f-mt: #b04585;
+  --ct-f-pytorch: #c26a3a;
+  --ct-f-xgb: #b8942f;
+  --ct-f-transformer: #7c5cc4;
+  --ct-f-sklearn: #6b8199;
+  --ct-f-meta: #2e9aa6;
+  --ct-f-other: #3a82b0;
+  --ct-medal-gold: #c99b23;
+  --ct-medal-silver: #8b97a5;
+  --ct-medal-bronze: #a96e42;
+  --ct-shadow: 0 6px 24px rgba(30, 50, 70, 0.10);
+}
+
+.ct-root * { box-sizing: border-box; }
+
+/* ---------- group sections (pipeline hierarchy) ---------- */
+.ct-root .ct-grid { animation: ctFadeIn .28s ease both; }
+.ct-root .ct-cat { margin-bottom: 12px; border-bottom: 1px solid var(--ct-border-soft); padding-bottom: 20px; }
+.ct-root .ct-cat:last-child { border-bottom: 0; }
+.ct-root .ct-cat-head { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; cursor: pointer; user-select: none; padding: 4px 0; }
+.ct-root .ct-caret { color: var(--ct-text-dim); display: inline-flex; align-items: center; transition: transform .2s ease; }
+.ct-root .ct-cat.collapsed > .ct-cat-head .ct-caret { transform: rotate(-90deg); }
+.ct-root .ct-cat-head:hover .ct-caret { color: var(--ct-accent); }
+.ct-root .ct-cat-head h3 { font-size: 18px; font-weight: 620; margin: 0; letter-spacing: -0.01em; }
+.ct-root .ct-cat-head .ct-pill { font-size: 12px; padding: 4px 11px; }
+/* Collapse via grid-template-rows 1fr->0fr (no JS height measurement); padding +
+   negative margin gives the card hover-lift room inside the clipping inner. */
+.ct-root .ct-cat-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .26s ease, opacity .2s ease; }
+.ct-root .ct-cat.collapsed > .ct-cat-body { grid-template-rows: 0fr; opacity: 0; }
+.ct-root .ct-cat-body-inner { overflow: hidden; min-height: 0; padding: 10px 8px; margin: -10px -8px; }
+
+/* ---------- card grid ---------- */
+.ct-root .ct-card-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 16px; animation: ctFadeIn .28s ease both; align-items: start;
+}
+
+.ct-root .ct-card {
+  background: var(--ct-panel); border: 1px solid var(--ct-border); border-radius: var(--ct-radius);
+  padding: 16px 16px 13px; cursor: pointer; display: flex; flex-direction: column; gap: 12px;
+  transition: transform .16s, border-color .16s, box-shadow .16s;
+}
+.ct-root .ct-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--ct-accent) 50%, var(--ct-border)); box-shadow: var(--ct-shadow); }
+.ct-root .ct-card:hover .ct-card-open { opacity: 1; transform: translateX(0); }
+
+/* Contested accent: amber frame + badge */
+.ct-root .ct-card.contested {
+  border-color: color-mix(in srgb, var(--ct-contested) 65%, var(--ct-border));
+  box-shadow: 0 0 0 3px var(--ct-contested-glow), 0 0 22px var(--ct-contested-glow);
+}
+.ct-root .ct-badge {
+  font-family: var(--ct-mono); font-size: 10px; font-weight: 650; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ct-contested); white-space: nowrap;
+  background: var(--ct-contested-glow); border: 1px solid color-mix(in srgb, var(--ct-contested) 40%, transparent);
+  border-radius: 20px; padding: 3px 9px;
+}
+
+.ct-root .ct-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ct-root .ct-card-title { font-family: var(--ct-mono); font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.ct-root .ct-card-sub { color: var(--ct-text-faint); font-family: var(--ct-mono); font-size: 11.5px; margin-top: 3px; }
+
+/* ---------- mini ranking ladder ---------- */
+.ct-root .ct-ladder { display: flex; flex-direction: column; gap: 3px; font-family: var(--ct-mono); font-size: 12px; }
+.ct-root .ct-lhead, .ct-root .ct-lrow {
+  display: grid; grid-template-columns: 14px minmax(0, 1.1fr) minmax(70px, 1fr) 52px 56px;
+  gap: 8px; align-items: center;
+}
+.ct-root .ct-lhead { font-size: 10px; color: var(--ct-text-faint); text-transform: uppercase; letter-spacing: .06em; }
+.ct-root .ct-lhead span:nth-child(4), .ct-root .ct-lhead span:nth-child(5) { text-align: right; }
+.ct-root .ct-lrow { padding: 4px 6px; border-radius: 6px; }
+.ct-root .ct-lrow.champ { background: var(--ct-panel-2); border: 1px solid var(--ct-border-soft); border-left: 3px solid var(--ct-accent); }
+.ct-root .ct-lname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ct-text); }
+.ct-root .ct-lval { text-align: right; font-variant-numeric: tabular-nums; color: var(--ct-text-dim); }
+.ct-root .ct-ldelta { text-align: right; font-variant-numeric: tabular-nums; font-size: 11px; }
+.ct-root .ct-ldelta.pos { color: var(--ct-good); }
+.ct-root .ct-ldelta.neg { color: var(--ct-text-faint); }
+
+/* Value bar: length = goodness of the primary metric (best model = longest bar),
+   color = the model's framework hue. The ladder reads as a colored skyline. */
+.ct-root .ct-vbar { position: relative; height: 8px; background: var(--ct-panel-2); border-radius: 4px; overflow: hidden; }
+.ct-root .ct-vbar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; opacity: .9; }
+
+/* Rank markers: gold crown (champion), then silver, bronze, open circles */
+.ct-root .ct-crown { color: var(--ct-medal-gold); display: inline-flex; justify-content: center; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ct-medal-gold) 55%, transparent)); }
+.ct-root .ct-medal { width: 9px; height: 9px; border-radius: 50%; justify-self: center; display: inline-block; box-sizing: border-box; }
+.ct-root .ct-medal-silver { background: var(--ct-medal-silver); }
+.ct-root .ct-medal-bronze { background: var(--ct-medal-bronze); }
+.ct-root .ct-medal-open { border: 1.5px solid var(--ct-text-faint); background: transparent; }
+
+.ct-root .ct-more { color: var(--ct-text-faint); font-size: 11px; padding: 2px 6px 0; }
+
+/* ---------- toolbar / framework legend ---------- */
+.ct-root .ct-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.ct-root .ct-legend { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.ct-root .ct-legend-chip {
+  font-family: var(--ct-mono); font-size: 11px; font-weight: 500; color: var(--ct-text-dim);
+  display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 5px;
+  background: var(--ct-panel); border: 1px solid var(--ct-border-soft);
+}
+.ct-root .ct-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; display: inline-block; }
+.ct-root .ct-table .ct-dot { margin-right: 7px; }
+
+/* ---------- expand-in-place: full contest table ---------- */
+.ct-root .ct-detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .26s ease, opacity .2s ease; }
+.ct-root .ct-card.expanded .ct-detail { grid-template-rows: 1fr; opacity: 1; }
+.ct-root .ct-card.expanded { grid-column: 1 / -1; cursor: default; }
+/* Expanded card spans the row; keep the ladder at card-ish width so bars stay readable */
+.ct-root .ct-card.expanded .ct-ladder { max-width: 640px; }
+.ct-root .ct-table-wrap { overflow-x: auto; min-height: 0; }
+.ct-root .ct-table { border-collapse: collapse; width: 100%; font-family: var(--ct-mono); font-size: 12px; }
+.ct-root .ct-table th {
+  color: var(--ct-text-faint); font-weight: 550; font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .05em; text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--ct-border);
+  white-space: nowrap;
+}
+.ct-root .ct-table td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--ct-border-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ct-root .ct-table td.ct-ta-l, .ct-root .ct-table th.ct-ta-l { text-align: left !important; }
+.ct-root .ct-table .ct-rank { text-align: center; width: 30px; }
+.ct-root .ct-table .ct-model { color: var(--ct-text); }
+.ct-root .ct-table .ct-type { color: var(--ct-text-faint); white-space: nowrap; }
+.ct-root .ct-table .ct-champ-row { background: var(--ct-panel-2); }
+.ct-root .ct-table .ct-pos { color: var(--ct-good); }
+.ct-root .ct-table .ct-neg { color: var(--ct-bad); }
+.ct-root .ct-table .ct-zero { color: var(--ct-text-faint); }
+
+/* ---------- footer ---------- */
+.ct-root .ct-card-foot { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ct-root .ct-pill {
+  font-family: var(--ct-mono); font-size: 10px; color: var(--ct-text-dim);
+  background: var(--ct-panel-2); border: 1px solid var(--ct-border-soft);
+  padding: 2px 7px; border-radius: 6px;
+}
+.ct-root .ct-foot-time { color: var(--ct-text-faint); font-size: 11px; margin-left: auto; }
+.ct-root .ct-card-open { font-size: 11px; font-family: var(--ct-mono); color: var(--ct-accent); opacity: 0; transform: translateX(-4px); transition: all .18s; white-space: nowrap; }
+
+/* ---------- empty state / spinner ---------- */
+.ct-root .ct-empty { color: var(--ct-text-dim); font-size: 13.5px; padding: 60px 0; text-align: center; }
+.ct-root .ct-empty code { font-family: var(--ct-mono); color: var(--ct-text); }
+.ct-root .ct-spinner-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 90px 0; color: var(--ct-text-dim); font-size: 13.5px; }
+.ct-root .ct-spinner { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--ct-border); border-top-color: var(--ct-accent); animation: ctSpin .8s linear infinite; }
+@keyframes ctSpin { to { transform: rotate(360deg); } }
+@keyframes ctFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ct-root .ct-card-grid { animation: none; }
+  .ct-root .ct-card, .ct-root .ct-detail { transition: none; }
+}
