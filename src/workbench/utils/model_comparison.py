@@ -61,8 +61,8 @@ def model_comparison(model_a: Model, model_b: Model, inference_run: str = "defau
 def prediction_comparison(model_a: Model, model_b: Model, inference_run: str = "default") -> Optional[pd.DataFrame]:
     """Concatenated inference predictions for two models, labeled by a 'model' column.
 
-    The shape the ComparisonPlot component expects: one row per (model, compound)
-    prediction, with the original prediction columns plus 'model' for color/dimming.
+    One row per (model, compound) prediction, with the original prediction columns
+    plus 'model' to distinguish the two point sets (e.g. for overlay plotting).
 
     Args:
         model_a (Model): The reference model (e.g. the champion)
