@@ -152,9 +152,7 @@ class ModelComparisonPage:
             # A model without predictions for the run (e.g. a fresh champion copy) keeps the old plot
             plot_df = self.view.plot_data(champion, challenger)
             plot_props = (
-                self.plot.update_properties(plot_df)
-                if plot_df is not None
-                else [no_update] * len(self.plot.properties)
+                self.plot.update_properties(plot_df) if plot_df is not None else [no_update] * len(self.plot.properties)
             )
             return metrics_props + plot_props
 
