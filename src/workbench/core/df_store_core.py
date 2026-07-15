@@ -115,6 +115,10 @@ class DFStoreCore:
         """
         df = self.details(include_cache=include_cache)
 
+        # Empty store/subtree: details() columns are object dtype, so skip the numeric formatting
+        if df.empty:
+            return pd.DataFrame(columns=["location", "size (MB)", "modified"])
+
         # Create a formatted DataFrame
         formatted_df = pd.DataFrame(
             {
@@ -142,7 +146,8 @@ class DFStoreCore:
                 full_key = obj["Key"]
 
                 # Reverse logic: Strip the bucket/prefix in the front and .parquet in the end
-                location = full_key.replace(f"{self.path_prefix}", "/").split(".parquet")[0]
+                # (collapse slashes: a path_prefix without a trailing slash would double up)
+                location = re.sub(r"/+", "/", full_key.replace(f"{self.path_prefix}", "/", 1)).split(".parquet")[0]
                 s3_file = f"s3://{self.workbench_bucket}/{full_key}"
                 size = obj["Size"]
                 modified = obj["LastModified"]
