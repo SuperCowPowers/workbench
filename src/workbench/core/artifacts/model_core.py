@@ -513,24 +513,14 @@ class ModelCore(Artifact):
 
         # Look for any Registered Endpoints
         registered_endpoints = self.workbench_meta().get("workbench_registered_endpoints")
-
-        # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
-        if registered_endpoints:
-            base = self.endpoints_s3_path
-            endpoint_inference_paths = [f"{base}/{e}/inference" for e in registered_endpoints]
-            inference_path = newest_path(endpoint_inference_paths, self.sm_session)
-
-            # If the ModelType is Regressor or Classifier we should log this
-            if inference_path is None and self.model_type in {ModelType.REGRESSOR, ModelType.CLASSIFIER}:
-                self.log.important(f"No inference data found for {self.model_name}!")
-                self.log.important(f"Returning default inference path for {registered_endpoints[0]}...")
-                self.log.important(f"{endpoint_inference_paths[0]}")
-                return endpoint_inference_paths[0]
-            else:
-                return inference_path
-        else:
+        if not registered_endpoints:
             self.log.warning(f"No registered endpoints found for {self.model_name}!")
             return None
+
+        # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
+        base = self.endpoints_s3_path
+        endpoint_inference_paths = [f"{base}/{e}/inference" for e in registered_endpoints]
+        return newest_path(endpoint_inference_paths, self.sm_session)
 
     def set_target(self, target_column: str):
         """Set the target for this Model
