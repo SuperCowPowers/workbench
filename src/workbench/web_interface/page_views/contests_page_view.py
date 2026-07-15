@@ -37,9 +37,7 @@ class ContestsPageView(PageView):
             df = df.copy()
             df["timestamp"] = df["timestamp"].apply(lambda t: t.isoformat())
             endpoint = df["endpoint"].iloc[0]
-            contests.append(
-                {"group": groups.get(endpoint, []), "rows": df.where(df.notna(), None).to_dict("records")}
-            )
+            contests.append({"group": groups.get(endpoint, []), "rows": df.where(df.notna(), None).to_dict("records")})
         self.contest_data = contests
 
     def contests(self) -> list:
