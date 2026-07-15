@@ -120,6 +120,27 @@ def main_layout(
                 ),
                 style={"padding": "0px 0px 20px"},
             ),
+            # Model Contests preview: 3 contests, contested first (cards rendered by the
+            # shared contests clientside renderer). The header + cards link to the page.
+            dbc.Row(
+                html.Div(
+                    [
+                        dcc.Store(id="contests_preview_data"),
+                        html.A(
+                            html.H3(
+                                "Model Contests",
+                                style={"textAlign": "left", "marginBottom": "20px", "marginTop": "20px"},
+                            ),
+                            href="/contests",
+                            style={"textDecoration": "none", "color": "inherit"},
+                        ),
+                        html.Div(id="contests-preview-root", className="ct-root"),
+                        # Dummy output target for the clientside preview render callback
+                        html.Div(id="contests_preview_render_signal", style={"display": "none"}),
+                    ]
+                ),
+                style={"padding": "0px 0px 20px"},
+            ),
             # 2x2 grid of artifact tables
             dbc.Row(
                 [

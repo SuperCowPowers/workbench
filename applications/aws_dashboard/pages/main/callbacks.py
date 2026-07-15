@@ -8,6 +8,7 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.page_views.main_page import MainPage
 from workbench.web_interface.page_views.ml_pipelines_page_view import MLPipelinesPageView
+from workbench.web_interface.page_views.contests_page_view import ContestsPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.pandas_utils import dataframe_delta
 
@@ -77,6 +78,24 @@ def pipeline_preview(page_view: MLPipelinesPageView):
         ClientsideFunction(namespace="ml_pipelines", function_name="renderPreview"),
         Output("mlp_preview_render_signal", "children"),
         Input("mlp_preview_data", "data"),
+    )
+
+
+# Model Contests preview: refresh the reports into a Store, then the shared clientside
+# renderer draws 3 contests (contested first, rest random) into #contests-preview-root.
+def contests_preview(page_view: ContestsPageView):
+    @callback(
+        Output("contests_preview_data", "data"),
+        Input("main_page_refresh", "n_intervals"),
+    )
+    def _refresh(_n):
+        page_view.refresh()
+        return page_view.contests()
+
+    clientside_callback(
+        ClientsideFunction(namespace="contests", function_name="renderPreview"),
+        Output("contests_preview_render_signal", "children"),
+        Input("contests_preview_data", "data"),
     )
 
 

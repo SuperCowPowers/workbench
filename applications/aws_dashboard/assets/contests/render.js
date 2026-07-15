@@ -285,7 +285,45 @@
     return String(sig.length);
   }
 
+  const PREVIEW_MAX = 3;
+
+  // Fisher–Yates shuffle (used to fill the preview's non-contested slots at random)
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* Main-page preview: render up to 3 contests into #contests-preview-root — every
+     contested contest first, then random others to fill. Cards look identical to the
+     grid's, but clicking one navigates to the full Contests page instead of expanding. */
+  function ctRenderPreview(data) {
+    const host = document.getElementById("contests-preview-root");
+    if (!host || !data) return "";
+    const sig = JSON.stringify(data);
+    if (host.dataset.sig === sig) return host.dataset.sig;
+    host.dataset.sig = sig;
+
+    const contests = data.map(parseContest).filter((c) => c.rows.length);
+    const contested = shuffle(contests.filter((c) => c.contested));
+    const rest = shuffle(contests.filter((c) => !c.contested));
+    const picks = contested.concat(rest).slice(0, PREVIEW_MAX);
+
+    const grid = document.createElement("div");
+    grid.className = "ct-card-grid ct-preview-grid";
+    picks.forEach((c) => {
+      const card = makeCard(c);
+      card.onclick = () => window.location.assign("/contests");
+      grid.appendChild(card);
+    });
+    host.replaceChildren(grid);
+    return String(sig.length);
+  }
+
   window.dash_clientside = Object.assign({}, window.dash_clientside, {
-    contests: { render: ctRender },
+    contests: { render: ctRender, renderPreview: ctRenderPreview },
   });
 })();

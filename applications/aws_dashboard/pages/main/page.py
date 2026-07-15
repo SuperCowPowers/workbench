@@ -5,6 +5,7 @@ from dash import register_page
 # Workbench Imports
 from workbench.web_interface.page_views.main_page import MainPage
 from workbench.web_interface.page_views.ml_pipelines_page_view import MLPipelinesPageView
+from workbench.web_interface.page_views.contests_page_view import ContestsPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 
 # Local Imports
@@ -47,6 +48,9 @@ callbacks.tables_refresh(main_page_view, tables)
 
 # ML Pipelines preview (top-4 most complex pipelines)
 callbacks.pipeline_preview(MLPipelinesPageView())
+
+# Model Contests preview (3 contests, contested first, rest random)
+callbacks.contests_preview(ContestsPageView())
 
 # Set up our subpage navigation
 callbacks.navigate_to_subpage()
