@@ -9,6 +9,7 @@ import pandas as pd
 # Workbench Imports
 from workbench.api import Reports
 from workbench.utils.model_comparison import (
+    _contested,
     contest_ranking,
     contest_report,
     contest_summaries,
@@ -16,6 +17,22 @@ from workbench.utils.model_comparison import (
     prediction_comparison,
     rank_models,
 )
+
+
+def _contest(champ_value, challengers, metric="rmse"):
+    """(champ_row, chall_rows) shaped like rank_models()/contest_ranking() output.
+
+    challengers: [(name, value)] already ranked best-first, as contest_ranking() returns them.
+    Δ is metrics-aware and absolute: champion - challenger for rmse (lower is better),
+    challenger - champion for f1. Positive Δ always means the challenger is better.
+    """
+    champ_row = pd.DataFrame([{metric: champ_value}], index=["champ"])
+    deltas = [(champ_value - v) if metric in ("rmse", "mae", "medae") else (v - champ_value) for _, v in challengers]
+    chall_rows = pd.DataFrame(
+        [{metric: v, f"Δ{metric}": d} for (_, v), d in zip(challengers, deltas)],
+        index=[n for n, _ in challengers],
+    )
+    return champ_row, chall_rows
 
 
 def test_regression_comparison():
@@ -72,13 +89,68 @@ def test_contest_report():
     assert list(report["role"]) == ["champion", "challenger", "challenger"]
     assert report["model"].iloc[0] == "aqsol-regression"
     assert report["endpoint"].eq("aqsol-regression").all()
-    assert report["framework"].isin(["xgboost", "pytorch", "chemprop", "multi-task", "sklearn"]).all()
+    assert report["framework"].isin(["xgboost", "pytorch", "chemprop", "hybrid", "multi-task", "sklearn"]).all()
     assert report["inference_run"].eq("full_cross_fold").all()
     assert report.loc[0, "Δrmse"] == 0.0  # champion delta vs itself
+    assert report["created"].notna().all()
+    assert report["contested"].nunique() == 1  # contest-level flag, repeated on every row
 
     # Challengers ranked best-first (regressor: rmse low to high)
     chall_rmse = list(report.loc[report["role"] == "challenger", "rmse"])
     assert chall_rmse == sorted(chall_rmse)
+
+
+def test_contested_skips_the_champions_twin():
+    """The champion is a frozen copy of a challenger, so its twin sits at Δ=0 and must not
+    make the contest contested by itself (otherwise every promoted contest is contested)"""
+    # Twin at Δ=0, next real challenger clearly worse (-8%)
+    champ, chall = _contest(0.50, [("twin", 0.50), ("worse", 0.54)])
+    assert _contested(champ, chall) is False
+
+    # Twin at Δ=0, next real challenger close (-0.5%) -> the twin is skipped, the real one counts
+    champ, chall = _contest(0.50, [("twin", 0.50), ("close", 0.5025)])
+    assert _contested(champ, chall) is True
+
+    # Every challenger is a twin -> nothing real to contest against
+    champ, chall = _contest(0.50, [("twin-a", 0.50), ("twin-b", 0.50)])
+    assert _contested(champ, chall) is False
+
+
+def test_contested_percent_threshold():
+    """CONTESTED_PCT is a percent of the champion's value (Δ is absolute) and the rule is
+    'better, or at most 1% worse'"""
+    # Just inside the 1% band (-0.9%) vs just outside (-1.1%)
+    champ, chall = _contest(0.50, [("inside", 0.5045)])
+    assert _contested(champ, chall) is True
+    champ, chall = _contest(0.50, [("outside", 0.5055)])
+    assert _contested(champ, chall) is False
+
+    # A challenger that beats the champion but wasn't promoted: blocked/broken pipeline
+    champ, chall = _contest(0.50, [("better", 0.475)])
+    assert _contested(champ, chall) is True
+
+    # Percent is relative, so the same absolute Δ flips with the champion's scale
+    champ, chall = _contest(100.0, [("tiny-abs-delta", 100.4)])  # -0.4%
+    assert _contested(champ, chall) is True
+
+
+def test_contested_classifier_and_edges():
+    """Classifiers rank on f1 (higher is better); degenerate inputs are not contested"""
+    # f1 challenger 0.25% worse -> inside the band
+    champ, chall = _contest(0.80, [("twin", 0.80), ("close", 0.798)], metric="f1")
+    assert _contested(champ, chall) is True
+    # f1 challenger 5% worse -> outside
+    champ, chall = _contest(0.80, [("worse", 0.76)], metric="f1")
+    assert _contested(champ, chall) is False
+
+    # No challengers, and a zero-valued champion (no meaningful percent)
+    champ, _ = _contest(0.50, [("x", 0.49)])
+    assert _contested(champ, pd.DataFrame()) is False
+    champ, chall = _contest(0.0, [("x", 0.01)])
+    assert _contested(champ, chall) is False
+
+    # Champion metrics missing entirely
+    assert _contested(pd.DataFrame(), chall) is False
 
 
 def test_contest_summaries():
@@ -92,6 +164,7 @@ def test_contest_summaries():
             "Δrmse": [0.0, 0.05, -0.10],
             "inference_run": "full_cross_fold",
             "timestamp": pd.Timestamp.now(tz="UTC"),
+            "contested": True,
         }
     )
     reports = Reports()
@@ -122,6 +195,9 @@ if __name__ == "__main__":
     test_rank_models()
     test_contest_ranking()
     test_contest_report()
+    test_contested_skips_the_champions_twin()
+    test_contested_percent_threshold()
+    test_contested_classifier_and_edges()
     test_contest_summaries()
     test_prediction_comparison()
     print("All model_comparison tests passed!")

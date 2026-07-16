@@ -17,9 +17,16 @@ log = logging.getLogger("workbench")
 # b - a difference, which is what we want for a count.
 LOWER_IS_BETTER = {"rmse", "mae", "medae"}
 
-# Deltas below this are run-to-run float noise (a champion vs its own frozen copy),
-# not a real difference; used for the "contested" call in contest_summaries()
-CONTESTED_EPS = 1e-6
+# A contest is "contested" when the best real challenger is better than the champion, or at
+# most this many percent worse, on the primary metric (percent of the champion's value, since
+# Δ is an absolute difference). Catches both a close race and a challenger that beats the
+# champion but wasn't promoted (a blocked or broken promotion pipeline).
+CONTESTED_PCT = -1.0
+
+# The arbiter promotes by freezing a copy of a challenger, so the champion's own twin sits in
+# the roster at Δ≈0 and would make every promoted contest contested forever. Challengers this
+# close to the champion are that copy (float noise, not a real difference) and are skipped.
+TWIN_EPS = 1e-6
 
 
 def model_comparison(model_a: Model, model_b: Model, inference_run: str = "default") -> Optional[pd.DataFrame]:
@@ -163,11 +170,12 @@ def contest_report(
 
     Returns:
         pd.DataFrame: One row per model (champion first, then challengers best-first) with
-            columns [model, role, framework, endpoint, <metrics interleaved with Δ vs
-            champion>, inference_run, timestamp]. Champion Δ columns are 0 (delta vs
-            itself); framework is the model's framework, with multi-task models (list
-            target) reported as "multi-task". Models without metrics are skipped;
-            None if no model has metrics.
+            columns [model, role, framework, endpoint, created, <metrics interleaved with Δ
+            vs champion>, inference_run, timestamp, contested]. Champion Δ columns are 0
+            (delta vs itself); framework is the model's framework, with multi-task models
+            (list target) reported as "multi-task"; created is the model's creation time;
+            contested is the contest-level flag (see CONTESTED_PCT), repeated on every row.
+            Models without metrics are skipped; None if no model has metrics.
     """
     champ_row = rank_models([champion], inference_run)
     chall_rows = contest_ranking(champion, challengers, inference_run)
@@ -180,13 +188,48 @@ def contest_report(
     report = pd.concat([champ_row, chall_rows])[cols]
     report.insert(0, "model", report.index)
     report.insert(1, "role", ["champion"] * len(champ_row) + ["challenger"] * len(chall_rows))
-    report.insert(2, "framework", report["model"].map({m.name: _framework(m) for m in [champion, *challengers]}))
+
+    # Only the models that made the report: challengers without metrics were dropped above,
+    # and framework/created both cost metadata reads we'd otherwise throw away.
+    in_report = set(report["model"])
+    models = {m.name: m for m in [champion, *challengers] if m.name in in_report}
+    report.insert(2, "framework", report["model"].map({name: _framework(m) for name, m in models.items()}))
     report.insert(3, "endpoint", endpoint_name)
+    created = report["model"].map({name: m.created() for name, m in models.items()})
+    report.insert(4, "created", pd.to_datetime(created, utc=True))
     delta_cols = [col for col in report.columns if col.startswith("Δ")]
     report.loc[report["role"] == "champion", delta_cols] = 0.0
     report["inference_run"] = inference_run
     report["timestamp"] = pd.Timestamp.now(tz="UTC")
+    report["contested"] = _contested(champ_row, chall_rows)
     return report.reset_index(drop=True)
+
+
+def _contested(champ_row: pd.DataFrame, chall_rows: pd.DataFrame) -> bool:
+    """Is the contest contested? True when the best real challenger beats the champion, or is
+    at most CONTESTED_PCT percent worse, on the primary metric (rmse for regressors, f1 for
+    classifiers). The champion's own frozen copy (Δ within TWIN_EPS) is skipped. Δ is
+    absolute, so the percent is taken against the champion's value."""
+    if champ_row.empty or chall_rows.empty:
+        return False
+    if "rmse" in champ_row.columns:
+        primary = "rmse"
+    elif "f1" in champ_row.columns:
+        primary = "f1"
+    else:
+        return False
+    if f"Δ{primary}" not in chall_rows.columns:
+        return False
+    champ_value = champ_row.iloc[0][primary]
+    if pd.isna(champ_value) or champ_value == 0:
+        return False
+
+    # Challengers are ranked best-first, so the first non-twin is the best real challenger
+    deltas = chall_rows[f"Δ{primary}"]
+    real = deltas[deltas.notna() & (deltas.abs() > TWIN_EPS)]
+    if real.empty:
+        return False
+    return bool(real.iloc[0] / abs(champ_value) * 100 >= CONTESTED_PCT)
 
 
 def contest_summaries() -> pd.DataFrame:
@@ -195,9 +238,8 @@ def contest_summaries() -> pd.DataFrame:
     Returns:
         pd.DataFrame: Columns [endpoint, champion, challengers, top_challenger,
             primary_metric, top_delta, contested, inference_run, timestamp], newest
-            first. 'contested' means the top challenger beats the champion on the
-            primary metric (rmse for regressors, f1 for classifiers). Empty if no
-            contest reports are published.
+            first. 'contested' is the report's contest-level flag (see CONTESTED_PCT).
+            Empty if no contest reports are published.
     """
     from concurrent.futures import ThreadPoolExecutor
     from workbench.api import Reports
@@ -226,7 +268,7 @@ def contest_summaries() -> pd.DataFrame:
                 "top_challenger": top["model"] if top is not None else None,
                 "primary_metric": primary,
                 "top_delta": top_delta,
-                "contested": bool(top_delta > CONTESTED_EPS) if top_delta is not None else None,
+                "contested": bool(df["contested"].iloc[0]),
                 "inference_run": df["inference_run"].iloc[0],
                 "timestamp": df["timestamp"].iloc[0],
             }
@@ -237,11 +279,16 @@ def contest_summaries() -> pd.DataFrame:
 
 
 def _framework(model) -> str:
-    """The model's framework for report rows; a list target means multi-task"""
+    """The model's framework for report rows. A list target means multi-task (checked first,
+    so a multi-task model reports as such even when it also carries descriptors). A chemprop
+    model with more than the SMILES column means hybrid: a graph model fed extra descriptors."""
     try:
         if isinstance(model.target(), list):
             return "multi-task"
-        return model.model_framework.value
+        framework = model.model_framework.value
+        if framework == "chemprop" and len(model.features() or []) > 1:
+            return "hybrid"
+        return framework
     except Exception as e:
         log.warning(f"Could not determine framework for {model.name}: {e}")
         return "unknown"

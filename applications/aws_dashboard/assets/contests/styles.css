@@ -11,12 +11,14 @@
   --ct-text-dim: #93a1b0;
   --ct-text-faint: #66727f;
   --ct-accent: #35d0ba;
+  --ct-accent-glow: rgba(53, 208, 186, 0.14);
   --ct-good: #57c96b;
   --ct-bad: #d97a6c;
   --ct-contested: #e0a63f;
   --ct-contested-glow: rgba(224, 166, 63, 0.14);
   --ct-good-glow: rgba(87, 201, 107, 0.09);
   --ct-f-chemprop: #6bd08a;
+  --ct-f-hybrid: #a8d06b;
   --ct-f-mt: #d06ba8;
   --ct-f-pytorch: #d98a5c;
   --ct-f-xgb: #d4b158;
@@ -43,12 +45,14 @@
   --ct-text-dim: #57646f;
   --ct-text-faint: #8592a0;
   --ct-accent: #12a892;
+  --ct-accent-glow: rgba(18, 168, 146, 0.12);
   --ct-good: #2f9d47;
   --ct-bad: #c05a4a;
   --ct-contested: #b57f1e;
   --ct-contested-glow: rgba(181, 127, 30, 0.12);
   --ct-good-glow: rgba(47, 157, 71, 0.10);
   --ct-f-chemprop: #3a9d5c;
+  --ct-f-hybrid: #6b9d3a;
   --ct-f-mt: #b04585;
   --ct-f-pytorch: #c26a3a;
   --ct-f-xgb: #b8942f;
@@ -86,7 +90,7 @@
   gap: 16px; animation: ctFadeIn .28s ease both; align-items: stretch;
 }
 
-/* Main-page preview: 3 contests in a single row (contested first, rest random). */
+/* Main-page preview: 3 contests in a single row (recent, then contested, then other). */
 .ct-root .ct-preview-grid { grid-template-columns: repeat(3, 1fr); }
 
 .ct-root .ct-card {
@@ -111,18 +115,29 @@
   background: var(--ct-contested-glow); border: 1px solid color-mix(in srgb, var(--ct-contested) 40%, transparent);
   border-radius: 20px; padding: 3px 9px;
 }
+/* Card badges sit in a single row (smaller than the group-header ones); flex:none keeps
+   them from being squeezed onto separate lines, so a long title wraps instead */
+.ct-root .ct-badges { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; flex: none; }
+.ct-root .ct-badges .ct-badge { font-size: 8.5px; letter-spacing: .05em; padding: 2px 6px; }
+.ct-root .ct-badge-recent {
+  color: var(--ct-accent); background: var(--ct-accent-glow);
+  border-color: color-mix(in srgb, var(--ct-accent) 40%, transparent);
+}
 
-.ct-root .ct-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+/* Head keeps title/badges and the ladder tight together: the card's 12px gap would space
+   them out, so they share one gapless block and set their own margin. */
+.ct-root .ct-card-head { display: flex; flex-direction: column; }
+.ct-root .ct-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ct-root .ct-card-title { font-family: var(--ct-mono); font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
-.ct-root .ct-card-sub { color: var(--ct-text-faint); font-family: var(--ct-mono); font-size: 11.5px; margin-top: 3px; }
+.ct-root .ct-card-head .ct-ladder { margin-top: 8px; }
 
 /* ---------- mini ranking ladder ---------- */
-.ct-root .ct-ladder { display: flex; flex-direction: column; gap: 3px; font-family: var(--ct-mono); font-size: 12px; }
+.ct-root .ct-ladder { display: flex; flex-direction: column; gap: 3px; font-family: var(--ct-mono); font-size: 11px; }
 .ct-root .ct-lhead, .ct-root .ct-lrow {
-  display: grid; grid-template-columns: 14px minmax(0, 1.4fr) 12px repeat(var(--ct-lcols, 2), 48px);
+  display: grid; grid-template-columns: 14px minmax(0, 1.4fr) 12px repeat(var(--ct-lcols, 2), 40px);
   gap: 8px; align-items: center;
 }
-.ct-root .ct-lhead { font-size: 10px; color: var(--ct-text-faint); text-transform: uppercase; letter-spacing: .06em; }
+.ct-root .ct-lhead { font-size: 9.5px; color: var(--ct-text-faint); text-transform: uppercase; letter-spacing: .06em; }
 .ct-root .ct-lhead span:nth-child(n+4) { text-align: center; }
 .ct-root .ct-lrow { padding: 4px 6px; border-radius: 6px; }
 .ct-root .ct-lrow.champ { background: var(--ct-panel-2); border: 1px solid var(--ct-border-soft); border-left: 3px solid var(--ct-accent); }
@@ -171,6 +186,7 @@
 .ct-root .ct-table .ct-rank { text-align: center; width: 30px; }
 .ct-root .ct-table .ct-model { color: var(--ct-text); }
 .ct-root .ct-table .ct-type { color: var(--ct-text-faint); white-space: nowrap; }
+.ct-root .ct-table .ct-created { color: var(--ct-text-faint); white-space: nowrap; }
 .ct-root .ct-table .ct-champ-row { background: var(--ct-panel-2); }
 
 /* ---------- footer ---------- */

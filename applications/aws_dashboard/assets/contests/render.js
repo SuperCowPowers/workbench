@@ -16,16 +16,15 @@
   const CHEVRON = '<svg viewBox="0 0 20 20" fill="none" width="18" height="18"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   // Columns that are contest metadata rather than metrics
-  const META_COLS = new Set(["model", "role", "framework", "endpoint", "inference_run", "timestamp"]);
-
-  // Deltas below this are run-to-run float noise (a champion vs its own frozen copy),
-  // not a real difference: they display as 0 and never mark a contest "contested".
-  const EPS = 1e-6;
+  const META_COLS = new Set([
+    "model", "role", "framework", "endpoint", "created", "inference_run", "timestamp", "contested",
+  ]);
 
   // Model framework: the report's `framework` column is authoritative (written by
   // contest_report(), multi-task already resolved). Unrecognized values map to "other".
   const FW_KEY = {
     "multi-task": "mt",
+    hybrid: "hybrid",
     chemprop: "chemprop",
     xgboost: "xgb",
     pytorch: "pytorch",
@@ -34,7 +33,7 @@
     meta: "meta",
   };
   const FRAMEWORK_LABEL = {
-    mt: "multi-task", chemprop: "chemprop", xgb: "xgboost", pytorch: "pytorch",
+    mt: "multi-task", hybrid: "hybrid", chemprop: "chemprop", xgb: "xgboost", pytorch: "pytorch",
     transformer: "transformer", sklearn: "sklearn", meta: "meta", other: "other",
   };
   const frameworkOf = (row) => FW_KEY[row.framework] || "other";
@@ -50,16 +49,14 @@
     return `<span class="ct-medal ${medal ? "ct-medal-" + medal : "ct-medal-open"}"></span>`;
   }
 
-  // Reshape one contest ({group, rows}) into the card's working form
+  // Reshape one contest ({group, recent_change, rows}) into the card's working form.
+  // The contested/recentChange calls are made server-side; we just carry them through.
   function parseContest(contest) {
     const rows = contest.rows || [];
     const group = contest.group || [];
     const champion = rows.find((r) => r.role === "champion") || null;
     const challengers = rows.filter((r) => r.role === "challenger");
     const first = rows[0] || {};
-    const primary = "rmse" in first ? "rmse" : "f1";
-    const top = challengers[0];
-    const topDelta = top && top["Δ" + primary] != null ? top["Δ" + primary] : null;
     return {
       rows,
       group,
@@ -68,7 +65,8 @@
       endpoint: first.endpoint,
       run: first.inference_run,
       timestamp: first.timestamp,
-      contested: topDelta != null && topDelta > EPS,
+      contested: !!first.contested,
+      recentChange: !!contest.recent_change,
     };
   }
 
@@ -143,7 +141,7 @@
     const cols = Object.keys(c.rows[0]).filter((k) => !META_COLS.has(k) && !k.startsWith("Δ"));
     const head = `<tr><th></th><th class="ct-ta-l">model</th><th class="ct-ta-l">type</th>${cols
       .map((k) => `<th>${metricLabel(k)}</th>`)
-      .join("")}</tr>`;
+      .join("")}<th>created</th></tr>`;
     let challengerIdx = 0;
     const body = c.rows
       .map((r) => {
@@ -155,7 +153,8 @@
         return `<tr class="${r.role === "champion" ? "ct-champ-row" : ""}">
           <td class="ct-rank">${marker}</td>
           <td class="ct-ta-l ct-model">${r.model}</td>
-          <td class="ct-ta-l ct-type"><span class="ct-dot" style="background:var(--ct-f-${fw})"></span>${FRAMEWORK_LABEL[fw]}</td>${cells}</tr>`;
+          <td class="ct-ta-l ct-type"><span class="ct-dot" style="background:var(--ct-f-${fw})"></span>${FRAMEWORK_LABEL[fw]}</td>${cells}
+          <td class="ct-created">${r.created}</td></tr>`;
       })
       .join("");
     return `<div class="ct-table-wrap"><table class="ct-table">${head}${body}</table></div>`;
@@ -166,14 +165,16 @@
     const card = document.createElement("div");
     card.className = "ct-card" + (c.contested ? " contested" : "");
     card.innerHTML = `
-      <div class="ct-card-top">
-        <div>
+      <div class="ct-card-head">
+        <div class="ct-card-top">
           <div class="ct-card-title">${c.endpoint}</div>
-          <div class="ct-card-sub">champion: ${c.champion ? c.champion.model : "—"}</div>
+          <div class="ct-badges">
+            ${c.recentChange ? '<span class="ct-badge ct-badge-recent">recent change</span>' : ""}
+            ${c.contested ? '<span class="ct-badge">contested</span>' : ""}
+          </div>
         </div>
-        ${c.contested ? '<span class="ct-badge">contested</span>' : ""}
+        ${ladderHTML(c)}
       </div>
-      ${ladderHTML(c)}
       <div class="ct-detail">${tableHTML(c)}</div>
       <div class="ct-card-foot">
         <span class="ct-pill">${c.challengers.length} challenger${c.challengers.length !== 1 ? "s" : ""}</span>
@@ -200,6 +201,7 @@
   // Collapsible group section (same interaction as the ML Pipelines page sections)
   function makeSection(title, list) {
     const contested = list.filter((c) => c.contested).length;
+    const recent = list.filter((c) => c.recentChange).length;
     const section = document.createElement("div");
     section.className = "ct-cat";
     const head = document.createElement("div");
@@ -207,6 +209,7 @@
     head.innerHTML = `<span class="ct-caret">${CHEVRON}</span>
       <h3>${title}</h3>
       <span class="ct-pill">${list.length} contest${list.length !== 1 ? "s" : ""}</span>
+      ${recent ? `<span class="ct-badge ct-badge-recent">${recent} recent change</span>` : ""}
       ${contested ? `<span class="ct-badge">${contested} contested</span>` : ""}`;
     const body = document.createElement("div");
     body.className = "ct-cat-body";
@@ -223,7 +226,7 @@
   function legendEl(contests) {
     const present = new Set();
     contests.forEach((c) => c.rows.forEach((r) => present.add(frameworkOf(r))));
-    const order = ["chemprop", "mt", "xgb", "pytorch", "transformer", "sklearn", "meta", "other"].filter((fw) =>
+    const order = ["chemprop", "hybrid", "mt", "xgb", "pytorch", "transformer", "sklearn", "meta", "other"].filter((fw) =>
       present.has(fw)
     );
     const legend = document.createElement("div");
@@ -297,9 +300,9 @@
     return a;
   }
 
-  /* Main-page preview: render up to 3 contests into #contests-preview-root — every
-     contested contest first, then random others to fill. Cards look identical to the
-     grid's, but clicking one navigates to the full Contests page instead of expanding. */
+  /* Main-page preview: render up to 3 contests into #contests-preview-root — recently
+     changed first, then contested, then the rest (random within each tier). Cards look
+     identical to the grid's, but clicking one navigates to the full Contests page. */
   function ctRenderPreview(data) {
     const host = document.getElementById("contests-preview-root");
     if (!host || !data) return "";
@@ -308,9 +311,10 @@
     host.dataset.sig = sig;
 
     const contests = data.map(parseContest).filter((c) => c.rows.length);
-    const contested = shuffle(contests.filter((c) => c.contested));
-    const rest = shuffle(contests.filter((c) => !c.contested));
-    const picks = contested.concat(rest).slice(0, PREVIEW_MAX);
+    const recent = shuffle(contests.filter((c) => c.recentChange));
+    const contested = shuffle(contests.filter((c) => !c.recentChange && c.contested));
+    const rest = shuffle(contests.filter((c) => !c.recentChange && !c.contested));
+    const picks = recent.concat(contested, rest).slice(0, PREVIEW_MAX);
 
     const grid = document.createElement("div");
     grid.className = "ct-card-grid ct-preview-grid";

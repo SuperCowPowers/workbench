@@ -49,7 +49,7 @@ callbacks.tables_refresh(main_page_view, tables)
 # ML Pipelines preview (top-4 most complex pipelines)
 callbacks.pipeline_preview(MLPipelinesPageView())
 
-# Model Contests preview (3 contests, contested first, rest random)
+# Model Contests preview (3 contests: recent, then contested, then other)
 callbacks.contests_preview(ContestsPageView())
 
 # Set up our subpage navigation

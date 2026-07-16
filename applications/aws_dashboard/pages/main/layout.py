@@ -120,7 +120,7 @@ def main_layout(
                 ),
                 style={"padding": "0px 0px 20px"},
             ),
-            # Model Contests preview: 3 contests, contested first (cards rendered by the
+            # Model Contests preview: 3 contests, recent/contested first (cards rendered by the
             # shared contests clientside renderer). The header + cards link to the page.
             dbc.Row(
                 html.Div(

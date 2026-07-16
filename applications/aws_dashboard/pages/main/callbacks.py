@@ -82,7 +82,7 @@ def pipeline_preview(page_view: MLPipelinesPageView):
 
 
 # Model Contests preview: refresh the reports into a Store, then the shared clientside
-# renderer draws 3 contests (contested first, rest random) into #contests-preview-root.
+# renderer draws 3 contests (recent, then contested, then other) into #contests-preview-root.
 def contests_preview(page_view: ContestsPageView):
     @callback(
         Output("contests_preview_data", "data"),
