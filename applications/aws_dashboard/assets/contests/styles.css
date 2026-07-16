@@ -172,8 +172,8 @@
 .ct-root .ct-detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .26s ease, opacity .2s ease; }
 .ct-root .ct-card.expanded .ct-detail { grid-template-rows: 1fr; opacity: 1; }
 .ct-root .ct-card.expanded { grid-column: 1 / -1; cursor: default; }
-/* Expanded card spans the row; keep the ladder at card-ish width */
-.ct-root .ct-card.expanded .ct-ladder { max-width: 640px; }
+/* The ladder is the table's top rows in miniature: redundant once expanded */
+.ct-root .ct-card.expanded .ct-ladder { display: none; }
 .ct-root .ct-table-wrap { overflow-x: auto; min-height: 0; }
 .ct-root .ct-table { border-collapse: collapse; width: 100%; font-family: var(--ct-mono); font-size: 12px; }
 .ct-root .ct-table th {
