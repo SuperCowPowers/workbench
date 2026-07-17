@@ -42,6 +42,7 @@ class PluginManager:
         self.staged_assets_dir = None
         self.plugin_modified_time = None
         self.plugins: Dict[str, dict] = {"components": {}, "transforms": {}, "views": {}, "pages": {}}
+        self.plugin_load_errors: List[str] = []
 
         # Get the plugin directory from the config
         cm = ConfigManager()
@@ -77,6 +78,11 @@ class PluginManager:
         self.log.important(f"Loading plugins from {self.loading_dir}...")
         for plugin_type in self.plugins.keys():
             self._load_plugins(self.loading_dir, plugin_type)
+
+        # A failing plugin is skipped, never fatal; surface a summary so it's not lost in startup logs
+        if self.plugin_load_errors:
+            failed = ", ".join(self.plugin_load_errors)
+            self.log.error(f"{len(self.plugin_load_errors)} plugin(s) failed to load: {failed}")
 
         # Store the most recent modified time
         self.plugin_modified_time = self._most_recent_modified_time()
@@ -142,17 +148,17 @@ class PluginManager:
                 if isinstance(attr, type) and attr.__module__ == module.__name__:
                     self.log.important(f"Loading {plugin_type} plugin: {attr_name}")
 
-                    # For web components, check if the class is a subclass of PluginInterface
+                    # For web components: only classes deriving from PluginInterface are meant to be
+                    # plugins; skip helper/base classes that just happen to live in a components file.
                     if plugin_type == "components":
+                        if PluginInterface not in attr.__mro__:
+                            continue
                         if issubclass(attr, PluginInterface):
                             self.plugins[plugin_type][attr_name] = attr
                         else:
-                            # PluginInterface has additional information for failed validation
-                            valid, validation_error = PluginInterface.validate_subclass(attr)
-                            self.log.error(f"Plugin '{attr_name}' failed validation:")
-                            self.log.error(f"\tFile: {os.path.join(plugin_dir, filename)}")
-                            self.log.error(f"\tClass: {attr_name}")
-                            self.log.error(f"\tDetails: {filename} {validation_error}")
+                            _, reason = PluginInterface.validate_subclass(attr)
+                            self.plugin_load_errors.append(attr_name)
+                            self.log.error(f"Plugin '{attr_name}' ({filename}) failed validation: {reason}")
 
                     # For views, check if the class is a subclass of PageView
                     elif plugin_type == "views" and issubclass(attr, PageView):
@@ -211,7 +217,7 @@ class PluginManager:
             for x in self.plugins["components"]
             if self.plugins["components"][x].auto_load_page == plugin_page
         ]
-        return [x() for x in plugin_classes]
+        return [instance for cls in plugin_classes if (instance := self._instantiate(cls)) is not None]
 
     def get_web_plugin(self, plugin_name: str) -> PluginInterface:
         """
@@ -224,7 +230,15 @@ class PluginManager:
             PluginInterface: The INSTANTIATED web plugin class with the given name
         """
         web_plugin = self.plugins["components"].get(plugin_name)
-        return web_plugin() if web_plugin else None
+        return self._instantiate(web_plugin) if web_plugin else None
+
+    def _instantiate(self, plugin_class: type) -> Optional[PluginInterface]:
+        """Instantiate a plugin, returning None (not raising) if its constructor fails."""
+        try:
+            return plugin_class()
+        except Exception as e:
+            self.log.error(f"Plugin '{plugin_class.__name__}' failed to instantiate: {e}")
+            return None
 
     def get_view(self, view_name: str) -> Union[PageView, None]:
         """
