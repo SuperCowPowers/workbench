@@ -39,8 +39,9 @@ class PluginManager:
         self.log = logging.getLogger("workbench")
         self.config_plugin_dir = None
         self.loading_dir = False
+        self.staged_assets_dir = None
         self.plugin_modified_time = None
-        self.plugins: Dict[str, dict] = {"components": {}, "transforms": {}, "views": {}, "pages": {}, "css": {}}
+        self.plugins: Dict[str, dict] = {"components": {}, "transforms": {}, "views": {}, "pages": {}}
 
         # Get the plugin directory from the config
         cm = ConfigManager()
@@ -79,6 +80,39 @@ class PluginManager:
 
         # Store the most recent modified time
         self.plugin_modified_time = self._most_recent_modified_time()
+
+    def stage_plugin_assets(self, dest_dir: str) -> bool:
+        """Stage any plugin-provided clientside assets so Dash serves and injects them.
+
+        A plugin repo may ship an 'assets/' folder (JS/CSS) alongside its Python. Those
+        files land in our loading_dir via the normal plugin copy; here we mirror them into
+        the app's real assets tree (dest_dir, e.g. .../assets/plugins) so Dash walks them at
+        startup and injects <script>/<link> tags into every page head. Must be called BEFORE
+        the Dash() app is constructed.
+
+        Args:
+            dest_dir (str): Destination inside the app's assets folder (e.g. assets/plugins).
+
+        Returns:
+            bool: True if any assets were staged, else False (the common no-assets case).
+        """
+        # No plugins configured, or no plugin tree copied: nothing to stage
+        if not self.loading_dir:
+            return False
+
+        src_assets = os.path.join(self.loading_dir, "assets")
+        if not os.path.isdir(src_assets):
+            self.log.info("No plugin 'assets/' folder found; skipping asset staging")
+            return False
+
+        # Replace any stale staged assets from a previous run, then copy fresh
+        if os.path.isdir(dest_dir):
+            shutil.rmtree(dest_dir)
+        shutil.copytree(src_assets, dest_dir)
+        self.staged_assets_dir = dest_dir
+        atexit.register(self._cleanup_staged_assets)
+        self.log.important(f"Staged plugin assets into {dest_dir}")
+        return True
 
     def _load_plugins(self, base_dir: str, plugin_type: str):
         """Internal: Load plugins of a specific type from a subdirectory.
@@ -253,6 +287,13 @@ class PluginManager:
             self.log.important(f"Cleaning up temporary directory: {self.loading_dir}")
             shutil.rmtree(self.loading_dir)
             self.loading_dir = None
+
+    def _cleanup_staged_assets(self):
+        """Cleans up the plugin assets staged into the app's assets tree."""
+        if self.staged_assets_dir and os.path.isdir(self.staged_assets_dir):
+            self.log.important(f"Cleaning up staged plugin assets: {self.staged_assets_dir}")
+            shutil.rmtree(self.staged_assets_dir)
+            self.staged_assets_dir = None
 
     def plugins_modified(self) -> bool:
         """Check if the plugins have been modified since the last check

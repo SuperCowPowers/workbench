@@ -23,9 +23,7 @@ class PluginPage2:
         """Required function to set up the page"""
 
         # Create a table to display the models
-        self.table_component = self.models_table.create_component(
-            "my_model_table", header_color="rgb(60, 60, 60)", max_height=400
-        )
+        self.table_component = self.models_table.create_component("my_model_table", max_height=400)
 
         # Register this page with Dash and set up the layout
         register_page(

@@ -1,14 +1,14 @@
 """Plugin Page 3:  A 'Hello World' Workbench Plugin Page"""
 
 import dash
-from dash import html, dcc, page_container, register_page, callback, Output, Input, no_update
+from dash import html, dcc, page_container, register_page, callback, Output, Input
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 # Workbench Imports
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.model_details import ModelDetails
-from workbench.web_interface.components.model_plot import ModelPlot
+from workbench.web_interface.components.plugins.model_plot import ModelPlot
 from workbench.cached.cached_meta import CachedMeta
 from workbench.cached.cached_model import CachedModel
 
@@ -26,15 +26,13 @@ class PluginPage3:
         self.model_plot = ModelPlot()
         self.plot_component = None
         self.meta = CachedMeta()
-        self.plugins = [self.model_details]  # Add any additional plugins here
+        self.plugins = [self.model_details, self.model_plot]  # Add any additional plugins here
 
     def page_setup(self, app: dash.Dash):
         """Required function to set up the page"""
 
         # Create a table to display the models
-        self.table_component = self.models_table.create_component(
-            "plugin_3_model_table", header_color="rgb(60, 60, 60)", max_height=400
-        )
+        self.table_component = self.models_table.create_component("plugin_3_model_table", max_height=400)
 
         # Create a model details panel and model plot
         self.details_component = self.model_details.create_component("plugin_3_model_details")
@@ -52,7 +50,6 @@ class PluginPage3:
         self.page_load_callbacks()
 
         # Register the callbacks for the page
-        self.page_callbacks()
         self.setup_plugin_callbacks()
         self.model_details.register_internal_callbacks()
 
@@ -86,31 +83,6 @@ class PluginPage3:
             models = self.meta.models(details=True)
             models["name"] = models["Model Group"]
             return self.models_table.update_properties(models)
-
-    def page_callbacks(self):
-        """Register the callbacks for the page"""
-
-        @callback(
-            Output("plugin_3_model_plot", "figure"),
-            Input("plugin_3_model_details-dropdown", "value"),
-            Input("plugin_3_model_table", "selectedRows"),
-            prevent_initial_call=True,
-        )
-        def generate_model_plot_figure(inference_run, selected_rows):
-            # Check for no selected rows
-            if not selected_rows or selected_rows[0] is None:
-                return no_update
-
-            # Get the selected row data and grab the name
-            selected_row_data = selected_rows[0]
-            model_name = selected_row_data["name"]
-            m = CachedModel(model_name)
-
-            # Model Details Markdown component
-            model_plot_fig = self.model_plot.update_properties(m, inference_run)
-
-            # Return the details/markdown for these data details
-            return model_plot_fig
 
     def setup_plugin_callbacks(self):
         @callback(

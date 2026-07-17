@@ -1,0 +1,34 @@
+/* Example plugin stylesheet. Ships in the plugin repo's assets/ folder, staged by the
+ * dashboard and injected as a <link> into every page head (served at
+ * /assets/plugins/hello/styles.css). Distinctive styling so it's obvious the plugin's
+ * own CSS is being applied. */
+
+.hello-banner {
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(90deg, #6a4cff 0%, #22d3ee 100%);
+}
+
+.hello-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.hello-card {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  background: rgba(128, 128, 128, 0.08);
+  font-weight: 500;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.hello-card:hover {
+  transform: translateY(-2px);
+  border-color: #6a4cff;
+}

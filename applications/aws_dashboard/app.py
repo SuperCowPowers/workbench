@@ -1,5 +1,6 @@
 """Workbench Dashboard: A Workbench Web Application for viewing and managing Workbench Artifacts"""
 
+import os
 from dash import Dash, html, dcc, page_container, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from dash import page_registry
@@ -26,6 +27,13 @@ log.info(f"CSS files: {css_files}")
 
 # Set the Dash App Title
 app_title = tm.branding().get("app_title", "Workbench Dashboard")
+
+# Spin up the Plugin Manager and stage any plugin-provided clientside assets into our
+# assets tree BEFORE Dash() is constructed. Dash walks assets_folder on the first request
+# and injects <script>/<link> tags for everything it finds, so plugin assets staged under
+# assets/plugins/ get served (at /assets/plugins/...) and injected exactly like app assets.
+pm = PluginManager()
+pm.stage_plugin_assets(os.path.join(os.path.dirname(__file__), "assets", "plugins"))
 
 # Create the Dash app
 app = Dash(
@@ -135,10 +143,7 @@ app.clientside_callback(
     Input(f"{settings_menu_id}-init", "data"),
 )
 
-# Spin up the Plugin Manager
-pm = PluginManager()
-
-# Grab any plugin pages
+# Grab any plugin pages (pm was created above, before Dash(), to stage plugin assets)
 plugin_pages = pm.get_pages()
 
 # Setup each if the plugin pages (call layout and callbacks internally)

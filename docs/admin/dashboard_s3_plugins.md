@@ -20,7 +20,7 @@ Okay now check your **Plugin Path:** config and make sure it points to the S3 bu
 ## Develop your Plugins
 During development it's good to both unit testing and local dashboard testing. Please see our main plugin docs for how to do local testing [Plugins General](../plugins/index.md).
 
-When you're ready to 'deploy' the plugins you can copy them up to the S3 bucket/prefix. You want to copy recursively so if you're plugin directory looks like the listing below you want to copy all the files/directories, so that the dashboard picks up everything.
+When you're ready to 'deploy' the plugins you can copy them up to the S3 bucket/prefix. Copy recursively so the dashboard picks up everything — including any clientside `assets/` (JS/CSS):
 
 ```
 - my_plugins
@@ -29,16 +29,21 @@ When you're ready to 'deploy' the plugins you can copy them up to the S3 bucket/
    - views
       - view_1.py
    - components
-       -component_1.py
-       -component_2.py
+      - component_1.py
+      - component_2.py
+   - assets
+      - my_page
+         - render.js
+         - styles.css
 ```
 
-!!! warning "Careful with Plugin Copy" 
-    In particular, pay attention to additional files in the directory structure. You do not want to copy \_pycache\_ and \*.pyc files. So we recommend using this CLI.
+!!! warning "Copy assets, skip the junk"
+    An `--include "*.py"`-only copy silently drops your `assets/` JS/CSS. Exclude the compiled/hidden files instead, so everything else (Python **and** assets) comes along.
 
 ```
 cd my_plugins
-aws s3 cp . s3://my_bucket/prefix --recursive --exclude "*" --include "*.py"
+aws s3 cp . s3://my_bucket/prefix --recursive \
+  --exclude "*.pyc" --exclude "__pycache__/*" --exclude ".*"
 ```
 
 
