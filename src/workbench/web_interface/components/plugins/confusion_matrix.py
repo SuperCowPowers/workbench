@@ -15,11 +15,18 @@ class ConfusionMatrix(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL
 
-    def __init__(self):
-        """Initialize the ConfusionMatrix plugin class"""
+    def __init__(self, height: int = None, scroll_zoom: bool = False):
+        """Initialize the ConfusionMatrix plugin class
+
+        Args:
+            height (int): Graph height in pixels. Default None falls back to Plotly's default.
+            scroll_zoom (bool): Whether the mouse wheel zooms the plot. Default is False.
+        """
         self.component_id = None
         self.model = None  # Store the model for re-rendering on theme change
         self.inference_run = None  # Store the inference run for re-rendering
+        self.height = height
+        self.scroll_zoom = scroll_zoom
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -31,10 +38,13 @@ class ConfusionMatrix(PluginInterface):
             dcc.Graph: The Confusion Matrix Component
         """
         self.component_id = component_id
+        # Only set style when a height is given, so the default preserves Plotly's sizing
+        graph_style = {"height": f"{self.height}px", "width": "100%"} if self.height is not None else None
         self.container = dcc.Graph(
             id=component_id,
             figure=self.display_text("Waiting for Data..."),
-            config={"scrollZoom": False, "doubleClick": "reset"},
+            config={"scrollZoom": self.scroll_zoom, "doubleClick": "reset"},
+            style=graph_style,
         )
 
         # Fill in plugin properties
@@ -194,6 +204,6 @@ if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
-    # Run the Unit Test on the Plugin
+    # Run the Unit Test on the Plugin (explicit height instead of Plotly's default)
     model = CachedModel("wine-classification")
-    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()
+    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark", plugin_kwargs={"height": 400}).run()

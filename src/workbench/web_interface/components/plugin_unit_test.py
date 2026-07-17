@@ -16,7 +16,14 @@ log = logging.getLogger("workbench")
 
 class PluginUnitTest:
     def __init__(
-        self, plugin_class, theme="midnight_blue", input_data=None, auto_update=True, height="700px", **kwargs
+        self,
+        plugin_class,
+        theme="midnight_blue",
+        input_data=None,
+        auto_update=True,
+        height="700px",
+        plugin_kwargs=None,
+        **kwargs,
     ):
         """A class to unit test a PluginInterface class.
 
@@ -26,7 +33,8 @@ class PluginUnitTest:
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
             auto_update (bool): Whether to automatically update the plugin properties (default: True)
             height (str): The height of the plugin container (default: "700px")
-            **kwargs (dict): Additional keyword arguments
+            plugin_kwargs (dict): Constructor kwargs passed to plugin_class() (default: None)
+            **kwargs (dict): Additional keyword arguments (passed to update_properties)
         """
         assert issubclass(
             plugin_class, PluginInterface
@@ -53,7 +61,7 @@ class PluginUnitTest:
         tm.register_css_route(self.app)
 
         # Instantiate the plugin
-        self.plugin = plugin_class()
+        self.plugin = plugin_class(**(plugin_kwargs or {}))
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
         # Set up the layout

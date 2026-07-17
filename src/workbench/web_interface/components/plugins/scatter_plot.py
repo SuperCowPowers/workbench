@@ -22,18 +22,23 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def __init__(self, show_axes: bool = True, show_controls: bool = True):
+    def __init__(self, show_axes: bool = True, show_controls: bool = True, height: int = 420, scroll_zoom: bool = True):
         """Initialize the Scatter Plot Plugin
 
         Args:
             show_axes (bool): Whether to show the axes and grid. Default is True.
             show_controls (bool): Whether to show the X/Y/Color dropdowns. Default is True.
+            height (int): Graph height in pixels. Default is 420.
+            scroll_zoom (bool): Whether the mouse wheel zooms the plot. Default is True. Set False
+                                for embedded plots on tall pages so the wheel scrolls the page.
         """
         self.component_id = None
         self.hover_columns = []
         self.df = None
         self.show_axes = show_axes
         self.show_controls = show_controls
+        self.height = height
+        self.scroll_zoom = scroll_zoom
         self.has_smiles = False  # Track if dataframe has smiles column for molecule hover
         self.smiles_column = None
         self.id_column = None
@@ -77,8 +82,8 @@ class ScatterPlot(PluginInterface):
                 dcc.Graph(
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
-                    config={"scrollZoom": True},
-                    style={"height": "420px", "width": "100%"},
+                    config={"scrollZoom": self.scroll_zoom},
+                    style={"height": f"{self.height}px", "width": "100%"},
                     clear_on_unhover=True,
                 ),
                 # Controls: X, Y, Color, Label Dropdowns, and Regression Line Checkbox
@@ -547,11 +552,12 @@ if __name__ == "__main__":
     model = Model("logd-reg-xgb")
     df = model.get_inference_predictions("full_cross_fold")
 
-    # Run the Unit Test on the Plugin
+    # Run the Unit Test on the Plugin (shorter height + wheel scrolls the page, not the plot)
     PluginUnitTest(
         ScatterPlot,
         input_data=df,
         theme="dark",
+        plugin_kwargs={"height": 300, "scroll_zoom": False},
         x="logd",
         y="prediction",
         color="prediction_std",
