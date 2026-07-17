@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+from typing import Any
 
 # Sentinel for distinguishing "no default provided" from "default=None"
 _MISSING = object()
@@ -43,7 +44,7 @@ class PipelineMeta:
         self._owner = "test"
         self._resolve()
 
-    def get(self, key: str, default=_MISSING):
+    def get(self, key: str, default: Any = _MISSING) -> Any:
         """Get a value from the pipeline metadata.
 
         Args:

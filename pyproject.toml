@@ -91,8 +91,9 @@ training = [
 dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black", "aws-cdk-lib"]
 # Docs toolchain (mkdocs site + mkdocstrings API reference). Kept in sync with .github/workflows/deploy-docs.yml
 docs = [
-    "mkdocs",
-    "mkdocs-material",
+    # Cap mkdocs/material below 2.0/10 — MkDocs 2.0 is a breaking rewrite that Material 10 will require
+    "mkdocs >=1.6,<2.0",
+    "mkdocs-material >=9.7,<10",
     "mkdocstrings",
     "mkdocstrings-python",
 ]

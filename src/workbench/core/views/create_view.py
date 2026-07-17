@@ -1,7 +1,7 @@
 """CreateView: An abstract base class for View Creation (training, display, etc)"""
 
 import logging
-from typing import Union
+from typing import Any, Union
 from abc import ABC, abstractmethod
 
 # Workbench Imports
@@ -40,7 +40,7 @@ class CreateView(ABC):
         self.table = f"{self.base_table_name}___{self.view_name}"
 
     @abstractmethod
-    def create(self, **kwargs) -> Union[View, None]:
+    def create(self, **kwargs: Any) -> Union[View, None]:
         """Abstract Method: Create the view, each subclass must implement this method
 
         Args:
