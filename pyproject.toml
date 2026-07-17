@@ -89,10 +89,18 @@ training = [
     "optuna",
 ]
 dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black", "aws-cdk-lib"]
+# Docs toolchain (mkdocs site + mkdocstrings API reference). Kept in sync with .github/workflows/deploy-docs.yml
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocstrings-python",
+]
 all = [
     "workbench[ui]",
     "workbench[dev]",
     "workbench[misc]",
+    "workbench[docs]",
 ]
 
 [project.urls]

@@ -20,7 +20,7 @@ jobs:
         python-version: '3.x'
 
     - name: Install dependencies
-      run: pip install mkdocs mkdocs-material mkdocstrings mkdocstrings-python
+      run: pip install .[docs]
 
     - name: Build the MkDocs site
       run: mkdocs build

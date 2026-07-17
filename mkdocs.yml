@@ -21,11 +21,17 @@ nav:
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
     - Async Endpoints: api_classes/async_endpoint.md
+    - Meta Endpoint: api_classes/meta_endpoint.md
     - InferenceCache: api_classes/inference_cache.md
+    - InferenceStore: api_classes/inference_store.md
     - Views: api_classes/views.md
     - Parameter Store: api_classes/parameter_store.md
     - DataFrame Store: api_classes/df_store.md
+    - Reports: api_classes/reports.md
+    - Graph Store: api_classes/graph_store.md
     - Monitor: api_classes/monitor.md
+    - Compound: api_classes/compound.md
+    - Public Data: api_classes/public_data.md
   - Comparisons: 
     - Databricks: comparisons/workbench_vs_databricks.md
   - Utilities:  
@@ -67,10 +73,15 @@ nav:
       - Artifact: core_classes/artifacts/artifact.md
     - Views:
       - OverView: core_classes/views/overview.md
+      - CreateView: core_classes/views/create_view.md
+      - ColumnSubsetView: core_classes/views/column_subset_view.md
+      - PandasToView: core_classes/views/pandas_to_view.md
       - ComputationView: core_classes/views/computation_view.md
       - DisplayView: core_classes/views/display_view.md
       - InferenceView: core_classes/views/inference_view.md
-    - Transforms: 
+    - Pipelines:
+      - PipelineMeta: core_classes/pipelines/pipeline_meta.md
+    - Transforms:
       - OverView: core_classes/transforms/overview.md
       - Data Loaders Light: core_classes/transforms/data_loaders_light.md
       - Data Loaders Heavy: core_classes/transforms/data_loaders_heavy.md
