@@ -15,16 +15,13 @@ class ConfusionMatrix(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL
 
-    def __init__(self, height: int = None, scroll_zoom: bool = False, log_colorscale: bool = True):
+    def __init__(self, height: int = None, scroll_zoom: bool = False, log_colorscale: bool = False):
         """Initialize the ConfusionMatrix plugin class
 
         Args:
             height (int): Graph height in pixels. Default None falls back to Plotly's default.
             scroll_zoom (bool): Whether the mouse wheel zooms the plot. Default is False.
-            log_colorscale (bool): Map cell colors on a log scale (cell numbers stay native
-                counts). Keeps an imbalanced matrix -- where one large cell would otherwise
-                flatten the rest to a single color -- readable. Default is True; pass False
-                for a linear scale.
+            log_colorscale (bool): Map cell colors on a log scale  Default is False
         """
         self.component_id = None
         self.model = None  # Store the model for re-rendering on theme change
