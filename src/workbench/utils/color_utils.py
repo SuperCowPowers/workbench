@@ -342,6 +342,45 @@ def seaborn_to_plotly_colorscale(seaborn_palette: str) -> list:
     return plotly_scale
 
 
+def log_scaled_heatmap(counts: np.ndarray) -> tuple[np.ndarray, float, dict]:
+    """Log-scale heatmap counts for color mapping, with a native-count colorbar.
+
+    Linear color on raw counts lets one large cell flatten the rest of a heatmap to a single
+    color. This maps color on log10(count + 1) instead (the +1 keeps zero-count cells finite),
+    and builds a colorbar whose ticks sit at those log positions but read as round native
+    counts (1, 10, 100, ... plus the actual max). Cell text should still use the raw counts.
+
+    Args:
+        counts (np.ndarray): The raw (pre-log) cell counts.
+
+    Returns:
+        tuple: (z, zmax, colorbar) -- the log-scaled array for the Heatmap's `z`, the zmax to
+            pair with zmin=0, and a Plotly colorbar dict with native-count tickvals/ticktext.
+    """
+    z = np.log10(counts + 1.0)
+    zmax = float(z.max()) if z.size else 1.0
+
+    # Native tick values: powers of 10 spanning the data, plus the actual max
+    max_count = float(np.nanmax(counts)) if counts.size else 1.0
+    ticks, p = [], 1
+    while p <= max_count:
+        ticks.append(p)
+        p *= 10
+    if not ticks:
+        ticks = [1]
+    if max_count >= 1 and int(max_count) not in ticks:
+        ticks.append(int(max_count))
+
+    colorbar = dict(
+        thickness=10,
+        title="Count",
+        outlinewidth=1,
+        tickvals=[np.log10(t + 1.0) for t in ticks],
+        ticktext=[str(t) for t in ticks],
+    )
+    return z, zmax or 1.0, colorbar
+
+
 if __name__ == "__main__":
     """Exercise the Color Utilities"""
 
@@ -371,3 +410,12 @@ if __name__ == "__main__":
     # Test the remove_middle_colors function
     new_colorscale = remove_middle_colors(colorscale)
     print("Modified colorscale:", new_colorscale)
+
+    # Test log_scaled_heatmap: native ticks, monotonic positions, unchanged counts
+    counts = np.array([[3000, 5, 1], [10, 40, 2], [0, 3, 900]], dtype=float)
+    z, zmax, colorbar = log_scaled_heatmap(counts)
+    assert colorbar["ticktext"] == ["1", "10", "100", "1000", "3000"]
+    assert all(a < b for a, b in zip(colorbar["tickvals"], colorbar["tickvals"][1:]))
+    assert all(0 <= v <= zmax + 1e-9 for v in colorbar["tickvals"])
+    assert log_scaled_heatmap(np.zeros((2, 2)))[2]["ticktext"] == ["1"]
+    print("log_scaled_heatmap tests pass.")

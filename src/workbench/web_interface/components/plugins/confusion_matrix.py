@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.cached.cached_model import CachedModel
-from workbench.utils.color_utils import add_alpha_to_first_color
+from workbench.utils.color_utils import add_alpha_to_first_color, log_scaled_heatmap
 
 
 class ConfusionMatrix(PluginInterface):
@@ -15,18 +15,23 @@ class ConfusionMatrix(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL
 
-    def __init__(self, height: int = None, scroll_zoom: bool = False):
+    def __init__(self, height: int = None, scroll_zoom: bool = False, log_colorscale: bool = True):
         """Initialize the ConfusionMatrix plugin class
 
         Args:
             height (int): Graph height in pixels. Default None falls back to Plotly's default.
             scroll_zoom (bool): Whether the mouse wheel zooms the plot. Default is False.
+            log_colorscale (bool): Map cell colors on a log scale (cell numbers stay native
+                counts). Keeps an imbalanced matrix -- where one large cell would otherwise
+                flatten the rest to a single color -- readable. Default is True; pass False
+                for a linear scale.
         """
         self.component_id = None
         self.model = None  # Store the model for re-rendering on theme change
         self.inference_run = None  # Store the inference run for re-rendering
         self.height = height
         self.scroll_zoom = scroll_zoom
+        self.log_colorscale = log_colorscale
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -87,20 +92,24 @@ class ConfusionMatrix(PluginInterface):
         x_labels = [f"{c}:{i}" for i, c in enumerate(df.columns)]
         y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
+        # Color mapping: linear on the raw counts, or log-scaled so a single large cell
+        # doesn't flatten the rest. The cell numbers are drawn as annotations from the native
+        # df below, so they stay as real counts either way.
+        if self.log_colorscale:
+            z, zmax, colorbar = log_scaled_heatmap(df.to_numpy(dtype=float))
+            heatmap_kwargs = dict(z=z, zmin=0.0, zmax=zmax, colorbar=colorbar)
+        else:
+            heatmap_kwargs = dict(z=df, colorbar=dict(thickness=10, title="Count", outlinewidth=1))
+
         # Create the heatmap figure
         fig = go.Figure(
             data=go.Heatmap(
-                z=df,
                 x=x_labels,
                 y=y_labels,
                 xgap=3,  # Add space between cells
                 ygap=3,
-                colorbar=dict(
-                    thickness=10,
-                    title="Count",
-                    outlinewidth=1,
-                ),
                 colorscale=colorscale,
+                **heatmap_kwargs,
             )
         )
 
