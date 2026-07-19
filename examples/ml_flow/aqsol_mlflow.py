@@ -12,8 +12,6 @@ import subprocess
 from pathlib import Path
 
 import matplotlib
-
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.pyfunc
@@ -25,6 +23,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, r2_score
 from xgboost import XGBRegressor
+
+matplotlib.use("Agg")  # figures are logged as artifacts, never displayed
 
 # SQLite file, not a server URL. Training, logging, and model registration all work
 # with no server running; point this at http://127.0.0.1:5001 to use a tracking server.
