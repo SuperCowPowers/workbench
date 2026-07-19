@@ -141,7 +141,7 @@ redis_tunnel = "workbench.scripts.redis_tunnel:main"
 # torch arrives transitively via sagemaker-serve (unconstrained); this floor
 # stops uv's universal resolver from picking a py313-incompatible old build.
 # A constraint bounds the transitive version without declaring torch as our dep.
-constraint-dependencies = ["torch >= 2.12"]
+constraint-dependencies = ["torch >= 2.13"]
 
 [tool.black]
 line-length = 120

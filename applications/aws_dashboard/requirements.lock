@@ -845,7 +845,7 @@ threadpoolctl==3.6.0
     # via
     #   -c ci/.uv-constraints.txt
     #   scikit-learn
-torch==2.12.0+cpu
+torch==2.13.0+cpu
     # via
     #   -c (workspace)
     #   sagemaker-serve
