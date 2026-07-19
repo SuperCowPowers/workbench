@@ -1393,6 +1393,10 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)
 
+    # Also write to the metrics path so the Model loads hyperparameters from meta
+    # (a cheap tag read) instead of downloading + extracting the full model artifact.
+    save_to_s3(hyperparameters, f"{model_metrics_s3_path}/hyperparameters.json")
+
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 

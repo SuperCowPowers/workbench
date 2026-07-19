@@ -46,6 +46,15 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().details(**kwargs)
 
     @CachedArtifactMixin.cache_result
+    def hyperparameters(self) -> Union[dict, None]:
+        """Retrieve the hyperparameters used to train this Model.
+
+        Returns:
+            Union[dict, None]: The hyperparameters used during training
+        """
+        return super().hyperparameters()
+
+    @CachedArtifactMixin.cache_result
     def workbench_meta(self) -> Union[dict, None]:
         """Retrieve the Workbench Metadata for this Model.
 

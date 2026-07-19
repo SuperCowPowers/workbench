@@ -21,7 +21,7 @@ from sagemaker.core.resources import (
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data, dict_to_aws_tags
 from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
-from workbench.utils.s3_utils import compute_s3_object_hash
+from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import (
@@ -663,6 +663,14 @@ class ModelCore(Artifact):
             else:
                 self.log.warning("Skipping training metrics reorder: cannot identify label column")
 
+    def hyperparameters(self) -> Union[dict, None]:
+        """The hyperparameters used to train this Model.
+
+        Returns:
+            dict: The hyperparameters used during training, or None if not found
+        """
+        return get_model_hyperparameters(self)
+
     def summary(self) -> dict:
         """Summary information about this Model
 
@@ -671,7 +679,7 @@ class ModelCore(Artifact):
         """
         self.log.info("Computing Model Summary...")
         summary = super().summary()
-        summary["hyperparameters"] = get_model_hyperparameters(self)
+        summary["hyperparameters"] = self.hyperparameters()
         return summary
 
     def details(self) -> dict:
@@ -698,7 +706,7 @@ class ModelCore(Artifact):
         details["status"] = self.latest_model["ModelPackageStatus"]
         details["approval_status"] = self.latest_model.get("ModelApprovalStatus", "unknown")
         details["image"] = self.container_image().split("/")[-1]  # Shorten the image uri
-        details["hyperparameters"] = get_model_hyperparameters(self)
+        details["hyperparameters"] = self.hyperparameters()
 
         # Grab the inference and container info
         inference_spec = self.latest_model["InferenceSpecification"]
@@ -887,6 +895,9 @@ class ModelCore(Artifact):
 
         # Load the training metrics
         self._load_training_metrics()
+
+        # Load the hyperparameters
+        self._load_hyperparameters()
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -1264,6 +1275,20 @@ class ModelCore(Artifact):
             self.upsert_workbench_meta(
                 {"workbench_training_metrics": metrics_df.to_dict(), "workbench_training_cm": cm_df.to_dict()}
             )
+
+    def _load_hyperparameters(self):
+        """Internal: Read hyperparameters.json from the training S3 path into Workbench meta.
+
+        Newer training jobs write hyperparameters.json to the metrics path, letting the
+        Model load them from a cheap tag read rather than downloading the model artifact.
+        Legacy models predate this and are backfilled lazily in get_model_hyperparameters().
+        """
+        s3_path = f"{self.model_training_path}/hyperparameters.json"
+        hyperparameters = read_s3_json(s3_path, self.boto3_session)
+        if hyperparameters is not None:
+            self.upsert_workbench_meta({"workbench_hyperparameters": hyperparameters})
+        else:
+            self.log.info(f"No hyperparameters.json at {s3_path} (legacy model?)")
 
     def get_inference_metadata(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model

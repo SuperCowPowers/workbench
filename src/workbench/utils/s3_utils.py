@@ -2,6 +2,7 @@
 
 import os
 import io
+import json
 import boto3
 from urllib.parse import urlparse
 import awswrangler as wr
@@ -28,6 +29,25 @@ def read_content_from_s3(path):
     wr.s3.download(path=path, local_file=buffer)
     buffer.seek(0)
     return buffer.read().decode("utf-8")
+
+
+def read_s3_json(s3_uri: str, session: boto3.session.Session) -> Optional[dict]:
+    """Read a JSON object from S3 into a dict (counterpart to inference.save_to_s3).
+
+    Args:
+        s3_uri (str): The S3 URI of the object (e.g., 's3://bucket/key').
+        session (boto3.session.Session): A boto3 session.
+
+    Returns:
+        Optional[dict]: The parsed JSON, or None if the object does not exist.
+    """
+    s3 = session.client("s3")
+    parsed = urlparse(s3_uri)
+    try:
+        obj = s3.get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
+        return json.loads(obj["Body"].read().decode("utf-8"))
+    except s3.exceptions.NoSuchKey:
+        return None
 
 
 def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:

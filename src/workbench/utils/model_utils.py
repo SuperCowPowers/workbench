@@ -503,7 +503,7 @@ def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
             try:
                 with open(hyperparameters_path, "r") as f:
                     hyperparameters = json.load(f)
-                log.important(f"Performance warning: Loaded hyperparameters from {hyperparameters_path}")
+                log.debug(f"Loaded hyperparameters from model artifact {hyperparameters_path}")
             except Exception as e:
                 log.warning(f"Failed to load hyperparameters from {hyperparameters_path}: {e}")
 
@@ -513,8 +513,8 @@ def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
 def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
     """Get the hyperparameters used to train a Workbench model.
 
-    This retrieves the hyperparameters.json file from the model artifacts
-    that was saved during model training.
+    Reads from Workbench meta (a cheap tag read). Models predating meta storage
+    fall back to the model artifact and are backfilled into meta on first read.
 
     Args:
         workbench_model: Workbench model object
@@ -522,14 +522,24 @@ def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
     Returns:
         dict: The hyperparameters used during training, or None if not found
     """
-    # Get the model artifact URI
-    model_artifact_uri = workbench_model.model_data_url()
+    # Fast path: hyperparameters cached in Workbench meta (a cheap tag read)
+    hyperparameters = workbench_model.workbench_meta().get("workbench_hyperparameters")
+    if hyperparameters is not None:
+        return hyperparameters
 
+    # Legacy fallback: pull from the model artifact (downloads + extracts model.tar.gz)
+    model_artifact_uri = workbench_model.model_data_url()
     if model_artifact_uri is None:
         log.warning(f"No model artifact found for {workbench_model.uuid}")
         return None
 
-    return load_hyperparameters_from_s3(model_artifact_uri)
+    hyperparameters = load_hyperparameters_from_s3(model_artifact_uri)
+
+    # Backfill meta so subsequent reads take the fast path
+    if hyperparameters is not None:
+        workbench_model.upsert_workbench_meta({"workbench_hyperparameters": hyperparameters})
+
+    return hyperparameters
 
 
 def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
