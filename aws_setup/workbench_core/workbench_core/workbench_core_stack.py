@@ -1067,6 +1067,36 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
+    ###################
+    #     Bedrock     #
+    ###################
+    @staticmethod
+    def bedrock_discover() -> iam.PolicyStatement:
+        """Discovery - list available foundation models."""
+        return iam.PolicyStatement(
+            actions=["bedrock:ListFoundationModels"],
+            resources=["*"],  # List operations require "*" resource
+        )
+
+    def bedrock_invoke(self) -> iam.PolicyStatement:
+        """Bedrock permissions for invoking Claude models.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Claude model invocation.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream",
+            ],
+            resources=[
+                # Foundation-model ARNs are AWS-owned, so they carry no account id
+                f"arn:aws:bedrock:{self.region}::foundation-model/anthropic.*",
+                # Several Claude models are only reachable via an inference profile
+                f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/*",
+            ],
+        )
+
     ##########################
     #   Workbench Dashboard  #
     ##########################
@@ -1516,6 +1546,8 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_to_policy(self.parameter_store_full())
         api_execution_role.add_to_policy(self.cloudwatch_logs())
         api_execution_role.add_to_policy(self.cloudwatch_monitor())
+        api_execution_role.add_to_policy(self.bedrock_discover())
+        api_execution_role.add_to_policy(self.bedrock_invoke())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
@@ -1543,6 +1575,8 @@ class WorkbenchCoreStack(Stack):
         readonly_role.add_to_policy(self.parameter_store_discover())
         readonly_role.add_to_policy(self.parameter_store_read())
         readonly_role.add_to_policy(self.cloudwatch_logs())
+        readonly_role.add_to_policy(self.bedrock_discover())
+        readonly_role.add_to_policy(self.bedrock_invoke())
         readonly_role.add_managed_policy(self.datasource_read_policy)
         readonly_role.add_managed_policy(self.featureset_read_policy)
         readonly_role.add_managed_policy(self.model_read_policy)
