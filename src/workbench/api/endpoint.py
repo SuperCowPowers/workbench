@@ -26,7 +26,7 @@ class Endpoint(EndpointCore):
     async core so callers get correct behavior from a single object.
 
     For feature endpoints (those that emit registered feature columns), use
-    :meth:`feature_list` to retrieve the column list.
+    :meth:`output_columns` to retrieve the column list.
     """
 
     def __init__(self, endpoint_name: str):

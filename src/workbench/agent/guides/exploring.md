@@ -47,7 +47,7 @@ checked" — read it as healthy.
 
 ```python
 fs = FeatureSet("aqsol_features")
-fs.column_names()
+fs.columns                # property, not a method
 fs.column_details()      # names + types
 fs.pull_dataframe()      # the whole thing -- check row count first
 fs.query("SELECT ... FROM ...")   # Athena, for anything large

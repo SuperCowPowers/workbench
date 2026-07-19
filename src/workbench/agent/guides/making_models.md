@@ -30,7 +30,7 @@ this costs nothing to leave up.
   endpoint.
 - Set `hyperparameters={"uq_version": "v1"}` on new models — strongest
   uncertainty quantification and keeps comparisons consistent.
-- Check `fs.column_names()` and `fs.column_details()` before choosing a
+- Check `fs.columns` (a property) and `fs.column_details()` before choosing a
   `feature_list`. Don't guess column names.
 
 ## Dependencies

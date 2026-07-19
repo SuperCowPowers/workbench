@@ -112,6 +112,27 @@ def _run_turn(namespace: dict) -> None:
     cprint("darkyellow", f"Stopped after {MAX_TOOL_ROUNDS} tool rounds.")
 
 
+def _close_pending_tools(note: str) -> None:
+    """Give any unanswered tool_use blocks a result.
+
+    An interrupt can land after Claude asks for a tool but before we return the
+    result. The API rejects that pairing on the next call, so the conversation
+    would be stuck; closing them out keeps the history usable.
+    """
+    if not _history or _history[-1]["role"] != "assistant":
+        return
+    pending = [b for b in _history[-1]["content"] if getattr(b, "type", None) == "tool_use"]
+    if pending:
+        _history.append(
+            {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "tool_use_id": b.id, "content": note} for b in pending
+                ],
+            }
+        )
+
+
 def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
     _history.append({"role": "user", "content": prompt})
@@ -120,8 +141,10 @@ def _ask(prompt: str) -> None:
         with log_level():
             _run_turn(_namespace())
     except KeyboardInterrupt:
-        cprint("darkyellow", "Interrupted.")
+        _close_pending_tools("Interrupted by the user before this finished.")
+        cprint("darkyellow", "Interrupted. (Ctrl-C again at the prompt to exit.)")
     except Exception as e:
+        _close_pending_tools(f"Failed: {type(e).__name__}")
         cprint("red", f"{type(e).__name__}: {e}")
 
 
