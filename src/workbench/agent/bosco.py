@@ -178,9 +178,7 @@ def _close_pending_tools(note: str) -> None:
         _history.append(
             {
                 "role": "user",
-                "content": [
-                    {"type": "tool_result", "tool_use_id": b.id, "content": note} for b in pending
-                ],
+                "content": [{"type": "tool_result", "tool_use_id": b.id, "content": note} for b in pending],
             }
         )
 
