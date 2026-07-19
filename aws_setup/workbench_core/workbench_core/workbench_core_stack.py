@@ -1072,9 +1072,12 @@ class WorkbenchCoreStack(Stack):
     ###################
     @staticmethod
     def bedrock_discover() -> iam.PolicyStatement:
-        """Discovery - list available foundation models."""
+        """Discovery - list available foundation models and inference profiles."""
         return iam.PolicyStatement(
-            actions=["bedrock:ListFoundationModels"],
+            actions=[
+                "bedrock:ListFoundationModels",
+                "bedrock:ListInferenceProfiles",
+            ],
             resources=["*"],  # List operations require "*" resource
         )
 
@@ -1090,11 +1093,27 @@ class WorkbenchCoreStack(Stack):
                 "bedrock:InvokeModelWithResponseStream",
             ],
             resources=[
-                # Foundation-model ARNs are AWS-owned, so they carry no account id
-                f"arn:aws:bedrock:{self.region}::foundation-model/anthropic.*",
-                # Several Claude models are only reachable via an inference profile
+                # Foundation-model ARNs are AWS-owned, so they carry no account id.
+                # The region is a wildcard because invoking through an inference
+                # profile requires model access in every region it can route to.
+                "arn:aws:bedrock:*::foundation-model/anthropic.*",
+                # Claude 4.x models are only reachable via an inference profile
                 f"arn:aws:bedrock:{self.region}:{self.account}:inference-profile/*",
             ],
+        )
+
+    def bedrock_mantle_invoke(self) -> iam.PolicyStatement:
+        """Bedrock Mantle permissions - the Anthropic Messages API endpoint.
+
+        Mantle is a separate IAM namespace from `bedrock:` with its own project
+        resource; the Anthropic SDK client targets this endpoint.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Mantle inference.
+        """
+        return iam.PolicyStatement(
+            actions=["bedrock-mantle:CreateInference"],
+            resources=[f"arn:aws:bedrock-mantle:{self.region}:{self.account}:project/*"],
         )
 
     ##########################
@@ -1548,6 +1567,7 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_to_policy(self.cloudwatch_monitor())
         api_execution_role.add_to_policy(self.bedrock_discover())
         api_execution_role.add_to_policy(self.bedrock_invoke())
+        api_execution_role.add_to_policy(self.bedrock_mantle_invoke())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
@@ -1577,6 +1597,7 @@ class WorkbenchCoreStack(Stack):
         readonly_role.add_to_policy(self.cloudwatch_logs())
         readonly_role.add_to_policy(self.bedrock_discover())
         readonly_role.add_to_policy(self.bedrock_invoke())
+        readonly_role.add_to_policy(self.bedrock_mantle_invoke())
         readonly_role.add_managed_policy(self.datasource_read_policy)
         readonly_role.add_managed_policy(self.featureset_read_policy)
         readonly_role.add_managed_policy(self.model_read_policy)
