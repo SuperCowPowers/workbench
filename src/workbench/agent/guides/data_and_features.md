@@ -40,6 +40,29 @@ ds.num_rows, ds.num_columns
 Note which are properties and which are methods; the same set exists on both
 DataSource and FeatureSet. There is no `column_names()`.
 
+## Column names are lowercase
+
+This is **AWS behavior, not a Workbench choice**. Glue lowercases column names
+when it creates a table, and Athena "accepts mixed case in DDL and DML queries,
+but lower cases the names when it executes the query." A column created as
+`Castle` comes back as `castle`.
+
+Workbench lowercases on the way in so what you see matches what AWS will
+actually store — otherwise the mismatch would surface later as a confusing
+query failure.
+
+Consequences:
+
+- Anything read back from a DataSource or FeatureSet is lowercase.
+- Raw external files are not — the public AqSol CSV has `SMILES`, client files
+  vary.
+- Case alone never distinguishes two columns. Don't hardcode a spelling; match
+  case-insensitively when the source might be raw:
+
+  ```python
+  col = next(c for c in df.columns if c.lower() == "smiles")
+  ```
+
 ## Getting rows
 
 ```python

@@ -49,8 +49,8 @@ without it, labels get cropped out of the saved image.
 Plot what the model actually produced rather than recomputing it:
 
 ```python
-m = Model("pxr-reg-chemprop")
-df = m.get_inference_predictions()      # has the target and prediction columns
+model = Model("pxr-reg-chemprop")
+df = model.get_inference_predictions()      # has the target and prediction columns
 fs = FeatureSet("aqsol_features")
 df = fs.pull_dataframe()                # or fs.query(...) if it is large
 ```

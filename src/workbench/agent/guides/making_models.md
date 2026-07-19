@@ -8,9 +8,9 @@ an artifact in AWS; each `to_*()` call launches real infrastructure.
 ```python
 ds = DataSource("s3://bucket/data.csv", name="my_data")
 fs = ds.to_features("my_features", id_column="id")
-m  = fs.to_model(name="my-model-reg", model_type=ModelType.REGRESSOR,
-                 target_column="solubility", feature_list=features)
-end = m.to_endpoint(name="my-model", tags=["my-model"])   # serverless by default
+model = fs.to_model(name="my-model-reg", model_type=ModelType.REGRESSOR,
+                    target_column="solubility", feature_list=features)
+end = model.to_endpoint(name="my-model", tags=["my-model"])   # serverless by default
 
 # Always deploy an endpoint after a model, then score it:
 end.test_inference()          # quick sanity check on held-out rows
@@ -23,6 +23,9 @@ this costs nothing to leave up.
 
 ## Conventions
 
+- **Name your handles `model` and `end`.** Variables you create live on in the
+  user's session, so use the names they expect: `model = Model(...)` and
+  `end = Endpoint(...)`. Not `m`, not `mdl`, not `my_model`.
 - `id_column` is **required** on `to_features()`. If the data has no natural id,
   say so — don't invent a row index silently.
 - Name models by role: `-reg` regression, `-class` classification. Endpoints are
@@ -51,22 +54,22 @@ compute that bills continuously. Only there, confirm with the user first.
 ## Inspecting
 
 ```python
-m.details()             # metadata, metrics, hyperparameters
-m.performance_metrics() # scored metrics (populated by the inference runs above)
-m.list_inference_runs() # capture names available on this model
+model.details()             # metadata, metrics, hyperparameters
+model.performance_metrics() # scored metrics (populated by the inference runs above)
+model.list_inference_runs() # capture names available on this model
 ```
 
 ## Model / Endpoint interaction
 
 Inference is run on the **Endpoint** but the results land on the **Model**. So
 after `end.test_inference()` or `end.cross_fold_inference()`, those runs show up
-in `m.list_inference_runs()`.
+in `model.list_inference_runs()`.
 
 Objects cache their metadata, so a Model you already have in hand will not show
 a run that was created after you fetched it. Recreate it to pick up new results:
 
 ```python
 end.test_inference()
-m = Model("my-model-reg")     # re-fetch, otherwise the new run is missing
-m.list_inference_runs()
+model = Model("my-model-reg")     # re-fetch, otherwise the new run is missing
+model.list_inference_runs()
 ```

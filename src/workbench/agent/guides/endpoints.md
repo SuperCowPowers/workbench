@@ -4,6 +4,10 @@ An Endpoint serves a Model. Inference runs on the Endpoint, but the results are
 stored on the **Model** — see the Model/Endpoint interaction note in
 `making_models`.
 
+**Name your handles `model` and `end`.** Variables you create stay in the user's
+session, so use the names they expect: `end = Endpoint(...)` and
+`model = Model(...)`. Not `e`, not `ep`, not `my_endpoint`.
+
 ## DataFrame in, DataFrame out
 
 Every Workbench endpoint follows the same contract: pass a DataFrame, get a
@@ -18,7 +22,7 @@ guide.
 ## Creating
 
 ```python
-end = m.to_endpoint(name="my-model", tags=["my-model"])   # serverless, scales to zero
+end = model.to_endpoint(name="my-model", tags=["my-model"])   # serverless, scales to zero
 ```
 
 - **Serverless** (default) — the right choice almost always. No cost when idle.
@@ -48,7 +52,7 @@ df = end.inference(eval_df, capture_name="my_holdout")  # saved to the Model
 ```
 
 `capture_name` is the switch that persists a run. With it, predictions and
-metrics are written and the run appears in `m.list_inference_runs()`; without
+metrics are written and the run appears in `model.list_inference_runs()`; without
 it you just get the DataFrame back. Name captures for what they are — the name
 is how the user finds the run later.
 

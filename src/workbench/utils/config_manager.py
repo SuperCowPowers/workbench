@@ -129,6 +129,7 @@ class ConfigManager:
             "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD",
+            "DASHBOARD_URL",
         ]
         for key, value in os.environ.items():
             # If the key is in the overwrites list, then overwrite the config
@@ -371,6 +372,7 @@ class ConfigManager:
             "REDIS_HOST": "change_me_optional:localhost",
             "REDIS_PORT": "change_me_optional:6379",
             "REDIS_PASSWORD": "change_me_optional:",
+            "DASHBOARD_URL": "change_me_optional:",
             "WORKBENCH_ROLE": "Workbench-ExecutionRole",
             "WORKBENCH_PLUGINS": "package",
             "WORKBENCH_FEATURES": {

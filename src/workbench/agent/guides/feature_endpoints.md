@@ -18,8 +18,8 @@ your rows with descriptor columns **appended**, so the output is a superset of
 the input, not a replacement.
 
 ```python
-fe = Endpoint("smiles-to-2d-v1")
-df_features = fe.inference(df)        # df + ~315 descriptor columns
+end = Endpoint("smiles-to-2d-v1")
+df_features = end.inference(df)        # df + ~315 descriptor columns
 ```
 
 That contract is what lets you chain them: the output of a feature endpoint is
@@ -62,8 +62,8 @@ a large batch; that is the work, not a hang.
 ## Knowing the columns
 
 ```python
-fe.input_columns()      # what it consumes, e.g. ["smiles"]
-fe.output_columns()     # the registered feature columns
+end.input_columns()      # what it consumes, e.g. ["smiles"]
+end.output_columns()     # the registered feature columns
 ```
 
 These are registered in ParameterStore, so downstream training scripts can look
