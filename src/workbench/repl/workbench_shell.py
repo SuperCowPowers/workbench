@@ -112,8 +112,11 @@ class WorkbenchPrompt(Prompts):
             lights = []
         else:
             lights = workbench_shell.status_lights()
-        aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}"), (Token.Blue, "> ")]
-        return lights + [(Token.Workbench, "Workbench")] + aws_profile_prompt
+        aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}")]
+        prompt = lights + [(Token.Workbench, "Workbench")] + aws_profile_prompt
+        if workbench_shell is not None and workbench_shell.bedrock_status:
+            prompt += [(Token.Blue, ":"), (Token.Lightgreen, "Bosco")]
+        return prompt + [(Token.Blue, "> ")]
 
 
 class WorkbenchShell:
@@ -131,6 +134,7 @@ class WorkbenchShell:
         # Our Metadata Object pull information from the Cloud Platform
         self.meta = None
         self.meta_status = "DIRECT"
+        self.bedrock_status = False  # set once AWS is confirmed (Bosco needs Bedrock)
 
         # Perform AWS connection test and other checks
         self.commands = dict()
@@ -176,6 +180,12 @@ class WorkbenchShell:
         self.commands["log_theme"] = log_theme
         self.commands["reconnect"] = self.check_aws_account
         self.commands["pub_data"] = importlib.import_module("workbench.api.public_data").PublicData()
+        self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
+
+        # Bosco needs Bedrock; gate the agent (and its prompt tag) on availability
+        if self.aws_status:
+            with silence_logs():
+                self.bedrock_status = importlib.import_module("workbench.utils.bedrock_utils").bedrock_available()
 
         # Add cheminformatics utils if available
         if HAVE_CHEM_UTILS:
@@ -198,6 +208,9 @@ class WorkbenchShell:
         config.TerminalInteractiveShell.prompts_class = WorkbenchPrompt
         config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
         config.TerminalInteractiveShell.banner1 = ""
+
+        # Install the `bosco <text>` line router once the shell exists
+        config.InteractiveShellApp.exec_lines = ["from workbench.agent.bosco import register; register()"]
 
         # Merge custom commands and globals into the namespace
         locs = self.commands.copy()  # Copy the custom commands

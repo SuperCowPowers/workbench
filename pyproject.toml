@@ -118,7 +118,8 @@ packages = { find = { where = ["src"] } }
     "resources/signature_verify_pub.pem",
     "resources/open_source_api.key",
     "model_scripts/**",
-    "themes/**"
+    "themes/**",
+    "agent/guides/*.md"
 ]
 
 [tool.setuptools.exclude-package-data]

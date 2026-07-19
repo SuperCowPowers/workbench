@@ -32,6 +32,22 @@ def bedrock_client():
     return clamp.boto3_session.client("bedrock", region_name=clamp.region)
 
 
+def bedrock_available(model_id: str = DEFAULT_MODEL) -> bool:
+    """Fast check that this session can reach Bedrock and see the model.
+
+    Control-plane only (ListFoundationModels): verifies region + IAM + that the
+    model exists in the account. Does not verify the marketplace subscription --
+    that surfaces on the first invoke. Swallows all errors and returns False, so
+    it is safe to call at REPL startup.
+    """
+    try:
+        base = model_id.split(".", 1)[1] if model_id.startswith(("us.", "global.")) else model_id
+        resp = bedrock_client().list_foundation_models(byProvider="anthropic")
+        return any(m["modelId"].startswith(base) for m in resp.get("modelSummaries", []))
+    except Exception:
+        return False
+
+
 def claude_client():
     """Anthropic client bound to the Workbench assumed role.
 

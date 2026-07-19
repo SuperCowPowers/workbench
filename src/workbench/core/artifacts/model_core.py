@@ -514,7 +514,7 @@ class ModelCore(Artifact):
         # Look for any Registered Endpoints
         registered_endpoints = self.workbench_meta().get("workbench_registered_endpoints")
         if not registered_endpoints:
-            self.log.warning(f"No registered endpoints found for {self.model_name}!")
+            self.log.info(f"No registered endpoints found for {self.model_name}!")
             return None
 
         # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
