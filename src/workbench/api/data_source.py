@@ -26,7 +26,7 @@ class DataSource(AthenaSource):
         ```python
         my_data = DataSource(name_of_source)
         my_data.details()
-        my_features = my_data.to_features()
+        my_features = my_data.to_features("my_features", id_column="id")
         ```
     """
 
@@ -110,7 +110,7 @@ class DataSource(AthenaSource):
     def to_features(
         self,
         name: str,
-        id_column: str = None,
+        id_column: str,
         tags: list = None,
         event_time_column: str = None,
         one_hot_columns: list = None,
@@ -120,7 +120,7 @@ class DataSource(AthenaSource):
 
         Args:
             name (str): Set the name for feature set (must be lowercase).
-            id_column (str, optional): The ID column (if not specified, an 'auto_id' will be generated).
+            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
             tags (list, optional): Set the tags for the feature set. If not specified tags will be generated.
             event_time_column (str, optional): Set the event time for feature set. If not specified will be generated
             one_hot_columns (list, optional): Set the columns to be one-hot encoded. (default: None)
@@ -218,6 +218,6 @@ if __name__ == "__main__":
     pprint(my_data.details())
 
     # Convert the Data Source to a Feature Set
-    my_features = test_data.to_features()
+    my_features = test_data.to_features("test_features", id_column="auto")
     pprint(my_features.summary())
     pprint(my_features.details())

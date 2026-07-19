@@ -30,7 +30,7 @@ from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 ds = DataSource("s3://workbench-public-data/common/abalone.csv")
 
 # Now create a FeatureSet
-ds.to_features("abalone_features")
+ds.to_features("abalone_features", id_column="auto")
 
 # Create the abalone_regression Model
 fs = FeatureSet("abalone_features")

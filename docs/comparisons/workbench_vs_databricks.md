@@ -36,7 +36,7 @@ deployed endpoint running inference:
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 
 ds = DataSource("s3://workbench-public-data/common/abalone.csv")
-ds.to_features("abalone_features")
+ds.to_features("abalone_features", id_column="auto")
 
 fs = FeatureSet("abalone_features")
 fs.to_model(

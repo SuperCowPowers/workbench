@@ -64,7 +64,7 @@ class PandasToFeatures(Transform):
 
         Args:
             input_df (pd.DataFrame): The input DataFrame.
-            id_column (str, optional): The ID column (if not specified, an 'auto_id' will be generated).
+            id_column (str, optional): The ID column (use "auto"/None for auto-generated IDs).
             event_time_column (str, optional): The name of the event time column (default: None).
             one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
@@ -93,7 +93,7 @@ class PandasToFeatures(Transform):
 
     def _ensure_id_column(self):
         """Internal: AWS Feature Store requires an Id field"""
-        if self.id_column is None:
+        if self.id_column in [None, "auto"]:
             self.log.warning("Generating an 'auto_id' column, we highly recommended setting the 'id_column'")
             self.output_df["auto_id"] = self.output_df.index
             self.id_column = "auto_id"

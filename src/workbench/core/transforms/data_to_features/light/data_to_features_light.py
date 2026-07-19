@@ -60,10 +60,13 @@ class DataToFeaturesLight(Transform):
         """At this point the output DataFrame should be populated, so publish it as a Feature Set
 
         Args:
-            id_column (str, optional): The ID column (if not specified, an 'auto_id' will be generated).
+            id_column (str): The ID column (must be specified, use "auto" for auto-generated IDs).
             event_time_column (str, optional): The name of the event time column (default: None).
             one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
+        if id_column is None:
+            raise ValueError('id_column is required (use "auto" for auto-generated IDs)')
+
         # Now publish to the output location
         output_features = PandasToFeatures(self.output_name)
         output_features.set_input(
