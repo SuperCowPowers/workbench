@@ -8072,7 +8072,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">            input_df (pd.DataFrame): The input DataFrame.</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">            id_column (str, optional): The ID column (if not specified, an &#39;auto_id&#39; will be generated).</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">            id_column (str, optional): The ID column (use &quot;auto&quot;/None for auto-generated IDs).</span>
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">            event_time_column (str, optional): The name of the event time column (default: None).</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">            one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">        &quot;&quot;&quot;</span>
@@ -8101,7 +8101,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_ensure_id_column</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal: AWS Feature Store requires an Id field&quot;&quot;&quot;</span>
-</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">]:</span>
 </span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Generating an &#39;auto_id&#39; column, we highly recommended setting the &#39;id_column&#39;&quot;</span><span class="p">)</span>
 </span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="p">[</span><span class="s2">&quot;auto_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span><span class="o">.</span><span class="n">index</span>
 </span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">id_column</span> <span class="o">=</span> <span class="s2">&quot;auto_id&quot;</span>
@@ -9321,7 +9321,7 @@ Args:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The ID column (if not specified, an 'auto_id' will be generated).</p>
+                <p>The ID column (use "auto"/None for auto-generated IDs).</p>
               </div>
             </td>
             <td>
@@ -9395,7 +9395,7 @@ Args:
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">        input_df (pd.DataFrame): The input DataFrame.</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">        id_column (str, optional): The ID column (if not specified, an &#39;auto_id&#39; will be generated).</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">        id_column (str, optional): The ID column (use &quot;auto&quot;/None for auto-generated IDs).</span>
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">        event_time_column (str, optional): The name of the event time column (default: None).</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">        one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">    &quot;&quot;&quot;</span>
