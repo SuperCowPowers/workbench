@@ -5,21 +5,10 @@ already in the account.
 
 ## Inventory
 
-Use `CachedMeta()` — it is much faster than `Meta()`. Only reach for `Meta()`
-when the user explicitly wants live, uncached values.
-
 ```python
+from workbench.cached.cached_meta import CachedMeta
+
 meta = CachedMeta()
-meta.models()
-```
-
-`models()` and `endpoints()` take `details` (default `False`). The default is a
-fast summary with only a **subset** of columns populated — the rest come back
-empty. Pass `details=True` to fill every column (Health, Type, Framework,
-metrics, ...); it is slower because it pulls per-artifact detail, so only reach
-for it when you actually need those columns.
-
-```python
 meta.models()               # fast, partial columns
 meta.models(details=True)   # all columns, slower
 ```
@@ -39,6 +28,20 @@ These return DataFrames. Filter them rather than eyeballing:
 ```python
 models()[models()["Model Type"] == "regressor"]
 ```
+
+## Health
+
+Health tags are **exceptions, not status**. A healthy artifact has an empty
+health tag list — no news is good news. Any tags present mean something is
+wrong with that artifact, and the tags name the problem.
+
+```python
+m.get_health_tags()     # [] means healthy
+```
+
+The `Health` column from `models(details=True)` / `endpoints(details=True)` is
+the same information. Don't read a blank Health cell as "unknown" or "not
+checked" — read it as healthy.
 
 ## Drilling in
 

@@ -7,6 +7,30 @@ from workbench.utils.workbench_logging import ColoredFormatter
 
 
 @contextmanager
+def log_level(level=logging.WARNING):
+    """Temporarily set the workbench log level, restoring it afterwards.
+
+    Unlike silence_logs(), warnings and errors still come through. Useful for
+    quieting routine INFO chatter during an interactive operation.
+
+    Args:
+        level: The temporary log level (default: logging.WARNING)
+    """
+    # Skip this if the WORKBENCH_DEBUG environment variable is set to True
+    if os.getenv("WORKBENCH_DEBUG", "False").lower() == "true":
+        yield
+        return
+
+    logger = logging.getLogger("workbench")
+    original_level = logger.level
+    try:
+        logger.setLevel(level)
+        yield
+    finally:
+        logger.setLevel(original_level)
+
+
+@contextmanager
 def silence_logs():
     """Be careful, this can be fairly dangerous, as it suppresses errors that are important to see"""
 

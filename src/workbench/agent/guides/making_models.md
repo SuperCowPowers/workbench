@@ -53,4 +53,20 @@ compute that bills continuously. Only there, confirm with the user first.
 ```python
 m.details()             # metadata, metrics, hyperparameters
 m.performance_metrics() # scored metrics (populated by the inference runs above)
+m.list_inference_runs() # capture names available on this model
+```
+
+## Model / Endpoint interaction
+
+Inference is run on the **Endpoint** but the results land on the **Model**. So
+after `end.test_inference()` or `end.cross_fold_inference()`, those runs show up
+in `m.list_inference_runs()`.
+
+Objects cache their metadata, so a Model you already have in hand will not show
+a run that was created after you fetched it. Recreate it to pick up new results:
+
+```python
+end.test_inference()
+m = Model("my-model-reg")     # re-fetch, otherwise the new run is missing
+m.list_inference_runs()
 ```

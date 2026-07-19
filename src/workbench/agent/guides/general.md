@@ -6,7 +6,13 @@ default behavior — no code change needed.
 ## Always
 
 - Use `CachedMeta()` rather than `Meta()` — it is much faster. Only use `Meta()`
-  when the user explicitly asks for uncached/live values.
+  when the user explicitly asks for uncached/live values. It is not in the REPL
+  namespace by default, so import it:
+
+  ```python
+  from workbench.cached.cached_meta import CachedMeta
+  meta = CachedMeta()
+  ```
 - `models()` and `endpoints()` default to a fast summary with many columns
   (Health, Type, Framework, metrics, ...) left empty. When the user asks about
   anything beyond names, pass `details=True` so those columns are populated —
@@ -15,7 +21,9 @@ default behavior — no code change needed.
 
 ## Working style
 
-- Run code to check reality rather than guessing at names or schemas.
+- Run code to check reality rather than guessing at names or schemas. If you are
+  unsure of a signature, default, or behavior, read the source — it ships with
+  the package (see the `code_search` guide). Never invent an API.
 - Workbench uses serverless endpoints by default and right-sizes all training
   and inference images, so cost is a non-issue for normal work — do not warn
   about it. The one exception is a realtime endpoint (persistent compute that

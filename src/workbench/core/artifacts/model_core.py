@@ -1203,7 +1203,7 @@ class ModelCore(Artifact):
         try:
             return ModelType(model_type)
         except ValueError:
-            self.log.warning(f"Could not determine model type for {self.model_name}!")
+            self.log.important(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
 
     def _set_model_framework(self, model_framework: ModelFramework):
@@ -1224,7 +1224,7 @@ class ModelCore(Artifact):
         try:
             return ModelFramework(model_framework)
         except ValueError:
-            self.log.warning(f"Could not determine model framework for {self.model_name}!")
+            self.log.important(f"Could not determine model framework for {self.model_name}!")
             return ModelFramework.UNKNOWN
 
     def _load_training_metrics(self):

@@ -71,6 +71,7 @@ class Spinner:
             message: The message to display beside the spinner.
         """
         self.done = False
+        self.clear = False
         self.message = message
         self.color = color
         self.thread = threading.Thread(target=self.spin)
@@ -108,16 +109,26 @@ class Spinner:
             self._write(f"\r{colors[self.color]}{self.message} {colors['darkyellow']}{spinner_display}")
             time.sleep(0.1)  # Control the speed of spinner animation
 
-        # Display the "done" frame when completed
-        self._write(f"\r{colors[self.color]}{self.message} {colors['lightgreen']}{done_frame}")
-        self._show_cursor()
+        if self.clear:
+            # Erase the spinner line entirely, leaving the cursor where it started
+            self._write(f"\r\033[K{colors['reset']}\033[?25h")
+        else:
+            # Display the "done" frame when completed
+            self._write(f"\r{colors[self.color]}{self.message} {colors['lightgreen']}{done_frame}")
+            self._show_cursor()
 
     def start(self):
         """Start the spinner in a separate thread."""
         self.thread.start()
 
-    def stop(self):
-        """Stop the spinner and wait for the thread to finish."""
+    def stop(self, clear: bool = False):
+        """Stop the spinner and wait for the thread to finish.
+
+        Args:
+            clear: Erase the spinner line instead of leaving a "done" frame.
+                   Use for repeated/transient waits that shouldn't pile up.
+        """
+        self.clear = clear
         self.done = True
         self.thread.join()  # Ensure the spinner thread is fully stopped
 

@@ -10,9 +10,11 @@ user's live session. Two ways to reach it, sharing one conversation:
 import re
 import codeop
 import logging
+from contextlib import contextmanager
 
 # Workbench Imports
-from workbench.utils.repl_utils import cprint, colors
+from workbench.utils.repl_utils import cprint, colors, Spinner
+from workbench.utils.log_utils import log_level
 from workbench.utils.bedrock_utils import claude_client, DEFAULT_MODEL
 from workbench.utils.config_manager import ConfigManager
 from workbench.agent.tools import TOOL_SCHEMAS, dispatch, guide_names, general_guide
@@ -54,6 +56,17 @@ def _text_of(message) -> str:
     return "\n".join(b.text for b in message.content if b.type == "text").strip()
 
 
+@contextmanager
+def _spinner(message: str):
+    """Animate while Bosco waits, then erase the line so replies stay clean."""
+    spinner = Spinner("lightpurple", message)
+    spinner.start()
+    try:
+        yield
+    finally:
+        spinner.stop(clear=True)
+
+
 def _namespace() -> dict:
     from IPython import get_ipython
 
@@ -68,13 +81,14 @@ def _run_turn(namespace: dict) -> None:
         _client = claude_client()
 
     for _ in range(MAX_TOOL_ROUNDS):
-        response = _client.messages.create(
-            model=DEFAULT_MODEL,
-            max_tokens=MAX_TOKENS,
-            system=_system_prompt(),
-            tools=TOOL_SCHEMAS,
-            messages=_history,
-        )
+        with _spinner("🐶  Bosco is thinking:"):
+            response = _client.messages.create(
+                model=DEFAULT_MODEL,
+                max_tokens=MAX_TOKENS,
+                system=_system_prompt(),
+                tools=TOOL_SCHEMAS,
+                messages=_history,
+            )
 
         text = _text_of(response)
         if text:
@@ -88,15 +102,11 @@ def _run_turn(namespace: dict) -> None:
         for block in response.content:
             if block.type != "tool_use":
                 continue
-            if block.name == "run_python":
+            if block.name == "run_python" and bosco.show_code:
                 cprint("grey", block.input.get("code", ""))
-            results.append(
-                {
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": dispatch(block.name, block.input, namespace),
-                }
-            )
+            with _spinner("🐶  Bosco is working:"):
+                content = dispatch(block.name, block.input, namespace)
+            results.append({"type": "tool_result", "tool_use_id": block.id, "content": content})
         _history.append({"role": "user", "content": results})
 
     cprint("darkyellow", f"Stopped after {MAX_TOOL_ROUNDS} tool rounds.")
@@ -106,7 +116,9 @@ def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
     _history.append({"role": "user", "content": prompt})
     try:
-        _run_turn(_namespace())
+        # Quiet routine INFO chatter from the code Bosco runs; restored afterwards
+        with log_level():
+            _run_turn(_namespace())
     except KeyboardInterrupt:
         cprint("darkyellow", "Interrupted.")
     except Exception as e:
@@ -117,12 +129,12 @@ def _prompt() -> str:
     """A colored '🐶 bosco:<config>>' prompt with the active AWS profile."""
     profile = ConfigManager().get_config("AWS_PROFILE") or "default"
     p, c, g, r = colors["lightpurple"], colors["darkyellow"], colors["grey"], colors["reset"]
-    return f"\n🐶 {p}bosco{g}:{c}{profile}{p}>{r} "
+    return f"\n🐶  {p}bosco{g}:{c}{profile}{p}>{r} "
 
 
 def _chat() -> None:
     """Interactive conversation until the user leaves."""
-    cprint("lightpurple", "🐶 Bosco — interactive mode. 'exit' to leave.")
+    cprint("lightpurple", "🐶  Bosco — interactive mode. 'exit' to leave.")
     cprint("grey", "(Or skip this and just prefix a line: bosco <your question>)")
     prompt = _prompt()
     while True:
@@ -143,11 +155,17 @@ def bosco(prompt: str = None):
 
     bosco("question")  -> one-shot answer
     bosco()            -> interactive conversation
+
+    bosco.show_code = True    -> also echo the code Bosco runs
     """
     if prompt:
         _ask(prompt)
     else:
         _chat()
+
+
+# Echo the code Bosco runs. Off by default; set True to follow along.
+bosco.show_code = False
 
 
 # A line transformer routes plain English to Bosco so you never switch modes:
@@ -159,6 +177,14 @@ _BOSCO_LINE = re.compile(r"^\s*bosco(\s+(?P<rest>.*))?\s*$")
 # from *incomplete* Python (returns None -> a multi-line block still being typed,
 # which we must leave alone so IPython keeps collecting lines).
 _compile = codeop.CommandCompiler()
+
+
+def _is_python(text: str) -> bool:
+    """True if text is complete, valid Python."""
+    try:
+        return _compile(text, "<bosco>", "exec") is not None
+    except (SyntaxError, ValueError, OverflowError):
+        return False
 
 
 def _bosco_transform(lines):
@@ -179,9 +205,17 @@ def _bosco_transform(lines):
         return [f"bosco({rest!r})\n" if rest else "bosco()\n"]
 
     # Auto-route: only single, complete logical lines that aren't valid Python.
-    # Leave multi-line cells and IPython special syntax (magics/shell/help) alone.
-    if "\n" in src or src[0] in "%!/,;@" or src.endswith("?"):
+    # Leave multi-line cells and IPython special syntax (magics/shell) alone.
+    if "\n" in src or src[0] in "%!/,;@":
         return lines
+
+    # A trailing `?` is IPython's help operator only when what precedes it is a
+    # real object (`Model?`, `fs.query?`). People end questions with `?` too, so
+    # anything that isn't a valid expression keeps its question mark and goes to
+    # Bosco -- otherwise IPython answers with "Object `me` not found."
+    if src.endswith("?"):
+        return lines if _is_python(src.rstrip("?")) else [f"bosco({src!r})\n"]
+
     try:
         if _compile(src, "<bosco>", "exec") is None:
             return lines  # incomplete block -> IPython keeps collecting

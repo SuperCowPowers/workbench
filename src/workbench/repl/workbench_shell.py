@@ -328,8 +328,7 @@ class WorkbenchShell:
         else:
             cprint("lightblue", self.help_txt())
 
-    @staticmethod
-    def help_txt():
+    def help_txt(self):
         help_msg = """    Commands:
         - help: Show this help message
         - docs: Open browser to show Workbench Documentation
@@ -341,6 +340,15 @@ class WorkbenchShell:
         - status: Show the current Workbench Status
         - log_(debug/info/important/warning): Set the Workbench log level
         - exit: Exit Workbench REPL"""
+
+        # Bosco is only usable when Bedrock is reachable
+        if self.bedrock_status:
+            help_msg += """
+
+    Bosco (ML Agent):
+        - Just ask: what pxr models do we have?
+        - bosco: Open an interactive conversation
+        - bosco.show_code = True: Echo the code Bosco runs (default: False)"""
         return help_msg
 
     def spinner_start(self, text: str, color: str = "lightpurple") -> Spinner:
