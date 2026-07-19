@@ -11,7 +11,9 @@ GUIDES_DIR = Path(__file__).parent / "guides"
 # Always injected into the system prompt (not offered in the lazy-read menu).
 ALWAYS_LOADED = {"general"}
 
-MAX_OUTPUT_CHARS = 8000
+# Tool output lands in history and is resent every round after, so keep it tight.
+# Hitting this usually means filtering belonged in the query.
+MAX_OUTPUT_CHARS = 4000
 
 
 def guide_names() -> List[str]:

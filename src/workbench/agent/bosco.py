@@ -27,6 +27,10 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 MAX_TOKENS = 8000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 
+# Every round of a turn resends the whole conversation, so an unbounded history
+# costs quadratically over a session. Roughly 50k tokens.
+MAX_HISTORY_CHARS = 200_000
+
 # One conversation for the whole REPL session, shared by one-shot and chat
 _history = []
 _client = None
@@ -74,6 +78,54 @@ def _namespace() -> dict:
     return shell.user_ns if shell else globals()
 
 
+def _history_chars() -> int:
+    return sum(len(str(m["content"])) for m in _history)
+
+
+def _trim_history() -> None:
+    """Drop the oldest exchanges once the conversation gets large.
+
+    Only cuts at a real user prompt, so a tool_use block is never separated from
+    its tool_result -- the API rejects that pairing.
+    """
+    while _history_chars() > MAX_HISTORY_CHARS:
+        cut = next(
+            (
+                i
+                for i in range(1, len(_history))
+                if _history[i]["role"] == "user" and isinstance(_history[i]["content"], str)
+            ),
+            None,
+        )
+        if cut is None:
+            return  # nothing safe to drop
+        del _history[:cut]
+
+
+def _cached_messages() -> list:
+    """History with a cache breakpoint on the newest message.
+
+    Each round of a turn resends tools + system + the whole conversation, so the
+    prefix is identical every time. One rolling breakpoint at the end lets all of
+    it come back as a cache read instead of being re-billed.
+
+    The last message is always a user message here (a prompt or tool results),
+    which is why only those two content shapes need handling.
+    """
+    if not _history:
+        return _history
+    messages = list(_history)
+    last = messages[-1]
+    content = last["content"]
+    if isinstance(content, str):
+        content = [{"type": "text", "text": content}]
+    else:
+        content = [dict(block) for block in content]
+    content[-1] = {**content[-1], "cache_control": {"type": "ephemeral"}}
+    messages[-1] = {**last, "content": content}
+    return messages
+
+
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
     global _client
@@ -87,7 +139,7 @@ def _run_turn(namespace: dict) -> None:
                 max_tokens=MAX_TOKENS,
                 system=_system_prompt(),
                 tools=TOOL_SCHEMAS,
-                messages=_history,
+                messages=_cached_messages(),
             )
 
         text = _text_of(response)
@@ -136,6 +188,7 @@ def _close_pending_tools(note: str) -> None:
 def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
     _history.append({"role": "user", "content": prompt})
+    _trim_history()
     try:
         # Quiet routine INFO chatter from the code Bosco runs; restored afterwards
         with log_level():
