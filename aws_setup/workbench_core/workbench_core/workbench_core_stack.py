@@ -1620,11 +1620,15 @@ class WorkbenchCoreStack(Stack):
 
         An explicit Deny overrides the Allow inherited from the execution policy
         set, so these block destruction of upstream artifacts even though the
-        underlying actions are otherwise granted. DataSource/FeatureSet recreation
-        is a destroy-and-recreate today (overwrite-mode writes), so this also
-        blocks overwriting an existing DataSource/FeatureSet, not just deleting
-        one — that requires the full Execution Role. Model/Endpoint deletes are
-        not denied. See docs/aws_setup/bedrock_security.md.
+        underlying actions are otherwise granted. The denies target the
+        irreplaceable *data* — a DataSource's parquet and a FeatureSet's offline
+        store and Feature Group — not the Glue catalog tables, which are only
+        pointers and are shared with derived Views (dropping a View is a routine,
+        non-destructive `glue:DeleteTable` in the same database). DataSource/
+        FeatureSet recreation is a destroy-and-recreate today (overwrite-mode
+        writes), so this also blocks overwriting an existing one, not just
+        deleting it — that requires the full Execution Role. Model/Endpoint
+        deletes are not denied. See docs/aws_setup/bedrock_security.md.
         """
         return [
             # DataSource + FeatureSet S3 data (parquet, offline store objects).
@@ -1637,13 +1641,6 @@ class WorkbenchCoreStack(Stack):
                     f"arn:aws:s3:::{self.workbench_bucket}/data-sources/*",
                     f"arn:aws:s3:::{self.workbench_bucket}/feature-sets/*",
                 ],
-            ),
-            # DataSource + FeatureSet Glue catalog tables (workbench and
-            # sagemaker_featurestore databases; inference_store is excluded).
-            iam.PolicyStatement(
-                effect=iam.Effect.DENY,
-                actions=["glue:DeleteTable"],
-                resources=self._workbench_database_arns(),
             ),
             # FeatureSet Feature Groups.
             iam.PolicyStatement(

@@ -531,28 +531,25 @@ class AthenaSource(DataSourceAbstract):
             cls.log.info(f"DataSource {table} not found in database {database}.")
             return
 
-        # Delete any views associated with this AthenaSource
-        cls.delete_views(table, database)
-
-        # Delete S3 Storage Objects (if they exist)
         try:
-            # Make an AWS Query to get the S3 storage location
+            # Delete the S3 data first. Under the Builder role this DeleteObject is
+            # denied, so aborting here leaves the catalog table and views intact
+            # rather than dropping them and orphaning the (protected) data.
             s3_path = wr.catalog.get_table_location(database, table, boto3_session=cls.boto3_session)
-
-            # Delete Data Catalog Table
-            cls.log.info(f"Deleting DataCatalog Table: {database}.{table}...")
-            wr.catalog.delete_table_if_exists(database, table, boto3_session=cls.boto3_session)
-
-            # Make sure we add the trailing slash
             s3_path = s3_path if s3_path.endswith("/") else f"{s3_path}/"
             cls.log.info(f"Deleting S3 Storage Objects: {s3_path}...")
             wr.s3.delete_objects(s3_path, boto3_session=cls.boto3_session)
+
+            # Data is gone -- now drop the derived views and the catalog table
+            cls.delete_views(table, database)
+            cls.log.info(f"Deleting DataCatalog Table: {database}.{table}...")
+            wr.catalog.delete_table_if_exists(database, table, boto3_session=cls.boto3_session)
+
+            # Delete any dataframes that were stored in the Dataframe Cache
+            cls.log.info("Deleting Dataframe Cache...")
+            cls.df_cache.delete_recursive(data_source_name)
         except Exception as e:
             cls.log.error(f"Failure when trying to delete {data_source_name}: {e}")
-
-        # Delete any dataframes that were stored in the Dataframe Cache
-        cls.log.info("Deleting Dataframe Cache...")
-        cls.df_cache.delete_recursive(data_source_name)
 
     @classmethod
     def delete_views(cls, table: str, database: str):
