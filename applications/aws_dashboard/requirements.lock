@@ -741,6 +741,7 @@ retrying==1.4.2
 rich==14.3.4
     # via
     #   -c ci/.uv-constraints.txt
+    #   workbench (pyproject.toml)
     #   pyiceberg
     #   sagemaker-core
 rpds-py==2026.5.1

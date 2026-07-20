@@ -38,7 +38,7 @@ fs.to_model(
             "search_space": { ... },  # see below
         },
     },
-    sample_weights={mid: 0.0 for mid in holdout_ids},  # held-out rows don't train
+    validation_ids=holdout_ids,   # kept, marked `validation`, never trained
 )
 ```
 
@@ -60,12 +60,16 @@ publishes.
 
 ### Objective + split
 
-Default objective is **held-out / OOD MAE** — the PXR pattern: zero-weight the
-held-out rows (`split == "phase1_test"`) out of training, then score MAE on
-exactly those rows. Because we write our own objective function (chemprop's
-current hpopt is a Python pattern, not a fixed-`val_loss` CLI), this drops in
-directly. `holdout` rows are designated the same way models already do it —
-via `sample_weights` zeroing.
+Default objective is **held-out / OOD MAE**. It rides on the landed
+validation-set support: designate held-out rows with `validation_ids` (they're
+kept in the training view, marked with a boolean `validation` column, and never
+trained). Inside training, `workbench.training.validation.split_validation_set(df)`
+routes them out of the train/CV path and scores them as an honest held-out set —
+the chemprop template **already prints `holdout_mae`** on exactly these rows. So
+each trial's objective is a metric the training path already emits; the HPO
+harness reuses the same split + scoring rather than re-deriving a holdout. Because
+we write our own objective function (chemprop's hpopt is a Python pattern, not a
+fixed-`val_loss` CLI), this drops in directly.
 
 ### Search space (chemprop defaults)
 
@@ -215,10 +219,11 @@ default to keep the search 4-D and well-conditioned.
 
 ### Objective (prefer OOD, fall back to CV)
 
-- Held-out rows designated (zero-weighted via `sample_weights`) → objective =
-  **MAE on those rows** (`holdout_mae`) — the honest OOD read.
-- None designated → **mean 5-fold CV MAE** (`cv_mae`), using the existing
-  `n_folds`. No extra user setup.
+- `validation_ids` designated (rows marked `validation`, split out via
+  `split_validation_set`) → objective = **MAE on those rows** (`holdout_mae`) —
+  the honest OOD read the chemprop template already emits.
+- None designated (`validation` frame empty) → **mean 5-fold CV MAE** (`cv_mae`),
+  using the existing `n_folds`. No extra user setup.
 - Minimized either way; the active objective is **logged** so it's never ambiguous.
 
 ## Baseline this doesn't need to beat
