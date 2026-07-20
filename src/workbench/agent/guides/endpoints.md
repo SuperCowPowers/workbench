@@ -58,6 +58,47 @@ The saved capture is column-trimmed, so if the user needs extra columns
 alongside predictions, keep the returned DataFrame rather than re-reading the
 capture.
 
+### Where the evaluation data comes from
+
+`test_inference()` doesn't hold a copy of any data — it **backtracks the artifact
+chain** to find it:
+
+```
+Endpoint -> get_input() -> Model -> get_input() -> FeatureSet -> pull_dataframe()
+```
+
+Use the utilities rather than re-deriving that walk:
+
+```python
+from workbench.utils.endpoint_utils import backtrack_to_fs, get_evaluation_data
+
+fs = backtrack_to_fs(end)        # the FeatureSet behind this endpoint
+df = get_evaluation_data(end)    # that FeatureSet, pulled as a DataFrame
+```
+
+This is the starting point for a custom capture: backtrack to the FeatureSet,
+filter the rows you want (a split column, a date range, a compound list), then
+run `inference(subset, capture_name="...")`.
+
+```python
+df = get_evaluation_data(end)
+subset = df[df["split"] == "phase1_test"]
+results = end.inference(subset, capture_name="phase1_test")
+```
+
+When the rows you want are defined by how the model was *trained* (a `split`
+column, sample weights, the validation flag), go through the model's own
+training view instead — it has those columns:
+
+```python
+model = Model(end.get_input())
+df = model.training_view().pull_dataframe()
+subset = df[df["split"] == "phase1_test"]
+```
+
+Never hunt for a view name on the FeatureSet; `model.training_view()` resolves
+it. See the views note in `data_and_features`.
+
 Other flavors:
 
 ```python

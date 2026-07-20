@@ -5,6 +5,33 @@
 The pipeline is `DataSource -> FeatureSet -> Model -> Endpoint`. Each stage is
 an artifact in AWS; each `to_*()` call launches real infrastructure.
 
+## Where to start
+
+When a user says "let's make a model", the first thing to settle is what it is
+built from. **Prefer the shortest chain.** In priority order:
+
+| Input | Chain to a model | |
+|---|---|---|
+| **FeatureSet** | `fs.to_model()` | **recommended** — one call |
+| **DataSource** | `ds.to_features()` → `fs.to_model()` | one extra step |
+| **PublicData** | `pub_data.get()` → `DataSource` → `to_features()` → `to_model()` | |
+| **S3 / local file** | `DataSource(path)` → `to_features()` → `to_model()` | |
+
+**Always check for an existing FeatureSet first:**
+
+```python
+feature_sets()        # or CachedMeta().feature_sets()
+```
+
+FeatureSet → Model is the shortest chain and the one to recommend. Reusing a
+FeatureSet also keeps models comparable, since they train on the same prepared
+data.
+
+The longer chains are perfectly fine — just more work and more decisions to get
+right (`id_column`, one-hot columns, naming). If the user hasn't said what to
+start from, ask rather than assuming, and offer the existing FeatureSets as the
+first option.
+
 ## Flow
 
 ```python
@@ -34,6 +61,30 @@ this costs nothing to leave up.
   uncertainty quantification and keeps comparisons consistent.
 - Check `fs.columns` (a property) and `fs.column_details()` before choosing a
   `feature_list`. Don't guess column names.
+
+## Weights, validation, and exclusions
+
+Three **separate** `to_model()` arguments, each doing exactly one thing. Don't
+try to express one through another.
+
+```python
+model = fs.to_model(
+    ...,
+    sample_weights={id_1: 2.0, id_2: 0.5},   # per-id weight, nothing more
+    validation_ids=[id_3, id_4],             # honest held-out scoring set
+    exclude_ids=[id_5],                      # dropped entirely
+)
+```
+
+- **`sample_weights`** — a `{id: weight}` dict (or a `[id_column,
+  "sample_weight"]` DataFrame), forwarded to the model script as-is. Ids not
+  listed default to `1.0`. It carries **no** role semantics: a weight of `0.0`
+  is just a zero weight, **not** an exclusion. To drop a row, use `exclude_ids`.
+- **`validation_ids`** — kept in the training view and marked, but routed out of
+  training and scored as a genuine held-out set.
+- **`exclude_ids`** — dropped from the training view entirely; no model ever
+  sees them. Use for outliers and anomalies. On overlap it **takes precedence**
+  over `validation_ids`.
 
 ## Dependencies
 

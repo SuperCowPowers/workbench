@@ -25,9 +25,9 @@ reply to you, not code.
 ### Shift+Enter
 
 It doesn't work out of the box, and that's a terminal limitation rather than a
-Workbench one: in the legacy terminal protocol Shift+Enter sends the same byte
-as Enter, so nothing can tell them apart. (The CSI-u protocol that *can* encode
-it has to be negotiated by the application, and the REPL doesn't do that.)
+Workbench one: terminals send the same byte for Shift+Enter as for Enter, so
+nothing can tell them apart. The CSI-u protocol that *can* encode it must be
+negotiated by the application, and the REPL doesn't negotiate it.
 
 Map it to Ctrl-J in the terminal and it works:
 

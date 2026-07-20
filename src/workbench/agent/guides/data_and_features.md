@@ -1,6 +1,6 @@
 # DataSources and FeatureSets
 
-> DataSources and FeatureSets: creation, columns, queries, views
+> DataSources and FeatureSets: columns, queries, views, a model's training data
 
 `DataSource -> FeatureSet` is the front half of the pipeline. A DataSource is
 the landed, queryable data; a FeatureSet is the modeling-ready version with an
@@ -77,19 +77,26 @@ back silently truncated. Check `fs.num_rows` first, and push filtering and
 aggregation into `query()` rather than pulling everything to count or average
 it in pandas.
 
-## Views
+**`query()` returns `None` on failure — it does not raise.** A bad table or
+column logs a CRITICAL and hands back `None`, so the error surfaces later as a
+confusing `'NoneType' object has no attribute ...`. Check the result before
+using it, and read the log line rather than debugging the `None`.
 
-A FeatureSet has views — different column subsets over the same rows.
+## A model's training data
+
+**`model.training_view().pull_dataframe()`** — always. It resolves the right
+view for that model and carries training-only columns the raw FeatureSet pull
+lacks: `sample_weight`, `validation`, and any `split` column.
 
 ```python
-fs.views()                        # available view names
-fs.view("training").pull_dataframe()
-fs.set_display_columns([...])     # what the UI shows
-fs.set_computation_columns([...]) # what gets computed on
+view = model.training_view()
+view.table                        # Athena table name, for query()
+df = view.pull_dataframe()
 ```
 
-The `training` view is what `to_model()` trains from, so inspect it when a
-model's feature list looks wrong.
+Never go looking for a training view on the FeatureSet — there isn't one to
+find, and guessing a name logs "cannot be auto-created" then fails with a
+confusing `TABLE_NOT_FOUND` on the follow-up query.
 
 ## Provenance
 

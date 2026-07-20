@@ -15,6 +15,19 @@ meta.models()               # fast, partial columns
 meta.models(details=True)   # all columns, slower
 ```
 
+The column names, so you don't have to guess (`details=True` changes which are
+**populated**, not which exist — the set is the same either way):
+
+```
+models()     Model Group, Health, Owner, Type, Framework, Created, Modified,
+             Ver, Input, Status, Description, Tags
+endpoints()  Name, Health, Owner, Instance, Created, Modified, Input, Status,
+             Config, Variant, Capture, Samp(%), Tags, Monitored
+```
+
+Note it is `Type`, not "Model Type", and `Model Group`, not "Name", for models —
+endpoints use `Name`. Print `df.columns.tolist()` if unsure rather than guessing.
+
 The REPL also exposes these as bare commands:
 
 ```python
