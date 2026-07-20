@@ -1,6 +1,6 @@
 # Plotting
 
-> matplotlib plots that are actually readable
+> readable matplotlib plots, including labeled molecule structure grids
 
 Use **matplotlib**. Make sure text, legends, and axis labels have enough space to
 be readable — a cramped plot is a useless plot.
@@ -73,3 +73,33 @@ prediction.
 
 For large scatter plots use `alpha=0.3` and `s=10` so the dense regions stay
 readable instead of turning into a solid block.
+
+## Molecule structure panels
+
+When the point is chemistry — an activity cliff, nearest neighbors, the top
+residuals — render the actual structures in a labeled grid. Seeing near-identical
+scaffolds with opposite activity tells the story a scatter plot can't.
+
+`molecule_grid()` handles the layout (grid sizing, axis-off, invalid-SMILES gaps,
+blank cells). You supply three parallel lists — SMILES, captions, and caption
+colors — and it returns a matplotlib figure.
+
+```python
+from workbench.utils.chem_utils.vis import molecule_grid
+
+smiles_col = next(c for c in df.columns if c.lower() == "smiles")   # see `compounds`
+smiles = df[smiles_col].tolist()
+captions = [f"{r.id}\npec50 = {r.pec50:.2f}" for r in df.itertuples()]
+# Color captions by role so the pattern jumps out at a glance
+colors = ["gold" if r.is_query else "#87d75f" if r.pec50 >= 5 else "salmon" for r in df.itertuples()]
+
+fig = molecule_grid(smiles, captions, colors, suptitle="Activity cliff: OADMET-0002753 vs neighbors")
+fig.show()                                          # or fig.savefig(path, dpi=150, bbox_inches="tight")
+```
+
+- **Caption every tile** with the id and the values that matter (activity,
+  Tanimoto, predicted vs measured) — the structure alone isn't identifiable.
+- **Color-code by role** (query vs active vs inactive, hit vs miss). Captions sit
+  on the white figure, so any readable color works.
+- The caller owns the domain choices (caption text, colors); `molecule_grid`
+  just lays them out. It already guards unparseable SMILES.

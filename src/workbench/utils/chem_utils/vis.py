@@ -255,6 +255,62 @@ def show(smiles: str, width: int = 500, height: int = 500, background: str = "rg
         log.error(f"Cannot display molecule for SMILES: {smiles}")
 
 
+def molecule_grid(
+    smiles: list,
+    captions: list = None,
+    caption_colors: list = None,
+    ncols: int = 3,
+    mol_size: int = 400,
+    suptitle: str = None,
+):
+    """Lay out molecule structures in a labeled matplotlib grid.
+
+    Handles the grid mechanics -- sizing, axis-off, invalid-SMILES gaps, blank
+    trailing cells -- and leaves the domain choices (what each caption says, what
+    color it is) to the caller. Ideal for activity cliffs, nearest neighbors, and
+    top-residual panels where seeing the structures side by side tells the story.
+
+    Args:
+        smiles (list[str]): One SMILES per molecule.
+        captions (list[str], optional): Caption under each molecule (id, metrics).
+            None for no captions.
+        caption_colors (list[str], optional): Per-caption color (any matplotlib
+            color, e.g. "gold", "#87d75f"). Defaults to black (readable on the
+            white figure).
+        ncols (int, optional): Columns in the grid. Defaults to 3.
+        mol_size (int, optional): Rendered size of each molecule in pixels.
+            Defaults to 400.
+        suptitle (str, optional): Figure-level title.
+
+    Returns:
+        matplotlib.figure.Figure: The grid figure. The caller shows or saves it:
+            `fig.show()`, or `fig.savefig(path, dpi=150, bbox_inches="tight")`.
+    """
+    import matplotlib.pyplot as plt
+
+    n = len(smiles)
+    nrows = -(-n // ncols)  # ceil
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5 * ncols, 5 * nrows), constrained_layout=True)
+    axes = list(axes.flat) if hasattr(axes, "flat") else [axes]
+
+    for i, ax in enumerate(axes):
+        ax.axis("off")
+        if i >= n:
+            continue  # blank trailing cell
+        img = img_from_smiles(smiles[i], width=mol_size, height=mol_size)
+        if img is not None:
+            ax.imshow(img)
+        else:
+            ax.text(0.5, 0.5, "invalid SMILES", ha="center", va="center", color="grey")
+        if captions is not None:
+            color = caption_colors[i] if caption_colors is not None else "black"
+            ax.set_title(captions[i], color=color, fontsize=12)
+
+    if suptitle:
+        fig.suptitle(suptitle, fontsize=14, fontweight="bold")
+    return fig
+
+
 if __name__ == "__main__":
     # Test suite
     print("Running molecular visualization tests...")
@@ -344,6 +400,23 @@ if __name__ == "__main__":
         tuple_match = all(abs(a - b) < 0.01 for a, b in zip(tuple_result, expected_tuple))
         tuple_status = "✓" if tuple_match else "✗"
         print(f"   {tuple_status} rgba_to_tuple('{color[:20]}...'): matches expected")
+
+    # Test 7: molecule_grid layout
+    print("\n7. Testing molecule_grid...")
+    import matplotlib
+
+    matplotlib.use("Agg")  # headless
+    grid_smiles = [test_molecules["benzene"], test_molecules["caffeine"], test_molecules["invalid"]]
+    fig = molecule_grid(
+        grid_smiles,
+        captions=["benzene", "caffeine", "bad"],
+        caption_colors=["gold", "#87d75f", "salmon"],
+        ncols=2,
+        suptitle="Test grid",
+    )
+    n_axes = len(fig.axes)
+    print(f"   {'✓' if n_axes == 4 else '✗'} 3 mols, ncols=2 -> 2x2 = 4 axes: {n_axes}")
+    matplotlib.pyplot.close(fig)
 
     # Test the tooltip generation in a simple Dash app
     from dash import Dash

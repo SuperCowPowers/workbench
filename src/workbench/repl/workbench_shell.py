@@ -40,6 +40,7 @@ except ImportError:
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
+from workbench.utils.color_utils import hex_color
 from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
@@ -83,21 +84,17 @@ log.addFilter(
 )
 
 
-# We want to customize our prompt colors
+# Prompt token colors, all sourced from the color_utils palette (single source
+# of truth) so they can't drift from the cprint / markdown colors.
 prompt_styles = {
-    Token.Workbench: "#af87ff",  # Light Purple color for Workbench
-    Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
-    Token.Lightblue: "#5fd7ff",
-    Token.Lightpurple: "#af87ff",
-    Token.Lightgreen: "#87ff87",
-    Token.Lime: "#afff00",
-    Token.Darkyellow: "#ddb777",
-    Token.Orange: "#ff8700",
-    Token.Red: "#dd0000",
-    Token.Blue: "#4444d7",
-    Token.Green: "#22cc22",
-    Token.Yellow: "#ffd787",
-    Token.Grey: "#aaaaaa",
+    Token.Workbench: hex_color("lightpurple"),
+    Token.AWSProfile: hex_color("darkyellow"),
+    Token.Lightpurple: hex_color("lightpurple"),
+    Token.Lightgreen: hex_color("lightgreen"),
+    Token.Orange: hex_color("orange"),
+    Token.Red: hex_color("red"),
+    Token.Blue: hex_color("royalblue"),
+    Token.Grey: hex_color("lightgrey"),
 }
 
 
@@ -440,9 +437,8 @@ class WorkbenchShell:
         cprint("yellow", "\nContests:")
         for row in rows:
             name = (row["contest"] + " " * 24)[:24]
-            champ = row["champion"] or "(none)"
-            flag = "contested" if row["contested"] else "settled"
-            flag_color = "orange" if row["contested"] else "grey"
+            flag = "contested" if row["contested"] else "stable"
+            flag_color = "lightgreen" if row["contested"] else "grey"
             when = row["timestamp"].strftime("%Y-%m-%d") if row["timestamp"] is not None else ""
             cprint(
                 [
@@ -450,10 +446,8 @@ class WorkbenchShell:
                     "\t" + name,
                     flag_color,
                     (flag + " " * 10)[:10],
-                    "purple_blue",
-                    f" {champ}  ",
                     "grey",
-                    f"({row['challengers']} challengers)  {when}",
+                    f" ({row['challengers']} challengers)  {when}",
                 ]
             )
 
@@ -505,13 +499,13 @@ class WorkbenchShell:
 
         # AWS Account Status
         if self.aws_status:
-            _status_lights.append((Token.Green, "●"))
+            _status_lights.append((Token.Lightgreen, "●"))
         else:
             _status_lights.append((Token.Red, "●"))
 
         # Cached Meta Status
         if self.meta_status == "CACHED":
-            _status_lights.append((Token.Green, "●"))
+            _status_lights.append((Token.Lightgreen, "●"))
         elif self.meta_status == "DIRECT":
             _status_lights.append((Token.Blue, "●"))
         elif self.meta_status == "FAIL":
@@ -523,7 +517,7 @@ class WorkbenchShell:
         if self.open_source_api_key:
             _status_lights.append((Token.Lightpurple, "●"))
         else:
-            _status_lights.append((Token.Green, "●"))
+            _status_lights.append((Token.Lightgreen, "●"))
 
         _status_lights.append((Token.Blue, "]"))
 

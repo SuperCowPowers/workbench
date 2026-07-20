@@ -5,71 +5,9 @@ import itertools
 import time
 import sys
 
-# Colors
-colors = {
-    "lightblue": "\x1b[38;5;69m",
-    "lightpurple": "\x1b[38;5;141m",
-    "lightgreen": "\x1b[38;5;113m",
-    "lime": "\x1b[38;5;154m",
-    "darkyellow": "\x1b[38;5;220m",
-    "orange": "\x1b[38;5;208m",
-    "red": "\x1b[38;5;198m",
-    "pink": "\x1b[38;5;213m",
-    "magenta": "\x1b[38;5;206m",
-    "tan": "\x1b[38;5;179m",
-    "lighttan": "\x1b[38;5;180m",
-    "yellow": "\x1b[38;5;226m",
-    "green": "\x1b[38;5;34m",
-    "blue": "\x1b[38;5;21m",
-    "purple": "\x1b[38;5;91m",
-    "purple_blue": "\x1b[38;5;63m",
-    "lightgrey": "\x1b[38;5;250m",
-    "grey": "\x1b[38;5;244m",
-    "darkgrey": "\x1b[38;5;240m",
-    "reset": "\x1b[0m",
-}
-
-
-def cprint(*args):
-    """
-    Print text in color. Supports either a single color and text or a list of color-text pairs.
-
-    Args:
-         A single color and text or a list of color-text pairs.
-         For example: cprint('red', 'Hello') or cprint(['red', 'Hello', 'green', 'World'])
-    """
-    if isinstance(args[0], list):
-        args = args[0]
-    # Iterate over the arguments in pairs of color and text
-    for i in range(0, len(args), 2):
-        print(f"{colors[args[i]]}{args[i + 1]}{colors['reset']}", end=" ")
-    print()  # Print a newline at the end
-
-
-def render_markdown(text: str) -> None:
-    """Render markdown (tables, bold, headers, lists) in the terminal.
-
-    Used for the Bosco agent's replies: prose in Bosco's blue, code and bold in
-    green with no background box, table cells left default (white). Falls back to
-    plain colored text if rich is unavailable.
-    """
-    try:
-        from rich.console import Console
-        from rich.markdown import Markdown
-        from rich.theme import Theme
-    except ImportError:
-        cprint("lightblue", text)
-        return
-
-    theme = Theme(
-        {
-            "markdown.text": "color(69)",  # prose in Bosco's blue
-            "markdown.paragraph": "color(69)",
-            "markdown.code": "bold color(113)",  # inline code: green, no bg box
-            "markdown.strong": "bold color(113)",  # bold: green, no bg box
-        }
-    )
-    Console(theme=theme).print(Markdown(text))
+# The color palette, cprint, and markdown rendering live in color_utils (the one
+# place colors are defined). Re-exported here for the many `repl_utils` importers.
+from workbench.utils.color_utils import colors, cprint, render_markdown  # noqa: F401
 
 
 def status_lights(status_colors: list[str]):
