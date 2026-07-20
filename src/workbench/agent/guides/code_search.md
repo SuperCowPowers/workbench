@@ -1,5 +1,7 @@
 # Searching the Workbench Source
 
+> read the installed source to check a signature, default, or behavior
+
 When you need the real signature, the actual default, or how something is
 implemented — read the source instead of guessing. It ships with the package, so
 it is always available and always matches the version the user is running.

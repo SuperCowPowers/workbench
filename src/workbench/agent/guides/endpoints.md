@@ -1,12 +1,10 @@
 # Endpoints and Inference
 
+> endpoint creation, inference, captures, async, DataFrame contract
+
 An Endpoint serves a Model. Inference runs on the Endpoint, but the results are
 stored on the **Model** — see the Model/Endpoint interaction note in
 `making_models`.
-
-**Name your handles `model` and `end`.** Variables you create stay in the user's
-session, so use the names they expect: `end = Endpoint(...)` and
-`model = Model(...)`. Not `e`, not `ep`, not `my_endpoint`.
 
 ## DataFrame in, DataFrame out
 

@@ -1,5 +1,7 @@
 # Uncertainty Quantification
 
+> uncertainty quantification: confidence scores, prediction intervals
+
 A prediction without a confidence is half an answer. In drug discovery, knowing
 *how much to trust* a number often matters more than the number — it decides
 whether someone synthesizes a compound.

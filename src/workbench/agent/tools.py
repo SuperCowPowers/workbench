@@ -21,6 +21,23 @@ def guide_names() -> List[str]:
     return sorted(p.stem for p in GUIDES_DIR.glob("*.md") if p.stem not in ALWAYS_LOADED)
 
 
+def guide_index() -> str:
+    """Guide names with their one-line descriptions, for the system prompt.
+
+    Names alone don't tell Claude what a guide covers, so it skips ones that
+    would have answered the question. The description is the `> one-liner`
+    under each guide's H1, so the index stays in sync with the files.
+    """
+    entries = []
+    for path in sorted(GUIDES_DIR.glob("*.md")):
+        if path.stem in ALWAYS_LOADED:
+            continue
+        head = path.read_text().splitlines()[:5]
+        desc = next((line.lstrip("> ").strip() for line in head if line.startswith(">")), "")
+        entries.append(f"  {path.stem:18} {desc}" if desc else f"  {path.stem}")
+    return "\n".join(entries)
+
+
 def general_guide() -> str:
     """The always-loaded general instructions, injected into the system prompt."""
     path = GUIDES_DIR / "general.md"

@@ -1,5 +1,7 @@
 # Making Models
 
+> build a model, deploy an endpoint, and score it
+
 The pipeline is `DataSource -> FeatureSet -> Model -> Endpoint`. Each stage is
 an artifact in AWS; each `to_*()` call launches real infrastructure.
 
@@ -23,9 +25,6 @@ this costs nothing to leave up.
 
 ## Conventions
 
-- **Name your handles `model` and `end`.** Variables you create live on in the
-  user's session, so use the names they expect: `model = Model(...)` and
-  `end = Endpoint(...)`. Not `m`, not `mdl`, not `my_model`.
 - `id_column` is **required** on `to_features()`. If the data has no natural id,
   say so — don't invent a row index silently.
 - Name models by role: `-reg` regression, `-class` classification. Endpoints are

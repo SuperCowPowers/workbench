@@ -1,5 +1,7 @@
 # The API Classes — Lego Pieces
 
+> the core classes and how they compose into pipelines
+
 Workbench is a small set of classes with **uniform connectors**. That is the
 whole design: few shapes, predictable interfaces, so they compose instead of
 locking you into one path.

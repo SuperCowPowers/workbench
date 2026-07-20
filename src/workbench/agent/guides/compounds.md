@@ -1,5 +1,7 @@
 # Compounds
 
+> SMILES columns in DataFrames; rendering molecules with show()
+
 Most Workbench data is chemistry: a row is a compound, with an id, a SMILES
 string, and measured or predicted values. So DataFrames coming back from almost
 anywhere carry a SMILES column:

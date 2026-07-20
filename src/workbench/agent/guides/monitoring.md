@@ -1,5 +1,7 @@
 # Endpoint Monitoring
 
+> endpoint drift monitoring: baselines, schedules, alerts
+
 A `Monitor` wraps a deployed Endpoint with data capture and model-quality
 monitoring: capture live traffic, compare it against a baseline built from the
 training data, and flag drift.

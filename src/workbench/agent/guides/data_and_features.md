@@ -1,5 +1,7 @@
 # DataSources and FeatureSets
 
+> DataSources and FeatureSets: creation, columns, queries, views
+
 `DataSource -> FeatureSet` is the front half of the pipeline. A DataSource is
 the landed, queryable data; a FeatureSet is the modeling-ready version with an
 id column and a feature store behind it.

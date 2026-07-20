@@ -1,5 +1,7 @@
 # ML Pipelines
 
+> declared artifact DAGs, their on-disk definitions, launching them
+
 A pipeline is a **declared DAG of artifacts** — which scripts produce which
 DataSources, FeatureSets, Models, and Endpoints. It is a definition on disk, not
 a running service: the DAG describes the dependency graph, and a launcher runs
@@ -42,7 +44,8 @@ ml_pipelines/
 }
 ```
 
-- Artifact ids are `type:name`, where type is `ds`, `fs`, `model`, or `endpoint`.
+- Artifact ids are `type:name`, where type is `ds`, `fs`, `model`, `endpoint`,
+  or `public` (a public dataset, e.g. `public:comp_chem/logd/logd_all`).
 - A step's `inputs`/`outputs` are what create the edges — the DAG is derived, not
   written by hand.
 - `script` is a path next to the JSON, or `workbench:...` for a built-in plugin
@@ -82,6 +85,51 @@ pl["links"][0]                        # {'source': 'ds:...', 'target': 'fs:...'}
 
 `networkx` is available if the user wants real graph work (topological order,
 ancestors of a node, orphan detection).
+
+## Is this artifact in a pipeline?
+
+**Use the utility — do not hand-roll the search.** The hierarchy nests
+(groups contain subgroups) and promoted models carry a date suffix the pipeline
+does not declare. Both are easy to miss and produce confident wrong answers.
+
+```python
+from workbench.utils.pipeline_utils import find_pipelines
+
+find_pipelines("pxr-reg-chemprop-mt-logd-260715")
+# [{'group': 'pxr', 'pipeline': 'openadmet_pxr', 'matched': 'model:pxr-reg-chemprop-mt-logd'}]
+
+find_pipelines("pxr-reg-v1", "endpoint")     # other types: ds, fs, endpoint, public
+```
+
+The `matched` field shows which node id actually hit, so you can tell the user
+whether it matched directly or via the de-promoted base name.
+
+### Promoted models carry a date suffix
+
+Promotion copies the winning model to `<base-name>-YYMMDD` and hands that copy
+the endpoint. The dated copy is the champion; the **base name** is what the
+pipeline declares.
+
+```
+model:pxr-reg-chemprop-mt-logd            <- declared pipeline node
+pxr-reg-chemprop-mt-logd-260715           <- promoted champion, 2026-07-15
+```
+
+`find_pipelines()` strips the suffix for you. A promoted model **is** part of
+its pipeline — it is the winner that pipeline produced. Saying "not in a
+pipeline" because the dated name isn't a node is wrong.
+
+An empty result is still a real answer: models built ad hoc in a REPL session
+are in no pipeline, and that is normal.
+
+## Show me the pipelines
+
+For "show me the pipelines" or a visual look at a DAG, open the dashboard page:
+
+```python
+from workbench.utils.dashboard_utils import open_page
+open_page("ml_pipelines")
+```
 
 ## Running one
 

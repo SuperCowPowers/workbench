@@ -1,23 +1,24 @@
 """Bosco: the Workbench ML agent.
 
 Runs Claude (via Bedrock) in the REPL with tools that execute against the
-user's live session. Two ways to reach it, sharing one conversation:
+user's live session. Anything typed that isn't valid Python is routed here:
 
-    bosco what pxr models do we have?     # one-shot, stay in the REPL
-    bosco                                 # open an interactive conversation
+    what pxr models do we have?           # auto-routed
+    bosco what models do we have          # explicit, for text that IS valid Python
 """
 
 import re
 import codeop
+import keyword
+import builtins
 import logging
 from contextlib import contextmanager
 
 # Workbench Imports
-from workbench.utils.repl_utils import cprint, colors, Spinner
+from workbench.utils.repl_utils import cprint, Spinner
 from workbench.utils.log_utils import log_level
 from workbench.utils.bedrock_utils import claude_client, DEFAULT_MODEL
-from workbench.utils.config_manager import ConfigManager
-from workbench.agent.tools import TOOL_SCHEMAS, dispatch, guide_names, general_guide
+from workbench.agent.tools import TOOL_SCHEMAS, dispatch, guide_index, general_guide
 
 log = logging.getLogger("workbench")
 
@@ -45,14 +46,18 @@ them afterwards, so use clear names and tell them what you left behind.
 
 {general}
 
-Guides available via read_guide: {guides}
-Read the relevant guide before building anything non-trivial."""
+Guides available via read_guide:
+{guides}
+
+Read the relevant guide before building anything non-trivial, and whenever one
+covers what the user is asking about. They are authoritative -- prefer them over
+your own assumptions rather than answering from general knowledge."""
 
 
 def _system_prompt() -> str:
     return SYSTEM_PROMPT.format(
         general=general_guide().strip(),
-        guides=", ".join(guide_names()) or "(none)",
+        guides=guide_index() or "  (none)",
     )
 
 
@@ -199,43 +204,19 @@ def _ask(prompt: str) -> None:
         cprint("red", f"{type(e).__name__}: {e}")
 
 
-def _prompt() -> str:
-    """A colored '🐶 bosco:<config>>' prompt with the active AWS profile."""
-    profile = ConfigManager().get_config("AWS_PROFILE") or "default"
-    p, c, g, r = colors["lightpurple"], colors["darkyellow"], colors["grey"], colors["reset"]
-    return f"\n🐶  {p}bosco{g}:{c}{profile}{p}>{r} "
-
-
-def _chat() -> None:
-    """Interactive conversation until the user leaves."""
-    cprint("lightpurple", "🐶  Bosco — interactive mode. 'exit' to leave.")
-    cprint("grey", "(Or skip this and just prefix a line: bosco <your question>)")
-    prompt = _prompt()
-    while True:
-        try:
-            user_input = input(prompt).strip()
-        except (EOFError, KeyboardInterrupt):
-            break
-        if not user_input:
-            continue
-        if user_input.lower() in ("exit", "quit", "bye"):
-            break
-        _ask(user_input)
-    cprint("lightpurple", "Bosco out.")
-
-
 def bosco(prompt: str = None):
     """Chat with Bosco, the Workbench ML agent.
 
-    bosco("question")  -> one-shot answer
-    bosco()            -> interactive conversation
+    Just type a question at the prompt -- anything that isn't valid Python is
+    routed here. `bosco <question>` works too, for text that is valid Python.
 
     bosco.show_code = True    -> also echo the code Bosco runs
     """
     if prompt:
         _ask(prompt)
-    else:
-        _chat()
+        return
+    cprint("lightpurple", "🐶  Just ask -- type a question at the prompt.")
+    cprint("grey", "(⌥ Option+Enter or Ctrl-J for a new line. bosco.show_code = True to see the code.)")
 
 
 # Echo the code Bosco runs. Off by default; set True to follow along.
@@ -251,6 +232,11 @@ _BOSCO_LINE = re.compile(r"^\s*bosco(\s+(?P<rest>.*))?\s*$")
 # from *incomplete* Python (returns None -> a multi-line block still being typed,
 # which we must leave alone so IPython keeps collecting lines).
 _compile = codeop.CommandCompiler()
+
+
+def _defined(name: str) -> bool:
+    """True if the name resolves in the REPL session or as a builtin."""
+    return name in _namespace() or hasattr(builtins, name)
 
 
 def _is_python(text: str) -> bool:
@@ -278,9 +264,8 @@ def _bosco_transform(lines):
             return lines
         return [f"bosco({rest!r})\n" if rest else "bosco()\n"]
 
-    # Auto-route: only single, complete logical lines that aren't valid Python.
-    # Leave multi-line cells and IPython special syntax (magics/shell) alone.
-    if "\n" in src or src[0] in "%!/,;@":
+    # Leave IPython special syntax (magics, shell) alone.
+    if src[0] in "%!/,;@":
         return lines
 
     # A trailing `?` is IPython's help operator only when what precedes it is a
@@ -290,12 +275,34 @@ def _bosco_transform(lines):
     if src.endswith("?"):
         return lines if _is_python(src.rstrip("?")) else [f"bosco({src!r})\n"]
 
+    # A lone undefined name could only ever raise NameError, so it is a reply to
+    # Bosco ("both", "yes", "metrics"), not code. Defined names still run.
+    if src.isidentifier() and not keyword.iskeyword(src) and not _defined(src):
+        return [f"bosco({src!r})\n"]
+
     try:
         if _compile(src, "<bosco>", "exec") is None:
             return lines  # incomplete block -> IPython keeps collecting
     except (SyntaxError, ValueError, OverflowError):
         return [f"bosco({src!r})\n"]  # not Python -> a question for Bosco
     return lines  # valid Python -> run it normally
+
+
+def _install_newline_keys(shell) -> None:
+    """Make Ctrl-J / Option+Enter insert a newline at the main REPL prompt.
+
+    Terminals can't send a distinct Shift+Enter, so users map it to Ctrl-J
+    (hex 0x0a). Ctrl-J otherwise behaves as Enter, which is what we are
+    deliberately overriding.
+    """
+    app = getattr(shell, "pt_app", None)
+    if app is None:  # simple prompt / no terminal
+        return
+
+    @app.key_bindings.add("c-j")
+    @app.key_bindings.add("escape", "enter")
+    def _newline(event):
+        event.current_buffer.insert_text("\n")
 
 
 def register():
@@ -305,3 +312,4 @@ def register():
     shell = get_ipython()
     if shell and _bosco_transform not in shell.input_transformers_cleanup:
         shell.input_transformers_cleanup.append(_bosco_transform)
+        _install_newline_keys(shell)

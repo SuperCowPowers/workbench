@@ -1,5 +1,7 @@
 # The Workbench Dashboard
 
+> the web dashboard, its pages, plugins, and artifact deep links
+
 A Dash/Plotly web app over the **same artifacts** the REPL works with — no
 separate data, no sync step. A model you create in the REPL shows up in the
 dashboard; the dashboard is the visual view, the REPL is the programmatic one.
@@ -14,12 +16,20 @@ Each artifact page takes a `?name=` query parameter, so you can hand the user a
 clickable deep link instead of describing where to click:
 
 ```python
-from workbench.utils.dashboard_utils import artifact_url
-artifact_url("model", "aqsol-fingerprint-reg-v1")
+from workbench.utils.dashboard_utils import artifact_url, open_artifact
+
+artifact_url("model", "aqsol-fingerprint-reg-v1")   # just the link
 # https://workbench-dashboard.com/models?name=aqsol-fingerprint-reg-v1
+
+open_artifact("model", "aqsol-fingerprint-reg-v1")  # opens a browser, returns the URL
 ```
 
 Types: `data_source`, `feature_set`, `model`, `endpoint`, `pipeline`.
+
+Which to use: **"show me / open / pull up X in the dashboard" → `open_artifact()`**,
+then say what you opened. If they just want a link to keep or share, or you're
+mentioning the page in passing, use `artifact_url()` and print it. Don't launch
+a browser the user didn't ask for.
 
 The base URL comes from the `DASHBOARD_URL` config value, which **returns None
 when unset** — it is not discoverable from AWS. If you get None, don't guess or

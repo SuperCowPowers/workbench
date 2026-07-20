@@ -1,5 +1,7 @@
 # Exploring What Exists
 
+> find what already exists in the account; health tags
+
 Start here before building anything — most questions are answered by what's
 already in the account.
 

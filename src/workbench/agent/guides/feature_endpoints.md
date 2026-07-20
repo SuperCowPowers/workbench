@@ -1,5 +1,7 @@
 # Feature Endpoints
 
+> SMILES-to-descriptor endpoints; avoiding train/inference skew
+
 A feature endpoint is an Endpoint that computes **features instead of
 predictions** — it holds no trained model. Model type is
 `ModelType.TRANSFORMER`. Send it SMILES, get molecular descriptors back.

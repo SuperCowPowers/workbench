@@ -1,5 +1,7 @@
 # Public Data
 
+> public S3 sample datasets for demos and experiments
+
 Read-only sample datasets in a public S3 bucket (`workbench-public-data`).
 Access is anonymous — no credentials, no AWS permissions needed — so this is a
 safe way to get real data for demos, tests, and experiments.

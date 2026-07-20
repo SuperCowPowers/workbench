@@ -1,5 +1,7 @@
 # Plotting
 
+> matplotlib plots that are actually readable
+
 Use **matplotlib**. Make sure text, legends, and axis labels have enough space to
 be readable — a cramped plot is a useless plot.
 
