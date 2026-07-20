@@ -5312,11 +5312,13 @@ allows, no more and no less. It is a faster way to drive the same APIs you
 already use, not a separate privilege.</p>
 <p>Two controls bound that reach:</p>
 <ul>
-<li><strong>IAM is the hard boundary.</strong> The agent can only touch what the role can
-  touch. For exploration where nothing should change, start the REPL under the
-  <strong>read-only role</strong> (<a href="../sso_assume_role/">Grant Access</a>) — AWS then denies
-  every write outright, regardless of what any prompt says. This is the control
-  to lean on when it matters.</li>
+<li><strong>IAM is the hard boundary.</strong> By default the REPL runs under the
+  <strong>Builder role</strong> (<a href="../sso_assume_role/">Grant Access</a>) — full create, train,
+  and read, but AWS refuses to delete or overwrite a DataSource or FeatureSet,
+  regardless of what any prompt says. Removing those upstream artifacts requires
+  deliberately launching under the Execution role. This is the control to lean
+  on: no prompt, mistaken or otherwise, can destroy an upstream artifact from a
+  Builder session.</li>
 <li><strong>Irreversible actions are confirmed.</strong> Before deleting or overwriting an
   artifact, dropping a table, or standing up a realtime endpoint, the agent
   states exactly what it will affect and waits for your explicit go-ahead. It
@@ -5324,8 +5326,8 @@ already use, not a separate privilege.</p>
   to guess which artifacts a vague phrase refers to.</li>
 </ul>
 <p>The first is a mechanism; the second is behavior. Where the two disagree — a
-write you did not intend — the read-only role wins, which is why it is the
-recommended default for anyone who is only exploring.</p>
+delete you did not intend — the Builder role wins, which is why it is the role
+the REPL launches with by default.</p>
 <h2 id="retention-and-training">Retention and training</h2>
 <p>Under the AWS service terms for third-party models on Bedrock, you retain all
 rights to your inputs, you own the outputs, and the model provider may not

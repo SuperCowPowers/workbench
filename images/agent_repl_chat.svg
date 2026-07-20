@@ -40,9 +40,9 @@
   <!-- Chat channel -->
   <text x="420" y="102" text-anchor="middle" font-size="17" font-weight="700" fill="#42A5F5">chat</text>
   <line x1="305" y1="120" x2="535" y2="120" stroke="#42A5F5" stroke-width="2.5" marker-start="url(#rc-blue)" marker-end="url(#rc-blue)"/>
-  <text x="420" y="150" text-anchor="middle" font-size="14" font-style="italic" fill="#8f8f8f">“review this”</text>
-  <text x="420" y="172" text-anchor="middle" font-size="14" font-style="italic" fill="#8f8f8f">“show me an example”</text>
-  <text x="420" y="194" text-anchor="middle" font-size="14" font-style="italic" fill="#8f8f8f">“take it from here”</text>
+  <text x="420" y="152" text-anchor="middle" font-size="18" font-style="italic" fill="#aab2c0">“review this”</text>
+  <text x="420" y="180" text-anchor="middle" font-size="18" font-style="italic" fill="#aab2c0">“show me an example”</text>
+  <text x="420" y="208" text-anchor="middle" font-size="18" font-style="italic" fill="#aab2c0">“take it from here”</text>
 
   <!-- Both drive the shared session -->
   <line x1="180" y1="175" x2="330" y2="318" stroke="#8f8f8f" stroke-width="2.5" marker-start="url(#rc-gray)" marker-end="url(#rc-gray)"/>
