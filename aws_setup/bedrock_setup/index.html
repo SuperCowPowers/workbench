@@ -12,7 +12,7 @@
         <link rel="prev" href="../compute_stack/">
       
       
-        <link rel="next" href="../dashboard_stack/">
+        <link rel="next" href="../bedrock_security/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Amazon Bedrock Setup - ADMET Workbench</title>
+        <title>AWS Bedrock Setup - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#amazon-bedrock-setup" class="md-skip">
+        <a href="#aws-bedrock-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Amazon Bedrock Setup
+              AWS Bedrock Setup
             
           </span>
         </div>
@@ -1839,6 +1839,34 @@
     
   
     OverView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blogs/ml_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Workbench ML Agent
   
 
     
@@ -3799,6 +3827,62 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../full_pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verify - Full Pipeline Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../redis_tunnel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis Access (SSM Tunnel)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -3812,17 +3896,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_22_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_22_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_22_4" id="__nav_22_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_22_6" id="__nav_22_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-    Administrator Setup
+    Administrators
   
 
     
@@ -3833,12 +3917,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_22_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_22_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_22_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_22_6">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Administrator Setup
+    Administrators
   
 
           </label>
@@ -4007,7 +4091,7 @@
   <span class="md-ellipsis">
     
   
-    Amazon Bedrock Setup
+    AWS Bedrock Setup
   
 
     
@@ -4025,7 +4109,7 @@
   <span class="md-ellipsis">
     
   
-    Amazon Bedrock Setup
+    AWS Bedrock Setup
   
 
     
@@ -4138,6 +4222,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../bedrock_security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Bedrock Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dashboard_stack/" class="md-nav__link">
         
   
@@ -4190,62 +4302,6 @@
           </ul>
         </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../full_pipeline/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Verify - Full Pipeline Test
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../redis_tunnel/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Redis Access (SSM Tunnel)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -5092,12 +5148,14 @@
 
 
 
-<h1 id="amazon-bedrock-setup">Amazon Bedrock Setup</h1>
+<h1 id="aws-bedrock-setup">AWS Bedrock Setup</h1>
 <p>The Workbench ML agent runs Claude through <strong>Amazon Bedrock</strong>, so prompts are
 authenticated by your existing Workbench IAM roles, billed through your AWS
 account, and never leave AWS.</p>
 <p>The Core Stack already grants the Bedrock permissions. Setup is a one-time
 console visit.</p>
+<p>For what the agent sends to the model and why that boundary is safe, see
+<a href="../bedrock_security/">AWS Bedrock Security</a>.</p>
 <h2 id="setup">Setup</h2>
 <p>Once per AWS account, as an <strong>administrator</strong>:</p>
 <ul>

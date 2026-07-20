@@ -1859,6 +1859,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../blogs/ml_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Workbench ML Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../blogs/confusion_explorer/" class="md-nav__link">
         
   
@@ -3881,6 +3909,62 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="full_pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Verify - Full Pipeline Test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="redis_tunnel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis Access (SSM Tunnel)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -3890,17 +3974,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_22_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_22_6" >
         
           
-          <label class="md-nav__link" for="__nav_22_4" id="__nav_22_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_22_6" id="__nav_22_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-    Administrator Setup
+    Administrators
   
 
     
@@ -3911,12 +3995,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_22_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_22_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_22_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_22_6">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Administrator Setup
+    Administrators
   
 
           </label>
@@ -4076,7 +4160,35 @@
   <span class="md-ellipsis">
     
   
-    Amazon Bedrock Setup
+    AWS Bedrock Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="bedrock_security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Bedrock Security
   
 
     
@@ -4149,62 +4261,6 @@
           </ul>
         </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="full_pipeline/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Verify - Full Pipeline Test
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="redis_tunnel/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Redis Access (SSM Tunnel)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -5024,7 +5080,7 @@ or on <a href="https://discord.gg/WHAJuz8sw8">Discord</a>.</p>
 <h2 id="who-does-what">Who does what</h2>
 <p><strong>Administrators</strong> — done <strong>once per AWS account</strong>: create the account/users,
 deploy the <a href="stacks/">Workbench stacks</a>, and grant role access. Follow the
-<em>Administrator Setup</em> pages in order.</p>
+<em>Administrators</em> pages in order.</p>
 <p><strong>Users</strong> — done by <strong>each person</strong>: configure an AWS CLI/SSO profile
 (<a href="aws_setup/">AWS CLI/SSO Setup</a>), then <code>pip install 'workbench[all]'</code> and use
 the API. That's it — users never deploy stacks.</p>
@@ -5035,9 +5091,11 @@ the API. That's it — users never deploy stacks.</p>
 <li><a href="core_stack/">Core Stack</a> — deploy the foundational <code>Workbench-ExecutionRole</code> (<strong>required</strong>)</li>
 <li>Grant role access — <a href="sso_assume_role/">SSO Users</a> or <a href="iam_assume_role/">IAM Users</a></li>
 <li><em>(optional)</em> <a href="compute_stack/">Compute Stack</a> — AWS Batch for pipeline fan-out</li>
+<li><em>(optional)</em> <a href="bedrock_setup/">AWS Bedrock</a> — enable Claude for the ML agent (see <a href="bedrock_security/">AWS Bedrock Security</a>)</li>
 <li><em>(optional)</em> <a href="dashboard_stack/">Dashboard Stack</a> — the team web UI (+ optional <a href="domain_cert_setup/">domain/SSL</a>)</li>
-<li><a href="full_pipeline/">Verify</a> — build a full ML pipeline end-to-end as a smoke test</li>
 </ol>
+<p>Then, as a final smoke test, run the
+<a href="full_pipeline/">Full Pipeline Test</a> — it builds an ML pipeline end-to-end.</p>
 <p>See <a href="stacks/">The Workbench Stacks</a> for what each stack provisions and when you need it.</p>
 <h2 id="useful-aws-references">Useful AWS references</h2>
 <ul>

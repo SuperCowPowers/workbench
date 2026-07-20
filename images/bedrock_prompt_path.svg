@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 480" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="bp-client" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4a3f8f"/>
+      <stop offset="100%" stop-color="#6152b5"/>
+    </linearGradient>
+    <linearGradient id="bp-endpoint" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="bp-account" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <filter id="bp-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Client side -->
+  <rect x="30" y="115" width="230" height="110" rx="10" fill="url(#bp-client)" filter="url(#bp-shadow)"/>
+  <text x="145" y="162" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">ML Agent</text>
+  <text x="145" y="193" text-anchor="middle" font-size="18" fill="#d5cff2">Workbench REPL</text>
+
+  <!-- Transport -->
+  <line x1="265" y1="170" x2="483" y2="170" stroke="#42A5F5" stroke-width="3"/>
+  <polygon points="481,161 499,170 481,179" fill="#42A5F5"/>
+  <text x="374" y="140" text-anchor="middle" font-size="19" font-weight="600" fill="#42A5F5">HTTPS · TLS 1.2+</text>
+  <text x="374" y="201" text-anchor="middle" font-size="17" fill="#42A5F5">SigV4-signed (IAM role)</text>
+  <text x="374" y="227" text-anchor="middle" font-size="16" fill="#8f8f8f">prompt · history · results</text>
+
+  <!-- AWS boundary -->
+  <rect x="500" y="60" width="330" height="390" rx="14" fill="none" stroke="#FF9900" stroke-width="2" stroke-dasharray="8,6"/>
+  <text x="522" y="95" font-size="20" font-weight="700" fill="#FF9900" letter-spacing="2">AWS</text>
+
+  <!-- Runtime endpoint -->
+  <rect x="520" y="120" width="290" height="100" rx="10" fill="url(#bp-endpoint)" filter="url(#bp-shadow)"/>
+  <text x="665" y="160" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">Bedrock Runtime Endpoint</text>
+  <text x="665" y="189" text-anchor="middle" font-size="16" fill="#c9e8e4">your Workbench region</text>
+
+  <line x1="665" y1="220" x2="665" y2="258" stroke="#8f8f8f" stroke-width="2.5"/>
+  <polygon points="656,256 665,272 674,256" fill="#8f8f8f"/>
+
+  <!-- Model deployment account -->
+  <rect x="520" y="272" width="290" height="158" rx="10" fill="url(#bp-account)" filter="url(#bp-shadow)"/>
+  <text x="665" y="308" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">Model Deployment Account</text>
+  <text x="665" y="335" text-anchor="middle" font-size="16" fill="#cbe7ee">AWS-operated</text>
+  <text x="665" y="357" text-anchor="middle" font-size="16" fill="#cbe7ee">model vendor has no access</text>
+  <rect x="580" y="372" width="170" height="44" rx="8" fill="#0d4a5f"/>
+  <text x="665" y="402" text-anchor="middle" font-size="20" font-weight="600" fill="#FFFFFF">Claude</text>
+</svg>

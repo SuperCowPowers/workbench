@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 470" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="rc-you" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4a3f8f"/>
+      <stop offset="100%" stop-color="#6152b5"/>
+    </linearGradient>
+    <linearGradient id="rc-agent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="rc-session" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#1E88E5"/>
+    </linearGradient>
+    <filter id="rc-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+    <marker id="rc-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#42A5F5"/>
+    </marker>
+    <marker id="rc-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8f8f8f"/>
+    </marker>
+  </defs>
+
+  <!-- REPL boundary -->
+  <rect x="20" y="25" width="800" height="420" rx="16" fill="none" stroke="#7e8aa2" stroke-width="2" stroke-dasharray="8,6"/>
+  <text x="42" y="53" font-size="18" font-weight="700" fill="#8f97ab">Workbench REPL</text>
+
+  <!-- You -->
+  <rect x="70" y="80" width="220" height="95" rx="10" fill="url(#rc-you)" filter="url(#rc-shadow)"/>
+  <text x="180" y="120" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">You</text>
+  <text x="180" y="148" text-anchor="middle" font-size="15" fill="#d5cff2">write &amp; run code</text>
+
+  <!-- ML Agent -->
+  <rect x="550" y="80" width="220" height="95" rx="10" fill="url(#rc-agent)" filter="url(#rc-shadow)"/>
+  <text x="660" y="120" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">ML Agent</text>
+  <text x="660" y="148" text-anchor="middle" font-size="15" fill="#c9e8e4">writes &amp; runs code</text>
+
+  <!-- Chat channel -->
+  <text x="420" y="102" text-anchor="middle" font-size="17" font-weight="700" fill="#42A5F5">chat</text>
+  <line x1="305" y1="120" x2="535" y2="120" stroke="#42A5F5" stroke-width="2.5" marker-start="url(#rc-blue)" marker-end="url(#rc-blue)"/>
+  <text x="420" y="150" text-anchor="middle" font-size="14" font-style="italic" fill="#8f8f8f">“review this”</text>
+  <text x="420" y="172" text-anchor="middle" font-size="14" font-style="italic" fill="#8f8f8f">“show me an example”</text>
+  <text x="420" y="194" text-anchor="middle" font-size="14" font-style="italic" fill="#8f8f8f">“take it from here”</text>
+
+  <!-- Both drive the shared session -->
+  <line x1="180" y1="175" x2="330" y2="318" stroke="#8f8f8f" stroke-width="2.5" marker-start="url(#rc-gray)" marker-end="url(#rc-gray)"/>
+  <line x1="660" y1="175" x2="510" y2="318" stroke="#8f8f8f" stroke-width="2.5" marker-start="url(#rc-gray)" marker-end="url(#rc-gray)"/>
+
+  <!-- Shared session -->
+  <rect x="190" y="320" width="460" height="112" rx="10" fill="url(#rc-session)" filter="url(#rc-shadow)"/>
+  <text x="420" y="360" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">Shared session</text>
+  <text x="420" y="389" text-anchor="middle" font-size="15" fill="#cfe3f5">one namespace — your real FeatureSets, models &amp; dataframes</text>
+  <text x="420" y="412" text-anchor="middle" font-size="15" fill="#cfe3f5">variables persist for both of you</text>
+</svg>
