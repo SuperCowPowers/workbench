@@ -6,6 +6,8 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 ## Blogs
 
+- **[The Workbench ML Agent](ml_agent.md):** Workbench embeds an ML agent directly in the Python REPL, so chemists and data scientists can ask for what they want in plain language and get code that runs in the live session. We cover how the loop works, why variables persisting in your namespace matters, and where the model actually runs.
+
 - **[Confusion Explorer: Beyond the Confusion Matrix](confusion_explorer.md):** The standard confusion matrix tells you *what* your model gets wrong — the Confusion Explorer shows you *why*. We pair a residual-colored matrix with an interactive ternary probability plot, linked through a confidence slider. Filter to high-confidence predictions, click a cell to isolate misclassified compounds, and hover to see molecular structures.
 
 - **[Model Confidence: Building on Conformal Prediction](model_confidence.md):** How does Workbench approach prediction uncertainty? We walk through our current pipeline — 5-fold ensemble disagreement, conformal calibration for coverage guarantees, and percentile-rank confidence scoring — discuss the trade-offs, and point to the foundational work we're building on.

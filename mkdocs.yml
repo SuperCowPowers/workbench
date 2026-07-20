@@ -51,6 +51,7 @@ nav:
     - Overview: confidence/index.md
   - Blogs:
     - OverView: blogs/index.md
+    - The Workbench ML Agent: blogs/ml_agent.md
     - Confusion Explorer: blogs/confusion_explorer.md
     - Model Confidence: blogs/model_confidence.md
     - Chemprop Shap Values: blogs/chemprop_shap.md
@@ -112,17 +113,18 @@ nav:
     - Overview: aws_setup/index.md
     - The Workbench Stacks: aws_setup/stacks.md
     - AWS CLI/SSO Setup: aws_setup/aws_setup.md
-    - Administrator Setup:
+    - Verify - Full Pipeline Test: aws_setup/full_pipeline.md
+    - Redis Access (SSM Tunnel): aws_setup/redis_tunnel.md
+    - Administrators:
       - AWS Account & Users: aws_setup/aws_tips_and_tricks.md
       - Core Stack: aws_setup/core_stack.md
       - Grant Access (SSO Users): aws_setup/sso_assume_role.md
       - Grant Access (IAM Users): aws_setup/iam_assume_role.md
       - Compute Stack: aws_setup/compute_stack.md
-      - Amazon Bedrock Setup: aws_setup/bedrock_setup.md
+      - AWS Bedrock Setup: aws_setup/bedrock_setup.md
+      - AWS Bedrock Security: aws_setup/bedrock_security.md
       - Dashboard Stack: aws_setup/dashboard_stack.md
       - Domain/SSL Cert Setup: aws_setup/domain_cert_setup.md
-    - Verify - Full Pipeline Test: aws_setup/full_pipeline.md
-    - Redis Access (SSM Tunnel): aws_setup/redis_tunnel.md
   - Road Maps: 
     - 0.9.0:  road_maps/0_9_0.md
     - 0.9.5:  road_maps/0_9_5.md

@@ -1,4 +1,4 @@
-# Amazon Bedrock Setup
+# AWS Bedrock Setup
 
 The Workbench ML agent runs Claude through **Amazon Bedrock**, so prompts are
 authenticated by your existing Workbench IAM roles, billed through your AWS
@@ -6,6 +6,9 @@ account, and never leave AWS.
 
 The Core Stack already grants the Bedrock permissions. Setup is a one-time
 console visit.
+
+For what the agent sends to the model and why that boundary is safe, see
+[AWS Bedrock Security](bedrock_security.md).
 
 ## Setup
 

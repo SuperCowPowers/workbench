@@ -12,7 +12,7 @@ administrator task**; individual users do almost nothing.
 
 **Administrators** — done **once per AWS account**: create the account/users,
 deploy the [Workbench stacks](stacks.md), and grant role access. Follow the
-*Administrator Setup* pages in order.
+*Administrators* pages in order.
 
 **Users** — done by **each person**: configure an AWS CLI/SSO profile
 ([AWS CLI/SSO Setup](aws_setup.md)), then `pip install 'workbench[all]'` and use
@@ -26,8 +26,11 @@ Do these in order (the optional stacks can be skipped or added later):
 2. [Core Stack](core_stack.md) — deploy the foundational `Workbench-ExecutionRole` (**required**)
 3. Grant role access — [SSO Users](sso_assume_role.md) or [IAM Users](iam_assume_role.md)
 4. *(optional)* [Compute Stack](compute_stack.md) — AWS Batch for pipeline fan-out
-5. *(optional)* [Dashboard Stack](dashboard_stack.md) — the team web UI (+ optional [domain/SSL](domain_cert_setup.md))
-6. [Verify](full_pipeline.md) — build a full ML pipeline end-to-end as a smoke test
+5. *(optional)* [AWS Bedrock](bedrock_setup.md) — enable Claude for the ML agent (see [AWS Bedrock Security](bedrock_security.md))
+6. *(optional)* [Dashboard Stack](dashboard_stack.md) — the team web UI (+ optional [domain/SSL](domain_cert_setup.md))
+
+Then, as a final smoke test, run the
+[Full Pipeline Test](full_pipeline.md) — it builds an ML pipeline end-to-end.
 
 See [The Workbench Stacks](stacks.md) for what each stack provisions and when you need it.
 
