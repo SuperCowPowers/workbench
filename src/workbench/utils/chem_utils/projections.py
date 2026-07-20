@@ -216,4 +216,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"   Note: Could not test NaN handling due to: {e}")
 
-    print("\n✅ All projection tests completed!")
+    print("\n✅  All projection tests completed!")

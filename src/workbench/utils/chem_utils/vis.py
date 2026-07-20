@@ -360,4 +360,4 @@ if __name__ == "__main__":
     if __name__ == "__main__":
         app.run(debug=True)
 
-    print("\n✅ All tests completed!")
+    print("\n✅  All tests completed!")

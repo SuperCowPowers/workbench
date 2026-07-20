@@ -191,4 +191,4 @@ if __name__ == "__main__":
     for c, l in zip(edge_conc, edge_log):
         print(f"      {c:6.2e} µM → {l:6.2f}")
 
-    print("\n✅ All molecular processing tests completed!")
+    print("\n✅  All molecular processing tests completed!")

@@ -324,4 +324,4 @@ if __name__ == "__main__":
         os.remove(tmp_path)
         print(f"\n✓ Cleaned up temp file: {tmp_path}")
 
-    print("\n✅ All SDF utilities tests completed!")
+    print("\n✅  All SDF utilities tests completed!")

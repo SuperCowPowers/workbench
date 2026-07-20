@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import List
 
 GUIDES_DIR = Path(__file__).parent / "guides"
+PERSONALITIES_FILE = Path(__file__).parent / "personalities.md"
+DEFAULT_PERSONALITY = "chipper"
 
 # Always injected into the system prompt (not offered in the lazy-read menu).
 ALWAYS_LOADED = {"general"}
@@ -42,6 +44,29 @@ def general_guide() -> str:
     """The always-loaded general instructions, injected into the system prompt."""
     path = GUIDES_DIR / "general.md"
     return path.read_text() if path.exists() else ""
+
+
+def _personality_sections() -> dict:
+    """Map each `## name` header in personalities.md to its body text."""
+    sections, current = {}, None
+    for line in PERSONALITIES_FILE.read_text().splitlines():
+        if line.startswith("## "):
+            current = line[3:].strip()
+            sections[current] = []
+        elif current is not None:
+            sections[current].append(line)
+    return {name: "\n".join(body).strip() for name, body in sections.items()}
+
+
+def personality_names() -> List[str]:
+    """The selectable personality names."""
+    return list(_personality_sections())
+
+
+def personality_text(name: str) -> str:
+    """Body of the selected personality, falling back to the default."""
+    sections = _personality_sections()
+    return sections.get(name) or sections.get(DEFAULT_PERSONALITY, "")
 
 
 def read_guide(name: str) -> str:

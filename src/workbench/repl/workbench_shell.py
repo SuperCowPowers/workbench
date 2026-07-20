@@ -40,6 +40,8 @@ except ImportError:
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
+from workbench.utils.cow_puns import random_cow_pun
+from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.utils.log_utils import silence_logs, log_theme
@@ -151,6 +153,7 @@ class WorkbenchShell:
         self.commands["help"] = self.help
         self.commands["docs"] = self.doc_browser
         self.commands["summary"] = self.summary
+        self.commands["contests"] = self.contests
         self.commands["incoming_data"] = self.incoming_data
         self.commands["glue_jobs"] = self.glue_jobs
         self.commands["data_sources"] = self.data_sources
@@ -199,8 +202,9 @@ class WorkbenchShell:
             cprint("red", f"Path: {self.cm.site_config_path}")
             self.show_config()
         else:
-            self.help()
+            self.cow_pun()
             self.summary()
+            self.contests()
 
         # Load the default IPython configuration
         config = load_default_config()
@@ -346,8 +350,13 @@ class WorkbenchShell:
             help_msg += """
 
     Bosco (ML Agent):
-        - Just ask: what pxr models do we have?
-        - bosco.show_code = True: Echo the code Bosco runs (default: False)"""
+        - Just ask: anything that isn't valid Python routes to Bosco
+              what pxr models do we have?
+        - bosco <text>: Force a question when the text IS valid Python
+        - Multi-line: ⌥ Option+Enter or Ctrl-J for a new line; Enter sends
+        - "show code" / "hide code": Toggle echoing the code Bosco runs
+        - Ctrl-C: Interrupt Bosco (the conversation stays usable)
+        - "how do I use you": Bosco explains the rest"""
         return help_msg
 
     def spinner_start(self, text: str, color: str = "lightpurple") -> Spinner:
@@ -398,6 +407,47 @@ class WorkbenchShell:
 
             # Print the summary
             cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "purple_blue", examples])
+
+    def cow_pun(self):
+        """Print a random cow pun -- the REPL greeting's opening moo."""
+        question, punchline = random_cow_pun()
+        cprint("lightpurple", f"\n🐄  {question}")
+        cprint("purple_blue", f"       {punchline}")
+        print()
+
+    def contests(self):
+        """Show the champion/challenger contests, most recent first."""
+        spinner = self.spinner_start("Checking contests:")
+        try:
+            rows = contest_summary()
+        finally:
+            spinner.stop()
+
+        if not rows:
+            return  # nothing to show; stay quiet at startup
+
+        # Recent first (by day), contested above settled within a day, newest last.
+        # Customers can have 30+ contests, so cap the greeting at the top 10.
+        dated = [r for r in rows if r["timestamp"] is not None]
+        undated = [r for r in rows if r["timestamp"] is None]
+        dated.sort(key=lambda r: (r["timestamp"].date(), r["contested"], r["timestamp"]), reverse=True)
+        rows = (dated + undated)[:10]
+
+        cprint("yellow", "\nContests:")
+        for row in rows:
+            name = (row["contest"] + " " * 24)[:24]
+            champ = row["champion"] or "(none)"
+            flag = "contested" if row["contested"] else "settled"
+            flag_color = "orange" if row["contested"] else "grey"
+            when = row["timestamp"].strftime("%Y-%m-%d") if row["timestamp"] is not None else ""
+            cprint(
+                [
+                    "lightpurple", "\t" + name,
+                    flag_color, (flag + " " * 10)[:10],
+                    "purple_blue", f" {champ}  ",
+                    "grey", f"({row['challengers']} challengers)  {when}",
+                ]
+            )
 
     def incoming_data(self):
         return self.meta.incoming_data()

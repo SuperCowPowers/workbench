@@ -192,4 +192,4 @@ if __name__ == "__main__":
     if all_counts:
         print(f"   Non-zero counts: min={min(all_counts)}, max={max(all_counts)}, mean={np.mean(all_counts):.2f}")
 
-    print("\n✅ All fingerprint tests completed!")
+    print("\n✅  All fingerprint tests completed!")

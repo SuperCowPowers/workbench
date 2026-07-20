@@ -253,4 +253,4 @@ if __name__ == "__main__":
         print(f"   ✓ Original columns preserved: 'existing_col' in result = {('existing_col' in result_df.columns)}")
         print(f"   ✓ Salt features added: {len(_get_salt_feature_columns())} new columns")
 
-    print("\n✅ All salt feature tests completed!")
+    print("\n✅  All salt feature tests completed!")

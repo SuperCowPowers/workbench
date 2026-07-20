@@ -15,10 +15,17 @@ import logging
 from contextlib import contextmanager
 
 # Workbench Imports
-from workbench.utils.repl_utils import cprint, Spinner
+from workbench.utils.repl_utils import cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
 from workbench.utils.bedrock_utils import claude_client, DEFAULT_MODEL
-from workbench.agent.tools import TOOL_SCHEMAS, dispatch, guide_index, general_guide
+from workbench.agent.tools import (
+    TOOL_SCHEMAS,
+    dispatch,
+    guide_index,
+    general_guide,
+    personality_text,
+    DEFAULT_PERSONALITY,
+)
 
 log = logging.getLogger("workbench")
 
@@ -46,6 +53,13 @@ them afterwards, so use clear names and tell them what you left behind.
 
 {general}
 
+## Voice
+
+{personality}
+
+The voice is a surface layer -- it never changes the work. Names, numbers, and
+code stay exact, and the answer never gets buried under the act.
+
 Guides available via read_guide:
 {guides}
 
@@ -57,6 +71,7 @@ your own assumptions rather than answering from general knowledge."""
 def _system_prompt() -> str:
     return SYSTEM_PROMPT.format(
         general=general_guide().strip(),
+        personality=personality_text(getattr(bosco, "personality", DEFAULT_PERSONALITY)).strip(),
         guides=guide_index() or "  (none)",
     )
 
@@ -149,7 +164,7 @@ def _run_turn(namespace: dict) -> None:
 
         text = _text_of(response)
         if text:
-            cprint("lightblue", text)
+            render_markdown(text)
 
         _history.append({"role": "assistant", "content": response.content})
         if response.stop_reason != "tool_use":
@@ -210,7 +225,8 @@ def bosco(prompt: str = None):
     Just type a question at the prompt -- anything that isn't valid Python is
     routed here. `bosco <question>` works too, for text that is valid Python.
 
-    bosco.show_code = True    -> also echo the code Bosco runs
+    bosco.show_code = True        -> also echo the code Bosco runs
+    bosco.personality = "pirate"  -> voice: chipper (default), professional, pirate
     """
     if prompt:
         _ask(prompt)
@@ -221,6 +237,9 @@ def bosco(prompt: str = None):
 
 # Echo the code Bosco runs. Off by default; set True to follow along.
 bosco.show_code = False
+
+# The agent's voice: "chipper" (default), "professional", or "pirate".
+bosco.personality = DEFAULT_PERSONALITY
 
 
 # A line transformer routes plain English to Bosco so you never switch modes:

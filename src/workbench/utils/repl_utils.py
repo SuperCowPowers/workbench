@@ -46,6 +46,32 @@ def cprint(*args):
     print()  # Print a newline at the end
 
 
+def render_markdown(text: str) -> None:
+    """Render markdown (tables, bold, headers, lists) in the terminal.
+
+    Used for the Bosco agent's replies: prose in Bosco's blue, code and bold in
+    green with no background box, table cells left default (white). Falls back to
+    plain colored text if rich is unavailable.
+    """
+    try:
+        from rich.console import Console
+        from rich.markdown import Markdown
+        from rich.theme import Theme
+    except ImportError:
+        cprint("lightblue", text)
+        return
+
+    theme = Theme(
+        {
+            "markdown.text": "color(69)",  # prose in Bosco's blue
+            "markdown.paragraph": "color(69)",
+            "markdown.code": "bold color(113)",  # inline code: green, no bg box
+            "markdown.strong": "bold color(113)",  # bold: green, no bg box
+        }
+    )
+    Console(theme=theme).print(Markdown(text))
+
+
 def status_lights(status_colors: list[str]):
     """
     Create status lights (circles) in color.

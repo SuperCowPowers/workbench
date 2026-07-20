@@ -483,4 +483,4 @@ if __name__ == "__main__":
     run_basic_tests()
     run_performance_tests()
 
-    print("\n✅ All tests completed!")
+    print("\n✅  All tests completed!")

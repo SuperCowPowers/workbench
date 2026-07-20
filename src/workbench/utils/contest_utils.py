@@ -40,3 +40,41 @@ def find_contests(model_name: str, reports=None) -> list:
                 }
             )
     return hits
+
+
+def contest_summary(reports=None) -> list:
+    """One row per contest for the REPL greeting, most recent first.
+
+    Args:
+        reports (Reports): Report store to search; defaults to Reports().
+
+    Returns:
+        list: One dict per contest, sorted newest-first, with keys "contest"
+            (name, prefix stripped), "champion", "challengers" (count),
+            "endpoint", "contested" (bool), and "timestamp".
+    """
+    if reports is None:
+        from workbench.api.reports import Reports
+
+        reports = Reports()
+
+    rows = []
+    for location in reports.list():
+        if not location.startswith(CONTEST_PREFIX):
+            continue
+        df = reports.get(location)
+        if df is None or "role" not in df.columns:
+            continue
+        champ = df[df["role"] == "champion"]
+        rows.append(
+            {
+                "contest": location[len(CONTEST_PREFIX) :],
+                "champion": champ.iloc[0]["model"] if not champ.empty else None,
+                "challengers": int((df["role"] == "challenger").sum()),
+                "endpoint": df.iloc[0].get("endpoint"),
+                "contested": bool(df.iloc[0].get("contested", False)),
+                "timestamp": df["timestamp"].max() if "timestamp" in df.columns else None,
+            }
+        )
+    rows.sort(key=lambda r: (r["timestamp"] is not None, r["timestamp"]), reverse=True)
+    return rows

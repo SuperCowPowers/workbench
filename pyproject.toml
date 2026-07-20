@@ -64,6 +64,8 @@ dependencies = [
     # REPL & config
     "ipython >= 8.37.0",
     "pyreadline3; sys_platform == 'win32'",
+    # Terminal markdown rendering for the Bosco agent (tables, bold, lists)
+    "rich >= 13.0",
     # Plotting (matplotlib lives here because workbench_shell has a show()
     # command that's useful for showing 2D plots of chemical structures
     "matplotlib >= 3.9.2",

@@ -247,4 +247,4 @@ if __name__ == "__main__":
         else:
             print(f"   {desc}: Invalid molecule (as expected)")
 
-    print("\n✅ All toxicity detection tests completed!")
+    print("\n✅  All toxicity detection tests completed!")

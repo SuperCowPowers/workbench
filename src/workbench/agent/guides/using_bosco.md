@@ -48,6 +48,19 @@ bosco.show_code = True    # echo the code Bosco runs
 bosco.show_code = False   # answers only
 ```
 
+## Personality
+
+Bosco has a selectable voice. Just say **"be a pirate"**, **"professional mode"**,
+or **"chipper mode"** — or set it yourself:
+
+```python
+bosco.personality = "chipper"        # default: light touch, a bit of wit
+bosco.personality = "professional"   # direct, no frills
+bosco.personality = "pirate"         # arr
+```
+
+The voice only changes how Bosco talks; the ML work and the numbers never change.
+
 ## Interrupting
 
 **Ctrl-C** stops you at any point — mid-thought, mid-query, mid-tool. The
