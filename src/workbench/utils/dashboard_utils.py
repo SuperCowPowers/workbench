@@ -6,6 +6,7 @@ and deployments usually sit behind a friendly domain that nothing in the stack
 knows about.
 """
 
+import webbrowser
 from typing import Optional
 from urllib.parse import quote
 
@@ -47,3 +48,36 @@ def artifact_url(artifact_type: str, name: str) -> Optional[str]:
     if not base or not page:
         return None
     return f"{base}/{page}?name={quote(name, safe='')}"
+
+
+def open_page(page: str = "") -> Optional[str]:
+    """Open a dashboard page in the browser (e.g. "contests", "models", "" for main).
+
+    Args:
+        page (str): Dashboard page path, without a leading slash.
+
+    Returns:
+        Optional[str]: The URL opened, or None if DASHBOARD_URL is unset.
+    """
+    base = dashboard_url()
+    if not base:
+        return None
+    url = f"{base}/{page}" if page else base
+    webbrowser.open(url)
+    return url
+
+
+def open_artifact(artifact_type: str, name: str) -> Optional[str]:
+    """Open an artifact's dashboard page in the default browser.
+
+    Args:
+        artifact_type (str): One of data_source, feature_set, model, endpoint, pipeline.
+        name (str): The artifact name.
+
+    Returns:
+        Optional[str]: The URL opened, or None if DASHBOARD_URL is unset.
+    """
+    url = artifact_url(artifact_type, name)
+    if url:
+        webbrowser.open(url)
+    return url
