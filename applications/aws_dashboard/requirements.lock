@@ -36,6 +36,10 @@ annotated-types==0.7.0
     # via
     #   -c ci/.uv-constraints.txt
     #   pydantic
+anthropic==0.117.0
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   workbench (pyproject.toml)
 antlr4-python3-runtime==4.9.3
     # via
     #   -c ci/.uv-constraints.txt
@@ -43,6 +47,8 @@ antlr4-python3-runtime==4.9.3
 anyio==4.13.0
     # via
     #   -c ci/.uv-constraints.txt
+    #   anthropic
+    #   httpx
     #   starlette
 asgiref==3.11.1
     # via -r applications/aws_dashboard/requirements.in
@@ -73,6 +79,7 @@ boto3==1.43.0
     # via
     #   -c ci/.uv-constraints.txt
     #   workbench (pyproject.toml)
+    #   anthropic
     #   awswrangler
     #   pyiceberg
     #   sagemaker-core
@@ -84,6 +91,7 @@ botocore==1.43.0
     #   -c ci/.uv-constraints.txt
     #   workbench (pyproject.toml)
     #   aiobotocore
+    #   anthropic
     #   awswrangler
     #   boto3
     #   s3transfer
@@ -107,6 +115,8 @@ certifi==2026.5.20
     # via
     #   -c ci/.uv-constraints.txt
     #   geventhttpclient
+    #   httpcore
+    #   httpx
     #   requests
 cffi==2.0.0
     # via
@@ -173,10 +183,18 @@ deepdiff==9.1.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
+distro==1.9.0
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   anthropic
 docker==7.1.0
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
+docstring-parser==0.18.0
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   anthropic
 executing==2.2.1
     # via
     #   -c ci/.uv-constraints.txt
@@ -265,7 +283,16 @@ gunicorn==26.0.0
 h11==0.16.0
     # via
     #   -c ci/.uv-constraints.txt
+    #   httpcore
     #   uvicorn
+httpcore==1.0.9
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   httpx
+httpx==0.28.1
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   anthropic
 huey==3.0.1
     # via
     #   -c ci/.uv-constraints.txt
@@ -274,6 +301,7 @@ idna==3.18
     # via
     #   -c ci/.uv-constraints.txt
     #   anyio
+    #   httpx
     #   requests
     #   yarl
 importlib-metadata==6.11.0
@@ -316,6 +344,10 @@ jinja2==3.1.6
     #   flask
     #   sagemaker-train
     #   torch
+jiter==0.16.0
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   anthropic
 jmespath==1.1.0
     # via
     #   -c ci/.uv-constraints.txt
@@ -607,6 +639,7 @@ pycparser==3.0
 pydantic==2.13.4
     # via
     #   -c ci/.uv-constraints.txt
+    #   anthropic
     #   fastapi
     #   mlflow-skinny
     #   mlflow-tracing
@@ -806,6 +839,10 @@ smmap==5.0.3
     # via
     #   -c ci/.uv-constraints.txt
     #   gitdb
+sniffio==1.3.1
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   anthropic
 sqlalchemy==2.0.50
     # via
     #   -c ci/.uv-constraints.txt
@@ -869,6 +906,7 @@ typing-extensions==4.15.0
     #   aiohttp
     #   aiosignal
     #   alembic
+    #   anthropic
     #   anyio
     #   awswrangler
     #   dash
