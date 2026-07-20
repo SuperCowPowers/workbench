@@ -36,11 +36,15 @@ ds.columns                 # property -- list of column names
 ds.column_types            # property -- name -> type
 ds.column_details()        # method  -- names + types together
 ds.column_stats()          # method  -- per-column statistics
-ds.num_rows, ds.num_columns
+ds.num_rows()              # method  -- row count
+ds.num_columns()           # method  -- column count
 ```
 
-Note which are properties and which are methods; the same set exists on both
+`num_rows()` and `num_columns()` are methods (parens). The same set exists on both
 DataSource and FeatureSet. There is no `column_names()`.
+
+`feature_sets(details=True)` already carries the correct `Num Columns`. It has no
+row-count column, so for rows construct the object: `FeatureSet(name).num_rows()`.
 
 ## Column names are lowercase
 

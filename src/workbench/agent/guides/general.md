@@ -7,10 +7,11 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 - Use `CachedMeta()` rather than `Meta()` — much faster. `Meta()` only when the
   user explicitly wants live/uncached values. Not in the REPL namespace, so
   `from workbench.cached.cached_meta import CachedMeta`.
-- `models()` and `endpoints()` default to a fast summary with many columns
-  (Health, Type, Framework, metrics) left **empty**. Pass `details=True` whenever
-  the user asks about anything beyond names, or you will report blanks.
-  Columns are `Model Group | Health | Owner | Type | Framework | Created |
+- **Always pass `details=True` when retrieving metadata** — `models()`,
+  `endpoints()`, `feature_sets()`, `data_sources()`. The default is a fast summary
+  with many columns (Health, Type, Framework, metrics, counts) left **empty**;
+  without `details=True` you will report blanks.
+  Model columns are `Model Group | Health | Owner | Type | Framework | Created |
   Modified | Ver | Input | Status | Description | Tags` — it is `Type`, not
   "Model Type". Endpoints use `Name` instead of `Model Group`.
 - **Empty health tags mean healthy.** No news is good news — never report it as
