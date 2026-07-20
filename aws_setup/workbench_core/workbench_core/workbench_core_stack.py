@@ -48,6 +48,7 @@ class WorkbenchCoreStack(Stack):
 
         # Workbench Role Names
         self.execution_role_name = "Workbench-ExecutionRole"  # Main role
+        self.builder_role_name = "Workbench-BuilderRole"  # Execution minus upstream destruction
         self.readonly_role_name = "Workbench-ReadOnlyRole"  # Read only operations
         self.glue_role_name = "Workbench-GlueRole"
         self.lambda_role_name = "Workbench-LambdaRole"
@@ -90,10 +91,13 @@ class WorkbenchCoreStack(Stack):
         self.inference_store_read_policy = self.workbench_inference_store_read_policy()
         self.inference_store_full_policy = self.workbench_inference_store_full_policy()
 
-        # Create our main Workbench API Execution Role and Read Only Role
+        # Create our main Workbench API Execution Role, Builder Role, and Read Only Role
         self.workbench_execution_role = self.create_execution_role()
+        self.workbench_builder_role = self.create_builder_role()
         self.workbench_readonly_role = self.create_readonly_role()
-        self._create_sso_instructions(self.workbench_execution_role, self.workbench_readonly_role)
+        self._create_sso_instructions(
+            self.workbench_execution_role, self.workbench_builder_role, self.workbench_readonly_role
+        )
 
         # Create additional roles for Lambda, Glue, and Batch
         self.workbench_lambda_role = self.create_lambda_role()
@@ -1552,27 +1556,102 @@ class WorkbenchCoreStack(Stack):
             role_name=self.execution_role_name,
         )
 
-        # Create and attach the Workbench managed policies to the role
-        api_execution_role.add_to_policy(self.glue_jobs_discover())
-        api_execution_role.add_to_policy(self.glue_jobs_full())
-        api_execution_role.add_to_policy(self.glue_pass_role())
-        api_execution_role.add_to_policy(self.batch_jobs_discover())
-        api_execution_role.add_to_policy(self.batch_jobs_full())
-        api_execution_role.add_to_policy(self.batch_pass_role())
-        api_execution_role.add_to_policy(self.sqs_discover())
-        api_execution_role.add_to_policy(self.sqs_full())
-        api_execution_role.add_to_policy(self.parameter_store_discover())
-        api_execution_role.add_to_policy(self.parameter_store_full())
-        api_execution_role.add_to_policy(self.cloudwatch_logs())
-        api_execution_role.add_to_policy(self.cloudwatch_monitor())
-        api_execution_role.add_to_policy(self.bedrock_discover())
-        api_execution_role.add_to_policy(self.bedrock_invoke())
-        api_execution_role.add_to_policy(self.bedrock_mantle_invoke())
-        api_execution_role.add_managed_policy(self.datasource_policy)
-        api_execution_role.add_managed_policy(self.featureset_policy)
-        api_execution_role.add_managed_policy(self.model_policy)
-        api_execution_role.add_managed_policy(self.endpoint_policy)
+        # Attach the full Workbench policy set
+        self._attach_execution_policies(api_execution_role)
         return api_execution_role
+
+    def _attach_execution_policies(self, role: iam.Role):
+        """Attach the full Workbench execution policy set to a role.
+
+        Shared by the Execution Role and the Builder Role so the two stay in
+        parity; the Builder Role layers an explicit Deny on top (see
+        create_builder_role).
+        """
+        role.add_to_policy(self.glue_jobs_discover())
+        role.add_to_policy(self.glue_jobs_full())
+        role.add_to_policy(self.glue_pass_role())
+        role.add_to_policy(self.batch_jobs_discover())
+        role.add_to_policy(self.batch_jobs_full())
+        role.add_to_policy(self.batch_pass_role())
+        role.add_to_policy(self.sqs_discover())
+        role.add_to_policy(self.sqs_full())
+        role.add_to_policy(self.parameter_store_discover())
+        role.add_to_policy(self.parameter_store_full())
+        role.add_to_policy(self.cloudwatch_logs())
+        role.add_to_policy(self.cloudwatch_monitor())
+        role.add_to_policy(self.bedrock_discover())
+        role.add_to_policy(self.bedrock_invoke())
+        role.add_to_policy(self.bedrock_mantle_invoke())
+        role.add_managed_policy(self.datasource_policy)
+        role.add_managed_policy(self.featureset_policy)
+        role.add_managed_policy(self.model_policy)
+        role.add_managed_policy(self.endpoint_policy)
+
+    def create_builder_role(self) -> iam.Role:
+        """Create the Workbench Builder Role: Execution minus upstream destruction.
+
+        Default role for the Workbench REPL and the Bosco agent. It inherits the
+        full execution policy set, then an explicit Deny blocks destroying or
+        overwriting upstream artifacts — DataSource and FeatureSet S3 data, their
+        Glue catalog tables, and SageMaker Feature Groups. Model and Endpoint
+        deletes are intentionally left enabled so retraining a model under an
+        existing name keeps working. Deleting or overwriting a DataSource or
+        FeatureSet requires the full Execution Role (`workbench --admin`).
+        """
+        base_principals = iam.CompositePrincipal(
+            iam.ServicePrincipal("ecs-tasks.amazonaws.com"), iam.ServicePrincipal("sagemaker.amazonaws.com")
+        )
+        assumed_by = self._create_sso_principals(base_principals)
+        builder_role = iam.Role(
+            self,
+            id=self.builder_role_name,
+            assumed_by=assumed_by,
+            role_name=self.builder_role_name,
+        )
+
+        # Full execution permissions, then deny upstream destruction on top
+        self._attach_execution_policies(builder_role)
+        for statement in self.builder_deny_upstream_destruction():
+            builder_role.add_to_policy(statement)
+        return builder_role
+
+    def builder_deny_upstream_destruction(self) -> list[iam.PolicyStatement]:
+        """Explicit Deny statements for the Builder Role.
+
+        An explicit Deny overrides the Allow inherited from the execution policy
+        set, so these block destruction of upstream artifacts even though the
+        underlying actions are otherwise granted. DataSource/FeatureSet recreation
+        is a destroy-and-recreate today (overwrite-mode writes), so this also
+        blocks overwriting an existing DataSource/FeatureSet, not just deleting
+        one — that requires `workbench --admin`. Model/Endpoint deletes are not
+        denied. See docs/aws_setup/bedrock_security.md.
+        """
+        return [
+            # DataSource + FeatureSet S3 data (parquet, offline store objects).
+            # Fresh creates write to an empty prefix (no delete), so only
+            # overwrite/delete of existing data trips this.
+            iam.PolicyStatement(
+                effect=iam.Effect.DENY,
+                actions=["s3:DeleteObject"],
+                resources=[
+                    f"arn:aws:s3:::{self.workbench_bucket}/data-sources/*",
+                    f"arn:aws:s3:::{self.workbench_bucket}/feature-sets/*",
+                ],
+            ),
+            # DataSource + FeatureSet Glue catalog tables (workbench and
+            # sagemaker_featurestore databases; inference_store is excluded).
+            iam.PolicyStatement(
+                effect=iam.Effect.DENY,
+                actions=["glue:DeleteTable"],
+                resources=self._workbench_database_arns(),
+            ),
+            # FeatureSet Feature Groups.
+            iam.PolicyStatement(
+                effect=iam.Effect.DENY,
+                actions=["sagemaker:DeleteFeatureGroup"],
+                resources=["*"],
+            ),
+        ]
 
     def create_readonly_role(self) -> iam.Role:
         """Create the Workbench Read-Only Role for viewing resources"""
@@ -1604,11 +1683,12 @@ class WorkbenchCoreStack(Stack):
         readonly_role.add_managed_policy(self.endpoint_read_policy)
         return readonly_role
 
-    def _create_sso_instructions(self, execution_role: iam.Role, readonly_role: iam.Role):
+    def _create_sso_instructions(self, execution_role: iam.Role, builder_role: iam.Role, readonly_role: iam.Role):
         """Print SSO setup instructions to console"""
         if self.sso_groups:
             # Build ARNs manually since tokens aren't resolved yet
             execution_arn = f"arn:aws:iam::{self.account}:role/{self.execution_role_name}"
+            builder_arn = f"arn:aws:iam::{self.account}:role/{self.builder_role_name}"
             readonly_arn = f"arn:aws:iam::{self.account}:role/{self.readonly_role_name}"
 
             print("\n" + "=" * 60)
@@ -1616,10 +1696,12 @@ class WorkbenchCoreStack(Stack):
             print("=" * 60)
             print("Have your SSO Administrator add these roles to your permission set:")
             print(f"  • {execution_arn}")
+            print(f"  • {builder_arn}")
             print(f"  • {readonly_arn}")
             print()
-            print("For multi-account deployments, you can add both lines for each account:")
+            print("For multi-account deployments, you can add these lines for each account:")
             print("  • arn:aws:iam::<account_id>:role/Workbench-ExecutionRole")
+            print("  • arn:aws:iam::<account_id>:role/Workbench-BuilderRole")
             print("  • arn:aws:iam::<account_id>:role/Workbench-ReadOnlyRole")
             print("=" * 60 + "\n")
 
