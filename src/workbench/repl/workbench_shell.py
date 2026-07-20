@@ -442,10 +442,14 @@ class WorkbenchShell:
             when = row["timestamp"].strftime("%Y-%m-%d") if row["timestamp"] is not None else ""
             cprint(
                 [
-                    "lightpurple", "\t" + name,
-                    flag_color, (flag + " " * 10)[:10],
-                    "purple_blue", f" {champ}  ",
-                    "grey", f"({row['challengers']} challengers)  {when}",
+                    "lightpurple",
+                    "\t" + name,
+                    flag_color,
+                    (flag + " " * 10)[:10],
+                    "purple_blue",
+                    f" {champ}  ",
+                    "grey",
+                    f"({row['challengers']} challengers)  {when}",
                 ]
             )
 
