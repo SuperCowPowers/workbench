@@ -5194,7 +5194,7 @@ artifacts.</p>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>            <span class="s2">&quot;search_space&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">},</span>  <span class="c1"># see below</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="p">},</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="p">},</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">sample_weights</span><span class="o">=</span><span class="p">{</span><span class="n">mid</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">mid</span> <span class="ow">in</span> <span class="n">holdout_ids</span><span class="p">},</span>  <span class="c1"># held-out rows don&#39;t train</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">validation_ids</span><span class="o">=</span><span class="n">holdout_ids</span><span class="p">,</span>   <span class="c1"># kept, marked `validation`, never trained</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="p">)</span>
 </span></code></pre></div>
 <p><code>pipelines.json</code> structure is <strong>unchanged</strong> (<code>fs → model:</code>). The non-negotiable
@@ -5239,12 +5239,16 @@ publishes.</p>
 </table>
 <p><code>uq_version</code> stays fixed at <code>v1</code> per repo convention.</p>
 <h3 id="objective-split">Objective + split</h3>
-<p>Default objective is <strong>held-out / OOD MAE</strong> — the PXR pattern: zero-weight the
-held-out rows (<code>split == "phase1_test"</code>) out of training, then score MAE on
-exactly those rows. Because we write our own objective function (chemprop's
-current hpopt is a Python pattern, not a fixed-<code>val_loss</code> CLI), this drops in
-directly. <code>holdout</code> rows are designated the same way models already do it —
-via <code>sample_weights</code> zeroing.</p>
+<p>Default objective is <strong>held-out / OOD MAE</strong>. It rides on the landed
+validation-set support: designate held-out rows with <code>validation_ids</code> (they're
+kept in the training view, marked with a boolean <code>validation</code> column, and never
+trained). Inside training, <code>workbench.training.validation.split_validation_set(df)</code>
+routes them out of the train/CV path and scores them as an honest held-out set —
+the chemprop template <strong>already prints <code>holdout_mae</code></strong> on exactly these rows. So
+each trial's objective is a metric the training path already emits; the HPO
+harness reuses the same split + scoring rather than re-deriving a holdout. Because
+we write our own objective function (chemprop's hpopt is a Python pattern, not a
+fixed-<code>val_loss</code> CLI), this drops in directly.</p>
 <h3 id="search-space-chemprop-defaults">Search space (chemprop defaults)</h3>
 <p><code>depth</code>, <code>message_hidden_dim</code>, <code>ffn_hidden_dim</code> (incl. <strong>tapered lists</strong> — the
 reason we own the loop rather than use SageMaker AMT's scalar-only space),
@@ -5393,10 +5397,11 @@ default to keep the search 4-D and well-conditioned.</p>
 </ul>
 <h3 id="objective-prefer-ood-fall-back-to-cv">Objective (prefer OOD, fall back to CV)</h3>
 <ul>
-<li>Held-out rows designated (zero-weighted via <code>sample_weights</code>) → objective =
-  <strong>MAE on those rows</strong> (<code>holdout_mae</code>) — the honest OOD read.</li>
-<li>None designated → <strong>mean 5-fold CV MAE</strong> (<code>cv_mae</code>), using the existing
-  <code>n_folds</code>. No extra user setup.</li>
+<li><code>validation_ids</code> designated (rows marked <code>validation</code>, split out via
+  <code>split_validation_set</code>) → objective = <strong>MAE on those rows</strong> (<code>holdout_mae</code>) —
+  the honest OOD read the chemprop template already emits.</li>
+<li>None designated (<code>validation</code> frame empty) → <strong>mean 5-fold CV MAE</strong> (<code>cv_mae</code>),
+  using the existing <code>n_folds</code>. No extra user setup.</li>
 <li>Minimized either way; the active objective is <strong>logged</strong> so it's never ambiguous.</li>
 </ul>
 <h2 id="baseline-this-doesnt-need-to-beat">Baseline this doesn't need to beat</h2>
