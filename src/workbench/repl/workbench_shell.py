@@ -347,7 +347,6 @@ class WorkbenchShell:
 
     Bosco (ML Agent):
         - Just ask: what pxr models do we have?
-        - bosco: Open an interactive conversation
         - bosco.show_code = True: Echo the code Bosco runs (default: False)"""
         return help_msg
 
