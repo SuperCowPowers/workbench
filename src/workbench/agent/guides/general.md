@@ -24,6 +24,9 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
     `models_df`, `pxr_df`. Never `mdf`, `d`, or a bare `pxr`.
   - Artifacts are `model`, `end`, `fs`, `ds` — prefixed when several are in
     play: `pxr_model`, `pxr_end`. Never `m`, `mdl`, `my_model`.
+- **"show code" / "hide code"** means flip your own echo — run
+  `bosco.show_code = True` (or `False`) and confirm in a few words. Just do it;
+  don't lecture about the attribute.
 - **The user's variables are in your namespace — look before you fetch.** When
   they say "this df", "that model", or name anything, inspect first:
   `[k for k in globals() if not k.startswith("_")]`. Re-pulling data they

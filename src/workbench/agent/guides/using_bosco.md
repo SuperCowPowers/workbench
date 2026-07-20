@@ -40,7 +40,8 @@ Map it to Ctrl-J in the terminal and it works:
 
 ## Showing the code
 
-Code echo is off by default:
+Code echo is off by default. Just say **"show code"** / **"hide code"** and Bosco
+flips it, or set it yourself:
 
 ```python
 bosco.show_code = True    # echo the code Bosco runs

@@ -17,13 +17,21 @@ into API calls before you can ask it. The agent also carries Workbench
 conventions, so the code it produces looks like the code your team already
 writes.
 
-## The loop runs against the real thing
+## One session, two drivers
 
-The agent reads your actual FeatureSets, your actual model predictions, and
-your actual compounds, so its next suggestion is grounded in what your data
-really looks like rather than a description of it. And because it all happens
-in your session, the loop stops wherever you want it to — take the dataframe it
-just built and keep going by hand.
+The REPL and the agent share a single session. You type Python when you want
+to; you talk to the agent when that's faster — ask it to review the code you
+just wrote, show you an example, or take a task and run with it. Either way the
+work lands in the same namespace, so control passes back and forth without
+anything being copied or handed off.
+
+<img src="../../images/agent_repl_chat.svg" alt="Inside the Workbench REPL, you and the ML agent both write and run code in one shared session; you direct the agent by chat — review this, show me an example, take it from here — and variables persist for both of you" style="width: 100%; min-height: 360px;">
+
+The loop runs against the real thing: the agent reads your actual FeatureSets,
+your actual model predictions, and your actual compounds, so its next
+suggestion is grounded in what your data really looks like rather than a
+description of it. And because it all happens in your session, it stops wherever
+you want — take the dataframe it just built and keep going by hand.
 
 ## Where the work happens
 
