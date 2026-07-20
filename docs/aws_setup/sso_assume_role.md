@@ -1,12 +1,20 @@
-# Setting Up SSO Users to Access Workbench-ExecutionRole
+# Setting Up SSO Users to Access Workbench Roles
 
-This guide provides step-by-step instructions to configure AWS SSO users to assume the `Workbench-ExecutionRole` in your AWS account.
+This guide configures AWS SSO users to assume the Workbench roles in your AWS account.
+
+Workbench deploys three roles, and a user's permission set should allow all three:
+
+- **`Workbench-BuilderRole`** — the REPL's default. Full create, train, and read, but
+  cannot delete or overwrite DataSources and FeatureSets.
+- **`Workbench-ExecutionRole`** — full access, including delete. The REPL uses it when its
+  config's `WORKBENCH_ROLE` names this role.
+- **`Workbench-ReadOnlyRole`** — read-only; used by the Dashboard.
 
 ## Prerequisites
 
 - Access to the **management account** in your AWS Organization.
 - **Administrative permissions** to modify AWS SSO permission sets.
-- The `Workbench-ExecutionRole` must already be deployed via the Workbench AWS CDK stack.
+- The Workbench roles must already be deployed via the Workbench AWS CDK stack.
 
 
 ## Steps to Update SSO Permissions
@@ -24,8 +32,8 @@ This guide provides step-by-step instructions to configure AWS SSO users to assu
 ### 3. Edit the Permission Set
 
 1. Select the permission set
-2. Scroll down to **Inline policy** and click the the Edit button.
-2. Add an **inline policy** with the following content:
+2. Scroll down to **Inline policy** and click the Edit button.
+3. Add an **inline policy** with the following content:
 
     ```json
     {
@@ -34,24 +42,29 @@ This guide provides step-by-step instructions to configure AWS SSO users to assu
             {
                 "Effect": "Allow",
                 "Action": "sts:AssumeRole",
-                "Resource": "arn:aws:iam::<account-id>:role/Workbench-ExecutionRole"
-                "Resource": "arn:aws:iam::<account-id>:role/Workbench-ReadOnlyRole"
+                "Resource": [
+                    "arn:aws:iam::<account-id>:role/Workbench-BuilderRole",
+                    "arn:aws:iam::<account-id>:role/Workbench-ExecutionRole",
+                    "arn:aws:iam::<account-id>:role/Workbench-ReadOnlyRole"
+                ]
             }
         ]
     }
     ```
 
-Replace `<account-id>` with your AWS account ID, OR for SSO Groups that span multiple accounts you can add both lines for each account.
+Replace `<account-id>` with your AWS account ID. For SSO Groups that span multiple
+accounts, list all three roles for each account:
 
-```
-    "Resource": "arn:aws:iam::<account-1>:role/Workbench-ExecutionRole"
-    "Resource": "arn:aws:iam::<account-1>:role/Workbench-ReadOnlyRole"
+```json
+"Resource": [
+    "arn:aws:iam::<account-1>:role/Workbench-BuilderRole",
+    "arn:aws:iam::<account-1>:role/Workbench-ExecutionRole",
+    "arn:aws:iam::<account-1>:role/Workbench-ReadOnlyRole",
 
-    "Resource": "arn:aws:iam::<account-2>:role/Workbench-ExecutionRole"
-    "Resource": "arn:aws:iam::<account-2>:role/Workbench-ReadOnlyRole"\
-
-    "Resource": "arn:aws:iam::<account-3>:role/Workbench-ExecutionRole"
-    "Resource": "arn:aws:iam::<account-3>:role/Workbench-ReadOnlyRole"
+    "arn:aws:iam::<account-2>:role/Workbench-BuilderRole",
+    "arn:aws:iam::<account-2>:role/Workbench-ExecutionRole",
+    "arn:aws:iam::<account-2>:role/Workbench-ReadOnlyRole"
+]
 ```
 
 **Please consult with your AWS SSO Administrator for guidance on this process.**
@@ -65,13 +78,17 @@ Replace `<account-id>` with your AWS account ID, OR for SSO Groups that span mul
 ## Verifying Access for SSO Users
 
 1. Activate an AWS Profile for the configured SSO group.
-2. Use the following CLI command to test access:
+2. Use the following CLI command to test access to each role:
 
     ```bash
     aws sts assume-role \
+        --role-arn arn:aws:iam::<account-id>:role/Workbench-BuilderRole \
+        --role-session-name TestSession
+
+    aws sts assume-role \
         --role-arn arn:aws:iam::<account-id>:role/Workbench-ExecutionRole \
         --role-session-name TestSession
-     
+
     aws sts assume-role \
         --role-arn arn:aws:iam::<account-id>:role/Workbench-ReadOnlyRole \
         --role-session-name TestSession
@@ -87,7 +104,11 @@ Replace `<account-id>` with your AWS account ID, OR for SSO Groups that span mul
 ### Common Issues
 
 - **Permission Denied**: Ensure the correct permission set is updated.
-- **Role Not Found**: Verify that the `Workbench-ExecutionRole` has been deployed correctly.
+- **Role Not Found**: Verify that the Workbench roles have been deployed correctly.
+- **REPL won't start / cannot assume role**: The REPL assumes `Workbench-BuilderRole` by
+  default. If that role is missing from the account or the permission set, the REPL cannot
+  start — deploy the Core Stack and add the role above, or set the REPL config's
+  `WORKBENCH_ROLE` to `Workbench-ExecutionRole`.
 
 ### Contact Support
 

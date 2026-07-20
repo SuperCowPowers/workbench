@@ -1596,7 +1596,7 @@ class WorkbenchCoreStack(Stack):
         Glue catalog tables, and SageMaker Feature Groups. Model and Endpoint
         deletes are intentionally left enabled so retraining a model under an
         existing name keeps working. Deleting or overwriting a DataSource or
-        FeatureSet requires the full Execution Role (`workbench --admin`).
+        FeatureSet requires the full Execution Role.
         """
         base_principals = iam.CompositePrincipal(
             iam.ServicePrincipal("ecs-tasks.amazonaws.com"), iam.ServicePrincipal("sagemaker.amazonaws.com")
@@ -1623,8 +1623,8 @@ class WorkbenchCoreStack(Stack):
         underlying actions are otherwise granted. DataSource/FeatureSet recreation
         is a destroy-and-recreate today (overwrite-mode writes), so this also
         blocks overwriting an existing DataSource/FeatureSet, not just deleting
-        one — that requires `workbench --admin`. Model/Endpoint deletes are not
-        denied. See docs/aws_setup/bedrock_security.md.
+        one — that requires the full Execution Role. Model/Endpoint deletes are
+        not denied. See docs/aws_setup/bedrock_security.md.
         """
         return [
             # DataSource + FeatureSet S3 data (parquet, offline store objects).

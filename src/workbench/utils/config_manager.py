@@ -373,7 +373,7 @@ class ConfigManager:
             "REDIS_PORT": "change_me_optional:6379",
             "REDIS_PASSWORD": "change_me_optional:",
             "DASHBOARD_URL": "change_me_optional:",
-            "WORKBENCH_ROLE": "Workbench-ExecutionRole",
+            "WORKBENCH_ROLE": "Workbench-BuilderRole",
             "WORKBENCH_PLUGINS": "package",
             "WORKBENCH_FEATURES": {
                 "plugins": "true",

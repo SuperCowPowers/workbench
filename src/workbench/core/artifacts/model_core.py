@@ -315,7 +315,7 @@ class ModelCore(Artifact):
             if run:
                 return self.get_inference_metrics(run)
             else:
-                self.log.warning(f"No performance metrics found for {self.model_name}!")
+                self.log.important(f"No performance metrics found for {self.model_name}!")
                 return None
 
         # Grab the metrics captured during model training (could return None)

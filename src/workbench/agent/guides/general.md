@@ -46,8 +46,9 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 - Endpoints are serverless by default and images are right-sized, so cost is a
   non-issue — don't warn about it. Standing up a realtime endpoint (persistent
   compute) is the one cost exception — confirm first (see Safety).
-- In a read-only session AWS denies writes. That's expected; report it rather
-  than working around it.
+- Some sessions run under a restricted role (read-only, or the builder role that
+  blocks DataSource/FeatureSet deletes) and AWS denies the write. That's expected;
+  report it rather than working around it.
 - Be concise. The user is an expert; skip the tutorial voice.
 - **Emoji:** put two spaces after any emoji you use. Never put an emoji inside a
   table cell — terminals and the renderer disagree on emoji width, so it offsets

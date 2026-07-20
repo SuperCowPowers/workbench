@@ -68,11 +68,13 @@ already use, not a separate privilege.
 
 Two controls bound that reach:
 
-- **IAM is the hard boundary.** The agent can only touch what the role can
-  touch. For exploration where nothing should change, start the REPL under the
-  **read-only role** ([Grant Access](sso_assume_role.md)) — AWS then denies
-  every write outright, regardless of what any prompt says. This is the control
-  to lean on when it matters.
+- **IAM is the hard boundary.** By default the REPL runs under the
+  **Builder role** ([Grant Access](sso_assume_role.md)) — full create, train,
+  and read, but AWS refuses to delete or overwrite a DataSource or FeatureSet,
+  regardless of what any prompt says. Removing those upstream artifacts requires
+  deliberately launching under the Execution role. This is the control to lean
+  on: no prompt, mistaken or otherwise, can destroy an upstream artifact from a
+  Builder session.
 - **Irreversible actions are confirmed.** Before deleting or overwriting an
   artifact, dropping a table, or standing up a realtime endpoint, the agent
   states exactly what it will affect and waits for your explicit go-ahead. It
@@ -80,8 +82,8 @@ Two controls bound that reach:
   to guess which artifacts a vague phrase refers to.
 
 The first is a mechanism; the second is behavior. Where the two disagree — a
-write you did not intend — the read-only role wins, which is why it is the
-recommended default for anyone who is only exploring.
+delete you did not intend — the Builder role wins, which is why it is the role
+the REPL launches with by default.
 
 ## Retention and training
 

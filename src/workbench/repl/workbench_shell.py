@@ -133,6 +133,10 @@ class WorkbenchShell:
             # Invoke Onboarding Procedure
             onboard()
 
+        # Show which role this session is running as
+        role = self.cm.get_config("WORKBENCH_ROLE")
+        cprint("lightpurple", f"Workbench Role: {role}")
+
         # Our Metadata Object pull information from the Cloud Platform
         self.meta = None
         self.meta_status = "DIRECT"

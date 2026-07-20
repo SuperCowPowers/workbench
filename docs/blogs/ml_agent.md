@@ -8,14 +8,11 @@ Workbench embeds an ML agent directly in the Python REPL. Chemists and data
 scientists describe what they want in plain language — *"which compounds does
 this model get worst?"*, *"build me a solubility model from this FeatureSet"* —
 and the agent writes the code, runs it in the live session, reads the output,
-and adjusts. Every variable it creates stays in the namespace, so you can pick
-up where it left off and keep working by hand.
+and adjusts.
 
-That turns exploratory ML work into a conversation. No context switching to a
-browser, no copying dataframes into a chat window, no translating a question
-into API calls before you can ask it. The agent also carries Workbench
-conventions, so the code it produces looks like the code your team already
-writes.
+That turns exploratory ML work into a conversation. And the agent carries
+Workbench conventions, so the code it produces looks like the code your team
+already writes.
 
 ## One session, two drivers
 
