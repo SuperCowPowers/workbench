@@ -6,9 +6,10 @@ infrastructure — without storing AWS keys in GitHub. Written so it can be
 repeated for a new account/customer from scratch.
 
 **Auth chain:** GitHub OIDC token → `github-actions-workbench` role (federated,
-short-lived credentials) → `sts:AssumeRole` → `Workbench-ExecutionRole`. The
-CI ends up using the exact same role workbench uses everywhere else, so no new
-permission set is defined or maintained.
+short-lived credentials) → `sts:AssumeRole` → `Workbench-BuilderRole`. CI runs
+the quick suite as Builder — the REPL's default role — so the Builder deny
+(no DataSource/FeatureSet destruction) is enforced in CI: a delete-heavy test
+that belongs in a higher tier fails here instead of silently passing.
 
 Replace `<AWS_ACCOUNT_ID>` with the target account ID and `<org>/<repo>` with
 the GitHub repository that runs the workflow (for workbench itself:
@@ -44,8 +45,9 @@ WORKBENCH_CONFIG=~/.workbench/<account>_admin.json cdk deploy
 ```
 
 The diff should show exactly one kind of change: the new ARN appearing in the
-`AssumeRolePolicyDocument` condition list on `Workbench-ExecutionRole` and
-`Workbench-ReadOnlyRole`. If anything else shows up, stop and investigate.
+`AssumeRolePolicyDocument` condition list on `Workbench-BuilderRole`,
+`Workbench-ExecutionRole`, and `Workbench-ReadOnlyRole`. If anything else shows
+up, stop and investigate.
 
 > Note: the role ARN can be referenced in the trust policy before the role
 > exists (step 3) — IAM trust conditions on `aws:PrincipalArn` are just string
@@ -101,15 +103,15 @@ Useful `sub` variations:
 ## 4. Grant its only permission
 
 The CI role carries no workbench permissions itself — just the right to become
-the execution role:
+the builder role:
 
 ```bash
 aws iam put-role-policy --role-name github-actions-workbench \
-  --policy-name assume-workbench-execution-role \
+  --policy-name assume-workbench-builder-role \
   --policy-document '{
     "Version": "2012-10-17",
     "Statement": [{"Effect": "Allow", "Action": "sts:AssumeRole",
-      "Resource": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/Workbench-ExecutionRole"}]
+      "Resource": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/Workbench-BuilderRole"}]
   }'
 ```
 
@@ -147,7 +149,7 @@ Trigger the workflow manually: repo → *Actions* → *AWS Tests* →
 
 Watch the **Configure AWS credentials** step — success there proves the OIDC
 provider, trust policy, and secrets are all correct. The test run itself then
-proves the `Workbench-ExecutionRole` assumption works (workbench logs
+proves the `Workbench-BuilderRole` assumption works (workbench logs
 `AWS Credentials Refreshed` when it assumes the role).
 
 ## Troubleshooting
@@ -156,5 +158,5 @@ proves the `Workbench-ExecutionRole` assumption works (workbench logs
 | --- | --- |
 | `Not authorized to perform sts:AssumeRoleWithWebIdentity` | OIDC provider missing (step 2), or the trust policy's `sub` pattern doesn't match the repo/branch running the workflow (step 3) |
 | `Credentials could not be loaded` at the configure step | `id-token: write` permission missing in the workflow, or `AWS_ACCOUNT_SANDBOX` secret unset (the role ARN comes out malformed) |
-| `AccessDenied` on `sts:AssumeRole` for `Workbench-ExecutionRole` | Core stack trust change not deployed (step 1), or the CI role's inline policy missing (step 4) |
+| `AccessDenied` on `sts:AssumeRole` for `Workbench-BuilderRole` | Core stack trust change not deployed (step 1), or the CI role's inline policy missing (step 4) |
 | Workbench exits with `AWS SSO Token Failure` | `WORKBENCH_CONFIG` not pointing at `ci/workbench_ci_config.json`, so workbench picked up a profile-based config |

@@ -2,8 +2,10 @@ name: AWS Tests (scp_sandbox)
 
 # Runs the real-AWS test suite (`tox -m quick`) against the scp_sandbox
 # account. Auth is GitHub OIDC -> github-actions-workbench role, which can
-# only sts:AssumeRole into Workbench-ExecutionRole — the same role workbench
-# assumes everywhere else; no AWS keys are stored in GitHub.
+# only sts:AssumeRole into Workbench-BuilderRole — the REPL's default role.
+# Running as Builder keeps the quick tier honest: the Builder deny blocks
+# DataSource/FeatureSet destruction, so a delete-heavy test that belongs in a
+# higher tier fails here instead of silently passing. No AWS keys in GitHub.
 #
 # Nightly + manual only (not per-PR): the tests create/delete real resources,
 # so cost and shared-state collisions argue against running them on every push.
@@ -42,18 +44,19 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/github-actions-workbench
           aws-region: us-west-2
 
-      # Chain into the execution role so the job's ambient credentials match
-      # what workbench code expects everywhere else (ECS, endpoint containers).
-      # The lean workbench.endpoints surface uses raw boto3 clients by design,
-      # so the ambient identity needs the execution role's permissions.
+      # Chain into the builder role so the job's ambient credentials match the
+      # REPL's default role. The lean workbench.endpoints surface uses raw boto3
+      # clients by design, so the ambient identity needs the builder role's
+      # permissions (Builder is Execution minus DataSource/FeatureSet destruction,
+      # which the endpoints surface never does).
       # Note: chained sessions are capped at 1 hour — fine for the quick suite.
-      - name: Assume Workbench-ExecutionRole
+      - name: Assume Workbench-BuilderRole
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/Workbench-ExecutionRole
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_SANDBOX }}:role/Workbench-BuilderRole
           aws-region: us-west-2
           role-chaining: true
-          # The execution role's trust policy allows sts:AssumeRole only —
+          # The builder role's trust policy allows sts:AssumeRole only —
           # session tagging would need sts:TagSession on both sides.
           role-skip-session-tagging: true
 
