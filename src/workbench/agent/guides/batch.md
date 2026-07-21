@@ -71,6 +71,18 @@ Two consequences:
 
 ## Monitoring
 
-The launch is asynchronous — it returns immediately, the job runs on its own. It
-shows up in **AWS Batch → Jobs**, with logs in **CloudWatch**. Point the user
-there; the REPL won't block or report completion.
+The launch is asynchronous — it returns immediately, the job runs on its own.
+Check status from the REPL with `batch_jobs()`:
+
+```python
+from workbench.utils.batch_utils import batch_jobs
+
+batch_jobs()              # recent jobs: name, status, created, runtime, reason
+batch_jobs("mppb_reg")    # filter to the one you launched, by the name you gave it
+```
+
+A job launched as `name="mppb_reg"` appears as `workbench_mppb_reg_<timestamp>`.
+It takes a few seconds to show up (SQS → Lambda → Batch), and terminated jobs are
+only retained for a limited window (at least ~24h, often several days) — a recent
+view, not full history. For full logs, **AWS Batch → Jobs** / **CloudWatch**. The
+REPL won't block or report completion — poll `batch_jobs()` or check the console.

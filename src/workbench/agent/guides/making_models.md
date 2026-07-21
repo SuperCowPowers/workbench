@@ -50,6 +50,34 @@ A model isn't "done" until it has an endpoint and both inference runs — that's
 what populates its metrics and predictions. Since the endpoint is serverless,
 this costs nothing to leave up.
 
+## Where it runs: inline vs. Batch
+
+`to_model()` launches a SageMaker training job and then **blocks the REPL**,
+polling until the training finishes. For a quick model that's fine; for a heavy
+one it ties up the session for the whole train.
+
+- **Quick** — XGBoost / sklearn on a modest set: call `to_model()` inline.
+- **Heavy** — chemprop or pytorch (a real GNN / neural train), an HPO sweep, or a
+  large FeatureSet: **don't run it inline.** Put the same `to_model()` call in a
+  script and launch it on Batch, so the REPL stays free (see the `batch` guide):
+
+  ```python
+  from workbench.utils.batch_utils import launch_batch
+
+  code = '''
+  from workbench.api import FeatureSet, ModelType, ModelFramework
+  fs = FeatureSet("mppb_features")
+  fs.to_model(name="mppb-reg", model_type=ModelType.REGRESSOR,
+              model_framework=ModelFramework.CHEMPROP, target_column="mppb",
+              feature_list=["smiles"], hyperparameters={"uq_version": "v1"})
+  '''
+  job = launch_batch(code, name="mppb_reg_chemprop", size="medium")
+  ```
+
+  The Batch job runs `to_model()` in a detached container — same result (a new
+  Model artifact you query afterward), but your session isn't blocked. It's
+  billable compute, so confirm before launching.
+
 ## Conventions
 
 - `id_column` is **required** on `to_features()`. If the data has no natural id,

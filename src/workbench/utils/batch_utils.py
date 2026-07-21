@@ -1,7 +1,11 @@
 """Launch ad-hoc Python work onto AWS Batch (via SQS -> Lambda -> Batch)."""
 
 import os
+import time
 import tempfile
+
+JOB_QUEUE = "workbench-job-queue"
+_JOB_STATUSES = ["SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING", "SUCCEEDED", "FAILED"]
 
 
 def launch_batch(
@@ -53,3 +57,54 @@ def launch_batch(
 
     bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
     return {"name": name, "size": size, "s3_path": f"s3://{bucket}/batch-jobs/{name}"}
+
+
+def batch_jobs(name: str = None):
+    """Recent AWS Batch jobs on the Workbench queue, newest first.
+
+    Correlates with launch_batch: a job launched as `name="foo"` appears here as
+    `workbench_foo_<timestamp>`, so pass a substring to find it.
+
+    Notes:
+        - A just-launched job takes a few seconds to appear (SQS -> Lambda ->
+          Batch), so an empty result right after a launch is normal.
+        - AWS keeps terminated jobs for a limited window (at least ~24h, often
+          several days), so this is a recent view, not full history.
+
+    Args:
+        name (str, optional): Case-insensitive substring filter on the job name.
+
+    Returns:
+        pandas.DataFrame: columns [name, status, created, runtime, reason], sorted
+            newest first. Empty if nothing matches.
+    """
+    import pandas as pd
+    from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+    batch = AWSAccountClamp().boto3_session.client("batch")
+
+    rows = []
+    for status in _JOB_STATUSES:
+        for job in batch.list_jobs(jobQueue=JOB_QUEUE, jobStatus=status).get("jobSummaryList", []):
+            started, stopped = job.get("startedAt"), job.get("stoppedAt")
+            if started and stopped:
+                runtime = f"{(stopped - started) / 1000:.0f}s"
+            elif started:
+                runtime = f"{(time.time() * 1000 - started) / 1000:.0f}s (running)"
+            else:
+                runtime = ""
+            created = job.get("createdAt")
+            rows.append(
+                {
+                    "name": job["jobName"],
+                    "status": job["status"],
+                    "created": pd.to_datetime(created, unit="ms") if created else pd.NaT,
+                    "runtime": runtime,
+                    "reason": job.get("statusReason", ""),
+                }
+            )
+
+    df = pd.DataFrame(rows, columns=["name", "status", "created", "runtime", "reason"])
+    if name:
+        df = df[df["name"].str.contains(name, case=False, na=False)]
+    return df.sort_values("created", ascending=False).reset_index(drop=True)
