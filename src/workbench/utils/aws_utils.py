@@ -10,6 +10,7 @@ from typing import Union, List, Callable, Optional, TYPE_CHECKING
 import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
+from pandas.errors import EmptyDataError
 from pathlib import Path
 import posixpath
 from botocore.exceptions import ClientError
@@ -414,8 +415,8 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
         else:
             df = wr.s3.read_csv(s3_path)
         return df
-    except NoFilesFound:
-        log.info(f"Could not find S3 data at {s3_path}...")
+    except (NoFilesFound, EmptyDataError):
+        log.info(f"No S3 data at {s3_path} (missing or empty)...")
         return None
     except Exception as e:
         log.error(f"Failed to pull data from {s3_path}!")
