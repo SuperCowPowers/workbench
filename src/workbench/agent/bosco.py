@@ -35,6 +35,10 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 MAX_TOKENS = 8000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 
+# USD per token for the default model (Opus 4.8 on Bedrock, list pricing). Cache
+# write is the 1.25x (5-minute ephemeral) rate we use; read is 0.1x input.
+_RATES = {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write": 6.25e-6}
+
 # Every round of a turn resends the whole conversation, so an unbounded history
 # costs quadratically over a session. Roughly 50k tokens.
 MAX_HISTORY_CHARS = 200_000
@@ -146,6 +150,16 @@ def _cached_messages() -> list:
     return messages
 
 
+def _track_usage(usage) -> None:
+    """Accumulate one API call's token counts onto bosco.usage (session totals)."""
+    bosco.usage["input"] += usage.input_tokens
+    bosco.usage["output"] += usage.output_tokens
+    bosco.usage["cache_read"] += getattr(usage, "cache_read_input_tokens", 0) or 0
+    bosco.usage["cache_write"] += getattr(usage, "cache_creation_input_tokens", 0) or 0
+    bosco.usage["calls"] += 1
+    bosco.usage["cost_usd"] = round(sum(bosco.usage[k] * rate for k, rate in _RATES.items()), 2)
+
+
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
     global _client
@@ -161,6 +175,7 @@ def _run_turn(namespace: dict) -> None:
                 tools=TOOL_SCHEMAS,
                 messages=_cached_messages(),
             )
+        _track_usage(response.usage)
 
         text = _text_of(response)
         if text:
@@ -227,6 +242,7 @@ def bosco(prompt: str = None):
 
     bosco.show_code = True        -> also echo the code Bosco runs
     bosco.personality = "pirate"  -> voice: chipper (default), professional, pirate
+    bosco.usage                   -> session token counts + estimated cost_usd
     """
     if prompt:
         _ask(prompt)
@@ -240,6 +256,9 @@ bosco.show_code = False
 
 # The agent's voice: "chipper" (default), "professional", or "pirate".
 bosco.personality = DEFAULT_PERSONALITY
+
+# Cumulative token counts + estimated USD for the session; type `bosco.usage` to see them.
+bosco.usage = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "calls": 0, "cost_usd": 0.0}
 
 
 # A line transformer routes plain English to Bosco so you never switch modes:

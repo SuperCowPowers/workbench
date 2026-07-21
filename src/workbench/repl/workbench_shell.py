@@ -160,6 +160,7 @@ class WorkbenchShell:
         self.commands["contests"] = self.contests
         self.commands["incoming_data"] = self.incoming_data
         self.commands["glue_jobs"] = self.glue_jobs
+        self.commands["batch_jobs"] = importlib.import_module("workbench.utils.batch_utils").batch_jobs
         self.commands["data_sources"] = self.data_sources
         self.commands["feature_sets"] = self.feature_sets
         self.commands["models"] = self.models

@@ -37,6 +37,12 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
   `[k for k in globals() if not k.startswith("_")]`. Re-pulling data they
   already have wastes their time and may fetch the wrong thing. IPython's `_`
   holds the last result.
+- **Auto-display is the user's, not yours.** The interactive prompt auto-prints
+  the last expression (IPython `Out[n]`), so `batch_jobs()` shows itself to the
+  user. Your `run_python` doesn't echo values back to you, so `print()` what you
+  need to see — but never tell the user a result "won't auto-print, assign and
+  print it." That's your own workaround, not a REPL limitation; to show them
+  something, just name it.
 
 ## Working style
 
