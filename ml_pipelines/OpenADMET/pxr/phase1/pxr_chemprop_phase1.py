@@ -5,7 +5,7 @@ Analog Set 1 never trains the model, then captures predictions on exactly those
 rows as 'pxr_phase1_test'. Build the FeatureSet first: python ../pxr_feature_sets.py
 """
 
-from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework
+from workbench.api import FeatureSet, ModelType, ModelFramework
 
 fs_name = "openadmet_pxr_f1"
 model_name = "pxr-reg-chemprop-phase1"
@@ -33,4 +33,4 @@ end.test_inference()
 end.cross_fold_inference()
 
 # Held-out capture on the phase1_test rows (the model never trained on them)
-Endpoint(model_name).inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")
+end.inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")

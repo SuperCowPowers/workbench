@@ -5,7 +5,7 @@ Trains on ALL rows (train + revealed phase-1 — no sample weights), predicts th
 Build the FeatureSet first: python ../pxr_feature_sets.py
 """
 
-from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework, PublicData
+from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 
 fs_name = "openadmet_pxr_f1"
 model_name = "pxr-reg-chemprop-phase2"
@@ -29,7 +29,7 @@ end.cross_fold_inference()
 
 # Predict the blinded phase-2 test set -> submission CSV (SMILES, Molecule Name, pEC50)
 blinded = PublicData().get("comp_chem/openadmet_pxr/pxr_test_blinded")[["molecule_name", "smiles"]]
-preds = Endpoint(model_name).inference(blinded)
+preds = end.inference(blinded)
 submission = preds[["smiles", "molecule_name", "prediction"]].rename(
     columns={"smiles": "SMILES", "molecule_name": "Molecule Name", "prediction": "pEC50"}
 )

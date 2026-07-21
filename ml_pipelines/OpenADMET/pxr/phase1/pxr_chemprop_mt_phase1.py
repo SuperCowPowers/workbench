@@ -17,7 +17,7 @@ so the held-out RAE is directly comparable to the single-task baseline (~0.569).
 Build the FeatureSet first: python ../pxr_chemprop_mt_feature_sets.py
 """
 
-from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework
+from workbench.api import FeatureSet, ModelType, ModelFramework
 
 fs_name = "openadmet_pxr_mt"
 base_tags = ["openadmet_pxr", "chemprop", "multi_task", "phase1"]
@@ -55,4 +55,4 @@ for suffix, targets, task_weights in VARIANTS:
     end.cross_fold_inference()
     # Held-out capture on the phase1_test rows (the model never trained on them).
     # `prediction` aliases the primary (pec50) head, so it's comparable to the baseline.
-    Endpoint(model_name).inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")
+    end.inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")

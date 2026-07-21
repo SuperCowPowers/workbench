@@ -12,7 +12,7 @@ the phase-2 submission (that script was deleted); this file documents why.
 Build the FeatureSet first: python ../pxr_feature_sets.py
 """
 
-from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework
+from workbench.api import FeatureSet, ModelType, ModelFramework
 
 fs_name = "openadmet_pxr_f1"
 FREEZE_EPOCHS = [0, 10, 20]  # 0 = CheMeleon's validated full fine-tune; >0 = LP-FT bet for OOD
@@ -43,4 +43,4 @@ for frz in FREEZE_EPOCHS:
     end.test_inference()
     end.cross_fold_inference()
     # Held-out capture on the phase1_test rows (the model never trained on them)
-    Endpoint(model_name).inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")
+    end.inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")

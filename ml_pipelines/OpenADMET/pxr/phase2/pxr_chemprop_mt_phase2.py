@@ -10,7 +10,7 @@ The `prediction` column aliases the primary (pEC50) head.
 Build the FeatureSet first: python ../pxr_chemprop_mt_feature_sets.py
 """
 
-from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework, PublicData
+from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 
 fs_name = "openadmet_pxr_mt"
 model_name = "pxr-reg-chemprop-mt-phase2"
@@ -35,7 +35,7 @@ end.cross_fold_inference()
 
 # Predict the blinded phase-2 test set -> submission CSV (SMILES, Molecule Name, pEC50)
 blinded = PublicData().get("comp_chem/openadmet_pxr/pxr_test_blinded")[["molecule_name", "smiles"]]
-preds = Endpoint(model_name).inference(blinded)
+preds = end.inference(blinded)
 submission = preds[["smiles", "molecule_name", "prediction"]].rename(
     columns={"smiles": "SMILES", "molecule_name": "Molecule Name", "prediction": "pEC50"}
 )
