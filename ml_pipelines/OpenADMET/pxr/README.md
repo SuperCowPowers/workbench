@@ -7,8 +7,8 @@ Modeling work for the [OpenADMET PXR Induction Blind Challenge](https://openadme
 
 One **shared** FeatureSet (`openadmet_pxr_f1`) holds train + the revealed phase-1
 set, with a `split` column marking each row. Both phase models (simple Chemprop,
-SMILES-only) consume it; the phase-1 model zero-weights the `phase1_test` rows via
-`sample_weights` so the held-out set never trains it. The xgb / pytorch / hybrid
+SMILES-only) consume it; the phase-1 model holds the `phase1_test` rows out of
+training via `validation_ids` so the held-out set never trains it. The xgb / pytorch / hybrid
 explorations are parked in a top-level `storage/` (kept out of the phase dirs so
 launching from inside a phase never picks them up).
 
@@ -16,7 +16,7 @@ launching from inside a phase never picks them up).
 pipelines.json         # one DAG: producer → phase1 + phase2 (subdir-relative paths)
 pxr_feature_sets.py    # producer: builds the shared FeatureSet openadmet_pxr_f1
 phase1/
-  pxr_chemprop_phase1.py   # consumes the FS; zero-weights phase1_test; capture on it
+  pxr_chemprop_phase1.py   # consumes the FS; holds out phase1_test; capture on it
 phase2/
   pxr_chemprop_phase2.py   # consumes the FS; trains on all rows; predict 513 blinded → submission CSV
   activity_leaderboard_phase2.csv

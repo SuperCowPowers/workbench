@@ -10,8 +10,8 @@ Two variants differ only in the 3D layer:
 
 A `split` column marks each row ("train" or "phase1_test"):
 
-  - phase-1 model zero-weights the `phase1_test` rows (via sample_weights) so the
-    held-out set never trains it — then evaluates on exactly those rows.
+  - phase-1 model holds the `phase1_test` rows out of training (via validation_ids)
+    so the held-out set never trains it — then evaluates on exactly those rows.
   - phase-2 model trains on everything (train + phase-1) and predicts the blinded set.
 
 f2 requires the smiles-to-2d-3d-v2 endpoint to be deployed first.

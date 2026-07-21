@@ -10,9 +10,9 @@ the unused auxiliary (its rows become all-NaN and chemprop masks them out):
   - mt-both : pEC50 + logP + logD
 
 `task_weights` keep pEC50 dominant in the gradient (logP is down-weighted harder
-since it has ~13x the rows). Each variant zero-weights the phase1_test rows out of
-training and captures `pxr_phase1_test` on exactly those rows, so the held-out RAE
-is directly comparable to the single-task baseline (~0.569).
+since it has ~13x the rows). Each variant holds the phase1_test rows out of
+training via validation_ids and captures `pxr_phase1_test` on exactly those rows,
+so the held-out RAE is directly comparable to the single-task baseline (~0.569).
 
 Build the FeatureSet first: python ../pxr_chemprop_mt_feature_sets.py
 """
@@ -32,7 +32,7 @@ VARIANTS = [
 fs = FeatureSet(fs_name)
 df = fs.pull_dataframe()
 phase1 = df[df["split"] == "phase1_test"]
-weights = {mid: 0.0 for mid in phase1["molecule_name"]}  # held-out rows don't train
+validation_ids = list(phase1["molecule_name"])  # held-out validation set (not trained)
 
 for suffix, targets, task_weights in VARIANTS:
     model_name = f"pxr-reg-chemprop-mt-{suffix}"
@@ -43,10 +43,10 @@ for suffix, targets, task_weights in VARIANTS:
         model_framework=ModelFramework.CHEMPROP,
         feature_list=["smiles"],
         target_column=targets,  # pec50 first (primary); aux head(s) follow
-        description=f"PXR phase-1 multi-task Chemprop, aux={'+'.join(targets[1:])} (phase1_test zero-weighted)",
+        description=f"PXR phase-1 multi-task Chemprop, aux={'+'.join(targets[1:])} (phase1_test held out)",
         tags=tags,
         hyperparameters={"uq_version": "v1", "task_weights": task_weights},
-        sample_weights=weights,
+        validation_ids=validation_ids,
     )
     m.set_owner("open_admet_pxr")
     end = m.to_endpoint(tags=tags)

@@ -21,7 +21,7 @@ base_tags = ["openadmet_pxr", "chemprop", "chemeleon", "phase1"]
 fs = FeatureSet(fs_name)
 df = fs.pull_dataframe()
 phase1 = df[df["split"] == "phase1_test"]
-weights = {mid: 0.0 for mid in phase1["molecule_name"]}  # held-out rows don't train
+validation_ids = list(phase1["molecule_name"])  # held-out validation set (not trained)
 
 for frz in FREEZE_EPOCHS:
     model_name = f"pxr-reg-chemprop-chemeleon-phase1-frz{frz}"
@@ -32,10 +32,10 @@ for frz in FREEZE_EPOCHS:
         model_framework=ModelFramework.CHEMPROP,
         feature_list=["smiles"],
         target_column="pec50",
-        description=f"PXR phase-1 Chemprop, CheMeleon warm-start, freeze={frz} (phase1_test zero-weighted)",
+        description=f"PXR phase-1 Chemprop, CheMeleon warm-start, freeze={frz} (phase1_test held out)",
         tags=tags,
         hyperparameters={"uq_version": "v1", "from_foundation": "CheMeleon", "freeze_mpnn_epochs": frz},
-        sample_weights=weights,
+        validation_ids=validation_ids,
     )
     m.set_owner("open_admet_pxr")
     end = m.to_endpoint(tags=tags)

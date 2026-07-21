@@ -9,8 +9,8 @@ built first to supply SHAP rankings for the reduced PyTorch variants:
     - pxr-2d-3dv2-reg-pytorch-<N>   PyTorch UQ, all N features
     - pxr-2d-3dv2-reg-pytorch-100   PyTorch UQ, top-100 non-zero SHAP
 
-f2 already CONTAINS the phase-1 rows (split == "phase1_test"), so each model
-zero-weights them via `sample_weights` (held-out never trains the model), then a
+f2 already CONTAINS the phase-1 rows (split == "phase1_test"), so each model holds
+them out of training via `validation_ids` (held-out never trains the model), then a
 `pxr_phase1_test` capture is run on exactly those rows — pulled straight from the
 FeatureSet (features already computed; no re-inference) — for honest held-out RAE.
 
@@ -49,10 +49,10 @@ def top_n_shap(model_name: str, n: int) -> list[str]:
     return [feat for feat, imp in Model(model_name).shap_importance() if imp != 0.0][:n]
 
 
-def build(fs, name, framework, feats, sample_weights, extra_tags, desc) -> None:
+def build(fs, name, framework, feats, validation_ids, extra_tags, desc) -> None:
     """Create the model + endpoint and run the standard validation captures.
 
-    `sample_weights` zero-weights the held-out phase1_test rows so they never train.
+    `validation_ids` holds the phase1_test rows out of training so they never train.
     """
     log.info(f"Creating {framework.name} model: {name}  ({len(feats)} features)")
     model = fs.to_model(
@@ -63,7 +63,7 @@ def build(fs, name, framework, feats, sample_weights, extra_tags, desc) -> None:
         feature_list=feats,
         description=desc,
         tags=TAGS + extra_tags,
-        sample_weights=sample_weights,
+        validation_ids=validation_ids,
         hyperparameters={"uq_version": "v1"},  # v1 = proximity-augmented RF error model
     )
     model.set_owner("open_admet_pxr")
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     df = fs.pull_dataframe()
     feats = feature_list(df)
     phase1 = df[df[SPLIT_COL] == "phase1_test"]
-    sample_weights = {mid: 0.0 for mid in phase1[ID_COL]}  # held-out rows don't train
+    validation_ids = list(phase1[ID_COL])  # held-out validation set (not trained)
     test_df = phase1[[ID_COL, SMILES_COL, TARGET_COL] + feats]  # features already present — no re-inference
     log.info(f"=== {VARIANT} — {FS_NAME}  ({len(feats)} features, {len(test_df)} held-out rows) ===")
 
@@ -105,9 +105,9 @@ if __name__ == "__main__":
         xgb_name,
         ModelFramework.XGBOOST,
         feats,
-        sample_weights,
+        validation_ids,
         [VARIANT, "xgboost"],
-        f"PXR pEC50 XGBoost UQ on {VARIANT} features (phase1_test zero-weighted)",
+        f"PXR pEC50 XGBoost UQ on {VARIANT} features (phase1_test held out)",
     )
     capture_phase1(xgb_name, test_df)
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
             name,
             ModelFramework.PYTORCH,
             selected,
-            sample_weights,
+            validation_ids,
             [VARIANT, "pytorch", f"feat{count}"],
             f"PXR pEC50 PyTorch Tabular UQ ({VARIANT}) — {label}",
         )

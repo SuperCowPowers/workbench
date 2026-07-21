@@ -1,7 +1,7 @@
 """PXR phase-1 model: regularization-tuned ChemProp on the shared FeatureSet.
 
-Same held-out setup as pxr_chemprop_phase1.py (the phase1_test rows are
-zero-weighted out of training and captured), but with the ChemProp knobs tuned
+Same held-out setup as pxr_chemprop_phase1.py (the phase1_test rows are held out
+of training via validation_ids and captured), but with the ChemProp knobs tuned
 toward regularization for this ~4k-compound dataset: a tapered FFN head (far
 fewer params than the default 2000x2), slightly higher dropout, and a gentler
 learning-rate schedule. Compares directly against the default-knob
@@ -35,7 +35,7 @@ m = fs.to_model(
         "warmup_epochs": 5,  # gentler schedule
         "max_lr": 5e-4,  # vs default 1e-3
     },
-    sample_weights={mid: 0.0 for mid in phase1["molecule_name"]},  # held-out rows don't train
+    validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
 )
 m.set_owner("open_admet_pxr")
 end = m.to_endpoint(tags=tags)

@@ -12,7 +12,7 @@ with NaN where a source doesn't carry that target (chemprop masks missing target
 
 Sources are unioned by canonical SMILES (a molecule in multiple sources collapses to
 one row with all its known targets). The PXR `split` column is carried through as a
-passthrough so the model can zero-weight the phase1_test rows out of training.
+passthrough so the model can hold the phase1_test rows out of training.
 
 Run once before the multi-task phase model:  python pxr_chemprop_mt_feature_sets.py
 """

@@ -1,8 +1,8 @@
 """PXR phase-1 model: Chemprop on the shared FeatureSet (openadmet_pxr_f1).
 
-Zero-weights the `phase1_test` rows via sample_weights so the held-out Analog
-Set 1 never trains the model, then captures predictions on exactly those rows as
-'pxr_phase1_test'. Build the FeatureSet first: python ../pxr_feature_sets.py
+Holds the `phase1_test` rows out of training via validation_ids so the held-out
+Analog Set 1 never trains the model, then captures predictions on exactly those
+rows as 'pxr_phase1_test'. Build the FeatureSet first: python ../pxr_feature_sets.py
 """
 
 from workbench.api import FeatureSet, Endpoint, ModelType, ModelFramework
@@ -21,10 +21,10 @@ m = fs.to_model(
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],
     target_column="pec50",
-    description="PXR phase-1 pEC50 Chemprop (SMILES only; phase1_test zero-weighted out of training)",
+    description="PXR phase-1 pEC50 Chemprop (SMILES only; phase1_test held out of training)",
     tags=tags,
     hyperparameters={"uq_version": "v1"},  # active confidence = v1; v0/v2 also saved
-    sample_weights={mid: 0.0 for mid in phase1["molecule_name"]},  # held-out rows don't train
+    validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
 )
 m.set_owner("open_admet_pxr")
 end = m.to_endpoint(tags=tags)

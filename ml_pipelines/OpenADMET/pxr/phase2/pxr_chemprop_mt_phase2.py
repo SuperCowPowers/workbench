@@ -3,7 +3,7 @@
 The weekend's best held-out model. Same multi-task recipe as the phase-1 winner
 (pxr-reg-chemprop-mt-both: pEC50 primary, logD + logP auxiliaries supervising the
 shared MPNN, task_weights [1.0, 0.2, 0.3]) but trains on ALL pEC50 rows (train +
-revealed phase-1, no zero-weighting) plus the public logP/logD aux data, then
+revealed phase-1, nothing held out) plus the public logP/logD aux data, then
 predicts the 513-compound blinded phase-2 test set and writes the submission CSV.
 
 The `prediction` column aliases the primary (pEC50) head.
