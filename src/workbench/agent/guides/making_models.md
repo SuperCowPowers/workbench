@@ -104,10 +104,14 @@ compute that bills continuously. Only there, confirm with the user first.
 ## Inspecting
 
 ```python
-model.details()             # metadata, metrics, hyperparameters
-model.performance_metrics() # scored metrics (populated by the inference runs above)
-model.list_inference_runs() # capture names available on this model
+model.details()                          # metadata, hyperparameters
+model.list_inference_runs()              # capture names available on this model
+model.get_inference_metrics(capture)     # metrics for a capture (rmse, mae, r2, spearmanr, ...)
 ```
+
+`get_inference_metrics(capture_name="default")` returns a one-row metrics
+DataFrame (or `None` if that capture doesn't exist — check
+`list_inference_runs()` first). There is no `performance_metrics()` method.
 
 ## Model / Endpoint interaction
 

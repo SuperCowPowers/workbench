@@ -76,8 +76,9 @@ million rows into the REPL to compute a mean wastes minutes.
 ```python
 model = Model("aqsol-reg")
 model.details()
-model.performance_metrics()
-model.get_inference_predictions()   # populated after endpoint inference runs
+model.list_inference_runs()                    # capture names on this model
+model.get_inference_metrics(capture)           # metrics for a capture (None if it doesn't exist)
+model.get_inference_predictions(capture)       # predictions, populated after inference runs
 ```
 
 ## Reading the pipeline backwards

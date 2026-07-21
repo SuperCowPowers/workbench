@@ -1,6 +1,6 @@
 # Contests
 
-> champion vs challenger model comparisons; who is winning an endpoint
+> ranked metrics comparison across a model family; which model performs best
 
 A contest is a **champion/challenger comparison for one endpoint**. The champion
 is the model currently serving it; challengers are alternatives scored on the
@@ -45,6 +45,30 @@ Each row is one model in the contest:
 
 The `Δ` columns are the point: a positive delta means the challenger beat the
 champion on that metric.
+
+## Which model is best? Use the contest report
+
+For "which pxr model is best" / "compare these models" / "who's the top
+performer", the contest report **is the answer** — it is a pre-computed, ranked
+metrics table for the whole family, all scored on the same `inference_run`. Read
+it instead of pulling metrics model-by-model (that is slower and easy to get
+wrong):
+
+```python
+from workbench.utils.contest_utils import find_contests
+from workbench.api import Reports
+
+loc = find_contests("pxr-reg-chemprop-mt-logd-260715")[0]["contest"]  # -> "/contests/pxr-reg-v1"
+report = Reports().get(loc)                                           # champion first, challengers best-first
+report[["model", "role", "rmse", "r2", "spearmanr"]]                  # the ranked comparison
+```
+
+Rows are already ordered best-first, so the top challenger (or the champion) is
+the best performer on the primary metric (rmse for regressors, f1 for
+classifiers). Only models entered in the contest appear — if one of the family
+isn't there, say so. For an arbitrary set of models that don't share a contest,
+`rank_models(models, inference_run)` from `workbench.utils.model_comparison` does
+the same ranking on the fly.
 
 ## Is this model in a contest?
 

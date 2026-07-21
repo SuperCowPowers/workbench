@@ -2,6 +2,7 @@
 
 import logging
 import base64
+import sys
 from typing import Optional, Tuple
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
@@ -418,19 +419,19 @@ if __name__ == "__main__":
     print(f"   {'✓' if n_axes == 4 else '✗'} 3 mols, ncols=2 -> 2x2 = 4 axes: {n_axes}")
     matplotlib.pyplot.close(fig)
 
-    # Test the tooltip generation in a simple Dash app
-    from dash import Dash
-
-    app = Dash(__name__)
-    app.layout = html.Div(
-        [
-            html.Div("Tooltip Preview:", style={"color": "white", "marginBottom": "20px"}),
-            *molecule_hover_tooltip("CC(=O)OC1=CC=CC=C1C(=O)O", mol_id="Aspirin", background="rgba(200, 30, 30, 1)"),
-        ],
-        style={"background": "#1a1a1a", "padding": "50px"},
-    )
-
-    if __name__ == "__main__":
-        app.run(debug=True)
-
     print("\n✅  All tests completed!")
+
+    # Opt-in Dash preview of the tooltip generation (blocking); run with `--dash`.
+    if "--dash" in sys.argv:
+        from dash import Dash
+
+        aspirin = "CC(=O)OC1=CC=CC=C1C(=O)O"
+        app = Dash(__name__)
+        app.layout = html.Div(
+            [
+                html.Div("Tooltip Preview:", style={"color": "white", "marginBottom": "20px"}),
+                *molecule_hover_tooltip(aspirin, mol_id="Aspirin", background="rgba(200, 30, 30, 1)"),
+            ],
+            style={"background": "#1a1a1a", "padding": "50px"},
+        )
+        app.run(debug=True)

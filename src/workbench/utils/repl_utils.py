@@ -39,11 +39,17 @@ class Spinner:
         self.message = message
         self.color = color
         self.thread = threading.Thread(target=self.spin)
+        self.stream = sys.stdout
 
     def _write(self, text):
-        """Write text to stdout and flush."""
-        sys.stdout.write(text)
-        sys.stdout.flush()
+        """Write to the pinned terminal stream and flush.
+
+        Pinned at start() rather than read live, so a `redirect_stdout` running
+        on another thread (e.g. Bosco capturing a tool's output) can't divert the
+        animation into its capture buffer.
+        """
+        self.stream.write(text)
+        self.stream.flush()
 
     def _hide_cursor(self):
         """Hide the terminal cursor."""
@@ -83,6 +89,7 @@ class Spinner:
 
     def start(self):
         """Start the spinner in a separate thread."""
+        self.stream = sys.stdout  # pin the terminal stream before any redirect
         self.thread.start()
 
     def stop(self, clear: bool = False):

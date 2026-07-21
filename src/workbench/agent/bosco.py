@@ -232,7 +232,7 @@ def bosco(prompt: str = None):
         _ask(prompt)
         return
     cprint("lightpurple", "🐶  Just ask -- type a question at the prompt.")
-    cprint("grey", "(⌥ Option+Enter or Ctrl-J for a new line. bosco.show_code = True to see the code.)")
+    cprint("grey", '(⌥ Option+Enter = newline. Say "show code"/"be a pirate", or set bosco.show_code / .personality.)')
 
 
 # Echo the code Bosco runs. Off by default; set True to follow along.
