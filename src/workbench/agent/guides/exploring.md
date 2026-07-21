@@ -77,9 +77,14 @@ million rows into the REPL to compute a mean wastes minutes.
 model = Model("aqsol-reg")
 model.details()
 model.list_inference_runs()                    # capture names on this model
-model.get_inference_metrics(capture)           # metrics for a capture (None if it doesn't exist)
+model.get_inference_metrics(capture)           # metrics for a capture (None if it has none)
 model.get_inference_predictions(capture)       # predictions, populated after inference runs
 ```
+
+`get_inference_metrics(capture)` returns `None` when the capture has no usable
+metrics. A `No columns to parse from file` log means the metrics file is **empty,
+not access-denied** (permissions would be a 403, raised before parsing). Read
+`None` as "no metrics here," report it, and move on — don't retry.
 
 ## Reading the pipeline backwards
 
