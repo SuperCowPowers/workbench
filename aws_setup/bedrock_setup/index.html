@@ -4135,10 +4135,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#enable-bosco" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        Enable Bosco
       
     </span>
   </a>
@@ -4164,45 +4164,6 @@
       
     </span>
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#403-accessdenied" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        403 / AccessDenied
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#404-model-does-not-exist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        404 / model does not exist
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -5060,10 +5021,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#enable-bosco" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Setup
+        Enable Bosco
       
     </span>
   </a>
@@ -5092,45 +5053,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#403-accessdenied" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        403 / AccessDenied
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#404-model-does-not-exist" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        404 / model does not exist
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -5149,59 +5071,61 @@
 
 
 <h1 id="aws-bedrock-setup">AWS Bedrock Setup</h1>
-<p>The Workbench ML agent runs Claude through <strong>Amazon Bedrock</strong>, so prompts are
-authenticated by your existing Workbench IAM roles, billed through your AWS
-account, and never leave AWS.</p>
-<p>The Core Stack already grants the Bedrock permissions. Setup is a one-time
-console visit.</p>
+<p>The Workbench ML agent (Bosco) runs Claude through <strong>Amazon Bedrock</strong>, so
+prompts are authenticated by your existing Workbench IAM roles, billed through
+your AWS account, and never leave AWS.</p>
 <p>For what the agent sends to the model and why that boundary is safe, see
 <a href="../bedrock_security/">AWS Bedrock Security</a>.</p>
-<h2 id="setup">Setup</h2>
-<p>Once per AWS account, as an <strong>administrator</strong>:</p>
-<ul>
-<li>Open <strong>Bedrock</strong> in the console, in your Workbench region.</li>
-<li><strong>Model catalog</strong> → select a Claude model.</li>
-<li>Submit the <strong>Use Case Details</strong> form if it appears.</li>
-<li>Open the model in the <strong>playground</strong> and send it a prompt.</li>
-</ul>
-<p>The playground prompt is what enables the model account-wide. There's no
-confirmation screen — verify below.</p>
+<h2 id="enable-bosco">Enable Bosco</h2>
+<p>Set <code>ENABLE_BOSCO</code> in the personal Workbench <strong>config</strong> for each account. It's also handy to set the dashboard URL so Bosco can open Dashboard
+pages for you.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">   </span><span class="nt">&quot;DASHBOARD_URL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your dashboard URL&gt;&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">   </span><span class="nt">&quot;ENABLE_BOSCO&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The config file lives at:</p>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macOS / Linux</td>
+<td><code>~/.workbench/workbench_config.json</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>%LOCALAPPDATA%\Workbench\workbench_config.json</code></td>
+</tr>
+</tbody>
+</table>
 <div class="admonition note">
 <p class="admonition-title">Which model?</p>
 <p>The agent defaults to <strong>Claude Opus 4.8</strong>
-(<code>us.anthropic.claude-opus-4-8</code>). Any Claude model works — repeat the
-playground step for each one you want. Non-Anthropic models (Llama,
-Mistral, Titan) are not supported.</p>
+(<code>us.anthropic.claude-opus-4-8</code>). Any Claude model works. Non-Anthropic
+models (Llama, Mistral, Titan) are not supported.</p>
 </div>
 <h2 id="verify">Verify</h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>bedrock_verify
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bedrock_verify
 </span></code></pre></div>
 <p>Uses the same credentials and region as the Workbench REPL, and does a small
 round-trip against Claude:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Region: us-west-2
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Model:  us.anthropic.claude-opus-4-8
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Success: ready
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Region: us-west-2
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Model:  us.anthropic.claude-opus-4-8
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Success: ready
 </span></code></pre></div>
 <p>To check a different model:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>bedrock_verify<span class="w"> </span>us.anthropic.claude-sonnet-5
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bedrock_verify<span class="w"> </span>us.anthropic.claude-sonnet-5
 </span></code></pre></div>
 <h2 id="cost">Cost</h2>
 <p>Per-token against your AWS account, on the same bill as SageMaker. See
 <a href="../../admin/aws_service_limits/">AWS Service Limits</a> for quota monitoring.</p>
-<h2 id="troubleshooting">Troubleshooting</h2>
-<h3 id="403-accessdenied">403 / AccessDenied</h3>
-<p>Credentials are fine — this is authorization:</p>
-<ol>
-<li><strong><code>aws-marketplace:Subscribe</code></strong> — nobody ran the playground step for this
-   model. See Setup.</li>
-<li><strong>Service Control Policy</strong> — an org-level deny overrides the account. Needs
-   org access to allow <code>bedrock:*</code>.</li>
-<li><strong>Stale Core Stack</strong> — redeploy if it predates the Bedrock permissions.</li>
-<li><strong>Wrong role</strong> — check <code>aws sts get-caller-identity</code>.</li>
-</ol>
-<h3 id="404-model-does-not-exist">404 / model does not exist</h3>
-<p>Model availability varies by region, and Claude 4.x needs the <code>us.</code> inference
-profile prefix — not a bare model id.</p>
 
 
 
