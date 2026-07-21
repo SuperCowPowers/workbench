@@ -139,6 +139,9 @@ class WorkbenchShell:
         self.meta_status = "DIRECT"
         self.bedrock_status = False  # set once AWS is confirmed (Bosco needs Bedrock)
 
+        # Bosco is opt-in per account: only wired up when ENABLE_BOSCO is truthy in the config.
+        self.bosco_enabled = str(self.cm.get_config("ENABLE_BOSCO", False)).strip().lower() in ("true", "1", "yes")
+
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.aws_status = self.check_aws_account()
@@ -184,12 +187,14 @@ class WorkbenchShell:
         self.commands["log_theme"] = log_theme
         self.commands["reconnect"] = self.check_aws_account
         self.commands["pub_data"] = importlib.import_module("workbench.api.public_data").PublicData()
-        self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
+        # Bosco is opt-in (ENABLE_BOSCO); when off, the agent, prompt tag, and router stay dark
+        if self.bosco_enabled:
+            self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
 
-        # Bosco needs Bedrock; gate the agent (and its prompt tag) on availability
-        if self.aws_status:
-            with silence_logs():
-                self.bedrock_status = importlib.import_module("workbench.utils.bedrock_utils").bedrock_available()
+            # Bosco needs Bedrock; light the prompt tag only when it's actually reachable
+            if self.aws_status:
+                with silence_logs():
+                    self.bedrock_status = importlib.import_module("workbench.utils.bedrock_utils").bedrock_available()
 
         # Add cheminformatics utils if available
         if HAVE_CHEM_UTILS:
@@ -214,8 +219,9 @@ class WorkbenchShell:
         config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
         config.TerminalInteractiveShell.banner1 = ""
 
-        # Install the `bosco <text>` line router once the shell exists
-        config.InteractiveShellApp.exec_lines = ["from workbench.agent.bosco import register; register()"]
+        # Install the `bosco <text>` line router once the shell exists (only when Bosco is enabled)
+        if self.bosco_enabled:
+            config.InteractiveShellApp.exec_lines = ["from workbench.agent.bosco import register; register()"]
 
         # Merge custom commands and globals into the namespace
         locs = self.commands.copy()  # Copy the custom commands
@@ -440,16 +446,17 @@ class WorkbenchShell:
             flag = "contested" if row["contested"] else "stable"
             flag_color = "lightgreen" if row["contested"] else "grey"
             when = row["timestamp"].strftime("%Y-%m-%d") if row["timestamp"] is not None else ""
-            cprint(
-                [
-                    "lightpurple",
-                    "\t" + name,
-                    flag_color,
-                    (flag + " " * 10)[:10],
-                    "grey",
-                    f" ({row['challengers']} challengers)  {when}",
-                ]
-            )
+            segments = [
+                "lightpurple",
+                "\t" + name,
+                flag_color,
+                (flag + " " * 10)[:10],
+                "grey",
+                f" ({row['challengers']} challengers)  {when}",
+            ]
+            if row.get("recent_change"):
+                segments += ["orange", "  ★ recent"]
+            cprint(segments)
 
     def incoming_data(self):
         return self.meta.incoming_data()

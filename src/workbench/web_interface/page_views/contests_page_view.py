@@ -10,10 +10,7 @@ from workbench.web_interface.page_views.page_view import PageView
 from workbench.api import Reports
 from workbench.cached.cached_meta import CachedMeta
 from workbench.utils.pipeline_utils import endpoint_group_paths
-
-# A contest gets the "recent change" badge when its champion was created (promoted) within
-# this window. Relative to now, so it's computed per refresh rather than in the report.
-RECENT_CHANGE_HOURS = 72
+from workbench.utils.contest_utils import RECENT_CHANGE_HOURS
 
 
 class ContestsPageView(PageView):

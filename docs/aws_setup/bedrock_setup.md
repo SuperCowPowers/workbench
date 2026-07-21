@@ -1,32 +1,39 @@
 # AWS Bedrock Setup
 
-The Workbench ML agent runs Claude through **Amazon Bedrock**, so prompts are
-authenticated by your existing Workbench IAM roles, billed through your AWS
-account, and never leave AWS.
+The Workbench ML agent (Bosco) runs Claude through **Amazon Bedrock**, so
+prompts are authenticated by your existing Workbench IAM roles, billed through
+your AWS account, and never leave AWS.
 
-The Core Stack already grants the Bedrock permissions. Setup is a one-time
-console visit.
 
 For what the agent sends to the model and why that boundary is safe, see
 [AWS Bedrock Security](bedrock_security.md).
 
-## Setup
+## Enable Bosco
 
-Once per AWS account, as an **administrator**:
+Set `ENABLE_BOSCO` in the personal Workbench **config** for each account. It's also handy to set the dashboard URL so Bosco can open Dashboard
+pages for you.
 
-- Open **Bedrock** in the console, in your Workbench region.
-- **Model catalog** → select a Claude model.
-- Submit the **Use Case Details** form if it appears.
-- Open the model in the **playground** and send it a prompt.
+```json
+{
+    ...
+   "DASHBOARD_URL": "<your dashboard URL>",
+   "ENABLE_BOSCO": true,
+    ...
+}
+```
 
-The playground prompt is what enables the model account-wide. There's no
-confirmation screen — verify below.
+The config file lives at:
+
+| OS | Path |
+| --- | --- |
+| macOS / Linux | `~/.workbench/workbench_config.json` |
+| Windows | `%LOCALAPPDATA%\Workbench\workbench_config.json` |
+
 
 !!! note "Which model?"
     The agent defaults to **Claude Opus 4.8**
-    (`us.anthropic.claude-opus-4-8`). Any Claude model works — repeat the
-    playground step for each one you want. Non-Anthropic models (Llama,
-    Mistral, Titan) are not supported.
+    (`us.anthropic.claude-opus-4-8`). Any Claude model works. Non-Anthropic
+    models (Llama, Mistral, Titan) are not supported.
 
 ## Verify
 
@@ -54,20 +61,3 @@ bedrock_verify us.anthropic.claude-sonnet-5
 Per-token against your AWS account, on the same bill as SageMaker. See
 [AWS Service Limits](../admin/aws_service_limits.md) for quota monitoring.
 
-## Troubleshooting
-
-### 403 / AccessDenied
-
-Credentials are fine — this is authorization:
-
-1. **`aws-marketplace:Subscribe`** — nobody ran the playground step for this
-   model. See Setup.
-2. **Service Control Policy** — an org-level deny overrides the account. Needs
-   org access to allow `bedrock:*`.
-3. **Stale Core Stack** — redeploy if it predates the Bedrock permissions.
-4. **Wrong role** — check `aws sts get-caller-identity`.
-
-### 404 / model does not exist
-
-Model availability varies by region, and Claude 4.x needs the `us.` inference
-profile prefix — not a bare model id.

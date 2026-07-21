@@ -197,7 +197,13 @@ class ConfigManager:
 
         # Prompt for each configuration value
         for key, value in bootstrap_config.items():
-            if value == "change_me":
+            if key == "ENABLE_BOSCO":
+                answer = input("[optional] ENABLE_BOSCO -- run the Bosco ML agent? (y/N): ").strip().lower()
+                site_config_updates[key] = answer in ("y", "yes", "true", "1")
+            elif not isinstance(value, str):
+                # Non-string defaults (dicts, bools) are kept as-is, not prompted
+                continue
+            elif value == "change_me":
                 value = input(f"{key}: ")
                 site_config_updates[key] = value
             elif "change_me_optional" in value:
@@ -375,6 +381,7 @@ class ConfigManager:
             "DASHBOARD_URL": "change_me_optional:",
             "WORKBENCH_ROLE": "Workbench-BuilderRole",
             "WORKBENCH_PLUGINS": "package",
+            "ENABLE_BOSCO": False,
             "WORKBENCH_FEATURES": {
                 "plugins": "true",
                 "experimental": "false",
