@@ -116,7 +116,10 @@ model = fs.to_model(
   listed default to `1.0`. It carries **no** role semantics: a weight of `0.0`
   is just a zero weight, **not** an exclusion. To drop a row, use `exclude_ids`.
 - **`validation_ids`** — kept in the training view and marked, but routed out of
-  training and scored as a genuine held-out set.
+  training and scored as a genuine held-out set. That scoring tells you how the
+  *model* generalizes; for the ground truth on *deployed* performance, run
+  `endpoint.inference()` on those same ids — it exercises the real serving path
+  (container, feature pipeline, prediction aliasing) end to end.
 - **`exclude_ids`** — dropped from the training view entirely; no model ever
   sees them. Use for outliers and anomalies. On overlap it **takes precedence**
   over `validation_ids`.

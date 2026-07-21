@@ -104,3 +104,9 @@ explain(vis.molecule_grid)
 Quote the real signature and defaults, and cite the location as
 `api/model.py:55`. If introspection contradicts a guide or what the user
 expects, say so plainly — the live code is the truth.
+
+When the user asked to **see** the code ("show me the Model class"), don't just
+`print()` it — `run_python` output comes back to you, not to their screen. Put
+the source in your reply inside a ```python fenced block so it renders for them
+(see `general` → showing code). If a whole class is too long to return in one
+read, show its signature and the methods they care about, then cite the path.

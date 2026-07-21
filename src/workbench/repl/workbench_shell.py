@@ -212,6 +212,8 @@ class WorkbenchShell:
             self.cow_pun()
             self.summary()
             self.contests()
+            if self.bosco_enabled:
+                cprint("lightpurple", "\n🐶  New to Workbench? Ask me to walk you through building your first model.")
 
         # Load the default IPython configuration
         config = load_default_config()
