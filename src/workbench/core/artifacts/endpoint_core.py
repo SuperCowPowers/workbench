@@ -1078,8 +1078,13 @@ class EndpointCore(Artifact):
             f"{inference_capture_path}/inference_meta.json",
             index=False,
         )
-        self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
-        wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
+        # An empty metrics frame (a target with no ground truth in the eval set) would
+        # serialize to a 1-byte CSV that read_csv can't parse — skip it instead.
+        if metrics is not None and not metrics.empty:
+            self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
+            wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
+        else:
+            self.log.info(f"No metrics for {capture_name} (no ground truth for target); skipping metrics file.")
 
         # Save the inference predictions for this target
         self._save_target_inference(inference_capture_path, pred_results_df, target, id_column, include_quantiles)
