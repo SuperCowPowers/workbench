@@ -6,6 +6,11 @@ When you need the real signature, the actual default, or how something is
 implemented — read the source instead of guessing. It ships with the package, so
 it is always available and always matches the version the user is running.
 
+This guide is for hunting **by name across the whole tree** when you don't have
+the object yet. If you already hold an object, class, or util function, the
+`introspection` guide is faster and exact — `dir()`, `inspect.signature`,
+`inspect.getsource` straight off the thing in hand.
+
 Most users `pip install workbench`, so the code lives in site-packages, not a
 cloned repo. Always locate it dynamically; never hardcode a path.
 

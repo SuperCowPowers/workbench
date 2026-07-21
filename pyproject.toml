@@ -129,6 +129,7 @@ packages = { find = { where = ["src"] } }
 
 [project.scripts]
 workbench = "workbench.repl.workbench_shell:launch_shell"
+bosco = "workbench.repl.workbench_shell:launch_shell"
 cloud_watch = "workbench.scripts.monitor_cloud_watch:main"
 workbench_config = "workbench.scripts.show_config:main"
 df_store = "workbench.scripts.df_store:main"

@@ -40,7 +40,10 @@ end.cross_fold_inference()    # full cross-fold metrics
 ```
 
 `test_inference()` proves the endpoint answers at all; it is not an evaluation.
-`cross_fold_inference()` is what gives you trustworthy metrics.
+`cross_fold_inference()` is what gives you trustworthy metrics. It **pulls the
+out-of-fold predictions computed at training time** from S3 — it does not re-run
+the folds through the endpoint — so it's quick and its cost doesn't scale with
+the set size. Both are inline calls; neither belongs on Batch.
 
 ## Inference on your own data
 

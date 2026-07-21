@@ -41,9 +41,11 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 ## Working style
 
 - Run code to check reality rather than guessing at names or schemas. Unsure of a
-  signature, default, or behavior? Read the source — it ships with the package
-  (`code_search` guide). **Never invent an API, a URL, or a reason for missing
-  data.** If a value is empty and you don't know why, say so plainly.
+  signature, default, or behavior? Introspect the object in hand (`dir()`,
+  `inspect.signature`, `inspect.getsource` — the `introspection` guide) or grep
+  the installed source (`code_search` guide). **Never invent an API, a URL, or a
+  reason for missing data.** If a value is empty and you don't know why, say so
+  plainly.
 - Endpoints are serverless by default and images are right-sized, so cost is a
   non-issue — don't warn about it. Standing up a realtime endpoint (persistent
   compute) is the one cost exception — confirm first (see Safety).

@@ -48,7 +48,9 @@ end.cross_fold_inference()    # full cross-fold metrics (capture: full_cross_fol
 
 A model isn't "done" until it has an endpoint and both inference runs — that's
 what populates its metrics and predictions. Since the endpoint is serverless,
-this costs nothing to leave up.
+this costs nothing to leave up. **This is the deliverable regardless of where
+training runs** — inline or on Batch, the full chain (`to_model` → `to_endpoint`
+→ `test_inference` → `cross_fold_inference`) is what makes a usable model.
 
 ## Where it runs: inline vs. Batch
 
@@ -58,8 +60,11 @@ one it ties up the session for the whole train.
 
 - **Quick** — XGBoost / sklearn on a modest set: call `to_model()` inline.
 - **Heavy** — chemprop or pytorch (a real GNN / neural train), an HPO sweep, or a
-  large FeatureSet: **don't run it inline.** Put the same `to_model()` call in a
-  script and launch it on Batch, so the REPL stays free (see the `batch` guide):
+  large FeatureSet: **don't run it inline.** Put the **whole chain** in a script
+  and launch it on Batch, so the REPL stays free (see the `batch` guide). The
+  Batch process is headless — no one is there to run the follow-up steps
+  interactively — so the script must build the endpoint and score it itself, or
+  you get a model with no metrics:
 
   ```python
   from workbench.utils.batch_utils import launch_batch
@@ -67,16 +72,18 @@ one it ties up the session for the whole train.
   code = '''
   from workbench.api import FeatureSet, ModelType, ModelFramework
   fs = FeatureSet("mppb_features")
-  fs.to_model(name="mppb-reg", model_type=ModelType.REGRESSOR,
-              model_framework=ModelFramework.CHEMPROP, target_column="mppb",
-              feature_list=["smiles"], hyperparameters={"uq_version": "v1"})
+  model = fs.to_model(name="mppb-reg", model_type=ModelType.REGRESSOR,
+                      model_framework=ModelFramework.CHEMPROP, target_column="mppb",
+                      feature_list=["smiles"], hyperparameters={"uq_version": "v1"})
+  end = model.to_endpoint(name="mppb-reg", tags=["mppb-reg"])
+  end.test_inference()
+  end.cross_fold_inference()
   '''
   job = launch_batch(code, name="mppb_reg_chemprop", size="medium")
   ```
 
-  The Batch job runs `to_model()` in a detached container — same result (a new
-  Model artifact you query afterward), but your session isn't blocked. It's
-  billable compute, so confirm before launching.
+  The Batch job runs the full chain in a detached container — same result (a
+  scored Model you query afterward), but your session isn't blocked.
 
 ## Conventions
 

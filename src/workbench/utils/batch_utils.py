@@ -23,8 +23,7 @@ def launch_batch(
     explicit artifact names), and its results come back as Workbench artifacts (a
     new Model, FeatureSet, inference run), not as a returned value.
 
-    This is a real, billable compute launch. See the `batch` guide for when to use
-    it versus running inline, and confirm with the user before calling it.
+    See the `batch` guide for when to use it versus running inline.
 
     Args:
         code (str): The Python source to run on Batch. Self-contained.

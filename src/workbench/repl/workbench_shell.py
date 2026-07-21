@@ -455,7 +455,7 @@ class WorkbenchShell:
                 f" ({row['challengers']} challengers)  {when}",
             ]
             if row.get("recent_change"):
-                segments += ["orange", "  ★ recent"]
+                segments += ["lightblue", "  ★ recent change"]
             cprint(segments)
 
     def incoming_data(self):
