@@ -109,7 +109,7 @@ scipy==1.17.1
     #   -c ci/.uv-constraints.txt
     #   scikit-learn
     #   xgboost-cpu
-setuptools==81.0.0
+setuptools==83.0.0
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler

@@ -594,7 +594,7 @@ pyarrow==24.0.0
     #   awswrangler
     #   mlflow
     #   sagemaker-mlops
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via
     #   -c ci/.uv-constraints.txt
     #   pyasn1-modules
@@ -782,7 +782,7 @@ scipy==1.17.1
     #   skops
     #   umap-learn
     #   xgboost
-setuptools==81.0.0
+setuptools==83.0.0
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler

@@ -313,7 +313,7 @@ scipy==1.17.1
     #   descriptastorus
     #   scikit-learn
     #   shap
-setuptools==81.0.0
+setuptools==83.0.0
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler
