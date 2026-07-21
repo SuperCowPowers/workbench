@@ -1326,8 +1326,8 @@ class WorkbenchCoreStack(Stack):
         - Running batch transform jobs (assumes role for input/output data access)
         - Creating processing jobs (assumes role for data processing operations)
 
-        Scoped to specific workbench roles:
-        - Workbench-ExecutionRole: Main API execution role for Workbench tasks
+        Scoped to the Workbench Execution and Builder roles, so a job can run
+        under whichever role launched it.
 
         Returns:
             iam.PolicyStatement: Policy allowing SageMaker to assume specific Workbench roles
@@ -1336,6 +1336,7 @@ class WorkbenchCoreStack(Stack):
             actions=["iam:PassRole"],
             resources=[
                 f"arn:aws:iam::{self.account}:role/{self.execution_role_name}",
+                f"arn:aws:iam::{self.account}:role/{self.builder_role_name}",
             ],
             conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
         )
