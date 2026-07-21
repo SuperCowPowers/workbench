@@ -539,7 +539,7 @@ pexpect==4.9.0
     # via
     #   -c ci/.uv-constraints.txt
     #   ipython
-pillow==12.2.0
+pillow==12.3.0
     # via
     #   -c ci/.uv-constraints.txt
     #   matplotlib

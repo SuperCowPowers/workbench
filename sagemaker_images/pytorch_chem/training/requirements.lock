@@ -240,7 +240,7 @@ pandas==2.3.3
     #   xarray
 pandas-flavor==0.8.1
     # via descriptastorus
-pillow==12.2.0
+pillow==12.3.0
     # via
     #   -c ci/.uv-constraints.txt
     #   rdkit

@@ -70,7 +70,7 @@ pandas==2.3.3
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in
     #   awswrangler
-pillow==12.2.0
+pillow==12.3.0
     # via
     #   -c ci/.uv-constraints.txt
     #   rdkit
