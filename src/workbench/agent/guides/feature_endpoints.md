@@ -36,11 +36,11 @@ predictions  = Endpoint("my-admet-model").inference(df_features)
 
 | Endpoint | Features | Use case |
 |---|---|---|
-| `smiles-to-2d` | ~315 2D descriptors | Standard ADMET modeling |
-| `smiles-to-2d-keep-salts` | ~315 2D descriptors | Salt-sensitive work (solubility, formulation) |
+| `smiles-to-2d-v1` | ~315 2D descriptors | Standard ADMET modeling |
+| `smiles-to-2d-keep-salts-v1` | ~315 2D descriptors | Salt-sensitive work (solubility, formulation) |
+| `smiles-to-fingerprints-v1` | 4096-dim Morgan counts | Similarity, substructure, fingerprint models |
 | `smiles-to-3d-v1` | 74 3D descriptors | Full first-gen 3D set — async |
 | `smiles-to-3d-v2` | 26 3D descriptors | Curated GFN2-xTB set, orthogonal to 2D — recommended, async |
-| `smiles-to-fingerprints` | 2048-dim Morgan counts | Similarity, substructure models |
 
 Combined **MetaEndpoints** fan out to both children and concatenate in one call:
 
@@ -81,12 +81,34 @@ Not every returned column is a feature. Provenance columns — `orig_smiles`,
 deliberately excluded from the registered output columns. Don't feed them into a
 `feature_list`.
 
+## Fingerprints: config lives in hyperparameters
+
+`smiles-to-fingerprints-v1` produces Morgan **count** fingerprints at radius 2,
+4096 bits (4096, not the common 2048, because count fingerprints are more
+collision-sensitive than binary). Its featurization config is recorded as the
+model's hyperparameters, so anything consuming a fingerprint model can resolve
+radius/bits/counts rather than assuming them:
+
+```python
+model_name = end.get_input()                 # endpoint -> its input model
+Model(model_name).hyperparameters()          # {'radius': 2, 'n_bits': 4096, 'counts': True}
+```
+
+A different radius/bits/counts mix is a new version (`-v2`), self-describing via
+its own hyperparameters.
+
 ## Versioning
 
 Versions are pinned by name (`-v1`, `-v2`), so a model keeps getting the
 features it trained against while new models adopt an improved set. When a model
 looks wrong, check which feature endpoint it was built against before suspecting
 the model.
+
+## Source
+
+Deployment scripts and the authoritative endpoint list live in
+`feature_endpoints/` (README + one script per endpoint). Check there to confirm
+a name or see how a feature endpoint is built.
 
 ## More
 
