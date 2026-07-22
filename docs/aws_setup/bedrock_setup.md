@@ -18,6 +18,7 @@ pages for you.
     ...
    "DASHBOARD_URL": "<your dashboard URL>",
    "ENABLE_BOSCO": true,
+   "WORKBENCH_ROLE": "Workbench-BuilderRole",
     ...
 }
 ```

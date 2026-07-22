@@ -42,13 +42,13 @@ Most agent tooling instead reaches a model through a vendor API, which means an
 account to create, a key to distribute, and a second invoice. Going through
 Bedrock skips all of it:
 
-| | Vendor-hosted model API | Workbench on Bedrock |
-|---|---|---|
-| Setup | New vendor account, new API key | Enable a model in the console |
-| Credentials on laptops | An API key per person | None — the AWS profile you already have |
+| | Vendor-hosted model API         | Workbench on Bedrock |
+|---|---------------------------------|------------------|
+| Setup | New vendor account, new API key | Automatic on AWS |
+| Credentials on laptops | An API key per person           | None — the AWS profile you already have |
 | Cost | A separate invoice to reconcile | A line on your AWS bill |
-| Adding a teammate | Issue and track another key | They already have the role |
-| Your data | Leaves for a third party | Stays in your AWS account |
+| Adding a teammate | Issue and track another key     | They already have the role |
+| Your data | Exposed to a third party        | Stays in your AWS account |
 
 Teams that want the details — IAM roles, retention settings, PrivateLink — will
 find them on the [AWS Bedrock Security](../aws_setup/bedrock_security.md) page.
