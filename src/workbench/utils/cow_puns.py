@@ -23,6 +23,12 @@ COW_PUNS = [
     ("What do you call a cow eating grass in your yard?", "A lawn moo-er."),
     ("Why do cows wear bells?", "Because their horns don't work."),
     ("What do you call a herd of cows telling stories?", "A load of bull."),
+    ("What do you get when you cross a cow and a rooster?", "Roost beef."),
+    ("What do you call a group of cows with a sense of humor?", "Laughing stock."),
+    ("What do you call a cow with two legs?", "Lean beef."),
+    ("What do you call a cow that tells jokes?", "A cow-median."),
+    ("What do you get when you cross a smurf with a cow?", "Blue cheese."),
+    ("Why did the Secret Service surround the president with cows?", "They were beefing up security."),
 ]
 
 
