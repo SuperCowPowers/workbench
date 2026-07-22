@@ -2,7 +2,8 @@
 
 Picks the best challenger for a champion endpoint and, if it beats the incumbent,
 freezes it to a dated copy and deploys it onto the endpoint. The challengers (the
-``-dt`` models) and the champion ``endpoint_name`` come from PipelineMeta.
+``-dt`` models) and the champion ``endpoint_name`` come from PipelineMeta. Each
+promotion decision publishes the contest results to Reports() at /contests/<endpoint>.
 
 This is a deliberately simple reference: no thresholds, notifications, or config --
 clients override it with a ``plugin:`` script for custom promotion policy.
@@ -11,8 +12,9 @@ clients override it with a ``plugin:`` script for custom promotion policy.
 import logging
 from datetime import datetime
 
-from workbench.api import Model, Endpoint, ModelType
+from workbench.api import Model, Endpoint, ModelType, Reports
 from workbench.core.pipelines.pipeline_meta import PipelineMeta
+from workbench.utils.model_comparison import contest_report
 
 log = logging.getLogger("workbench")
 
@@ -42,6 +44,18 @@ def beats(challenger: dict, incumbent: dict | None, is_classifier: bool) -> bool
     return challenger["rmse"] < incumbent["rmse"] and challenger["mae"] < incumbent["mae"]
 
 
+def publish_contest_report(endpoint_name: str, champion: Model, challengers: list):
+    """Publish the contest results to Reports() at /contests/<endpoint>. Never raises:
+    the promotion decision has already been made, so a report failure is logged and swallowed."""
+    try:
+        report = contest_report(champion, challengers, endpoint_name)
+        if report is not None:
+            Reports().upsert(f"/contests/{endpoint_name}", report)
+            log.important(f"Published contest report /contests/{endpoint_name}")
+    except Exception as e:
+        log.error(f"Failed to publish contest report for {endpoint_name}: {e}")
+
+
 def main():
     log.important("🔌🔌🔌 HELLO FROM THE CLIENT PLUGIN model_promotion.py 🔌🔌🔌")
     pm = PipelineMeta()
@@ -64,17 +78,18 @@ def main():
     is_classifier = scored[0][0].model_type == ModelType.CLASSIFIER
     scored.sort(key=(lambda s: -s[1]["f1"]) if is_classifier else (lambda s: s[1]["rmse"]))
     winner, winner_metrics = scored[0]
+    challengers = [model for model, _ in scored]
     log.important(f"Best challenger for {endpoint_name}: {winner.name} {winner_metrics}")
 
     # Compare against the model currently serving the champion endpoint
     end = Endpoint(endpoint_name)
     dethroned = end.get_input() if end.exists() else None
-    incumbent_metrics = None
-    if dethroned and dethroned != "unknown" and Model(dethroned).exists():
-        incumbent_metrics = primary_metrics(Model(dethroned))
+    champion_model = Model(dethroned) if dethroned and dethroned != "unknown" and Model(dethroned).exists() else None
+    incumbent_metrics = primary_metrics(champion_model) if champion_model else None
 
     if not beats(winner_metrics, incumbent_metrics, is_classifier):
         log.important(f"Champion stays: {winner.name} does not beat incumbent {incumbent_metrics}")
+        publish_contest_report(endpoint_name, champion_model, challengers)
         return
 
     # Promote: freeze a dated copy of the winner, deploy it onto the champion endpoint,
@@ -87,6 +102,8 @@ def main():
     if dethroned and dethroned not in ("unknown", dated_name):
         log.important(f"Retiring dethroned model {dethroned}")
         Model(dethroned).delete()
+
+    publish_contest_report(endpoint_name, frozen, challengers)
 
 
 if __name__ == "__main__":
