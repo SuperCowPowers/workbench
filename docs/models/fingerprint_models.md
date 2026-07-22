@@ -21,7 +21,7 @@ tags = ["smiles", "morgan fingerprints"]
 script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
 feature_set = FeatureSet("aqsol_features")
 model = feature_set.to_model(
-    name="smiles-to-fingerprints-v0",
+    name="smiles-to-fingerprints-v1",
     model_type=ModelType.TRANSFORMER,
     feature_list=["smiles"],
     description="Smiles to Morgan Fingerprints",
@@ -121,7 +121,7 @@ model = fs.to_model(
 Morgan count fingerprints (ECFP4 equivalent) encode substructure occurrence counts rather than binary presence/absence:
 
 - **Radius 2** (ECFP4) — captures local chemical environments up to 2 bonds from each atom
-- **2048 bits** — hashed into a fixed-length vector
+- **4096 bits** — hashed into a fixed-length vector (4096, not the common 2048: count fingerprints are more collision-sensitive than binary, so the wider vector preserves count fidelity)
 - **Count values (0–255)** — how many times each substructure occurs, providing richer information than binary fingerprints
 
 !!! note "Examples"

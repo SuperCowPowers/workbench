@@ -79,7 +79,7 @@ Most clients use variants similar to those listed below but we have the flexibil
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-v1</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Full first-gen 3D set — shape, CPSA, pharmacophore, ensemble stats; adaptive Boltzmann conformers (50-200), async</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-v2</td><td style="padding: 8px 16px;">26 3D descriptors</td><td style="padding: 8px 16px;">Curated GFN2-xTB set (electronic, surface, shape, pharmacophore) chosen orthogonal to 2D — recommended, async</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints</td><td style="padding: 8px 16px;">2048-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints-v1</td><td style="padding: 8px 16px;">4096-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
   </tbody>
 </table>
 
@@ -92,7 +92,7 @@ In addition to molecular descriptor endpoints, Workbench supports **fingerprint 
 The fingerprint endpoint computes **count fingerprints** rather than binary — each position holds the number of times a substructure occurs (0–255), providing richer information than simple presence/absence. Parameters:
 
 - **Radius 2** (ECFP4) — captures local chemical environments up to 2 bonds from each atom
-- **2048 bits** — hashed into a fixed-length vector
+- **4096 bits** — hashed into a fixed-length vector (4096, not the common 2048: count fingerprints are more collision-sensitive than binary, so the wider vector preserves count fidelity)
 - **Count values** — stored as compressed uint8 arrays for efficient storage and transfer
 
 Fingerprint endpoints follow the same create-once, reuse-everywhere pattern as descriptor endpoints. See the [Fingerprint Models](../models/fingerprint_models.md) guide for full usage examples including creating the endpoint, computing fingerprints, and training models on them.

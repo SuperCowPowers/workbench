@@ -176,7 +176,7 @@ class FeatureSet(FeatureSetCore):
         fingerprint_column: str = None,
         include_all_columns: bool = False,
         radius: int = 2,
-        n_bits: int = 2048,
+        n_bits: int = 4096,
     ) -> "FingerprintProximity":  # noqa: F821
         """Create a local FingerprintProximity Model for this FeatureSet
 
@@ -189,7 +189,7 @@ class FeatureSet(FeatureSetCore):
                                      column or computes from SMILES column.
            include_all_columns (bool): Include all DataFrame columns in results (default: False)
            radius (int): Radius for Morgan fingerprint computation (default: 2)
-           n_bits (int): Number of bits for fingerprint (default: 2048)
+           n_bits (int): Number of bits for fingerprint (default: 4096)
 
         Returns:
            FingerprintProximity: A local FingerprintProximity Model

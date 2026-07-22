@@ -52,7 +52,7 @@ class MultiTaskAlignment:
         id_column: str = "id",
         k_neighbors: int = 5,
         radius: int = 2,
-        n_bits: int = 2048,
+        n_bits: int = 4096,
         min_n_shared: int = 10,
         extension_ratio_threshold: float = 0.5,
     ) -> None:
@@ -68,7 +68,7 @@ class MultiTaskAlignment:
             k_neighbors: Number of primary-having neighbors used for the residual
                 computation (default: 5).
             radius: Morgan fingerprint radius (default: 2 = ECFP4).
-            n_bits: Number of fingerprint bits (default: 2048).
+            n_bits: Number of fingerprint bits (default: 4096).
             min_n_shared: Minimum rows-with-both-targets before Pearson r is trusted
                 (default: 10).
             extension_ratio_threshold: ``n_aux_only / n_primary`` above which the

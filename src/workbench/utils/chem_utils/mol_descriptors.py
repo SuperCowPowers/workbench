@@ -100,7 +100,6 @@ from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Constitutional, Chi, CarbonTypes
 
 logger = logging.getLogger("workbench")
-logger.setLevel(logging.DEBUG)
 
 
 # Helper context manager for timing
@@ -375,6 +374,8 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
 if __name__ == "__main__":
     from mol_standardize import standardize
     from workbench.api import DataSource
+
+    logger.setLevel(logging.DEBUG)
 
     # Configure pandas display
     pd.set_option("display.max_columns", None)

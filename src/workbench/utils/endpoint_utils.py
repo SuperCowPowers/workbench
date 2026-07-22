@@ -217,7 +217,7 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
         ``register_fn``.
     """
     ps = ParameterStore()
-    cols = ps.get(key)
+    cols = ps.get(key, warn=False)  # a miss is expected on first call — handled below by deriving + caching
 
     if cols is None:
         endpoint.log.important(f"Endpoint[{endpoint.name}]: no {kind} registered yet — deriving and caching.")

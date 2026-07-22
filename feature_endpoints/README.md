@@ -8,6 +8,7 @@ SMILES-based molecular descriptor endpoints deployed on AWS SageMaker via Workbe
 |--------|--------------|-------------|
 | `smiles_to_2d_v1.py` | `smiles-to-2d-v1` | RDKit + Mordred 2D descriptors (salts removed) |
 | `smiles_to_2d_keep_salts_v1.py` | `smiles-to-2d-keep-salts-v1` | RDKit + Mordred 2D descriptors (salts kept) |
+| `smiles_to_fingerprints_v1.py` | `smiles-to-fingerprints-v1` | Morgan count fingerprints (4096-dim, radius 2 / ECFP4) |
 | `smiles_to_3d_v1.py` | `smiles-to-3d-v1` | 3D conformer-based descriptors, async — 50-500 adaptive conformers, Boltzmann-weighted (74 features) |
 
 ## Deployment
@@ -20,6 +21,9 @@ python smiles_to_2d_v1.py
 
 # 2D Descriptors (salts kept) --> endpoint: smiles-to-2d-keep-salts-v1
 python smiles_to_2d_keep_salts_v1.py
+
+# Morgan count fingerprints --> endpoint: smiles-to-fingerprints-v1
+python smiles_to_fingerprints_v1.py
 
 # 3D Full (async) --> endpoint: smiles-to-3d-v1
 python smiles_to_3d_v1.py

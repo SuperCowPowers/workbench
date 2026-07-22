@@ -154,7 +154,7 @@ class Model(ModelCore):
         self,
         include_all_columns: bool = False,
         radius: int = 2,
-        n_bits: int = 2048,
+        n_bits: int = 4096,
     ) -> FingerprintProximity:
         """Create a local Fingerprint Proximity Model for this Model
 
@@ -164,7 +164,7 @@ class Model(ModelCore):
         Args:
             include_all_columns (bool): Include all DataFrame columns in results (default: False)
             radius (int): Morgan fingerprint radius (default: 2)
-            n_bits (int): Number of bits for the fingerprint (default: 2048)
+            n_bits (int): Number of bits for the fingerprint (default: 4096)
 
         Returns:
             FingerprintProximity: A local FingerprintProximity Model
@@ -176,7 +176,7 @@ class Model(ModelCore):
         version: str = None,
         refresh_proximity: bool = False,
         radius: int = 2,
-        n_bits: int = 2048,
+        n_bits: int = 4096,
     ) -> "UQModelV0 | UQModelV1":  # noqa: F821
         """Load this model's fitted UQ model (V0 or V1) for uncertainty-quantified inference.
 

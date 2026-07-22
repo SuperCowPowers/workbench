@@ -205,7 +205,7 @@ class FingerprintProximity(Proximity):
         target: Optional[str] = None,
         include_all_columns: bool = False,
         radius: int = 2,
-        n_bits: int = 2048,
+        n_bits: int = 4096,
     ) -> None:
         """
         Initialize FingerprintProximity for Tanimoto similarity on molecular fingerprints.
@@ -218,7 +218,7 @@ class FingerprintProximity(Proximity):
             target: Name of the target column. Defaults to None.
             include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
             radius: Radius for Morgan fingerprint computation (default: 2).
-            n_bits: Number of bits for fingerprint (default: 2048).
+            n_bits: Number of bits for fingerprint (default: 4096).
         """
         self._fp_radius = radius
         self._fp_n_bits = n_bits

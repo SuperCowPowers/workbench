@@ -24,7 +24,7 @@ RDLogger.DisableLog("rdApp.warning")
 log = logging.getLogger("workbench")
 
 
-def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 2048) -> pd.DataFrame:
+def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096) -> pd.DataFrame:
     """Compute Morgan count fingerprints for ADMET modeling.
 
     Generates true count fingerprints where each bit position contains the
@@ -34,7 +34,10 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
     Args:
         df: Input DataFrame containing SMILES strings.
         radius: Radius for the Morgan fingerprint (default 2 = ECFP4 equivalent).
-        n_bits: Number of bits for the fingerprint (default 2048).
+        n_bits: Number of bits for the fingerprint (default 4096). Count
+            fingerprints are more collision-sensitive than binary — a collision
+            sums two unrelated substructure counts — so 4096 preserves count
+            fidelity that folding to 2048 would corrupt.
 
     Returns:
         pd.DataFrame: Input DataFrame with 'fingerprint' column added.
@@ -136,7 +139,7 @@ if __name__ == "__main__":
     }
 
     # Test 1: Morgan Count Fingerprints (default parameters)
-    print("\n1. Testing Morgan fingerprint generation (radius=2, n_bits=2048)...")
+    print("\n1. Testing Morgan fingerprint generation (radius=2, n_bits=4096)...")
 
     test_df = pd.DataFrame({"SMILES": list(test_molecules.values()), "name": list(test_molecules.keys())})
     fp_df = compute_morgan_fingerprints(test_df.copy())

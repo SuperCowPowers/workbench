@@ -1,0 +1,1 @@
+../../../src/workbench/utils/chem_utils/fingerprints.py
