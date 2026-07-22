@@ -125,8 +125,14 @@ class FeaturesToModel(Transform):
                 no model ever sees them. Takes precedence over ``validation_ids`` on overlap
                 (default None: nothing excluded).
         """
-        if target_column is None:
-            raise ValueError("target_column is required (pass target_column=...)")
+        supervised_types = (
+            ModelType.CLASSIFIER,
+            ModelType.REGRESSOR,
+            ModelType.UQ_REGRESSOR,
+            ModelType.ENSEMBLE_REGRESSOR,
+        )
+        if target_column is None and self.model_type in supervised_types:
+            raise ValueError("target_column is required for supervised models (pass target_column=...)")
 
         # Set our model description
         self.model_description = description if description is not None else f"Model created from {self.input_name}"
