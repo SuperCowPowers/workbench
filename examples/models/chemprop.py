@@ -104,16 +104,16 @@ if True or recreate or not Endpoint("aqsol-class-chemprop").exists():
 # Multi-Target Chemprop Regression Model (Open ADMET)
 # =============================================================================
 # This example shows how to train a multi-task model predicting all 9 ADMET endpoints
-# from the Open ADMET challenge: logd, ksol, hlm_clint, mlm_clint, caco_2_papp_a_b,
-# caco_2_efflux, mppb, mbpb, mgmb
+# from the Open ADMET challenge: logd, ksol, hlm_clint, mlm_clint, caco2_papp_a_b,
+# caco2_efflux, mppb, mbpb, mgmb
 
 ADMET_TARGETS = [
     "logd",
     "ksol",
     "hlm_clint",
     "mlm_clint",
-    "caco_2_papp_a_b",
-    "caco_2_efflux",
+    "caco2_papp_a_b",
+    "caco2_efflux",
     "mppb",
     "mbpb",
     "mgmb",

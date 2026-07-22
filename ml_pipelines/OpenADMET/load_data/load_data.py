@@ -12,8 +12,8 @@ TRANSFORM_CONFIG = {
     "ksol": {"log_transform": True, "multiplier": 1e-6},
     "hlm_clint": {"log_transform": True, "multiplier": 1.0},
     "mlm_clint": {"log_transform": True, "multiplier": 1.0},
-    "caco_2_papp_a_b": {"log_transform": True, "multiplier": 1e-6},
-    "caco_2_efflux": {"log_transform": True, "multiplier": 1.0},
+    "caco2_papp_a_b": {"log_transform": True, "multiplier": 1e-6},
+    "caco2_efflux": {"log_transform": True, "multiplier": 1.0},
     "mppb": {"log_transform": True, "multiplier": 1.0},
     "mbpb": {"log_transform": True, "multiplier": 1.0},
     "mgmb": {"log_transform": True, "multiplier": 1.0},
@@ -41,6 +41,8 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize column names: lowercase, replace spaces and special chars with underscores."""
     df = df.copy()
     df.columns = df.columns.str.lower().str.replace(" ", "_").str.replace("-", "_").str.replace(">", "_")
+    # "Caco-2 …" normalizes to "caco_2_…"; collapse to "caco2_…" to match target/model naming
+    df.columns = df.columns.str.replace("caco_2", "caco2")
     return df
 
 
@@ -73,6 +75,10 @@ def main():
     # We've already created the DataSource "open_admet_xformed" in Workbench
     df = DataSource("open_admet_xformed").pull_dataframe()
     print(f"Pulled {len(df)} rows from DataSource 'open_admet_xformed'")
+
+    # The open_admet_xformed DataSource carries caco_2_* column names; align to caco2_*
+    # (no-op once the DataSource is regenerated with normalize_columns)
+    df = df.rename(columns={"caco_2_efflux": "caco2_efflux", "caco_2_papp_a_b": "caco2_papp_a_b"})
 
     # Run the data through our Fingerprint Endpoint
     fp_end = Endpoint("smiles-to-fingerprints-v0")

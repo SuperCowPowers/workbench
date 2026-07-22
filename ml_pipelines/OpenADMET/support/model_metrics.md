@@ -12,17 +12,17 @@ We used 5 different model types for each ADMET endpoint. The [Workbench AWS Dash
 | Model                               | MAE   | RMSE  | MedAE | R²    | N    |
 |-------------------------------------|-------|-------|-------|-------|------|
 | Caco2-Efflux                        |           
-| caco-2-efflux-reg-xgb               | 0.15  | 0.23  | 0.09  | 0.52  | 2161 |
-| caco-2-efflux-reg-pytorch           | 0.14  | 0.21  | 0.08  | 0.63  | 2161 |
-| caco-2-efflux-reg-chemprop          | 0.13  | 0.20  | 0.08  | 0.66  | 2161 |
-| caco-2-efflux-reg-chemprop-hybrid   | 0.13  | 0.19  | 0.08  | 0.67  | 2161 |
-| caco-2-efflux-reg-mt                | 0.128 | 0.197 | 0.077 | 0.658 | 2161 |
+| caco2-efflux-reg-xgb               | 0.15  | 0.23  | 0.09  | 0.52  | 2161 |
+| caco2-efflux-reg-pytorch           | 0.14  | 0.21  | 0.08  | 0.63  | 2161 |
+| caco2-efflux-reg-chemprop          | 0.13  | 0.20  | 0.08  | 0.66  | 2161 |
+| caco2-efflux-reg-chemprop-hybrid   | 0.13  | 0.19  | 0.08  | 0.67  | 2161 |
+| caco2-efflux-reg-mt                | 0.128 | 0.197 | 0.077 | 0.658 | 2161 |
 | Caco2-Papp-A>B                      |
-| caco-2-papp-a-b-reg-xgb             | 0.22  | 0.28  | 0.17  | 0.57  | 2157 |
-| caco-2-papp-a-b-reg-pytorch         | 0.24  | 0.30  | 0.19  | 0.49  | 2157 |
-| caco-2-papp-a-b-reg-chemprop        | 0.18  | 0.24  | 0.14  | 0.68  | 2157 |
-| caco-2-papp-a-b-reg-chemprop-hybrid | 0.18  | 0.24  | 0.14  | 0.67  | 2157 |
-| caco-2-papp-a-b-reg-mt              | 0.187 | 0.248 | 0.145 | 0.661 | 2157 |
+| caco2-papp-a-b-reg-xgb             | 0.22  | 0.28  | 0.17  | 0.57  | 2157 |
+| caco2-papp-a-b-reg-pytorch         | 0.24  | 0.30  | 0.19  | 0.49  | 2157 |
+| caco2-papp-a-b-reg-chemprop        | 0.18  | 0.24  | 0.14  | 0.68  | 2157 |
+| caco2-papp-a-b-reg-chemprop-hybrid | 0.18  | 0.24  | 0.14  | 0.67  | 2157 |
+| caco2-papp-a-b-reg-mt              | 0.187 | 0.248 | 0.145 | 0.661 | 2157 |
 | HLM CLint                           |
 | hlm-clint-reg-xgb                   | 0.32  | 0.43  | 0.23  | 0.53  | 3759 |
 | hlm-clint-reg-pytorch               | 0.31  | 0.41  | 0.24  | 0.58  | 3759 |

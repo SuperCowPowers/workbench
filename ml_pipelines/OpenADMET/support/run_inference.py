@@ -11,8 +11,8 @@ INVERSE_TRANSFORM_CONFIG = {
     "ksol": {"log_transform": True, "multiplier": 1e-6},
     "hlm_clint": {"log_transform": True, "multiplier": 1.0},
     "mlm_clint": {"log_transform": True, "multiplier": 1.0},
-    "caco_2_papp_a_b": {"log_transform": True, "multiplier": 1e-6},
-    "caco_2_efflux": {"log_transform": True, "multiplier": 1.0},
+    "caco2_papp_a_b": {"log_transform": True, "multiplier": 1e-6},
+    "caco2_efflux": {"log_transform": True, "multiplier": 1.0},
     "mppb": {"log_transform": True, "multiplier": 1.0},
     "mbpb": {"log_transform": True, "multiplier": 1.0},
     "mgmb": {"log_transform": True, "multiplier": 1.0},
@@ -31,8 +31,8 @@ def inverse_transform(predictions: np.ndarray, target_name: str) -> np.ndarray:
 
 # Mapping from our internal names to submission column names
 COLUMN_MAP = {
-    "caco_2_efflux": "Caco-2 Permeability Efflux",
-    "caco_2_papp_a_b": "Caco-2 Permeability Papp A>B",
+    "caco2_efflux": "Caco-2 Permeability Efflux",
+    "caco2_papp_a_b": "Caco-2 Permeability Papp A>B",
     "hlm_clint": "HLM CLint",
     "ksol": "KSOL",
     "logd": "LogD",
@@ -44,8 +44,8 @@ COLUMN_MAP = {
 
 # Map model name prefix to our internal target name
 MODEL_TO_TARGET = {
-    "caco-2-efflux": "caco_2_efflux",
-    "caco-2-papp-a-b": "caco_2_papp_a_b",
+    "caco2-efflux": "caco2_efflux",
+    "caco2-papp-a-b": "caco2_papp_a_b",
     "hlm-clint": "hlm_clint",
     "ksol": "ksol",
     "logd": "logd",
@@ -57,12 +57,12 @@ MODEL_TO_TARGET = {
 
 # List of all available models
 model_list = [
-    "caco-2-efflux-reg-chemprop",
-    "caco-2-efflux-reg-pytorch",
-    "caco-2-efflux-reg-xgb",
-    "caco-2-papp-a-b-reg-chemprop",
-    "caco-2-papp-a-b-reg-pytorch",
-    "caco-2-papp-a-b-reg-xgb",
+    "caco2-efflux-reg-chemprop",
+    "caco2-efflux-reg-pytorch",
+    "caco2-efflux-reg-xgb",
+    "caco2-papp-a-b-reg-chemprop",
+    "caco2-papp-a-b-reg-pytorch",
+    "caco2-papp-a-b-reg-xgb",
     "hlm-clint-reg-chemprop",
     "hlm-clint-reg-pytorch",
     "hlm-clint-reg-xgb",
@@ -107,7 +107,7 @@ df_features = df_store.get("/workbench/datasets/open_admet_test_featurized")
 
 
 def get_model_prefix(model_name: str) -> str:
-    """Extract the target prefix from model name (e.g., 'caco-2-efflux-reg-xgb' -> 'caco-2-efflux')"""
+    """Extract the target prefix from model name (e.g., 'caco2-efflux-reg-xgb' -> 'caco2-efflux')"""
     # Remove the model type suffix
     for suffix in ["-reg-chemprop-hybrid", "-reg-chemprop", "-reg-pytorch", "-reg-xgb"]:
         if model_name.endswith(suffix):

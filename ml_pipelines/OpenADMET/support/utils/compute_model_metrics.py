@@ -3,14 +3,14 @@ from workbench.api import Model
 
 # List of all available models
 model_list = [
-    "caco-2-efflux-reg-xgb",
-    "caco-2-efflux-reg-pytorch",
-    "caco-2-efflux-reg-chemprop",
-    "caco-2-efflux-reg-chemprop-hybrid",
-    "caco-2-papp-a-b-reg-xgb",
-    "caco-2-papp-a-b-reg-pytorch",
-    "caco-2-papp-a-b-reg-chemprop",
-    "caco-2-papp-a-b-reg-chemprop-hybrid",
+    "caco2-efflux-reg-xgb",
+    "caco2-efflux-reg-pytorch",
+    "caco2-efflux-reg-chemprop",
+    "caco2-efflux-reg-chemprop-hybrid",
+    "caco2-papp-a-b-reg-xgb",
+    "caco2-papp-a-b-reg-pytorch",
+    "caco2-papp-a-b-reg-chemprop",
+    "caco2-papp-a-b-reg-chemprop-hybrid",
     "hlm-clint-reg-xgb",
     "hlm-clint-reg-pytorch",
     "hlm-clint-reg-chemprop",
@@ -43,8 +43,8 @@ model_list = [
 
 # First pull/store metrics from the multi-task model
 runs = [
-    "cv_caco_2_efflux",
-    "cv_caco_2_papp_a_b",
+    "cv_caco2_efflux",
+    "cv_caco2_papp_a_b",
     "cv_hlm_clint",
     "cv_ksol",
     "cv_logd",

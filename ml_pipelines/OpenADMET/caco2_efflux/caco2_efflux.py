@@ -1,5 +1,5 @@
 """Create regression models (XGBoost, PyTorch, ChemProp, ChemProp-Hybrid) for the
-Open ADMET caco-2-papp-a-b assay.
+Open ADMET caco2-efflux assay.
 
 Consumes the shared FeatureSet built by ../load_data/load_data.py and produces a model +
 endpoint per framework. SHAP importances from the XGBoost model drive the PyTorch and
@@ -8,7 +8,7 @@ ChemProp-Hybrid feature lists.
 
 from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
-FS_NAME = "open_admet_caco_2_papp_a_b"
+FS_NAME = "open_admet_caco2_efflux"
 RECREATE = True
 
 

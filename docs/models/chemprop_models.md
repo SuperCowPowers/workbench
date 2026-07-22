@@ -109,7 +109,7 @@ Multi-task models train a single MPNN that predicts multiple endpoints simultane
 ```python
 ADMET_TARGETS = [
     "logd", "ksol", "hlm_clint", "mlm_clint",
-    "caco_2_papp_a_b", "caco_2_efflux", "mppb", "mbpb", "mgmb",
+    "caco2_papp_a_b", "caco2_efflux", "mppb", "mbpb", "mgmb",
 ]
 
 model = feature_set.to_model(

@@ -1,0 +1,34 @@
+{
+  "pipelines": {
+    "caco2_efflux": [
+      {
+        "script": "caco2_efflux.py",
+        "inputs": [
+          "fs:open_admet_caco2_efflux"
+        ],
+        "outputs": [
+          "model:caco2-efflux-reg-xgb",
+          "endpoint:caco2-efflux-reg-xgb",
+          "model:caco2-efflux-reg-pytorch",
+          "endpoint:caco2-efflux-reg-pytorch",
+          "model:caco2-efflux-reg-chemprop",
+          "endpoint:caco2-efflux-reg-chemprop",
+          "model:caco2-efflux-reg-chemprop-hybrid",
+          "endpoint:caco2-efflux-reg-chemprop-hybrid"
+        ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:caco2-efflux-reg-xgb",
+          "model:caco2-efflux-reg-pytorch",
+          "model:caco2-efflux-reg-chemprop",
+          "model:caco2-efflux-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:caco2-efflux-reg-v1"
+        ]
+      }
+    ]
+  }
+}

@@ -7,8 +7,8 @@
           "ds:open_admet_xformed"
         ],
         "outputs": [
-          "fs:open_admet_caco_2_efflux",
-          "fs:open_admet_caco_2_papp_a_b",
+          "fs:open_admet_caco2_efflux",
+          "fs:open_admet_caco2_papp_a_b",
           "fs:open_admet_hlm_clint",
           "fs:open_admet_ksol",
           "fs:open_admet_logd",

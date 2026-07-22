@@ -142,7 +142,7 @@ def test_linearize_matches_models_to_endpoints_by_name():
     """One assay job with N models + N endpoints threads model:x -> endpoint:x by name."""
     jobs = [
         _job(
-            "caco_2_efflux.py",
+            "caco2_efflux.py",
             inputs=["fs:f"],
             outputs=["model:a", "model:b", "endpoint:a", "endpoint:b"],
             pipeline="p",

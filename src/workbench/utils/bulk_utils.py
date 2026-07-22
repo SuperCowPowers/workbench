@@ -20,19 +20,21 @@ def bulk_delete(artifacts_to_delete: list[tuple[str, str]]):
     Args:
         artifacts_to_delete (list[tuple[str, str]]): A list of tuples of the form (item_type, item_name)
     """
+    # Item type matching is case-insensitive (e.g. "endpoint" and "Endpoint" both work).
+    delete_methods = {
+        "datasource": ("DataSource", DataSource.managed_delete),
+        "featureset": ("FeatureSet", FeatureSet.managed_delete),
+        "model": ("Model", Model.managed_delete),
+        "endpoint": ("Endpoint", Endpoint.managed_delete),
+    }
     for item_type, item_name in artifacts_to_delete:
-        if item_type == "DataSource":
-            log.info(f"Deleting DataSource: {item_name}")
-            DataSource.managed_delete(item_name)
-        elif item_type == "FeatureSet":
-            log.info(f"Deleting FeatureSet: {item_name}")
-            FeatureSet.managed_delete(item_name)
-        elif item_type == "Model":
-            log.info(f"Deleting Model: {item_name}")
-            Model.managed_delete(item_name)
-        elif item_type == "Endpoint":
-            log.info(f"Deleting Endpoint: {item_name}")
-            Endpoint.managed_delete(item_name)
+        entry = delete_methods.get(item_type.lower())
+        if entry is None:
+            log.warning(f"Unknown item_type '{item_type}' for '{item_name}', skipping")
+            continue
+        label, managed_delete = entry
+        log.info(f"Deleting {label}: {item_name}")
+        managed_delete(item_name)
 
 
 if __name__ == "__main__":

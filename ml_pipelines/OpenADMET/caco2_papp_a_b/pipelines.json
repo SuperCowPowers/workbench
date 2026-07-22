@@ -1,0 +1,34 @@
+{
+  "pipelines": {
+    "caco2_papp_a_b": [
+      {
+        "script": "caco2_papp_a_b.py",
+        "inputs": [
+          "fs:open_admet_caco2_papp_a_b"
+        ],
+        "outputs": [
+          "model:caco2-papp-a-b-reg-xgb",
+          "endpoint:caco2-papp-a-b-reg-xgb",
+          "model:caco2-papp-a-b-reg-pytorch",
+          "endpoint:caco2-papp-a-b-reg-pytorch",
+          "model:caco2-papp-a-b-reg-chemprop",
+          "endpoint:caco2-papp-a-b-reg-chemprop",
+          "model:caco2-papp-a-b-reg-chemprop-hybrid",
+          "endpoint:caco2-papp-a-b-reg-chemprop-hybrid"
+        ]
+      },
+      {
+        "script": "workbench:models/model_promotion.py",
+        "inputs": [
+          "model:caco2-papp-a-b-reg-xgb",
+          "model:caco2-papp-a-b-reg-pytorch",
+          "model:caco2-papp-a-b-reg-chemprop",
+          "model:caco2-papp-a-b-reg-chemprop-hybrid"
+        ],
+        "outputs": [
+          "endpoint:caco2-papp-a-b-reg-v1"
+        ]
+      }
+    ]
+  }
+}

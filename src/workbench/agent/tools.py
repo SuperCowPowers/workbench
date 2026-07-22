@@ -1,6 +1,7 @@
 """Tools Bosco can call, and their schemas."""
 
 import io
+import logging
 import contextlib
 import traceback
 from pathlib import Path
@@ -77,22 +78,89 @@ def read_guide(name: str) -> str:
     return path.read_text()
 
 
+# Loggers to watch during a run. The `workbench` logger sets `propagate = False`
+# (it owns its own handlers), so a root handler alone would miss it — watch both.
+_CAPTURED_LOGGERS = ("", "workbench")
+
+
+class _CaptureHandler(logging.Handler):
+    """Collect WARNING+ records emitted while Bosco's code runs.
+
+    Workbench code often logs an error and returns an empty/None result rather
+    than raising. Those log lines go to the handlers' original stdout, which
+    `redirect_stdout` doesn't touch, so `run_python`'s buffer stays clean and
+    Bosco never learns why the result was empty. This hands them back.
+    """
+
+    def __init__(self):
+        super().__init__(level=logging.WARNING)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+@contextlib.contextmanager
+def _capture_logs():
+    """Attach a capture handler to the watched loggers for the duration."""
+    handler = _CaptureHandler()
+    loggers = [logging.getLogger(name) for name in _CAPTURED_LOGGERS]
+    for lg in loggers:
+        lg.addHandler(handler)
+    try:
+        yield handler
+    finally:
+        for lg in loggers:
+            lg.removeHandler(handler)
+
+
+def _format_captured(records: list) -> str:
+    """Render captured records as `LEVEL logger: message`, repeats collapsed.
+
+    A log-in-a-loop would otherwise flood the output; identical (level, logger,
+    message) lines fold into one with a `(xN)` count, preserving first-seen order.
+    """
+    counts, order = {}, []
+    for r in records:
+        key = (r.levelname, r.name, r.getMessage())
+        if key not in counts:
+            order.append(key)
+        counts[key] = counts.get(key, 0) + 1
+    lines = []
+    for level, name, message in order:
+        suffix = f" (x{counts[(level, name, message)]})" if counts[(level, name, message)] > 1 else ""
+        lines.append(f"{level} {name}: {message}{suffix}")
+    return "\n".join(lines)
+
+
 def run_python(code: str, namespace: dict) -> str:
     """Execute code in the REPL namespace and return stdout plus any error.
 
     The namespace is the live REPL session, so anything assigned here stays
-    available to the user afterwards.
+    available to the user afterwards. WARNING+ log records emitted during the run
+    are appended too — Workbench often logs a failure and returns empty rather
+    than raising, and those lines never reach stdout.
     """
     buffer = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
-            exec(code, namespace)
-    except Exception:
-        buffer.write(traceback.format_exc())
+    with _capture_logs() as captured:
+        try:
+            with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+                exec(code, namespace)
+        except Exception:
+            buffer.write(traceback.format_exc())
 
     output = buffer.getvalue().strip()
     if len(output) > MAX_OUTPUT_CHARS:
         output = output[:MAX_OUTPUT_CHARS] + f"\n... [truncated, {len(output)} chars total]"
+
+    logged = _format_captured(captured.records)
+    if logged:
+        # Budget the log section separately so it can't starve real stdout/tracebacks.
+        if len(logged) > MAX_OUTPUT_CHARS:
+            logged = logged[:MAX_OUTPUT_CHARS] + f"\n... [truncated, {len(logged)} chars total]"
+        section = f"--- logged during execution (not stdout) ---\n{logged}"
+        output = f"{output}\n\n{section}" if output else section
+
     return output or "(no output)"
 
 
