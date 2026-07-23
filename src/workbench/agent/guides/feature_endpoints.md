@@ -1,10 +1,11 @@
 # Feature Endpoints
 
-> SMILES-to-descriptor endpoints; avoiding train/inference skew
+> SMILES-to-feature endpoints; avoiding train/inference skew
 
 A feature endpoint is an Endpoint that computes **features instead of
 predictions** — it holds no trained model. Model type is
-`ModelType.TRANSFORMER`. Send it SMILES, get molecular descriptors back.
+`ModelType.TRANSFORMER`. Send it SMILES, get molecular features back —
+descriptors or fingerprints.
 
 The point is eliminating training/inference skew: training, deployed inference,
 batch jobs, and external platforms all call the *same* endpoint, so features are
@@ -84,9 +85,11 @@ deliberately excluded from the registered output columns. Don't feed them into a
 ## Fingerprints: config lives in hyperparameters
 
 `smiles-to-fingerprints-v1` produces Morgan **count** fingerprints at radius 2,
-4096 bits (wide enough to limit count-corrupting collisions). Its featurization
-config is recorded as the model's hyperparameters, so anything consuming a
-fingerprint model can resolve radius/bits/counts rather than assuming them:
+4096 bits (wide enough to limit count-corrupting collisions). Inference appends a
+single `fingerprint` column — the 4096 counts packed as a comma-separated string,
+not 4096 columns. Its featurization config is recorded as the model's
+hyperparameters, so anything consuming a fingerprint model can resolve
+radius/bits/counts rather than assuming them:
 
 ```python
 model_name = end.get_input()                 # endpoint -> its input model
