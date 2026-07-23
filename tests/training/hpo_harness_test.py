@@ -87,6 +87,16 @@ def test_invalid_backend_raises():
         run_search(_quadratic_objective, SPACE, n_trials=1, backend="optuaa")
 
 
+def test_default_pruning_respects_warmup():
+    """With pruning on, trials reporting fewer steps than the warmup are never pruned.
+
+    Guards the grace period: an over-eager pruner kills configs before they're rankable
+    (which collapsed a real 10-trial search down to 2 usable evaluations).
+    """
+    result = run_search(_quadratic_objective, SPACE, n_trials=12, backend="optuna")
+    assert all(t["state"] == "COMPLETE" for t in result.trials)
+
+
 def test_pruning_disabled_runs_all_trials():
     """With pruning off, every trial completes (none pruned)."""
     result = run_search(_quadratic_objective, SPACE, n_trials=15, backend="optuna", pruning=False)

@@ -66,6 +66,14 @@ class Choice:
 Spec = Union[IntRange, FloatRange, Choice]
 SearchSpace = dict
 
+# Pruning grace. Successive-halving/ASHA defaults judge a trial almost immediately,
+# which wrecks a small search (tens of trials): configs get killed before they've
+# trained enough to rank. No trial is eligible for pruning until it has reported this
+# many steps (epochs), and Optuna additionally needs this many completed trials as
+# baselines before it prunes anything.
+PRUNE_WARMUP_STEPS = 20
+PRUNE_STARTUP_TRIALS = 5
+
 
 @dataclass
 class HpoResult:
@@ -165,7 +173,14 @@ def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode,
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     sampler = optuna.samplers.TPESampler(seed=seed)
-    pruner = optuna.pruners.SuccessiveHalvingPruner() if pruning else optuna.pruners.NopPruner()
+    # MedianPruner rather than successive halving: at our trial budgets, halving prunes
+    # before configs are rankable. Median prunes a trial only once baselines exist and it
+    # is worse than the median at the same step.
+    pruner = (
+        optuna.pruners.MedianPruner(n_startup_trials=PRUNE_STARTUP_TRIALS, n_warmup_steps=PRUNE_WARMUP_STEPS)
+        if pruning
+        else optuna.pruners.NopPruner()
+    )
     study = optuna.create_study(direction="minimize" if mode == "min" else "maximize", sampler=sampler, pruner=pruner)
 
     def objective(trial):
@@ -256,7 +271,13 @@ def _run_ray(
         tune.report({metric: value, time_attr: last_step + 1})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
-    scheduler = ASHAScheduler(metric=metric, mode=mode, time_attr=time_attr) if pruning else None
+    # grace_period defaults to 1 (prune after a single report) — far too eager; give each
+    # trial the same warmup the Optuna path gets.
+    scheduler = (
+        ASHAScheduler(metric=metric, mode=mode, time_attr=time_attr, grace_period=PRUNE_WARMUP_STEPS)
+        if pruning
+        else None
+    )
     tuner = tune.Tuner(
         trainable_res,
         param_space=param_space,

@@ -21,18 +21,21 @@ import os
 
 from workbench.training.hpo_harness import Choice, FloatRange, IntRange
 
-# Default per-knob search space, grouped like chemprop's own hpopt keywords. The
-# `basic` group matches chemprop's documented ranges, adapted to our ensemble-tuned
-# defaults: dropout is narrowed (the 5-fold ensemble already regularizes), and
-# ffn_hidden_dim is a categorical that encodes both uniform widths and tapered heads
-# (folding in ffn_num_layers, and exercising the list-valued head the harness
-# supports). uq_version and other knobs stay fixed at their configured values.
+# Default per-knob search space, grouped like chemprop's own hpopt keywords. The `basic`
+# group is chemprop's canonical space verbatim, extended only so ffn_hidden_dim can also
+# express a tapered head. Everything else — uq_version, max_epochs, patience, batch_size,
+# split_strategy, criterion, seed — stays fixed at its configured value.
 _SEARCH_GROUPS = {
     "basic": {
+        # depth / hidden_dim / dropout / ffn_num_layers ranges are chemprop's canonical
+        # search space verbatim. ffn_hidden_dim additionally offers tapered heads (lists),
+        # which chemprop's own space can't express — ffn_num_layers is ignored when a
+        # tapered list is chosen (the list length sets the depth).
         "depth": IntRange(2, 6, 1),
         "hidden_dim": IntRange(300, 2400, 100),
-        "dropout": FloatRange(0.0, 0.3, 0.05),
-        "ffn_hidden_dim": Choice([2000, 1000, 500, [1024, 256, 64], [512, 128]]),
+        "dropout": FloatRange(0.0, 0.4, 0.05),
+        "ffn_num_layers": IntRange(1, 3, 1),
+        "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]]),
     },
     # Opt-in ("basic+lr"). init_lr/final_lr are tied to max_lr in merge_best_config
     # rather than searched independently (independent search can produce init > max,
@@ -42,6 +45,23 @@ _SEARCH_GROUPS = {
         "warmup_epochs": IntRange(2, 10, 2),
     },
 }
+
+# Knobs outside the default space — the working list for when this is revisited:
+#
+#   * learning rate (`max_lr`, `warmup_epochs`) — already available as the opt-in "lr"
+#     group. Chemprop's maintainers describe their recommended search as focusing on
+#     learning rate and batch size, which makes this the first candidate to promote into
+#     the default.
+#   * `batch_size` — searchable in chemprop, not here. It moves memory and throughput as
+#     well as accuracy, so a range has to be chosen against the training instance's GPU
+#     memory rather than picked from the literature.
+#   * `aggregation` (mean/sum/norm) — searchable in chemprop but unreachable from here:
+#     `chemprop_core.build_mpnn_model` constructs `NormAggregation` directly, so tuning it
+#     requires a model-construction change first.
+#   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword.
+#
+# Each added knob costs trials: the default space is already 5-dimensional, and pruning
+# reserves the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines.
 
 
 def chemprop_search_space(groups=("basic",)) -> dict:
@@ -219,6 +239,13 @@ def _make_trial_fn(train_df, eval_df, base_hyperparameters, target_columns, smil
         target_scaler = train_ds.normalize_targets()
         eval_ds.normalize_targets(target_scaler)
         output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
+        # `val_loss` is the criterion on *normalized* targets, but the value we return is
+        # unscaled MAE. Rescale per-epoch reports into the objective's units so the pruning
+        # signal, the recorded per-trial values, and the final value are all one quantity —
+        # otherwise pruned trials record a smaller number than completed ones and look
+        # better than they are. Exact for the default MAE criterion (MAE is linear in the
+        # target scale); a monotone proxy for others.
+        target_scale = float(getattr(target_scaler, "scale_", [1.0])[0])
         train_ds.cache = eval_ds.cache = True
 
         batch_size = hp.get("batch_size", 64)
@@ -230,9 +257,13 @@ def _make_trial_fn(train_df, eval_df, base_hyperparameters, target_columns, smil
         class _ReportPruning(pl.Callback):
             # Report per-epoch held-out val_loss so the harness can prune weak trials (ASHA).
             def on_validation_epoch_end(self, trainer, module):
+                # Lightning's pre-training sanity-check pass fires this at epoch 0 too;
+                # reporting it would duplicate step 0 with an untrained model's value.
+                if trainer.sanity_checking:
+                    return
                 v = trainer.callback_metrics.get("val_loss")
                 if v is not None:
-                    report(step=trainer.current_epoch, **{metric: float(v)})
+                    report(step=trainer.current_epoch, **{metric: float(v) * target_scale})
 
         trainer = pl.Trainer(
             accelerator="auto",

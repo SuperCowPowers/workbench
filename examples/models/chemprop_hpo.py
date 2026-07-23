@@ -29,13 +29,13 @@ if recreate or not Model(model_name).exists():
             "uq_version": "v1",
             "hpo": {
                 "backend": "optuna",  # serial; flip to "ray" for parallel trials + ASHA on the 4 GPUs
-                "n_trials": 10,  # small for a first run; raise for a real search
+                "n_trials": 40,  # 5 baseline trials (pruner warmup) + 35 pruned candidates
                 "search_space": "basic",  # "basic" (architecture + dropout) | "basic+lr"
             },
         },
         # For an honest out-of-distribution objective, pass validation_ids=[...]: those
         # rows are held out of training and scored as `holdout_mae`. Without them the
-        # search optimizes `cv_mae` on a random split.
+        # search optimizes `cv_mae` on a single scaffold split of the training rows.
     )
     m.set_owner("BW")
 

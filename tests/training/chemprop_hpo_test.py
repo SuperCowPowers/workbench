@@ -10,11 +10,13 @@ from workbench.training.hpo_harness import Choice, FloatRange, IntRange
 
 
 def test_basic_group_is_default():
-    """The default space is the `basic` group with our chosen knobs/ranges."""
+    """The default space is the `basic` group, matching chemprop's canonical ranges."""
     space = chemprop_search_space()
-    assert set(space) == {"depth", "hidden_dim", "dropout", "ffn_hidden_dim"}
-    assert space["depth"] == IntRange(2, 6, 1)
-    assert space["dropout"] == FloatRange(0.0, 0.3, 0.05)
+    assert set(space) == {"depth", "hidden_dim", "dropout", "ffn_num_layers", "ffn_hidden_dim"}
+    assert space["depth"] == IntRange(2, 6, 1)  # chemprop {2,3,4,5,6}
+    assert space["hidden_dim"] == IntRange(300, 2400, 100)  # chemprop {300,400,...,2400}
+    assert space["dropout"] == FloatRange(0.0, 0.4, 0.05)  # chemprop {0.0,0.05,...,0.4}
+    assert space["ffn_num_layers"] == IntRange(1, 3, 1)  # chemprop {1,2,3}
     assert isinstance(space["ffn_hidden_dim"], Choice)
     assert [1024, 256, 64] in space["ffn_hidden_dim"].options  # tapered head is a choice
 
@@ -36,8 +38,10 @@ def test_unknown_group_raises():
 
 def test_resolve_search_space_shorthands():
     """String/iterable/dict/None all resolve to a {knob: Spec} space."""
-    assert set(resolve_search_space("basic")) == {"depth", "hidden_dim", "dropout", "ffn_hidden_dim"}
+    assert set(resolve_search_space("basic")) == set(chemprop_search_space(("basic",)))
     assert "max_lr" in resolve_search_space("basic+lr")
+    # basic+lr is a superset of basic
+    assert set(resolve_search_space("basic")) < set(resolve_search_space("basic+lr"))
     assert set(resolve_search_space(None)) == set(chemprop_search_space())
     custom = {"depth": IntRange(3, 5, 1)}
     assert resolve_search_space(custom) is custom  # ready dict passes through
