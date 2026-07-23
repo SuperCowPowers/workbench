@@ -75,6 +75,18 @@ def test_maximize_mode():
     assert result.best_value > -1.0
 
 
+def test_invalid_mode_raises():
+    """A bad mode fails loudly rather than silently optimizing the wrong direction."""
+    with pytest.raises(ValueError, match="mode must be"):
+        run_search(_quadratic_objective, SPACE, n_trials=1, backend="optuna", mode="minimum")
+
+
+def test_invalid_backend_raises():
+    """A typo'd backend fails loudly rather than silently falling back to optuna."""
+    with pytest.raises(ValueError, match="backend must be"):
+        run_search(_quadratic_objective, SPACE, n_trials=1, backend="optuaa")
+
+
 def test_pruning_disabled_runs_all_trials():
     """With pruning off, every trial completes (none pruned)."""
     result = run_search(_quadratic_objective, SPACE, n_trials=15, backend="optuna", pruning=False)

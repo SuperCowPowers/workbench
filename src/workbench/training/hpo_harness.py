@@ -112,7 +112,11 @@ def run_search(
     Returns:
         HpoResult: best config/value plus a per-trial record.
     """
+    if mode not in ("min", "max"):
+        raise ValueError(f"mode must be 'min' or 'max', got {mode!r}")
     backend = _resolve_backend(backend)
+    if backend not in ("optuna", "ray"):
+        raise ValueError(f"backend must be 'optuna', 'ray', or 'auto', got {backend!r}")
     log.info(
         f"HPO search: backend={backend}, n_trials={n_trials}, metric={metric} ({mode}), "
         f"max_parallel={max_parallel}, knobs={list(search_space)}"
@@ -234,15 +238,25 @@ def _run_ray(
 
     param_space = _to_ray_space(search_space)
 
+    # ASHA advances on this attribute. Reporting the caller's `step` (the model's epoch)
+    # under it — rather than leaving Ray's default training_iteration to count report()
+    # calls — keeps pruning decisions aligned with the model's notion of progress.
+    time_attr = "step"
+
     def trainable(config):
+        last_step = 0
+
         def report(step=None, **metrics):
-            tune.report(metrics)
+            nonlocal last_step
+            last_step = step if step is not None else last_step + 1
+            tune.report({**metrics, time_attr: last_step})
 
         value = trial_fn(config, report)
-        tune.report({metric: value})
+        # Final objective, one tick past the last epoch (time_attr must increase).
+        tune.report({metric: value, time_attr: last_step + 1})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
-    scheduler = ASHAScheduler(metric=metric, mode=mode) if pruning else None
+    scheduler = ASHAScheduler(metric=metric, mode=mode, time_attr=time_attr) if pruning else None
     tuner = tune.Tuner(
         trainable_res,
         param_space=param_space,

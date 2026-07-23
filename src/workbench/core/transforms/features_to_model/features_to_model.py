@@ -304,15 +304,18 @@ class FeaturesToModel(Transform):
         # Create a Sagemaker Model with our script
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
 
-        # Use user-specified instance or default based on framework. An HPO run needs a
-        # multi-GPU box so the search can run trials in parallel (one per GPU).
-        hpo_requested = bool((kwargs.get("hyperparameters") or {}).get("hpo"))
+        # Use user-specified instance or default based on framework. Only a *parallel*
+        # search needs a multi-GPU box (one trial per GPU) — a serial search (optuna, or
+        # max_parallel=1) stays on the normal single-GPU instance.
+        hpo = (kwargs.get("hyperparameters") or {}).get("hpo") or {}
+        hpo_requested = bool(hpo)
+        hpo_parallel = hpo.get("backend", "auto") != "optuna" and hpo.get("max_parallel", 1) > 1
         train_instance_type = kwargs.get("training_instance")
         if train_instance_type:
             self.log.important(f"Using user-specified instance {train_instance_type}")
-        elif hpo_requested and self.model_framework == ModelFramework.CHEMPROP:
+        elif hpo_parallel and self.model_framework == ModelFramework.CHEMPROP:
             train_instance_type = "ml.g6.12xlarge"  # 4x NVIDIA L4 — parallel HPO trials
-            self.log.important(f"Using multi-GPU instance {train_instance_type} for chemprop HPO")
+            self.log.important(f"Using multi-GPU instance {train_instance_type} for parallel chemprop HPO")
         elif self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
             train_instance_type = "ml.g6.2xlarge"  # NVIDIA L4 GPU + 8 vCPUs for data loading
             self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")
