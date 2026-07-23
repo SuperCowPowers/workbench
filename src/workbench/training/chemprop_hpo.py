@@ -27,13 +27,18 @@ from workbench.training.hpo_harness import Choice, FloatRange, IntRange
 # split_strategy, criterion, seed — stays fixed at its configured value.
 _SEARCH_GROUPS = {
     "basic": {
-        # depth / hidden_dim / dropout / ffn_num_layers ranges are chemprop's canonical
-        # search space verbatim. ffn_hidden_dim additionally offers tapered heads (lists),
-        # which chemprop's own space can't express — ffn_num_layers is ignored when a
-        # tapered list is chosen (the list length sets the depth).
+        # depth / hidden_dim / ffn_num_layers ranges are chemprop's canonical search space
+        # verbatim. ffn_hidden_dim additionally offers tapered heads (lists), which
+        # chemprop's own space can't express — ffn_num_layers is ignored when a tapered
+        # list is chosen (the list length sets the depth).
+        #
+        # `dropout` is deliberately absent even though chemprop searches it: a trial trains
+        # a *single* model, while the published model is an `n_folds` ensemble. Dropout
+        # chosen without ensembling over-regularizes once the ensemble is stacked on top
+        # (DEFAULT_HYPERPARAMETERS keeps it low precisely because the ensemble already
+        # regularizes), so it stays at that ensemble-tuned default.
         "depth": IntRange(2, 6, 1),
         "hidden_dim": IntRange(300, 2400, 100),
-        "dropout": FloatRange(0.0, 0.4, 0.05),
         "ffn_num_layers": IntRange(1, 3, 1),
         "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]]),
     },
@@ -48,6 +53,11 @@ _SEARCH_GROUPS = {
 
 # Knobs outside the default space — the working list for when this is revisited:
 #
+#   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}); we can't transfer a value found
+#     single-model to an ensemble (see the `basic` group note). Searching it honestly needs
+#     trials scored in the *deployment* regime — e.g. shortlist cheaply single-fold, then
+#     re-rank the top-K configs by training each as a real `n_folds` ensemble and selecting
+#     on that. Same treatment would make the capacity knobs transfer better too.
 #   * learning rate (`max_lr`, `warmup_epochs`) — already available as the opt-in "lr"
 #     group. Chemprop's maintainers describe their recommended search as focusing on
 #     learning rate and batch size, which makes this the first candidate to promote into

@@ -6,17 +6,19 @@ imports are deferred in the search entry point, not at module top).
 
 # Workbench Imports
 from workbench.training.chemprop_hpo import chemprop_search_space, merge_best_config, resolve_search_space
-from workbench.training.hpo_harness import Choice, FloatRange, IntRange
+from workbench.training.hpo_harness import Choice, IntRange
 
 
 def test_basic_group_is_default():
     """The default space is the `basic` group, matching chemprop's canonical ranges."""
     space = chemprop_search_space()
-    assert set(space) == {"depth", "hidden_dim", "dropout", "ffn_num_layers", "ffn_hidden_dim"}
+    assert set(space) == {"depth", "hidden_dim", "ffn_num_layers", "ffn_hidden_dim"}
     assert space["depth"] == IntRange(2, 6, 1)  # chemprop {2,3,4,5,6}
     assert space["hidden_dim"] == IntRange(300, 2400, 100)  # chemprop {300,400,...,2400}
-    assert space["dropout"] == FloatRange(0.0, 0.4, 0.05)  # chemprop {0.0,0.05,...,0.4}
     assert space["ffn_num_layers"] == IntRange(1, 3, 1)  # chemprop {1,2,3}
+    # dropout is NOT searched: single-model trials can't transfer it to the published
+    # n_folds ensemble, so it stays at the ensemble-tuned default.
+    assert "dropout" not in space
     assert isinstance(space["ffn_hidden_dim"], Choice)
     assert [1024, 256, 64] in space["ffn_hidden_dim"].options  # tapered head is a choice
 
