@@ -30,6 +30,9 @@ Modules:
 * :mod:`training_harness` — the ModelTrainer wrapper copied into the training
   source dir and run as ``python training_harness.py <entry_point>`` (a copied
   script, not an imported symbol).
+* :mod:`validation` — split the held-out ``validation`` rows out of training.
+* :mod:`hpo_harness` — framework-agnostic hyperparameter-search engine (Optuna /
+  Ray Tune) that model frameworks drive via a ``trial_fn`` + search space.
 """
 
 # Pin awswrangler to its single-node Python/pandas engine (see workbench/__init__.py).
