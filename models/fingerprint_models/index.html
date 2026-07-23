@@ -5207,7 +5207,7 @@
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">script_path</span> <span class="o">=</span> <span class="n">get_custom_script_path</span><span class="p">(</span><span class="s2">&quot;chem_info&quot;</span><span class="p">,</span> <span class="s2">&quot;morgan_fingerprints.py&quot;</span><span class="p">)</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">feature_set</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;aqsol_features&quot;</span><span class="p">)</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;smiles-to-fingerprints-v0&quot;</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;smiles-to-fingerprints-v1&quot;</span><span class="p">,</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">TRANSFORMER</span><span class="p">,</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Smiles to Morgan Fingerprints&quot;</span><span class="p">,</span>
@@ -5291,7 +5291,7 @@
 <p>Morgan count fingerprints (ECFP4 equivalent) encode substructure occurrence counts rather than binary presence/absence:</p>
 <ul>
 <li><strong>Radius 2</strong> (ECFP4) — captures local chemical environments up to 2 bonds from each atom</li>
-<li><strong>2048 bits</strong> — hashed into a fixed-length vector</li>
+<li><strong>4096 bits</strong> — hashed into a fixed-length vector, wide enough to limit count-corrupting bit collisions</li>
 <li><strong>Count values (0–255)</strong> — how many times each substructure occurs, providing richer information than binary fingerprints</li>
 </ul>
 <div class="admonition note">
