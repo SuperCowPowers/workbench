@@ -147,68 +147,61 @@ class FeatureSet(FeatureSetCore):
         # Return the Model
         return Model(name)
 
-    def prox_model(
-        self, target: str, features: list, include_all_columns: bool = False
-    ) -> "FeatureSpaceProximity":  # noqa: F821
-        """Create a local FeatureSpaceProximity Model for this FeatureSet
-
-        Args:
-           target (str): The target column name
-           features (list): The list of feature column names
-           include_all_columns (bool): Include all DataFrame columns in results (default: False)
-
-        Returns:
-           FeatureSpaceProximity: A local FeatureSpaceProximity Model
-        """
-        from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity  # noqa: F401
-
-        # Create the Proximity Model from the full FeatureSet dataframe
-        full_df = self.pull_dataframe()
-
-        # Create and return the FeatureSpaceProximity Model
-        return FeatureSpaceProximity(
-            full_df, id_column=self.id_column, features=features, target=target, include_all_columns=include_all_columns
-        )
-
-    def fp_prox_model(
+    def prox(
         self,
-        target: str,
-        fingerprint_column: str = None,
+        space: str,
+        feature_list: list = None,
+        target: str = None,
         include_all_columns: bool = False,
-        radius: int = 2,
-        n_bits: int = 4096,
-    ) -> "FingerprintProximity":  # noqa: F821
-        """Create a local FingerprintProximity Model for this FeatureSet
+    ) -> "Union[FingerprintProximity, FeatureSpaceProximity]":  # noqa: F821
+        """Create (or reuse) a proximity model over this FeatureSet.
 
-        Note: FingerprintProximity auto-detects binary vs. count fingerprints from the
-        fingerprint column format (comma-separated → count, otherwise binary).
+        For finding issues/anomalies or nearest neighbors before building a model.
+        Cached per ``(space, feature_list, target)`` on this instance, so repeated
+        calls return the same model.
 
         Args:
-           target (str): The target column name
-           fingerprint_column (str): Column containing fingerprints. If None, uses existing 'fingerprint'
-                                     column or computes from SMILES column.
-           include_all_columns (bool): Include all DataFrame columns in results (default: False)
-           radius (int): Radius for Morgan fingerprint computation (default: 2)
-           n_bits (int): Number of bits for fingerprint (default: 4096)
+            space: ``"fingerprint"`` (Tanimoto over SMILES/fingerprints) or
+                ``"features"`` (standardized Euclidean over numeric features).
+            feature_list: Numeric columns for neighbor computation. Required for
+                ``space="features"``; ignored for ``"fingerprint"``.
+            target: Target column surfaced in neighbor results (optional).
+            include_all_columns: Include all DataFrame columns in neighbor results.
 
         Returns:
-           FingerprintProximity: A local FingerprintProximity Model
+            FingerprintProximity or FeatureSpaceProximity.
         """
-        from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity  # noqa: F401
+        if space not in ("fingerprint", "features"):
+            raise ValueError(f"space must be 'fingerprint' or 'feature', got {space!r}")
+        if space == "features" and not feature_list:
+            raise ValueError("space='feature' requires feature_list=[...]")
 
-        # Create the Proximity Model from the full FeatureSet dataframe
+        key = (space, tuple(feature_list) if feature_list else None, target)
+        if not hasattr(self, "_prox_cache"):
+            self._prox_cache = {}
+        if key in self._prox_cache:
+            return self._prox_cache[key]
+
         full_df = self.pull_dataframe()
+        if space == "fingerprint":
+            from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
-        # Create and return the FingerprintProximity Model
-        return FingerprintProximity(
-            full_df,
-            id_column=self.id_column,
-            fingerprint_column=fingerprint_column,
-            target=target,
-            include_all_columns=include_all_columns,
-            radius=radius,
-            n_bits=n_bits,
-        )
+            prox = FingerprintProximity(
+                full_df, id_column=self.id_column, target=target, include_all_columns=include_all_columns
+            )
+        else:
+            from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
+
+            prox = FeatureSpaceProximity(
+                full_df,
+                id_column=self.id_column,
+                features=feature_list,
+                target=target,
+                include_all_columns=include_all_columns,
+            )
+
+        self._prox_cache[key] = prox
+        return prox
 
     def cleanlab_model(
         self,
@@ -252,7 +245,7 @@ if __name__ == "__main__":
 
     # Create a Proximity Model from the FeatureSet
     features = ["height", "weight", "age", "iq_score", "likes_dogs", "food"]
-    my_prox = my_features.prox_model(target="salary", features=features)
+    my_prox = my_features.prox("features", feature_list=features, target="salary")
     neighbors = my_prox.neighbors(42)
     print("Neighbors for ID 42:")
     print(neighbors)

@@ -18,7 +18,6 @@ from scipy.stats import norm
 
 if TYPE_CHECKING:
     from workbench.api import Model
-    from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.algorithms.models.noise_model import NoiseModel
     from workbench.algorithms.models.cleanlab_model import CleanlabModels
@@ -142,41 +141,6 @@ def copy_model_artifacts(model: "Model", dst_name: str) -> str:
         )
 
     return f"{dst_training_path}/model.tar.gz"
-
-
-def proximity_model_local(model: Model, include_all_columns: bool = False) -> FeatureSpaceProximity:
-    """Create a FeatureSpaceProximity Model for this Model
-
-    Args:
-        model (Model): The Model/FeatureSet used to create the proximity model
-        include_all_columns (bool): Include all DataFrame columns in neighbor results (default: False)
-
-    Returns:
-        FeatureSpaceProximity: The proximity model
-    """
-    from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity  # noqa: F401
-    from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
-
-    # Get Feature and Target Columns from the existing given Model
-    features = model.features()
-    target = model.target()
-
-    # Backtrack our FeatureSet to get the ID column
-    fs = FeatureSet(model.get_input())
-    id_column = fs.id_column
-
-    # Create the Proximity Model from both the full FeatureSet and the Model training data
-    full_df = fs.pull_dataframe()
-    model_df = model.training_view().pull_dataframe()
-
-    # Mark rows that are in the model
-    model_ids = set(model_df[id_column])
-    full_df["in_model"] = full_df[id_column].isin(model_ids)
-
-    # Create and return the FeatureSpaceProximity Model
-    return FeatureSpaceProximity(
-        full_df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns
-    )
 
 
 def fingerprint_prox_model_local(

@@ -197,6 +197,8 @@ class FingerprintProximity(Proximity):
     FingerprintProximity-specific extra (in addition to the canonical `distance`).
     """
 
+    space = "fingerprint"
+
     def __init__(
         self,
         df: pd.DataFrame,

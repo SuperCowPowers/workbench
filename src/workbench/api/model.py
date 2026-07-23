@@ -8,7 +8,7 @@ Dashboard UI, which provides additional model details and performance metrics
 from __future__ import annotations
 
 # Type checking imports (avoid circular imports at runtime)
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
@@ -25,8 +25,6 @@ __all__ = ["Model", "ModelType", "ModelFramework"]
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
 from workbench.utils.model_utils import (
-    proximity_model_local,
-    fingerprint_prox_model_local,
     uq_model_local,
     noise_model_local,
     cleanlab_model_local,
@@ -139,37 +137,32 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, include_all_columns: bool = False) -> FeatureSpaceProximity:
-        """Create a local Proximity Model for this Model
+    def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
+        """Return this model's precomputed proximity model for the given space, or None.
+
+        Precomputed only — this never recomputes. Returns the proximity the model
+        already carries (if any) for ``space``, otherwise ``None``. To build one fresh
+        over the source data, use ``FeatureSet(model.get_input()).prox(space, ...)``.
 
         Args:
-            include_all_columns (bool): Include all DataFrame columns in results (default: False)
+            space: ``"fingerprint"`` or ``"features"``.
 
         Returns:
-            FeatureSpaceProximity: A local FeatureSpaceProximity Model
+            The proximity model if the artifact carries one for this space, else ``None``.
         """
-        return proximity_model_local(self, include_all_columns=include_all_columns)
+        if space not in ("fingerprint", "features"):
+            raise ValueError(f"space must be 'fingerprint' or 'feature', got {space!r}")
 
-    def fp_prox_model(
-        self,
-        include_all_columns: bool = False,
-        radius: int = 2,
-        n_bits: int = 4096,
-    ) -> FingerprintProximity:
-        """Create a local Fingerprint Proximity Model for this Model
+        # Feature-space proximity isn't embedded in model artifacts today.
+        if space == "features":
+            return None
 
-        Note: FingerprintProximity auto-detects binary vs. count fingerprints from the
-        fingerprint column format (comma-separated → count, otherwise binary).
-
-        Args:
-            include_all_columns (bool): Include all DataFrame columns in results (default: False)
-            radius (int): Morgan fingerprint radius (default: 2)
-            n_bits (int): Number of bits for the fingerprint (default: 4096)
-
-        Returns:
-            FingerprintProximity: A local FingerprintProximity Model
-        """
-        return fingerprint_prox_model_local(self, include_all_columns=include_all_columns, radius=radius, n_bits=n_bits)
+        # The fingerprint proximity is carried in the model's UQ artifact.
+        try:
+            uq = self.uq_model()
+        except FileNotFoundError:
+            return None
+        return getattr(uq, "prox", None)
 
     def uq_model(
         self,
@@ -245,6 +238,7 @@ if __name__ == "__main__":
     # my_endpoint = my_model.to_endpoint()
     # pprint(my_endpoint.summary())
 
-    # Create a local Proximity Model for this Model
-    prox_model = my_model.prox_model()
-    print(prox_model.neighbors(3398))
+    # Grab this Model's precomputed fingerprint proximity (None if it has none)
+    prox = my_model.prox("fingerprint")
+    if prox is not None:
+        print(prox.neighbors(3398))

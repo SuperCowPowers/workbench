@@ -88,6 +88,11 @@ class Proximity(ABC):
         queries this is called with the caller-supplied query_df.
         """
 
+    @property
+    @abstractmethod
+    def space(self) -> str:
+        """The space this proximity operates in: ``"fingerprint"`` or ``"feature"``."""
+
     # ------------------------------------------------------------------
     # Concrete neighbor query API (the ABC contract)
     # ------------------------------------------------------------------

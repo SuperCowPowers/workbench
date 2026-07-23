@@ -25,6 +25,8 @@ class FeatureSpaceProximity(Proximity):
     NearestNeighbors output). For visualization, call `project_2d()` explicitly.
     """
 
+    space = "features"
+
     def __init__(
         self,
         df: pd.DataFrame,
