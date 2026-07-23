@@ -1,18 +1,15 @@
 """Canonical fingerprint featurization config for the smiles-to-fingerprints endpoint.
 
-Single source of truth shared by the inference script (which computes the
-fingerprints) and the deploy script (which records these as the model's
-hyperparameters, retrievable via ``Model(...).hyperparameters()``).
+Shared by the inference script (computes the fingerprints) and the deploy script
+(records these as the model's hyperparameters, via ``Model(...).hyperparameters()``).
 
-radius=2 (ECFP4): standard; radius 3 multiplies unique substructures and would
-    worsen bit collisions without more bits.
-n_bits=4096: count fingerprints are more collision-sensitive than binary — a
-    collision sums two unrelated substructure counts rather than OR-ing a bit —
-    so 4096 preserves count fidelity that folding to 2048 would corrupt.
-counts=True: count fingerprints outperform binary for property prediction.
+radius=2 (ECFP4): substructures up to 2 bonds from each atom.
+n_bits=4096: wide enough to limit count-corrupting bit collisions (a collision
+    sums two unrelated substructure counts).
+counts=True: count fingerprints suit property prediction.
 
-A different radius/bits/counts mix is a new endpoint version (-v2, ...), whose
-own config makes it self-describing.
+A different radius/bits/counts mix is a new endpoint version, self-describing via
+its own config.
 """
 
 FP_RADIUS = 2

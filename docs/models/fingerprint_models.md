@@ -121,7 +121,7 @@ model = fs.to_model(
 Morgan count fingerprints (ECFP4 equivalent) encode substructure occurrence counts rather than binary presence/absence:
 
 - **Radius 2** (ECFP4) — captures local chemical environments up to 2 bonds from each atom
-- **4096 bits** — hashed into a fixed-length vector (4096, not the common 2048: count fingerprints are more collision-sensitive than binary, so the wider vector preserves count fidelity)
+- **4096 bits** — hashed into a fixed-length vector, wide enough to limit count-corrupting bit collisions
 - **Count values (0–255)** — how many times each substructure occurs, providing richer information than binary fingerprints
 
 !!! note "Examples"

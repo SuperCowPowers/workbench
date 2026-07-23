@@ -348,9 +348,10 @@ class FeatureSetCore(Artifact):
             str: The full path/file for the CSV file created by Feature Store create_dataset()
         """
 
-        # Set up the S3 Query results path
+        # Throwaway dump for the training job — written under the scratch root and
+        # deleted after training. See Artifact.temp_s3_path.
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
-        s3_output_path = self.feature_sets_s3_path + f"/{self.name}/datasets/all_{date_time}"
+        s3_output_path = self.temp_s3_path + f"/training_data/{self.name}/all_{date_time}"
 
         # Make the query
         query = f'SELECT * FROM "{source_table}"'

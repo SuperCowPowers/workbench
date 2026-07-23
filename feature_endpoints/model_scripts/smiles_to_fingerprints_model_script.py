@@ -79,8 +79,7 @@ def output_fn(output_df, accept_type):
 def predict_fn(df, model):
 
     # Compute Morgan count fingerprints per the shared config (radius / n_bits).
-    # Desalting (largest-fragment selection) is handled inside
-    # compute_morgan_fingerprints, so there's no separate standardize step here —
-    # this matches how fingerprint models are trained (no train/inference skew).
+    # Desalting (largest-fragment) is internal to compute_morgan_fingerprints, so
+    # no separate standardize step is needed.
     df = compute_morgan_fingerprints(df, radius=FP_RADIUS, n_bits=FP_N_BITS)
     return df

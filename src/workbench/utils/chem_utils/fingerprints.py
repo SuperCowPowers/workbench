@@ -34,10 +34,9 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
     Args:
         df: Input DataFrame containing SMILES strings.
         radius: Radius for the Morgan fingerprint (default 2 = ECFP4 equivalent).
-        n_bits: Number of bits for the fingerprint (default 4096). Count
-            fingerprints are more collision-sensitive than binary — a collision
-            sums two unrelated substructure counts — so 4096 preserves count
-            fidelity that folding to 2048 would corrupt.
+        n_bits: Number of bits for the fingerprint (default 4096). Wide enough to
+            limit count-corrupting bit collisions (a collision sums two unrelated
+            substructure counts).
 
     Returns:
         pd.DataFrame: Input DataFrame with 'fingerprint' column added.

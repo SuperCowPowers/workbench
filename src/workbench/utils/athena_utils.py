@@ -223,24 +223,17 @@ def compute_athena_table_hash(database: str, table: str, session: boto3.session,
 if __name__ == "__main__":
     # Test the athena utils functions
     from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-    from workbench.utils.config_manager import ConfigManager
+    from workbench.core.artifacts.artifact import Artifact
 
     # Get our boto3 session
     session = AWSAccountClamp().boto3_session
 
-    # Get our workbench bucket
-    cm = ConfigManager()
-    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
-
-    # Setup a temporary S3 prefix for the Athena output
-    s3_scratch = f"s3://{workbench_bucket}/temp/athena_output"
+    # Transient Athena output under the shared scratch root (Artifact.temp_s3_path).
+    # compute_athena_table_hash cleans up this prefix itself when it's done.
+    s3_scratch = f"{Artifact.temp_s3_path}/athena_output"
 
     # Compute the hash for a table
     database_name = "workbench"
     table_name = "abalone_data"
     table_hash = compute_athena_table_hash(database_name, table_name, session, s3_scratch)
     print(f"Hash for {database_name}.{table_name}: {table_hash}")
-
-    # Remove the temporary S3 prefix
-    s3 = session.client("s3")
-    s3.delete_object(Bucket=workbench_bucket, Key=f"temp/athena_output/{table_hash}.csv")

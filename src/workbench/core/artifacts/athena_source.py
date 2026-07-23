@@ -181,7 +181,7 @@ class AthenaSource(DataSourceAbstract):
 
     def table_hash(self) -> str:
         """Get the table hash for this AthenaSource"""
-        s3_scratch = f"s3://{self.workbench_bucket}/temp/athena_output"
+        s3_scratch = f"{self.temp_s3_path}/athena_output"
         return compute_athena_table_hash(self.database, self.table, self.boto3_session, s3_scratch)
 
     def num_rows(self) -> int:

@@ -204,13 +204,12 @@ if __name__ == "__main__":
 
     # Get our Account Clamp and S3 Bucket
     from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-    from workbench.utils.config_manager import ConfigManager
+    from workbench.core.artifacts.artifact import Artifact
 
     session = AWSAccountClamp().boto3_session
-    workbench_bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
 
-    # Setup a temporary S3 prefix for the Athena output
-    s3_scratch = f"s3://{workbench_bucket}/temp/s3_utils_test/"
+    # Temporary S3 prefix under the shared scratch root (Artifact.temp_s3_path)
+    s3_scratch = f"{Artifact.temp_s3_path}/s3_utils_test/"
 
     # Check if a bucket and prefix exist
     print(f"Ensuring bucket and prefix exist: {s3_scratch}")

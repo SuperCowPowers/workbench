@@ -92,7 +92,7 @@ In addition to molecular descriptor endpoints, Workbench supports **fingerprint 
 The fingerprint endpoint computes **count fingerprints** rather than binary — each position holds the number of times a substructure occurs (0–255), providing richer information than simple presence/absence. Parameters:
 
 - **Radius 2** (ECFP4) — captures local chemical environments up to 2 bonds from each atom
-- **4096 bits** — hashed into a fixed-length vector (4096, not the common 2048: count fingerprints are more collision-sensitive than binary, so the wider vector preserves count fidelity)
+- **4096 bits** — hashed into a fixed-length vector, wide enough to limit count-corrupting bit collisions
 - **Count values** — stored as compressed uint8 arrays for efficient storage and transfer
 
 Fingerprint endpoints follow the same create-once, reuse-everywhere pattern as descriptor endpoints. See the [Fingerprint Models](../models/fingerprint_models.md) guide for full usage examples including creating the endpoint, computing fingerprints, and training models on them.

@@ -2,10 +2,8 @@
 
 Takes a SMILES string and computes Morgan count fingerprints (4096-dim,
 radius 2 / ECFP4 equivalent). Each position holds the count of that circular
-substructure, clamped to uint8 — the recommended representation for ADMET
-modeling and the input to similarity / proximity workflows. 4096 bits (vs the
-common 2048) keeps count fidelity that folding would otherwise collide away.
-Salts are handled internally via largest-fragment selection.
+substructure, clamped to uint8 — suited to ADMET modeling and to similarity /
+proximity workflows. Salts are handled internally via largest-fragment selection.
 
 Output is a single ``fingerprint`` column (comma-separated uint8 counts).
 
@@ -50,11 +48,9 @@ if __name__ == "__main__":
     )
     model.set_owner("BW")
 
-    # ── Record the featurization config as the model's hyperparameters, so
-    # consumers can resolve radius/n_bits/counts via Model(name).hyperparameters()
-    # (reachable from an endpoint through end.get_input()). This is a plain custom
-    # script, not a template, so we write meta directly rather than relying on
-    # template-substituted hyperparameters.json.
+    # ── Record the featurization config as the model's hyperparameters, so consumers
+    # can resolve radius/n_bits/counts via Model(name).hyperparameters() (reachable
+    # from an endpoint via end.get_input()).
     model.upsert_workbench_meta({"workbench_hyperparameters": FP_HYPERPARAMETERS})
 
     # ── Deploy as a realtime endpoint (serverless or dedicated instance).

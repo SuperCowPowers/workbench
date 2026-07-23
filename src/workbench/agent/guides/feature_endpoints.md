@@ -84,10 +84,9 @@ deliberately excluded from the registered output columns. Don't feed them into a
 ## Fingerprints: config lives in hyperparameters
 
 `smiles-to-fingerprints-v1` produces Morgan **count** fingerprints at radius 2,
-4096 bits (4096, not the common 2048, because count fingerprints are more
-collision-sensitive than binary). Its featurization config is recorded as the
-model's hyperparameters, so anything consuming a fingerprint model can resolve
-radius/bits/counts rather than assuming them:
+4096 bits (wide enough to limit count-corrupting collisions). Its featurization
+config is recorded as the model's hyperparameters, so anything consuming a
+fingerprint model can resolve radius/bits/counts rather than assuming them:
 
 ```python
 model_name = end.get_input()                 # endpoint -> its input model

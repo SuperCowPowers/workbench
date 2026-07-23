@@ -44,6 +44,9 @@ class Artifact(ABC):
     feature_sets_s3_path = f"s3://{workbench_bucket}/feature-sets"
     models_s3_path = f"s3://{workbench_bucket}/models"
     endpoints_s3_path = f"s3://{workbench_bucket}/endpoints"
+    # Scratch root for transient files, separate from the protected artifact
+    # prefixes. Each use owns a subfolder (temp/training_data/, temp/athena_output/).
+    temp_s3_path = f"s3://{workbench_bucket}/temp"
 
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
