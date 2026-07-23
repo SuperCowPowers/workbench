@@ -670,7 +670,7 @@ if __name__ == "__main__":
     print(instance_architecture("ml.c7g.large"))
 
     # Get the custom script path
-    print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
+    print(get_custom_script_path("proximity", "feature_space_proximity.template"))
 
     # Test loading hyperparameters
     m = Model("aqsol-regression")

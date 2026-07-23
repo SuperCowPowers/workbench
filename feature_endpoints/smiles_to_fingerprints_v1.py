@@ -11,15 +11,8 @@ Created artifacts:  Model/Endpoint ``smiles-to-fingerprints-v1``
 """
 
 import os
-import sys
-
 from workbench.api import ModelType, ModelFramework
 from _common import ensure_featureset
-
-# Shared featurization config — same module the inference script imports, so the
-# recorded hyperparameters can't drift from what the endpoint actually computes.
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "model_scripts"))
-from fingerprint_config import FP_HYPERPARAMETERS  # noqa: E402
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
@@ -44,14 +37,10 @@ if __name__ == "__main__":
         feature_list=["smiles"],
         description="SMILES to Morgan count fingerprints (4096-dim, radius 2 / ECFP4)",
         tags=tags,
-        custom_script="model_scripts/smiles_to_fingerprints_model_script.py",
+        custom_script="model_scripts/smiles_to_fingerprints_model_script.template",
+        hyperparameters={"radius": 2, "n_bits": 4096, "counts": True},
     )
     model.set_owner("BW")
-
-    # ── Record the featurization config as the model's hyperparameters, so consumers
-    # can resolve radius/n_bits/counts via Model(name).hyperparameters() (reachable
-    # from an endpoint via end.get_input()).
-    model.upsert_workbench_meta({"workbench_hyperparameters": FP_HYPERPARAMETERS})
 
     # ── Deploy as a realtime endpoint (serverless or dedicated instance).
     # Fingerprints compute fast, so serverless is almost always the right choice —

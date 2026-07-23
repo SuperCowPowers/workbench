@@ -1,9 +1,9 @@
-# Model: molecular_descriptors
+# Model: smiles_to_fingerprints_model_script
 #
-# Description: The molecular_descriptors model uses RDKit and Mordred to compute a wide array of
-#     molecular descriptors from SMILES strings. These descriptors quantify various chemical properties
-#     and structural features, providing critical insights for cheminformatics applications such as
-#     QSAR modeling and drug discovery.
+# Description: Computes Morgan count fingerprints (ECFP-style) from SMILES strings.
+#     Each of the n_bits positions holds the count of that circular substructure
+#     (clamped to uint8), the recommended representation for ADMET property
+#     prediction. Salts are handled internally via largest-fragment selection.
 #
 import argparse
 import os
@@ -12,8 +12,13 @@ import pandas as pd
 import json
 
 # Local imports
-from mol_standardize import standardize
-from mol_descriptors import compute_descriptors
+from molecular_utils.fingerprints import compute_morgan_fingerprints
+
+# Hyperparameters are injected here at model-creation time (fill_template), so the
+# radius / n_bits passed to to_model(hyperparameters=...) actually drive the compute.
+TEMPLATE_PARAMS = {
+    "hyperparameters": "{{hyperparameters}}",
+}
 
 # TRAINING SECTION
 #
@@ -24,9 +29,15 @@ if __name__ == "__main__":
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
-    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
     parser.add_argument(
-        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+        "--train",
+        type=str,
+        default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"),
+    )
+    parser.add_argument(
+        "--output-data-dir",
+        type=str,
+        default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"),
     )
     parser.parse_args()
 
@@ -61,7 +72,10 @@ def output_fn(output_df, accept_type):
     if "text/csv" in accept_type:
         return output_df.to_csv(index=False), "text/csv"
     elif "application/json" in accept_type:
-        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+        return (
+            output_df.to_json(orient="records"),
+            "application/json",
+        )  # JSON array of records (NaNs -> null)
     else:
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
@@ -69,7 +83,9 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
 
-    # Standardize the molecule (extract salts) and then compute descriptors
-    df = standardize(df, extract_salts=True)
-    df = compute_descriptors(df)
+    # Compute Morgan count fingerprints per the injected hyperparameters (falling back
+    # to the compute_morgan_fingerprints defaults: radius 2, 4096 bits). Desalting
+    # (largest-fragment) is internal, so no separate standardize step is needed.
+    hp = TEMPLATE_PARAMS["hyperparameters"] or {}
+    df = compute_morgan_fingerprints(df, radius=hp.get("radius", 2), n_bits=hp.get("n_bits", 4096))
     return df

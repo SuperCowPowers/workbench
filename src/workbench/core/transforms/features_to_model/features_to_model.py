@@ -24,6 +24,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.workbench_logging import _suppress_sagemaker_logging
 from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE
+from workbench.utils.s3_utils import read_s3_json
 
 # Transient DescribeTrainingJob control-plane errors that botocore does not classify as
 # retryable, so a single blip under concurrent Batch load would otherwise kill the pipeline.
@@ -496,6 +497,16 @@ class FeaturesToModel(Transform):
         output_model.upsert_workbench_meta({"workbench_model_target": self.target_column})
         output_model.upsert_workbench_meta({"workbench_training_view": self.model_training_view_name})
 
+        # Persist hyperparameters to meta. Template frameworks write the resolved set
+        # (defaults + overrides) to S3 during training; custom scripts don't, so fall
+        # back to the passed kwarg. Prefer S3 so the stored set is complete.
+        training_hp = read_s3_json(
+            f"{output_model.model_training_path}/hyperparameters.json", output_model.boto3_session
+        )
+        hyperparameters = training_hp if training_hp is not None else kwargs.get("hyperparameters")
+        if hyperparameters:
+            output_model.upsert_workbench_meta({"workbench_hyperparameters": hyperparameters})
+
         # Store the class labels (if they exist)
         if self.class_labels:
             output_model.set_class_labels(self.class_labels)
@@ -628,14 +639,3 @@ if __name__ == "__main__":
     )
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
-
-    # Molecular Descriptors Model
-    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
-    my_script = scripts_root / "custom_models" / "chem_info" / "molecular_descriptors.py"
-    input_name = "aqsol_features"
-    output_name = "test-smiles-to-2d"
-    to_model = FeaturesToModel(
-        input_name, output_name, ModelType.TRANSFORMER, ModelFramework.TRANSFORMER, custom_script=my_script
-    )
-    to_model.set_output_tags(["smiles", "molecular descriptors"])
-    to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
