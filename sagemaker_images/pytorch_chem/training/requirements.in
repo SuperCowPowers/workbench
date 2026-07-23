@@ -18,3 +18,8 @@ rdkit >= 2026.3.1
 torch
 chemprop
 shap
+
+# Hyperparameter search (workbench.training.hpo_harness). Training-image only —
+# never in endpoint images. Mirrors the pyproject `training` extra.
+ray[tune]
+optuna

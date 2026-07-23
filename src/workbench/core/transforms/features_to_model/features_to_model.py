@@ -304,10 +304,15 @@ class FeaturesToModel(Transform):
         # Create a Sagemaker Model with our script
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
 
-        # Use user-specified instance or default based on framework
+        # Use user-specified instance or default based on framework. An HPO run needs a
+        # multi-GPU box so the search can run trials in parallel (one per GPU).
+        hpo_requested = bool((kwargs.get("hyperparameters") or {}).get("hpo"))
         train_instance_type = kwargs.get("training_instance")
         if train_instance_type:
             self.log.important(f"Using user-specified instance {train_instance_type}")
+        elif hpo_requested and self.model_framework == ModelFramework.CHEMPROP:
+            train_instance_type = "ml.g6.12xlarge"  # 4x NVIDIA L4 — parallel HPO trials
+            self.log.important(f"Using multi-GPU instance {train_instance_type} for chemprop HPO")
         elif self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
             train_instance_type = "ml.g6.2xlarge"  # NVIDIA L4 GPU + 8 vCPUs for data loading
             self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")
@@ -331,7 +336,7 @@ class FeaturesToModel(Transform):
             ),
             compute=Compute(instance_type=train_instance_type, instance_count=1),
             output_data_config=OutputDataConfig(s3_output_path=self.model_training_root, compression_type="GZIP"),
-            stopping_condition=StoppingCondition(max_runtime_in_seconds=6 * 3600),
+            stopping_condition=StoppingCondition(max_runtime_in_seconds=(24 if hpo_requested else 6) * 3600),
             base_job_name=self.output_name,
             role=self.workbench_role_arn,
             sagemaker_session=self.sm_session,
