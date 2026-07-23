@@ -29,6 +29,7 @@ from workbench.utils.model_utils import (
     noise_model_local,
     cleanlab_model_local,
 )
+from workbench.utils.prox_utils import precomputed_model_proximity
 
 
 class Model(ModelCore):
@@ -138,31 +139,51 @@ class Model(ModelCore):
         return end
 
     def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
-        """Return this model's precomputed proximity model for the given space, or None.
+        """Return a proximity model for this Model — precomputed if it has one, else fresh.
 
-        Precomputed only — this never recomputes. Returns the proximity the model
-        already carries (if any) for ``space``, otherwise ``None``. To build one fresh
-        over the source data, use ``FeatureSet(model.get_input()).prox(space, ...)``.
+        Precomputed-first: returns the proximity the model already carries for ``space``
+        (frozen at training time). If it has none, builds one fresh over the model's
+        FeatureSet — using the model's own features/target — and logs that it did so.
+        Cached per ``space`` on this instance.
+
+        Returns ``None`` for ``space="features"`` when the model's features include
+        ``smiles`` or ``fingerprint`` — that's a structure model, so feature-space
+        proximity is meaningless; use ``prox("fingerprint")`` instead.
 
         Args:
             space: ``"fingerprint"`` or ``"features"``.
 
         Returns:
-            The proximity model if the artifact carries one for this space, else ``None``.
+            A FingerprintProximity or FeatureSpaceProximity (or None — see above).
         """
         if space not in ("fingerprint", "features"):
-            raise ValueError(f"space must be 'fingerprint' or 'feature', got {space!r}")
+            raise ValueError(f"space must be 'fingerprint' or 'features', got {space!r}")
 
-        # Feature-space proximity isn't embedded in model artifacts today.
-        if space == "features":
+        structure_cols = {"smiles", "fingerprint"}.intersection(f.lower() for f in (self.features() or []))
+        if space == "features" and structure_cols:
+            self.log.important(
+                f"{self.name}: features are structural ({structure_cols}) — "
+                "use prox('fingerprint') for structural neighbors."
+            )
             return None
 
-        # The fingerprint proximity is carried in the model's UQ artifact.
-        try:
-            uq = self.uq_model()
-        except FileNotFoundError:
-            return None
-        return getattr(uq, "prox", None)
+        if not hasattr(self, "_prox_cache"):
+            self._prox_cache = {}
+        if space not in self._prox_cache:
+            prox = precomputed_model_proximity(self, space)
+            if prox is None:
+                from workbench.api import FeatureSet
+
+                self.log.important(
+                    f"No precomputed {space} proximity for {self.name}; building fresh from its FeatureSet..."
+                )
+                fs = FeatureSet(self.get_input())
+                if space == "features":
+                    prox = fs.prox("features", feature_list=self.features(), target=self.target())
+                else:
+                    prox = fs.prox("fingerprint", target=self.target())
+            self._prox_cache[space] = prox
+        return self._prox_cache[space]
 
     def uq_model(
         self,

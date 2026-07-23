@@ -13,6 +13,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from workbench.api.model import Model, ModelType, ModelFramework
+from workbench.utils.prox_utils import build_proximity
 
 
 class FeatureSet(FeatureSetCore):
@@ -171,37 +172,19 @@ class FeatureSet(FeatureSetCore):
         Returns:
             FingerprintProximity or FeatureSpaceProximity.
         """
-        if space not in ("fingerprint", "features"):
-            raise ValueError(f"space must be 'fingerprint' or 'feature', got {space!r}")
-        if space == "features" and not feature_list:
-            raise ValueError("space='feature' requires feature_list=[...]")
-
         key = (space, tuple(feature_list) if feature_list else None, target)
         if not hasattr(self, "_prox_cache"):
             self._prox_cache = {}
-        if key in self._prox_cache:
-            return self._prox_cache[key]
-
-        full_df = self.pull_dataframe()
-        if space == "fingerprint":
-            from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
-
-            prox = FingerprintProximity(
-                full_df, id_column=self.id_column, target=target, include_all_columns=include_all_columns
-            )
-        else:
-            from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
-
-            prox = FeatureSpaceProximity(
-                full_df,
-                id_column=self.id_column,
-                features=feature_list,
+        if key not in self._prox_cache:
+            self._prox_cache[key] = build_proximity(
+                self.pull_dataframe(),
+                space,
+                self.id_column,
+                feature_list=feature_list,
                 target=target,
                 include_all_columns=include_all_columns,
             )
-
-        self._prox_cache[key] = prox
-        return prox
+        return self._prox_cache[key]
 
     def cleanlab_model(
         self,

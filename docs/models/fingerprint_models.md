@@ -13,26 +13,13 @@ Fingerprint models use a two-step pipeline:
 ### Create the Fingerprint Endpoint
 Note: This 'feature endpoint' only needs to be created once. It can then be reused across multiple models and FeatureSets. Please see our blog post [Feature Endpoints: Reusable Data Transformations](../blogs/feature_endpoints.md) for more details.
 
-```python
-from workbench.api import FeatureSet, ModelType
-from workbench.utils.model_utils import get_custom_script_path
+The `smiles-to-fingerprints-v1` endpoint is deployed from its feature-endpoint script:
 
-tags = ["smiles", "morgan fingerprints"]
-script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
-feature_set = FeatureSet("aqsol_features")
-model = feature_set.to_model(
-    name="smiles-to-fingerprints-v1",
-    model_type=ModelType.TRANSFORMER,
-    feature_list=["smiles"],
-    description="Smiles to Morgan Fingerprints",
-    tags=tags,
-    custom_script=script_path,
-)
-
-# Create the endpoint for the model
-end = model.to_endpoint(tags=tags)
-end.test_inference()
+```bash
+cd feature_endpoints && python smiles_to_fingerprints_v1.py
 ```
+
+Once deployed, it's reused everywhere — run SMILES through it to get Morgan count fingerprints.
 
 ### Step 1: Compute Fingerprints and Create a FeatureSet
 
@@ -46,7 +33,7 @@ ds = DataSource("aqsol_data")
 df = ds.pull_dataframe()
 
 # Run the data through our Smiles to Fingerprints Endpoint
-fp_end = Endpoint("smiles-to-fingerprints-v0")
+fp_end = Endpoint("smiles-to-fingerprints-v1")
 df_with_fp = fp_end.inference(df)
 
 # Create a Feature Set

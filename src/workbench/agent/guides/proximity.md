@@ -1,4 +1,4 @@
-# Neighborhood
+# Proximity
 
 > nearest neighbors of a compound — fingerprint space (Tanimoto) or feature space (Euclidean)
 
@@ -16,24 +16,27 @@ Two proximity flavors, same interface:
 
 ## Getting a proximity model
 
-Two entry points, by intent:
+Two entry points:
 
 ```python
-prox = model.prox("fingerprint")                    # precomputed; or None
-prox = fs.prox("fingerprint", target="logS")        # built fresh from a FeatureSet
-prox = fs.prox("features", feature_list=["mollogp", "tpsa", ...], target="logS")
+prox = model.prox("fingerprint")                    # from a trained model
+prox = fs.prox("fingerprint", target="logS")        # from a FeatureSet (pre-model)
+prox = fs.prox("features", feature_list=["mollogp", "tpsa"], target="logS")
 ```
 
-- **`model.prox(space)`** — the proximity the model already carries, **frozen at
-  training time** over the training rows (this is what it uses for its own uncertainty).
-  Never recomputes; returns `None` if the model has none for that `space`. Today only
-  fingerprint proximity is embedded, so `model.prox("features")` is `None`.
-- **`fs.prox(space, …)`** — build (or grab a cached) proximity **fresh** over the full
-  FeatureSet at the current config. This is the pre-model path: hunt anomalies and
-  neighbors before training. `feature_list` is required for `"features"`.
+- **`model.prox(space)`** — precomputed-first: returns the proximity the model already
+  carries (a fingerprint proximity **frozen at training time** over the training rows —
+  what it uses for its own uncertainty). If it has none, builds one **fresh** from the
+  model's FeatureSet using the model's own features/target, and logs that it did. Cached
+  per `space`.
+  - Returns **`None`** for `"features"` when the model's features are structural (contain
+    `smiles` or `fingerprint`) — that's a structure model, so use `model.prox("fingerprint")`.
+- **`fs.prox(space, …)`** — always builds fresh over the full FeatureSet at the current
+  config. The pre-model path: hunt anomalies and neighbors before training. `feature_list`
+  is required for `"features"`. Cached per `(space, feature_list, target)`.
 
 `space` is `"fingerprint"` (Tanimoto over SMILES) or `"features"` (Euclidean over
-descriptors); check what you got with `prox.space`.
+descriptors); `prox.space` reports which you got.
 
 Passing a **target** unlocks target-aware analysis on top of the proximity —
 `ActivityLandscape(prox)` (activity cliffs, isolated compounds) and `ResidualFeatures(prox)`

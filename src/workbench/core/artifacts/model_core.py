@@ -25,7 +25,6 @@ from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import (
-    published_proximity_model,
     get_model_hyperparameters,
     copy_model_artifacts,
 )
@@ -987,20 +986,6 @@ class ModelCore(Artifact):
             return meta["ModelPackageList"][0]["InferenceSpecification"]["SupportedRealtimeInferenceInstanceTypes"]
         except (KeyError, IndexError, TypeError):
             return None
-
-    def publish_prox_model(self, prox_model_name: str = None, include_all_columns: bool = False) -> "ModelCore":
-        """Create and publish a Proximity Model for this Model
-
-        Args:
-            prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)
-            include_all_columns (bool): Include all DataFrame columns in results (default: False)
-
-        Returns:
-            Model: The published Proximity Model
-        """
-        if prox_model_name is None:
-            prox_model_name = self.model_name + "-prox"
-        return published_proximity_model(self, prox_model_name, include_all_columns=include_all_columns)
 
     # Source-bound metadata that must NOT carry to a copy: its endpoints, transient
     # health tags, and its training view (managed_delete uses workbench_training_view,

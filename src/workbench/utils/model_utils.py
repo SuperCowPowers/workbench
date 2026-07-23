@@ -18,7 +18,6 @@ from scipy.stats import norm
 
 if TYPE_CHECKING:
     from workbench.api import Model
-    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.algorithms.models.noise_model import NoiseModel
     from workbench.algorithms.models.cleanlab_model import CleanlabModels
 
@@ -143,55 +142,6 @@ def copy_model_artifacts(model: "Model", dst_name: str) -> str:
     return f"{dst_training_path}/model.tar.gz"
 
 
-def fingerprint_prox_model_local(
-    model: Model,
-    include_all_columns: bool = False,
-    radius: int = 2,
-    n_bits: int = 4096,
-) -> FingerprintProximity:
-    """Create a FingerprintProximity Model for this Model
-
-    Note: FingerprintProximity auto-detects binary vs. count fingerprints from the
-    fingerprint column format (comma-separated → count, otherwise binary).
-
-    Args:
-        model (Model): The Model used to create the fingerprint proximity model
-        include_all_columns (bool): Include all DataFrame columns in neighbor results (default: False)
-        radius (int): Morgan fingerprint radius (default: 2)
-        n_bits (int): Number of bits for the fingerprint (default: 4096)
-
-    Returns:
-        FingerprintProximity: The fingerprint proximity model
-    """
-    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity  # noqa: F401
-    from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
-
-    # Get Target Column from the existing given Model
-    target = model.target()
-
-    # Backtrack our FeatureSet to get the ID column
-    fs = FeatureSet(model.get_input())
-    id_column = fs.id_column
-
-    # Create the Proximity Model from both the full FeatureSet and the Model training data
-    full_df = fs.pull_dataframe()
-    model_df = model.training_view().pull_dataframe()
-
-    # Mark rows that are in the model
-    model_ids = set(model_df[id_column])
-    full_df["in_model"] = full_df[id_column].isin(model_ids)
-
-    # Create and return the FingerprintProximity Model
-    return FingerprintProximity(
-        full_df,
-        id_column=id_column,
-        target=target,
-        include_all_columns=include_all_columns,
-        radius=radius,
-        n_bits=n_bits,
-    )
-
-
 _VALID_UQ_VERSIONS = ("v0", "v1", "v2")
 
 
@@ -267,6 +217,8 @@ def uq_model_local(
     # V1/V2 share the proximity artifact; optionally build a fresh one to override
     fresh_prox = None
     if effective_version in ("v1", "v2") and refresh_proximity:
+        from workbench.utils.prox_utils import fingerprint_prox_model_local
+
         fresh_prox = fingerprint_prox_model_local(model, radius=radius, n_bits=n_bits)
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -353,43 +305,6 @@ def cleanlab_model_local(model: Model) -> CleanlabModels:
 
     # Create and return the CleanlabModels instance
     return CleanlabModels(full_df, id_column, features, target, model_type=model_type)
-
-
-def published_proximity_model(model: Model, prox_model_name: str, include_all_columns: bool = False) -> Model:
-    """Create a published proximity model based on the given model
-
-    Args:
-        model (Model): The model to create the proximity model from
-        prox_model_name (str): The name of the proximity model to create
-        include_all_columns (bool): Include all DataFrame columns in results (default: False)
-    Returns:
-        Model: The proximity model
-    """
-    from workbench.api import Model, ModelType, FeatureSet  # noqa: F401 (avoid circular import)
-
-    # Get the custom script path for the proximity model
-    script_path = get_custom_script_path("proximity", "feature_space_proximity.template")
-
-    # Get Feature and Target Columns from the existing given Model
-    features = model.features()
-    target = model.target()
-
-    # Create the Proximity Model from our FeatureSet
-    fs = FeatureSet(model.get_input())
-    from workbench.core.artifacts.model_core import ModelFramework
-
-    prox_model = fs.to_model(
-        name=prox_model_name,
-        model_type=ModelType.PROXIMITY,
-        model_framework=ModelFramework.SKLEARN,
-        feature_list=features,
-        target_column=target,
-        description=f"Proximity Model for {model.name}",
-        tags=["proximity", model.name],
-        custom_script=script_path,
-        custom_args={"include_all_columns": include_all_columns},
-    )
-    return prox_model
 
 
 def safe_extract_tarfile(tar_path: str, extract_path: str) -> None:
@@ -670,7 +585,7 @@ if __name__ == "__main__":
     print(instance_architecture("ml.c7g.large"))
 
     # Get the custom script path
-    print(get_custom_script_path("proximity", "feature_space_proximity.template"))
+    print(get_custom_script_path("uq_models", "ensemble_xgb.template"))
 
     # Test loading hyperparameters
     m = Model("aqsol-regression")

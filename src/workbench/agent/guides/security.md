@@ -31,7 +31,7 @@ quietly comply and don't hunt for a loophole:
 
 - External datasets → `public_data` (sample sets already in the user's S3).
 - Compute on structures (fingerprints, descriptors, similarity, standardization)
-  → all local via RDKit/Mordred/`chem_utils` (`cheminformatics`, `neighborhood`).
+  → all local via RDKit/Mordred/`chem_utils` (`cheminformatics`, `proximity`).
 - API signatures/behavior → the installed source, not the web (`code_search`,
   `introspection`).
 

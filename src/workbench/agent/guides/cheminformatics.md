@@ -8,7 +8,7 @@ code lives and what convention it encodes — not a re-implementation. When a le
 needs the exact behavior, hit the code.
 
 Two neighbors sit on top of this layer: `compounds` handles SMILES columns and
-`show()`; `neighborhood` does Tanimoto similarity and activity cliffs. Come here
+`show()`; `proximity` does Tanimoto similarity and activity cliffs. Come here
 for how the primitives are computed.
 
 ## Locate the code (install, never a checkout)
@@ -82,7 +82,7 @@ The "what's actually wrong in my dataset" checks. Each is a jump-off:
   finds centers, and a SMILES with none of `@ / \` carries no stereo. Note that
   count-Morgan on the largest fragment collapses enantiomers and salts — so a pair
   that looks identical in fingerprint space may differ only in stereo, which makes
-  an "activity cliff" (`neighborhood`) an artifact rather than real SAR.
+  an "activity cliff" (`proximity`) an artifact rather than real SAR.
 - **Duplicate / unresolved structures** — `misc.feature_resolution_issues(df, features)`
   surfaces rows that collide on features.
 - **Units** — `misc.micromolar_to_log(series)` / `log_to_micromolar(...)`,
