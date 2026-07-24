@@ -278,7 +278,11 @@ def train_chemprop_fold(
         )
 
     nw = spec.num_workers
-    loader_kwargs = {"num_workers": nw, "persistent_workers": nw > 0, "pin_memory": True, "prefetch_factor": 2}
+    # persistent_workers / prefetch_factor are only valid with worker processes; PyTorch
+    # rejects them when num_workers == 0.
+    loader_kwargs = {"num_workers": nw, "pin_memory": True}
+    if nw > 0:
+        loader_kwargs.update(persistent_workers=True, prefetch_factor=2)
     train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, **loader_kwargs)
     val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, **loader_kwargs)
 
@@ -313,13 +317,16 @@ def train_chemprop_fold(
                     save_top_k=1,
                 )
             )
+        # Only enable checkpointing on the phase that actually saves — otherwise Lightning
+        # adds a default ModelCheckpoint writing throwaway files (e.g. foundation phase 1).
+        save = save_checkpoint and bool(checkpoint_dir)
         return pl.Trainer(
             accelerator="auto",
             max_epochs=max_epochs,
             precision="16-mixed",
             logger=False,
             enable_progress_bar=spec.enable_progress_bar,
-            enable_checkpointing=bool(checkpoint_dir),
+            enable_checkpointing=save,
             callbacks=callbacks,
         )
 

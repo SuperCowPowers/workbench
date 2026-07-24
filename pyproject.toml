@@ -92,7 +92,7 @@ training = [
     "ray[tune]",
     "optuna",
 ]
-dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black", "aws-cdk-lib"]
+dev = ["tox", "pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black", "aws-cdk-lib"]
 # Docs toolchain (mkdocs site + mkdocstrings API reference). Kept in sync with .github/workflows/deploy-docs.yml
 docs = [
     # Cap mkdocs/material below 2.0/10 — MkDocs 2.0 is a breaking rewrite that Material 10 will require

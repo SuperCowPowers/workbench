@@ -201,7 +201,7 @@ def run_chemprop_hpo(
 
     space = resolve_search_space(hpo_block.get("search_space"))
     backend = hpo_block.get("backend", "auto")
-    max_parallel = hpo_block.get("max_parallel", 1)
+    max_parallel = max(1, hpo_block.get("max_parallel", 1))
     # Every dataloader worker is a process, so concurrent trials have to share the vCPUs —
     # oversubscribing them starves the GPU instead of feeding it.
     num_workers = max(1, min((os.cpu_count() or 4) // max_parallel, 8))
