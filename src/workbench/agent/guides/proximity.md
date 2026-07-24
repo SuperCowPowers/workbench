@@ -52,7 +52,7 @@ FeatureSpaceProximity(df, id_column="id", features=[...])
 ## Neighbors of a compound in the set
 
 ```python
-nbrs = prox.neighbors(compound_id, n_neighbors=6, include_self=False)
+nbrs = prox.neighbors(compound_id, n_neighbors=6)
 ```
 
 One row per neighbor:
@@ -63,13 +63,6 @@ One row per neighbor:
 | `neighbor_id` | the neighboring compound |
 | `similarity` / `distance` | Tanimoto similarity 0–1 (FingerprintProximity) or standardized Euclidean distance (FeatureSpaceProximity) |
 | `<target>` | the neighbor's target value (may be `NaN` for a multi-task model's off-task rows) |
-
-Two gotchas:
-
-- **`include_self` defaults to `True`.** A compound is its own closest neighbor, so
-  pass `include_self=False` to get real neighbors.
-- **`n_neighbors` counts before self is dropped.** With `include_self=False`, request
-  `k + 1` to get `k` neighbors back.
 
 Don't hardcode the query id column — it's `prox.id_column`. `neighbor_id` is stable.
 
@@ -89,8 +82,8 @@ with a warning rather than raising.
 ## Controlling the search
 
 ```python
-prox.neighbors(cid, min_similarity=0.5, include_self=False)   # FingerprintProximity: all >= 0.5 Tanimoto
-prox.neighbors(cid, radius=2.0, include_self=False)           # FeatureSpaceProximity: all within distance
+prox.neighbors(cid, min_similarity=0.5)   # FingerprintProximity: all >= 0.5 Tanimoto
+prox.neighbors(cid, radius=2.0)           # FeatureSpaceProximity: all within distance
 ```
 
 The threshold overrides `n_neighbors` — use it when "how many are actually close"

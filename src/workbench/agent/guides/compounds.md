@@ -36,7 +36,8 @@ SMILES string**, not a DataFrame or a Series:
 ```python
 show(df["smiles"].iloc[0])              # first compound
 show("CN1C=NC2=C1C(=O)N(C(=O)N2C)C")    # caffeine
-show(smiles, width=800, height=800)     # bigger; default is 500x500
+show(smiles, width=300, height=300)     # smaller; default is 500x500
+show(smiles, background="rgba(255, 255, 255, 0.5)")   # white/half alpha; default is dark grey
 ```
 
 To look at several, loop — but keep it to a handful, since each opens an image:

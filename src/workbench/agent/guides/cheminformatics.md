@@ -28,13 +28,13 @@ and `dir(module)` in the REPL are the documentation. Reach for them freely.
 
 ## How Workbench computes fingerprints
 
-`chem_utils/fingerprints.py` → `compute_morgan_fingerprints(df, radius=2, n_bits=2048)`.
+`chem_utils/fingerprints.py` → `compute_morgan_fingerprints(df, radius=2, n_bits=4096)`.
 The choices that aren't obvious:
 
 - **Count, not binary.** Each bit holds how many times the substructure appears
   (clamped to 0–255), stored as a comma-separated string. Count fingerprints beat
   binary for ADMET property prediction — the citation is in the module docstring.
-- **radius=2** is ECFP4-equivalent; **2048 bits**.
+- **radius=2** is ECFP4-equivalent; **4096 bits**.
 - **Largest fragment first.** Salts/counterions are stripped
   (`rdMolStandardize.LargestFragmentChooser`) before hashing, so the fingerprint
   describes the parent, not the salt.
