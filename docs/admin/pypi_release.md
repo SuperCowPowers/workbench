@@ -19,7 +19,7 @@ For full details on packaging see the
 ### Package Requirements
 
 ```bash
-pip install --upgrade build twine
+pip install --upgrade build twine tox
 ```
 
 ### How the version is set

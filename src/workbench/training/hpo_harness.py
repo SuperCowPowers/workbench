@@ -315,7 +315,16 @@ def _run_ray(
     # otherwise be published — the very regime mismatch the ensemble objective removes.
     completed = [r for r in results if r.metrics.get(done_flag)]
     pool = completed or list(results)  # fall back if pruning stopped everything
-    best = min(pool, key=lambda r: (1 if mode == "min" else -1) * r.metrics.get(metric, float("inf")))
+
+    def _objective(r):
+        # Missing/None metric sorts to the worst end regardless of mode — a signed default
+        # (e.g. -inf in max mode) would otherwise make an unscored trial win.
+        v = r.metrics.get(metric)
+        if v is None:
+            return float("inf")
+        return v if mode == "min" else -v
+
+    best = min(pool, key=_objective)
     trials = [
         {
             "number": i,

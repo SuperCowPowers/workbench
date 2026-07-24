@@ -2,7 +2,9 @@
 
 Lives on the endpoint import surface (per the :mod:`workbench.endpoints` contract)
 because the serving ``predict_fn`` builds datapoints the same way training does.
-Top-level deps are numpy + chemprop, both supplied by the ``pytorch_chem`` base image.
+Top-level deps are numpy + chemprop; ``create_molecule_datapoints`` additionally needs
+rdkit at call time (imported inside the function). All three ship in the ``pytorch_chem``
+base image.
 """
 
 import numpy as np
@@ -50,10 +52,14 @@ def create_molecule_datapoints(
     from rdkit import Chem
 
     datapoints, valid_indices = [], []
-    targets = np.atleast_2d(np.array(targets)).T if targets is not None and np.array(targets).ndim == 1 else targets
+    if targets is not None:
+        targets = np.asarray(targets)
+        if targets.ndim == 1:
+            targets = np.atleast_2d(targets).T
 
     for i, smi in enumerate(smiles_list):
-        if Chem.MolFromSmiles(smi) is None:
+        # Guard the RDKit call: MolFromSmiles(None) raises, and blank strings parse to None.
+        if not isinstance(smi, str) or not smi.strip() or Chem.MolFromSmiles(smi) is None:
             continue
         y = targets[i].tolist() if targets is not None else None
         x_d = extra_descriptors[i] if extra_descriptors is not None else None

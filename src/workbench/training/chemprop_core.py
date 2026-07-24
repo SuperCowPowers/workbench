@@ -284,7 +284,11 @@ def train_chemprop_fold(
     if nw > 0:
         loader_kwargs.update(persistent_workers=True, prefetch_factor=2)
     train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, **loader_kwargs)
-    val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, **loader_kwargs)
+    # safe_batch_size on val: chemprop drops the last batch when len(val) % batch_size == 1,
+    # which would silently drop a row from the val_loss that drives EarlyStopping/checkpointing.
+    val_loader = data.build_dataloader(
+        val_dataset, batch_size=safe_batch_size(len(val_dataset), batch_size), shuffle=False, **loader_kwargs
+    )
 
     pl.seed_everything(hp["seed"] + fold_idx)
     mpnn = build_mpnn_model(
@@ -400,4 +404,6 @@ def predict_chemprop_frame(mpnn, spec: FoldSpec, df, targets=None, extra=None):
         preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, loader)], axis=0)
     if preds.ndim == 3 and preds.shape[1] == 1:
         preds = preds.squeeze(axis=1)
+    if preds.ndim == 1:  # single-target models can emit (n,); callers index [:, 0]
+        preds = preds.reshape(-1, 1)
     return preds
