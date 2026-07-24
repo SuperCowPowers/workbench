@@ -1,9 +1,11 @@
 """Chemprop hyperparameter-search objective + default search space.
 
-Drives the framework-agnostic :mod:`workbench.training.hpo_harness` for chemprop:
-a default search space (this module) and, per trial, a single-fold chemprop train
-scored as held-out ``holdout_mae`` (the search *objective*). Training-only; imported
-**only inside the chemprop template's ``__main__``** (deferred).
+Drives the framework-agnostic :mod:`workbench.training.hpo_harness` for chemprop: a
+default search space (this module) and, per trial, a full ``n_folds`` ensemble scored as
+``holdout_mae`` / ``cv_mae`` (the search *objective*). Scoring a trial in the regime the
+winner is published in is the point — a config selected as a lone model does not carry
+over to an ensemble. Training-only; imported **only inside the chemprop template's
+``__main__``** (deferred).
 
 Parity: each trial builds its model through
 :func:`workbench.training.chemprop_core.build_mpnn_model` — the same builder the
@@ -11,8 +13,8 @@ template uses to publish the winner — so a searched config maps to the identic
 architecture and optimizer schedule.
 
 Only the pure pieces here (the search space and config merge) import without
-chemprop; the search entry point and per-trial train (added next) defer their
-chemprop/chemprop_core imports so this module stays importable for unit tests.
+chemprop; the search entry point and per-trial train defer their chemprop/chemprop_core
+imports so this module stays importable for unit tests.
 """
 
 from __future__ import annotations
@@ -20,6 +22,11 @@ from __future__ import annotations
 import os
 
 from workbench.training.hpo_harness import Choice, FloatRange, IntRange
+
+# Trials report once per completed fold, so a trial is eligible for pruning only after its
+# second member has trained. One fold is too noisy a basis to kill a config on: a config can
+# lag on a single scaffold fold and still make the better ensemble.
+FOLD_PRUNE_WARMUP = 2
 
 # Default per-knob search space, grouped like chemprop's own hpopt keywords. The `basic`
 # group is chemprop's canonical space verbatim, extended only so ffn_hidden_dim can also
@@ -31,12 +38,6 @@ _SEARCH_GROUPS = {
         # verbatim. ffn_hidden_dim additionally offers tapered heads (lists), which
         # chemprop's own space can't express — ffn_num_layers is ignored when a tapered
         # list is chosen (the list length sets the depth).
-        #
-        # `dropout` is deliberately absent even though chemprop searches it: a trial trains
-        # a *single* model, while the published model is an `n_folds` ensemble. Dropout
-        # chosen without ensembling over-regularizes once the ensemble is stacked on top
-        # (DEFAULT_HYPERPARAMETERS keeps it low precisely because the ensemble already
-        # regularizes), so it stays at that ensemble-tuned default.
         "depth": IntRange(2, 6, 1),
         "hidden_dim": IntRange(300, 2400, 100),
         "ffn_num_layers": IntRange(1, 3, 1),
@@ -53,11 +54,10 @@ _SEARCH_GROUPS = {
 
 # Knobs outside the default space — the working list for when this is revisited:
 #
-#   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}); we can't transfer a value found
-#     single-model to an ensemble (see the `basic` group note). Searching it honestly needs
-#     trials scored in the *deployment* regime — e.g. shortlist cheaply single-fold, then
-#     re-rank the top-K configs by training each as a real `n_folds` ensemble and selecting
-#     on that. Same treatment would make the capacity knobs transfer better too.
+#   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}) and ensemble-scored trials can
+#     now select it honestly (a regularization knob is only meaningful against the
+#     ensemble it ships in). Held out of the default space to keep the trial budget on the
+#     capacity knobs; the first candidate to add after the capacity search is characterized.
 #   * learning rate (`max_lr`, `warmup_epochs`) — already available as the opt-in "lr"
 #     group. Chemprop's maintainers describe their recommended search as focusing on
 #     learning rate and batch size, which makes this the first candidate to promote into
@@ -70,15 +70,16 @@ _SEARCH_GROUPS = {
 #     requires a model-construction change first.
 #   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword.
 #
-# Each added knob costs trials: the default space is already 5-dimensional, and pruning
-# reserves the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines.
+# Each added knob costs trials: the default space is already 4-dimensional, pruning reserves
+# the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines, and every trial now trains a
+# full ensemble.
 
 
 def chemprop_search_space(groups=("basic",)) -> dict:
     """Build the default chemprop search space for the named knob ``groups``.
 
     Args:
-        groups: iterable of group names — ``"basic"`` (architecture + dropout) and/or
+        groups: iterable of group names — ``"basic"`` (architecture capacity) and/or
             ``"lr"`` (the learning-rate schedule).
 
     Returns:
@@ -143,59 +144,85 @@ def run_chemprop_hpo(
     """Phase-1 chemprop hyperparameter search; returns the phase-2 hyperparameters.
 
     The caller passes the already-split training frame and the held-out ``validation``
-    frame (e.g. the template's ``split_validation_set`` output). Runs the search —
-    single-fold trials scored on the held-out set (``holdout_mae``), or a scaffold split
-    of ``train_df`` when ``val_df`` is empty (``cv_mae``) — and merges the winner into
-    ``base_hyperparameters``. Writes ``best_config.json`` + ``hpo_trials.csv`` to
-    ``output_dir`` when given.
+    frame (e.g. the template's ``split_validation_set`` output). Each trial trains a full
+    ``n_folds`` ensemble — the same regime the winner is published in — scored on the
+    held-out set (``holdout_mae``) or out-of-fold (``cv_mae``) when ``val_df`` is empty.
+    The winner is merged into ``base_hyperparameters``. Writes ``best_config.json`` +
+    ``hpo_trials.csv`` to ``output_dir`` when given.
+
+    Cost is kept near single-fold for weak configs by reporting the running objective
+    after every fold: the harness prunes a trial that is already off the pace once
+    ``FOLD_PRUNE_WARMUP`` folds are in, so only promising configs pay for the full
+    ensemble.
 
     v1 scope: regression, SMILES-only features; the objective is the primary target's
-    held-out MAE. Extra descriptors / bounded loss / multi-task featurization are not
-    exercised during search — the phase-2 publish still uses the full template.
+    MAE. Extra descriptors / bounded loss / multi-task featurization are not exercised
+    during search — the phase-2 publish still uses the full template.
     """
     import json
 
     import pandas as pd
 
+    from workbench.endpoints.chemprop_utils import create_molecule_datapoints
     from workbench.endpoints.inference import get_split_indices
     from workbench.training.hpo_harness import run_search
 
+    def _rdkit_valid(df):
+        """Drop rows RDKit can't parse, so predictions stay aligned with the target array."""
+        df = df.dropna(subset=[smiles_column]).reset_index(drop=True)
+        _, valid = create_molecule_datapoints(df[smiles_column].tolist())
+        return df.iloc[valid].reset_index(drop=True)
+
+    # The caller's holdout frame is split off *before* the template's own valid-SMILES
+    # filter, so it is filtered here rather than assumed clean.
+    train_df, val_df = _rdkit_valid(train_df), _rdkit_valid(val_df)
+
+    # Same folds the template would build for this config, so a trial's ensemble matches
+    # the published one. Scaffold is the SMILES-feature default (literature-favored;
+    # random splits leak near-duplicate scaffolds across train/val).
+    n_folds = int(hpo_block.get("n_folds", base_hyperparameters.get("n_folds", 5)))
+    strategy = base_hyperparameters.get("split_strategy", "scaffold")
+    folds = get_split_indices(
+        train_df,
+        n_splits=n_folds,
+        strategy=strategy,
+        smiles_column=smiles_column,
+        test_size=0.2,
+        random_state=base_hyperparameters.get("seed", 42),
+        butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
+    )
     if len(val_df):
-        eval_df, metric, where = val_df, "holdout_mae", f"held-out validation set ({len(val_df)} rows)"
+        metric, where = "holdout_mae", f"held-out validation set ({len(val_df)} rows)"
     else:
-        # No designated validation rows -> a single scaffold split held out as a cv_mae
-        # proxy. Scaffold is the SMILES-feature default (literature-favored; random splits
-        # leak near-duplicate scaffolds across train/val), and reuses the same
-        # get_split_indices the template uses for its own CV.
-        strategy = base_hyperparameters.get("split_strategy", "scaffold")
-        folds = get_split_indices(
-            train_df,
-            n_splits=1,
-            strategy=strategy,
-            smiles_column=smiles_column,
-            test_size=0.2,
-            random_state=base_hyperparameters.get("seed", 42),
-            butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
-        )
-        tr_idx, val_idx = folds[0]
-        eval_df = train_df.iloc[val_idx].reset_index(drop=True)
-        train_df = train_df.iloc[tr_idx].reset_index(drop=True)
-        metric, where = "cv_mae", f"{strategy} split ({len(val_idx)} val rows; no validation_ids)"
-    print(f"[hpo] objective = {metric} on {where}; {len(train_df)} training rows")
+        metric, where = "cv_mae", f"out-of-fold {strategy} splits (no validation_ids)"
+    print(
+        f"[hpo] objective = {metric} on {where}; {n_folds}-fold ensemble per trial, " f"{len(train_df)} training rows"
+    )
 
     space = resolve_search_space(hpo_block.get("search_space"))
     backend = hpo_block.get("backend", "auto")
-    trial_fn = _make_trial_fn(train_df, eval_df, base_hyperparameters, list(target_columns), smiles_column, metric)
+    max_parallel = hpo_block.get("max_parallel", 1)
+    # Every dataloader worker is a process, so concurrent trials have to share the vCPUs —
+    # oversubscribing them starves the GPU instead of feeding it.
+    num_workers = max(1, min((os.cpu_count() or 4) // max_parallel, 8))
+    print(f"[hpo] {max_parallel} concurrent trial(s), {num_workers} dataloader workers each")
+
+    trial_fn = _make_trial_fn(
+        train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers
+    )
     result = run_search(
         trial_fn,
         space,
         n_trials=hpo_block.get("n_trials", 40),
         backend=backend,
-        max_parallel=hpo_block.get("max_parallel", 1),
+        max_parallel=max_parallel,
         metric=metric,
         mode="min",
+        prune_warmup=FOLD_PRUNE_WARMUP,
         seed=base_hyperparameters.get("seed", 42),
-        resources_per_trial={"gpu": 1} if backend != "optuna" else None,
+        # A trial uses ~5% of an L4's memory and ~46% of its compute, so packing two per
+        # GPU roughly saturates one without spilling. Ray only.
+        resources_per_trial={"gpu": hpo_block.get("gpus_per_trial", 0.5)} if backend != "optuna" else None,
     )
     print(f"[hpo] best {metric}={result.best_value:.4f}  best_config={result.best_config}")
 
@@ -209,89 +236,76 @@ def run_chemprop_hpo(
     return merge_best_config(base_hyperparameters, result.best_config)
 
 
-def _make_trial_fn(train_df, eval_df, base_hyperparameters, target_columns, smiles_column, metric):
-    """Build the single-fold chemprop ``trial_fn`` (closes over the split data).
+def _make_trial_fn(train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers):
+    """Build the ensemble chemprop ``trial_fn`` (closes over the folds and eval data).
 
-    Each trial builds its model via :func:`workbench.training.chemprop_core.build_mpnn_model`
-    (parity with the published model), trains on the train rows using the held-out rows as
-    Lightning's validation set — so per-epoch ``val_loss`` drives ASHA pruning — and returns
-    the final unscaled MAE on the primary target as the objective.
+    Each trial trains one model per fold through
+    :func:`workbench.training.chemprop_core.train_chemprop_fold` — the same function the
+    template publishes with, so a trial's members are built, early-stopped, and
+    best-checkpoint-selected identically — and scores the ensemble the way it is deployed:
+
+    * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
+      members' mean prediction, i.e. the real ensemble's held-out error.
+    * ``cv_mae`` — each member is scored on its own out-of-fold rows and the objective is
+      the mean across folds.
+
+    The running objective is reported after each fold so the harness can prune a config
+    that is already off the pace, which keeps weak trials near single-fold cost.
+
+    Epoch-level early stopping stays with chemprop's ``EarlyStopping`` callback; the
+    harness prunes at fold granularity.
     """
+    import tempfile
+
     import numpy as np
-    import torch
-    from chemprop import data, nn
-    from lightning import pytorch as pl
-    from rdkit import Chem
 
-    from workbench.training.chemprop_core import build_mpnn_model
+    from workbench.training.chemprop_core import FoldSpec, predict_chemprop_frame, train_chemprop_fold
 
-    n_targets = len(target_columns)
-    num_workers = min(os.cpu_count() or 4, 8)
-
-    def _dataset(df):
-        """Featurize a frame -> (MoleculeDataset, aligned original-scale targets)."""
-        smis = df[smiles_column].tolist()
-        y = df[target_columns].to_numpy(dtype=float)
-        dps, ys = [], []
-        for i, smi in enumerate(smis):
-            if Chem.MolFromSmiles(smi) is None:
-                continue
-            dps.append(data.MoleculeDatapoint.from_smi(smi, y=y[i].tolist()))
-            ys.append(y[i])
-        return data.MoleculeDataset(dps), np.asarray(ys, dtype=float)
+    target_columns = list(target_columns)
+    holdout = bool(len(val_df))
+    all_y = train_df[target_columns].to_numpy(dtype=float)
+    eval_y = val_df[target_columns].to_numpy(dtype=float)[:, 0] if holdout else None
 
     def trial_fn(config, report):
-        hp = merge_best_config(base_hyperparameters, config)
-        pl.seed_everything(hp.get("seed", 42))
-
-        train_ds, _ = _dataset(train_df)
-        eval_ds, eval_y = _dataset(eval_df)
-        target_scaler = train_ds.normalize_targets()
-        eval_ds.normalize_targets(target_scaler)
-        output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
-        # `val_loss` is the criterion on *normalized* targets, but the value we return is
-        # unscaled MAE. Rescale per-epoch reports into the objective's units so the pruning
-        # signal, the recorded per-trial values, and the final value are all one quantity —
-        # otherwise pruned trials record a smaller number than completed ones and look
-        # better than they are. Exact for the default MAE criterion (MAE is linear in the
-        # target scale); a monotone proxy for others.
-        target_scale = float(getattr(target_scaler, "scale_", [1.0])[0])
-        train_ds.cache = eval_ds.cache = True
-
-        batch_size = hp.get("batch_size", 64)
-        train_loader = data.build_dataloader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-        eval_loader = data.build_dataloader(eval_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
-
-        mpnn = build_mpnn_model(hp, task="regression", n_targets=n_targets, output_transform=output_transform)
-
-        class _ReportPruning(pl.Callback):
-            # Report per-epoch held-out val_loss so the harness can prune weak trials (ASHA).
-            def on_validation_epoch_end(self, trainer, module):
-                # Lightning's pre-training sanity-check pass fires this at epoch 0 too;
-                # reporting it would duplicate step 0 with an untrained model's value.
-                if trainer.sanity_checking:
-                    return
-                v = trainer.callback_metrics.get("val_loss")
-                if v is not None:
-                    report(step=trainer.current_epoch, **{metric: float(v) * target_scale})
-
-        trainer = pl.Trainer(
-            accelerator="auto",
-            max_epochs=hp.get("max_epochs", 400),
-            precision="16-mixed",
-            logger=False,
+        spec = FoldSpec(
+            hyperparameters=merge_best_config(base_hyperparameters, config),
+            smiles_column=smiles_column,
+            n_targets=len(target_columns),
+            model_type="uq_regressor",
             enable_progress_bar=False,
-            callbacks=[
-                _ReportPruning(),
-                pl.callbacks.EarlyStopping(monitor="val_loss", patience=hp.get("patience", 40), mode="min"),
-            ],
+            verbose=False,
+            num_workers=num_workers,
         )
-        trainer.fit(mpnn, train_loader, eval_loader)
 
-        mpnn.eval()
-        with torch.inference_mode():
-            preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, eval_loader)], axis=0)
-        preds = preds.reshape(len(eval_y), -1)[:, 0]  # primary target; output_transform already unscaled
-        return float(np.mean(np.abs(preds - eval_y[:, 0])))
+        member_preds, fold_maes = [], []
+        for fold_idx, (tr_idx, va_idx) in enumerate(folds):
+            fold_val_df = train_df.iloc[va_idx].reset_index(drop=True)
+            # Checkpoints are scratch: the trial keeps the model object, not the file.
+            with tempfile.TemporaryDirectory() as ckpt_dir:
+                mpnn, fold_preds = train_chemprop_fold(
+                    spec,
+                    train_df.iloc[tr_idx].reset_index(drop=True),
+                    fold_val_df,
+                    all_y[tr_idx],
+                    all_y[va_idx],
+                    fold_idx=fold_idx,
+                    checkpoint_dir=ckpt_dir,
+                )
+
+            if holdout:
+                # Each member predicts the held-out rows; the objective is the ensemble's
+                # mean prediction. The fold's own val rows drive early stopping only, so
+                # the objective set never influences model selection.
+                member_preds.append(predict_chemprop_frame(mpnn, spec, val_df)[:, 0])
+                running = float(np.mean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
+            else:
+                fold_maes.append(float(np.mean(np.abs(fold_preds[:, 0] - all_y[va_idx][:, 0]))))
+                running = float(np.mean(fold_maes))
+
+            # Fold-granular pruning: a config already off the pace stops here rather than
+            # paying for the remaining members.
+            report(step=fold_idx + 1, **{metric: running})
+
+        return running
 
     return trial_fn

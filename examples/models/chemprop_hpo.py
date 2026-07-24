@@ -28,9 +28,12 @@ if recreate or not Model(model_name).exists():
         hyperparameters={
             "uq_version": "v1",
             "hpo": {
-                "backend": "optuna",  # serial; flip to "ray" for parallel trials + ASHA on the 4 GPUs
+                # "ray" + max_parallel > 1 runs trials concurrently (ASHA) and puts the job
+                # on a 4-GPU instance; "optuna" is the serial single-GPU path.
+                "backend": "ray",
+                "max_parallel": 8,  # 4 GPUs x 2 trials each (see gpus_per_trial)
                 "n_trials": 40,  # 5 baseline trials (pruner warmup) + 35 pruned candidates
-                "search_space": "basic",  # "basic" (architecture + dropout) | "basic+lr"
+                "search_space": "basic",  # "basic" (architecture capacity) | "basic+lr"
             },
         },
         # For an honest out-of-distribution objective, pass validation_ids=[...]: those

@@ -12,9 +12,11 @@ candidate plus a default search space (e.g. :mod:`workbench.training.chemprop_hp
 
 ``trial_fn(config, report) -> float`` contract:
 
-* build + train the framework model for ``config`` (single-fold),
-* call ``report(step=<epoch>, <metric>=<value>)`` each epoch so the backend can
-  prune weak trials early (ASHA / successive halving),
+* build + train the framework model for ``config``,
+* call ``report(step=<tick>, <metric>=<value>)`` as the trial progresses so the
+  backend can prune weak trials early (ASHA / successive halving). ``step`` is
+  whatever unit of progress the framework reports — an epoch, or a completed
+  ensemble fold — and ``prune_warmup`` must be set to match that unit,
 * return the final objective value (the same ``<metric>``), which the harness
   minimizes or maximizes per ``mode``.
 
@@ -69,8 +71,9 @@ SearchSpace = dict
 # Pruning grace. Successive-halving/ASHA defaults judge a trial almost immediately,
 # which wrecks a small search (tens of trials): configs get killed before they've
 # trained enough to rank. No trial is eligible for pruning until it has reported this
-# many steps (epochs), and Optuna additionally needs this many completed trials as
-# baselines before it prunes anything.
+# many steps, and Optuna additionally needs this many completed trials as baselines
+# before it prunes anything. The default suits per-epoch reporters; callers reporting
+# a coarser step (e.g. one per ensemble fold) pass a smaller ``prune_warmup``.
 PRUNE_WARMUP_STEPS = 20
 PRUNE_STARTUP_TRIALS = 5
 
@@ -97,6 +100,7 @@ def run_search(
     metric: str = "holdout_mae",
     mode: str = "min",
     pruning: bool = True,
+    prune_warmup: int = PRUNE_WARMUP_STEPS,
     seed: int = 42,
     resources_per_trial: Union[dict, None] = None,
 ) -> HpoResult:
@@ -114,6 +118,8 @@ def run_search(
         metric: the objective key reported by ``trial_fn``/``report``.
         mode: ``"min"`` or ``"max"``.
         pruning: enable early-stopping of weak trials (successive halving / ASHA).
+        prune_warmup: steps a trial must report before it is eligible for pruning —
+            in the same unit ``trial_fn`` reports (epochs, folds, ...).
         seed: sampler seed for reproducible searches.
         resources_per_trial: Ray only — e.g. ``{"gpu": 1}`` (one trial per GPU).
 
@@ -138,6 +144,7 @@ def run_search(
             metric=metric,
             mode=mode,
             pruning=pruning,
+            prune_warmup=prune_warmup,
             seed=seed,
             resources_per_trial=resources_per_trial,
         )
@@ -149,6 +156,7 @@ def run_search(
         metric=metric,
         mode=mode,
         pruning=pruning,
+        prune_warmup=prune_warmup,
         seed=seed,
     )
 
@@ -168,7 +176,7 @@ def _resolve_backend(backend: str) -> str:
 # --- Optuna backend (local, serial) ----------------------------------------
 
 
-def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, seed) -> HpoResult:
+def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed):
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -177,7 +185,7 @@ def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode,
     # before configs are rankable. Median prunes a trial only once baselines exist and it
     # is worse than the median at the same step.
     pruner = (
-        optuna.pruners.MedianPruner(n_startup_trials=PRUNE_STARTUP_TRIALS, n_warmup_steps=PRUNE_WARMUP_STEPS)
+        optuna.pruners.MedianPruner(n_startup_trials=PRUNE_STARTUP_TRIALS, n_warmup_steps=prune_warmup)
         if pruning
         else optuna.pruners.NopPruner()
     )
@@ -245,7 +253,7 @@ def _suggest_optuna(trial, search_space) -> dict:
 
 
 def _run_ray(
-    trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, seed, resources_per_trial
+    trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed, resources_per_trial
 ) -> HpoResult:
     from ray import tune
     from ray.tune.schedulers import ASHAScheduler
@@ -274,9 +282,7 @@ def _run_ray(
     # grace_period defaults to 1 (prune after a single report) — far too eager; give each
     # trial the same warmup the Optuna path gets.
     scheduler = (
-        ASHAScheduler(metric=metric, mode=mode, time_attr=time_attr, grace_period=PRUNE_WARMUP_STEPS)
-        if pruning
-        else None
+        ASHAScheduler(metric=metric, mode=mode, time_attr=time_attr, grace_period=prune_warmup) if pruning else None
     )
     tuner = tune.Tuner(
         trainable_res,

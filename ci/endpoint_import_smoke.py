@@ -46,6 +46,7 @@ PYPROJECT = REPO_ROOT / "pyproject.toml"
 _FRAMEWORK_SPECIFIC = {
     "workbench.endpoints.pytorch_utils": {"torch"},
     "workbench.endpoints.chemprop_shap_utils": {"torch", "chemprop"},
+    "workbench.endpoints.chemprop_utils": {"chemprop"},
 }
 
 # Extras that don't ship to any container at runtime and aren't relevant to

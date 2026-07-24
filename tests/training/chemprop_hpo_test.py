@@ -16,8 +16,7 @@ def test_basic_group_is_default():
     assert space["depth"] == IntRange(2, 6, 1)  # chemprop {2,3,4,5,6}
     assert space["hidden_dim"] == IntRange(300, 2400, 100)  # chemprop {300,400,...,2400}
     assert space["ffn_num_layers"] == IntRange(1, 3, 1)  # chemprop {1,2,3}
-    # dropout is NOT searched: single-model trials can't transfer it to the published
-    # n_folds ensemble, so it stays at the ensemble-tuned default.
+    # dropout is held out of the default space to keep the budget on the capacity knobs.
     assert "dropout" not in space
     assert isinstance(space["ffn_hidden_dim"], Choice)
     assert [1024, 256, 64] in space["ffn_hidden_dim"].options  # tapered head is a choice

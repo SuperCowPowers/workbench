@@ -49,6 +49,11 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
+from workbench.endpoints.chemprop_utils import (
+    create_molecule_datapoints,
+    find_smiles_column,
+    safe_batch_size,
+)
 from workbench.endpoints.uq_regression import load_regression_uq
 
 print(f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported", flush=True)
@@ -130,64 +135,6 @@ TEMPLATE_PARAMS = {
 
 
 # =============================================================================
-# Helper Functions
-# =============================================================================
-def _safe_batch_size(dataset_len: int, batch_size: int) -> int:
-    """Compute a batch size that avoids ChemProp's drop_last behavior.
-
-    ChemProp's build_dataloader sets drop_last=True when len(dataset) % batch_size == 1
-    to avoid batch norm issues with single-sample batches. For prediction/inference this
-    drops a sample, causing misalignment with the source DataFrame. Bumping batch_size
-    by 1 in that case makes the last batch 2 samples instead of 1, avoiding both problems.
-    """
-    if dataset_len % batch_size == 1:
-        return batch_size + 1
-    return batch_size
-
-
-def _find_smiles_column(columns: list[str]) -> str:
-    """Find SMILES column (case-insensitive match for 'smiles')."""
-    smiles_col = next((c for c in columns if c.lower() == "smiles"), None)
-    if smiles_col is None:
-        raise ValueError("Column list must contain a 'smiles' column (case-insensitive)")
-    return smiles_col
-
-
-def _create_molecule_datapoints(
-    smiles_list: list[str],
-    targets: np.ndarray | None = None,
-    extra_descriptors: np.ndarray | None = None,
-    gt_mask: np.ndarray | None = None,
-    lt_mask: np.ndarray | None = None,
-) -> tuple[list[data.MoleculeDatapoint], list[int]]:
-    """Create ChemProp MoleculeDatapoints from SMILES strings.
-
-    gt_mask/lt_mask are per-(row, target) boolean arrays for bounded-loss training:
-    gt_mask[i, j] == True means target j on row i is right-censored (true value >= y).
-    lt_mask[i, j] == True means target j on row i is left-censored (true value <= y).
-    """
-    from rdkit import Chem
-
-    datapoints, valid_indices = [], []
-    targets = np.atleast_2d(np.array(targets)).T if targets is not None and np.array(targets).ndim == 1 else targets
-
-    for i, smi in enumerate(smiles_list):
-        if Chem.MolFromSmiles(smi) is None:
-            continue
-        y = targets[i].tolist() if targets is not None else None
-        x_d = extra_descriptors[i] if extra_descriptors is not None else None
-        kwargs = {"y": y, "x_d": x_d}
-        if gt_mask is not None:
-            kwargs["gt_mask"] = gt_mask[i]
-        if lt_mask is not None:
-            kwargs["lt_mask"] = lt_mask[i]
-        datapoints.append(data.MoleculeDatapoint.from_smi(smi, **kwargs))
-        valid_indices.append(i)
-
-    return datapoints, valid_indices
-
-
-# =============================================================================
 # Model Loading (for SageMaker inference)
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
@@ -255,7 +202,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         print(f"Hybrid mode: {len(feature_metadata['extra_feature_cols'])} extra features")
 
     # Find SMILES column and validate
-    smiles_column = _find_smiles_column(df.columns.tolist())
+    smiles_column = find_smiles_column(df.columns.tolist())
     smiles_list = df[smiles_column].tolist()
 
     valid_mask = np.array([bool(s and isinstance(s, str) and s.strip()) for s in smiles_list])
@@ -290,7 +237,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                 extra_features[:, j] = col_means[j]
 
     # Create datapoints and predict
-    datapoints, rdkit_valid = _create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
+    datapoints, rdkit_valid = create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
     if len(datapoints) == 0:
         return df
 
@@ -411,7 +358,6 @@ if __name__ == "__main__":
     import glob
 
     import awswrangler as wr
-    from lightning import pytorch as pl
     from sklearn.preprocessing import LabelEncoder
 
     # Enable Tensor Core optimization for GPUs that support it
@@ -421,8 +367,6 @@ if __name__ == "__main__":
     # loops bypass Lightning, so they must move model + batches to the GPU explicitly
     # or they silently run on CPU (was the single largest cost before this fix).
     device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    from chemprop import nn
 
     from workbench.endpoints.inference import (
         check_dataframe,
@@ -438,7 +382,7 @@ if __name__ == "__main__":
         save_classification_uq,
     )
     from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
-    from workbench.training.chemprop_core import build_mpnn_model
+    from workbench.training.chemprop_core import FoldSpec, train_chemprop_fold
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
@@ -474,7 +418,7 @@ if __name__ == "__main__":
         raise ValueError("'targets' must be a non-empty list of target column names")
     n_targets = len(target_columns)
 
-    smiles_column = _find_smiles_column(feature_list)
+    smiles_column = find_smiles_column(feature_list)
     extra_feature_cols = [f for f in feature_list if f != smiles_column]
     use_extra_features = len(extra_feature_cols) > 0
 
@@ -593,7 +537,7 @@ if __name__ == "__main__":
         print(f"Criterion -> bounded variant ({hyperparameters.get('criterion', 'mae')}).")
 
     # Filter invalid SMILES
-    _, valid_indices = _create_molecule_datapoints(all_df[smiles_column].tolist(), all_targets, all_extra_features)
+    _, valid_indices = create_molecule_datapoints(all_df[smiles_column].tolist(), all_targets, all_extra_features)
     all_df = all_df.iloc[valid_indices].reset_index(drop=True)
     all_targets = all_targets[valid_indices]
     if all_extra_features is not None:
@@ -673,178 +617,46 @@ if __name__ == "__main__":
         else None
     )
 
+    fold_spec = FoldSpec(
+        hyperparameters=hyperparameters,
+        task=task,
+        model_type=model_type,
+        smiles_column=smiles_column,
+        n_targets=n_targets,
+        num_classes=num_classes,
+        n_extra_descriptors=n_extra,
+        task_weights=task_weights,
+        use_bounded_loss=use_bounded_loss,
+        use_extra_features=use_extra_features,
+    )
+
     ensemble_models = []
     for fold_idx, (train_idx, val_idx) in enumerate(folds):
         print(f"\n{'='*50}")
         print(f"Fold {fold_idx + 1}/{len(folds)} - Train: {len(train_idx)}, Val: {len(val_idx)}")
         print(f"{'='*50}")
 
-        # Split data (val_extra_raw preserves unscaled features for OOF predictions)
-        df_train, df_val = all_df.iloc[train_idx].reset_index(drop=True), all_df.iloc[val_idx].reset_index(drop=True)
-        train_targets, val_targets = all_targets[train_idx], all_targets[val_idx]
-        train_extra = all_extra_features[train_idx] if all_extra_features is not None else None
+        # val_extra is copied before training: normalize_inputs scales the descriptor rows
+        # in place, and prediction needs them unscaled.
         val_extra = all_extra_features[val_idx] if all_extra_features is not None else None
-        val_extra_raw = val_extra.copy() if val_extra is not None else None
-        train_gt = all_gt_mask[train_idx] if all_gt_mask is not None else None
-        train_lt = all_lt_mask[train_idx] if all_lt_mask is not None else None
-        val_gt = all_gt_mask[val_idx] if all_gt_mask is not None else None
-        val_lt = all_lt_mask[val_idx] if all_lt_mask is not None else None
-
-        # Create datasets
-        train_dps, _ = _create_molecule_datapoints(
-            df_train[smiles_column].tolist(),
-            train_targets,
-            train_extra,
-            gt_mask=train_gt,
-            lt_mask=train_lt,
+        mpnn, fold_preds = train_chemprop_fold(
+            fold_spec,
+            all_df.iloc[train_idx].reset_index(drop=True),
+            all_df.iloc[val_idx].reset_index(drop=True),
+            all_targets[train_idx],
+            all_targets[val_idx],
+            fold_idx=fold_idx,
+            checkpoint_dir=args.model_dir,
+            train_extra=all_extra_features[train_idx] if all_extra_features is not None else None,
+            val_extra=val_extra,
+            val_extra_raw=val_extra.copy() if val_extra is not None else None,
+            train_gt=all_gt_mask[train_idx] if all_gt_mask is not None else None,
+            train_lt=all_lt_mask[train_idx] if all_lt_mask is not None else None,
+            val_gt=all_gt_mask[val_idx] if all_gt_mask is not None else None,
+            val_lt=all_lt_mask[val_idx] if all_lt_mask is not None else None,
         )
-        val_dps, _ = _create_molecule_datapoints(
-            df_val[smiles_column].tolist(),
-            val_targets,
-            val_extra,
-            gt_mask=val_gt,
-            lt_mask=val_lt,
-        )
-        train_dataset, val_dataset = data.MoleculeDataset(train_dps), data.MoleculeDataset(val_dps)
-
-        # Scale features/targets
-        x_d_transform = None
-        if use_extra_features:
-            scaler = train_dataset.normalize_inputs("X_d")
-            val_dataset.normalize_inputs("X_d", scaler)
-            x_d_transform = nn.ScaleTransform.from_standard_scaler(scaler)
-
-        output_transform = None
-        if model_type in ["regressor", "uq_regressor"]:
-            target_scaler = train_dataset.normalize_targets()
-            val_dataset.normalize_targets(target_scaler)
-            output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
-
-        # Cache featurized MolGraphs so dataloader workers don't re-featurize every epoch (CPU bottleneck).
-        # Setting cache=True eagerly precomputes all MolGraphs; timing it both confirms the code ran and
-        # measures how much featurization cost moved up front (vs. the per-batch collation floor).
-        _cache_t0 = time.time()
-        train_dataset.cache = True
-        val_dataset.cache = True
-        print(
-            f"[cache] featurization cache ENABLED — {len(train_dataset)} train + {len(val_dataset)} val "
-            f"MolGraphs precomputed in {time.time() - _cache_t0:.1f}s",
-            flush=True,
-        )
-
-        num_workers = min(os.cpu_count() or 4, 8)  # Scale with CPUs, cap at 8
-        train_loader = data.build_dataloader(
-            train_dataset,
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=num_workers,
-            persistent_workers=num_workers > 0,
-            pin_memory=True,
-            prefetch_factor=2,
-        )
-        val_loader = data.build_dataloader(
-            val_dataset,
-            batch_size=batch_size,
-            shuffle=False,
-            num_workers=num_workers,
-            persistent_workers=num_workers > 0,
-            pin_memory=True,
-            prefetch_factor=2,
-        )
-
-        # Build model
-        pl.seed_everything(hyperparameters["seed"] + fold_idx)
-        mpnn = build_mpnn_model(
-            hyperparameters,
-            task=task,
-            num_classes=num_classes,
-            n_targets=n_targets,
-            n_extra_descriptors=n_extra,
-            x_d_transform=x_d_transform,
-            output_transform=output_transform,
-            task_weights=task_weights,
-            use_bounded_loss=use_bounded_loss,
-        )
-
-        # Train model (with optional two-phase foundation training)
-        freeze_mpnn_epochs = hyperparameters.get("freeze_mpnn_epochs", 0)
-        use_two_phase = hyperparameters.get("from_foundation") and freeze_mpnn_epochs > 0
-
-        def _set_mpnn_frozen(frozen: bool):
-            for param in mpnn.message_passing.parameters():
-                param.requires_grad = not frozen
-            for param in mpnn.agg.parameters():
-                param.requires_grad = not frozen
-
-        def _make_trainer(max_epochs: int, save_checkpoint: bool = False):
-            callbacks = [
-                pl.callbacks.EarlyStopping(monitor="val_loss", patience=hyperparameters["patience"], mode="min")
-            ]
-            if save_checkpoint:
-                callbacks.append(
-                    pl.callbacks.ModelCheckpoint(
-                        dirpath=args.model_dir,
-                        filename=f"best_{fold_idx}",
-                        monitor="val_loss",
-                        mode="min",
-                        save_top_k=1,
-                    )
-                )
-            return pl.Trainer(
-                accelerator="auto",
-                max_epochs=max_epochs,
-                precision="16-mixed",
-                logger=False,
-                enable_progress_bar=True,
-                callbacks=callbacks,
-            )
-
-        _fit_t0 = time.time()
-        if use_two_phase:
-            # Phase 1: Freeze MPNN, train FFN only
-            print(f"Phase 1: Training with frozen MPNN for {freeze_mpnn_epochs} epochs...")
-            _set_mpnn_frozen(True)
-            _make_trainer(freeze_mpnn_epochs).fit(mpnn, train_loader, val_loader)
-
-            # Phase 2: Unfreeze and fine-tune all
-            print("Phase 2: Unfreezing MPNN, continuing training...")
-            _set_mpnn_frozen(False)
-            remaining_epochs = max(1, hyperparameters["max_epochs"] - freeze_mpnn_epochs)
-            trainer = _make_trainer(remaining_epochs, save_checkpoint=True)
-            trainer.fit(mpnn, train_loader, val_loader)
-        else:
-            trainer = _make_trainer(hyperparameters["max_epochs"], save_checkpoint=True)
-            trainer.fit(mpnn, train_loader, val_loader)
-
-        _fit_secs = time.time() - _fit_t0
-        print(f"[timing] fold {fold_idx + 1} fit: {_fit_secs:.1f}s", flush=True)
-
-        # Load best checkpoint
-        if trainer.checkpoint_callback and trainer.checkpoint_callback.best_model_path:
-            checkpoint = torch.load(trainer.checkpoint_callback.best_model_path, weights_only=False)
-            mpnn.load_state_dict(checkpoint["state_dict"])
-
-        mpnn.eval()
         ensemble_models.append(mpnn)
-
-        # Out-of-fold predictions (using unscaled features - model's x_d_transform handles scaling)
-        val_dps_raw, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra_raw)
-        oof_dataset = data.MoleculeDataset(val_dps_raw)
-        val_loader_pred = data.build_dataloader(
-            oof_dataset,
-            batch_size=_safe_batch_size(len(oof_dataset), batch_size),
-            shuffle=False,
-            num_workers=num_workers,
-            pin_memory=True,
-        )
-
-        _oof_t0 = time.time()
-        with torch.inference_mode():
-            fold_preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, val_loader_pred)], axis=0)
-        print(f"[timing] fold {fold_idx + 1} OOF predict: {time.time() - _oof_t0:.1f}s", flush=True)
         print(f"Fold {fold_idx + 1} OOF predictions complete.", flush=True)
-        if fold_preds.ndim == 3 and fold_preds.shape[1] == 1:
-            fold_preds = fold_preds.squeeze(axis=1)
 
         if model_type == "classifier" and fold_preds.ndim == 2:
             oof_predictions[val_idx, 0] = np.argmax(fold_preds, axis=1)
@@ -900,12 +712,12 @@ if __name__ == "__main__":
 
         # Calibrate VGMU classification confidence from ensemble probabilities
         if len(ensemble_models) > 1:
-            val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), None, val_extra_features)
+            val_dps, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), None, val_extra_features)
             cal_dataset = data.MoleculeDataset(val_dps)
             infer_batch = min(len(cal_dataset), 4096)
             cal_loader = data.build_dataloader(
                 cal_dataset,
-                batch_size=_safe_batch_size(len(cal_dataset), infer_batch),
+                batch_size=safe_batch_size(len(cal_dataset), infer_batch),
                 shuffle=False,
             )
 
@@ -948,14 +760,14 @@ if __name__ == "__main__":
         if len(ensemble_models) > 1:
             _std_t0 = time.time()
             print("Computing prediction_std from ensemble...", flush=True)
-            val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
+            val_dps, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
             std_dataset.cache = True
             infer_batch = min(len(std_dataset), 4096)
             infer_workers = min(os.cpu_count() or 4, 8)
             val_loader = data.build_dataloader(
                 std_dataset,
-                batch_size=_safe_batch_size(len(std_dataset), infer_batch),
+                batch_size=safe_batch_size(len(std_dataset), infer_batch),
                 shuffle=False,
                 num_workers=infer_workers,
                 pin_memory=True,
@@ -1148,13 +960,13 @@ if __name__ == "__main__":
             for i in range(h_extra.shape[1]):
                 h_extra[np.isnan(h_extra[:, i]), i] = col_means[i]
 
-        h_dps, h_valid = _create_molecule_datapoints(h_df[smiles_column].tolist(), None, h_extra)
+        h_dps, h_valid = create_molecule_datapoints(h_df[smiles_column].tolist(), None, h_extra)
         h_df = h_df.iloc[h_valid].reset_index(drop=True)
 
         if len(h_dps):
             h_dataset = data.MoleculeDataset(h_dps)
             h_loader = data.build_dataloader(
-                h_dataset, batch_size=_safe_batch_size(len(h_dataset), min(len(h_dataset), 4096)), shuffle=False
+                h_dataset, batch_size=safe_batch_size(len(h_dataset), min(len(h_dataset), 4096)), shuffle=False
             )
             all_ens = []
             for m in ensemble_models:
