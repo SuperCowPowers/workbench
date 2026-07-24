@@ -584,7 +584,6 @@ if __name__ == "__main__":
     # Cross-validation setup
     # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]
-    batch_size = hyperparameters["batch_size"]
 
     # Get split strategy parameters
     split_strategy = hyperparameters.get("split_strategy", "scaffold")

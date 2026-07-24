@@ -388,6 +388,10 @@ def predict_chemprop_frame(mpnn, spec: FoldSpec, df, targets=None, extra=None):
         num_workers=spec.num_workers,
         pin_memory=True,
     )
+    # fp32 (the Trainer default), not the training fit's "16-mixed": mixed precision is a
+    # training-throughput technique. All inference — OOF here, the manual std/calibration
+    # loops, and the serving endpoint — is fp32, so UQ calibration is fit on the same numbers
+    # production emits. Keep this fp32; don't "restore parity" with the fit's precision.
     trainer = pl.Trainer(
         accelerator="auto", devices=1, logger=False, enable_progress_bar=False, enable_checkpointing=False
     )

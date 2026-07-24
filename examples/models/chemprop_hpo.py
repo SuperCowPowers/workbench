@@ -32,7 +32,7 @@ if recreate or not Model(model_name).exists():
                 # on a 4-GPU instance; "optuna" is the serial single-GPU path.
                 "backend": "ray",
                 "max_parallel": 8,  # 4 GPUs x 2 trials each (see gpus_per_trial)
-                "n_trials": 6,  # smoke-test value; 40 for a real search (5 warmup + pruned candidates)
+                "n_trials": 40,  # 5 baseline trials (pruner warmup) + 35 pruned candidates
                 "search_space": "basic",  # "basic" (architecture capacity) | "basic+lr"
             },
         },

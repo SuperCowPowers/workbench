@@ -207,7 +207,11 @@ def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode,
 
         return trial_fn(config, report)
 
-    study.optimize(objective, n_trials=n_trials, n_jobs=max_parallel)
+    # Serial: n_jobs>1 runs trials on threads in one process, racing pl.seed_everything's
+    # global RNG and contending on the single GPU. Real parallelism is the Ray offload's job.
+    if max_parallel > 1:
+        log.info(f"Optuna backend is serial; ignoring max_parallel={max_parallel} (use backend='ray' for parallel).")
+    study.optimize(objective, n_trials=n_trials, n_jobs=1)
 
     trials = [
         {"number": t.number, "value": t.value, "state": t.state.name, "config": t.user_attrs.get("config", {})}
@@ -259,14 +263,19 @@ def _run_ray(
     from ray.tune.schedulers import ASHAScheduler
     from ray.tune.search.optuna import OptunaSearch
 
-    param_space = _to_ray_space(search_space)
+    # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
+    # Optuna path): OptunaSearch's categorical rejects unhashable options (our tapered
+    # ffn_hidden_dim lists), so passing the raw list only works by warning-and-degrading.
+    param_space, choice_options = _to_ray_space(search_space)
 
     # ASHA advances on this attribute. Reporting the caller's `step` (the model's epoch)
     # under it — rather than leaving Ray's default training_iteration to count report()
     # calls — keeps pruning decisions aligned with the model's notion of progress.
     time_attr = "step"
+    done_flag = "_hpo_completed"
 
     def trainable(config):
+        config = {k: (choice_options[k][v] if k in choice_options else v) for k, v in config.items()}
         last_step = 0
 
         def report(step=None, **metrics):
@@ -275,8 +284,9 @@ def _run_ray(
             tune.report({**metrics, time_attr: last_step})
 
         value = trial_fn(config, report)
-        # Final objective, one tick past the last epoch (time_attr must increase).
-        tune.report({metric: value, time_attr: last_step + 1})
+        # Final objective, one tick past the last epoch (time_attr must increase). done_flag
+        # marks a full run so winner selection can exclude ASHA-stopped partial ensembles.
+        tune.report({metric: value, time_attr: last_step + 1, done_flag: 1})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
     # grace_period defaults to 1 (prune after a single report) — far too eager; give each
@@ -295,10 +305,28 @@ def _run_ray(
         ),
     )
     results = tuner.fit()
-    best = results.get_best_result(metric=metric, mode=mode)
-    trials = [{"number": i, "value": r.metrics.get(metric), "config": r.config} for i, r in enumerate(results)]
+
+    def _resolve(config):
+        # config holds Choice knobs as indices (see trainable); map them back to values.
+        return {k: (choice_options[k][v] if k in choice_options else v) for k, v in config.items()}
+
+    # Rank only among trials that ran the full ensemble. An ASHA-stopped trial's last value
+    # is a *partial* ensemble mean, which can read lower than a completed one and would
+    # otherwise be published — the very regime mismatch the ensemble objective removes.
+    completed = [r for r in results if r.metrics.get(done_flag)]
+    pool = completed or list(results)  # fall back if pruning stopped everything
+    best = min(pool, key=lambda r: (1 if mode == "min" else -1) * r.metrics.get(metric, float("inf")))
+    trials = [
+        {
+            "number": i,
+            "value": r.metrics.get(metric),
+            "config": _resolve(r.config),
+            "completed": bool(r.metrics.get(done_flag)),
+        }
+        for i, r in enumerate(results)
+    ]
     return HpoResult(
-        best_config=best.config,
+        best_config=_resolve(best.config),
         best_value=best.metrics.get(metric),
         metric=metric,
         mode=mode,
@@ -307,11 +335,17 @@ def _run_ray(
     )
 
 
-def _to_ray_space(search_space) -> dict:
-    """Translate backend-agnostic specs to a Ray Tune ``param_space``."""
+def _to_ray_space(search_space):
+    """Translate backend-agnostic specs to a Ray Tune ``param_space``.
+
+    Returns ``(param_space, choice_options)`` — ``choice_options`` maps each ``Choice``
+    knob to its option list, because those knobs are sampled as an *index* (Ray's caller
+    unwraps them). This keeps unhashable options (tapered ffn lists) out of Optuna's
+    categorical, which only accepts hashables.
+    """
     from ray import tune
 
-    space = {}
+    space, choice_options = {}, {}
     for name, spec in search_space.items():
         if isinstance(spec, IntRange):
             space[name] = tune.qrandint(spec.low, spec.high, spec.step)
@@ -323,7 +357,9 @@ def _to_ray_space(search_space) -> dict:
             else:
                 space[name] = tune.uniform(spec.low, spec.high)
         elif isinstance(spec, Choice):
-            space[name] = tune.choice(list(spec.options))
+            options = list(spec.options)
+            choice_options[name] = options
+            space[name] = tune.choice(list(range(len(options))))
         else:
             raise TypeError(f"Unknown search spec for {name!r}: {type(spec).__name__}")
-    return space
+    return space, choice_options
