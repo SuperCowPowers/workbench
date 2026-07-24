@@ -35,6 +35,10 @@ if recreate or not Model(model_name).exists():
                 "n_trials": 60,  # 5 baseline trials (pruner warmup) + 55 pruned candidates
                 # search_space defaults to "basic+lr" (capacity + LR schedule + batch size);
                 # pass "basic" to search architecture capacity only.
+                # The search only shortlists: its top rerank_top_k configs are then re-scored
+                # against these hyperparameters as-is, and the winner of *that* is published.
+                # So a search that finds nothing real publishes the untuned baseline.
+                "rerank_top_k": 5,
             },
         },
         # For an honest out-of-distribution objective, pass validation_ids=[...]: those

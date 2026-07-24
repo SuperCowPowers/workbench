@@ -7,7 +7,14 @@ suite. The Ray backend needs a ray-enabled container and is not covered here.
 import pytest
 
 # Workbench Imports
-from workbench.training.hpo_harness import Choice, FloatRange, HpoResult, IntRange, run_search
+from workbench.training.hpo_harness import (
+    Choice,
+    FloatRange,
+    HpoResult,
+    IntRange,
+    evaluate_configs,
+    run_search,
+)
 
 # The Optuna backend needs the `training` extra; skip the whole module if absent.
 # (hpo_harness itself imports optuna lazily, so the import above works without it.)
@@ -121,3 +128,41 @@ def test_prune_warmup_above_reported_steps_disables_pruning():
         _multistep_objective, {"x": FloatRange(0.0, 6.0)}, n_trials=20, backend="optuna", prune_warmup=50
     )
     assert all(t["state"] == "COMPLETE" for t in result.trials)
+
+
+# --- evaluate_configs (the re-rank primitive) ------------------------------
+
+
+def test_evaluate_configs_scores_every_config_in_order():
+    """Values come back positionally aligned with the configs, one call each."""
+    seen = []
+
+    def eval_fn(config, index):
+        seen.append(index)
+        return config["x"] * 2
+
+    values = evaluate_configs(eval_fn, [{"x": 1}, {"x": 2}, {"x": 3}], backend="optuna")
+    assert values == [2, 4, 6]
+    assert seen == [0, 1, 2]
+
+
+def test_evaluate_configs_handles_unhashable_config_values():
+    """Configs may hold tapered lists — nothing here hashes them."""
+    configs = [{"ffn_hidden_dim": [1024, 256, 64]}, {"ffn_hidden_dim": 600}]
+    values = evaluate_configs(lambda c, i: float(i), configs, backend="optuna")
+    assert values == [0.0, 1.0]
+
+
+def test_evaluate_configs_isolates_failures():
+    """One config blowing up yields None for that slot, not a lost run."""
+
+    def eval_fn(config, index):
+        if index == 1:
+            raise RuntimeError("boom")
+        return 1.0
+
+    assert evaluate_configs(eval_fn, [{}, {}, {}], backend="optuna") == [1.0, None, 1.0]
+
+
+def test_evaluate_configs_empty():
+    assert evaluate_configs(lambda c, i: 1.0, [], backend="optuna") == []

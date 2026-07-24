@@ -161,6 +161,47 @@ def run_search(
     )
 
 
+def evaluate_configs(
+    eval_fn: Callable[..., float],
+    configs: Sequence[dict],
+    *,
+    backend: str = "auto",
+    max_parallel: int = 1,
+    resources_per_trial: Union[dict, None] = None,
+) -> list:
+    """Score a fixed list of configs — no sampling, no pruning.
+
+    The counterpart to :func:`run_search`, for a confirmation/re-rank pass: every config
+    runs to completion, so the returned values are directly comparable to each other in a
+    way the search's own (pruned, selection-biased) values are not.
+
+    Args:
+        eval_fn: ``(config, index) -> float`` — scores one config.
+        configs: the configs to score.
+        backend: ``"ray"`` fans them out concurrently, ``"optuna"`` scores them serially
+            in-process, ``"auto"`` picks ray when importable.
+        max_parallel: concurrent evaluations (Ray only).
+        resources_per_trial: Ray only — e.g. ``{"gpu": 1}``.
+
+    Returns:
+        list: one value per config, positionally aligned, ``None`` where scoring failed.
+    """
+    configs = list(configs)
+    if not configs:
+        return []
+    if len(configs) > 1 and _resolve_backend(backend) == "ray":
+        return _evaluate_ray(eval_fn, configs, max_parallel=max_parallel, resources_per_trial=resources_per_trial)
+
+    values = []
+    for index, config in enumerate(configs):
+        try:
+            values.append(float(eval_fn(config, index)))
+        except Exception as exc:
+            log.warning(f"Config {index} failed to evaluate: {exc}")
+            values.append(None)
+    return values
+
+
 def _resolve_backend(backend: str) -> str:
     """Resolve ``"auto"`` to ``"ray"`` when ray is importable, else ``"optuna"``."""
     if backend != "auto":
@@ -342,6 +383,33 @@ def _run_ray(
         n_trials=len(trials),
         trials=trials,
     )
+
+
+def _evaluate_ray(eval_fn, configs, *, max_parallel, resources_per_trial):
+    """Fan :func:`evaluate_configs` out across the node's GPUs via Ray."""
+    from ray import tune
+
+    # Configs are captured in the closure and addressed by index — they can hold unhashable
+    # values (a tapered ffn_hidden_dim list) that a Ray param_space would reject.
+    idx_key, value_key = "_config_index", "value"
+
+    def trainable(slot):
+        index = slot[idx_key]
+        tune.report({value_key: float(eval_fn(configs[index], index)), idx_key: index})
+
+    trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
+    tuner = tune.Tuner(
+        trainable_res,
+        # grid_search over the indices runs each config exactly once; num_samples multiplies it.
+        param_space={idx_key: tune.grid_search(list(range(len(configs))))},
+        tune_config=tune.TuneConfig(num_samples=1, max_concurrent_trials=max_parallel),
+    )
+    values = [None] * len(configs)
+    for result in tuner.fit():
+        index = (result.metrics or {}).get(idx_key)
+        if index is not None:
+            values[int(index)] = result.metrics.get(value_key)
+    return values
 
 
 def _to_ray_space(search_space):

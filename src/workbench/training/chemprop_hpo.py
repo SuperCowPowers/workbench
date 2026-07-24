@@ -7,6 +7,14 @@ winner is published in is the point — a config selected as a lone model does n
 over to an ensemble. Training-only; imported **only inside the chemprop template's
 ``__main__``** (deferred).
 
+Selection is two-stage: the search shortlists, then :func:`_rerank_finalists` re-scores the
+finalists *and the caller's baseline* on fresh trainings and picks from those. The search's
+own winning value is the minimum of many noisy estimates and so is optimistically biased;
+carrying the baseline through the re-rank is what bounds the feature's downside, which
+matters because the literature finds chemprop HPO is roughly a coin-flip against defaults
+on small sets (Tetko et al., J Cheminform 2024) and no help out-of-distribution (BOOM,
+arXiv:2505.01912).
+
 Parity: each trial builds its model through
 :func:`workbench.training.chemprop_core.build_mpnn_model` — the same builder the
 template uses to publish the winner — so a searched config maps to the identical
@@ -19,6 +27,7 @@ imports so this module stays importable for unit tests.
 
 from __future__ import annotations
 
+import json
 import os
 
 from workbench.training.hpo_harness import Choice, FloatRange, IntRange
@@ -27,6 +36,14 @@ from workbench.training.hpo_harness import Choice, FloatRange, IntRange
 # second member has trained. One fold is too noisy a basis to kill a config on: a config can
 # lag on a single scaffold fold and still make the better ensemble.
 FOLD_PRUNE_WARMUP = 2
+
+# Finalists re-scored in phase 1.5 (plus the baseline, always). See _rerank_finalists.
+RERANK_TOP_K = 5
+
+# Added to the seed for the re-rank pass. Trials are deterministic (train_chemprop_fold seeds
+# on `seed + fold_idx`), so re-scoring a config at the search seed would replay the search's
+# number rather than draw an independent one.
+RERANK_SEED_OFFSET = 1000
 
 # Default per-knob search space, grouped like chemprop's own hpopt keywords. Both groups
 # are searched by default. Everything else — uq_version, max_epochs, patience,
@@ -153,13 +170,19 @@ def run_chemprop_hpo(
     frame (e.g. the template's ``split_validation_set`` output). Each trial trains a full
     ``n_folds`` ensemble — the same regime the winner is published in — scored on the
     held-out set (``holdout_mae``) or out-of-fold (``cv_mae``) when ``val_df`` is empty.
-    The winner is merged into ``base_hyperparameters``. Writes ``best_config.json`` +
-    ``hpo_trials.csv`` to ``output_dir`` when given.
+    Writes ``best_config.json``, ``hpo_trials.csv`` and ``hpo_rerank.csv`` to ``output_dir``
+    when given.
 
     Cost is kept near single-fold for weak configs by reporting the running objective
     after every fold: the harness prunes a trial that is already off the pace once
     ``FOLD_PRUNE_WARMUP`` folds are in, so only promising configs pay for the full
     ensemble.
+
+    The search does not pick the winner on its own — its finalists go through
+    :func:`_rerank_finalists`, which re-scores them and the *baseline* on fresh trainings
+    and selects on those. The published config is whichever wins there, so a search that
+    found nothing real publishes the caller's own hyperparameters unchanged. Disable with
+    ``hpo["rerank_top_k"] = 0``.
 
     v1 scope: regression, SMILES-only features; the objective is the primary target's
     MAE. Extra descriptors / bounded loss / multi-task featurization are not exercised
@@ -188,15 +211,15 @@ def run_chemprop_hpo(
     # random splits leak near-duplicate scaffolds across train/val).
     n_folds = int(hpo_block.get("n_folds", base_hyperparameters.get("n_folds", 5)))
     strategy = base_hyperparameters.get("split_strategy", "scaffold")
-    folds = get_split_indices(
-        train_df,
+    seed = base_hyperparameters.get("seed", 42)
+    split_kwargs = dict(
         n_splits=n_folds,
         strategy=strategy,
         smiles_column=smiles_column,
         test_size=0.2,
-        random_state=base_hyperparameters.get("seed", 42),
         butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
     )
+    folds = get_split_indices(train_df, random_state=seed, **split_kwargs)
     if len(val_df):
         metric, where = "holdout_mae", f"held-out validation set ({len(val_df)} rows)"
     else:
@@ -213,6 +236,10 @@ def run_chemprop_hpo(
     num_workers = max(1, min((os.cpu_count() or 4) // max_parallel, 8))
     print(f"[hpo] {max_parallel} concurrent trial(s), {num_workers} dataloader workers each")
 
+    # A trial uses ~5% of an L4's memory and ~46% of its compute, so packing two per GPU
+    # roughly saturates one without spilling. Ray only.
+    resources = {"gpu": hpo_block.get("gpus_per_trial", 0.5)} if backend != "optuna" else None
+
     trial_fn = _make_trial_fn(
         train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers
     )
@@ -225,21 +252,170 @@ def run_chemprop_hpo(
         metric=metric,
         mode="min",
         prune_warmup=FOLD_PRUNE_WARMUP,
-        seed=base_hyperparameters.get("seed", 42),
-        # A trial uses ~5% of an L4's memory and ~46% of its compute, so packing two per
-        # GPU roughly saturates one without spilling. Ray only.
-        resources_per_trial={"gpu": hpo_block.get("gpus_per_trial", 0.5)} if backend != "optuna" else None,
+        seed=seed,
+        resources_per_trial=resources,
     )
-    print(f"[hpo] best {metric}={result.best_value:.4f}  best_config={result.best_config}")
+    print(f"[hpo] search best {metric}={result.best_value:.4f}  config={result.best_config}")
+
+    # Phase 1.5 refines a result the search has already produced, so its failure degrades to
+    # the unrefined winner rather than discarding a search that has already run to completion.
+    try:
+        best_config, rerank = _rerank_finalists(
+            result,
+            top_k=int(hpo_block.get("rerank_top_k", RERANK_TOP_K)),
+            train_df=train_df,
+            val_df=val_df,
+            folds=folds,
+            split_kwargs=split_kwargs,
+            base_hyperparameters=base_hyperparameters,
+            target_columns=target_columns,
+            smiles_column=smiles_column,
+            metric=metric,
+            num_workers=num_workers,
+            seed=seed,
+            backend=backend,
+            max_parallel=max_parallel,
+            resources=resources,
+        )
+    except Exception as exc:
+        print(f"[hpo] re-rank FAILED ({exc!r}); publishing the search winner unrefined")
+        best_config, rerank = result.best_config, []
 
     if output_dir:
         with open(os.path.join(output_dir, "best_config.json"), "w") as fp:
             json.dump(
-                {"metric": metric, "best_value": result.best_value, "best_config": result.best_config}, fp, indent=2
+                {
+                    "metric": metric,
+                    "best_config": best_config,
+                    "search_best_value": result.best_value,
+                    "search_best_config": result.best_config,
+                    "rerank": rerank,
+                },
+                fp,
+                indent=2,
+                default=str,
             )
         pd.DataFrame(result.trials).to_csv(os.path.join(output_dir, "hpo_trials.csv"), index=False)
+        if rerank:
+            pd.DataFrame(rerank).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
 
-    return merge_best_config(base_hyperparameters, result.best_config)
+    return merge_best_config(base_hyperparameters, best_config)
+
+
+def _trial_completed(trial: dict) -> bool:
+    """Whether a trial ran to completion (not pruned) — both backends' record shapes."""
+    if "completed" in trial:  # ray
+        return bool(trial["completed"])
+    return trial.get("state") == "COMPLETE"  # optuna
+
+
+def _shortlist_configs(trials, top_k: int) -> list:
+    """The ``top_k`` distinct configs among completed trials, best (lowest) first."""
+    ranked, seen = [], set()
+    for trial in trials:
+        value = trial.get("value")
+        if value is None or not _trial_completed(trial):
+            continue
+        config = trial.get("config") or {}
+        key = json.dumps(config, sort_keys=True, default=str)
+        if key in seen:
+            continue
+        seen.add(key)
+        ranked.append((value, config))
+    ranked.sort(key=lambda pair: pair[0])
+    return [config for _, config in ranked[:top_k]]
+
+
+def _rerank_finalists(
+    result,
+    *,
+    top_k,
+    train_df,
+    val_df,
+    folds,
+    split_kwargs,
+    base_hyperparameters,
+    target_columns,
+    smiles_column,
+    metric,
+    num_workers,
+    seed,
+    backend,
+    max_parallel,
+    resources,
+):
+    """Phase 1.5 — re-score the search's finalists, plus the baseline, on fresh trainings.
+
+    The search reports the *minimum* over many noisy estimates, so its winning value is
+    optimistically biased and the winner may simply have drawn the luckiest evaluation
+    (winner's curse). Re-scoring a shortlist independently and selecting on *that* is the
+    fix. The user's own hyperparameters ride along as a candidate, which is what keeps HPO
+    from making the model worse: a search that found nothing real loses to the baseline and
+    the baseline is what gets published. Ties go to the baseline.
+
+    Independence comes from a fresh seed (trials are deterministic, so the search seed would
+    replay rather than redraw) and, in ``cv_mae`` mode, a fresh fold partition as well — the
+    split is part of what the search selected against there. In ``holdout_mae`` mode the
+    holdout is the user's fixed OOD set and is deliberately reused, so that pass removes the
+    training-stochasticity component of the bias but not the holdout-sampling component.
+
+    Returns:
+        tuple: ``(best_config, rerank_rows)`` — the config to publish and a per-candidate
+        record (empty when the re-rank is disabled or nothing scored).
+    """
+    from workbench.endpoints.inference import get_split_indices
+    from workbench.training.hpo_harness import evaluate_configs
+
+    if top_k <= 0:
+        print("[hpo] re-rank disabled (rerank_top_k=0); publishing the search winner")
+        return result.best_config, []
+
+    # The baseline is the empty config: merged over base_hyperparameters it changes nothing.
+    candidates = [{}] + _shortlist_configs(result.trials, top_k)
+    if len(candidates) == 1:
+        print("[hpo] re-rank: no completed trials to re-rank; publishing the search winner")
+        return result.best_config, []
+
+    rerank_seed = seed + RERANK_SEED_OFFSET
+    rerank_folds = folds
+    if metric == "cv_mae":
+        rerank_folds = get_split_indices(train_df, random_state=rerank_seed, **split_kwargs)
+    print(
+        f"[hpo] re-rank: {len(candidates)} candidates (baseline + {len(candidates) - 1} finalists) "
+        f"on fresh {metric}" + (" and a fresh fold partition" if metric == "cv_mae" else "")
+    )
+
+    rerank_fn = _make_trial_fn(
+        train_df, rerank_folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers
+    )
+
+    def evaluate(config, index):
+        return rerank_fn({**config, "seed": rerank_seed}, lambda **_: None)
+
+    values = evaluate_configs(
+        evaluate, candidates, backend=backend, max_parallel=max_parallel, resources_per_trial=resources
+    )
+    rows = [
+        {"candidate": "baseline" if i == 0 else f"finalist_{i}", "config": c, metric: v}
+        for i, (c, v) in enumerate(zip(candidates, values))
+    ]
+
+    scored = [(v, i) for i, v in enumerate(values) if v is not None]
+    if not scored:
+        print("[hpo] re-rank: no candidate scored; publishing the search winner")
+        return result.best_config, rows
+
+    # min() over (value, index) returns the first minimum, and the baseline is index 0 — so
+    # an exact tie is resolved in the baseline's favor.
+    best_value, best_index = min(scored)
+    baseline_value = values[0]
+    if best_index == 0:
+        print(f"[hpo] re-rank winner: BASELINE at {metric}={best_value:.4f} — no searched config beat it")
+    else:
+        margin = f", {100 * (baseline_value - best_value) / baseline_value:+.1f}% vs baseline" if baseline_value else ""
+        print(f"[hpo] re-rank winner: finalist_{best_index} at {metric}={best_value:.4f}{margin}")
+        print(f"[hpo] published config: {candidates[best_index]}")
+    return candidates[best_index], rows
 
 
 def _make_trial_fn(train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers):
