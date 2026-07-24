@@ -28,14 +28,14 @@ The common alternative — an agent calling a vendor-hosted model API — moves
 several controls outside your account. This table is the concrete difference,
 stated so you can check each row against your own requirements.
 
-| | Vendor-hosted model API | Bedrock |
+| Control | Vendor-hosted model API | Bedrock |
 |---|---|---|
-| Account boundary | Vendor's | Yours |
-| Credential | Shared API key in a config file | Your existing IAM role |
-| Attribution | One key for the whole team | Per-user, via `sts:AssumeRole` |
-| Revocation | Rotate a key everyone shares | Remove a role assignment |
-| Audit trail | Vendor's dashboard | Your CloudTrail |
-| Egress | Public internet to a third party | AWS network, in your region |
+| **Account boundary** | ✗ Vendor's | ✓ Yours |
+| **Credential** | ✗ Shared API key in a config file | ✓ Your existing IAM role |
+| **Attribution** | ✗ One key for the whole team | ✓ Per-user, via `sts:AssumeRole` |
+| **Revocation** | ✗ Rotate a key everyone shares | ✓ Remove a role assignment |
+| **Audit trail** | ✗ Vendor's dashboard | ✓ Your CloudTrail |
+| **Egress** | ✗ Public internet to a third party | ✓ AWS network, in your region |
 
 The credential row is the one that matters most in practice. A public API key
 is a long-lived secret that has to live on every analyst's laptop, grants the
@@ -46,18 +46,13 @@ revokes their model access at the same time.
 
 ## Where the model actually runs
 
-A Bedrock foundation model does not run in your account, and it does not run on
-Anthropic's servers either.
-
 Anthropic supplies the model weights and inference software to AWS. AWS deploys
 a copy into an AWS-owned account operated by the Bedrock service team, in the
 region you call. Anthropic has no access to that account — no network path, no
 credentials, no logs.
 
 !!! note "The practical consequence"
-    Your prompts are never handled by the model vendor's infrastructure. This
-    is a structural property of how Bedrock is built, not a promise about
-    conduct.
+    Your prompts are never handled by the model provider's infrastructure. This is a structural property of how AWS Bedrock is managed. The model provider cannot see your data, and you do not have to trust them to keep it private.
 
 ## What the agent can do
 
@@ -91,7 +86,7 @@ Under the AWS service terms for third-party models on Bedrock, you retain all
 rights to your inputs, you own the outputs, and the model provider may not
 train on them.
 
-Bedrock runs a zero operator access model: no AWS operator can read your
+Bedrock enforces a **zero-operator-access** model: no AWS operator can read your
 inputs or outputs. Under the default retention setting AWS may retain them for
 safety and abuse prevention, but the model provider never receives them.
 

@@ -101,3 +101,23 @@ def test_pruning_disabled_runs_all_trials():
     """With pruning off, every trial completes (none pruned)."""
     result = run_search(_quadratic_objective, SPACE, n_trials=15, backend="optuna", pruning=False)
     assert all(t["state"] == "COMPLETE" for t in result.trials)
+
+
+def _multistep_objective(config, report):
+    """Reports 10 intermediate steps so a warmup window has room to apply."""
+    err = abs(config["x"] - 3.0)
+    for step in range(1, 11):
+        report(step=step, holdout_mae=err)
+    return err
+
+
+def test_prune_warmup_above_reported_steps_disables_pruning():
+    """A non-default prune_warmup beyond every trial's reported steps makes nothing prunable.
+
+    Exercises that prune_warmup is actually threaded (not just the module default): trials
+    report 10 steps, warmup is 50, so no trial ever becomes eligible and all complete.
+    """
+    result = run_search(
+        _multistep_objective, {"x": FloatRange(0.0, 6.0)}, n_trials=20, backend="optuna", prune_warmup=50
+    )
+    assert all(t["state"] == "COMPLETE" for t in result.trials)

@@ -1,21 +1,40 @@
 # PyPI Release Notes
 
-Notes and information on how to do the PyPI release for the SageMaker project. For full details on packaging you can reference this page
-[Packaging](https://packaging.python.org/tutorials/packaging-projects/#packaging-your-project)
+Releases normally happen automatically: pushing a `v*` tag triggers the
+`.github/workflows/publish.yml` GitHub Action, which lints, builds,
+publishes to PyPI via trusted publishing (OIDC), and creates a GitHub Release. These
+notes cover doing the same thing **manually from a laptop** when the Action is
+unavailable or you need to bypass it.
 
-The following instructions should work, but things change :)
+For full details on packaging see the
+[Packaging tutorial](https://packaging.python.org/tutorials/packaging-projects/#packaging-your-project).
+
+> **Heads up — the tag triggers the Action.** `git push --tags` is what fires
+> `publish.yml`. If the tag is already pushed, the Action is already publishing that
+> version, so don't also publish manually — you'll just get a "file already exists" 400
+> from PyPI. Do a manual release either (a) as a **fallback** after the Action failed on
+> an already-pushed tag, or (b) as a **full bypass** where you build and upload *before*
+> pushing the tag.
 
 ### Package Requirements
 
--   pip install tox
--   pip install \--upgrade wheel build twine
+```bash
+pip install --upgrade build twine tox
+```
 
-### Setup pypirc
+### How the version is set
 
-The easiest thing to do is setup a \~/.pypirc file with the following
-contents
+The version is derived from the git tag by `setuptools_scm` (see `[tool.setuptools_scm]`
+in `pyproject.toml`) — there is no hardcoded version string. The build must run from a
+**tagged commit**, otherwise you get a `.devN` version instead of the clean release
+version.
 
-``` {.bash}
+### Set up ~/.pypirc
+
+The Action uses OIDC trusted publishing and needs no token. A manual upload from your
+laptop still needs an API token. Put it in `~/.pypirc`:
+
+```ini
 [distutils]
 index-servers =
   pypi
@@ -28,53 +47,71 @@ password = pypi-AgEIcH...
 [testpypi]
 username = __token__
 password = pypi-AgENdG...
-
 ```
 
-### Tox Background
+### Lint (matches the Action's gate)
 
-Tox will install the SageMaker Sandbox package into a blank virtualenv and then execute all the tests against the newly installed package. So if everything goes okay, you know the pypi package installed fine and the tests (which pulls from the installed `workbench` package) also ran okay.
+The Action publishes only if lint passes, so run the same checks locally first:
 
-### Make sure ALL tests pass
-
-``` {.bash}
-$ cd workbench
-$ tox 
+```bash
+black --check --line-length=120 src/workbench applications tests
+flake8 --exclude '*generated*' src/workbench applications tests
 ```
 
-If ALL the test above pass\...
+Optionally run the full test suite via tox, which installs the built package into a clean
+virtualenv and runs the tests against it:
 
-### Clean any previous distribution files
+```bash
+tox
 ```
+
+### Clean previous distribution files
+
+```bash
 make clean
 ```
-### Tag the New Version
-```
-git tag v0.1.8 (or whatever)
-git push --tags
+
+### Tag the new version
+
+```bash
+git tag v0.1.8   # or whatever the next version is
 ```
 
-### Create the TEST PyPI Release
+Push the tag **now** only if you want the GitHub Action to do the release. For a manual
+bypass, hold off on pushing until after the upload (see the last step).
 
-``` {.bash}
+### Build
+
+`setuptools_scm` reads the version from the tag you just created.
+
+```bash
 python -m build
-twine upload dist/* -r testpypi
 ```
 
-### Install the TEST PyPI Release
+### (Optional) Test PyPI dry run
 
-``` {.bash}
+```bash
+twine upload dist/* -r testpypi
 pip install --index-url https://test.pypi.org/simple workbench
 ```
 
-### Create the REAL PyPI Release
+### Publish to PyPI
 
-``` {.bash}
+```bash
 twine upload dist/* -r pypi
 ```
 
-### Push any possible changes to Github
+### Push the tag and any changes
 
-``` {.bash}
+```bash
 git push
+git push --tags
+```
+
+If you published manually as a **full bypass**, pushing the tag here will still trigger
+the Action. It will fail at the PyPI upload step (version already exists) but will still
+create the GitHub Release — or create that release yourself:
+
+```bash
+gh release create v0.1.8 dist/* --title v0.1.8 --generate-notes
 ```

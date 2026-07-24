@@ -1,141 +1,37 @@
-from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
+"""Baseline example: a plain 5-fold Chemprop regressor on the AQSol feature set.
 
-# Recreate Flag in case you want to recreate the artifacts
+The hyperparameter-searched counterpart is ``chemprop_hpo.py`` — this is the same
+model and feature set with the ``hpo`` block dropped, so the two are directly
+comparable (the search should match or beat this baseline). Open-ADMET multi-task /
+hybrid / classifier examples live in ``chemprop_open_admet.py``.
+"""
+
+from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType
+
+# Recreate flag in case you want to recreate the artifacts
 recreate = True
+model_name = "aqsol-chemprop"
 
 # =============================================================================
-# Single-Target Chemprop Regression Model
+# Chemprop Regression Model (baseline for the HPO comparison)
 # =============================================================================
-if recreate or not Model("open-admet-chemprop-logd").exists():
-    feature_set = FeatureSet("open_admet_all")
-    m = feature_set.to_model(
-        name="open-admet-chemprop-logd",
+if recreate or not Model(model_name).exists():
+    fs = FeatureSet("aqsol_features")
+    m = fs.to_model(
+        name=model_name,
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
-        target_column="logd",  # Single target (string)
+        target_column="solubility",
         feature_list=["smiles"],
-        description="Single-target Chemprop Regression Model for LogD",
-        tags=["chemprop", "open_admet"],
+        description="AQSol Chemprop regressor (hand-tuned baseline)",
+        tags=["aqsol", "chemprop"],
+        hyperparameters={"uq_version": "v1"},
     )
     m.set_owner("BW")
 
-# Create an Endpoint for the Regression Model
-if recreate or not Endpoint("open-admet-chemprop-logd").exists():
-    m = Model("open-admet-chemprop-logd")
-    end = m.to_endpoint(tags=["chemprop", "open_admet"])
-    end.set_owner("BW")
-    end.test_inference()
-    end.cross_fold_inference()
-
-# =============================================================================
-# Hybrid ChemProp Model (SMILES + Molecular Descriptors)
-# =============================================================================
-# This example shows how to combine ChemProp's learned molecular representations
-# with pre-computed molecular descriptors (RDKit/Mordred features).
-# The extra features are concatenated with the MPNN output before the FFN.
-
-# Top 10 SHAP features from LogD XGBoost model (provides complementary information to MPNN)
-TOP_LOGD_SHAP_FEATURES = [
-    "mollogp",
-    "fr_halogen",
-    "peoe_vsa6",
-    "nbase",
-    "peoe_vsa7",
-    "peoe_vsa9",
-    "peoe_vsa1",
-    "mi",
-    "bcut2d_mrlow",
-    "slogp_vsa1",
-]
-
-if recreate or not Model("open-admet-chemprop-logd-hybrid").exists():
-    feature_set = FeatureSet("open_admet_logd")
-
-    # Hybrid mode: SMILES + top molecular descriptors
-    # The template auto-detects extra features beyond the SMILES column
-    hybrid_features = ["smiles"] + TOP_LOGD_SHAP_FEATURES
-
-    m = feature_set.to_model(
-        name="open-admet-chemprop-logd-hybrid",
-        model_type=ModelType.UQ_REGRESSOR,
-        model_framework=ModelFramework.CHEMPROP,
-        target_column="logd",
-        feature_list=hybrid_features,
-        description="Hybrid ChemProp model combining D-MPNN with top SHAP molecular descriptors",
-        tags=["chemprop", "open_admet", "hybrid"],
-    )
-    m.set_owner("BW")
-
-# Create an Endpoint for the Hybrid Model
-if recreate or not Endpoint("open-admet-chemprop-logd-hybrid").exists():
-    m = Model("open-admet-chemprop-logd-hybrid")
-    end = m.to_endpoint(tags=["chemprop", "open_admet", "hybrid"])
-    end.set_owner("BW")
-    end.test_inference()
-    end.cross_fold_inference()
-
-# =============================================================================
-# Chemprop Classification Model
-# =============================================================================
-if recreate or not Model("aqsol-class-chemprop").exists():
-    feature_set = FeatureSet("aqsol_features")
-    m = feature_set.to_model(
-        name="aqsol-class-chemprop",
-        model_type=ModelType.CLASSIFIER,
-        model_framework=ModelFramework.CHEMPROP,
-        target_column="solubility_class",
-        feature_list=["smiles"],
-        description="Classification ChemProp model AQSol solubility classes",
-        tags=["chemprop", "aqsol", "class"],
-    )
-    m.set_owner("BW")
-    m.set_class_labels(["low", "medium", "high"])
-
-# Create an Endpoint for the Multi-Task Regression Model
-if True or recreate or not Endpoint("aqsol-class-chemprop").exists():
-    m = Model("aqsol-class-chemprop")
-    end = m.to_endpoint(tags=["chemprop", "aqsol", "class"])
-    end.set_owner("BW")
-    end.test_inference()
-    end.cross_fold_inference()
-    end.full_inference()
-
-# =============================================================================
-# Multi-Target Chemprop Regression Model (Open ADMET)
-# =============================================================================
-# This example shows how to train a multi-task model predicting all 9 ADMET endpoints
-# from the Open ADMET challenge: logd, ksol, hlm_clint, mlm_clint, caco2_papp_a_b,
-# caco2_efflux, mppb, mbpb, mgmb
-
-ADMET_TARGETS = [
-    "logd",
-    "ksol",
-    "hlm_clint",
-    "mlm_clint",
-    "caco2_papp_a_b",
-    "caco2_efflux",
-    "mppb",
-    "mbpb",
-    "mgmb",
-]
-
-if recreate or not Model("open-admet-chemprop-mt").exists():
-    feature_set = FeatureSet("open_admet_all")
-    m = feature_set.to_model(
-        name="open-admet-chemprop-mt",
-        model_type=ModelType.REGRESSOR,
-        model_framework=ModelFramework.CHEMPROP,
-        target_column=ADMET_TARGETS,  # Multi-task: list of 9 targets
-        feature_list=["smiles"],
-        description="Multi-task ChemProp model for 9 ADMET endpoints",
-        tags=["chemprop", "open_admet", "multitask"],
-    )
-    m.set_owner("BW")
-
-# Create an Endpoint for the Multi-Task Regression Model
-if recreate or not Endpoint("open-admet-chemprop-mt").exists():
-    m = Model("open-admet-chemprop-mt")
-    end = m.to_endpoint(tags=["chemprop", "open_admet", "multitask"])
+# Create an Endpoint for the model
+if recreate or not Endpoint(model_name).exists():
+    end = Model(model_name).to_endpoint(tags=["aqsol", "chemprop"])
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()

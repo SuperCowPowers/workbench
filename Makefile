@@ -1,4 +1,7 @@
-.PHONY: help clean clean-pyc clean-build list 
+.PHONY: help clean clean-pyc clean-build list
+
+# Prune virtualenv and git internals so cleans never touch installed packages
+PRUNE := \( -path ./.venv -o -path ./.git \) -prune -o
 
 help:
 	@echo "clean - remove ALL build/python/misc artifacts"
@@ -9,23 +12,23 @@ help:
 clean: clean-build clean-pyc clean-misc
 
 clean-build:
-	find . -name 'build' -exec rm -rf {} +
-	find . -name '_build' -exec rm -rf {} +
-	find . -name 'dist' -exec rm -rf {} +
-	find . -name '*.egg-info' -exec rm -rf {} +
-	find . -name '*.eggs' -exec rm -rf {} +
-	find . -name '*.tar.gz' -exec rm -rf {} +
-	find . -name '.tox' -exec rm -rf {} +
-	find . -name '.coverage' -exec rm -rf {} +
-	find . -name '.cache' -exec rm -rf {} +
-	find . -name '__pycache__' -exec rm -rf {} +
-	find . -name 'cdk.out' -exec rm -rf {} +
+	find . $(PRUNE) -name 'build' -exec rm -rf {} +
+	find . $(PRUNE) -name '_build' -exec rm -rf {} +
+	find . $(PRUNE) -name 'dist' -exec rm -rf {} +
+	find . $(PRUNE) -name '*.egg-info' -exec rm -rf {} +
+	find . $(PRUNE) -name '*.eggs' -exec rm -rf {} +
+	find . $(PRUNE) -name '*.tar.gz' -exec rm -rf {} +
+	find . $(PRUNE) -name '.tox' -exec rm -rf {} +
+	find . $(PRUNE) -name '.coverage' -exec rm -rf {} +
+	find . $(PRUNE) -name '.cache' -exec rm -rf {} +
+	find . $(PRUNE) -name '__pycache__' -exec rm -rf {} +
+	find . $(PRUNE) -name 'cdk.out' -exec rm -rf {} +
 
 clean-pyc:
-	find . -name '*.pyc' -exec rm -rf {} +
-	find . -name '*.pyo' -exec rm -rf {} +
-	find . -name '*~' -exec rm -rf {} +
+	find . $(PRUNE) -name '*.pyc' -exec rm -rf {} +
+	find . $(PRUNE) -name '*.pyo' -exec rm -rf {} +
+	find . $(PRUNE) -name '*~' -exec rm -rf {} +
 
 clean-misc:
-	find . -name '.ipynb_checkpoints' -exec rm -rf {} +
+	find . $(PRUNE) -name '.ipynb_checkpoints' -exec rm -rf {} +
 
