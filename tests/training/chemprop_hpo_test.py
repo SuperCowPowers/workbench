@@ -9,12 +9,20 @@ from workbench.training.chemprop_hpo import chemprop_search_space, merge_best_co
 from workbench.training.hpo_harness import Choice, IntRange
 
 
-def test_basic_group_is_default():
-    """The default space is the `basic` group, matching chemprop's canonical ranges."""
+def test_default_space_is_basic_plus_lr():
+    """The default space is both groups: capacity + LR schedule + batch size."""
     space = chemprop_search_space()
-    assert set(space) == {"depth", "hidden_dim", "ffn_num_layers", "ffn_hidden_dim"}
+    assert set(space) == {
+        "depth",
+        "hidden_dim",
+        "ffn_num_layers",
+        "ffn_hidden_dim",
+        "max_lr",
+        "warmup_epochs",
+        "batch_size",
+    }
     assert space["depth"] == IntRange(2, 6, 1)  # chemprop {2,3,4,5,6}
-    assert space["hidden_dim"] == IntRange(300, 2400, 100)  # chemprop {300,400,...,2400}
+    assert space["hidden_dim"] == IntRange(100, 2400, 100)  # chemprop floor of 300 extended to 100
     assert space["ffn_num_layers"] == IntRange(1, 3, 1)  # chemprop {1,2,3}
     # dropout is held out of the default space to keep the budget on the capacity knobs.
     assert "dropout" not in space
@@ -23,10 +31,11 @@ def test_basic_group_is_default():
 
 
 def test_lr_group_adds_schedule_knobs():
-    """basic+lr adds max_lr (log) and warmup_epochs on top of basic."""
-    space = chemprop_search_space(("basic", "lr"))
-    assert "max_lr" in space and "warmup_epochs" in space
+    """The lr group carries max_lr (log), warmup_epochs, and batch_size."""
+    space = chemprop_search_space(("lr",))
+    assert set(space) == {"max_lr", "warmup_epochs", "batch_size"}
     assert space["max_lr"].log is True
+    assert isinstance(space["batch_size"], Choice)
 
 
 def test_unknown_group_raises():

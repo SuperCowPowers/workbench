@@ -32,8 +32,9 @@ if recreate or not Model(model_name).exists():
                 # on a 4-GPU instance; "optuna" is the serial single-GPU path.
                 "backend": "ray",
                 "max_parallel": 8,  # 4 GPUs x 2 trials each (see gpus_per_trial)
-                "n_trials": 40,  # 5 baseline trials (pruner warmup) + 35 pruned candidates
-                "search_space": "basic",  # "basic" (architecture capacity) | "basic+lr"
+                "n_trials": 60,  # 5 baseline trials (pruner warmup) + 55 pruned candidates
+                # search_space defaults to "basic+lr" (capacity + LR schedule + batch size);
+                # pass "basic" to search architecture capacity only.
             },
         },
         # For an honest out-of-distribution objective, pass validation_ids=[...]: those

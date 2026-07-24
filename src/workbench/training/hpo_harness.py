@@ -94,7 +94,7 @@ def run_search(
     trial_fn: Callable[..., float],
     search_space: SearchSpace,
     *,
-    n_trials: int = 40,
+    n_trials: int = 60,
     backend: str = "auto",
     max_parallel: int = 1,
     metric: str = "holdout_mae",

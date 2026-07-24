@@ -28,48 +28,45 @@ from workbench.training.hpo_harness import Choice, FloatRange, IntRange
 # lag on a single scaffold fold and still make the better ensemble.
 FOLD_PRUNE_WARMUP = 2
 
-# Default per-knob search space, grouped like chemprop's own hpopt keywords. The `basic`
-# group is chemprop's canonical space verbatim, extended only so ffn_hidden_dim can also
-# express a tapered head. Everything else — uq_version, max_epochs, patience, batch_size,
+# Default per-knob search space, grouped like chemprop's own hpopt keywords. Both groups
+# are searched by default. Everything else — uq_version, max_epochs, patience,
 # split_strategy, criterion, seed — stays fixed at its configured value.
 _SEARCH_GROUPS = {
     "basic": {
-        # depth / hidden_dim / ffn_num_layers ranges are chemprop's canonical search space
-        # verbatim. ffn_hidden_dim additionally offers tapered heads (lists), which
-        # chemprop's own space can't express — ffn_num_layers is ignored when a tapered
-        # list is chosen (the list length sets the depth).
+        # depth / ffn_num_layers ranges are chemprop's canonical search space. hidden_dim
+        # extends chemprop's 300 floor down to 100 (the AqSol optimum sat on that floor).
+        # ffn_hidden_dim additionally offers tapered heads (lists), which chemprop's own
+        # space can't express — ffn_num_layers is ignored when a tapered list is chosen
+        # (the list length sets the depth).
         "depth": IntRange(2, 6, 1),
-        "hidden_dim": IntRange(300, 2400, 100),
+        "hidden_dim": IntRange(100, 2400, 100),
         "ffn_num_layers": IntRange(1, 3, 1),
         "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]]),
     },
-    # Opt-in ("basic+lr"). init_lr/final_lr are tied to max_lr in merge_best_config
-    # rather than searched independently (independent search can produce init > max,
-    # which the Noam schedule rejects).
+    # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
+    # interact (they scale together), so they search as one group. The batch_size ceiling
+    # is set by optimization dynamics, not GPU memory (a bs=64 trial uses ~11% of an L4).
+    # init_lr/final_lr are tied to max_lr in merge_best_config rather than searched
+    # independently (independent search can produce init > max, which the Noam schedule
+    # rejects).
     "lr": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True),
         "warmup_epochs": IntRange(2, 10, 2),
+        "batch_size": Choice([32, 64, 128, 256]),
     },
 }
 
 # Knobs outside the default space — the working list for when this is revisited, ordered by
 # expected payoff. The full cross-file backlog (infra + correctness items too) lives in the
 # "Backlog / follow-ups" section of docs/planning/hpo_support.md; this comment covers only
-# the search-space knobs. Capacity search (the current `basic` group) is a modest lever:
-# Yang et al. 2019 measured ~2-5% from HPO on most datasets, and on AqSol the search drove
-# capacity to the floor for a small win. The bigger levers are featurization and LR/batch —
-# and ensembling, which the n_folds publish already captures.
+# the search-space knobs. Capacity search (the `basic` group) is a modest lever: Yang et
+# al. 2019 measured ~2-5% from HPO on most datasets, and on AqSol the search drove
+# capacity to the floor for a small win. The bigger remaining lever is featurization — and
+# ensembling, which the n_folds publish already captures.
 #
 #   * featurization (atom-featurizer mode ORGANIC; RIGR for small datasets) — the biggest
 #     untapped lever and not even in chemprop's "all" keyword. A template featurizer swap,
 #     not a search range, so it lands as its own feature rather than a knob here.
-#   * `batch_size` + the learning-rate group (`max_lr`, `warmup_epochs`, already the opt-in
-#     "lr" group) — what chemprop's maintainers actually recommend tuning. Cheapest
-#     high-value promotion into the default; batch_size also raises GPU utilization (trials
-#     use ~11% of L4 memory at bs=64). batch_size range must be chosen against the training
-#     instance's GPU memory, not the literature.
-#   * capacity floor — the AqSol optimum sat on `hidden_dim=300` (the range floor), so lower
-#     the floor before re-running to see if it wants to go smaller still.
 #   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}) and ensemble-scored trials can now
 #     select it honestly (a regularization knob is only meaningful against the ensemble it
 #     ships in). Low priority — coupled to the ensemble, small effect.
@@ -79,17 +76,17 @@ _SEARCH_GROUPS = {
 #   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword; smallest
 #     expected effect.
 #
-# Each added knob costs trials: the default space is already 4-dimensional, pruning reserves
-# the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines, and every trial now trains a
+# Each added knob costs trials: the default space is already 7-dimensional, pruning reserves
+# the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines, and every trial trains a
 # full ensemble.
 
 
-def chemprop_search_space(groups=("basic",)) -> dict:
+def chemprop_search_space(groups=("basic", "lr")) -> dict:
     """Build the default chemprop search space for the named knob ``groups``.
 
     Args:
         groups: iterable of group names — ``"basic"`` (architecture capacity) and/or
-            ``"lr"`` (the learning-rate schedule).
+            ``"lr"`` (the learning-rate schedule + batch size). Both by default.
 
     Returns:
         dict: ``{knob: Spec}`` for :func:`workbench.training.hpo_harness.run_search`.
@@ -107,7 +104,7 @@ def resolve_search_space(spec) -> dict:
 
     Accepts a shorthand string (``"basic"``, ``"basic+lr"``), an iterable of group
     names, or a ready ``{knob: Spec}`` dict (passed through for full custom control).
-    Defaults to the ``basic`` group.
+    Defaults to all groups (``basic+lr``).
     """
     if spec is None:
         return chemprop_search_space()
@@ -222,7 +219,7 @@ def run_chemprop_hpo(
     result = run_search(
         trial_fn,
         space,
-        n_trials=hpo_block.get("n_trials", 40),
+        n_trials=hpo_block.get("n_trials", 60),
         backend=backend,
         max_parallel=max_parallel,
         metric=metric,
