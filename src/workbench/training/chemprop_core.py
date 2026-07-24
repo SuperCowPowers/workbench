@@ -322,6 +322,13 @@ def train_chemprop_fold(
         save = save_checkpoint and bool(checkpoint_dir)
         return pl.Trainer(
             accelerator="auto",
+            # One device per fold: on a multi-GPU box Lightning otherwise auto-selects DDP
+            # (data parallelism) and deadlocks, since phase-2 publish is a single process.
+            # DDP is the wrong tool anyway — these models are small and dataloader-bound, so
+            # splitting one fold across GPUs adds sync overhead for no gain. The utilization
+            # win is *task* parallelism (independent folds one-per-GPU); see the "Parallelize
+            # the publish folds" backlog item in docs/planning/hpo_support.md.
+            devices=1,
             max_epochs=max_epochs,
             precision="16-mixed",
             logger=False,
@@ -381,7 +388,9 @@ def predict_chemprop_frame(mpnn, spec: FoldSpec, df, targets=None, extra=None):
         num_workers=spec.num_workers,
         pin_memory=True,
     )
-    trainer = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False, enable_checkpointing=False)
+    trainer = pl.Trainer(
+        accelerator="auto", devices=1, logger=False, enable_progress_bar=False, enable_checkpointing=False
+    )
     mpnn.eval()
     with torch.inference_mode():
         preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, loader)], axis=0)

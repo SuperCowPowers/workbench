@@ -52,23 +52,32 @@ _SEARCH_GROUPS = {
     },
 }
 
-# Knobs outside the default space — the working list for when this is revisited:
+# Knobs outside the default space — the working list for when this is revisited, ordered by
+# expected payoff. The full cross-file backlog (infra + correctness items too) lives in the
+# "Backlog / follow-ups" section of docs/planning/hpo_support.md; this comment covers only
+# the search-space knobs. Capacity search (the current `basic` group) is a modest lever:
+# Yang et al. 2019 measured ~2-5% from HPO on most datasets, and on AqSol the search drove
+# capacity to the floor for a small win. The bigger levers are featurization and LR/batch —
+# and ensembling, which the n_folds publish already captures.
 #
-#   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}) and ensemble-scored trials can
-#     now select it honestly (a regularization knob is only meaningful against the
-#     ensemble it ships in). Held out of the default space to keep the trial budget on the
-#     capacity knobs; the first candidate to add after the capacity search is characterized.
-#   * learning rate (`max_lr`, `warmup_epochs`) — already available as the opt-in "lr"
-#     group. Chemprop's maintainers describe their recommended search as focusing on
-#     learning rate and batch size, which makes this the first candidate to promote into
-#     the default.
-#   * `batch_size` — searchable in chemprop, not here. It moves memory and throughput as
-#     well as accuracy, so a range has to be chosen against the training instance's GPU
-#     memory rather than picked from the literature.
+#   * featurization (atom-featurizer mode ORGANIC; RIGR for small datasets) — the biggest
+#     untapped lever and not even in chemprop's "all" keyword. A template featurizer swap,
+#     not a search range, so it lands as its own feature rather than a knob here.
+#   * `batch_size` + the learning-rate group (`max_lr`, `warmup_epochs`, already the opt-in
+#     "lr" group) — what chemprop's maintainers actually recommend tuning. Cheapest
+#     high-value promotion into the default; batch_size also raises GPU utilization (trials
+#     use ~11% of L4 memory at bs=64). batch_size range must be chosen against the training
+#     instance's GPU memory, not the literature.
+#   * capacity floor — the AqSol optimum sat on `hidden_dim=300` (the range floor), so lower
+#     the floor before re-running to see if it wants to go smaller still.
+#   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}) and ensemble-scored trials can now
+#     select it honestly (a regularization knob is only meaningful against the ensemble it
+#     ships in). Low priority — coupled to the ensemble, small effect.
 #   * `aggregation` (mean/sum/norm) — searchable in chemprop but unreachable from here:
 #     `chemprop_core.build_mpnn_model` constructs `NormAggregation` directly, so tuning it
 #     requires a model-construction change first.
-#   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword.
+#   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword; smallest
+#     expected effect.
 #
 # Each added knob costs trials: the default space is already 4-dimensional, pruning reserves
 # the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines, and every trial now trains a
