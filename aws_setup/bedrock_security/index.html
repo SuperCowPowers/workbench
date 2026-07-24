@@ -5248,41 +5248,41 @@ stated so you can check each row against your own requirements.</p>
 <table>
 <thead>
 <tr>
-<th></th>
+<th>Control</th>
 <th>Vendor-hosted model API</th>
 <th>Bedrock</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Account boundary</td>
-<td>Vendor's</td>
-<td>Yours</td>
+<td><strong>Account boundary</strong></td>
+<td>✗ Vendor's</td>
+<td>✓ Yours</td>
 </tr>
 <tr>
-<td>Credential</td>
-<td>Shared API key in a config file</td>
-<td>Your existing IAM role</td>
+<td><strong>Credential</strong></td>
+<td>✗ Shared API key in a config file</td>
+<td>✓ Your existing IAM role</td>
 </tr>
 <tr>
-<td>Attribution</td>
-<td>One key for the whole team</td>
-<td>Per-user, via <code>sts:AssumeRole</code></td>
+<td><strong>Attribution</strong></td>
+<td>✗ One key for the whole team</td>
+<td>✓ Per-user, via <code>sts:AssumeRole</code></td>
 </tr>
 <tr>
-<td>Revocation</td>
-<td>Rotate a key everyone shares</td>
-<td>Remove a role assignment</td>
+<td><strong>Revocation</strong></td>
+<td>✗ Rotate a key everyone shares</td>
+<td>✓ Remove a role assignment</td>
 </tr>
 <tr>
-<td>Audit trail</td>
-<td>Vendor's dashboard</td>
-<td>Your CloudTrail</td>
+<td><strong>Audit trail</strong></td>
+<td>✗ Vendor's dashboard</td>
+<td>✓ Your CloudTrail</td>
 </tr>
 <tr>
-<td>Egress</td>
-<td>Public internet to a third party</td>
-<td>AWS network, in your region</td>
+<td><strong>Egress</strong></td>
+<td>✗ Public internet to a third party</td>
+<td>✓ AWS network, in your region</td>
 </tr>
 </tbody>
 </table>
@@ -5293,17 +5293,13 @@ reuses the Workbench execution role, so agent access is governed by the same
 IAM you already use for S3 and SageMaker — and revoking a departing analyst
 revokes their model access at the same time.</p>
 <h2 id="where-the-model-actually-runs">Where the model actually runs</h2>
-<p>A Bedrock foundation model does not run in your account, and it does not run on
-Anthropic's servers either.</p>
 <p>Anthropic supplies the model weights and inference software to AWS. AWS deploys
 a copy into an AWS-owned account operated by the Bedrock service team, in the
 region you call. Anthropic has no access to that account — no network path, no
 credentials, no logs.</p>
 <div class="admonition note">
 <p class="admonition-title">The practical consequence</p>
-<p>Your prompts are never handled by the model vendor's infrastructure. This
-is a structural property of how Bedrock is built, not a promise about
-conduct.</p>
+<p>Your prompts are never handled by the model provider's infrastructure. This is a structural property of how AWS Bedrock is managed. The model provider cannot see your data, and you do not have to trust them to keep it private.</p>
 </div>
 <h2 id="what-the-agent-can-do">What the agent can do</h2>
 <p>The agent works by writing and running Python in your live REPL session, so it
@@ -5332,7 +5328,7 @@ the REPL launches with by default.</p>
 <p>Under the AWS service terms for third-party models on Bedrock, you retain all
 rights to your inputs, you own the outputs, and the model provider may not
 train on them.</p>
-<p>Bedrock runs a zero operator access model: no AWS operator can read your
+<p>Bedrock enforces a <strong>zero-operator-access</strong> model: no AWS operator can read your
 inputs or outputs. Under the default retention setting AWS may retain them for
 safety and abuse prevention, but the model provider never receives them.</p>
 <p>Retention is configurable at the account or project level. The modes are
