@@ -61,15 +61,15 @@ _SEARCH_GROUPS = {
         "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]]),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
-    # interact (they scale together), so they search as one group. The batch_size ceiling
-    # is set by optimization dynamics, not GPU memory (a bs=64 trial uses ~11% of an L4).
-    # init_lr/final_lr are tied to max_lr in merge_best_config rather than searched
-    # independently (independent search can produce init > max, which the Noam schedule
-    # rejects).
+    # interact (they scale together), so they search as one group. The batch_size ceiling is
+    # set by optimization dynamics, not GPU memory — a 60-trial 8-concurrent search peaks at
+    # ~22% of a 4x L4 box. init_lr/final_lr are tied to max_lr in merge_best_config rather
+    # than searched independently (independent search can produce init > max, which the Noam
+    # schedule rejects).
     "lr": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True),
         "warmup_epochs": IntRange(2, 10, 2),
-        "batch_size": Choice([32, 64, 128, 256]),
+        "batch_size": Choice([32, 64, 128, 256, 512]),
     },
 }
 
@@ -130,6 +130,37 @@ def resolve_search_space(spec) -> dict:
     if isinstance(spec, dict):
         return spec
     return chemprop_search_space(tuple(spec))
+
+
+def _use_holdout(requested_metric, n_val_rows: int) -> bool:
+    """Whether the designated validation rows should drive the search objective.
+
+    Defaults to out-of-fold scoring, leaving any validation rows out of the objective. They
+    stay out of training either way (the template split them off) — this only decides
+    whether they *drive the search*. Out-of-fold is the safe default because
+    ``validation_ids`` usually marks a benchmark set, and tuning on one makes its own final
+    score optimistic and unfair against models that never saw those labels. Opt in with
+    ``hpo["metric"]="holdout_mae"`` when the holdout exists to be tuned toward.
+
+    Args:
+        requested_metric: the ``hpo["metric"]`` value, or None for the default.
+        n_val_rows: how many validation rows the caller designated.
+
+    Returns:
+        bool: True to score ``holdout_mae`` on the validation rows, False for ``cv_mae``.
+    """
+    if requested_metric not in (None, "holdout_mae", "cv_mae"):
+        raise ValueError(f"hpo['metric'] must be 'holdout_mae' or 'cv_mae', got {requested_metric!r}")
+    if requested_metric == "holdout_mae":
+        if not n_val_rows:
+            raise ValueError("hpo['metric']='holdout_mae' needs validation_ids, but no validation rows were designated")
+        return True
+    if n_val_rows:
+        print(
+            f"[hpo] objective is cv_mae; the {n_val_rows} validation rows stay out of training and out of the "
+            "search (set hpo['metric']='holdout_mae' to tune toward them)"
+        )
+    return False
 
 
 def merge_best_config(hyperparameters: dict, best_config: dict) -> dict:
@@ -205,6 +236,10 @@ def run_chemprop_hpo(
     # The caller's holdout frame is split off *before* the template's own valid-SMILES
     # filter, so it is filtered here rather than assumed clean.
     train_df, val_df = _rdkit_valid(train_df), _rdkit_valid(val_df)
+
+    if not _use_holdout(hpo_block.get("metric"), len(val_df)):
+        # Emptying it here is what routes the trial/re-rank scoring to out-of-fold.
+        val_df = val_df.iloc[:0]
 
     # Same folds the template would build for this config, so a trial's ensemble matches
     # the published one. Scaffold is the SMILES-feature default (literature-favored;

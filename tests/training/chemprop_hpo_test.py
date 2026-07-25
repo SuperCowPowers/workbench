@@ -7,6 +7,7 @@ imports are deferred in the search entry point, not at module top).
 # Workbench Imports
 from workbench.training.chemprop_hpo import (
     _shortlist_configs,
+    _use_holdout,
     _trial_completed,
     chemprop_search_space,
     merge_best_config,
@@ -124,3 +125,34 @@ def test_shortlist_dedupes_and_handles_unhashable_configs():
 def test_shortlist_empty_when_everything_pruned():
     """Nothing completed → no finalists (caller falls back to the search winner)."""
     assert _shortlist_configs([{"value": 0.3, "completed": False, "config": {"depth": 2}}], 5) == []
+
+
+def test_use_holdout_defaults_to_out_of_fold():
+    """Default never tunes on the validation rows — a benchmark holdout stays uncontaminated."""
+    assert _use_holdout(None, 500) is False
+    assert _use_holdout(None, 0) is False
+
+
+def test_cv_mae_override_ignores_the_holdout():
+    """Asking for cv_mae explicitly matches the default."""
+    assert _use_holdout("cv_mae", 500) is False
+    assert _use_holdout("cv_mae", 0) is False
+
+
+def test_holdout_mae_is_opt_in_and_requires_validation_rows():
+    """Tuning toward the holdout happens only when asked for, and only if rows exist."""
+    assert _use_holdout("holdout_mae", 500) is True
+    try:
+        _use_holdout("holdout_mae", 0)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "validation_ids" in str(exc)
+
+
+def test_unknown_metric_raises():
+    """A typo'd metric fails rather than silently falling back to a default objective."""
+    try:
+        _use_holdout("holdout_rmse", 500)
+        assert False, "expected ValueError"
+    except ValueError as exc:
+        assert "must be" in str(exc)
