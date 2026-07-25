@@ -6,6 +6,8 @@
       {"script": "aqsol_class_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-class-2"]},
       {"script": "aqsol_reg_1.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-1"]},
       {"script": "aqsol_reg_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-2"]},
+      {"script": "aqsol_chemprop_hpo.py", "inputs": ["fs:aqsol_features"],
+       "outputs": ["model:aqsol-chemprop-hpo", "endpoint:aqsol-chemprop-hpo"]},
       {"script": "plugin:models/model_promotion.py",
        "inputs": ["model:aqsol-class-1", "model:aqsol-class-2"], "outputs": ["endpoint:aqsol-class"]},
       {"script": "workbench:models/model_promotion.py",
