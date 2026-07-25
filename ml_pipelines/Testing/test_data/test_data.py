@@ -19,7 +19,7 @@ FEATURES = ["height", "weight", "age", "iq_score", "likes_dogs", "food"]
 def main():
     # DataSource: public synthetic person data with a binned salary_class column
     df = PublicData().get("testing/test_data")
-    df["Date"] = pd.to_datetime(df["Date"])  # CSV round-trips dates as strings
+    df["Date"] = pd.to_datetime(df["Date"], format="ISO8601", utc=True)  # CSV round-trips dates as strings
     bins = [-float("inf"), 130000, 150000, float("inf")]
     df["salary_class"] = pd.cut(df["Salary"], bins=bins, labels=["low", "medium", "high"])
     DataSource(df, name="test_data")

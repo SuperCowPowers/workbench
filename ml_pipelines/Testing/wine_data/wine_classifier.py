@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     # Create the wine_features FeatureSet
     ds = DataSource("wine_data")
-    fs = ds.to_features("wine_features", tags=["wine", "classification"])
+    fs = ds.to_features("wine_features", id_column="auto", tags=["wine", "classification"])
     fs.set_owner("test")
 
     # Create the wine classification Model

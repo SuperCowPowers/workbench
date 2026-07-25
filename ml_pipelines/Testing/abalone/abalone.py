@@ -27,7 +27,7 @@ def main():
     DataSource(PublicData().get("testing/abalone"), name="abalone_data")
 
     # FeatureSet
-    DataSource("abalone_data").to_features("abalone_features")
+    DataSource("abalone_data").to_features("abalone_features", id_column="auto")
 
     # Regression model + endpoint
     m = FeatureSet("abalone_features").to_model(
