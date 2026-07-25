@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import spearmanr
 import importlib.resources
+from contextlib import contextmanager
 from pathlib import Path
 import os
 import json
@@ -321,6 +322,58 @@ def safe_extract_tarfile(tar_path: str, extract_path: str) -> None:
             tar.extractall(path=extract_path)
 
 
+@contextmanager
+def extracted_artifact(artifact_uri: str):
+    """Download an S3 tarball and yield the temp directory it extracted into.
+
+    Yields None when the object can't be fetched — callers name a specific artifact and a
+    bundle need not contain it (only searched models write ``output.tar.gz``). The directory
+    is removed on exit, so read what you need inside the ``with``.
+
+    Args:
+        artifact_uri (str): S3 URI of a .tar.gz artifact.
+
+    Yields:
+        str | None: Path to the extracted directory, or None if the download failed.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_tar_path = os.path.join(tmpdir, "artifact.tar.gz")
+        try:
+            wr.s3.download(path=artifact_uri, local_file=local_tar_path)
+        except Exception as e:
+            log.debug(f"Could not download artifact {artifact_uri}: {e}")
+            yield None
+            return
+        safe_extract_tarfile(local_tar_path, tmpdir)
+        yield tmpdir
+
+
+def _load_json_from_artifact(artifact_uri: str, filename: str) -> Optional[dict]:
+    """Read one JSON file from the base directory of an S3 tarball artifact.
+
+    Args:
+        artifact_uri (str): S3 URI of the .tar.gz artifact.
+        filename (str): File to read from the archive's base directory.
+
+    Returns:
+        dict: The parsed JSON, or None if the artifact or file is absent/unreadable.
+    """
+    with extracted_artifact(artifact_uri) as artifact_dir:
+        if artifact_dir is None:
+            return None
+        path = os.path.join(artifact_dir, filename)
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            log.debug(f"Loaded {filename} from {artifact_uri}")
+            return data
+        except Exception as e:
+            log.warning(f"Failed to load {filename} from {artifact_uri}: {e}")
+            return None
+
+
 def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     """
     Download and extract category mappings from a model artifact in S3.
@@ -331,28 +384,7 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     Returns:
         dict: The loaded category mappings or None if not found.
     """
-    category_mappings = None
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Download model artifact
-        local_tar_path = os.path.join(tmpdir, "model.tar.gz")
-        wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
-
-        # Extract tarball
-        safe_extract_tarfile(local_tar_path, tmpdir)
-
-        # Look for category mappings in base directory only
-        mappings_path = os.path.join(tmpdir, "category_mappings.json")
-
-        if os.path.exists(mappings_path):
-            try:
-                with open(mappings_path, "r") as f:
-                    category_mappings = json.load(f)
-                print(f"Loaded category mappings from {mappings_path}")
-            except Exception as e:
-                print(f"Failed to load category mappings from {mappings_path}: {e}")
-
-    return category_mappings
+    return _load_json_from_artifact(model_artifact_uri, "category_mappings.json")
 
 
 def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
@@ -365,28 +397,46 @@ def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
     Returns:
         dict: The loaded hyperparameters or None if not found.
     """
-    hyperparameters = None
+    return _load_json_from_artifact(model_artifact_uri, "hyperparameters.json")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Download model artifact
-        local_tar_path = os.path.join(tmpdir, "model.tar.gz")
-        wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
 
-        # Extract tarball
-        safe_extract_tarfile(local_tar_path, tmpdir)
+def get_hpo_results(workbench_model: Any) -> Optional[dict]:
+    """Get the hyperparameter-search results for a Workbench model.
 
-        # Look for hyperparameters in base directory only
-        hyperparameters_path = os.path.join(tmpdir, "hyperparameters.json")
+    HPO writes its audit trail to the training job's ``output.tar.gz``, a sibling of the
+    ``model.tar.gz`` that ``model_data_url()`` points at. A None return means the model was
+    not hyperparameter-searched, so this doubles as the "was this an HPO model?" check.
 
-        if os.path.exists(hyperparameters_path):
-            try:
-                with open(hyperparameters_path, "r") as f:
-                    hyperparameters = json.load(f)
-                log.debug(f"Loaded hyperparameters from model artifact {hyperparameters_path}")
-            except Exception as e:
-                log.warning(f"Failed to load hyperparameters from {hyperparameters_path}: {e}")
+    Reading the returned values: ``best_value`` and ``baseline_value`` share the re-rank's
+    basis, so their difference is the margin the publish decision turned on.
+    ``search_best_value`` comes from the search phase and is not comparable to them when
+    ``rerank_fresh_split`` is true — the re-rank scored on a different fold partition.
 
-    return hyperparameters
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        dict: ``best_config.json`` contents plus ``rerank``/``trials`` DataFrames, or None
+        when the model has no search artifacts.
+    """
+    model_artifact_uri = workbench_model.model_data_url()
+    if model_artifact_uri is None:
+        log.warning(f"No model artifact found for {workbench_model.uuid}")
+        return None
+
+    output_uri = model_artifact_uri.rsplit("/", 1)[0] + "/output.tar.gz"
+    with extracted_artifact(output_uri) as artifact_dir:
+        if artifact_dir is None:
+            return None
+        best_config_path = os.path.join(artifact_dir, "best_config.json")
+        if not os.path.exists(best_config_path):
+            return None
+        with open(best_config_path, "r") as f:
+            results = json.load(f)
+        for key, filename in (("rerank", "hpo_rerank.csv"), ("trials", "hpo_trials.csv")):
+            csv_path = os.path.join(artifact_dir, filename)
+            results[key] = pd.read_csv(csv_path) if os.path.exists(csv_path) else None
+    return results
 
 
 def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
