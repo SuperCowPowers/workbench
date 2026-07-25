@@ -86,8 +86,13 @@ What makes it readable:
 - Expand the per-trial config into one column per parameter.
 - Normalize each axis independently and print its true min/max at the ends.
   Log-scale any parameter spanning orders of magnitude, and say so in its label.
-- Color by the objective, and draw the good trials thicker and more opaque on top
-  of the faint ones — otherwise the winners are lost in the crowd.
+- Color by the objective with a **divergent** colormap centered on the baseline
+  (`TwoSlopeNorm(vcenter=<baseline objective>)`), so hue answers the question that
+  matters — did this trial beat the user's own hyperparameters — rather than where
+  it ranks within the run. Set the direction so better-than-baseline gets the
+  favorable hue; for a minimized objective that means reversing the map (`RdBu_r`).
+- Draw the good trials thicker and more opaque on top of the faint ones, or the
+  winners are lost in the crowd.
 - Draw the two reference lines: the published config, and the `kind="baseline"`
   row (the user's own hyperparameters, scored on the same basis as the trials).
   A search plot without the baseline can't show whether the search achieved
