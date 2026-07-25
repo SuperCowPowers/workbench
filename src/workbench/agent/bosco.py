@@ -12,6 +12,7 @@ import codeop
 import keyword
 import builtins
 import logging
+import anthropic
 from contextlib import contextmanager
 
 # Workbench Imports
@@ -160,15 +161,29 @@ def _track_usage(usage) -> None:
     bosco.usage["cost_usd"] = round(sum(bosco.usage[k] * rate for k, rate in _RATES.items()), 2)
 
 
-def _run_turn(namespace: dict) -> None:
-    """Send the current history, running tools until Claude is done."""
+def _message_create(**kwargs):
+    """Create a message, rebuilding the client once on an expired token.
+
+    claude_client() freezes credentials into the Anthropic client, so an SSO token
+    renewed elsewhere is only picked up when the client is rebuilt (Workbench's own
+    boto3 session refreshes on its own). Retry once on a 403 so a renewal takes
+    effect without restarting the REPL.
+    """
     global _client
     if _client is None:
         _client = claude_client()
+    try:
+        return _client.messages.create(**kwargs)
+    except anthropic.PermissionDeniedError:
+        _client = claude_client()
+        return _client.messages.create(**kwargs)
 
+
+def _run_turn(namespace: dict) -> None:
+    """Send the current history, running tools until Claude is done."""
     for _ in range(MAX_TOOL_ROUNDS):
         with _spinner("🐶  Bosco is thinking:"):
-            response = _client.messages.create(
+            response = _message_create(
                 model=DEFAULT_MODEL,
                 max_tokens=MAX_TOKENS,
                 system=_system_prompt(),
