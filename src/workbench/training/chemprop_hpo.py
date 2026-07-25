@@ -50,22 +50,20 @@ RERANK_SEED_OFFSET = 1000
 # split_strategy, criterion, seed — stays fixed at its configured value.
 _SEARCH_GROUPS = {
     "basic": {
-        # depth / ffn_num_layers ranges are chemprop's canonical search space. hidden_dim
-        # extends chemprop's 300 floor down to 100 (the AqSol optimum sat on that floor).
-        # ffn_hidden_dim additionally offers tapered heads (lists), which chemprop's own
-        # space can't express — ffn_num_layers is ignored when a tapered list is chosen
-        # (the list length sets the depth).
+        # depth / ffn_num_layers follow chemprop's canonical search space. hidden_dim spans
+        # 100-2400; small datasets select capacity at the low end. A list-valued
+        # ffn_hidden_dim gives a tapered head, which a scalar width cannot express —
+        # ffn_num_layers is ignored for a list (its length sets the depth).
         "depth": IntRange(2, 6, 1),
         "hidden_dim": IntRange(100, 2400, 100),
         "ffn_num_layers": IntRange(1, 3, 1),
         "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]]),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
-    # interact (they scale together), so they search as one group. The batch_size ceiling is
-    # set by optimization dynamics, not GPU memory — a 60-trial 8-concurrent search peaks at
-    # ~22% of a 4x L4 box. init_lr/final_lr are tied to max_lr in merge_best_config rather
-    # than searched independently (independent search can produce init > max, which the Noam
-    # schedule rejects).
+    # interact (they scale together), so they search as one group. Memory headroom for the
+    # batch_size ceiling: a 60-trial 8-concurrent search peaks near 22% of a 4x L4 box.
+    # init_lr/final_lr are tied to max_lr in merge_best_config; searched independently they
+    # can produce init > max, which the Noam schedule rejects.
     "lr": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True),
         "warmup_epochs": IntRange(2, 10, 2),
@@ -188,6 +186,10 @@ def run_chemprop_hpo(
     *,
     target_columns,
     smiles_column: str,
+    task: str = "regression",
+    model_type: str = "uq_regressor",
+    num_classes: int | None = None,
+    task_weights=None,
     output_dir: str | None = None,
 ) -> dict:
     """Phase-1 chemprop hyperparameter search; returns the phase-2 hyperparameters.
@@ -210,9 +212,15 @@ def run_chemprop_hpo(
     found nothing real publishes the caller's own hyperparameters unchanged. Disable with
     ``hpo["rerank_top_k"] = 0``.
 
-    v1 scope: regression, SMILES-only features; the objective is the primary target's
-    MAE. Extra descriptors / bounded loss / multi-task featurization are not exercised
-    during search — the phase-2 publish still uses the full template.
+    ``task`` / ``model_type`` / ``num_classes`` / ``task_weights`` shape the trial models the
+    same way the template shapes the published one. ``task_weights`` in particular must be
+    forwarded for multi-task runs: without it every trial trains at equal task weight and the
+    search optimizes a different loss than the winner ships with.
+
+    v1 scope: the objective is the primary target's MAE, computed with ``nanmean`` so
+    multi-task rows lacking that target are trained on but not scored. Extra descriptors and
+    bounded-loss censoring are still NOT exercised during search (they need per-fold data
+    plumbing, not just config) — the phase-2 publish uses the full template.
     """
     import json
 
@@ -297,8 +305,10 @@ def run_chemprop_hpo(
     # roughly saturates one without spilling. Ray only.
     resources = {"gpu": hpo_block.get("gpus_per_trial", 0.5)} if backend != "optuna" else None
 
+    model_shape = {"task": task, "model_type": model_type, "num_classes": num_classes, "task_weights": task_weights}
+
     trial_fn = _make_trial_fn(
-        train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers
+        train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers, model_shape
     )
     result = run_search(
         trial_fn,
@@ -329,6 +339,7 @@ def run_chemprop_hpo(
             smiles_column=smiles_column,
             metric=metric,
             num_workers=num_workers,
+            model_shape=model_shape,
             seed=seed,
             backend=backend,
             max_parallel=max_parallel,
@@ -414,6 +425,7 @@ def _rerank_finalists(
     smiles_column,
     metric,
     num_workers,
+    model_shape,
     seed,
     backend,
     max_parallel,
@@ -474,6 +486,7 @@ def _rerank_finalists(
         smiles_column,
         metric,
         _dataloader_workers(rerank_parallel),
+        model_shape,
     )
 
     def evaluate(config, index):
@@ -486,8 +499,8 @@ def _rerank_finalists(
         # Without a baseline score the comparison is finalist-vs-finalist, so the guarantee
         # that HPO can't ship something worse than the caller's own hyperparameters is gone.
         print("[hpo] re-rank WARNING: the baseline failed to score — publishing WITHOUT the baseline guard")
-    # Candidate i>0 is the search's rank-i config (the shortlist is best-first), so the label
-    # names that rank rather than a position in this list.
+    # The shortlist is best-first, so candidate i>0 holds the search's rank-i config and the
+    # label names that rank.
     rows = [
         {"candidate": "baseline" if i == 0 else f"search_rank_{i}", "config": c, metric: v}
         for i, (c, v) in enumerate(zip(candidates, values))
@@ -513,7 +526,9 @@ def _rerank_finalists(
     return candidates[best_index], info
 
 
-def _make_trial_fn(train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers):
+def _make_trial_fn(
+    train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers, model_shape
+):
     """Build the ensemble chemprop ``trial_fn`` (closes over the folds and eval data).
 
     Each trial trains one model per fold through
@@ -548,10 +563,10 @@ def _make_trial_fn(train_df, folds, val_df, base_hyperparameters, target_columns
             hyperparameters=merge_best_config(base_hyperparameters, config),
             smiles_column=smiles_column,
             n_targets=len(target_columns),
-            model_type="uq_regressor",
             enable_progress_bar=False,
             verbose=False,
             num_workers=num_workers,
+            **model_shape,
         )
 
         member_preds, fold_maes = [], []

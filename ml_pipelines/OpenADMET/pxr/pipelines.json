@@ -23,6 +23,8 @@
        "outputs": ["model:pxr-reg-chemprop-mt-logp", "endpoint:pxr-reg-chemprop-mt-logp",
                    "model:pxr-reg-chemprop-mt-logd", "endpoint:pxr-reg-chemprop-mt-logd",
                    "model:pxr-reg-chemprop-mt-both", "endpoint:pxr-reg-chemprop-mt-both"]},
+      {"script": "phase1/pxr_chemprop_mt_hpo_phase1.py", "inputs": ["fs:openadmet_pxr_mt"],
+       "outputs": ["model:pxr-reg-chemprop-mt-logd-hpo", "endpoint:pxr-reg-chemprop-mt-logd-hpo"]},
       {"script": "phase2/pxr_chemprop_mt_phase2.py", "inputs": ["fs:openadmet_pxr_mt"],
        "outputs": ["model:pxr-reg-chemprop-mt-phase2", "endpoint:pxr-reg-chemprop-mt-phase2"]},
       {"script": "pxr_pytorch_3dv2.py", "inputs": ["fs:openadmet_pxr_f2"],
@@ -35,7 +37,8 @@
                   "model:pxr-reg-chemprop-phase2", "model:pxr-reg-chemprop-chemeleon-phase1-frz0",
                   "model:pxr-reg-chemprop-chemeleon-phase1-frz10", "model:pxr-reg-chemprop-chemeleon-phase1-frz20",
                   "model:pxr-reg-chemprop-mt-logp", "model:pxr-reg-chemprop-mt-logd",
-                  "model:pxr-reg-chemprop-mt-both", "model:pxr-reg-chemprop-mt-phase2",
+                  "model:pxr-reg-chemprop-mt-both", "model:pxr-reg-chemprop-mt-logd-hpo",
+                  "model:pxr-reg-chemprop-mt-phase2",
                   "model:pxr-2d-3dv2-reg-xgb", "model:pxr-2d-3dv2-reg-pytorch-339",
                   "model:pxr-2d-3dv2-reg-pytorch-100"],
        "outputs": ["endpoint:pxr-reg-v1"]}

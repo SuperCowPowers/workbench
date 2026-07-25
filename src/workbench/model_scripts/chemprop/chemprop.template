@@ -577,6 +577,10 @@ if __name__ == "__main__":
             hpo_block,
             target_columns=target_columns,
             smiles_column=smiles_column,
+            task=task,
+            model_type=model_type,
+            num_classes=num_classes,
+            task_weights=task_weights,
             output_dir=args.output_data_dir,
         )
 

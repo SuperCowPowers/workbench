@@ -171,9 +171,9 @@ def test_evaluate_configs_empty():
 def test_all_nan_objective_raises_actionable_error():
     """A NaN objective fails every Optuna trial — the error must say why, not 'no trials'.
 
-    Regression: NaN reached the objective via multi-target rows with an unlabeled primary
-    target, and surfaced only as optuna's opaque "No trials are completed yet" after a full
-    search had been paid for.
+    A multi-task frame whose primary target is unlabeled on some rows can drive the objective
+    to NaN, which Optuna records as a failed trial. The whole search is spent by the time this
+    surfaces, so the message has to name the cause.
     """
 
     def nan_objective(config, report):
