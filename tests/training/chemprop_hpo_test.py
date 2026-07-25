@@ -6,6 +6,7 @@ imports are deferred in the search entry point, not at module top).
 
 # Workbench Imports
 from workbench.training.chemprop_hpo import (
+    _dataloader_workers,
     _shortlist_configs,
     _use_holdout,
     _trial_completed,
@@ -156,3 +157,11 @@ def test_unknown_metric_raises():
         assert False, "expected ValueError"
     except ValueError as exc:
         assert "must be" in str(exc)
+
+
+def test_dataloader_workers_scale_down_with_concurrency():
+    """Workers are shared vCPUs — more concurrent trials means fewer each, never zero."""
+    assert _dataloader_workers(1) >= _dataloader_workers(8)
+    assert _dataloader_workers(1000) == 1  # never zero, however tight the budget
+    assert _dataloader_workers(0) >= 1  # guards a zero-concurrency call
+    assert _dataloader_workers(1) <= 8  # capped regardless of core count

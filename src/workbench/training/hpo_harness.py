@@ -258,7 +258,20 @@ def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode,
         {"number": t.number, "value": t.value, "state": t.state.name, "config": t.user_attrs.get("config", {})}
         for t in study.trials
     ]
-    best = study.best_trial
+    # Rank explicitly rather than via study.best_trial: its "No trials are completed yet"
+    # gives no clue what went wrong, and the most likely cause has a specific fix — Optuna
+    # marks a trial FAIL when the objective returns NaN, so an unlabeled target column fails
+    # every trial and only shows up here, after the whole search has been paid for.
+    completed = [t for t in study.trials if t.state.name == "COMPLETE" and t.value is not None]
+    if not completed:
+        states = {}
+        for t in study.trials:
+            states[t.state.name] = states.get(t.state.name, 0) + 1
+        raise RuntimeError(
+            f"HPO search produced no usable trial (states: {states}). If trials FAILed, a NaN "
+            "objective is the usual cause — check the target column has non-NaN values."
+        )
+    best = min(completed, key=lambda t: t.value) if mode == "min" else max(completed, key=lambda t: t.value)
     return HpoResult(
         best_config=best.user_attrs.get("config", dict(best.params)),
         best_value=best.value,

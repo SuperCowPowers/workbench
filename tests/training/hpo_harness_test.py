@@ -166,3 +166,28 @@ def test_evaluate_configs_isolates_failures():
 
 def test_evaluate_configs_empty():
     assert evaluate_configs(lambda c, i: 1.0, [], backend="optuna") == []
+
+
+def test_all_nan_objective_raises_actionable_error():
+    """A NaN objective fails every Optuna trial — the error must say why, not 'no trials'.
+
+    Regression: NaN reached the objective via multi-target rows with an unlabeled primary
+    target, and surfaced only as optuna's opaque "No trials are completed yet" after a full
+    search had been paid for.
+    """
+
+    def nan_objective(config, report):
+        return float("nan")
+
+    with pytest.raises(RuntimeError, match="no usable trial"):
+        run_search(nan_objective, {"x": FloatRange(0.0, 1.0)}, n_trials=3, backend="optuna")
+
+
+def test_partial_nan_objective_still_finds_the_best():
+    """Some trials NaN-ing out doesn't sink the search — the scorable ones still rank."""
+
+    def sometimes_nan(config, report):
+        return config["x"] if config["x"] < 0.5 else float("nan")
+
+    result = run_search(sometimes_nan, {"x": FloatRange(0.0, 1.0)}, n_trials=25, backend="optuna")
+    assert result.best_value < 0.5

@@ -155,11 +155,6 @@ def _use_holdout(requested_metric, n_val_rows: int) -> bool:
         if not n_val_rows:
             raise ValueError("hpo['metric']='holdout_mae' needs validation_ids, but no validation rows were designated")
         return True
-    if n_val_rows:
-        print(
-            f"[hpo] objective is cv_mae; the {n_val_rows} validation rows stay out of training and out of the "
-            "search (set hpo['metric']='holdout_mae' to tune toward them)"
-        )
     return False
 
 
@@ -237,14 +232,36 @@ def run_chemprop_hpo(
     # filter, so it is filtered here rather than assumed clean.
     train_df, val_df = _rdkit_valid(train_df), _rdkit_valid(val_df)
 
-    if not _use_holdout(hpo_block.get("metric"), len(val_df)):
+    # The objective is the PRIMARY target's MAE, but the template keeps a row when any target
+    # is non-NaN — so a multi-target frame can arrive with unlabeled primary targets. Scoring
+    # nanmean-skips them; this check catches the degenerate case up front rather than after a
+    # full search (a NaN objective fails every trial, which surfaces as an opaque crash).
+    primary = list(target_columns)[0]
+    labeled = int(train_df[primary].notna().sum())
+    if labeled == 0:
+        raise ValueError(f"HPO objective needs non-NaN values in the primary target {primary!r}; found none.")
+    if labeled < len(train_df):
+        print(
+            f"[hpo] {len(train_df) - labeled} of {len(train_df)} training rows have no {primary}; "
+            "trained on, but excluded from scoring"
+        )
+
+    n_val_rows = len(val_df)
+    if not _use_holdout(hpo_block.get("metric"), n_val_rows):
         # Emptying it here is what routes the trial/re-rank scoring to out-of-fold.
         val_df = val_df.iloc[:0]
 
     # Same folds the template would build for this config, so a trial's ensemble matches
     # the published one. Scaffold is the SMILES-feature default (literature-favored;
     # random splits leak near-duplicate scaffolds across train/val).
-    n_folds = int(hpo_block.get("n_folds", base_hyperparameters.get("n_folds", 5)))
+    publish_folds = int(base_hyperparameters.get("n_folds", 5))
+    n_folds = int(hpo_block.get("n_folds", publish_folds))
+    if n_folds != publish_folds:
+        print(
+            f"[hpo] WARNING: searching/re-ranking with {n_folds}-fold ensembles but publishing with "
+            f"{publish_folds} — the winner is selected in a different regime than it ships in. "
+            "hpo['n_folds'] is for cheap validation runs, not real searches."
+        )
     strategy = base_hyperparameters.get("split_strategy", "scaffold")
     seed = base_hyperparameters.get("seed", 42)
     split_kwargs = dict(
@@ -258,7 +275,14 @@ def run_chemprop_hpo(
     if len(val_df):
         metric, where = "holdout_mae", f"held-out validation set ({len(val_df)} rows)"
     else:
-        metric, where = "cv_mae", f"out-of-fold {strategy} splits (no validation_ids)"
+        # Say which it is: no rows were designated, or rows were designated and deliberately
+        # kept out of the objective. The two mean very different things when reading a log.
+        excluded = (
+            f"{n_val_rows} validation rows held out of training AND out of the search"
+            if n_val_rows
+            else "no validation_ids"
+        )
+        metric, where = "cv_mae", f"out-of-fold {strategy} splits ({excluded})"
     print(
         f"[hpo] objective = {metric} on {where}; {n_folds}-fold ensemble per trial, " f"{len(train_df)} training rows"
     )
@@ -266,9 +290,7 @@ def run_chemprop_hpo(
     space = resolve_search_space(hpo_block.get("search_space"))
     backend = hpo_block.get("backend", "auto")
     max_parallel = max(1, hpo_block.get("max_parallel", 1))
-    # Every dataloader worker is a process, so concurrent trials have to share the vCPUs —
-    # oversubscribing them starves the GPU instead of feeding it.
-    num_workers = max(1, min((os.cpu_count() or 4) // max_parallel, 8))
+    num_workers = _dataloader_workers(max_parallel)
     print(f"[hpo] {max_parallel} concurrent trial(s), {num_workers} dataloader workers each")
 
     # A trial uses ~5% of an L4's memory and ~46% of its compute, so packing two per GPU
@@ -343,6 +365,16 @@ def run_chemprop_hpo(
             pd.DataFrame(rerank["candidates"]).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
 
     return merge_best_config(base_hyperparameters, best_config)
+
+
+def _dataloader_workers(concurrency: int) -> int:
+    """Dataloader workers per trial at a given concurrency.
+
+    Every worker is a process, so concurrent trials share the vCPUs — oversubscribing them
+    starves the GPU instead of feeding it. Phase 1.5 runs fewer trials at once than the
+    search, so it recomputes this rather than inheriting the search's tighter budget.
+    """
+    return max(1, min((os.cpu_count() or 4) // max(1, concurrency), 8))
 
 
 def _trial_completed(trial: dict) -> bool:
@@ -430,16 +462,30 @@ def _rerank_finalists(
         f"on fresh {metric}" + (" and a fresh fold partition" if metric == "cv_mae" else "")
     )
 
+    # At most one slot per candidate runs at a time, so the vCPUs divide fewer ways here than
+    # during the search — recompute rather than inherit the search's tighter worker budget.
+    rerank_parallel = min(max_parallel, len(candidates))
     rerank_fn = _make_trial_fn(
-        train_df, rerank_folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers
+        train_df,
+        rerank_folds,
+        val_df,
+        base_hyperparameters,
+        target_columns,
+        smiles_column,
+        metric,
+        _dataloader_workers(rerank_parallel),
     )
 
     def evaluate(config, index):
         return rerank_fn({**config, "seed": rerank_seed}, lambda **_: None)
 
     values = evaluate_configs(
-        evaluate, candidates, backend=backend, max_parallel=max_parallel, resources_per_trial=resources
+        evaluate, candidates, backend=backend, max_parallel=rerank_parallel, resources_per_trial=resources
     )
+    if values[0] is None:
+        # Without a baseline score the comparison is finalist-vs-finalist, so the guarantee
+        # that HPO can't ship something worse than the caller's own hyperparameters is gone.
+        print("[hpo] re-rank WARNING: the baseline failed to score — publishing WITHOUT the baseline guard")
     # Candidate i>0 is the search's rank-i config (the shortlist is best-first), so the label
     # names that rank rather than a position in this list.
     rows = [
@@ -523,14 +569,17 @@ def _make_trial_fn(train_df, folds, val_df, base_hyperparameters, target_columns
                     checkpoint_dir=ckpt_dir,
                 )
 
+            # nanmean, not mean: the template keeps a row when ANY target is non-NaN, so a
+            # multi-target frame can carry a NaN primary target. Training still uses every
+            # row (chemprop masks per-target); only the scoring skips the unlabeled ones.
             if holdout:
                 # Each member predicts the held-out rows; the objective is the ensemble's
                 # mean prediction. The fold's own val rows drive early stopping only, so
                 # the objective set never influences model selection.
                 member_preds.append(predict_chemprop_frame(mpnn, spec, val_df)[:, 0])
-                running = float(np.mean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
+                running = float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
             else:
-                fold_maes.append(float(np.mean(np.abs(fold_preds[:, 0] - all_y[va_idx][:, 0]))))
+                fold_maes.append(float(np.nanmean(np.abs(fold_preds[:, 0] - all_y[va_idx][:, 0]))))
                 running = float(np.mean(fold_maes))
 
             # Fold-granular pruning: a config already off the pace stops here rather than
