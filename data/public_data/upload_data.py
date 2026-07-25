@@ -9,6 +9,9 @@ under output/ is preserved, so the top-level dir is the category):
     output/comp_chem/logd/logd_all.csv -> s3://workbench-public-data/comp_chem/logd/logd_all.csv
     output/testing/abalone.csv         -> s3://workbench-public-data/testing/abalone.csv
 
+Unchanged files are skipped (local MD5 vs remote ETag) so LastModified only
+moves when content actually changes -- pipeline freshness checks key off it.
+
 Then merges entries from the local `descriptions.json` into the top-level
 `s3://workbench-public-data/descriptions.json` (read-merge-write — existing
 remote entries for other datasets are preserved).
@@ -20,15 +23,16 @@ actually upload:
 """
 
 import argparse
+import hashlib
 import json
 import logging
 from pathlib import Path
 
-import awswrangler as wr
 import boto3
 import pandas as pd
 from botocore import UNSIGNED
 from botocore.config import Config
+from botocore.exceptions import ClientError
 
 log = logging.getLogger("workbench")
 
@@ -52,36 +56,67 @@ def s3_key_for(local_path: Path) -> str:
     return local_path.relative_to(OUTPUT_DIR).as_posix()
 
 
+def anon_s3():
+    """Unsigned S3 client for reads -- the bucket is public-read, no creds needed."""
+    return boto3.client("s3", region_name="us-west-2", config=Config(signature_version=UNSIGNED))
+
+
+def remote_md5(s3_anon, key: str) -> str | None:
+    """MD5 of the remote object via its ETag; None if absent or multipart (ETag isn't an MD5 then)."""
+    try:
+        etag = s3_anon.head_object(Bucket=BUCKET, Key=key)["ETag"].strip('"')
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
+            return None
+        raise
+    return None if "-" in etag else etag
+
+
 def upload_csvs(dry_run: bool) -> list[str]:
-    """Upload every CSV under output/ and return the S3 keys written."""
+    """Upload every changed CSV under output/ and return the S3 keys written.
+
+    Unchanged files (local MD5 == remote ETag) are skipped so LastModified stays
+    put -- ml_pipeline freshness treats any bump as "public data modified".
+    """
+    paths = csv_files()
+    if not paths:
+        log.warning(f"No CSVs found under {OUTPUT_DIR}")
+        return []
+    s3_anon = anon_s3()
     keys = []
     log.info("CSV uploads:")
-    for path in csv_files():
+    for path in paths:
         key = s3_key_for(path)
         df = pd.read_csv(path)
+        body = df.to_csv(index=False).encode("utf-8")
+        if hashlib.md5(body).hexdigest() == remote_md5(s3_anon, key):
+            log.info(f"  {path.relative_to(DATA_DIR)} -> unchanged, skipping")
+            continue
         s3_uri = f"s3://{BUCKET}/{key}"
         log.info(f"  {path.relative_to(DATA_DIR)} -> {s3_uri}  ({len(df):,} rows, {len(df.columns)} cols)")
         if not dry_run:
-            wr.s3.to_csv(df, s3_uri, index=False)
+            boto3.client("s3").put_object(Bucket=BUCKET, Key=key, Body=body, ContentType="text/csv")
         keys.append(key)
     if not keys:
-        log.warning(f"No CSVs found under {OUTPUT_DIR}")
+        log.info("  All CSVs unchanged -- nothing to upload")
     return keys
 
 
-def merge_descriptions() -> dict:
+def merge_descriptions() -> tuple[dict, dict]:
     """Merge local descriptions.json on top of the remote one. Local wins.
 
-    Reads the remote with an unsigned client (the bucket is public-read), so
-    this works without AWS credentials — only the put_object below needs them.
+    Returns (merged, remote) so the caller can skip the upload when nothing
+    changed. Reads the remote with an unsigned client (the bucket is
+    public-read), so this works without AWS credentials — only the put_object
+    below needs them.
     """
     if not LOCAL_DESCRIPTIONS.exists():
         log.warning(f"No local descriptions.json at {LOCAL_DESCRIPTIONS}; skipping merge")
-        return {}
+        return {}, {}
 
     local = json.loads(LOCAL_DESCRIPTIONS.read_text())
 
-    s3_anon = boto3.client("s3", region_name="us-west-2", config=Config(signature_version=UNSIGNED))
+    s3_anon = anon_s3()
     try:
         obj = s3_anon.get_object(Bucket=BUCKET, Key=DESCRIPTIONS_KEY)
         remote = json.loads(obj["Body"].read())
@@ -93,11 +128,13 @@ def merge_descriptions() -> dict:
         else:
             raise
 
-    merged = {**remote, **local}
-    return merged
+    return {**remote, **local}, remote
 
 
-def upload_descriptions(merged: dict, dry_run: bool) -> None:
+def upload_descriptions(merged: dict, remote: dict, dry_run: bool) -> None:
+    if merged == remote:
+        log.info(f"\ndescriptions.json: unchanged ({len(merged)} entries), skipping")
+        return
     body = json.dumps(merged, indent=2).encode("utf-8")
     log.info(f"\ndescriptions.json: {len(merged)} entries -> s3://{BUCKET}/{DESCRIPTIONS_KEY}")
     for key in sorted(merged.keys()):
@@ -132,9 +169,9 @@ def main():
         upload_csvs(dry_run)
 
     if not args.skip_descriptions:
-        merged = merge_descriptions()
+        merged, remote = merge_descriptions()
         if merged:
-            upload_descriptions(merged, dry_run)
+            upload_descriptions(merged, remote, dry_run)
 
     log.info("\nDone." if not dry_run else "\nDry run complete — re-run with --apply.")
 
