@@ -339,6 +339,7 @@ def run_chemprop_hpo(
             smiles_column=smiles_column,
             metric=metric,
             num_workers=num_workers,
+            searched_knobs=list(space),
             model_shape=model_shape,
             seed=seed,
             backend=backend,
@@ -425,6 +426,7 @@ def _rerank_finalists(
     smiles_column,
     metric,
     num_workers,
+    searched_knobs,
     model_shape,
     seed,
     backend,
@@ -500,9 +502,15 @@ def _rerank_finalists(
         # that HPO can't ship something worse than the caller's own hyperparameters is gone.
         print("[hpo] re-rank WARNING: the baseline failed to score — publishing WITHOUT the baseline guard")
     # The shortlist is best-first, so candidate i>0 holds the search's rank-i config and the
-    # label names that rank.
+    # label names that rank. Each row carries the EFFECTIVE value of every searched knob —
+    # a candidate that didn't override one trained with the base value, and the baseline
+    # overrides nothing — so the records line up as a rectangular table.
     rows = [
-        {"candidate": "baseline" if i == 0 else f"search_rank_{i}", "config": c, metric: v}
+        {
+            "candidate": "baseline" if i == 0 else f"search_rank_{i}",
+            "config": {knob: c.get(knob, base_hyperparameters.get(knob)) for knob in searched_knobs},
+            metric: v,
+        }
         for i, (c, v) in enumerate(zip(candidates, values))
     ]
     info = {"candidates": rows, "fresh_split": metric == "cv_mae", "baseline_value": values[0], "best_value": None}

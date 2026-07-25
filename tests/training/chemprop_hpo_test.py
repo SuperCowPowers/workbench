@@ -165,3 +165,27 @@ def test_dataloader_workers_scale_down_with_concurrency():
     assert _dataloader_workers(1000) == 1  # never zero, however tight the budget
     assert _dataloader_workers(0) >= 1  # guards a zero-concurrency call
     assert _dataloader_workers(1) <= 8  # capped regardless of core count
+
+
+def test_every_searched_knob_has_a_template_default():
+    """Each knob in the default space must have a value in the template's defaults.
+
+    The re-rank records the effective value of every searched knob, falling back to the base
+    hyperparameters for knobs a candidate didn't override. A knob with no template default
+    resolves to None there and lands as NaN in hpo_rerank.csv, which downstream readers
+    would have to special-case. Adding a knob to _SEARCH_GROUPS means giving it a default.
+    """
+    import ast
+    from pathlib import Path
+
+    template = Path(__file__).parents[2] / "src/workbench/model_scripts/chemprop/chemprop.template"
+    tree = ast.parse(template.read_text())
+    defaults = next(
+        ast.literal_eval(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(getattr(t, "id", None) == "DEFAULT_HYPERPARAMETERS" for t in node.targets)
+    )
+
+    missing = [knob for knob in chemprop_search_space() if knob not in defaults]
+    assert not missing, f"searched knobs with no template default (would render as NaN): {missing}"
