@@ -31,7 +31,7 @@ def _capture(metrics):
     """Run one capture with the given metrics frame; return the patched `wr`."""
     ep = _fake_endpoint()
     with patch("workbench.core.artifacts.endpoint_core.wr") as wr_mock:
-        ep._capture_inference_results("pxr_phase1_test_logd", PRED_DF, metrics=metrics, **COMMON)
+        ep._capture_inference_results("pxr_phase1_test", PRED_DF, metrics=metrics, **COMMON)
     return wr_mock
 
 
@@ -50,4 +50,4 @@ def test_real_metrics_frame_writes_metrics_file():
     wr_mock = _capture(pd.DataFrame([{"rmse": 0.2, "r2": 0.96}]))
     assert wr_mock.s3.to_csv.call_count == 1
     path = wr_mock.s3.to_csv.call_args.args[1]
-    assert path.endswith("pxr_phase1_test_logd/inference_metrics.csv")
+    assert path.endswith("pxr_phase1_test/inference_metrics.csv")

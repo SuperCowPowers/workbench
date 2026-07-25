@@ -44,4 +44,4 @@ end.test_inference()
 end.cross_fold_inference()
 
 # Held-out capture on the phase1_test rows (the model never trained on them)
-end.inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_tuned_test")
+end.inference(phase1[["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")
