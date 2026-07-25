@@ -310,6 +310,12 @@ def run_chemprop_hpo(
     trial_fn = _make_trial_fn(
         train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers, model_shape
     )
+    # A same-basis reference for every trial: the caller's own hyperparameters ({} overrides
+    # nothing) scored on the search folds and seed. Without it the search's numbers and the
+    # trials plot have nothing to anchor against, so it always runs.
+    search_baseline_value = float(trial_fn({}, lambda **_: None))
+    print(f"[hpo] baseline {metric}={search_baseline_value:.4f} (caller's hyperparameters, search basis)")
+
     result = run_search(
         trial_fn,
         space,
@@ -322,7 +328,11 @@ def run_chemprop_hpo(
         seed=seed,
         resources_per_trial=resources,
     )
-    print(f"[hpo] search best {metric}={result.best_value:.4f}  config={result.best_config}")
+    pct = 100 * (search_baseline_value - result.best_value) / search_baseline_value
+    print(
+        f"[hpo] search best {metric}={result.best_value:.4f} ({pct:+.1f}% vs baseline, search basis)  "
+        f"config={result.best_config}"
+    )
 
     # Phase 1.5 refines a result the search has already produced, so its failure degrades to
     # the unrefined winner rather than discarding a search that has already run to completion.
@@ -364,6 +374,7 @@ def run_chemprop_hpo(
                     # on a different fold partition, so this is NOT comparable to the two
                     # above — partitions differ in difficulty.
                     "search_best_value": result.best_value,
+                    "search_baseline_value": search_baseline_value,
                     "search_best_config": result.best_config,
                     "rerank_fresh_split": rerank.get("fresh_split", False),
                     "rerank": rerank.get("candidates", []),
@@ -372,7 +383,18 @@ def run_chemprop_hpo(
                 indent=2,
                 default=str,
             )
-        pd.DataFrame(result.trials).to_csv(os.path.join(output_dir, "hpo_trials.csv"), index=False)
+        # Effective values for every searched knob, so the baseline plots alongside the trials.
+        baseline_row = {
+            "number": -1,
+            "value": search_baseline_value,
+            "config": {knob: base_hyperparameters.get(knob) for knob in space},
+            "kind": "baseline",
+        }
+        # Match the backend's completion-flag key so the frame stays rectangular.
+        ray_shape = bool(result.trials) and "completed" in result.trials[0]
+        baseline_row["completed" if ray_shape else "state"] = True if ray_shape else "COMPLETE"
+        trial_rows = [{**t, "kind": "trial"} for t in result.trials] + [baseline_row]
+        pd.DataFrame(trial_rows).to_csv(os.path.join(output_dir, "hpo_trials.csv"), index=False)
         if rerank.get("candidates"):
             pd.DataFrame(rerank["candidates"]).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
 

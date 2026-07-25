@@ -46,17 +46,14 @@ m = fs.to_model(
         "hpo": {
             "backend": "ray",
             "max_parallel": 8,  # 4 GPUs x 2 trials each
-            # PLUMBING-VALIDATION SETTINGS — exercise every phase cheaply. For a real search:
-            # n_trials 60, rerank_top_k 5, and no n_folds override.
-            "n_trials": 6,  # >= the 5 un-pruned pruner baselines, so finalists exist
-            "n_folds": 3,  # search/re-rank only; the phase-2 publish still uses n_folds
+            "n_trials": 60,
             # Score on scaffold folds of the training rows, never on the held-out
             # phase1_test rows — tuning on those would cost them their role as a benchmark.
             "metric": "cv_mae",
             # The search only shortlists: its top rerank_top_k configs are re-scored against
             # these hyperparameters as-is, and the winner of *that* is published. So a search
             # that finds nothing real publishes the untuned baseline.
-            "rerank_top_k": 2,
+            "rerank_top_k": 5,
         },
     },
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)

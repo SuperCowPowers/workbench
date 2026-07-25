@@ -74,6 +74,25 @@ prediction.
 For large scatter plots use `alpha=0.3` and `s=10` so the dense regions stay
 readable instead of turning into a solid block.
 
+## Parallel coordinates for HPO trials
+
+The default view of a hyperparameter search: one vertical axis per parameter, one
+line per trial, colored by the objective. It shows which regions the good trials
+cluster in and lets you trace a single config across every axis. Data is
+`get_hpo_results(model)["trials"]`; see the `hpo` guide for what the columns mean.
+
+What makes it readable:
+
+- Expand the per-trial config into one column per parameter.
+- Normalize each axis independently and print its true min/max at the ends.
+  Log-scale any parameter spanning orders of magnitude, and say so in its label.
+- Color by the objective, and draw the good trials thicker and more opaque on top
+  of the faint ones — otherwise the winners are lost in the crowd.
+- Draw the two reference lines: the published config, and the `kind="baseline"`
+  row (the user's own hyperparameters, scored on the same basis as the trials).
+  A search plot without the baseline can't show whether the search achieved
+  anything.
+
 ## Molecule structure panels
 
 When the point is chemistry — an activity cliff, nearest neighbors, the top
