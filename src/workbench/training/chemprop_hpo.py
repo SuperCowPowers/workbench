@@ -279,7 +279,7 @@ def run_chemprop_hpo(
         )
     except Exception as exc:
         print(f"[hpo] re-rank FAILED ({exc!r}); publishing the search winner unrefined")
-        best_config, rerank = result.best_config, []
+        best_config, rerank = result.best_config, {}
 
     if output_dir:
         with open(os.path.join(output_dir, "best_config.json"), "w") as fp:
@@ -287,17 +287,25 @@ def run_chemprop_hpo(
                 {
                     "metric": metric,
                     "best_config": best_config,
+                    # best_value and baseline_value share the re-rank's basis, so their
+                    # difference is the real margin the publish decision turned on.
+                    "best_value": rerank.get("best_value"),
+                    "baseline_value": rerank.get("baseline_value"),
+                    # Phase 1's own number. When rerank_fresh_split is true the re-rank scored
+                    # on a different fold partition, so this is NOT comparable to the two
+                    # above — partitions differ in difficulty.
                     "search_best_value": result.best_value,
                     "search_best_config": result.best_config,
-                    "rerank": rerank,
+                    "rerank_fresh_split": rerank.get("fresh_split", False),
+                    "rerank": rerank.get("candidates", []),
                 },
                 fp,
                 indent=2,
                 default=str,
             )
         pd.DataFrame(result.trials).to_csv(os.path.join(output_dir, "hpo_trials.csv"), index=False)
-        if rerank:
-            pd.DataFrame(rerank).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
+        if rerank.get("candidates"):
+            pd.DataFrame(rerank["candidates"]).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
 
     return merge_best_config(base_hyperparameters, best_config)
 
@@ -360,21 +368,23 @@ def _rerank_finalists(
     training-stochasticity component of the bias but not the holdout-sampling component.
 
     Returns:
-        tuple: ``(best_config, rerank_rows)`` — the config to publish and a per-candidate
-        record (empty when the re-rank is disabled or nothing scored).
+        tuple: ``(best_config, info)`` — the config to publish, and a dict carrying
+        ``candidates`` (the per-candidate record), the winning and baseline values on the
+        re-rank's own basis, and ``fresh_split``. ``info`` is empty when the re-rank is
+        disabled or nothing scored.
     """
     from workbench.endpoints.inference import get_split_indices
     from workbench.training.hpo_harness import evaluate_configs
 
     if top_k <= 0:
         print("[hpo] re-rank disabled (rerank_top_k=0); publishing the search winner")
-        return result.best_config, []
+        return result.best_config, {}
 
     # The baseline is the empty config: merged over base_hyperparameters it changes nothing.
     candidates = [{}] + _shortlist_configs(result.trials, top_k)
     if len(candidates) == 1:
         print("[hpo] re-rank: no completed trials to re-rank; publishing the search winner")
-        return result.best_config, []
+        return result.best_config, {}
 
     rerank_seed = seed + RERANK_SEED_OFFSET
     rerank_folds = folds
@@ -395,27 +405,31 @@ def _rerank_finalists(
     values = evaluate_configs(
         evaluate, candidates, backend=backend, max_parallel=max_parallel, resources_per_trial=resources
     )
+    # Candidate i>0 is the search's rank-i config (the shortlist is best-first), so the label
+    # names that rank rather than a position in this list.
     rows = [
-        {"candidate": "baseline" if i == 0 else f"finalist_{i}", "config": c, metric: v}
+        {"candidate": "baseline" if i == 0 else f"search_rank_{i}", "config": c, metric: v}
         for i, (c, v) in enumerate(zip(candidates, values))
     ]
+    info = {"candidates": rows, "fresh_split": metric == "cv_mae", "baseline_value": values[0], "best_value": None}
 
     scored = [(v, i) for i, v in enumerate(values) if v is not None]
     if not scored:
         print("[hpo] re-rank: no candidate scored; publishing the search winner")
-        return result.best_config, rows
+        return result.best_config, info
 
     # min() over (value, index) returns the first minimum, and the baseline is index 0 — so
     # an exact tie is resolved in the baseline's favor.
     best_value, best_index = min(scored)
     baseline_value = values[0]
+    info["best_value"] = best_value
     if best_index == 0:
         print(f"[hpo] re-rank winner: BASELINE at {metric}={best_value:.4f} — no searched config beat it")
     else:
         margin = f", {100 * (baseline_value - best_value) / baseline_value:+.1f}% vs baseline" if baseline_value else ""
-        print(f"[hpo] re-rank winner: finalist_{best_index} at {metric}={best_value:.4f}{margin}")
+        print(f"[hpo] re-rank winner: search_rank_{best_index} at {metric}={best_value:.4f}{margin}")
         print(f"[hpo] published config: {candidates[best_index]}")
-    return candidates[best_index], rows
+    return candidates[best_index], info
 
 
 def _make_trial_fn(train_df, folds, val_df, base_hyperparameters, target_columns, smiles_column, metric, num_workers):
