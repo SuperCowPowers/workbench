@@ -8,10 +8,14 @@
       {"script": "aqsol_reg_2.py", "inputs": ["fs:aqsol_features"], "outputs": ["model:aqsol-regression-2"]},
       {"script": "aqsol_chemprop_hpo.py", "inputs": ["fs:aqsol_features"],
        "outputs": ["model:aqsol-chemprop-hpo", "endpoint:aqsol-chemprop-hpo"]},
+      {"script": "aqsol_xgb_hpo.py", "inputs": ["fs:aqsol_features"],
+       "outputs": ["model:aqsol-xgb-hpo", "endpoint:aqsol-xgb-hpo"]},
       {"script": "plugin:models/model_promotion.py",
        "inputs": ["model:aqsol-class-1", "model:aqsol-class-2"], "outputs": ["endpoint:aqsol-class"]},
       {"script": "workbench:models/model_promotion.py",
-       "inputs": ["model:aqsol-regression-1", "model:aqsol-regression-2"], "outputs": ["endpoint:aqsol-regression"]}
+       "inputs": ["model:aqsol-regression-1", "model:aqsol-regression-2",
+                  "model:aqsol-xgb-hpo", "model:aqsol-chemprop-hpo"],
+       "outputs": ["endpoint:aqsol-regression"]}
     ]
   }
 }

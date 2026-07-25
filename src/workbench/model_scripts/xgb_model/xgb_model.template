@@ -313,6 +313,37 @@ if __name__ == "__main__":
         print(f"Class labels: {label_encoder.classes_.tolist()}")
 
     # -------------------------------------------------------------------------
+    # Hyperparameter search (optional)
+    # -------------------------------------------------------------------------
+    # When an `hpo` block is present, search for the best config (held-out holdout_df
+    # objective, else a scaffold split) and train the winner below. Trials run in-process
+    # and ephemerally — no Workbench models/endpoints are created for them.
+    hpo_block = hyperparameters.get("hpo")
+    if hpo_block and model_type == "classifier":
+        print("[hpo] NOTE: hyperparameter search is regression-only (v1); ignoring the `hpo` block.")
+        hpo_block = None
+    if hpo_block:
+        from workbench.training.xgb_hpo import run_xgb_hpo
+
+        # The search scores held-out rows through the SAME fitted objects used for training.
+        hpo_holdout = holdout_df
+        if len(hpo_holdout):
+            hpo_holdout, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
+            if compressed_features:
+                hpo_holdout, _ = decompress_features(hpo_holdout, orig_features, compressed_features)
+
+        hyperparameters = run_xgb_hpo(
+            all_df,
+            hpo_holdout,
+            hyperparameters,
+            hpo_block,
+            target=target,
+            features=features,
+            output_dir=args.output_data_dir,
+        )
+        print(f"Hyperparameters (tuned): {hyperparameters}")
+
+    # -------------------------------------------------------------------------
     # Cross-validation setup
     # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]

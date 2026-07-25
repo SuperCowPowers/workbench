@@ -319,6 +319,11 @@ class FeaturesToModel(Transform):
         elif self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
             train_instance_type = "ml.g6.2xlarge"  # NVIDIA L4 GPU + 8 vCPUs for data loading
             self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")
+        elif hpo_requested:
+            # A search is hundreds of fits. XGBoost spreads one fit across every core, so
+            # cores cut wall-clock even though the search itself is serial.
+            train_instance_type = "ml.c7i.4xlarge"  # 16 vCPUs
+            self.log.important(f"Using compute instance {train_instance_type} for {self.model_framework.value} HPO")
         else:
             train_instance_type = "ml.m5.xlarge"
 

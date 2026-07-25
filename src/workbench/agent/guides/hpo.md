@@ -7,16 +7,19 @@ HPO is not a separate artifact type. It is `to_model()` with an `hpo` block in
 winning config is published. Trials are ephemeral: they never create Workbench
 models or endpoints, so a searched model looks like any other model.
 
-Chemprop only, and regression only. An otherwise normal `to_model()` call plus:
+Chemprop and XGBoost, regression only. An otherwise normal `to_model()` call plus:
 
 ```python
 hyperparameters={"uq_version": "v1", "hpo": {"n_trials": 60}}
 ```
 
-For the `hpo` block's other keys and their defaults, read `run_chemprop_hpo` in
-`workbench/training/chemprop_hpo.py` rather than guessing (see the `code_search`
-guide). HPO is heavy — a multi-GPU box for hours — so it belongs on AWS Batch (see
-the `batch` guide), not inline.
+For the `hpo` block's keys and their defaults, read `run_hpo` in
+`workbench/training/hpo_runner.py`; the searched knobs are per-framework, in that
+framework's `*_hpo.py`. Read those rather than guessing (see the `code_search` guide).
+
+Cost differs sharply by framework. A chemprop search is a multi-GPU box for hours, so it
+belongs on AWS Batch (see the `batch` guide), not inline. An XGBoost trial is seconds,
+which makes it the cheap way to try something.
 
 ## Finding the results
 
@@ -64,8 +67,8 @@ HPO cost GPU time and confirmed the existing settings.
 ## What to expect
 
 Temper claims. Measured on our own data: HPO improved in-distribution cross-validation
-(AqSol, ~5%) but **lost to stock chemprop defaults** on PXR's held-out analog set.
-Gains on CV do not imply gains on a new chemical series. Chemprop's defaults are a
+(AqSol chemprop, ~5%) but **lost to stock chemprop defaults** on PXR's held-out analog
+set. Gains on CV do not imply gains on a new chemical series. Framework defaults are a
 strong baseline and often win on small datasets.
 
 By default the objective is `cv_mae`, scored out-of-fold on the training rows. Rows

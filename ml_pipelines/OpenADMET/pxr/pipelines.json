@@ -31,6 +31,8 @@
        "outputs": ["model:pxr-2d-3dv2-reg-xgb", "endpoint:pxr-2d-3dv2-reg-xgb",
                    "model:pxr-2d-3dv2-reg-pytorch-339", "endpoint:pxr-2d-3dv2-reg-pytorch-339",
                    "model:pxr-2d-3dv2-reg-pytorch-100", "endpoint:pxr-2d-3dv2-reg-pytorch-100"]},
+      {"script": "pxr_xgb_hpo.py", "inputs": ["fs:openadmet_pxr_f2"],
+       "outputs": ["model:pxr-2d-3dv2-reg-xgb-hpo", "endpoint:pxr-2d-3dv2-reg-xgb-hpo"]},
       {"script": "workbench:models/model_promotion.py",
        "inputs": ["model:pxr-reg-chemprop-phase1", "model:pxr-reg-chemprop-tuned-phase1",
                   "model:pxr-reg-chemprop-hpo-phase1",
@@ -39,7 +41,8 @@
                   "model:pxr-reg-chemprop-mt-logp", "model:pxr-reg-chemprop-mt-logd",
                   "model:pxr-reg-chemprop-mt-both", "model:pxr-reg-chemprop-mt-logd-hpo",
                   "model:pxr-reg-chemprop-mt-phase2",
-                  "model:pxr-2d-3dv2-reg-xgb", "model:pxr-2d-3dv2-reg-pytorch-339",
+                  "model:pxr-2d-3dv2-reg-xgb", "model:pxr-2d-3dv2-reg-xgb-hpo",
+                  "model:pxr-2d-3dv2-reg-pytorch-339",
                   "model:pxr-2d-3dv2-reg-pytorch-100"],
        "outputs": ["endpoint:pxr-reg-v1"]}
     ]

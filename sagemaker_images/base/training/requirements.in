@@ -17,3 +17,8 @@ xgboost-cpu >= 3.0.3  # same `import xgboost` API; skips the ~400MB bundled CUDA
 joblib >= 1.3.2
 rdkit >= 2026.3.1
 mordredcommunity >= 2.0.6
+
+# Hyperparameter search (workbench.training.hpo_harness). Training-image only —
+# never in endpoint images. Optuna alone: an XGBoost fit already uses every core,
+# so ray's parallel trials would only contend for the same CPUs.
+optuna
