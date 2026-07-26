@@ -133,8 +133,12 @@ def _adapter(targets):
     from workbench.training.chemprop_hpo import ChempropAdapter
 
     return ChempropAdapter(
-        target_columns=targets, smiles_column="smiles", task="regression",
-        model_type="uq_regressor", num_classes=None, task_weights=None,
+        target_columns=targets,
+        smiles_column="smiles",
+        task="regression",
+        model_type="uq_regressor",
+        num_classes=None,
+        task_weights=None,
     )
 
 
