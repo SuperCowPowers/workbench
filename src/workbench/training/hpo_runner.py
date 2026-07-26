@@ -168,7 +168,7 @@ def run_hpo(
     Returns:
         dict: phase-2 hyperparameters — no ``hpo`` block.
     """
-    from workbench.endpoints.inference import get_split_indices
+    from workbench.training.splits import get_split_indices
     from workbench.training.hpo_harness import run_search
 
     # The caller's holdout frame is split off *before* the template's own row filtering, so
@@ -335,18 +335,20 @@ def run_hpo(
                 default=str,
             )
         # Effective values for every searched knob, so the baseline plots alongside the trials.
+        # Both backends' completion flags normalize to one `completed` bool, so the CSV schema
+        # is identical whichever backend ran the search. Pruned vs failed stays recoverable:
+        # an incomplete trial with a value was pruned; one without ever scored.
         baseline_row = {
             "number": -1,
             "value": search_baseline_value,
+            "completed": True,
             "hyperparameters": effective_config({}, base_hyperparameters, search_space),
             "kind": "baseline",
         }
-        # Match the backend's completion-flag key so the frame stays rectangular.
-        ray_shape = bool(result.trials) and "completed" in result.trials[0]
-        baseline_row["completed" if ray_shape else "state"] = True if ray_shape else "COMPLETE"
         trial_rows = [
             {
-                **{k: v for k, v in t.items() if k != "config"},
+                **{k: v for k, v in t.items() if k not in ("config", "state", "completed")},
+                "completed": trial_completed(t),
                 "hyperparameters": effective_config(t.get("config") or {}, base_hyperparameters, search_space),
                 "kind": "trial",
             }
@@ -457,7 +459,9 @@ def rerank_finalists(
     (winner's curse). Re-scoring a shortlist independently and selecting on *that* is the
     fix. The user's own hyperparameters ride along as a candidate, which is what keeps HPO
     from making the model worse: a search that found nothing real loses to the baseline and
-    the baseline is what gets published. Ties go to the baseline.
+    the baseline is what gets published. Ties go to the baseline, and so does a re-rank
+    whose baseline failed to score — a finalist publishes only by beating a measured
+    baseline.
 
     Independence comes from a fresh seed (trials are deterministic, so the search seed would
     replay rather than redraw) and, in ``cv_mae`` mode, a fresh fold partition as well — the
@@ -471,7 +475,7 @@ def rerank_finalists(
         re-rank's own basis, and ``fresh_split``. ``info`` is empty when the re-rank is
         disabled or nothing scored.
     """
-    from workbench.endpoints.inference import get_split_indices
+    from workbench.training.splits import get_split_indices
     from workbench.training.hpo_harness import evaluate_configs
 
     if top_k <= 0:
@@ -511,10 +515,6 @@ def rerank_finalists(
     values = evaluate_configs(
         evaluate, candidates, backend=backend, max_parallel=rerank_parallel, resources_per_trial=resources
     )
-    if values[0] is None:
-        # Without a baseline score the comparison is finalist-vs-finalist, so the guarantee
-        # that HPO can't ship something worse than the caller's own hyperparameters is gone.
-        print("[hpo] re-rank WARNING: the baseline failed to score — publishing WITHOUT the baseline guard")
     # The shortlist is best-first, so candidate i>0 holds the search's rank-i config and the
     # label names that rank. The baseline overrides nothing, so its row is the caller's own
     # effective config.
@@ -528,13 +528,20 @@ def rerank_finalists(
     ]
     info = {"candidates": rows, "fresh_split": metric == "cv_mae", "baseline_value": values[0], "best_value": None}
 
-    scored = [(v, i) for i, v in enumerate(values) if v is not None]
-    if not scored:
-        print("[hpo] re-rank: no candidate scored; publishing the search winner")
-        return result.best_config, info
+    if values[0] is None:
+        # Beating the baseline on this basis is the bar for publishing a searched config;
+        # with no baseline score, no finalist can clear it — so the caller's own
+        # hyperparameters ship (phase 2 trains them fresh).
+        print(
+            "[hpo] re-rank: the baseline failed to score, so no searched config can prove itself "
+            "against it — publishing the caller's own hyperparameters"
+        )
+        return {}, info
 
     # min() over (value, index) returns the first minimum, and the baseline is index 0 — so
-    # an exact tie is resolved in the baseline's favor.
+    # an exact tie is resolved in the baseline's favor. The baseline scored, so `scored` is
+    # never empty.
+    scored = [(v, i) for i, v in enumerate(values) if v is not None]
     best_value, best_index = min(scored)
     baseline_value = values[0]
     info["best_value"] = best_value

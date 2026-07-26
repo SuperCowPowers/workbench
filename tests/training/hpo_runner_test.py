@@ -125,3 +125,118 @@ def test_summarize_trials_reads_the_optuna_shape():
         ]
     )
     assert counts == {"attempted": 3, "completed": 1, "pruned": 1, "failed": 1}
+
+
+class _StubAdapter(HpoAdapter):
+    """Objective = the candidate's `x` (default 5.0); optionally fails the baseline."""
+
+    def __init__(self, fail_baseline=False):
+        self.fail_baseline = fail_baseline
+
+    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
+        def trial_fn(config, report):
+            if self.fail_baseline and "x" not in config:
+                raise RuntimeError("baseline failed to train")
+            value = float(config.get("x", hyperparameters.get("x", 5.0)))
+            report(step=1, **{metric: value})
+            return value
+
+        return trial_fn
+
+
+def _rerank(adapter, trials, **overrides):
+    import pandas as pd
+
+    from workbench.training.hpo_harness import FloatRange, HpoResult
+    from workbench.training.hpo_runner import rerank_finalists
+
+    result = HpoResult(
+        best_config=trials[0]["config"],
+        best_value=trials[0]["value"],
+        metric="holdout_mae",
+        mode="min",
+        n_trials=len(trials),
+        trials=trials,
+    )
+    kwargs = dict(
+        top_k=5,
+        adapter=adapter,
+        train_df=pd.DataFrame({"y": [1.0, 2.0]}),
+        val_df=pd.DataFrame({"y": [1.0]}),
+        folds=[],
+        split_kwargs={},
+        base_hyperparameters={},
+        metric="holdout_mae",
+        search_space={"x": FloatRange(0.0, 10.0, default=5.0)},
+        seed=42,
+        backend="optuna",
+        max_parallel=1,
+        resources=None,
+    )
+    kwargs.update(overrides)
+    return rerank_finalists(result, **kwargs)
+
+
+_TRIALS = [
+    {"number": 0, "value": 2.0, "state": "COMPLETE", "config": {"x": 2.0}},
+    {"number": 1, "value": 4.0, "state": "COMPLETE", "config": {"x": 4.0}},
+]
+
+
+def test_rerank_picks_the_finalist_that_beats_the_baseline():
+    best_config, info = _rerank(_StubAdapter(), _TRIALS)
+    assert best_config == {"x": 2.0}
+    assert info["baseline_value"] == 5.0 and info["best_value"] == 2.0
+
+
+def test_rerank_tie_goes_to_the_baseline():
+    trials = [{"number": 0, "value": 5.0, "state": "COMPLETE", "config": {"x": 5.0}}]
+    best_config, _ = _rerank(_StubAdapter(), trials)
+    assert best_config == {}
+
+
+def test_rerank_publishes_the_baseline_when_it_fails_to_score():
+    """No measured baseline means no finalist can prove itself — the caller's own
+    hyperparameters ship, preserving the never-worse-than-untuned guarantee."""
+    best_config, info = _rerank(_StubAdapter(fail_baseline=True), _TRIALS)
+    assert best_config == {}
+    assert info["baseline_value"] is None
+    # The finalists' scores are still recorded for the audit trail.
+    assert [r["holdout_mae"] for r in info["candidates"]] == [None, 2.0, 4.0]
+
+
+def test_run_hpo_end_to_end_writes_the_artifact_contract(tmp_path):
+    """A tiny real search (Optuna backend, stub objective) produces the full artifact set
+    with the backend-independent schema: one `completed` bool column, a baseline row, and
+    same-basis best/baseline values in best_config.json."""
+    import json
+
+    import pandas as pd
+
+    from workbench.training.hpo_harness import FloatRange
+    from workbench.training.hpo_runner import run_hpo
+
+    train_df = pd.DataFrame({"feat": [float(i) for i in range(20)], "y": [float(i % 7) for i in range(20)]})
+    published = run_hpo(
+        train_df,
+        train_df.iloc[0:0],
+        {"n_folds": 2, "split_strategy": "random", "seed": 42, "hpo": {"n_trials": 4}},
+        {"n_trials": 4, "backend": "optuna", "rerank_top_k": 2},
+        adapter=_StubAdapter(),
+        search_space={"x": FloatRange(0.0, 10.0, default=5.0)},
+        primary_target="y",
+        output_dir=str(tmp_path),
+    )
+    assert "hpo" not in published
+
+    trials = pd.read_csv(tmp_path / "hpo_trials.csv")
+    assert trials["completed"].dtype == bool
+    assert "state" not in trials.columns
+    assert (trials["kind"] == "baseline").sum() == 1
+    assert len(trials) == 5  # 4 trials + the baseline row
+
+    best = json.loads((tmp_path / "best_config.json").read_text())
+    assert best["search_baseline_value"] == 5.0
+    assert best["baseline_value"] == 5.0
+    assert best["best_value"] is not None and best["best_value"] <= best["baseline_value"]
+    assert (tmp_path / "hpo_rerank.csv").exists()

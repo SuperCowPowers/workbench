@@ -283,7 +283,6 @@ if __name__ == "__main__":
         check_dataframe,
         compute_classification_metrics,
         compute_regression_metrics,
-        get_split_indices,
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
@@ -324,6 +323,7 @@ if __name__ == "__main__":
 
     # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
     # scaler, category mappings, and downstream CV/UQ/SHAP never see them. Scored held-out below.
+    from workbench.training.splits import get_split_indices
     from workbench.training.validation import split_validation_set
 
     all_df, holdout_df = split_validation_set(all_df)
@@ -407,7 +407,7 @@ if __name__ == "__main__":
         strategy=split_strategy,
         target_column=target_col,
         test_size=0.2,
-        random_state=42,
+        random_state=hyperparameters["seed"],
         butina_cutoff=butina_cutoff,
     )
     print(f"Split strategy: {split_strategy}")

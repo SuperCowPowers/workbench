@@ -45,7 +45,9 @@ The knobs differ by framework — read them off the object rather than hardcodin
 
 `trials` also carries a `kind` column: the search trials plus one `baseline` row — the
 user's own hyperparameters on the same basis — which is the reference line any plot of the
-search needs. See the `plotting` guide for parallel coordinates.
+search needs. See the `plotting` guide for parallel coordinates. A `completed` boolean
+marks trials that ran the full ensemble (backend-independent); an incomplete trial with a
+`value` was pruned, one without ever scored.
 
 ## Reading the numbers (the part that misleads)
 
