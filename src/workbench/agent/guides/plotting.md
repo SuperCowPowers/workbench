@@ -84,6 +84,9 @@ cluster in and lets you trace a single config across every axis. Data is
 What makes it readable:
 
 - Expand the `hyperparameters` cell into one column per parameter (`json.loads`).
+- Values are scalars: numbers, or dash-strings for shaped knobs (a tapered
+  `ffn_hidden_dim` like `"1024-256-64"`). Plot dash-string knobs as a categorical
+  axis (`str()` every value in that column, then rank the categories).
 - Normalize each axis independently and print its true min/max at the ends.
   Log-scale any parameter spanning orders of magnitude, and say so in its label.
 - Color by the objective with a **divergent** colormap centered on the baseline

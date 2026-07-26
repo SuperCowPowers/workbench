@@ -33,7 +33,20 @@ def test_default_space_is_basic_plus_lr():
     # dropout is held out of the default space to keep the budget on the capacity knobs.
     assert "dropout" not in space
     assert isinstance(space["ffn_hidden_dim"], Choice)
-    assert [1024, 256, 64] in space["ffn_hidden_dim"].options  # tapered head is a choice
+    assert "1024-256-64" in space["ffn_hidden_dim"].options  # tapered head is a choice
+
+
+def test_ffn_options_are_scalar_widths_or_parseable_shapes():
+    """Every ffn_hidden_dim option is an int width or a dash-string shape (the pytorch
+    `layers` convention) — one scalar cell per record, so the knob plots directly."""
+    options = chemprop_search_space(("basic",))["ffn_hidden_dim"].options
+    for opt in options:
+        if isinstance(opt, str):
+            widths = [int(x) for x in opt.split("-")]
+            assert len(widths) >= 2 and all(w > 0 for w in widths)
+        else:
+            assert isinstance(opt, int) and opt > 0
+    assert any(isinstance(o, str) for o in options)  # at least one tapered shape
 
 
 def test_lr_group_adds_schedule_knobs():

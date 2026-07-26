@@ -22,8 +22,8 @@ candidate plus a default search space (e.g. :mod:`workbench.training.chemprop_hp
 
 The search space is expressed with backend-agnostic specs (:class:`IntRange`,
 :class:`FloatRange`, :class:`Choice`) that each backend translates to its own
-sampler. ``Choice`` options may be unhashable (e.g. a tapered ``ffn_hidden_dim``
-list like ``[1024, 256, 64]``).
+sampler. ``Choice`` options may be unhashable (e.g. a custom space with list-valued
+knobs).
 """
 
 from __future__ import annotations
@@ -366,8 +366,8 @@ def _run_ray(
     )
 
     # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
-    # Optuna path): OptunaSearch's categorical rejects unhashable options (our tapered
-    # ffn_hidden_dim lists), so passing the raw list only works by warning-and-degrading.
+    # Optuna path): OptunaSearch's categorical rejects unhashable options (list-valued
+    # knobs), so passing the raw list only works by warning-and-degrading.
     param_space, choice_options = _to_ray_space(search_space)
 
     # ASHA advances on this attribute. Reporting the caller's `step` (the model's epoch)
@@ -452,7 +452,7 @@ def _evaluate_ray(eval_fn, configs, *, max_parallel, resources_per_trial):
     from ray import tune
 
     # Configs are captured in the closure and addressed by index — they can hold unhashable
-    # values (a tapered ffn_hidden_dim list) that a Ray param_space would reject.
+    # values (a list-valued knob) that a Ray param_space would reject.
     idx_key, value_key = "_config_index", "value"
 
     def trainable(slot):
@@ -479,7 +479,7 @@ def _to_ray_space(search_space):
 
     Returns ``(param_space, choice_options)`` — ``choice_options`` maps each ``Choice``
     knob to its option list, because those knobs are sampled as an *index* (Ray's caller
-    unwraps them). This keeps unhashable options (tapered ffn lists) out of Optuna's
+    unwraps them). This keeps unhashable options (list-valued knobs) out of Optuna's
     categorical, which only accepts hashables.
     """
     from ray import tune

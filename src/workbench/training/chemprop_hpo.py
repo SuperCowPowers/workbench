@@ -35,13 +35,15 @@ from workbench.training.hpo_runner import HpoAdapter, run_hpo
 _SEARCH_GROUPS = {
     "basic": {
         # depth / ffn_num_layers follow chemprop's canonical search space. hidden_dim spans
-        # 100-2400; small datasets select capacity at the low end. A list-valued
-        # ffn_hidden_dim gives a tapered head, which a scalar width cannot express —
-        # ffn_num_layers is ignored for a list (its length sets the depth).
+        # 100-2400; small datasets select capacity at the low end. A dash-string
+        # ffn_hidden_dim ("1024-256-64", the pytorch `layers` convention) gives a tapered
+        # head, which a scalar width cannot express — ffn_num_layers is ignored for a
+        # shape (its length sets the depth). Every option is a scalar cell in the search
+        # records, so the knob plots directly.
         "depth": IntRange(2, 6, 1, default=6),
         "hidden_dim": IntRange(100, 2400, 100, default=700),
         "ffn_num_layers": IntRange(1, 3, 1, default=2),
-        "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]], default=1800),
+        "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, "1024-256-64", "512-128"], default=1800),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
     # interact (they scale together), so they search as one group. Memory headroom for the

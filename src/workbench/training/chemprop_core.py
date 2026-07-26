@@ -75,6 +75,20 @@ def load_foundation_weights(from_foundation: str) -> tuple:
     return pretrained.message_passing, pretrained.agg
 
 
+def resolve_ffn_shape(ffn_hidden_dim):
+    """``ffn_hidden_dim`` as chemprop consumes it.
+
+    An int is a uniform width (paired with ``ffn_num_layers``); a dash-string
+    (``"1024-256-64"``, the same convention as the pytorch template's ``layers``) or a
+    list of ints is an explicit per-layer shape whose length sets the layer count.
+    Dash-strings are what the search space and recorded hyperparameters use — one
+    scalar cell per knob; lists pass through for callers that build shapes in code.
+    """
+    if isinstance(ffn_hidden_dim, str):
+        return [int(x) for x in ffn_hidden_dim.split("-")]
+    return ffn_hidden_dim
+
+
 def build_ffn(
     task: str,
     input_dim: int,
@@ -92,7 +106,7 @@ def build_ffn(
     time. The mask data itself flows through MoleculeDatapoint, not here.
     """
     dropout = hyperparameters["dropout"]
-    ffn_hidden_dim = hyperparameters["ffn_hidden_dim"]
+    ffn_hidden_dim = resolve_ffn_shape(hyperparameters["ffn_hidden_dim"])
     ffn_num_layers = hyperparameters["ffn_num_layers"]
 
     if task == "classification" and num_classes is not None:

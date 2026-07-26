@@ -72,9 +72,9 @@ DEFAULT_HYPERPARAMETERS = {
     "depth": 6,
     "dropout": 0.1,  # Lower dropout - ensemble provides regularization
     # FFN. ffn_hidden_dim accepts a single int (uniform width, repeated
-    # ffn_num_layers times) or a list of ints for a tapered head, e.g.
-    # [1024, 256, 64]. When a list is given, ffn_num_layers is ignored and
-    # depth is taken from the list length.
+    # ffn_num_layers times) or an explicit per-layer shape — a dash-string
+    # ("1024-256-64", the pytorch `layers` convention) or a list of ints. For a
+    # shape, ffn_num_layers is ignored and depth is taken from its length.
     "ffn_hidden_dim": 1800,
     "ffn_num_layers": 2,
     # Optimizer schedule (Noam-style warmup then decay). Defaults match
@@ -381,7 +381,7 @@ if __name__ == "__main__":
         save_classification_uq,
     )
     from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
-    from workbench.training.chemprop_core import FoldSpec, train_chemprop_fold
+    from workbench.training.chemprop_core import FoldSpec, resolve_ffn_shape, train_chemprop_fold
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
@@ -402,11 +402,12 @@ if __name__ == "__main__":
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
 
-    # A list-valued ffn_hidden_dim sets the FFN layer count directly (chemprop
-    # ignores ffn_num_layers in that case). Keep ffn_num_layers consistent so the
-    # recorded/printed hyperparameters reflect the actual model.
-    if isinstance(hyperparameters.get("ffn_hidden_dim"), list):
-        hyperparameters["ffn_num_layers"] = len(hyperparameters["ffn_hidden_dim"])
+    # A shaped ffn_hidden_dim (dash-string or list) sets the FFN layer count directly
+    # (chemprop ignores ffn_num_layers in that case). Keep ffn_num_layers consistent so
+    # the recorded/printed hyperparameters reflect the actual model.
+    ffn_shape = resolve_ffn_shape(hyperparameters.get("ffn_hidden_dim"))
+    if isinstance(ffn_shape, list):
+        hyperparameters["ffn_num_layers"] = len(ffn_shape)
 
     # butina_cutoff only applies to the butina split; null it otherwise so the
     # recorded hyperparameters don't imply an inactive knob is in effect.
