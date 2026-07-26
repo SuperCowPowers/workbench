@@ -39,6 +39,10 @@ def align_frame(df, category_mappings=None, orig_features=None, compressed_featu
     from workbench.endpoints.inference import convert_categorical_types, decompress_features
 
     df = df.copy()
+    # An empty frame (no validation_ids) has nothing to transform, and decompression
+    # rejects a 0-row column.
+    if df.empty:
+        return df
     if category_mappings:
         df, _ = convert_categorical_types(df, list(category_mappings), category_mappings)
     if compressed_features and any(f in df.columns for f in compressed_features):

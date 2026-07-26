@@ -63,6 +63,10 @@ def align_frame(spec: PyTorchFoldSpec, df):
     from workbench.endpoints.inference import convert_categorical_types, decompress_features
 
     df = df.copy()
+    # An empty frame (no validation_ids) has nothing to transform, and decompression
+    # rejects a 0-row column.
+    if df.empty:
+        return df
     if spec.category_mappings:
         df, _ = convert_categorical_types(df, list(spec.category_mappings), spec.category_mappings)
     if spec.compressed_features and any(f in df.columns for f in spec.compressed_features):

@@ -59,6 +59,14 @@ def test_align_frame_is_idempotent():
     pd.testing.assert_frame_equal(once, twice)
 
 
+def test_align_frame_handles_the_empty_holdout():
+    """No validation_ids means an empty holdout that still has the compressed column —
+    it must pass through rather than trip decompression's 0-row guard."""
+    empty = _raw_frame().iloc[0:0]
+    out = align_frame(_spec(), empty)
+    assert len(out) == 0 and "fingerprint" in out.columns
+
+
 def test_align_frame_without_alignment_state_passes_through():
     """A spec with no fitted state (unit-test scale) aligns to a plain copy."""
     spec = _spec(category_mappings={}, orig_features=None, compressed_features=None, cat_impute_values=None)

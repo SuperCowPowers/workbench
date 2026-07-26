@@ -473,7 +473,7 @@ def rerank_finalists(
         tuple: ``(best_config, info)`` — the config to publish, and a dict carrying
         ``candidates`` (the per-candidate record), the winning and baseline values on the
         re-rank's own basis, and ``fresh_split``. ``info`` is empty when the re-rank is
-        disabled or nothing scored.
+        disabled or there were no completed trials to re-rank.
     """
     from workbench.training.splits import get_split_indices
     from workbench.training.hpo_harness import evaluate_configs

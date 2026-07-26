@@ -144,6 +144,16 @@ def test_align_frame_applies_fitted_transforms_and_is_idempotent():
     pd.testing.assert_frame_equal(once, twice)
 
 
+def test_align_frame_handles_the_empty_holdout():
+    """No validation_ids means an empty holdout that still has the compressed column —
+    it must pass through rather than trip decompression's 0-row guard."""
+    import pandas as pd
+
+    empty = pd.DataFrame({"x1": pd.Series(dtype=float), "fingerprint": pd.Series(dtype=object)})
+    out = align_frame(empty, {"color": ["red"]}, ["x1", "fingerprint"], ["fingerprint"])
+    assert len(out) == 0 and "fingerprint" in out.columns
+
+
 def test_adapter_prepare_frame_without_alignment_state_passes_through():
     """The minimal adapter (unit-test scale) must not require the template's fitted state."""
     import pandas as pd
