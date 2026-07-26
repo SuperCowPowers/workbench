@@ -16,10 +16,14 @@ def test_champion_models():
 
 
 def test_challenger_models():
-    """challenger_models() lists the model inputs of the endpoint's promotion node"""
+    """challenger_models() lists the model inputs of the endpoint's promotion node
+
+    A contest accumulates entrants over time, so this asserts the seeded challengers are
+    present rather than pinning an exact list — a new entrant is expected, not a failure.
+    """
     meta = CachedMeta()
-    assert meta.challenger_models("aqsol-regression") == ["aqsol-regression-1", "aqsol-regression-2"]
-    assert meta.challenger_models("aqsol-class") == ["aqsol-class-1", "aqsol-class-2"]
+    assert {"aqsol-regression-1", "aqsol-regression-2"} <= set(meta.challenger_models("aqsol-regression"))
+    assert {"aqsol-class-1", "aqsol-class-2"} <= set(meta.challenger_models("aqsol-class"))
 
     # Endpoints without a promotion node have no challengers
     assert meta.challenger_models("abalone-regression") == []

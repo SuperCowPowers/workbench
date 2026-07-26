@@ -2,6 +2,9 @@
 
 Pure synthetic objectives — no chemprop/GPU/AWS, so these run in the default
 suite. The Ray backend needs a ray-enabled container and is not covered here.
+
+Optuna is a test dependency (the `dev` extra), so a missing one is a broken
+environment rather than a reason to skip.
 """
 
 import pytest
@@ -15,10 +18,6 @@ from workbench.training.hpo_harness import (
     evaluate_configs,
     run_search,
 )
-
-# The Optuna backend needs the `training` extra; skip the whole module if absent.
-# (hpo_harness itself imports optuna lazily, so the import above works without it.)
-pytest.importorskip("optuna")
 
 
 def _quadratic_objective(config, report):

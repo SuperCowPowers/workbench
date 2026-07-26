@@ -48,12 +48,18 @@ class HpoAdapter:
     """
 
     def prepare_frame(self, df):
-        """Drop rows the framework cannot train or predict on.
+        """Align a frame to what training expects — row filtering, fitted transforms.
 
         Runs on the training and holdout frames before anything else, so predictions stay
-        positionally aligned with the target array.
+        positionally aligned with the target array. The holdout arrives raw (it is split
+        off before the template's preprocessing), while the training frame has already
+        been through it — so an override must be idempotent.
         """
         return df
+
+    def split_kwargs(self) -> dict:
+        """Extra ``get_split_indices`` kwargs, e.g. the SMILES column for scaffold folds."""
+        return {}
 
     def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
         """Build the ``(config, report) -> float`` objective for one search pass.
@@ -126,7 +132,6 @@ def run_hpo(
     adapter: HpoAdapter,
     search_space: dict,
     primary_target: str,
-    smiles_column: str | None = None,
     output_dir: str | None = None,
 ) -> dict:
     """Run the search and return the hyperparameters to publish the tuned model with.
@@ -158,13 +163,12 @@ def run_hpo(
         adapter: the framework's :class:`HpoAdapter`.
         search_space: resolved ``{knob: Spec}`` for the framework.
         primary_target: the target column the objective scores.
-        smiles_column: the molecule column, when the fold strategy needs one.
         output_dir: where to write the HPO artifacts.
 
     Returns:
         dict: phase-2 hyperparameters — no ``hpo`` block.
     """
-    from workbench.endpoints.inference import get_split_indices
+    from workbench.training.splits import get_split_indices
     from workbench.training.hpo_harness import run_search
 
     # The caller's holdout frame is split off *before* the template's own row filtering, so
@@ -207,9 +211,8 @@ def run_hpo(
         strategy=strategy,
         test_size=0.2,
         butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
+        **adapter.split_kwargs(),
     )
-    if smiles_column:
-        split_kwargs["smiles_column"] = smiles_column
     folds = get_split_indices(train_df, random_state=seed, **split_kwargs)
     if len(val_df):
         metric, where = "holdout_mae", f"held-out validation set ({len(val_df)} rows)"
@@ -306,54 +309,109 @@ def run_hpo(
         best_config, rerank = result.best_config, {}
 
     if output_dir:
+        record = best_config_record(
+            result,
+            metric=metric,
+            counts=counts,
+            best_config=best_config,
+            rerank=rerank,
+            search_baseline_value=search_baseline_value,
+        )
         with open(os.path.join(output_dir, "best_config.json"), "w") as fp:
-            json.dump(
-                {
-                    "metric": metric,
-                    # completed/pruned/failed. Only `completed` trials were shortlist-eligible,
-                    # so this is how much of the budget actually backed the result.
-                    "trial_counts": counts,
-                    "best_config": best_config,
-                    # best_value and baseline_value share the re-rank's basis, so their
-                    # difference is the real margin the publish decision turned on.
-                    "best_value": rerank.get("best_value"),
-                    "baseline_value": rerank.get("baseline_value"),
-                    # Phase 1's own number. When rerank_fresh_split is true the re-rank scored
-                    # on a different fold partition, so this is NOT comparable to the two
-                    # above — partitions differ in difficulty.
-                    "search_best_value": result.best_value,
-                    "search_baseline_value": search_baseline_value,
-                    "search_best_config": result.best_config,
-                    "rerank_fresh_split": rerank.get("fresh_split", False),
-                    "rerank": rerank.get("candidates", []),
-                },
-                fp,
-                indent=2,
-                default=str,
-            )
-        # Effective values for every searched knob, so the baseline plots alongside the trials.
-        baseline_row = {
-            "number": -1,
-            "value": search_baseline_value,
-            "hyperparameters": effective_config({}, base_hyperparameters, search_space),
-            "kind": "baseline",
-        }
-        # Match the backend's completion-flag key so the frame stays rectangular.
-        ray_shape = bool(result.trials) and "completed" in result.trials[0]
-        baseline_row["completed" if ray_shape else "state"] = True if ray_shape else "COMPLETE"
-        trial_rows = [
-            {
-                **{k: v for k, v in t.items() if k != "config"},
-                "hyperparameters": effective_config(t.get("config") or {}, base_hyperparameters, search_space),
-                "kind": "trial",
-            }
-            for t in result.trials
-        ] + [baseline_row]
-        _write_records(trial_rows, os.path.join(output_dir, "hpo_trials.csv"))
+            json.dump(record, fp, indent=2, default=str)
+        rows = trial_records(result.trials, base_hyperparameters, search_space, search_baseline_value)
+        _write_records(rows, os.path.join(output_dir, "hpo_trials.csv"))
         if rerank.get("candidates"):
             _write_records(rerank["candidates"], os.path.join(output_dir, "hpo_rerank.csv"))
 
     return adapter.merge_config(base_hyperparameters, best_config)
+
+
+def best_config_record(result, *, metric, counts, best_config, rerank, search_baseline_value) -> dict:
+    """The ``best_config.json`` payload — the search's decision and what it turned on.
+
+    Read by :func:`workbench.utils.model_utils.get_hpo_results`. The two value pairs are
+    on *different bases* and must not be mixed:
+
+    * ``best_value`` / ``baseline_value`` — the re-rank's basis, so their difference is
+      the real margin the publish decision turned on. This is the pair to quote.
+    * ``search_best_value`` / ``search_baseline_value`` — phase 1's own numbers, the same
+      basis as every row in ``hpo_trials.csv``. When ``rerank_fresh_split`` is true the
+      re-rank scored on a different fold partition, so these are not comparable to the
+      pair above — partitions differ in difficulty.
+
+    Args:
+        result: the :class:`~workbench.training.hpo_harness.HpoResult` from the search.
+        metric: the objective key (``cv_mae`` or ``holdout_mae``).
+        counts: :func:`summarize_trials` output — completed/pruned/failed. Only
+            ``completed`` trials were shortlist-eligible, so this is how much of the
+            budget actually backed the result.
+        best_config: the config being published.
+        rerank: :func:`rerank_finalists`' info dict (empty when it was skipped).
+        search_baseline_value: the caller's own hyperparameters on the search basis.
+
+    Returns:
+        dict: json-serializable record.
+    """
+    return {
+        "metric": metric,
+        "trial_counts": counts,
+        "best_config": best_config,
+        "best_value": rerank.get("best_value"),
+        "baseline_value": rerank.get("baseline_value"),
+        "search_best_value": result.best_value,
+        "search_baseline_value": search_baseline_value,
+        "search_best_config": result.best_config,
+        "rerank_fresh_split": rerank.get("fresh_split", False),
+        "rerank": rerank.get("candidates", []),
+    }
+
+
+def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseline_value) -> list:
+    """The ``hpo_trials.csv`` rows — every trial plus the baseline, one schema.
+
+    Read by :func:`workbench.utils.model_utils.get_hpo_results`. Columns:
+
+    * ``number`` — the trial's index; ``-1`` for the baseline row.
+    * ``value`` — the objective. On a ``completed`` trial this is the full-ensemble
+      score; on a pruned one it is a *partial*-ensemble score, which can read lower.
+    * ``completed`` — bool, normalized across backends (Optuna reports a state name,
+      Ray a flag). Pruned vs failed stays recoverable: an incomplete trial with a
+      ``value`` was pruned, one without ever scored.
+    * ``hyperparameters`` — every searched knob and the value it actually trained at,
+      so the table is rectangular and NaN-free (see :func:`effective_config`).
+    * ``kind`` — ``trial`` or ``baseline``. The baseline is the caller's own
+      hyperparameters on the search basis: the reference line any plot of the search
+      needs.
+
+    Args:
+        trials: the per-trial records from :class:`~workbench.training.hpo_harness.HpoResult`.
+        base_hyperparameters: the caller's hyperparameters.
+        search_space: the resolved ``{knob: Spec}`` space.
+        baseline_value: the baseline's objective on the search basis.
+
+    Returns:
+        list: one dict per trial, with the baseline row last.
+    """
+    rows = [
+        {
+            **{k: v for k, v in trial.items() if k not in ("config", "state", "completed")},
+            "completed": trial_completed(trial),
+            "hyperparameters": effective_config(trial.get("config") or {}, base_hyperparameters, search_space),
+            "kind": "trial",
+        }
+        for trial in trials
+    ]
+    rows.append(
+        {
+            "number": -1,
+            "value": baseline_value,
+            "completed": True,
+            "hyperparameters": effective_config({}, base_hyperparameters, search_space),
+            "kind": "baseline",
+        }
+    )
+    return rows
 
 
 def _json_scalar(value):
@@ -454,7 +512,9 @@ def rerank_finalists(
     (winner's curse). Re-scoring a shortlist independently and selecting on *that* is the
     fix. The user's own hyperparameters ride along as a candidate, which is what keeps HPO
     from making the model worse: a search that found nothing real loses to the baseline and
-    the baseline is what gets published. Ties go to the baseline.
+    the baseline is what gets published. Ties go to the baseline, and so does a re-rank
+    whose baseline failed to score — a finalist publishes only by beating a measured
+    baseline.
 
     Independence comes from a fresh seed (trials are deterministic, so the search seed would
     replay rather than redraw) and, in ``cv_mae`` mode, a fresh fold partition as well — the
@@ -466,9 +526,9 @@ def rerank_finalists(
         tuple: ``(best_config, info)`` — the config to publish, and a dict carrying
         ``candidates`` (the per-candidate record), the winning and baseline values on the
         re-rank's own basis, and ``fresh_split``. ``info`` is empty when the re-rank is
-        disabled or nothing scored.
+        disabled or there were no completed trials to re-rank.
     """
-    from workbench.endpoints.inference import get_split_indices
+    from workbench.training.splits import get_split_indices
     from workbench.training.hpo_harness import evaluate_configs
 
     if top_k <= 0:
@@ -508,10 +568,6 @@ def rerank_finalists(
     values = evaluate_configs(
         evaluate, candidates, backend=backend, max_parallel=rerank_parallel, resources_per_trial=resources
     )
-    if values[0] is None:
-        # Without a baseline score the comparison is finalist-vs-finalist, so the guarantee
-        # that HPO can't ship something worse than the caller's own hyperparameters is gone.
-        print("[hpo] re-rank WARNING: the baseline failed to score — publishing WITHOUT the baseline guard")
     # The shortlist is best-first, so candidate i>0 holds the search's rank-i config and the
     # label names that rank. The baseline overrides nothing, so its row is the caller's own
     # effective config.
@@ -525,13 +581,20 @@ def rerank_finalists(
     ]
     info = {"candidates": rows, "fresh_split": metric == "cv_mae", "baseline_value": values[0], "best_value": None}
 
-    scored = [(v, i) for i, v in enumerate(values) if v is not None]
-    if not scored:
-        print("[hpo] re-rank: no candidate scored; publishing the search winner")
-        return result.best_config, info
+    if values[0] is None:
+        # Beating the baseline on this basis is the bar for publishing a searched config;
+        # with no baseline score, no finalist can clear it — so the caller's own
+        # hyperparameters ship (phase 2 trains them fresh).
+        print(
+            "[hpo] re-rank: the baseline failed to score, so no searched config can prove itself "
+            "against it — publishing the caller's own hyperparameters"
+        )
+        return {}, info
 
     # min() over (value, index) returns the first minimum, and the baseline is index 0 — so
-    # an exact tie is resolved in the baseline's favor.
+    # an exact tie is resolved in the baseline's favor. The baseline scored, so `scored` is
+    # never empty.
+    scored = [(v, i) for i, v in enumerate(values) if v is not None]
     best_value, best_index = min(scored)
     baseline_value = values[0]
     info["best_value"] = best_value

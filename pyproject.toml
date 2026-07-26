@@ -92,7 +92,23 @@ training = [
     "ray[tune]",
     "optuna",
 ]
-dev = ["tox", "pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black", "aws-cdk-lib"]
+# `optuna` is here as well as in `training`: the test suite exercises the HPO harness's
+# Optuna backend, and `training` is deliberately outside `all`. Listing it in both keeps
+# it on the endpoint-import-smoke forbidden list (derived from non-dev extras) while
+# still reaching the test environment. `ray[tune]` stays training-only — the Ray backend
+# needs a ray-enabled container and has no test coverage here.
+dev = [
+    "tox",
+    "pytest",
+    "pytest-sugar",
+    "pytest-xdist",
+    "coverage",
+    "pytest-cov",
+    "flake8",
+    "black",
+    "aws-cdk-lib",
+    "optuna",
+]
 # Docs toolchain (mkdocs site + mkdocstrings API reference). Kept in sync with .github/workflows/deploy-docs.yml
 docs = [
     # Cap mkdocs/material below 2.0/10 — MkDocs 2.0 is a breaking rewrite that Material 10 will require

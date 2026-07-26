@@ -6,8 +6,8 @@ The framework-agnostic orchestration is covered by ``hpo_runner_test.py``.
 
 # Workbench Imports
 from workbench.training.hpo_harness import FloatRange, IntRange
-from workbench.training.xgb_core import xgb_params
-from workbench.training.xgb_hpo import _xgb_threads, resolve_search_space, xgb_search_space
+from workbench.training.xgb_core import align_frame, xgb_params
+from workbench.training.xgb_hpo import XGBAdapter, _xgb_threads, resolve_search_space, xgb_search_space
 
 
 def test_default_space_is_basic_plus_reg():
@@ -126,3 +126,38 @@ def test_every_searched_knob_declares_a_default():
     """No knob may leave its default unset — that is what keeps search records NaN-free."""
     missing = [knob for knob, spec in xgb_search_space().items() if spec.default is None]
     assert not missing, f"searched knobs with no declared default: {missing}"
+
+
+def test_align_frame_applies_fitted_transforms_and_is_idempotent():
+    """A raw holdout gets the training mappings + decompression; a second pass is a no-op."""
+    import pandas as pd
+
+    df = pd.DataFrame({"x1": [1.0, 2.0], "color": ["blue", "red"], "fingerprint": ["10", "01"], "y": [0.1, 0.2]})
+    once = align_frame(df, {"color": ["red", "blue"]}, ["x1", "color", "fingerprint"], ["fingerprint"])
+
+    assert str(once["color"].dtype) == "category"
+    assert "fingerprint" not in once.columns
+    assert {"fin_0", "fin_1"} <= set(once.columns)
+    assert "fingerprint" in df.columns  # input not mutated
+
+    twice = align_frame(once, {"color": ["red", "blue"]}, ["x1", "color", "fingerprint"], ["fingerprint"])
+    pd.testing.assert_frame_equal(once, twice)
+
+
+def test_align_frame_handles_the_empty_holdout():
+    """No validation_ids means an empty holdout that still has the compressed column —
+    it must pass through rather than trip decompression's 0-row guard."""
+    import pandas as pd
+
+    empty = pd.DataFrame({"x1": pd.Series(dtype=float), "fingerprint": pd.Series(dtype=object)})
+    out = align_frame(empty, {"color": ["red"]}, ["x1", "fingerprint"], ["fingerprint"])
+    assert len(out) == 0 and "fingerprint" in out.columns
+
+
+def test_adapter_prepare_frame_without_alignment_state_passes_through():
+    """The minimal adapter (unit-test scale) must not require the template's fitted state."""
+    import pandas as pd
+
+    adapter = XGBAdapter(target="y", features=["x1"])
+    df = pd.DataFrame({"x1": [1.0, 2.0], "y": [0.1, 0.2]})
+    pd.testing.assert_frame_equal(adapter.prepare_frame(df), df)

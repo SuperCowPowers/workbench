@@ -91,11 +91,30 @@ class XGBAdapter(HpoAdapter):
     """Trains and scores one XGBoost candidate for :func:`run_hpo`.
 
     Regression only — the objective is MAE, and the runner's re-rank compares on it.
+    ``category_mappings``/``orig_features``/``compressed_features`` are the template's
+    fitted frame-alignment state; :meth:`prepare_frame` applies it to the raw holdout.
     """
 
-    def __init__(self, *, target: str, features: list):
+    def __init__(
+        self,
+        *,
+        target: str,
+        features: list,
+        category_mappings: dict | None = None,
+        orig_features: list | None = None,
+        compressed_features: list | None = None,
+    ):
         self.target = target
         self.features = list(features)
+        self.category_mappings = category_mappings
+        self.orig_features = orig_features
+        self.compressed_features = compressed_features
+
+    def prepare_frame(self, df):
+        """Apply the template's fitted categorical/decompression transforms."""
+        from workbench.training.xgb_core import align_frame
+
+        return align_frame(df, self.category_mappings, self.orig_features, self.compressed_features)
 
     def resources_per_trial(self, hpo_block, backend):
         """Ray only. One trial claims the cores its estimator is configured to use."""
@@ -167,23 +186,32 @@ def run_xgb_hpo(
     *,
     target: str,
     features: list,
-    smiles_column: str | None = None,
+    category_mappings: dict | None = None,
+    orig_features: list | None = None,
+    compressed_features: list | None = None,
     output_dir: str | None = None,
 ) -> dict:
     """Run the XGBoost hyperparameter search; returns the phase-2 hyperparameters.
 
-    See :func:`workbench.training.hpo_runner.run_hpo` for the search/re-rank contract and
-    the ``hpo`` block's keys.
+    ``val_df`` may be the raw holdout — the adapter routes both frames through the
+    template's fitted preprocessing. See :func:`workbench.training.hpo_runner.run_hpo`
+    for the search/re-rank contract and the ``hpo`` block's keys.
     """
+    adapter = XGBAdapter(
+        target=target,
+        features=features,
+        category_mappings=category_mappings,
+        orig_features=orig_features,
+        compressed_features=compressed_features,
+    )
     return run_hpo(
         train_df,
         val_df,
         base_hyperparameters,
         hpo_block,
-        adapter=XGBAdapter(target=target, features=features),
+        adapter=adapter,
         search_space=resolve_search_space(hpo_block.get("search_space")),
         primary_target=target,
-        smiles_column=smiles_column,
         output_dir=output_dir,
     )
 

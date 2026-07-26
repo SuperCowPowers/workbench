@@ -283,16 +283,11 @@ if __name__ == "__main__":
         check_dataframe,
         compute_classification_metrics,
         compute_regression_metrics,
-        get_split_indices,
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
     )
-    from workbench.endpoints.pytorch_utils import (
-        create_model,
-        save_model,
-        train_model,
-    )
+    from workbench.endpoints.pytorch_utils import save_model
     from workbench.endpoints.uq_harness import (
         calibrate_classification_confidence,
         save_classification_uq,
@@ -328,6 +323,7 @@ if __name__ == "__main__":
 
     # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
     # scaler, category mappings, and downstream CV/UQ/SHAP never see them. Scored held-out below.
+    from workbench.training.splits import get_split_indices
     from workbench.training.validation import split_validation_set
 
     all_df, holdout_df = split_validation_set(all_df)
@@ -411,7 +407,7 @@ if __name__ == "__main__":
         strategy=split_strategy,
         target_column=target_col,
         test_size=0.2,
-        random_state=42,
+        random_state=hyperparameters["seed"],
         butina_cutoff=butina_cutoff,
     )
     print(f"Split strategy: {split_strategy}")
@@ -427,45 +423,53 @@ if __name__ == "__main__":
     scaler.fit(all_df, continuous_cols)
     print(f"Fitted scaler on {len(continuous_cols)} continuous features")
 
+    # The fold-invariant training spec: model shape plus the fitted preprocessing
+    # (scaler, category mappings, frame-alignment state). Both the HPO trials and the
+    # publish loop below train through this spec, so a searched config maps to the
+    # exact model that ships.
+    from workbench.training.pytorch_core import PyTorchFoldSpec, align_frame, train_pytorch_fold
+
+    fold_spec = PyTorchFoldSpec(
+        hyperparameters=hyperparameters,
+        target=target,
+        continuous_cols=continuous_cols,
+        categorical_cols=categorical_cols,
+        category_mappings=category_mappings,
+        categorical_cardinalities=categorical_cardinalities,
+        scaler=scaler,
+        n_outputs=n_outputs,
+        task=task,
+        device=device,
+        orig_features=orig_features,
+        compressed_features=compressed_features,
+        cat_impute_values=cat_impute_values,
+    )
+
     # -------------------------------------------------------------------------
     # Hyperparameter search (optional)
     # -------------------------------------------------------------------------
     # When an `hpo` block is present, search for the best config (held-out holdout_df
     # objective, else a scaffold split) and train the winner below. Trials run in-process
-    # and ephemerally — no Workbench models/endpoints are created for them.
+    # and ephemerally — no Workbench models/endpoints are created for them. The raw
+    # holdout is aligned by the adapter through the spec's fitted preprocessing.
     hpo_block = hyperparameters.get("hpo")
     if hpo_block and model_type == "classifier":
         print("[hpo] NOTE: hyperparameter search is regression-only (v1); ignoring the `hpo` block.")
         hpo_block = None
     if hpo_block:
-        from workbench.training.pytorch_hpo import run_pytorch_hpo
+        from dataclasses import replace
 
-        # The search scores held-out rows through the SAME fitted objects used for training.
-        hpo_holdout = holdout_df
-        if len(hpo_holdout):
-            hpo_holdout, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
-            if compressed_features:
-                hpo_holdout, _ = decompress_features(hpo_holdout, orig_features, compressed_features)
-            for col in categorical_cols:
-                if hpo_holdout[col].isna().any():
-                    hpo_holdout[col] = hpo_holdout[col].fillna(cat_impute_values[col])
+        from workbench.training.pytorch_hpo import run_pytorch_hpo
 
         hyperparameters = run_pytorch_hpo(
             all_df,
-            hpo_holdout,
+            holdout_df,
             hyperparameters,
             hpo_block,
-            target=target,
-            continuous_cols=continuous_cols,
-            categorical_cols=categorical_cols,
-            category_mappings=category_mappings,
-            categorical_cardinalities=categorical_cardinalities,
-            scaler=scaler,
-            n_outputs=n_outputs,
-            task=task,
-            device=device,
+            spec=fold_spec,
             output_dir=args.output_data_dir,
         )
+        fold_spec = replace(fold_spec, hyperparameters=hyperparameters)
         print(f"Hyperparameters (tuned): {hyperparameters}")
 
     hidden_layers = [int(x) for x in hyperparameters["layers"].split("-")]
@@ -497,35 +501,13 @@ if __name__ == "__main__":
             df_val, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
 
-        # Create model
-        torch.manual_seed(hyperparameters["seed"] + fold_idx)
-        model = create_model(
-            n_continuous=len(continuous_cols),
-            categorical_cardinalities=categorical_cardinalities,
-            hidden_layers=hidden_layers,
-            n_outputs=n_outputs,
-            task=task,
-            dropout=hyperparameters["dropout"],
-        )
-
-        # Train
-        model, history = train_model(
-            model,
-            train_x_cont,
-            train_x_cat,
-            train_y,
-            val_x_cont,
-            val_x_cat,
-            val_y,
-            task=task,
-            max_epochs=hyperparameters["max_epochs"],
-            patience=hyperparameters["early_stopping_patience"],
-            batch_size=hyperparameters["batch_size"],
-            learning_rate=hyperparameters["learning_rate"],
-            weight_decay=hyperparameters["weight_decay"],
-            loss=hyperparameters["loss"],
-            device=device,
-            restore_best_weights=hyperparameters["restore_best_weights"],
+        # Same trainer the HPO objective scores its trials with, so a searched config
+        # maps to this exact model.
+        model, _ = train_pytorch_fold(
+            fold_spec,
+            (train_x_cont, train_x_cat, train_y),
+            (val_x_cont, val_x_cat, val_y),
+            fold_idx=fold_idx,
         )
         ensemble_models.append(model)
 
@@ -765,12 +747,7 @@ if __name__ == "__main__":
         print("=" * 50)
 
         # Preprocess held-out rows through the SAME fitted objects used for training
-        h_df, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
-        if compressed_features:
-            h_df, _ = decompress_features(h_df, orig_features, compressed_features)
-        for col in categorical_cols:
-            if h_df[col].isna().any():
-                h_df[col] = h_df[col].fillna(cat_impute_values[col])
+        h_df = align_frame(fold_spec, holdout_df)
         h_cont, h_cat, _, _, _ = prepare_data(
             h_df, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
         )

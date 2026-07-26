@@ -45,7 +45,9 @@ The knobs differ by framework — read them off the object rather than hardcodin
 
 `trials` also carries a `kind` column: the search trials plus one `baseline` row — the
 user's own hyperparameters on the same basis — which is the reference line any plot of the
-search needs. See the `plotting` guide for parallel coordinates.
+search needs. See the `plotting` guide for parallel coordinates. A `completed` boolean
+marks trials that ran the full ensemble (backend-independent); an incomplete trial with a
+`value` was pruned, one without ever scored.
 
 ## Reading the numbers (the part that misleads)
 
@@ -67,7 +69,9 @@ number from one is not comparable to the other and can even look better. Never p
 **A baseline win is a legitimate outcome, not a failed run.** If `best_config` is
 empty or matches the user's own hyperparameters, the search found nothing that beat
 their defaults and the untuned model was published. Report that plainly — it means
-HPO cost GPU time and confirmed the existing settings.
+HPO cost GPU time and confirmed the existing settings. One exception to check: an empty
+`best_config` with a null `baseline_value` means the baseline never scored, so nothing
+could be measured against it — the untuned config shipped by default, not by winning.
 
 ## Judging the search space
 

@@ -158,3 +158,8 @@ def test_explicit_gpus_per_trial_wins_over_the_default():
 
 def test_optuna_backend_requests_no_ray_resources():
     assert _adapter(["pec50", "logd"]).resources_per_trial({}, "optuna") is None
+
+
+def test_split_kwargs_names_the_molecule_column():
+    """Scaffold/butina folds need the SMILES column; the adapter is what knows its name."""
+    assert _adapter(["pec50"]).split_kwargs() == {"smiles_column": "smiles"}
