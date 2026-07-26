@@ -6,9 +6,9 @@ The PyTorch adapter for :mod:`workbench.training.hpo_runner`: a default search s
 published in is the point — a config selected as a lone model does not carry over to an
 ensemble. The runner owns everything around that: selection, the re-rank, the artifacts.
 
-Trials build and train through :mod:`workbench.endpoints.pytorch_utils` — the same
-``create_model`` / ``train_model`` the template publishes with — so a searched config maps
-to the identical architecture and optimizer.
+Trials train through :func:`workbench.training.pytorch_core.train_pytorch_fold` — the
+same recipe the template publishes with — so a searched config maps to the identical
+architecture, seeding, and optimizer.
 
 Training-only; imported **only inside the PyTorch template's ``__main__``** (deferred).
 """
@@ -95,33 +95,20 @@ def resolve_search_space(spec) -> dict:
 class PyTorchAdapter(HpoAdapter):
     """Trains and scores one PyTorch tabular candidate for :func:`run_hpo`.
 
-    Carries the fitted preprocessing the template built (scaler, category mappings) so a
-    trial sees exactly the inputs the published model will. Regression only — the
-    objective is MAE.
+    Carries the template's :class:`~workbench.training.pytorch_core.PyTorchFoldSpec` —
+    the fitted preprocessing (scaler, category mappings) and model shape — so a trial
+    sees exactly the inputs the published model will. Regression only — the objective
+    is MAE.
     """
 
-    def __init__(
-        self,
-        *,
-        target: str,
-        continuous_cols: list,
-        categorical_cols: list,
-        category_mappings: dict,
-        categorical_cardinalities: list,
-        scaler,
-        n_outputs: int = 1,
-        task: str = "regression",
-        device: str = "cpu",
-    ):
-        self.target = target
-        self.continuous_cols = list(continuous_cols)
-        self.categorical_cols = list(categorical_cols)
-        self.category_mappings = category_mappings
-        self.categorical_cardinalities = list(categorical_cardinalities)
-        self.scaler = scaler
-        self.n_outputs = n_outputs
-        self.task = task
-        self.device = device
+    def __init__(self, *, spec):
+        self.spec = spec
+
+    def prepare_frame(self, df):
+        """Apply the template's fitted transforms (mappings, decompression, imputation)."""
+        from workbench.training.pytorch_core import align_frame
+
+        return align_frame(self.spec, df)
 
     def resources_per_trial(self, hpo_block, backend):
         """Two trials per GPU roughly saturates one without spilling. Ray only."""
@@ -132,27 +119,35 @@ class PyTorchAdapter(HpoAdapter):
     def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
         """Build the ensemble PyTorch ``trial_fn`` (closes over the folds and eval data).
 
-        Each trial trains one MLP per fold and scores the ensemble the way it is deployed:
+        Each trial trains one MLP per fold through
+        :func:`workbench.training.pytorch_core.train_pytorch_fold` — the same recipe the
+        template publishes with, so a trial's members are seeded, built, and
+        early-stopped identically — and scores the ensemble the way it is deployed:
 
         * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
           members' mean prediction, i.e. the real ensemble's held-out error.
         * ``cv_mae`` — each member is scored on its own out-of-fold rows and the objective is
           the mean across folds.
         """
-        import numpy as np
-        import torch
+        from dataclasses import replace
 
-        from workbench.endpoints.pytorch_utils import create_model, predict, prepare_data, train_model
+        import numpy as np
+
+        from workbench.endpoints.pytorch_utils import predict, prepare_data
+        from workbench.training.pytorch_core import train_pytorch_fold
+
+        spec = self.spec
 
         def prep(df, with_target=True):
-            return prepare_data(
+            tensors = prepare_data(
                 df,
-                self.continuous_cols,
-                self.categorical_cols,
-                self.target if with_target else None,
-                self.category_mappings,
-                scaler=self.scaler,
+                spec.continuous_cols,
+                spec.categorical_cols,
+                spec.target if with_target else None,
+                spec.category_mappings,
+                scaler=spec.scaler,
             )
+            return tensors[:3]  # (x_cont, x_cat, y)
 
         # Tensors don't depend on the trial config, so build them once rather than once per
         # trial — for a 250-trial search that is the difference between prep dominating the
@@ -163,48 +158,21 @@ class PyTorchAdapter(HpoAdapter):
         ]
         holdout = bool(len(val_df))
         if holdout:
-            eval_cont, eval_cat, _, _, _ = prep(val_df, with_target=False)
-            eval_y = val_df[self.target].to_numpy(dtype=float)
+            eval_cont, eval_cat, _ = prep(val_df, with_target=False)
+            eval_y = val_df[spec.target].to_numpy(dtype=float)
 
         def trial_fn(config, report):
-            merged = self.merge_config(hyperparameters, config)
-            hidden_layers = [int(x) for x in str(merged["layers"]).split("-")]
+            trial_spec = replace(spec, hyperparameters=self.merge_config(hyperparameters, config), verbose=False)
 
             member_preds, fold_maes = [], []
-            for fold_idx, ((tr_cont, tr_cat, tr_y, _, _), (va_cont, va_cat, va_y, _, _)) in enumerate(prepared):
-                torch.manual_seed(merged.get("seed", 42) + fold_idx)
-                model = create_model(
-                    n_continuous=len(self.continuous_cols),
-                    categorical_cardinalities=self.categorical_cardinalities,
-                    hidden_layers=hidden_layers,
-                    n_outputs=self.n_outputs,
-                    task=self.task,
-                    dropout=merged["dropout"],
-                )
-                model, _ = train_model(
-                    model,
-                    tr_cont,
-                    tr_cat,
-                    tr_y,
-                    va_cont,
-                    va_cat,
-                    va_y,
-                    task=self.task,
-                    max_epochs=merged["max_epochs"],
-                    patience=merged["early_stopping_patience"],
-                    batch_size=merged["batch_size"],
-                    learning_rate=merged["learning_rate"],
-                    weight_decay=merged["weight_decay"],
-                    loss=merged["loss"],
-                    device=self.device,
-                    restore_best_weights=merged["restore_best_weights"],
-                    verbose=False,
-                )
+            for fold_idx, (train_tensors, val_tensors) in enumerate(prepared):
+                model, _ = train_pytorch_fold(trial_spec, train_tensors, val_tensors, fold_idx=fold_idx)
 
                 if holdout:
                     member_preds.append(predict(model, eval_cont, eval_cat).flatten())
                     running = float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
                 else:
+                    va_cont, va_cat, va_y = val_tensors
                     fold_preds = predict(model, va_cont, va_cat).flatten()
                     fold_maes.append(float(np.nanmean(np.abs(fold_preds - va_y.numpy().flatten()))))
                     running = float(np.mean(fold_maes))
@@ -224,42 +192,24 @@ def run_pytorch_hpo(
     base_hyperparameters: dict,
     hpo_block: dict,
     *,
-    target: str,
-    continuous_cols: list,
-    categorical_cols: list,
-    category_mappings: dict,
-    categorical_cardinalities: list,
-    scaler,
-    n_outputs: int = 1,
-    task: str = "regression",
-    device: str = "cpu",
-    smiles_column: str | None = None,
+    spec,
     output_dir: str | None = None,
 ) -> dict:
     """Run the PyTorch hyperparameter search; returns the phase-2 hyperparameters.
 
-    See :func:`workbench.training.hpo_runner.run_hpo` for the search/re-rank contract and
+    ``spec`` is the template's :class:`~workbench.training.pytorch_core.PyTorchFoldSpec`;
+    ``val_df`` may be the raw holdout — the adapter routes both frames through the
+    fitted preprocessing the spec carries. See
+    :func:`workbench.training.hpo_runner.run_hpo` for the search/re-rank contract and
     the ``hpo`` block's keys.
     """
-    adapter = PyTorchAdapter(
-        target=target,
-        continuous_cols=continuous_cols,
-        categorical_cols=categorical_cols,
-        category_mappings=category_mappings,
-        categorical_cardinalities=categorical_cardinalities,
-        scaler=scaler,
-        n_outputs=n_outputs,
-        task=task,
-        device=device,
-    )
     return run_hpo(
         train_df,
         val_df,
         base_hyperparameters,
         hpo_block,
-        adapter=adapter,
+        adapter=PyTorchAdapter(spec=spec),
         search_space=resolve_search_space(hpo_block.get("search_space")),
-        primary_target=target,
-        smiles_column=smiles_column,
+        primary_target=spec.target,
         output_dir=output_dir,
     )

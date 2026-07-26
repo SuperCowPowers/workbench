@@ -163,6 +163,9 @@ class ChempropAdapter(HpoAdapter):
         _, valid = create_molecule_datapoints(df[self.smiles_column].tolist())
         return df.iloc[valid].reset_index(drop=True)
 
+    def split_kwargs(self) -> dict:
+        return {"smiles_column": self.smiles_column}
+
     def merge_config(self, hyperparameters, config) -> dict:
         return merge_best_config(hyperparameters, config)
 
@@ -297,7 +300,6 @@ def run_chemprop_hpo(
         adapter=adapter,
         search_space=resolve_search_space(hpo_block.get("search_space")),
         primary_target=list(target_columns)[0],
-        smiles_column=smiles_column,
         output_dir=output_dir,
     )
 

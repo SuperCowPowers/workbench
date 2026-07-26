@@ -282,7 +282,7 @@ if __name__ == "__main__":
     # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
     # category mappings and downstream CV/UQ/SHAP never see them. They're scored held-out below.
     from workbench.training.validation import split_validation_set
-    from workbench.training.xgb_core import train_xgb_fold, xgb_params
+    from workbench.training.xgb_core import align_frame, train_xgb_fold, xgb_params
 
     all_df, holdout_df = split_validation_set(all_df)
     if len(holdout_df):
@@ -325,20 +325,18 @@ if __name__ == "__main__":
     if hpo_block:
         from workbench.training.xgb_hpo import run_xgb_hpo
 
-        # The search scores held-out rows through the SAME fitted objects used for training.
-        hpo_holdout = holdout_df
-        if len(hpo_holdout):
-            hpo_holdout, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
-            if compressed_features:
-                hpo_holdout, _ = decompress_features(hpo_holdout, orig_features, compressed_features)
-
+        # The raw holdout is aligned by the adapter through the same fitted transforms
+        # used for training.
         hyperparameters = run_xgb_hpo(
             all_df,
-            hpo_holdout,
+            holdout_df,
             hyperparameters,
             hpo_block,
             target=target,
             features=features,
+            category_mappings=category_mappings,
+            orig_features=orig_features,
+            compressed_features=compressed_features,
             output_dir=args.output_data_dir,
         )
         print(f"Hyperparameters (tuned): {hyperparameters}")
@@ -603,11 +601,8 @@ if __name__ == "__main__":
         print("=" * 50)
 
         # Preprocess held-out rows through the SAME fitted objects used for training
-        h_df, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
-        h_features = features
-        if compressed_features:
-            h_df, h_features = decompress_features(h_df, orig_features, compressed_features)
-        X_h = h_df[h_features]
+        h_df = align_frame(holdout_df, category_mappings, orig_features, compressed_features)
+        X_h = h_df[features]
 
         if model_type == "classifier":
             all_probs = np.stack([m.predict_proba(X_h) for m in ensemble_models])

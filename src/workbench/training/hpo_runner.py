@@ -48,12 +48,18 @@ class HpoAdapter:
     """
 
     def prepare_frame(self, df):
-        """Drop rows the framework cannot train or predict on.
+        """Align a frame to what training expects — row filtering, fitted transforms.
 
         Runs on the training and holdout frames before anything else, so predictions stay
-        positionally aligned with the target array.
+        positionally aligned with the target array. The holdout arrives raw (it is split
+        off before the template's preprocessing), while the training frame has already
+        been through it — so an override must be idempotent.
         """
         return df
+
+    def split_kwargs(self) -> dict:
+        """Extra ``get_split_indices`` kwargs, e.g. the SMILES column for scaffold folds."""
+        return {}
 
     def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
         """Build the ``(config, report) -> float`` objective for one search pass.
@@ -126,7 +132,6 @@ def run_hpo(
     adapter: HpoAdapter,
     search_space: dict,
     primary_target: str,
-    smiles_column: str | None = None,
     output_dir: str | None = None,
 ) -> dict:
     """Run the search and return the hyperparameters to publish the tuned model with.
@@ -158,7 +163,6 @@ def run_hpo(
         adapter: the framework's :class:`HpoAdapter`.
         search_space: resolved ``{knob: Spec}`` for the framework.
         primary_target: the target column the objective scores.
-        smiles_column: the molecule column, when the fold strategy needs one.
         output_dir: where to write the HPO artifacts.
 
     Returns:
@@ -207,9 +211,8 @@ def run_hpo(
         strategy=strategy,
         test_size=0.2,
         butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
+        **adapter.split_kwargs(),
     )
-    if smiles_column:
-        split_kwargs["smiles_column"] = smiles_column
     folds = get_split_indices(train_df, random_state=seed, **split_kwargs)
     if len(val_df):
         metric, where = "holdout_mae", f"held-out validation set ({len(val_df)} rows)"

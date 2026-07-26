@@ -9,6 +9,12 @@ training. The per-framework objectives are covered by ``chemprop_hpo_test.py`` a
 from workbench.training.hpo_runner import HpoAdapter, shortlist_configs, trial_completed, use_holdout
 
 
+def test_split_kwargs_default_is_empty():
+    """The base adapter adds nothing to get_split_indices — frameworks with a molecule
+    column (chemprop) override to name it."""
+    assert HpoAdapter().split_kwargs() == {}
+
+
 def test_trial_completed_reads_both_backend_shapes():
     """Ray records a `completed` flag; Optuna records a state name."""
     assert trial_completed({"completed": True}) is True

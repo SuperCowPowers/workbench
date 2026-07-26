@@ -19,6 +19,33 @@ from __future__ import annotations
 WORKBENCH_PARAMS = {"n_folds", "split_strategy", "butina_cutoff", "uq_version", "early_stopping_fraction"}
 
 
+def align_frame(df, category_mappings=None, orig_features=None, compressed_features=None):
+    """Route a frame through the template's fitted preprocessing.
+
+    The held-out validation rows are split off *before* the template fits its
+    preprocessing, so they arrive raw; this applies the same fitted transforms —
+    categorical mappings and compressed-feature decompression. Idempotent, so it is
+    safe on a frame that already went through the template's own preprocessing.
+
+    Args:
+        df: the frame to align (not mutated).
+        category_mappings: the template's fitted categorical mappings.
+        orig_features: the feature list before decompression.
+        compressed_features: features stored as bitstrings/count vectors.
+
+    Returns:
+        The aligned copy.
+    """
+    from workbench.endpoints.inference import convert_categorical_types, decompress_features
+
+    df = df.copy()
+    if category_mappings:
+        df, _ = convert_categorical_types(df, list(category_mappings), category_mappings)
+    if compressed_features and any(f in df.columns for f in compressed_features):
+        df, _ = decompress_features(df, orig_features, compressed_features)
+    return df
+
+
 def xgb_params(hyperparameters: dict, *, fold_idx: int = 0) -> dict:
     """Reduce a hyperparameters dict to the estimator kwargs XGBoost accepts.
 
