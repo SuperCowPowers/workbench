@@ -1,8 +1,16 @@
-"""Tests for the model_comparison utility (champion vs challenger metrics)"""
+"""Tests for the model_comparison utility (champion vs challenger metrics)
+
+Contests evolve: a promotion repoints the champion endpoint at the winning model, and the
+promotion node accumulates challengers. So the models under test are resolved by lineage —
+the champion is whatever model the endpoint currently serves, and the challengers are
+whatever the promotion node currently lists — never by assuming a model name.
+"""
 
 import pytest
 
 # Workbench Imports
+from workbench.api import Endpoint
+from workbench.cached.cached_meta import CachedMeta
 from workbench.cached.cached_model import CachedModel
 import pandas as pd
 
@@ -15,6 +23,31 @@ from workbench.utils.model_comparison import (
     prediction_comparison,
     rank_models,
 )
+
+REGRESSION_ENDPOINT = "aqsol-regression"
+CLASSIFICATION_ENDPOINT = "aqsol-class"
+
+
+def _champion(endpoint_name: str) -> CachedModel:
+    """The model the endpoint currently serves (lineage, not name)."""
+    return CachedModel(Endpoint(endpoint_name).get_input())
+
+
+def _challengers(endpoint_name: str) -> list:
+    """The models the endpoint's promotion node currently lists."""
+    return [CachedModel(name) for name in CachedMeta().challenger_models(endpoint_name)]
+
+
+@pytest.fixture(scope="module")
+def regression_contest():
+    """(champion, challengers) for the regression endpoint."""
+    return _champion(REGRESSION_ENDPOINT), _challengers(REGRESSION_ENDPOINT)
+
+
+@pytest.fixture(scope="module")
+def classification_contest():
+    """(champion, challengers) for the classification endpoint."""
+    return _champion(CLASSIFICATION_ENDPOINT), _challengers(CLASSIFICATION_ENDPOINT)
 
 
 def _contest(champ_value, challengers, metric="rmse"):
@@ -33,10 +66,12 @@ def _contest(champ_value, challengers, metric="rmse"):
     return champ_row, chall_rows
 
 
-def test_regression_comparison():
+def test_regression_comparison(regression_contest):
     """Regressor comparison: [a, b, delta] rows with metrics-aware delta signs"""
-    comp = model_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-1"), "full_cross_fold")
-    assert list(comp.index) == ["aqsol-regression", "aqsol-regression-1", "delta"]
+    champion, challengers = regression_contest
+    challenger = challengers[0]
+    comp = model_comparison(champion, challenger, "full_cross_fold")
+    assert list(comp.index) == [champion.name, challenger.name, "delta"]
     assert {"rmse", "mae", "r2", "spearmanr", "support"} <= set(comp.columns)
 
     # Metrics-aware: positive delta always means model_b is better
@@ -45,29 +80,31 @@ def test_regression_comparison():
     assert delta["r2"] == pytest.approx(row_b["r2"] - row_a["r2"])  # higher is better
 
 
-def test_classification_comparison():
+def test_classification_comparison(classification_contest):
     """Classifier comparison uses the 'all' summary row"""
-    comp = model_comparison(CachedModel("aqsol-class"), CachedModel("aqsol-class-1"), "full_cross_fold")
-    assert list(comp.index) == ["aqsol-class", "aqsol-class-1", "delta"]
+    champion, challengers = classification_contest
+    challenger = challengers[0]
+    comp = model_comparison(champion, challenger, "full_cross_fold")
+    assert list(comp.index) == [champion.name, challenger.name, "delta"]
     assert {"precision", "recall", "f1", "roc_auc"} <= set(comp.columns)
 
 
-def test_missing_run_returns_none():
+def test_missing_run_returns_none(regression_contest):
     """A missing inference run on either model returns None"""
-    assert model_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-1"), "no-such-run") is None
+    champion, challengers = regression_contest
+    assert model_comparison(champion, challengers[0], "no-such-run") is None
 
 
-def test_rank_models():
+def test_rank_models(regression_contest):
     """rank_models() sorts regressors by rmse (low to high)"""
-    models = [CachedModel("aqsol-regression-1"), CachedModel("aqsol-regression-2")]
-    ranked = rank_models(models, "full_cross_fold")
+    _, challengers = regression_contest
+    ranked = rank_models(challengers, "full_cross_fold")
     assert list(ranked["rmse"]) == sorted(ranked["rmse"])
 
 
-def test_contest_ranking():
+def test_contest_ranking(regression_contest):
     """contest_ranking() ranks challengers with metrics-aware Δ columns vs the champion"""
-    champion = CachedModel("aqsol-regression")
-    challengers = [CachedModel("aqsol-regression-1"), CachedModel("aqsol-regression-2")]
+    champion, challengers = regression_contest
     ranked = contest_ranking(champion, challengers, "full_cross_fold")
     assert list(ranked.columns[:2]) == ["rmse", "Δrmse"]  # Δ interleaved after each metric
     assert "Δsupport" not in ranked.columns
@@ -78,15 +115,16 @@ def test_contest_ranking():
         assert row["Δrmse"] == pytest.approx(champ_rmse - row["rmse"])
 
 
-def test_contest_report():
+def test_contest_report(regression_contest):
     """contest_report() has champion first (Δ=0), ranked challengers, and contest metadata columns"""
-    champion = CachedModel("aqsol-regression")
-    challengers = [CachedModel("aqsol-regression-1"), CachedModel("aqsol-regression-2")]
-    report = contest_report(champion, challengers, "aqsol-regression", "full_cross_fold")
+    champion, challengers = regression_contest
+    report = contest_report(champion, challengers, REGRESSION_ENDPOINT, "full_cross_fold")
 
-    assert list(report["role"]) == ["champion", "challenger", "challenger"]
-    assert report["model"].iloc[0] == "aqsol-regression"
-    assert report["endpoint"].eq("aqsol-regression").all()
+    # One champion row first; a challenger row for each that had metrics to rank
+    assert report["role"].iloc[0] == "champion"
+    assert set(report["role"].iloc[1:]) <= {"challenger"}
+    assert report["model"].iloc[0] == champion.name
+    assert report["endpoint"].eq(REGRESSION_ENDPOINT).all()
     assert report["framework"].isin(["xgboost", "pytorch", "chemprop", "hybrid", "multi-task", "sklearn"]).all()
     assert report["inference_run"].eq("full_cross_fold").all()
     assert report.loc[0, "Δrmse"] == 0.0  # champion delta vs itself
@@ -151,22 +189,26 @@ def test_contested_classifier_and_edges():
     assert _contested(pd.DataFrame(), chall) is False
 
 
-def test_prediction_comparison():
+def test_prediction_comparison(regression_contest):
     """prediction_comparison() stacks both models' predictions with a 'model' column"""
-    preds = prediction_comparison(CachedModel("aqsol-regression"), CachedModel("aqsol-regression-2"), "full_cross_fold")
-    assert list(preds["model"].unique()) == ["aqsol-regression", "aqsol-regression-2"]
+    champion, challengers = regression_contest
+    challenger = challengers[-1]
+    preds = prediction_comparison(champion, challenger, "full_cross_fold")
+    assert list(preds["model"].unique()) == [champion.name, challenger.name]
     assert {"prediction", "solubility"} <= set(preds.columns)
 
 
 if __name__ == "__main__":
-    test_regression_comparison()
-    test_classification_comparison()
-    test_missing_run_returns_none()
-    test_rank_models()
-    test_contest_ranking()
-    test_contest_report()
+    regression = (_champion(REGRESSION_ENDPOINT), _challengers(REGRESSION_ENDPOINT))
+    classification = (_champion(CLASSIFICATION_ENDPOINT), _challengers(CLASSIFICATION_ENDPOINT))
+    test_regression_comparison(regression)
+    test_classification_comparison(classification)
+    test_missing_run_returns_none(regression)
+    test_rank_models(regression)
+    test_contest_ranking(regression)
+    test_contest_report(regression)
     test_contested_skips_the_champions_twin()
     test_contested_percent_threshold()
     test_contested_classifier_and_edges()
-    test_prediction_comparison()
+    test_prediction_comparison(regression)
     print("All model_comparison tests passed!")
