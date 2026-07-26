@@ -38,6 +38,13 @@ log = logging.getLogger("workbench")
 # --- backend-agnostic search-space specs -----------------------------------
 
 
+# Every spec carries a ``default`` — where the knob sits when nobody tunes it. Samplers
+# ignore it; it is what makes a space self-describing (the range AND the baseline in one
+# object) and what keeps the un-overridden knobs out of the search records as real values
+# rather than NaN. A default need not lie inside its own range: the search deliberately
+# explores away from where the untuned model sits.
+
+
 @dataclass(frozen=True)
 class IntRange:
     """Integer knob sampled in ``[low, high]`` on a ``step`` grid."""
@@ -45,6 +52,7 @@ class IntRange:
     low: int
     high: int
     step: int = 1
+    default: Union[int, None] = None
 
 
 @dataclass(frozen=True)
@@ -56,6 +64,7 @@ class FloatRange:
     high: float
     step: Union[float, None] = None
     log: bool = False
+    default: Union[float, None] = None
 
 
 @dataclass(frozen=True)
@@ -63,10 +72,17 @@ class Choice:
     """Categorical knob. ``options`` may include unhashable values (e.g. lists)."""
 
     options: Sequence
+    default: object = None
 
 
 Spec = Union[IntRange, FloatRange, Choice]
 SearchSpace = dict
+
+
+def space_defaults(search_space: SearchSpace) -> dict:
+    """The ``{knob: default}`` baseline a space describes — the untuned config it searches around."""
+    return {knob: spec.default for knob, spec in search_space.items()}
+
 
 # Pruning grace. Successive-halving/ASHA defaults judge a trial almost immediately,
 # which wrecks a small search (tens of trials): configs get killed before they've

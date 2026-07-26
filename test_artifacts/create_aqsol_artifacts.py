@@ -8,10 +8,12 @@ FeatureSets:
 
 Models:
     - aqsol-regression
+    - aqsol-xgb-hpo
     - aqsol-class
 
 Endpoints:
     - aqsol-regression
+    - aqsol-xgb-hpo
     - aqsol-class
 """
 
@@ -84,6 +86,41 @@ if __name__ == "__main__":
     if recreate or not Endpoint("aqsol-regression").exists():
         m = Model("aqsol-regression")
         end = m.to_endpoint(tags=["aqsol", "regression"])
+        end.set_owner("test")
+        end.test_inference()
+        end.cross_fold_inference()
+
+    # Create the hyperparameter-searched regression Model. The search runs inside the
+    # single training job — trials are ephemeral, so only the winner is published — and
+    # this model is the fixture for the HPO artifact readers (see get_hpo_results).
+    if recreate or not Model("aqsol-xgb-hpo").exists():
+        feature_set = FeatureSet("aqsol_features")
+        m = feature_set.to_model(
+            name="aqsol-xgb-hpo",
+            model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            target_column="solubility",
+            feature_list=aqsol_features,
+            description="AQSol Regression Model (hyperparameter-searched)",
+            tags=["aqsol", "regression", "hpo"],
+            hyperparameters={
+                "uq_version": "v1",
+                "hpo": {
+                    # The base training image carries optuna, not ray — and one XGBoost fit
+                    # already spreads across every core, so the search is serial by design.
+                    "backend": "optuna",
+                    "n_trials": 100,
+                    # search_space defaults to "basic+reg" (capacity/boosting + sampling/penalties).
+                    "rerank_top_k": 5,
+                },
+            },
+        )
+        m.set_owner("test")
+
+    # Create the aqsol hpo regression Endpoint
+    if recreate or not Endpoint("aqsol-xgb-hpo").exists():
+        m = Model("aqsol-xgb-hpo")
+        end = m.to_endpoint(tags=["aqsol", "regression", "hpo"])
         end.set_owner("test")
         end.test_inference()
         end.cross_fold_inference()

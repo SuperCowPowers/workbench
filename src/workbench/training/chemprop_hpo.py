@@ -38,10 +38,10 @@ _SEARCH_GROUPS = {
         # 100-2400; small datasets select capacity at the low end. A list-valued
         # ffn_hidden_dim gives a tapered head, which a scalar width cannot express —
         # ffn_num_layers is ignored for a list (its length sets the depth).
-        "depth": IntRange(2, 6, 1),
-        "hidden_dim": IntRange(100, 2400, 100),
-        "ffn_num_layers": IntRange(1, 3, 1),
-        "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]]),
+        "depth": IntRange(2, 6, 1, default=6),
+        "hidden_dim": IntRange(100, 2400, 100, default=700),
+        "ffn_num_layers": IntRange(1, 3, 1, default=2),
+        "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, [1024, 256, 64], [512, 128]], default=1800),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
     # interact (they scale together), so they search as one group. Memory headroom for the
@@ -49,9 +49,9 @@ _SEARCH_GROUPS = {
     # init_lr/final_lr are tied to max_lr in merge_best_config; searched independently they
     # can produce init > max, which the Noam schedule rejects.
     "lr": {
-        "max_lr": FloatRange(1e-4, 5e-3, log=True),
-        "warmup_epochs": IntRange(2, 10, 2),
-        "batch_size": Choice([32, 64, 128, 256, 512]),
+        "max_lr": FloatRange(1e-4, 5e-3, log=True, default=1e-3),
+        "warmup_epochs": IntRange(2, 10, 2, default=2),
+        "batch_size": Choice([32, 64, 128, 256, 512], default=64),
     },
 }
 

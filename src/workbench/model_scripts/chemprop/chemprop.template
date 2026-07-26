@@ -75,7 +75,7 @@ DEFAULT_HYPERPARAMETERS = {
     # ffn_num_layers times) or a list of ints for a tapered head, e.g.
     # [1024, 256, 64]. When a list is given, ffn_num_layers is ignored and
     # depth is taken from the list length.
-    "ffn_hidden_dim": 2000,
+    "ffn_hidden_dim": 1800,
     "ffn_num_layers": 2,
     # Optimizer schedule (Noam-style warmup then decay). Defaults match
     # chemprop's own defaults, so behavior is unchanged unless overridden.

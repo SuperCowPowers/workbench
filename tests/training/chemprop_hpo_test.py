@@ -27,9 +27,9 @@ def test_default_space_is_basic_plus_lr():
         "warmup_epochs",
         "batch_size",
     }
-    assert space["depth"] == IntRange(2, 6, 1)  # chemprop {2,3,4,5,6}
-    assert space["hidden_dim"] == IntRange(100, 2400, 100)  # chemprop floor of 300 extended to 100
-    assert space["ffn_num_layers"] == IntRange(1, 3, 1)  # chemprop {1,2,3}
+    assert space["depth"] == IntRange(2, 6, 1, default=6)  # chemprop {2,3,4,5,6}
+    assert space["hidden_dim"] == IntRange(100, 2400, 100, default=700)  # chemprop floor of 300 extended to 100
+    assert space["ffn_num_layers"] == IntRange(1, 3, 1, default=2)  # chemprop {1,2,3}
     # dropout is held out of the default space to keep the budget on the capacity knobs.
     assert "dropout" not in space
     assert isinstance(space["ffn_hidden_dim"], Choice)
@@ -96,13 +96,12 @@ def test_dataloader_workers_scale_down_with_concurrency():
     assert _dataloader_workers(1) <= 8  # capped regardless of core count
 
 
-def test_every_searched_knob_has_a_template_default():
-    """Each knob in the default space must have a value in the template's defaults.
+def test_spec_defaults_match_the_template():
+    """Each knob's declared default must equal what the template would actually train with.
 
-    The re-rank records the effective value of every searched knob, falling back to the base
-    hyperparameters for knobs a candidate didn't override. A knob with no template default
-    resolves to None there and lands as NaN in hpo_rerank.csv, which downstream readers
-    would have to special-case. Adding a knob to _SEARCH_GROUPS means giving it a default.
+    The template's DEFAULT_HYPERPARAMETERS is what trains; a spec default is what the search
+    records report for a knob nobody overrode. If the two disagree, the baseline row
+    describes a model that was never built.
     """
     import ast
     from pathlib import Path
@@ -116,5 +115,15 @@ def test_every_searched_knob_has_a_template_default():
         and any(getattr(t, "id", None) == "DEFAULT_HYPERPARAMETERS" for t in node.targets)
     )
 
-    missing = [knob for knob in chemprop_search_space() if knob not in defaults]
-    assert not missing, f"searched knobs with no template default (would render as NaN): {missing}"
+    mismatched = {
+        knob: (spec.default, defaults.get(knob))
+        for knob, spec in chemprop_search_space().items()
+        if knob in defaults and spec.default != defaults[knob]
+    }
+    assert not mismatched, f"spec default != template default for {mismatched}"
+
+
+def test_every_searched_knob_declares_a_default():
+    """No knob may leave its default unset — that is what keeps search records NaN-free."""
+    missing = [knob for knob, spec in chemprop_search_space().items() if spec.default is None]
+    assert not missing, f"searched knobs with no declared default: {missing}"

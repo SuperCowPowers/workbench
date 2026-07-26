@@ -35,21 +35,21 @@ _SEARCH_GROUPS = {
     # against each other (half the rate wants roughly twice the trees), so they search as
     # one group; max_depth and min_child_weight set how expressive an individual tree is.
     "basic": {
-        "max_depth": IntRange(3, 12, 1),
-        "min_child_weight": IntRange(1, 20, 1),
-        "n_estimators": IntRange(100, 1500, 100),
-        "learning_rate": FloatRange(0.01, 0.3, log=True),
+        "max_depth": IntRange(3, 12, 1, default=7),
+        "min_child_weight": IntRange(1, 20, 1, default=3),
+        "n_estimators": IntRange(100, 1500, 100, default=300),
+        "learning_rate": FloatRange(0.01, 0.3, log=True, default=0.05),
     },
     # Sampling + penalty terms. These are the knobs that decide how hard the model
     # overfits, which is the dominant failure mode on the small, wide descriptor frames
     # ADMET datasets produce. gamma starts at 0 (no split penalty), so it is sampled
     # linearly rather than log.
     "reg": {
-        "subsample": FloatRange(0.5, 1.0, step=0.05),
-        "colsample_bytree": FloatRange(0.4, 1.0, step=0.05),
-        "gamma": FloatRange(0.0, 5.0, step=0.1),
-        "reg_alpha": FloatRange(1e-3, 10.0, log=True),
-        "reg_lambda": FloatRange(1e-2, 50.0, log=True),
+        "subsample": FloatRange(0.5, 1.0, step=0.05, default=0.8),
+        "colsample_bytree": FloatRange(0.4, 1.0, step=0.05, default=0.8),
+        "gamma": FloatRange(0.0, 5.0, step=0.1, default=0.1),
+        "reg_alpha": FloatRange(1e-3, 10.0, log=True, default=0.1),
+        "reg_lambda": FloatRange(1e-2, 50.0, log=True, default=1.0),
     },
 }
 

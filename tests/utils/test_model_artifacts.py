@@ -6,22 +6,44 @@ Run against the sandbox:
 Marked `medium` — each test downloads and extracts a tarball from S3.
 """
 
+import json
+import os
+import tarfile
+
+import awswrangler as wr
 import pandas as pd
 import pytest
 
 # Workbench Imports
 from workbench.api import Model
 from workbench.utils.model_utils import (
+    _load_json_from_artifact,
     extracted_artifact,
     get_hpo_results,
-    load_category_mappings_from_s3,
     load_hyperparameters_from_s3,
 )
 
-HPO_MODEL = "aqsol-chemprop-hpo"  # published by examples/models/chemprop_hpo.py
-PLAIN_MODEL = "aqsol-chemprop"  # same data/framework, no hpo block
+# XGBoost rather than chemprop: a search is minutes on a CPU box, so regenerating the
+# fixtures is cheap. Both come from test_artifacts/create_aqsol_artifacts.py.
+HPO_MODEL = "aqsol-xgb-hpo"
+PLAIN_MODEL = "aqsol-regression"  # same data/framework, no hpo block
 
 BOGUS_URI = "s3://sandbox-sageworks-artifacts/no/such/artifact.tar.gz"
+SCRATCH_PREFIX = "s3://sandbox-sageworks-artifacts/tests/model_artifacts"
+
+
+@pytest.fixture
+def artifact_uri(tmp_path):
+    """A two-file tarball in S3: one JSON present, everything else absent."""
+    (tmp_path / "present.json").write_text(json.dumps({"answer": 42}))
+    tar_path = tmp_path / "artifact.tar.gz"
+    with tarfile.open(tar_path, "w:gz") as tar:
+        tar.add(tmp_path / "present.json", arcname="present.json")
+
+    uri = f"{SCRATCH_PREFIX}/{os.getpid()}/artifact.tar.gz"
+    wr.s3.upload(local_file=str(tar_path), path=uri)
+    yield uri
+    wr.s3.delete_objects(uri)
 
 
 @pytest.mark.medium
@@ -75,9 +97,10 @@ def test_load_hyperparameters_from_s3():
 
 
 @pytest.mark.medium
-def test_absent_file_in_present_artifact_returns_none():
-    """A chemprop bundle has no category_mappings.json — absent file, not an error."""
-    assert load_category_mappings_from_s3(Model(HPO_MODEL).model_data_url()) is None
+def test_absent_file_in_present_artifact_returns_none(artifact_uri):
+    """A readable tarball that lacks the requested file yields None, not an error."""
+    assert _load_json_from_artifact(artifact_uri, "present.json") == {"answer": 42}
+    assert _load_json_from_artifact(artifact_uri, "nope.json") is None
 
 
 @pytest.mark.medium

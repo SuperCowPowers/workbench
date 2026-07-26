@@ -23,7 +23,7 @@ def test_default_space_is_basic_plus_reg():
         "reg_alpha",
         "reg_lambda",
     }
-    assert space["max_depth"] == IntRange(3, 12, 1)
+    assert space["max_depth"] == IntRange(3, 12, 1, default=7)
     assert space["learning_rate"].log is True  # rate spans an order of magnitude
     assert space["gamma"].log is False  # starts at 0, so it cannot be sampled log-uniformly
     assert space["reg_alpha"].log is True
@@ -32,7 +32,7 @@ def test_default_space_is_basic_plus_reg():
 def test_reg_group_is_sampling_and_penalties():
     space = xgb_search_space(("reg",))
     assert set(space) == {"subsample", "colsample_bytree", "gamma", "reg_alpha", "reg_lambda"}
-    assert space["subsample"] == FloatRange(0.5, 1.0, step=0.05)
+    assert space["subsample"] == FloatRange(0.5, 1.0, step=0.05, default=0.8)
 
 
 def test_unknown_group_raises():
@@ -84,13 +84,12 @@ def test_threads_scale_down_with_concurrency():
     assert _xgb_threads(0) >= 1  # guards a zero-concurrency call
 
 
-def test_every_searched_knob_has_a_template_default():
-    """Each knob in the default space must have a value in the template's defaults.
+def test_spec_defaults_match_the_template():
+    """Each knob's declared default must equal what the template would actually train with.
 
-    The re-rank records the effective value of every searched knob, falling back to the base
-    hyperparameters for knobs a candidate didn't override. A knob with no template default
-    resolves to None there and lands as NaN in hpo_rerank.csv, which downstream readers
-    would have to special-case. Adding a knob to _SEARCH_GROUPS means giving it a default.
+    The template's DEFAULT_HYPERPARAMETERS is what trains; a spec default is what the search
+    records report for a knob nobody overrode. If the two disagree, the baseline row
+    describes a model that was never built.
     """
     import ast
     from pathlib import Path
@@ -104,5 +103,15 @@ def test_every_searched_knob_has_a_template_default():
         and any(getattr(t, "id", None) == "DEFAULT_HYPERPARAMETERS" for t in node.targets)
     )
 
-    missing = [knob for knob in xgb_search_space() if knob not in defaults]
-    assert not missing, f"searched knobs with no template default (would render as NaN): {missing}"
+    mismatched = {
+        knob: (spec.default, defaults.get(knob))
+        for knob, spec in xgb_search_space().items()
+        if knob in defaults and spec.default != defaults[knob]
+    }
+    assert not mismatched, f"spec default != template default for {mismatched}"
+
+
+def test_every_searched_knob_declares_a_default():
+    """No knob may leave its default unset — that is what keeps search records NaN-free."""
+    missing = [knob for knob, spec in xgb_search_space().items() if spec.default is None]
+    assert not missing, f"searched knobs with no declared default: {missing}"

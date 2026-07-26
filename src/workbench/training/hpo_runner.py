@@ -278,7 +278,7 @@ def run_hpo(
             split_kwargs=split_kwargs,
             base_hyperparameters=base_hyperparameters,
             metric=metric,
-            searched_knobs=list(search_space),
+            search_space=search_space,
             seed=seed,
             backend=backend,
             max_parallel=max_parallel,
@@ -315,7 +315,7 @@ def run_hpo(
         baseline_row = {
             "number": -1,
             "value": search_baseline_value,
-            "config": {knob: base_hyperparameters.get(knob) for knob in search_space},
+            "config": effective_config({}, base_hyperparameters, search_space),
             "kind": "baseline",
         }
         # Match the backend's completion-flag key so the frame stays rectangular.
@@ -327,6 +327,17 @@ def run_hpo(
             pd.DataFrame(rerank["candidates"]).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
 
     return adapter.merge_config(base_hyperparameters, best_config)
+
+
+def effective_config(config: dict, base_hyperparameters: dict, search_space: dict) -> dict:
+    """What a candidate actually trained with, for every searched knob.
+
+    Resolution order is the same one training follows: the candidate's own override, else
+    the caller's hyperparameters, else the knob's declared default. The last step is why a
+    search record is always a rectangular table of real values — a knob nobody set still has
+    the value it trained at, rather than a hole downstream readers have to interpret.
+    """
+    return {knob: config.get(knob, base_hyperparameters.get(knob, spec.default)) for knob, spec in search_space.items()}
 
 
 def trial_completed(trial: dict) -> bool:
@@ -364,7 +375,7 @@ def rerank_finalists(
     split_kwargs,
     base_hyperparameters,
     metric,
-    searched_knobs,
+    search_space,
     seed,
     backend,
     max_parallel,
@@ -436,13 +447,12 @@ def rerank_finalists(
         # that HPO can't ship something worse than the caller's own hyperparameters is gone.
         print("[hpo] re-rank WARNING: the baseline failed to score — publishing WITHOUT the baseline guard")
     # The shortlist is best-first, so candidate i>0 holds the search's rank-i config and the
-    # label names that rank. Each row carries the EFFECTIVE value of every searched knob —
-    # a candidate that didn't override one trained with the base value, and the baseline
-    # overrides nothing — so the records line up as a rectangular table.
+    # label names that rank. The baseline overrides nothing, so its row is the caller's own
+    # effective config.
     rows = [
         {
             "candidate": "baseline" if i == 0 else f"search_rank_{i}",
-            "config": {knob: c.get(knob, base_hyperparameters.get(knob)) for knob in searched_knobs},
+            "config": effective_config(c, base_hyperparameters, search_space),
             metric: v,
         }
         for i, (c, v) in enumerate(zip(candidates, values))
