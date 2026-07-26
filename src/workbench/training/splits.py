@@ -120,9 +120,10 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
             cluster_labels[original_idx] = cluster_idx
 
     # Assign invalid molecules to their own clusters
+    valid_set = set(valid_indices)
     next_cluster = len(clusters)
     for i in range(len(smiles_list)):
-        if i not in valid_indices:
+        if i not in valid_set:
             cluster_labels[i] = next_cluster
             next_cluster += 1
 

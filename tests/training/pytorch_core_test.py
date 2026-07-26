@@ -77,7 +77,7 @@ def test_align_frame_without_alignment_state_passes_through():
 
 
 def _train_spec():
-    torch = pytest.importorskip("torch")  # noqa: F841
+    pytest.importorskip("torch")
     hp = {
         "layers": "8-4",
         "dropout": 0.0,
