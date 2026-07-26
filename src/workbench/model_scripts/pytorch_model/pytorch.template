@@ -395,7 +395,6 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]
     task = "classification" if model_type == "classifier" else "regression"
-    hidden_layers = [int(x) for x in hyperparameters["layers"].split("-")]
 
     # Get categorical cardinalities
     categorical_cardinalities = [len(category_mappings.get(col, {})) for col in categorical_cols]
@@ -427,6 +426,49 @@ if __name__ == "__main__":
     scaler = FeatureScaler()
     scaler.fit(all_df, continuous_cols)
     print(f"Fitted scaler on {len(continuous_cols)} continuous features")
+
+    # -------------------------------------------------------------------------
+    # Hyperparameter search (optional)
+    # -------------------------------------------------------------------------
+    # When an `hpo` block is present, search for the best config (held-out holdout_df
+    # objective, else a scaffold split) and train the winner below. Trials run in-process
+    # and ephemerally — no Workbench models/endpoints are created for them.
+    hpo_block = hyperparameters.get("hpo")
+    if hpo_block and model_type == "classifier":
+        print("[hpo] NOTE: hyperparameter search is regression-only (v1); ignoring the `hpo` block.")
+        hpo_block = None
+    if hpo_block:
+        from workbench.training.pytorch_hpo import run_pytorch_hpo
+
+        # The search scores held-out rows through the SAME fitted objects used for training.
+        hpo_holdout = holdout_df
+        if len(hpo_holdout):
+            hpo_holdout, _ = convert_categorical_types(holdout_df.copy(), non_compressed_features, category_mappings)
+            if compressed_features:
+                hpo_holdout, _ = decompress_features(hpo_holdout, orig_features, compressed_features)
+            for col in categorical_cols:
+                if hpo_holdout[col].isna().any():
+                    hpo_holdout[col] = hpo_holdout[col].fillna(cat_impute_values[col])
+
+        hyperparameters = run_pytorch_hpo(
+            all_df,
+            hpo_holdout,
+            hyperparameters,
+            hpo_block,
+            target=target,
+            continuous_cols=continuous_cols,
+            categorical_cols=categorical_cols,
+            category_mappings=category_mappings,
+            categorical_cardinalities=categorical_cardinalities,
+            scaler=scaler,
+            n_outputs=n_outputs,
+            task=task,
+            device=device,
+            output_dir=args.output_data_dir,
+        )
+        print(f"Hyperparameters (tuned): {hyperparameters}")
+
+    hidden_layers = [int(x) for x in hyperparameters["layers"].split("-")]
 
     # -------------------------------------------------------------------------
     # Training loop

@@ -263,6 +263,25 @@ def run_hpo(
         f"config={result.best_config}"
     )
 
+    # Only completed trials are shortlist-eligible, so an unnoticed pile of failures shrinks
+    # the real search budget without shrinking the reported one.
+    counts = summarize_trials(result.trials)
+    print(
+        f"[hpo] trials: {counts['completed']} completed, {counts['pruned']} pruned, "
+        f"{counts['failed']} FAILED (of {counts['attempted']})"
+    )
+    if counts["failed"]:
+        print(
+            f"[hpo] WARNING: {counts['failed']} trial(s) raised and produced no score. With trials "
+            "sharing a GPU, CUDA OOM is the usual cause — check the log for OutOfMemoryError and "
+            "consider hpo['gpus_per_trial']=1.0."
+        )
+    if counts["completed"] < max(1, counts["attempted"] // 4):
+        print(
+            f"[hpo] WARNING: only {counts['completed']} of {counts['attempted']} trials ran the full "
+            "ensemble, so the re-rank shortlist came from a small pool — treat the margin as weak."
+        )
+
     # Phase 1.5 refines a result the search has already produced, so its failure degrades to
     # the unrefined winner rather than discarding a search that has already run to completion.
     try:
@@ -291,6 +310,9 @@ def run_hpo(
             json.dump(
                 {
                     "metric": metric,
+                    # completed/pruned/failed. Only `completed` trials were shortlist-eligible,
+                    # so this is how much of the budget actually backed the result.
+                    "trial_counts": counts,
                     "best_config": best_config,
                     # best_value and baseline_value share the re-rank's basis, so their
                     # difference is the real margin the publish decision turned on.
@@ -363,6 +385,25 @@ def effective_config(config: dict, base_hyperparameters: dict, search_space: dic
     the value it trained at, rather than a hole downstream readers have to interpret.
     """
     return {knob: config.get(knob, base_hyperparameters.get(knob, spec.default)) for knob, spec in search_space.items()}
+
+
+def summarize_trials(trials) -> dict:
+    """Split a search's trials into completed / pruned / failed.
+
+    The three are not interchangeable and only ``completed`` is comparable. A *pruned*
+    trial was stopped early by the scheduler and its value is a partial-ensemble score; a
+    *failed* trial never produced a value at all (it raised — CUDA OOM is the usual cause
+    when trials share a GPU). Failures are indistinguishable from prunes by the completion
+    flag alone, which is how a run can lose a third of its budget and still look fine.
+    """
+    completed = [t for t in trials if trial_completed(t)]
+    unfinished = [t for t in trials if not trial_completed(t)]
+    return {
+        "attempted": len(trials),
+        "completed": len(completed),
+        "pruned": len([t for t in unfinished if t.get("value") is not None]),
+        "failed": len([t for t in unfinished if t.get("value") is None]),
+    }
 
 
 def trial_completed(trial: dict) -> bool:

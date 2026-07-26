@@ -240,11 +240,14 @@ def train_model(
     loss: str = "L1Loss",
     device: str = "cpu",
     restore_best_weights: bool = False,
+    verbose: bool = True,
 ) -> tuple[TabularMLP, dict]:
     """Train the model with early stopping.
 
     Args:
         weight_decay: AdamW L2 regularization coefficient. Default 1e-4.
+        verbose: Print per-epoch progress. Set False for hyperparameter-search trials,
+            where one line per epoch per fold per trial buries the run's own log.
         restore_best_weights: If False (default for Workbench UQ ensembles), keep
             the final weights — each fold stops `patience` epochs past its
             best-val-loss point and holds that slightly-overfit state. This
@@ -343,11 +346,12 @@ def train_model(
         else:
             epochs_without_improvement += 1
 
-        if (epoch + 1) % 10 == 0:
+        if verbose and (epoch + 1) % 10 == 0:
             print(f"Epoch {epoch + 1}: train_loss={train_loss:.4f}, val_loss={val_loss:.4f}")
 
         if epochs_without_improvement >= patience:
-            print(f"Early stopping at epoch {epoch + 1}")
+            if verbose:
+                print(f"Early stopping at epoch {epoch + 1}")
             break
 
     # Load best weights (if the flag is set)

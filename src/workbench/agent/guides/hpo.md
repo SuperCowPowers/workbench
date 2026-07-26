@@ -7,7 +7,7 @@ HPO is not a separate artifact type. It is `to_model()` with an `hpo` block in
 winning config is published. Trials are ephemeral: they never create Workbench
 models or endpoints, so a searched model looks like any other model.
 
-Chemprop and XGBoost, regression only. An otherwise normal `to_model()` call plus:
+Chemprop, XGBoost, and PyTorch, regression only. An otherwise normal `to_model()` call plus:
 
 ```python
 hyperparameters={"uq_version": "v1", "hpo": {"n_trials": 60}}

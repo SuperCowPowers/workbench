@@ -313,9 +313,11 @@ class FeaturesToModel(Transform):
         train_instance_type = kwargs.get("training_instance")
         if train_instance_type:
             self.log.important(f"Using user-specified instance {train_instance_type}")
-        elif hpo_parallel and self.model_framework == ModelFramework.CHEMPROP:
+        elif hpo_parallel and self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
             train_instance_type = "ml.g6.12xlarge"  # 4x NVIDIA L4 — parallel HPO trials
-            self.log.important(f"Using multi-GPU instance {train_instance_type} for parallel chemprop HPO")
+            self.log.important(
+                f"Using multi-GPU instance {train_instance_type} for parallel " f"{self.model_framework.value} HPO"
+            )
         elif self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
             train_instance_type = "ml.g6.2xlarge"  # NVIDIA L4 GPU + 8 vCPUs for data loading
             self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")

@@ -326,12 +326,44 @@ def _suggest_optuna(trial, search_space) -> dict:
 # and needs a GPU box for real parallelism); the Optuna backend is what CI covers.
 
 
+def _fence_gpu_memory(resources_per_trial) -> None:
+    """Cap this trial process at the share of the GPU it was scheduled for.
+
+    ``gpus_per_trial`` is only a *placement* hint — Ray packs two trials onto a card, but
+    nothing stops one of them allocating the whole thing and OOMing its neighbour. Fencing
+    each process makes an oversized config fail on its own first oversized allocation, so
+    the failure is attributable to the trial that caused it instead of the ones behind it.
+
+    Ray gives each trial its own ``CUDA_VISIBLE_DEVICES``, so device 0 is this trial's card.
+    A no-op when the trial holds no GPU (the CPU-resourced XGBoost path) or torch is absent.
+    """
+    share = (resources_per_trial or {}).get("gpu")
+    if not share:
+        return
+    try:
+        import torch
+    except ImportError:
+        return
+    if torch.cuda.is_available():
+        torch.cuda.set_per_process_memory_fraction(min(1.0, float(share)), 0)
+
+
 def _run_ray(
     trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed, resources_per_trial
 ) -> HpoResult:
+    import ray
     from ray import tune
     from ray.tune.schedulers import ASHAScheduler
     from ray.tune.search.optuna import OptunaSearch
+
+    # Trials run in their own worker processes, so the allocator setting has to travel in the
+    # runtime env rather than the driver's os.environ. Expandable segments let the caching
+    # allocator grow a segment instead of demanding one contiguous block, which is what
+    # fragments when several trials share a card.
+    ray.init(
+        runtime_env={"env_vars": {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}},
+        ignore_reinit_error=True,
+    )
 
     # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
     # Optuna path): OptunaSearch's categorical rejects unhashable options (our tapered
@@ -345,6 +377,7 @@ def _run_ray(
     done_flag = "_hpo_completed"
 
     def trainable(config):
+        _fence_gpu_memory(resources_per_trial)
         config = {k: (choice_options[k][v] if k in choice_options else v) for k, v in config.items()}
         last_step = 0
 

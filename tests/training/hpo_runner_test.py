@@ -89,3 +89,33 @@ def test_default_adapter_passes_frames_through():
     frame = object()
     assert HpoAdapter().prepare_frame(frame) is frame
     assert HpoAdapter().resources_per_trial({}, "ray") is None
+
+
+def test_summarize_trials_separates_pruned_from_failed():
+    """A pruned trial has a partial value; a failed one has none. Both are 'not completed'."""
+    from workbench.training.hpo_runner import summarize_trials
+
+    counts = summarize_trials(
+        [
+            {"completed": True, "value": 0.5},
+            {"completed": True, "value": 0.6},
+            {"completed": False, "value": 0.9},  # ASHA-stopped, partial ensemble
+            {"completed": False, "value": None},  # raised (e.g. CUDA OOM)
+            {"completed": False, "value": None},
+        ]
+    )
+    assert counts == {"attempted": 5, "completed": 2, "pruned": 1, "failed": 2}
+
+
+def test_summarize_trials_reads_the_optuna_shape():
+    """Optuna records a state name rather than a completion flag."""
+    from workbench.training.hpo_runner import summarize_trials
+
+    counts = summarize_trials(
+        [
+            {"state": "COMPLETE", "value": 0.5},
+            {"state": "PRUNED", "value": 0.8},
+            {"state": "FAIL", "value": None},
+        ]
+    )
+    assert counts == {"attempted": 3, "completed": 1, "pruned": 1, "failed": 1}

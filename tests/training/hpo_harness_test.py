@@ -191,3 +191,12 @@ def test_partial_nan_objective_still_finds_the_best():
 
     result = run_search(sometimes_nan, {"x": FloatRange(0.0, 1.0)}, n_trials=25, backend="optuna")
     assert result.best_value < 0.5
+
+
+def test_gpu_fence_is_a_noop_without_a_gpu_allocation():
+    """A CPU-resourced trial (or no resource request at all) must not touch torch."""
+    from workbench.training.hpo_harness import _fence_gpu_memory
+
+    _fence_gpu_memory(None)
+    _fence_gpu_memory({})
+    _fence_gpu_memory({"cpu": 4})  # the XGBoost-on-ray shape
