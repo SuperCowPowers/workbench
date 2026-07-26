@@ -1,12 +1,19 @@
 """Fast unit tests for the framework-agnostic pieces of ``workbench.training.hpo_runner``.
 
-Objective selection, shortlisting, and the default config merge — no framework, no
-training. The per-framework objectives are covered by ``chemprop_hpo_test.py`` and
-``xgb_hpo_test.py``.
+Objective selection, shortlisting, the re-rank's publish decision, and the artifact
+contract — no framework, no real training (a stub adapter stands in for one). The
+per-framework objectives are covered by ``chemprop_hpo_test.py`` and ``xgb_hpo_test.py``.
 """
 
 # Workbench Imports
-from workbench.training.hpo_runner import HpoAdapter, shortlist_configs, trial_completed, use_holdout
+from workbench.training.hpo_runner import (
+    HpoAdapter,
+    best_config_record,
+    shortlist_configs,
+    trial_completed,
+    trial_records,
+    use_holdout,
+)
 
 
 def test_split_kwargs_default_is_empty():
@@ -125,6 +132,117 @@ def test_summarize_trials_reads_the_optuna_shape():
         ]
     )
     assert counts == {"attempted": 3, "completed": 1, "pruned": 1, "failed": 1}
+
+
+def _space():
+    from workbench.training.hpo_harness import FloatRange, IntRange
+
+    return {"x": FloatRange(0.0, 10.0, default=5.0), "depth": IntRange(2, 6, 1, default=6)}
+
+
+def test_trial_records_normalize_both_backend_shapes():
+    """Optuna reports a state name and Ray a flag; the CSV carries one `completed` bool
+    either way, so a reader needs no per-backend logic."""
+    optuna_rows = trial_records(
+        [{"number": 0, "value": 0.4, "state": "COMPLETE", "config": {"x": 1.0}}], {}, _space(), 0.9
+    )
+    ray_rows = trial_records([{"number": 0, "value": 0.4, "completed": True, "config": {"x": 1.0}}], {}, _space(), 0.9)
+
+    for rows in (optuna_rows, ray_rows):
+        assert rows[0]["completed"] is True
+        assert "state" not in rows[0]
+    # Same schema from both backends
+    assert set(optuna_rows[0]) == set(ray_rows[0])
+
+
+def test_trial_records_mark_pruned_trials_incomplete():
+    """A pruned trial keeps its (partial-ensemble) value but is not `completed`, which is
+    what keeps it out of the shortlist and out of a reader's comparisons."""
+    rows = trial_records(
+        [
+            {"number": 0, "value": 0.4, "state": "PRUNED", "config": {}},
+            {"number": 1, "value": None, "state": "FAIL", "config": {}},
+        ],
+        {},
+        _space(),
+        0.9,
+    )
+    assert [r["completed"] for r in rows[:2]] == [False, False]
+    assert rows[0]["value"] == 0.4 and rows[1]["value"] is None  # pruned vs failed stays recoverable
+
+
+def test_trial_records_append_the_baseline_row():
+    """The baseline is the caller's own hyperparameters on the search basis — the
+    reference line a trials plot needs — and always completes."""
+    rows = trial_records([{"number": 0, "value": 0.4, "state": "COMPLETE", "config": {"x": 1.0}}], {}, _space(), 0.9)
+    baseline = rows[-1]
+    assert baseline["kind"] == "baseline" and rows[0]["kind"] == "trial"
+    assert baseline["number"] == -1
+    assert baseline["value"] == 0.9
+    assert baseline["completed"] is True
+
+
+def test_trial_records_are_rectangular_and_nan_free():
+    """Every row carries every searched knob at the value it trained at: the trial's own
+    override, else the caller's hyperparameters, else the spec default."""
+    rows = trial_records(
+        [{"number": 0, "value": 0.4, "state": "COMPLETE", "config": {"x": 1.0}}],
+        {"depth": 3},  # caller set depth; nobody set x on the baseline
+        _space(),
+        0.9,
+    )
+    assert rows[0]["hyperparameters"] == {"x": 1.0, "depth": 3}  # trial override wins for x
+    assert rows[-1]["hyperparameters"] == {"x": 5.0, "depth": 3}  # baseline: spec default, caller's depth
+    assert all(set(r["hyperparameters"]) == {"x", "depth"} for r in rows)
+
+
+def test_best_config_record_keeps_the_two_bases_separate():
+    """best/baseline come from the re-rank; search_* are phase 1's own numbers. Mixing
+    them is the documented misread, so they must stay distinctly labelled."""
+    from workbench.training.hpo_harness import HpoResult
+
+    result = HpoResult(best_config={"x": 1.0}, best_value=0.30, metric="cv_mae", mode="min", n_trials=4, trials=[])
+    counts = {"attempted": 4, "completed": 3, "pruned": 1, "failed": 0}
+    rerank = {
+        "best_value": 0.42,
+        "baseline_value": 0.45,
+        "fresh_split": True,
+        "candidates": [{"candidate": "baseline"}],
+    }
+    record = best_config_record(
+        result,
+        metric="cv_mae",
+        counts=counts,
+        best_config={"x": 1.0},
+        rerank=rerank,
+        search_baseline_value=0.50,
+    )
+
+    # Re-rank basis: the margin the publish decision turned on
+    assert (record["best_value"], record["baseline_value"]) == (0.42, 0.45)
+    # Search basis: not comparable to the above when the partition was re-drawn
+    assert (record["search_best_value"], record["search_baseline_value"]) == (0.30, 0.50)
+    assert record["rerank_fresh_split"] is True
+    assert record["trial_counts"] == counts
+    assert record["rerank"] == rerank["candidates"]
+
+
+def test_best_config_record_when_the_rerank_was_skipped():
+    """A disabled/failed re-rank leaves an empty info dict — the record still writes, with
+    the re-rank basis absent rather than silently borrowing the search's numbers."""
+    from workbench.training.hpo_harness import HpoResult
+
+    result = HpoResult(best_config={}, best_value=0.30, metric="cv_mae", mode="min", n_trials=1, trials=[])
+    record = best_config_record(
+        result,
+        metric="cv_mae",
+        counts={"attempted": 1, "completed": 1, "pruned": 0, "failed": 0},
+        best_config={},
+        rerank={},
+        search_baseline_value=0.50,
+    )
+    assert record["best_value"] is None and record["baseline_value"] is None
+    assert record["rerank"] == [] and record["rerank_fresh_split"] is False
 
 
 class _StubAdapter(HpoAdapter):

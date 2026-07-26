@@ -309,56 +309,109 @@ def run_hpo(
         best_config, rerank = result.best_config, {}
 
     if output_dir:
+        record = best_config_record(
+            result,
+            metric=metric,
+            counts=counts,
+            best_config=best_config,
+            rerank=rerank,
+            search_baseline_value=search_baseline_value,
+        )
         with open(os.path.join(output_dir, "best_config.json"), "w") as fp:
-            json.dump(
-                {
-                    "metric": metric,
-                    # completed/pruned/failed. Only `completed` trials were shortlist-eligible,
-                    # so this is how much of the budget actually backed the result.
-                    "trial_counts": counts,
-                    "best_config": best_config,
-                    # best_value and baseline_value share the re-rank's basis, so their
-                    # difference is the real margin the publish decision turned on.
-                    "best_value": rerank.get("best_value"),
-                    "baseline_value": rerank.get("baseline_value"),
-                    # Phase 1's own number. When rerank_fresh_split is true the re-rank scored
-                    # on a different fold partition, so this is NOT comparable to the two
-                    # above — partitions differ in difficulty.
-                    "search_best_value": result.best_value,
-                    "search_baseline_value": search_baseline_value,
-                    "search_best_config": result.best_config,
-                    "rerank_fresh_split": rerank.get("fresh_split", False),
-                    "rerank": rerank.get("candidates", []),
-                },
-                fp,
-                indent=2,
-                default=str,
-            )
-        # Effective values for every searched knob, so the baseline plots alongside the trials.
-        # Both backends' completion flags normalize to one `completed` bool, so the CSV schema
-        # is identical whichever backend ran the search. Pruned vs failed stays recoverable:
-        # an incomplete trial with a value was pruned; one without ever scored.
-        baseline_row = {
-            "number": -1,
-            "value": search_baseline_value,
-            "completed": True,
-            "hyperparameters": effective_config({}, base_hyperparameters, search_space),
-            "kind": "baseline",
-        }
-        trial_rows = [
-            {
-                **{k: v for k, v in t.items() if k not in ("config", "state", "completed")},
-                "completed": trial_completed(t),
-                "hyperparameters": effective_config(t.get("config") or {}, base_hyperparameters, search_space),
-                "kind": "trial",
-            }
-            for t in result.trials
-        ] + [baseline_row]
-        _write_records(trial_rows, os.path.join(output_dir, "hpo_trials.csv"))
+            json.dump(record, fp, indent=2, default=str)
+        rows = trial_records(result.trials, base_hyperparameters, search_space, search_baseline_value)
+        _write_records(rows, os.path.join(output_dir, "hpo_trials.csv"))
         if rerank.get("candidates"):
             _write_records(rerank["candidates"], os.path.join(output_dir, "hpo_rerank.csv"))
 
     return adapter.merge_config(base_hyperparameters, best_config)
+
+
+def best_config_record(result, *, metric, counts, best_config, rerank, search_baseline_value) -> dict:
+    """The ``best_config.json`` payload — the search's decision and what it turned on.
+
+    Read by :func:`workbench.utils.model_utils.get_hpo_results`. The two value pairs are
+    on *different bases* and must not be mixed:
+
+    * ``best_value`` / ``baseline_value`` — the re-rank's basis, so their difference is
+      the real margin the publish decision turned on. This is the pair to quote.
+    * ``search_best_value`` / ``search_baseline_value`` — phase 1's own numbers, the same
+      basis as every row in ``hpo_trials.csv``. When ``rerank_fresh_split`` is true the
+      re-rank scored on a different fold partition, so these are not comparable to the
+      pair above — partitions differ in difficulty.
+
+    Args:
+        result: the :class:`~workbench.training.hpo_harness.HpoResult` from the search.
+        metric: the objective key (``cv_mae`` or ``holdout_mae``).
+        counts: :func:`summarize_trials` output — completed/pruned/failed. Only
+            ``completed`` trials were shortlist-eligible, so this is how much of the
+            budget actually backed the result.
+        best_config: the config being published.
+        rerank: :func:`rerank_finalists`' info dict (empty when it was skipped).
+        search_baseline_value: the caller's own hyperparameters on the search basis.
+
+    Returns:
+        dict: json-serializable record.
+    """
+    return {
+        "metric": metric,
+        "trial_counts": counts,
+        "best_config": best_config,
+        "best_value": rerank.get("best_value"),
+        "baseline_value": rerank.get("baseline_value"),
+        "search_best_value": result.best_value,
+        "search_baseline_value": search_baseline_value,
+        "search_best_config": result.best_config,
+        "rerank_fresh_split": rerank.get("fresh_split", False),
+        "rerank": rerank.get("candidates", []),
+    }
+
+
+def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseline_value) -> list:
+    """The ``hpo_trials.csv`` rows — every trial plus the baseline, one schema.
+
+    Read by :func:`workbench.utils.model_utils.get_hpo_results`. Columns:
+
+    * ``number`` — the trial's index; ``-1`` for the baseline row.
+    * ``value`` — the objective. On a ``completed`` trial this is the full-ensemble
+      score; on a pruned one it is a *partial*-ensemble score, which can read lower.
+    * ``completed`` — bool, normalized across backends (Optuna reports a state name,
+      Ray a flag). Pruned vs failed stays recoverable: an incomplete trial with a
+      ``value`` was pruned, one without ever scored.
+    * ``hyperparameters`` — every searched knob and the value it actually trained at,
+      so the table is rectangular and NaN-free (see :func:`effective_config`).
+    * ``kind`` — ``trial`` or ``baseline``. The baseline is the caller's own
+      hyperparameters on the search basis: the reference line any plot of the search
+      needs.
+
+    Args:
+        trials: the per-trial records from :class:`~workbench.training.hpo_harness.HpoResult`.
+        base_hyperparameters: the caller's hyperparameters.
+        search_space: the resolved ``{knob: Spec}`` space.
+        baseline_value: the baseline's objective on the search basis.
+
+    Returns:
+        list: one dict per trial, with the baseline row last.
+    """
+    rows = [
+        {
+            **{k: v for k, v in trial.items() if k not in ("config", "state", "completed")},
+            "completed": trial_completed(trial),
+            "hyperparameters": effective_config(trial.get("config") or {}, base_hyperparameters, search_space),
+            "kind": "trial",
+        }
+        for trial in trials
+    ]
+    rows.append(
+        {
+            "number": -1,
+            "value": baseline_value,
+            "completed": True,
+            "hyperparameters": effective_config({}, base_hyperparameters, search_space),
+            "kind": "baseline",
+        }
+    )
+    return rows
 
 
 def _json_scalar(value):
