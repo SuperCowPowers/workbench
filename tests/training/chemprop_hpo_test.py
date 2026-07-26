@@ -127,3 +127,30 @@ def test_every_searched_knob_declares_a_default():
     """No knob may leave its default unset — that is what keeps search records NaN-free."""
     missing = [knob for knob, spec in chemprop_search_space().items() if spec.default is None]
     assert not missing, f"searched knobs with no declared default: {missing}"
+
+
+def _adapter(targets):
+    from workbench.training.chemprop_hpo import ChempropAdapter
+
+    return ChempropAdapter(
+        target_columns=targets, smiles_column="smiles", task="regression",
+        model_type="uq_regressor", num_classes=None, task_weights=None,
+    )
+
+
+def test_single_task_packs_two_trials_per_gpu():
+    assert _adapter(["pec50"]).resources_per_trial({}, "ray") == {"gpu": 0.5}
+
+
+def test_multi_task_claims_a_whole_gpu():
+    """Packing two multi-task trials on one card has been measured to OOM it."""
+    assert _adapter(["pec50", "logd"]).resources_per_trial({}, "ray") == {"gpu": 1.0}
+
+
+def test_explicit_gpus_per_trial_wins_over_the_default():
+    block = {"gpus_per_trial": 0.25}
+    assert _adapter(["pec50", "logd"]).resources_per_trial(block, "ray") == {"gpu": 0.25}
+
+
+def test_optuna_backend_requests_no_ray_resources():
+    assert _adapter(["pec50", "logd"]).resources_per_trial({}, "optuna") is None

@@ -167,12 +167,17 @@ class ChempropAdapter(HpoAdapter):
         return merge_best_config(hyperparameters, config)
 
     def resources_per_trial(self, hpo_block, backend):
-        """A trial uses ~5% of an L4's memory and ~46% of its compute, so packing two per GPU
-        roughly saturates one without spilling. Ray only.
+        """GPU share per trial. Ray only; ``hpo['gpus_per_trial']`` overrides.
+
+        Two trials per card saturates an L4 without spilling for a single-task search. A
+        multi-task one gets the whole card: its good configs sit at the top of the capacity
+        range and its molecules come from more than one assay, and packing two of those has
+        been measured to run a card out of memory — taking the co-scheduled trial with it.
         """
         if backend == "optuna":
             return None
-        return {"gpu": hpo_block.get("gpus_per_trial", 0.5)}
+        default = 1.0 if len(self.target_columns) > 1 else 0.5
+        return {"gpu": hpo_block.get("gpus_per_trial", default)}
 
     def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
         """Build the ensemble chemprop ``trial_fn`` (closes over the folds and eval data).

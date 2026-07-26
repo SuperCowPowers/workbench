@@ -44,12 +44,10 @@ m = fs.to_model(
         "uq_version": "v1",
         "task_weights": [1.0, 0.3],  # matches pxr-reg-chemprop-mt-logd, so the comparison is clean
         "hpo": {
+            # "ray" runs trials concurrently (ASHA) across the GPUs. A multi-task search
+            # claims a whole card per trial, so this fills 4 GPUs with 4 trials.
             "backend": "ray",
-            # One trial per GPU. The multi-task view carries roughly twice the rows of the
-            # single-task one, and the good configs here sit at the top of the capacity
-            # range — packing two per card runs them out of memory.
-            "max_parallel": 4,
-            "gpus_per_trial": 1.0,
+            "max_parallel": 8,
             "n_trials": 60,
             # Score on scaffold folds of the training rows, never on the held-out
             # phase1_test rows — tuning on those would cost them their role as a benchmark.
