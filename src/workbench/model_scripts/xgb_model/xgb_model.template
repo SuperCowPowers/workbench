@@ -45,8 +45,10 @@ DEFAULT_HYPERPARAMETERS = {
     # Training parameters
     "n_folds": 5,  # Number of CV folds (1 = single train/val split)
     # Core tree parameters. n_estimators is a ceiling, not a target: early stopping picks
-    # the round count per fold, watching a slice held out of that fold's training rows.
-    "n_estimators": 2000,
+    # the round count per fold, watching a slice held out of that fold's training rows. Set
+    # high enough that a low learning rate still converges before hitting it — a fold that
+    # reaches the ceiling was truncated mid-training, not early-stopped.
+    "n_estimators": 6000,
     "early_stopping_rounds": 50,
     "early_stopping_fraction": 0.1,
     "max_depth": 7,

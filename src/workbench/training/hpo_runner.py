@@ -164,8 +164,6 @@ def run_hpo(
     Returns:
         dict: phase-2 hyperparameters — no ``hpo`` block.
     """
-    import pandas as pd
-
     from workbench.endpoints.inference import get_split_indices
     from workbench.training.hpo_harness import run_search
 
@@ -315,18 +313,45 @@ def run_hpo(
         baseline_row = {
             "number": -1,
             "value": search_baseline_value,
-            "config": effective_config({}, base_hyperparameters, search_space),
+            "hyperparameters": effective_config({}, base_hyperparameters, search_space),
             "kind": "baseline",
         }
         # Match the backend's completion-flag key so the frame stays rectangular.
         ray_shape = bool(result.trials) and "completed" in result.trials[0]
         baseline_row["completed" if ray_shape else "state"] = True if ray_shape else "COMPLETE"
-        trial_rows = [{**t, "kind": "trial"} for t in result.trials] + [baseline_row]
-        pd.DataFrame(trial_rows).to_csv(os.path.join(output_dir, "hpo_trials.csv"), index=False)
+        trial_rows = [
+            {
+                **{k: v for k, v in t.items() if k != "config"},
+                "hyperparameters": effective_config(t.get("config") or {}, base_hyperparameters, search_space),
+                "kind": "trial",
+            }
+            for t in result.trials
+        ] + [baseline_row]
+        _write_records(trial_rows, os.path.join(output_dir, "hpo_trials.csv"))
         if rerank.get("candidates"):
-            pd.DataFrame(rerank["candidates"]).to_csv(os.path.join(output_dir, "hpo_rerank.csv"), index=False)
+            _write_records(rerank["candidates"], os.path.join(output_dir, "hpo_rerank.csv"))
 
     return adapter.merge_config(base_hyperparameters, best_config)
+
+
+def _json_scalar(value):
+    """Unwrap a sampler's numpy scalar so json can serialize it."""
+    return value.item() if hasattr(value, "item") else str(value)
+
+
+def _write_records(rows, path) -> None:
+    """Write search records to CSV with the ``hyperparameters`` cell as real JSON.
+
+    A dict rendered by ``str()`` is single-quoted and not parseable by anything but
+    ``ast.literal_eval``; ``json.dumps`` makes the column ``json.loads``-able, which is what
+    a reader will reach for.
+    """
+    import pandas as pd
+
+    frame = pd.DataFrame(rows)
+    if "hyperparameters" in frame:
+        frame["hyperparameters"] = [json.dumps(h, default=_json_scalar) for h in frame["hyperparameters"]]
+    frame.to_csv(path, index=False)
 
 
 def effective_config(config: dict, base_hyperparameters: dict, search_space: dict) -> dict:
@@ -452,7 +477,7 @@ def rerank_finalists(
     rows = [
         {
             "candidate": "baseline" if i == 0 else f"search_rank_{i}",
-            "config": effective_config(c, base_hyperparameters, search_space),
+            "hyperparameters": effective_config(c, base_hyperparameters, search_space),
             metric: v,
         }
         for i, (c, v) in enumerate(zip(candidates, values))

@@ -83,7 +83,7 @@ cluster in and lets you trace a single config across every axis. Data is
 
 What makes it readable:
 
-- Expand the per-trial config into one column per parameter.
+- Expand the `hyperparameters` cell into one column per parameter (`json.loads`).
 - Normalize each axis independently and print its true min/max at the ends.
   Log-scale any parameter spanning orders of magnitude, and say so in its label.
 - Color by the objective with a **divergent** colormap centered on the baseline

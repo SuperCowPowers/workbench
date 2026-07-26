@@ -38,9 +38,14 @@ results.
 "is this an HPO model?" check.
 
 It returns the published config, the values below, and `rerank` / `trials` DataFrames.
-`trials` carries a `kind` column: the search trials plus one `baseline` row — the user's
-own hyperparameters on the same basis — which is the reference line any plot of the search
-needs. See the `plotting` guide for parallel coordinates.
+
+Both frames carry a `hyperparameters` column: a JSON object of every searched knob and the
+value it actually trained at, so `json.loads` gives you a complete, NaN-free record per row.
+The knobs differ by framework — read them off the object rather than hardcoding names.
+
+`trials` also carries a `kind` column: the search trials plus one `baseline` row — the
+user's own hyperparameters on the same basis — which is the reference line any plot of the
+search needs. See the `plotting` guide for parallel coordinates.
 
 ## Reading the numbers (the part that misleads)
 
@@ -48,28 +53,37 @@ needs. See the `plotting` guide for parallel coordinates.
 finalists *and the user's own untuned hyperparameters* on fresh trainings, and
 whichever wins there is published.
 
-- `best_value` vs `baseline_value` — same basis. Their difference is the real margin
-  the publish decision turned on. **This is the comparison to quote.**
-- `search_best_value` vs `search_baseline_value` — same basis as each other and as every
-  row in `trials`. Use this pair to say how the search went.
-- Do **not** mix the pairs. When `rerank_fresh_split` is true the search phase and the
-  re-rank used *different fold partitions*, so `search_best_value` is not comparable to
-  `best_value`/`baseline_value` and can even look better. Never present it as the model's
-  improvement.
-- `rerank` — one row per candidate, `baseline` first. All rows share one basis, so
-  these are directly comparable to each other.
+There are two same-basis pairs and they must not be mixed:
+
+- `best_value` vs `baseline_value` — the real margin the publish decision turned on.
+  **This is the comparison to quote.** The `rerank` frame shares this basis.
+- `search_best_value` vs `search_baseline_value` — how the *search* went; same basis as
+  every row in `trials`.
+
+When `rerank_fresh_split` is true the two pairs scored on different fold partitions, so a
+number from one is not comparable to the other and can even look better. Never present
+`search_best_value` as the model's improvement.
 
 **A baseline win is a legitimate outcome, not a failed run.** If `best_config` is
 empty or matches the user's own hyperparameters, the search found nothing that beat
 their defaults and the untuned model was published. Report that plainly — it means
 HPO cost GPU time and confirmed the existing settings.
 
+## Judging the search space
+
+Every knob's spec carries its range and its `default`, so a space is inspectable without
+running anything — `space_defaults` and the framework's `*_search_space()`.
+
+Winners clustering at a bound is not on its own a reason to widen it. A knob clipped
+*mechanically* — an ensemble member hitting its round ceiling — is different, and shows
+up only in the training log, never in the objective.
+
 ## What to expect
 
-Temper claims. Measured on our own data: HPO improved in-distribution cross-validation
-(AqSol chemprop, ~5%) but **lost to stock chemprop defaults** on PXR's held-out analog
-set. Gains on CV do not imply gains on a new chemical series. Framework defaults are a
-strong baseline and often win on small datasets.
+Temper claims. Measured on our own data: HPO improved in-distribution cross-validation but
+**lost to stock defaults** on PXR's held-out analog set. Gains on CV do not imply gains on
+a new chemical series. Framework defaults are a strong baseline and often win on small
+datasets. Quote the run's own numbers rather than a remembered figure.
 
 By default the objective is `cv_mae`, scored out-of-fold on the training rows. Rows
 designated via `validation_ids` are held out of training **and** out of the search, so
