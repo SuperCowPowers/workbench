@@ -160,7 +160,7 @@ def prepare_data(
         continuous_cols: List of continuous feature column names
         categorical_cols: List of categorical feature column names
         target_col: Target column name (optional, for training)
-        category_mappings: Existing category mappings (for inference)
+        category_mappings: Existing category mappings as {col: [category, ...]} (for inference)
         scaler: Existing FeatureScaler (for inference), or None to fit a new one
 
     Returns:
@@ -178,14 +178,11 @@ def prepare_data(
     x_cat = None
     if categorical_cols:
         if category_mappings is None:
-            category_mappings = {}
-            for col in categorical_cols:
-                unique_vals = df[col].unique().tolist()
-                category_mappings[col] = {v: i for i, v in enumerate(unique_vals)}
+            category_mappings = {col: df[col].unique().tolist() for col in categorical_cols}
 
         cat_indices = []
         for col in categorical_cols:
-            mapping = category_mappings[col]
+            mapping = {v: i for i, v in enumerate(category_mappings[col])}
             # Map values to indices, use 0 for unknown categories
             indices = df[col].map(lambda x: mapping.get(x, 0)).values
             cat_indices.append(indices)
