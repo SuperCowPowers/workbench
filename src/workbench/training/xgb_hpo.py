@@ -25,31 +25,30 @@ from workbench.training.hpo_harness import FloatRange, IntRange
 from workbench.training.hpo_runner import HpoAdapter, run_hpo
 
 # Workbench knobs the template consumes itself — never forwarded to XGBoost.
-WORKBENCH_PARAMS = {"n_folds", "split_strategy", "butina_cutoff", "uq_version"}
-
 # Default per-knob search space, split into the two levers that matter for gradient
 # boosting. Both groups are searched by default. Everything else — n_folds,
 # split_strategy, uq_version, objective, seed — stays fixed at its configured value.
 _SEARCH_GROUPS = {
-    # Capacity and how fast it is spent. n_estimators and learning_rate trade directly
-    # against each other (half the rate wants roughly twice the trees), so they search as
-    # one group; max_depth and min_child_weight set how expressive an individual tree is.
+    # Capacity and how fast it is spent. n_estimators is NOT here — early stopping picks the
+    # round count per fold, so the tree budget tunes itself and a searched value would only
+    # fight it. max_depth and min_child_weight set how expressive an individual tree is.
     "basic": {
-        "max_depth": IntRange(3, 12, 1, default=7),
-        "min_child_weight": IntRange(1, 20, 1, default=3),
-        "n_estimators": IntRange(100, 1500, 100, default=300),
-        "learning_rate": FloatRange(0.01, 0.3, log=True, default=0.05),
+        "max_depth": IntRange(3, 16, 1, default=7),
+        "min_child_weight": IntRange(1, 30, 1, default=3),
+        "learning_rate": FloatRange(0.003, 0.3, log=True, default=0.05),
     },
     # Sampling + penalty terms. These are the knobs that decide how hard the model
     # overfits, which is the dominant failure mode on the small, wide descriptor frames
     # ADMET datasets produce. gamma starts at 0 (no split penalty), so it is sampled
-    # linearly rather than log.
+    # linearly rather than log. The reg_alpha/reg_lambda floors sit far enough below
+    # XGBoost's own defaults to be numerically off — a log range cannot include 0, and
+    # searches on ADMET data head for that corner.
     "reg": {
-        "subsample": FloatRange(0.5, 1.0, step=0.05, default=0.8),
+        "subsample": FloatRange(0.4, 1.0, step=0.05, default=0.8),
         "colsample_bytree": FloatRange(0.4, 1.0, step=0.05, default=0.8),
         "gamma": FloatRange(0.0, 5.0, step=0.1, default=0.1),
-        "reg_alpha": FloatRange(1e-3, 10.0, log=True, default=0.1),
-        "reg_lambda": FloatRange(1e-2, 50.0, log=True, default=1.0),
+        "reg_alpha": FloatRange(1e-4, 10.0, log=True, default=0.1),
+        "reg_lambda": FloatRange(1e-3, 50.0, log=True, default=1.0),
     },
 }
 
@@ -88,19 +87,6 @@ def resolve_search_space(spec) -> dict:
     return xgb_search_space(tuple(spec))
 
 
-def xgb_params(hyperparameters: dict, *, fold_idx: int = 0) -> dict:
-    """Reduce a hyperparameters dict to the estimator kwargs XGBoost accepts.
-
-    Mirrors the template: Workbench-only knobs are dropped, ``seed`` becomes
-    ``random_state``, regression defaults to MAE, and each fold offsets the seed so the
-    ensemble members differ.
-    """
-    params = {k: v for k, v in hyperparameters.items() if k not in WORKBENCH_PARAMS and k != "hpo"}
-    params["random_state"] = params.pop("seed", 42) + fold_idx
-    params.setdefault("objective", "reg:absoluteerror")
-    return params
-
-
 class XGBAdapter(HpoAdapter):
     """Trains and scores one XGBoost candidate for :func:`run_hpo`.
 
@@ -130,7 +116,8 @@ class XGBAdapter(HpoAdapter):
           the mean across folds.
         """
         import numpy as np
-        import xgboost as xgb
+
+        from workbench.training.xgb_core import train_xgb_fold
 
         n_jobs = _xgb_threads(concurrency)
         print(f"[hpo] {n_jobs} XGBoost threads per trial at {concurrency} concurrent")
@@ -141,17 +128,16 @@ class XGBAdapter(HpoAdapter):
         weights = train_df["sample_weight"] if "sample_weight" in train_df.columns else None
 
         def trial_fn(config, report):
-            merged = self.merge_config(hyperparameters, config)
+            merged = {**self.merge_config(hyperparameters, config), "n_jobs": n_jobs}
 
             member_preds, fold_maes = [], []
             for fold_idx, (tr_idx, va_idx) in enumerate(folds):
-                model = xgb.XGBRegressor(
-                    enable_categorical=True, n_jobs=n_jobs, **xgb_params(merged, fold_idx=fold_idx)
-                )
-                model.fit(
+                model = train_xgb_fold(
+                    merged,
                     train_df.iloc[tr_idx][self.features],
                     all_y[tr_idx],
-                    sample_weight=None if weights is None else weights.iloc[tr_idx],
+                    sample_weight=None if weights is None else weights.iloc[tr_idx].to_numpy(),
+                    fold_idx=fold_idx,
                 )
 
                 if holdout:

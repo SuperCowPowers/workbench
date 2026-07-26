@@ -44,8 +44,11 @@ from workbench.endpoints.uq_regression import load_regression_uq
 DEFAULT_HYPERPARAMETERS = {
     # Training parameters
     "n_folds": 5,  # Number of CV folds (1 = single train/val split)
-    # Core tree parameters
-    "n_estimators": 300,
+    # Core tree parameters. n_estimators is a ceiling, not a target: early stopping picks
+    # the round count per fold, watching a slice held out of that fold's training rows.
+    "n_estimators": 2000,
+    "early_stopping_rounds": 50,
+    "early_stopping_fraction": 0.1,
     "max_depth": 7,
     "learning_rate": 0.05,
     # Sampling parameters (less aggressive - ensemble provides regularization)
@@ -74,12 +77,6 @@ DEFAULT_HYPERPARAMETERS = {
     # other versions stay available for comparison via Model.uq_model(version=...).
     "uq_version": "v0",
 }
-
-# Workbench-specific parameters (not passed to XGBoost)
-WORKBENCH_PARAMS = {"n_folds", "split_strategy", "butina_cutoff", "uq_version"}
-
-# Regression-only parameters (filtered out for classifiers)
-REGRESSION_ONLY_PARAMS = {"objective"}
 
 # Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
@@ -283,6 +280,7 @@ if __name__ == "__main__":
     # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
     # category mappings and downstream CV/UQ/SHAP never see them. They're scored held-out below.
     from workbench.training.validation import split_validation_set
+    from workbench.training.xgb_core import train_xgb_fold, xgb_params
 
     all_df, holdout_df = split_validation_set(all_df)
     if len(holdout_df):
@@ -347,20 +345,7 @@ if __name__ == "__main__":
     # Cross-validation setup
     # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]
-    xgb_params = {k: v for k, v in hyperparameters.items() if k not in WORKBENCH_PARAMS}
-
-    # Map 'seed' to 'random_state' for XGBoost
-    if "seed" in xgb_params:
-        xgb_params["random_state"] = xgb_params.pop("seed")
-
-    # Handle objective: filter regression-only params for classifiers, set default for regressors
-    if model_type == "classifier":
-        xgb_params = {k: v for k, v in xgb_params.items() if k not in REGRESSION_ONLY_PARAMS}
-    else:
-        # Default to MAE (reg:absoluteerror) for regression if not specified
-        xgb_params.setdefault("objective", "reg:absoluteerror")
-
-    print(f"XGBoost params: {xgb_params}")
+    print(f"XGBoost params: {xgb_params(hyperparameters)}")
 
     # Get split strategy parameters
     split_strategy = hyperparameters.get("split_strategy", "scaffold")
@@ -411,15 +396,18 @@ if __name__ == "__main__":
         X_val = all_df.iloc[val_idx][features]
         sample_weights = all_df.iloc[train_idx]["sample_weight"] if has_sample_weights else None
 
-        # Create model with fold-specific random state for diversity
-        fold_params = {**xgb_params, "random_state": xgb_params.get("random_state", 42) + fold_idx}
-        if model_type == "classifier":
-            model = xgb.XGBClassifier(enable_categorical=True, **fold_params)
-        else:
-            model = xgb.XGBRegressor(enable_categorical=True, **fold_params)
-
-        # Train
-        model.fit(X_train, y_train, sample_weight=sample_weights)
+        # Same trainer the HPO objective scores its trials with, so a searched config maps
+        # to this exact model.
+        model = train_xgb_fold(
+            hyperparameters,
+            X_train,
+            y_train,
+            sample_weight=sample_weights,
+            model_type=model_type,
+            fold_idx=fold_idx,
+        )
+        if getattr(model, "best_iteration", None) is not None:
+            print(f"Early stopping at round {model.best_iteration + 1}/{hyperparameters['n_estimators']}")
         ensemble_models.append(model)
 
         # Out-of-fold predictions

@@ -109,7 +109,7 @@ if __name__ == "__main__":
                     # The base training image carries optuna, not ray — and one XGBoost fit
                     # already spreads across every core, so the search is serial by design.
                     "backend": "optuna",
-                    "n_trials": 100,
+                    "n_trials": 250,
                     # search_space defaults to "basic+reg" (capacity/boosting + sampling/penalties).
                     "rerank_top_k": 5,
                 },

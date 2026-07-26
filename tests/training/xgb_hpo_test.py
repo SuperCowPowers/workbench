@@ -6,7 +6,8 @@ The framework-agnostic orchestration is covered by ``hpo_runner_test.py``.
 
 # Workbench Imports
 from workbench.training.hpo_harness import FloatRange, IntRange
-from workbench.training.xgb_hpo import _xgb_threads, resolve_search_space, xgb_params, xgb_search_space
+from workbench.training.xgb_core import xgb_params
+from workbench.training.xgb_hpo import _xgb_threads, resolve_search_space, xgb_search_space
 
 
 def test_default_space_is_basic_plus_reg():
@@ -15,7 +16,6 @@ def test_default_space_is_basic_plus_reg():
     assert set(space) == {
         "max_depth",
         "min_child_weight",
-        "n_estimators",
         "learning_rate",
         "subsample",
         "colsample_bytree",
@@ -23,7 +23,9 @@ def test_default_space_is_basic_plus_reg():
         "reg_alpha",
         "reg_lambda",
     }
-    assert space["max_depth"] == IntRange(3, 12, 1, default=7)
+    # Early stopping owns the tree budget, so searching it would only fight that.
+    assert "n_estimators" not in space
+    assert space["max_depth"] == IntRange(3, 16, 1, default=7)
     assert space["learning_rate"].log is True  # rate spans an order of magnitude
     assert space["gamma"].log is False  # starts at 0, so it cannot be sampled log-uniformly
     assert space["reg_alpha"].log is True
@@ -32,7 +34,7 @@ def test_default_space_is_basic_plus_reg():
 def test_reg_group_is_sampling_and_penalties():
     space = xgb_search_space(("reg",))
     assert set(space) == {"subsample", "colsample_bytree", "gamma", "reg_alpha", "reg_lambda"}
-    assert space["subsample"] == FloatRange(0.5, 1.0, step=0.05, default=0.8)
+    assert space["subsample"] == FloatRange(0.4, 1.0, step=0.05, default=0.8)
 
 
 def test_unknown_group_raises():
@@ -56,11 +58,20 @@ def test_resolve_search_space_shorthands():
 def test_xgb_params_drops_workbench_knobs_and_the_hpo_block():
     """Only estimator kwargs reach XGBoost — the template's own knobs are filtered out."""
     params = xgb_params(
-        {"n_folds": 5, "split_strategy": "scaffold", "uq_version": "v1", "max_depth": 4, "hpo": {"n_trials": 10}}
+        {
+            "n_folds": 5,
+            "split_strategy": "scaffold",
+            "uq_version": "v1",
+            "early_stopping_fraction": 0.1,
+            "max_depth": 4,
+            "hpo": {"n_trials": 10},
+        }
     )
     assert params["max_depth"] == 4
-    for dropped in ("n_folds", "split_strategy", "uq_version", "hpo"):
+    for dropped in ("n_folds", "split_strategy", "uq_version", "early_stopping_fraction", "hpo"):
         assert dropped not in params
+    # early_stopping_rounds IS an estimator kwarg, so it must survive the reduction.
+    assert xgb_params({"early_stopping_rounds": 50})["early_stopping_rounds"] == 50
 
 
 def test_xgb_params_maps_seed_and_offsets_per_fold():

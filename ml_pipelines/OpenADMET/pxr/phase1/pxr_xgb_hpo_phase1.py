@@ -45,7 +45,7 @@ m = fs.to_model(
             # The base training image carries optuna, not ray — and one XGBoost fit already
             # spreads across every core, so the search is serial by design.
             "backend": "optuna",
-            "n_trials": 100,
+            "n_trials": 250,
             # Score on scaffold folds of the training rows, NOT on the held-out phase1_test
             # rows — see the module docstring.
             "metric": "cv_mae",
