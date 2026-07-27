@@ -361,6 +361,26 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
+    def job_logs_read(self) -> iam.PolicyStatement:
+        """Create a policy statement for read-only access to Batch and Glue job logs.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for reading Batch/Glue job logs.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "logs:DescribeLogStreams",
+                "logs:GetLogEvents",
+                "logs:FilterLogEvents",
+            ],
+            resources=[
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job:*",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws-glue/*",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws-glue/*:*",
+            ],
+        )
+
     @staticmethod
     def batch_jobs_discover() -> iam.PolicyStatement:
         """Discovery actions that absolutely require * resource."""
@@ -1574,6 +1594,7 @@ class WorkbenchCoreStack(Stack):
         role.add_to_policy(self.batch_jobs_discover())
         role.add_to_policy(self.batch_jobs_full())
         role.add_to_policy(self.batch_pass_role())
+        role.add_to_policy(self.job_logs_read())
         role.add_to_policy(self.sqs_discover())
         role.add_to_policy(self.sqs_full())
         role.add_to_policy(self.parameter_store_discover())
