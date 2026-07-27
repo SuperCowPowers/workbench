@@ -697,19 +697,19 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cost-differs-sharply-by-framework" class="md-nav__link">
+          <li class="md-nav__item">
+  <a href="#your-own-ranges-and-defaults" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cost differs sharply by framework
+        Your own ranges and defaults
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -732,6 +732,34 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Reading the results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-trials-frame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The trials frame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-knobs-mattered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which knobs mattered
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -5130,19 +5158,19 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cost-differs-sharply-by-framework" class="md-nav__link">
+          <li class="md-nav__item">
+  <a href="#your-own-ranges-and-defaults" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cost differs sharply by framework
+        Your own ranges and defaults
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -5165,6 +5193,34 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Reading the results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-trials-frame" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The trials frame
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#which-knobs-mattered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which knobs mattered
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -5356,10 +5412,37 @@ second lever does:</p>
 </table>
 <p>So <code>hpo={"search_space": "basic"}</code> spends the whole budget on architecture — useful when you
 already trust your optimizer settings.</p>
-<h2 id="cost-differs-sharply-by-framework">Cost differs sharply by framework</h2>
-<p>An XGBoost trial is seconds, which makes a 250-trial search the cheap way to try something.
-A ChemProp search trains a full ensemble per trial on a GPU — that is a multi-GPU box for
-hours, so it belongs on AWS Batch rather than run inline.</p>
+<h3 id="your-own-ranges-and-defaults">Your own ranges and defaults</h3>
+<p><strong>A default is just a hyperparameter.</strong> Set a knob normally alongside the <code>hpo</code> block and it
+becomes the baseline the search has to beat — and the value used for any knob outside the
+searched groups:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;max_lr&quot;</span><span class="p">:</span> <span class="mf">3e-3</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">}}</span>
+</span></code></pre></div>
+<p><strong>A range needs a <code>SearchSpace</code>.</strong> Start from the shipped space, change the knobs you have an
+opinion about, and hand the result to <code>hpo["search_space"]</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.training.hpo_harness</span><span class="w"> </span><span class="kn">import</span> <span class="n">SearchSpace</span><span class="p">,</span> <span class="n">IntRange</span><span class="p">,</span> <span class="n">FloatRange</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">space</span> <span class="o">=</span> <span class="n">SearchSpace</span><span class="p">(</span><span class="s2">&quot;xgboost&quot;</span><span class="p">)</span>                              <span class="c1"># or &quot;chemprop&quot; / &quot;pytorch&quot;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">space</span><span class="p">[</span><span class="s2">&quot;max_depth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">IntRange</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>              <span class="c1"># your ceiling, not ours</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">space</span><span class="p">[</span><span class="s2">&quot;learning_rate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FloatRange</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.06</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">del</span> <span class="n">space</span><span class="p">[</span><span class="s2">&quot;gamma&quot;</span><span class="p">]</span>                                          <span class="c1"># not worth trials on this data</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>                                  <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s2">&quot;search_space&quot;</span><span class="p">:</span> <span class="n">space</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()}})</span>
+</span></code></pre></div>
+<p><code>SearchSpace</code> is a <code>dict</code> subclass, so ordinary <code>space[knob] = ...</code> and <code>del</code> are the whole
+editing API. <code>.subset("basic")</code> narrows to a group, and <code>.to_frame()</code> gives the same table
+<code>hpo_search_space()</code> returns, for checking your work.</p>
+<p><strong>What you pass is the whole space</strong> — a one-knob dict searches one knob, it does not patch
+ours. That is what makes <code>space.to_dict()</code> the natural starting point.</p>
+<p><code>to_dict()</code> emits plain JSON, which is also what <code>hpo["search_space"]</code> accepts directly if
+you would rather write it out:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">hpo</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;search_space&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;max_depth&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dist&quot;</span><span class="p">:</span> <span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>                      <span class="s2">&quot;learning_rate&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;dist&quot;</span><span class="p">:</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="mf">0.06</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}}</span>
+</span></code></pre></div>
+<p><code>dist</code> is required — <code>"int"</code>, <code>"float"</code>, or <code>"choice"</code> — and <code>default</code> is optional, falling
+back to the framework's. Bad spaces fail immediately rather than on trial 40: an inverted
+range, a log scale starting at zero, or an empty option list all raise at construction.</p>
 <h2 id="selection-is-two-stage">Selection is two-stage</h2>
 <p>A search reports the <em>minimum</em> over many noisy estimates, so its winning value is
 optimistically biased — the winner may simply have drawn the luckiest evaluation. Workbench
@@ -5375,38 +5458,146 @@ unchanged</strong>. Ties go to your settings.</p>
 <p>That makes a baseline win a legitimate outcome rather than a failed run — it means the
 search spent the compute and confirmed your existing configuration.</p>
 <h2 id="reading-the-results">Reading the results</h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">hpo_results</span><span class="p">()</span>       <span class="c1"># None if the model was not searched</span>
+<p>One call resolves the training job's artifacts — no hunting for S3 paths or CloudWatch
+logs. A <code>None</code> return doubles as the "was this model searched?" check.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">hpo_results</span><span class="p">()</span>
 </span></code></pre></div>
-<p>That resolves the training job's artifacts for you — no need to hunt for S3 paths or
-CloudWatch logs. A <code>None</code> return doubles as the "was this model searched?" check.</p>
-<p>It returns the published configuration, the values below, and <code>rerank</code> / <code>trials</code>
-DataFrames.</p>
-<p>There are two same-basis value pairs, and mixing them is the easy mistake:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;cv_mae&#39;</span><span class="p">,</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a> <span class="s1">&#39;trial_counts&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;attempted&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">34</span><span class="p">,</span> <span class="s1">&#39;pruned&#39;</span><span class="p">:</span> <span class="mi">66</span><span class="p">,</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a> <span class="s1">&#39;best_config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;layers&#39;</span><span class="p">:</span> <span class="s1">&#39;128-64&#39;</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>                 <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>                 <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.0002846282635669909</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>                 <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.0014020994043985207</span><span class="p">,</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>                 <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">},</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a> <span class="s1">&#39;best_value&#39;</span><span class="p">:</span> <span class="mf">0.5106314063072205</span><span class="p">,</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a> <span class="s1">&#39;baseline_value&#39;</span><span class="p">:</span> <span class="mf">0.5450914978981019</span><span class="p">,</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a> <span class="o">...</span><span class="p">}</span>
+</span></code></pre></div>
+<p><strong><code>best_config</code> is what shipped.</strong> These are the model's hyperparameters now — you can hand
+the dict straight to another <code>to_model()</code> call to train a sibling on different data:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pxr-reg-pytorch-v2&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;best_config&quot;</span><span class="p">]})</span>
+</span></code></pre></div>
+<p><strong><code>best_value</code> vs <code>baseline_value</code> is the headline.</strong> Both are <code>metric</code> (here <code>cv_mae</code>,
+lower is better) on the same basis, so their difference is the margin the publish decision
+turned on — quote this pair:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">gain</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;baseline_value&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;best_value&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;baseline_value&quot;</span><span class="p">]</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;metric&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;best_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;baseline_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> baseline (</span><span class="si">{</span><span class="n">gain</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># cv_mae: 0.5106 vs 0.5451 baseline (+6.3%)</span>
+</span></code></pre></div>
+<p><strong><code>trial_counts</code> tells you whether the budget was spent well.</strong> A high <code>pruned</code> count is the
+pruner working as intended — those trials were stopped early once they fell off the pace, so
+<code>completed</code> is what ran to term. Any <code>failed</code> at all is worth a look at the training log.</p>
+<h3 id="the-trials-frame">The trials frame</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">trials</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;trials&quot;</span><span class="p">]</span>      <span class="c1"># one row per trial, plus a `baseline` row</span>
+</span></code></pre></div>
 <table>
 <thead>
 <tr>
-<th>pair</th>
-<th>meaning</th>
+<th>number</th>
+<th>value</th>
+<th>completed</th>
+<th>kind</th>
+<th>hyperparameters</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>best_value</code> vs <code>baseline_value</code></td>
-<td>the real margin the publish decision turned on — <strong>the one to quote</strong></td>
+<td>0</td>
+<td>0.516991</td>
+<td>True</td>
+<td>trial</td>
+<td><code>{"layers": "256-128", ...}</code></td>
 </tr>
 <tr>
-<td><code>search_best_value</code> vs <code>search_baseline_value</code></td>
-<td>how the search itself went; same basis as the <code>trials</code> rows</td>
+<td>1</td>
+<td>0.530321</td>
+<td>False</td>
+<td>trial</td>
+<td><code>{"layers": "512-256-64", ...}</code></td>
 </tr>
 </tbody>
 </table>
-<p>When <code>rerank_fresh_split</code> is <code>true</code> the two pairs scored on different fold partitions, so a
-number from one is not comparable to the other and can even look better. Never present
-<code>search_best_value</code> as the model's improvement.</p>
-<p>Both DataFrames carry a <code>hyperparameters</code> column: a JSON object of every searched knob and
-the value it actually trained at, so each row is a complete, NaN-free record. The <code>trials</code>
-frame also carries a <code>kind</code> column — the trials plus one <code>baseline</code> row, which is the
-reference line any plot of the search needs.</p>
+<p><code>hyperparameters</code> is a JSON object of every searched knob and the value it actually trained
+at, so each row is complete and NaN-free — expand it with <code>json.loads</code> to get one column per
+knob:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">trials</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]])</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trials</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">df</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>                        <span class="c1"># the finalists the re-rank scored</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;layers&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
+</span></code></pre></div>
+<p><code>completed=False</code> marks a pruned trial: its <code>value</code> is the last score before it was stopped,
+so it is a lower bound, not a finished result. The single <code>kind="baseline"</code> row is your own
+untuned config scored on the same basis as the trials — it is the reference line any plot of
+the search needs, and <code>results["rerank"]</code> holds the finalists' re-scores if you want the
+second stage's own numbers.</p>
+<h3 id="which-knobs-mattered">Which knobs mattered</h3>
+<p><code>hpo_importance()</code> answers that from the search's own trials — useful for deciding where to
+spend the next budget, or whether a knob earns its place in the space at all:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">model</span><span class="o">.</span><span class="n">hpo_importance</span><span class="p">()</span>          <span class="c1"># None if the model was not searched</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>knob</th>
+<th>importance</th>
+<th>effect</th>
+<th>best</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_lr</code></td>
+<td>0.51</td>
+<td>7.9%</td>
+<td>0.0043</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td>0.37</td>
+<td>7.8%</td>
+<td>512</td>
+</tr>
+<tr>
+<td><code>hidden_dim</code></td>
+<td>0.07</td>
+<td>2.4%</td>
+<td>100</td>
+</tr>
+<tr>
+<td><code>depth</code></td>
+<td>0.02</td>
+<td>0.5%</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Read the two numbers together.</strong> <code>importance</code> is a share and always sums to 1, so in a
+search where nothing mattered something still looks important. <code>effect</code> is the absolute
+read — how far the objective moves across that knob's range, as a percentage of the
+objective. A knob is worth tuning only when both are high; <code>depth</code> above holds a real share
+of very little. <code>best</code> is where the objective bottoms out with the other knobs averaged out,
+which is meaningless when <code>effect</code> is small.</p>
+<p><strong>How it's computed.</strong> The trials are the dataset — knob values in, objective out — and a
+random forest is fit to that response surface. <code>importance</code> is the forest's split-based
+importance; <code>effect</code> and <code>best</code> come from a partial-dependence sweep, which pins one knob
+across its range while averaging over the others.</p>
+<p>That averaging is the point. A search is not a designed experiment: the sampler
+concentrates trials where it thinks the optimum is, so a knob's raw group means are
+confounded with whatever else it happened to be exploring at the time. Marginalizing the
+other knobs out is what makes one knob's effect readable on its own. A forest suits the job
+because the response is small-N, riddled with interactions, and often non-monotone — a
+learning rate with an interior optimum has a rank correlation near zero, which would read
+as "irrelevant" to a simpler measure. It is also the field standard: fANOVA, what Optuna
+reports, is random-forest-based too.</p>
+<p>Two limits worth knowing. Split-based importance is biased toward knobs with more distinct
+values, which is part of why <code>effect</code> is there as a differently-biased second opinion. And
+partial dependence extrapolates — where the sampler correlated two knobs, the sweep asks
+the forest about combinations the search never actually tried. These are observational
+estimates over a few dozen trials, not a controlled ablation, so treat the ordering as
+directional.</p>
 <h2 id="how-it-fits-together">How it fits together</h2>
 <figure style="text-align: center;">
   <img src="../images/hpo_details.svg" alt="HPO component interactions" style="height: 330px;">
