@@ -52,7 +52,6 @@ _SEARCH_GROUPS = {
     # can produce init > max, which the Noam schedule rejects.
     "optimizer": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True, default=1e-3),
-        "warmup_epochs": IntRange(2, 10, 2, default=2),
         "batch_size": Choice([32, 64, 128, 256, 512], default=64),
     },
 }

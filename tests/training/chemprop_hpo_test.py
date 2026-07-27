@@ -24,7 +24,6 @@ def test_default_space_is_basic_plus_optimizer():
         "ffn_num_layers",
         "ffn_hidden_dim",
         "max_lr",
-        "warmup_epochs",
         "batch_size",
     }
     assert space["depth"] == IntRange(2, 6, 1, default=6)  # chemprop {2,3,4,5,6}
@@ -50,9 +49,9 @@ def test_ffn_options_are_scalar_widths_or_parseable_shapes():
 
 
 def test_optimizer_group_adds_schedule_knobs():
-    """The optimizer group carries max_lr (log), warmup_epochs, and batch_size."""
+    """The optimizer group carries max_lr (log) and batch_size."""
     space = chemprop_search_space(("optimizer",))
-    assert set(space) == {"max_lr", "warmup_epochs", "batch_size"}
+    assert set(space) == {"max_lr", "batch_size"}
     assert space["max_lr"].log is True
     assert isinstance(space["batch_size"], Choice)
 

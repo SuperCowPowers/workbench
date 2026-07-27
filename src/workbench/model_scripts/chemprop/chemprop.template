@@ -77,8 +77,7 @@ DEFAULT_HYPERPARAMETERS = {
     # shape, ffn_num_layers is ignored and depth is taken from its length.
     "ffn_hidden_dim": 1800,
     "ffn_num_layers": 2,
-    # Optimizer schedule (Noam-style warmup then decay). Defaults match
-    # chemprop's own defaults, so behavior is unchanged unless overridden.
+    # Defaults match chemprop's own
     "warmup_epochs": 2,
     "init_lr": 1e-4,
     "max_lr": 1e-3,

@@ -36,8 +36,10 @@ Rules that keep plots legible:
 
 ## Showing the plot
 
-The REPL uses an interactive backend, so `plt.show()` opens a window. If the
-user wants a file to keep or share, save it at a readable resolution:
+**Default to `plt.show()` — don't write a file unless the user asks.** The REPL
+uses an interactive backend, so `plt.show()` opens the plot in a window. A
+`savefig` leaves a stray PNG in the user's working directory; only save when they
+ask to keep or share one, and then at a readable resolution:
 
 ```python
 fig.savefig("pxr_parity.png", dpi=150, bbox_inches="tight")
