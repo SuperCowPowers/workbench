@@ -101,9 +101,12 @@ class WorkbenchComputeStack(Stack):
             vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=self.existing_vpc_id)
             vpc_subnets = None
 
-            # Use specific subnets if provided (filter by ID so route tables resolve from the VPC lookup)
+            # Use specific subnets if provided (select from the VPC lookup so route tables resolve,
+            # then keep config order — the CE subnet list order must stay stable across deploys)
             if self.subnet_ids:
-                vpc_subnets = ec2.SubnetSelection(subnet_filters=[ec2.SubnetFilter.by_ids(self.subnet_ids)])
+                selected = vpc.select_subnets(subnet_filters=[ec2.SubnetFilter.by_ids(self.subnet_ids)]).subnets
+                ordered = sorted(selected, key=lambda s: self.subnet_ids.index(s.subnet_id))
+                vpc_subnets = ec2.SubnetSelection(subnets=ordered)
         else:
             raise ValueError(
                 'Please provide the Workbench Config entry: "WORKBENCH_VPC_ID":"vpc-123456789abcdef0". '
