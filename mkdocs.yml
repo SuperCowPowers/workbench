@@ -13,6 +13,7 @@ nav:
     - ChemProp: models/chemprop_models.md
     - Cleanlab: models/cleanlab_models.md
     - Meta Endpoints: models/meta_endpoints.md
+    - Hyperparameter Optimization: models/hpo.md
   - API Classes: 
     - OverView: api_classes/overview.md
     - Meta: api_classes/meta.md
