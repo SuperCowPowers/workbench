@@ -3,7 +3,9 @@
 > build a model, deploy an endpoint, and score it
 
 The pipeline is `DataSource -> FeatureSet -> Model -> Endpoint`. Each stage is
-an artifact in AWS; each `to_*()` call launches real infrastructure.
+an artifact in AWS; each `to_*()` call launches real infrastructure. The chain is
+strict — a FeatureSet never feeds an Endpoint directly — and deleting an upstream
+artifact orphans everything downstream.
 
 ## Where to start
 
@@ -23,14 +25,10 @@ built from. **Prefer the shortest chain.** In priority order:
 feature_sets()        # or CachedMeta().feature_sets()
 ```
 
-FeatureSet → Model is the shortest chain and the one to recommend. Reusing a
-FeatureSet also keeps models comparable, since they train on the same prepared
-data.
-
-The longer chains are perfectly fine — just more work and more decisions to get
-right (`id_column`, one-hot columns, naming). If the user hasn't said what to
-start from, ask rather than assuming, and offer the existing FeatureSets as the
-first option.
+Reusing a FeatureSet also keeps models comparable, since they train on the same
+prepared data. The longer chains are fine — just more decisions to get right
+(`id_column`, one-hot columns, naming). If the user hasn't said what to start
+from, ask rather than assuming, and offer the existing FeatureSets first.
 
 ## Flow
 
@@ -64,26 +62,7 @@ one it ties up the session for the whole train.
   and launch it on Batch, so the REPL stays free (see the `batch` guide). The
   Batch process is headless — no one is there to run the follow-up steps
   interactively — so the script must build the endpoint and score it itself, or
-  you get a model with no metrics:
-
-  ```python
-  from workbench.utils.batch_utils import launch_batch
-
-  code = '''
-  from workbench.api import FeatureSet, ModelType, ModelFramework
-  fs = FeatureSet("mppb_features")
-  model = fs.to_model(name="mppb-reg", model_type=ModelType.REGRESSOR,
-                      model_framework=ModelFramework.CHEMPROP, target_column="mppb",
-                      feature_list=["smiles"], hyperparameters={"uq_version": "v1"})
-  end = model.to_endpoint(name="mppb-reg", tags=["mppb-reg"])
-  end.test_inference()
-  end.cross_fold_inference()
-  '''
-  job = launch_batch(code, name="mppb_reg_chemprop", size="medium")
-  ```
-
-  The Batch job runs the full chain in a detached container — same result (a
-  scored Model you query afterward), but your session isn't blocked.
+  you get a model with no metrics.
 
 ## Conventions
 
@@ -124,20 +103,13 @@ model = fs.to_model(
   sees them. Use for outliers and anomalies. On overlap it **takes precedence**
   over `validation_ids`.
 
-## Dependencies
-
-Artifacts form a chain: `ds -> fs -> model -> endpoint`. A FeatureSet never
-feeds an Endpoint directly. Deleting an upstream artifact orphans everything
-downstream.
-
 ## Cost
 
-Not a concern for normal work. Training images are right-sized automatically,
-and `to_endpoint()` is **serverless by default** (`serverless=True`) — it scales
-to zero when idle. Don't warn about cost or ask for confirmation.
-
-The one exception is a **realtime** endpoint (`serverless=False`): persistent
-compute that bills continuously. Only there, confirm with the user first.
+Not a concern for normal work — training images are right-sized automatically and
+endpoints are serverless by default, scaling to zero when idle. Don't warn about
+cost or ask for confirmation. The one exception is a **realtime** endpoint
+(`serverless=False`): persistent compute that bills continuously, so confirm
+that one with the user first.
 
 ## Inspecting
 

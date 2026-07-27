@@ -82,10 +82,13 @@ The default view of a hyperparameter search: one vertical axis per parameter, on
 line per trial, colored by the objective. It shows which regions the good trials
 cluster in and lets you trace a single config across every axis.
 
-**Build it from `model.hpo_search_space()`.** That is the plot's scaffold — one row per
-knob is one axis, and each row already declares what the axis is: `dist` (`int` / `float`
-/ `choice`), and in `spec` the bounds or the `options` and the `log` flag. Then
-`model.hpo_results()["trials"]` supplies the lines to draw on it. See the `hpo` guide.
+Three methods build it, and each answers a different question (see the `hpo` guide):
+
+```python
+model.hpo_search_space()   # the axes: what each knob is and what its range means
+model.hpo_results()        # the lines: one per trial, plus the baseline
+model.hpo_importance()     # the axis ORDER, and which axes are worth keeping
+```
 
 Taking the axes from the space rather than inferring them from the trial values is what
 keeps a mixed-type knob from breaking the plot — and it keeps a knob on the chart even
@@ -93,6 +96,9 @@ when every trial happened to pick the same value.
 
 What makes it readable:
 
+- **Order the axes by `importance`, most important on the left.** Only *adjacent* axes show
+  their relationship in a parallel-coordinates plot, so axis order decides what the chart
+  can reveal; an arbitrary order buries the structure.
 - Axis per knob, typed from `dist`: a `choice` knob is categorical (rank its `options`),
   the rest are numeric. Log-scale where `spec` says `log`, and say so in the label.
 - Scale each axis to the declared `low`/`high`, not the observed min and max. That is
@@ -100,19 +106,18 @@ What makes it readable:
 - Clip every line to the axis range (`[0, 1]` normalized). A trial or reference value
   outside a knob's declared bounds would otherwise draw off the axes.
 - Expand the `trials` frame's `hyperparameters` cell into one column per knob
-  (`json.loads`) and join to the axes. The space describes the framework's full set and a
-  search may have used a subset, so drive off the knobs the trials actually carry.
+  (`json.loads`) and join to the axes. The space describes the framework's full set while a
+  search may have used a subset — the `importance` frame is exactly that subset, so driving
+  the axis list off it gets the right knobs and the right order in one step.
 - Color by the objective with a **divergent** colormap centered on the baseline
   (`TwoSlopeNorm(vcenter=<baseline objective>)`), so hue answers the question that
   matters — did this trial beat the user's own hyperparameters — rather than where
   it ranks within the run. Set the direction so better-than-baseline gets the
   favorable hue; for a minimized objective that means reversing the map (`RdBu_r`).
-- Draw the good trials thicker and more opaque on top of the faint ones, or the
-  winners are lost in the crowd.
-- Draw the two reference lines: the published config, and the `kind="baseline"`
-  row (the user's own hyperparameters, scored on the same basis as the trials).
-  A search plot without the baseline can't show whether the search achieved
-  anything.
+- **Every trial line at `alpha=0.3`.** Only two lines break that: the `kind="baseline"` row
+  (the user's own hyperparameters, scored on the same basis as the trials) and the winner.
+  Draw those last, opaque and thicker, so they read on top of the crowd. A search plot
+  without the baseline can't show whether the search achieved anything.
 
 ## Molecule structure panels
 
