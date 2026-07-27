@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 960 340" role="img">
+<title>HPO wrapped over model creation</title>
+<desc>Hyperparameter optimization as a wrapper enclosing normal model creation: the search
+driver hands hyperparameters down into the Models (one template per framework, shown
+stacked), results come back up, and this repeats for n_trials inside a single training
+job. Only the winning config leaves the wrapper to become the AWS published model,
+shown as a miniature prediction-versus-actual scatter with a confidence colorbar.</desc>
+<defs>
+<marker id="hpoArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+<style>
+.hpo-t { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #0F6E56; }
+.hpo-s { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #0F6E56; }
+.hpo-pt { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #3C3489; }
+.hpo-ps { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #534AB7; }
+.hpo-nt { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #2C2C2A; }
+.hpo-ns { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #5F5E5A; }
+.hpo-wrap { fill: #E1F5EE; stroke: #0F6E56; stroke-width: 0.5; }
+.hpo-tmpl { fill: #EEEDFE; stroke: #534AB7; stroke-width: 0.5; }
+.hpo-card { fill: #FFFFFF; stroke: #888780; stroke-width: 0.5; }
+.hpo-edge { stroke: #5F5E5A; stroke-width: 1.5; fill: none; }
+@media (prefers-color-scheme: dark) {
+  .hpo-t, .hpo-s { fill: #9FE1CB; }
+  .hpo-pt { fill: #CECBF6; } .hpo-ps { fill: #AFA9EC; }
+  .hpo-nt { fill: #F1EFE8; } .hpo-ns { fill: #B4B2A9; }
+  .hpo-wrap { fill: #085041; stroke: #9FE1CB; }
+  .hpo-tmpl { fill: #3C3489; stroke: #AFA9EC; }
+  .hpo-card { fill: #2C2C2A; stroke: #B4B2A9; }
+  .hpo-edge { stroke: #B4B2A9; }
+}
+</style>
+</defs>
+
+<rect class="hpo-wrap" x="30" y="40" width="560" height="270" rx="8"/>
+<text class="hpo-t" x="310" y="72" text-anchor="middle">HPO — the search driver</text>
+<text class="hpo-s" x="310" y="90" text-anchor="middle">picks hyperparameters · judges scores</text>
+<text class="hpo-s" x="310" y="288" text-anchor="middle">repeat × n_trials — trials stay inside</text>
+
+<rect class="hpo-tmpl" x="207" y="182" width="220" height="66" rx="4"/>
+<rect class="hpo-tmpl" x="201" y="176" width="220" height="66" rx="4"/>
+<rect class="hpo-tmpl" x="195" y="170" width="220" height="66" rx="4"/>
+<text class="hpo-pt" x="305" y="198" text-anchor="middle">Models</text>
+<text class="hpo-ps" x="305" y="216" text-anchor="middle">chemprop · xgb · pytorch</text>
+
+<line class="hpo-edge" x1="250" y1="108" x2="250" y2="164" marker-end="url(#hpoArrow)"/>
+<text class="hpo-ns" x="242" y="132" text-anchor="end">here's your</text>
+<text class="hpo-ns" x="242" y="148" text-anchor="end">hyperparameters</text>
+<line class="hpo-edge" x1="366" y1="164" x2="366" y2="108" marker-end="url(#hpoArrow)"/>
+<text class="hpo-ns" x="376" y="132">run,</text>
+<text class="hpo-ns" x="376" y="148">return results</text>
+
+<line class="hpo-edge" x1="594" y1="175" x2="650" y2="175" marker-end="url(#hpoArrow)"/>
+<text class="hpo-ns" x="622" y="158" text-anchor="middle">only the</text>
+<text class="hpo-ns" x="622" y="200" text-anchor="middle">winner leaves</text>
+
+<rect class="hpo-card" x="655" y="92" width="275" height="196" rx="8"/>
+<text class="hpo-nt" x="792" y="116" text-anchor="middle">AWS Published Model</text>
+<text class="hpo-ns" x="792" y="134" text-anchor="middle">the winner — or your defaults</text>
+<rect x="667" y="146" width="210" height="126" rx="4" fill="#16161D"/>
+<line x1="676" y1="264" x2="868" y2="152" stroke="#8A8A92" stroke-width="1.5"/>
+<circle cx="676.0" cy="262.0" r="3.2" fill="#378ADD"/>
+<circle cx="681.8" cy="263.3" r="3.2" fill="#378ADD"/>
+<circle cx="687.5" cy="238.9" r="3.2" fill="#378ADD"/>
+<circle cx="693.3" cy="264.7" r="3.2" fill="#378ADD"/>
+<circle cx="699.0" cy="251.8" r="3.2" fill="#378ADD"/>
+<circle cx="704.8" cy="240.6" r="3.2" fill="#5DCAA5"/>
+<circle cx="710.5" cy="251.7" r="3.2" fill="#378ADD"/>
+<circle cx="716.3" cy="223.9" r="3.2" fill="#97C459"/>
+<circle cx="722.1" cy="240.8" r="3.2" fill="#378ADD"/>
+<circle cx="727.8" cy="242.4" r="3.2" fill="#EF9F27"/>
+<circle cx="733.6" cy="221.6" r="3.2" fill="#378ADD"/>
+<circle cx="739.3" cy="236.4" r="3.2" fill="#378ADD"/>
+<circle cx="745.1" cy="212.9" r="3.2" fill="#378ADD"/>
+<circle cx="750.8" cy="216.0" r="3.2" fill="#378ADD"/>
+<circle cx="756.6" cy="230.4" r="3.2" fill="#378ADD"/>
+<circle cx="762.4" cy="205.9" r="3.2" fill="#5DCAA5"/>
+<circle cx="768.1" cy="217.8" r="3.2" fill="#378ADD"/>
+<circle cx="773.9" cy="203.9" r="3.2" fill="#97C459"/>
+<circle cx="779.6" cy="193.1" r="3.2" fill="#378ADD"/>
+<circle cx="785.4" cy="214.5" r="3.2" fill="#EF9F27"/>
+<circle cx="791.2" cy="193.3" r="3.2" fill="#378ADD"/>
+<circle cx="796.9" cy="197.0" r="3.2" fill="#378ADD"/>
+<circle cx="802.7" cy="194.7" r="3.2" fill="#378ADD"/>
+<circle cx="808.4" cy="173.6" r="3.2" fill="#378ADD"/>
+<circle cx="814.2" cy="194.9" r="3.2" fill="#378ADD"/>
+<circle cx="819.9" cy="182.5" r="3.2" fill="#5DCAA5"/>
+<circle cx="825.7" cy="176.1" r="3.2" fill="#378ADD"/>
+<circle cx="831.5" cy="183.3" r="3.2" fill="#97C459"/>
+<circle cx="837.2" cy="158.3" r="3.2" fill="#378ADD"/>
+<circle cx="843.0" cy="172.5" r="3.2" fill="#EF9F27"/>
+<circle cx="848.7" cy="171.7" r="3.2" fill="#378ADD"/>
+<circle cx="854.5" cy="156.8" r="3.2" fill="#378ADD"/>
+<circle cx="860.2" cy="168.6" r="3.2" fill="#378ADD"/>
+<circle cx="866.0" cy="146.4" r="3.2" fill="#378ADD"/>
+<rect x="886" y="146" width="9" height="25" fill="#D4537E"/>
+<rect x="886" y="171" width="9" height="25" fill="#EF9F27"/>
+<rect x="886" y="196" width="9" height="28" fill="#97C459"/>
+<rect x="886" y="224" width="9" height="18" fill="#5DCAA5"/>
+<rect x="886" y="242" width="9" height="30" fill="#378ADD"/>
+</svg>
