@@ -130,15 +130,14 @@ class ModelCore(Artifact):
         self._endpoint_inference_path = None
 
         # Grab an Cloud Platform Meta object and pull information for this Model
-        self.model_name = model_name
-        self.model_meta = self.meta.model(self.model_name)
+        self.model_meta = self.meta.model(self.name)
         if self.model_meta is None:
-            self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
+            self.log.warning(f"Could not find model {self.name} within current visibility scope")
             return
         else:
             # Is this a model package group without any models?
             if len(self.model_meta["ModelPackageList"]) == 0:
-                self.log.critical(f"Model Group {self.model_name} has no Model Packages!")
+                self.log.critical(f"Model Group {self.name} has no Model Packages!")
                 self.latest_model = None
                 self.training_job_name = None
                 self.add_health_tag("model_not_found")
@@ -150,11 +149,11 @@ class ModelCore(Artifact):
                 self.model_type = self._get_model_type()
                 self.model_framework = self._get_model_framework()
             except (IndexError, KeyError):
-                self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
+                self.log.critical(f"Model {self.name} appears to be malformed. Delete and recreate it!")
                 return
 
         # Set the Model Training S3 Path
-        self.model_training_path = f"{self.models_s3_path}/{self.model_name}/training"
+        self.model_training_path = f"{self.models_s3_path}/{self.name}/training"
 
         # Endpoint Inference Path is computed lazily on first access (see property)
         self._endpoint_inference_path = _UNSET
@@ -163,11 +162,11 @@ class ModelCore(Artifact):
         super().__post_init__()
 
         # All done
-        self.log.info(f"Model Initialized: {self.model_name}")
+        self.log.info(f"Model Initialized: {self.name}")
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
-        self.model_meta = self.meta.model(self.model_name)
+        self.model_meta = self.meta.model(self.name)
         self.latest_model = self.model_meta["ModelPackageList"][0]
         self.description = self.latest_model.get("ModelPackageDescription", "-")
         self.training_job_name = self._extract_training_job_name()
@@ -175,7 +174,7 @@ class ModelCore(Artifact):
     def exists(self) -> bool:
         """Does the model metadata exist in the AWS Metadata?"""
         if self.model_meta is None:
-            self.log.info(f"Model {self.model_name} not found in AWS Metadata!")
+            self.log.info(f"Model {self.name} not found in AWS Metadata!")
             return False
         return True
 
@@ -292,11 +291,11 @@ class ModelCore(Artifact):
             # Check if there are any objects at the path
             if wr.s3.list_objects(full_path):
                 wr.s3.delete_objects(path=full_path)
-                self.log.important(f"Deleted inference run {inference_run_name} for {self.model_name}")
+                self.log.important(f"Deleted inference run {inference_run_name} for {self.name}")
             else:
-                self.log.warning(f"Inference run {inference_run_name} not found for {self.model_name}!")
+                self.log.warning(f"Inference run {inference_run_name} not found for {self.name}!")
         else:
-            self.log.important(f"No inference data found for {self.model_name}!")
+            self.log.important(f"No inference data found for {self.name}!")
 
     def get_inference_metrics(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
@@ -316,14 +315,14 @@ class ModelCore(Artifact):
             if run:
                 return self.get_inference_metrics(run)
             else:
-                self.log.important(f"No performance metrics found for {self.model_name}!")
+                self.log.important(f"No performance metrics found for {self.name}!")
                 return None
 
         # Grab the metrics captured during model training (could return None)
         if capture_name == "model_training":
             # Sanity check the workbench metadata
             if self.workbench_meta() is None:
-                error_msg = f"Model {self.model_name} has no workbench_meta(). Either onboard() or delete this model!"
+                error_msg = f"Model {self.name} has no workbench_meta(). Either onboard() or delete this model!"
                 self.log.critical(error_msg)
                 raise ValueError(error_msg)
 
@@ -336,7 +335,7 @@ class ModelCore(Artifact):
             if metrics is not None:
                 return metrics
             else:
-                self.log.warning(f"Performance metrics {capture_name} not found for {self.model_name}!")
+                self.log.warning(f"Performance metrics {capture_name} not found for {self.name}!")
                 return None
 
     def confusion_matrix(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
@@ -350,7 +349,7 @@ class ModelCore(Artifact):
 
         # Sanity check the workbench metadata
         if self.workbench_meta() is None:
-            error_msg = f"Model {self.model_name} has no workbench_meta(). Either onboard() or delete this model!"
+            error_msg = f"Model {self.name} has no workbench_meta(). Either onboard() or delete this model!"
             self.log.critical(error_msg)
             raise ValueError(error_msg)
 
@@ -370,7 +369,7 @@ class ModelCore(Artifact):
             if cm is not None:
                 return cm
             else:
-                self.log.warning(f"Confusion Matrix {capture_name} not found for {self.model_name}!")
+                self.log.warning(f"Confusion Matrix {capture_name} not found for {self.name}!")
                 return None
 
     def set_input(self, input: str, force: bool = False):
@@ -421,7 +420,7 @@ class ModelCore(Artifact):
         """Container Image for the Latest Model Package"""
         info = self.container_info()
         if info is None:
-            raise ValueError(f"Model {self.model_name} has no registered packages — delete and recreate it")
+            raise ValueError(f"Model {self.name} has no registered packages — delete and recreate it")
         return info["Image"]
 
     def aws_url(self):
@@ -515,7 +514,7 @@ class ModelCore(Artifact):
         # Look for any Registered Endpoints
         registered_endpoints = self.workbench_meta().get("workbench_registered_endpoints")
         if not registered_endpoints:
-            self.log.info(f"No registered endpoints found for {self.model_name}!")
+            self.log.info(f"No registered endpoints found for {self.name}!")
             return None
 
         # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
@@ -578,7 +577,7 @@ class ModelCore(Artifact):
             labels (list[str]): List of class labels in the desired order
         """
         if self.model_type != ModelType.CLASSIFIER:
-            self.log.error(f"Model {self.model_name} is not a classifier!")
+            self.log.error(f"Model {self.name} is not a classifier!")
             return
 
         self.upsert_workbench_meta({"class_labels": labels})
@@ -726,7 +725,7 @@ class ModelCore(Artifact):
 
         # Sanity check is we have models in the group
         if self.latest_model is None:
-            self.log.warning(f"Model Package Group {self.model_name} has no models!")
+            self.log.warning(f"Model Package Group {self.name} has no models!")
             return details
 
         # Grab the Model Details
@@ -771,7 +770,7 @@ class ModelCore(Artifact):
                 return view
 
         # No model-specific training view: create a default one (all rows, weight 1.0)
-        self.log.error(f"No model training view for {self.model_name}, creating a default view...")
+        self.log.error(f"No model training view for {self.name}, creating a default view...")
         default_view_name = f"{self.name.replace('-', '_')}_training_default".lower()
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         feature_columns = [c for c in fs.columns if c not in aws_cols]
@@ -1041,7 +1040,7 @@ class ModelCore(Artifact):
                 Model when called on one, so it has to_endpoint() etc.)
         """
         if self.latest_model is None:
-            raise ValueError(f"Cannot copy {self.model_name}: no registered model package")
+            raise ValueError(f"Cannot copy {self.name}: no registered model package")
 
         # Capture source container/metadata before any dst mutations
         src_spec = self.latest_model["InferenceSpecification"]
@@ -1087,7 +1086,7 @@ class ModelCore(Artifact):
             },
             ModelApprovalStatus="Approved",
         )
-        self.log.important(f"Copied model {self.model_name} -> {dst_name}")
+        self.log.important(f"Copied model {self.name} -> {dst_name}")
         # Same class as the receiver, so Model(...).copy() returns an api Model (with
         # to_endpoint etc.), not a bare ModelCore.
         return type(self)(dst_name)
@@ -1218,7 +1217,7 @@ class ModelCore(Artifact):
         try:
             return ModelType(model_type)
         except ValueError:
-            self.log.important(f"Could not determine model type for {self.model_name}!")
+            self.log.important(f"Could not determine model type for {self.name}!")
             return ModelType.UNKNOWN
 
     def _set_model_framework(self, model_framework: ModelFramework):
@@ -1239,7 +1238,7 @@ class ModelCore(Artifact):
         try:
             return ModelFramework(model_framework)
         except ValueError:
-            self.log.important(f"Could not determine model framework for {self.model_name}!")
+            self.log.important(f"Could not determine model framework for {self.name}!")
             return ModelFramework.UNKNOWN
 
     def _load_training_metrics(self):
@@ -1368,16 +1367,16 @@ class ModelCore(Artifact):
             ModelType.ENSEMBLE_REGRESSOR,
         ]
         if not has_predictions:
-            self.log.warning(f"No Predictions for {self.model_name}...")
+            self.log.warning(f"No Predictions for {self.name}...")
             return None
 
         # Resolve the default capture (full_cross_fold -> test_inference -> first run)
         if capture_name == "default":
             capture_name = self.default_inference_run()
             if capture_name is None:
-                self.log.warning(f"No inference runs for {self.model_name}...")
+                self.log.warning(f"No inference runs for {self.name}...")
                 return None
-        self.log.important(f"Grabbing {capture_name} predictions for {self.model_name}...")
+        self.log.important(f"Grabbing {capture_name} predictions for {self.name}...")
 
         # Special case for model_training
         if capture_name == "model_training":
@@ -1395,9 +1394,9 @@ class ModelCore(Artifact):
         """
         # Sanity check the training path (which may or may not exist)
         if self.model_training_path is None:
-            self.log.warning(f"No Validation Predictions for {self.model_name}...")
+            self.log.warning(f"No Validation Predictions for {self.name}...")
             return None
-        self.log.important(f"Grabbing Validation Predictions for {self.model_name}...")
+        self.log.important(f"Grabbing Validation Predictions for {self.name}...")
         s3_path = f"{self.model_training_path}/validation_predictions.csv"
         df = pull_s3_data(s3_path)
         return df

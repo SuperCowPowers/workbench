@@ -86,8 +86,7 @@ class EndpointCore(Artifact):
         super().__init__(endpoint_name, **kwargs)
 
         # Grab an Cloud Metadata object and pull information for Endpoints
-        self.endpoint_name = endpoint_name
-        self.endpoint_meta = self.meta.endpoint(self.endpoint_name)
+        self.endpoint_meta = self.meta.endpoint(self.name)
 
         # Sanity check that we found the endpoint
         if self.endpoint_meta is None:
@@ -117,11 +116,11 @@ class EndpointCore(Artifact):
         super().__post_init__()
 
         # All done
-        self.log.info(f"EndpointCore Initialized: {self.endpoint_name}")
+        self.log.info(f"EndpointCore Initialized: {self.name}")
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
-        self.endpoint_meta = self.meta.endpoint(self.endpoint_name)
+        self.endpoint_meta = self.meta.endpoint(self.name)
 
     def _read_instance_counts(self) -> dict:
         """Read current/desired instance counts from the cached ``endpoint_meta``.
@@ -142,7 +141,7 @@ class EndpointCore(Artifact):
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.endpoint_meta is None:
-            self.log.debug(f"Endpoint {self.endpoint_name} not found in AWS Metadata")
+            self.log.debug(f"Endpoint {self.name} not found in AWS Metadata")
             return False
         return True
 
@@ -224,7 +223,7 @@ class EndpointCore(Artifact):
         """Get the MonitorCore class for this endpoint"""
         from workbench.core.artifacts.data_capture_core import DataCaptureCore
 
-        return DataCaptureCore(self.endpoint_name)
+        return DataCaptureCore(self.name)
 
     def enable_data_capture(self):
         """Add data capture to the endpoint"""
@@ -234,7 +233,7 @@ class EndpointCore(Artifact):
         """Get the MonitorCore class for this endpoint"""
         from workbench.core.artifacts.monitor_core import MonitorCore
 
-        return MonitorCore(self.endpoint_name)
+        return MonitorCore(self.name)
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -837,7 +836,7 @@ class EndpointCore(Artifact):
             raise ValueError(f"DataFrame does not contain required features: {missing_features}")
 
         # Create our SageMaker Endpoint object with CSV in / DataFrame out
-        sm_endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
+        sm_endpoint = SagemakerEndpoint.get(self.name, session=self.boto3_session)
         sm_endpoint.serializer = CSVSerializer()
         sm_endpoint.deserializer = WorkbenchDeserializer()
 
@@ -1252,7 +1251,7 @@ class EndpointCore(Artifact):
 
     def endpoint_config_name(self) -> str:
         # Grab the Endpoint Config Name from the AWS
-        endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
+        endpoint = SagemakerEndpoint.get(self.name, session=self.boto3_session)
         return endpoint.endpoint_config_name
 
     def set_input(self, input: str, force=False):

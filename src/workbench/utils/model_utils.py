@@ -215,7 +215,7 @@ def uq_model_local(
 
     model_artifact_uri = model.model_data_url()
     if model_artifact_uri is None:
-        raise ValueError(f"No model artifact found for {model.uuid}")
+        raise ValueError(f"No model artifact found for {model.name}")
 
     effective_version = _resolve_uq_version(model, version)
     if effective_version not in _VALID_UQ_VERSIONS:
@@ -239,7 +239,7 @@ def uq_model_local(
         if effective_version == "v1":
             if not os.path.exists(os.path.join(tmpdir, "uq_model.joblib")):
                 raise FileNotFoundError(
-                    f"Model '{model.uuid}' does not have a fitted UQModelV1 "
+                    f"Model '{model.name}' does not have a fitted UQModelV1 "
                     "(expected uq_model.joblib in the model artifact)."
                 )
             return UQModelV1.load(tmpdir, prox=fresh_prox)
@@ -247,7 +247,7 @@ def uq_model_local(
         # v2
         if not os.path.exists(os.path.join(tmpdir, UQModelV2.METADATA_FILENAME)):
             raise FileNotFoundError(
-                f"Model '{model.uuid}' does not have a fitted UQModelV2 "
+                f"Model '{model.name}' does not have a fitted UQModelV2 "
                 f"(expected {UQModelV2.METADATA_FILENAME} in the model artifact)."
             )
         return UQModelV2.load(tmpdir, prox=fresh_prox)
@@ -427,7 +427,7 @@ def get_hpo_results(workbench_model: Any) -> Optional[dict]:
     """
     model_artifact_uri = workbench_model.model_data_url()
     if model_artifact_uri is None:
-        log.warning(f"No model artifact found for {workbench_model.uuid}")
+        log.warning(f"No model artifact found for {workbench_model.name}")
         return None
 
     output_uri = model_artifact_uri.rsplit("/", 1)[0] + "/output.tar.gz"
@@ -539,7 +539,7 @@ def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
     # Legacy fallback: pull from the model artifact (downloads + extracts model.tar.gz)
     model_artifact_uri = workbench_model.model_data_url()
     if model_artifact_uri is None:
-        log.warning(f"No model artifact found for {workbench_model.uuid}")
+        log.warning(f"No model artifact found for {workbench_model.name}")
         return None
 
     hyperparameters = load_hyperparameters_from_s3(model_artifact_uri)

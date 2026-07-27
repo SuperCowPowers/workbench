@@ -27,7 +27,6 @@ class _Clock:
 def _bare_core():
     c = object.__new__(AsyncEndpointCore)  # skip __init__ (no AWS)
     c.name = "ep"
-    c.endpoint_name = "ep"
     c.is_serverless = lambda: False
     return c
 

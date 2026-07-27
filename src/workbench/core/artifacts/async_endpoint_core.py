@@ -186,7 +186,7 @@ class AsyncEndpointCore(EndpointCore):
                 Bucket=self.workbench_bucket, Key=key, Body=warmer_csv, ContentType="text/csv"
             )
             self.boto3_session.client("sagemaker-runtime").invoke_endpoint_async(
-                EndpointName=self.endpoint_name,
+                EndpointName=self.name,
                 InputLocation=f"s3://{self.workbench_bucket}/{key}",
                 ContentType="text/csv",
                 Accept="text/csv",
@@ -272,7 +272,7 @@ class AsyncEndpointCore(EndpointCore):
         batch_size, max_in_flight = resolve_batch_sizing(meta, len(eval_df))
 
         return async_inference(
-            endpoint_name=self.endpoint_name,
+            endpoint_name=self.name,
             eval_df=eval_df,
             sm_session=self.boto3_session,
             batch_size=batch_size,
