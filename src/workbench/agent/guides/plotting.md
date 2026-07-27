@@ -97,6 +97,8 @@ What makes it readable:
   the rest are numeric. Log-scale where `spec` says `log`, and say so in the label.
 - Scale each axis to the declared `low`/`high`, not the observed min and max. That is
   what makes a knob pinned against its own bound visible.
+- Clip every line to the axis range (`[0, 1]` normalized). A trial or reference value
+  outside a knob's declared bounds would otherwise draw off the axes.
 - Expand the `trials` frame's `hyperparameters` cell into one column per knob
   (`json.loads`) and join to the axes. The space describes the framework's full set and a
   search may have used a subset, so drive off the knobs the trials actually carry.
