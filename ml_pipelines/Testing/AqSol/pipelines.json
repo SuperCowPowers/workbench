@@ -10,6 +10,8 @@
        "outputs": ["model:aqsol-chemprop-hpo", "endpoint:aqsol-chemprop-hpo"]},
       {"script": "aqsol_xgb_hpo.py", "inputs": ["fs:aqsol_features"],
        "outputs": ["model:aqsol-xgb-hpo", "endpoint:aqsol-xgb-hpo"]},
+      {"script": "aqsol_xgb_custom_space.py", "inputs": ["fs:aqsol_features"],
+       "outputs": ["model:aqsol-xgb-custom-space", "endpoint:aqsol-xgb-custom-space"]},
       {"script": "plugin:models/model_promotion.py",
        "inputs": ["model:aqsol-class-1", "model:aqsol-class-2"], "outputs": ["endpoint:aqsol-class"]},
       {"script": "workbench:models/model_promotion.py",
