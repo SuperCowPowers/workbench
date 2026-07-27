@@ -439,6 +439,80 @@ def get_hpo_results(workbench_model: Any) -> Optional[dict]:
     return results
 
 
+# Frameworks whose HPO search space is defined; the rest have no search support. Each
+# module exposes resolve_search_space(), which accepts the same shorthand as the
+# hpo["search_space"] key.
+_SEARCH_SPACE_MODULES = {
+    "chemprop": "workbench.training.chemprop_hpo",
+    "xgboost": "workbench.training.xgb_hpo",
+    "pytorch": "workbench.training.pytorch_hpo",
+}
+
+
+def get_hpo_search_space(workbench_model: Any) -> Optional[pd.DataFrame]:
+    """Get the HPO search space for a Workbench model's framework.
+
+    Describes what a search *would* explore, and where each knob sits when nobody tunes
+    it — inspectable without running anything. This is the framework's full default space,
+    not the space a particular search used; for that, read the ``hyperparameters`` column
+    of :func:`get_hpo_results`' ``trials`` frame. To search a subset, set
+    ``hpo["search_space"]`` at training time.
+
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        pd.DataFrame: one row per knob with three pinned columns — ``knob``, ``default``,
+        ``dist`` — plus ``spec``, a JSON object carrying whatever fields that ``dist`` has
+        (``low``/``high``/``step``/``log`` for a range, ``options`` for a categorical).
+        ``json.loads`` the cell to read it. None when the model's framework has no HPO
+        support.
+    """
+    # getattr on the model too: a model that doesn't resolve never gets a framework set.
+    framework = getattr(workbench_model, "model_framework", None)
+    framework = getattr(framework, "value", framework)
+    if framework not in _SEARCH_SPACE_MODULES:
+        log.warning(f"No HPO search space for framework '{framework}' (chemprop, xgboost, and pytorch have one)")
+        return None
+
+    # Deferred: workbench.training is training-only by contract. These search-space modules
+    # are importable without the training extras (they defer optuna/ray/framework imports),
+    # so this works from a lean environment such as the dashboard.
+    import importlib
+
+    from workbench.training.hpo_harness import Choice, FloatRange, IntRange
+
+    module = importlib.import_module(_SEARCH_SPACE_MODULES[framework])
+    space = module.resolve_search_space(None)
+
+    rows = []
+    for knob, spec in space.items():
+        if isinstance(spec, IntRange):
+            dist, fields = "int", {"low": spec.low, "high": spec.high, "step": spec.step}
+        elif isinstance(spec, FloatRange):
+            dist, fields = "float", {"low": spec.low, "high": spec.high, "step": spec.step, "log": spec.log}
+        elif isinstance(spec, Choice):
+            dist, fields = "choice", {"options": list(spec.options)}
+        else:
+            dist, fields = type(spec).__name__, {}
+        # Pinned columns stay scalar per dist; everything dist-specific rides in the JSON
+        # blob, so a knob's fields never leak into another knob's row as NaN. Unset fields
+        # are dropped rather than serialized as null.
+        fields = {key: value for key, value in fields.items() if value is not None}
+        rows.append({"knob": knob, "default": spec.default, "dist": dist, "spec": json.dumps(fields)})
+
+    # `default` holds each knob's native type — an int width, a float rate, a shape string
+    # — so it is built as object rather than letting pandas upcast the column to float.
+    return pd.DataFrame(
+        {
+            "knob": [row["knob"] for row in rows],
+            "default": pd.Series([row["default"] for row in rows], dtype=object),
+            "dist": [row["dist"] for row in rows],
+            "spec": [row["spec"] for row in rows],
+        }
+    )
+
+
 def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
     """Get the hyperparameters used to train a Workbench model.
 

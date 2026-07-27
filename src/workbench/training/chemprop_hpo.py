@@ -50,7 +50,7 @@ _SEARCH_GROUPS = {
     # batch_size ceiling: a 60-trial 8-concurrent search peaks near 22% of a 4x L4 box.
     # init_lr/final_lr are tied to max_lr in merge_best_config; searched independently they
     # can produce init > max, which the Noam schedule rejects.
-    "lr": {
+    "optimizer": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True, default=1e-3),
         "warmup_epochs": IntRange(2, 10, 2, default=2),
         "batch_size": Choice([32, 64, 128, 256, 512], default=64),
@@ -82,12 +82,12 @@ _SEARCH_GROUPS = {
 # full ensemble.
 
 
-def chemprop_search_space(groups=("basic", "lr")) -> dict:
+def chemprop_search_space(groups=("basic", "optimizer")) -> dict:
     """Build the default chemprop search space for the named knob ``groups``.
 
     Args:
         groups: iterable of group names — ``"basic"`` (architecture capacity) and/or
-            ``"lr"`` (the learning-rate schedule + batch size). Both by default.
+            ``"optimizer"`` (the learning-rate schedule + batch size). Both by default.
 
     Returns:
         dict: ``{knob: Spec}`` for :func:`workbench.training.hpo_harness.run_search`.
@@ -103,9 +103,9 @@ def chemprop_search_space(groups=("basic", "lr")) -> dict:
 def resolve_search_space(spec) -> dict:
     """Resolve an ``hpo['search_space']`` value into a ``{knob: Spec}`` space.
 
-    Accepts a shorthand string (``"basic"``, ``"basic+lr"``), an iterable of group
+    Accepts a shorthand string (``"basic"``, ``"basic+optimizer"``), an iterable of group
     names, or a ready ``{knob: Spec}`` dict (passed through for full custom control).
-    Defaults to all groups (``basic+lr``).
+    Defaults to all groups (``basic+optimizer``).
     """
     if spec is None:
         return chemprop_search_space()

@@ -25,6 +25,8 @@ from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import (
+    get_hpo_results,
+    get_hpo_search_space,
     get_model_hyperparameters,
     copy_model_artifacts,
 )
@@ -669,6 +671,34 @@ class ModelCore(Artifact):
             dict: The hyperparameters used during training, or None if not found
         """
         return get_model_hyperparameters(self)
+
+    def hpo_results(self) -> Union[dict, None]:
+        """The hyperparameter-search results for this Model.
+
+        A None return means this model was not hyperparameter-searched, so this doubles as
+        the "was this an HPO model?" check.
+
+        Returns:
+            dict: The published config, the search/re-rank values, and ``rerank`` /
+                ``trials`` DataFrames. None if the model has no search artifacts.
+        """
+        return get_hpo_results(self)
+
+    def hpo_search_space(self) -> Union[pd.DataFrame, None]:
+        """The HPO search space for this Model's framework.
+
+        What a search *would* explore, and where each knob sits untuned. This is the
+        framework's full default space — for the space a particular search used, read the
+        ``hyperparameters`` column of :meth:`hpo_results`' ``trials`` frame; to search a
+        subset, set ``hpo["search_space"]`` at training time.
+
+        Returns:
+            pd.DataFrame: one row per knob with pinned ``knob`` / ``default`` / ``dist``
+                columns, plus ``spec`` — a JSON object of the fields that ``dist`` has
+                (bounds for a range, options for a categorical). None if the framework
+                has no HPO support.
+        """
+        return get_hpo_search_space(self)
 
     def summary(self) -> dict:
         """Summary information about this Model

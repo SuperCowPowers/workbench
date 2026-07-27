@@ -9,7 +9,7 @@ from workbench.training.hpo_harness import Choice, FloatRange
 from workbench.training.pytorch_hpo import pytorch_search_space, resolve_search_space
 
 
-def test_default_space_is_basic_plus_lr():
+def test_default_space_is_basic_plus_optimizer():
     """The default space is both groups: architecture + optimizer."""
     space = pytorch_search_space()
     assert set(space) == {"layers", "dropout", "learning_rate", "weight_decay", "batch_size"}
@@ -47,8 +47,8 @@ def test_unknown_group_raises():
 def test_resolve_search_space_shorthands():
     """String/iterable/dict/None all resolve to a {knob: Spec} space."""
     assert set(resolve_search_space("basic")) == set(pytorch_search_space(("basic",)))
-    assert "learning_rate" in resolve_search_space("basic+lr")
-    assert set(resolve_search_space("basic")) < set(resolve_search_space("basic+lr"))
+    assert "learning_rate" in resolve_search_space("basic+optimizer")
+    assert set(resolve_search_space("basic")) < set(resolve_search_space("basic+optimizer"))
     assert set(resolve_search_space(None)) == set(pytorch_search_space())
     custom = {"dropout": FloatRange(0.0, 0.2)}
     assert resolve_search_space(custom) is custom  # ready dict passes through

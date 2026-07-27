@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 960 500" role="img">
+<title>HPO component interactions</title>
+<desc>Interaction detail: the model template hands its hpo block to the per-framework
+adapter, which calls the shared runner; the runner calls back into adapter hooks, drives
+the search through the harness, and writes the HPO artifacts. Trials and the final publish
+both train through the same per-framework core fold trainer. The left column is
+per-framework (one each for chemprop, xgb and pytorch, shown stacked); the right column is
+framework-agnostic and shared.</desc>
+<defs>
+<marker id="dArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+<style>
+.d-pt { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #3C3489; }
+.d-ps { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #534AB7; }
+.d-tt { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #0F6E56; }
+.d-ts { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #0F6E56; }
+.d-nt { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #2C2C2A; }
+.d-ns { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #5F5E5A; }
+.d-lbl { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; fill: #5F5E5A; }
+.d-reg { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; font-weight: 500; fill: #5F5E5A; }
+.d-pbox { fill: #EEEDFE; stroke: #534AB7; stroke-width: 0.5; }
+.d-tbox { fill: #E1F5EE; stroke: #0F6E56; stroke-width: 0.5; }
+.d-card { fill: #FFFFFF; stroke: #888780; stroke-width: 0.5; }
+.d-cont { fill: none; stroke: #888780; stroke-width: 0.5; stroke-dasharray: 6 4; }
+.d-edge { stroke: #5F5E5A; stroke-width: 1.5; fill: none; }
+@media (prefers-color-scheme: dark) {
+  .d-pt { fill: #CECBF6; } .d-ps { fill: #AFA9EC; }
+  .d-tt, .d-ts { fill: #9FE1CB; }
+  .d-nt { fill: #F1EFE8; } .d-ns, .d-lbl, .d-reg { fill: #B4B2A9; }
+  .d-pbox { fill: #3C3489; stroke: #AFA9EC; }
+  .d-tbox { fill: #085041; stroke: #9FE1CB; }
+  .d-card { fill: #2C2C2A; stroke: #B4B2A9; }
+  .d-cont { stroke: #B4B2A9; }
+  .d-edge { stroke: #B4B2A9; }
+}
+</style>
+</defs>
+
+<rect class="d-cont" x="30" y="52" width="300" height="398" rx="8"/>
+<text class="d-reg" x="174" y="76" text-anchor="middle">per framework</text>
+<text class="d-ns" x="174" y="430" text-anchor="middle">chemprop · xgb · pytorch</text>
+
+<rect class="d-cont" x="440" y="180" width="300" height="270" rx="8"/>
+<text class="d-reg" x="590" y="204" text-anchor="middle">shared orchestration</text>
+<text class="d-ns" x="590" y="430" text-anchor="middle">framework-agnostic</text>
+
+<rect class="d-pbox" x="58" y="104" width="256" height="58" rx="4"/>
+<rect class="d-pbox" x="52" y="98" width="256" height="58" rx="4"/>
+<rect class="d-pbox" x="46" y="92" width="256" height="58" rx="4"/>
+<text class="d-pt" x="174" y="116" text-anchor="middle">model template</text>
+<text class="d-ps" x="174" y="134" text-anchor="middle">hyperparameters + hpo block</text>
+
+<rect class="d-pbox" x="58" y="228" width="256" height="58" rx="4"/>
+<rect class="d-pbox" x="52" y="222" width="256" height="58" rx="4"/>
+<rect class="d-pbox" x="46" y="216" width="256" height="58" rx="4"/>
+<text class="d-pt" x="174" y="240" text-anchor="middle">*_hpo.py — HpoAdapter</text>
+<text class="d-ps" x="174" y="258" text-anchor="middle">space · trial_fn · prepare_frame</text>
+
+<rect class="d-pbox" x="58" y="352" width="256" height="58" rx="4"/>
+<rect class="d-pbox" x="52" y="346" width="256" height="58" rx="4"/>
+<rect class="d-pbox" x="46" y="340" width="256" height="58" rx="4"/>
+<text class="d-pt" x="174" y="364" text-anchor="middle">*_core.py</text>
+<text class="d-ps" x="174" y="382" text-anchor="middle">train_*_fold — trials and publish</text>
+
+<rect class="d-tbox" x="456" y="216" width="268" height="58" rx="4"/>
+<text class="d-tt" x="590" y="234" text-anchor="middle">hpo_runner.py</text>
+<text class="d-ts" x="590" y="250" text-anchor="middle">objective · baseline guard · re-rank</text>
+<text class="d-ts" x="590" y="266" text-anchor="middle">folds via splits.py</text>
+
+<rect class="d-tbox" x="456" y="340" width="268" height="58" rx="4"/>
+<text class="d-tt" x="590" y="364" text-anchor="middle">hpo_harness.py</text>
+<text class="d-ts" x="590" y="382" text-anchor="middle">Optuna · Ray Tune + ASHA</text>
+
+<rect class="d-card" x="770" y="216" width="180" height="58" rx="4"/>
+<text class="d-nt" x="860" y="240" text-anchor="middle">HPO artifacts (S3)</text>
+<text class="d-ns" x="860" y="258" text-anchor="middle">read by get_hpo_results()</text>
+
+<line class="d-edge" x1="96" y1="154" x2="96" y2="212" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="104" y="188">hpo block</text>
+<line class="d-edge" x1="252" y1="212" x2="252" y2="154" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="244" y="206" text-anchor="end">tuned config</text>
+
+<line class="d-edge" x1="96" y1="278" x2="96" y2="336" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="104" y="312">train candidate</text>
+<line class="d-edge" x1="252" y1="336" x2="252" y2="278" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="244" y="330" text-anchor="end">score</text>
+
+<line class="d-edge" x1="334" y1="236" x2="436" y2="236" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="385" y="228" text-anchor="middle">run_hpo(space)</text>
+<line class="d-edge" x1="436" y1="258" x2="334" y2="258" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="385" y="276" text-anchor="middle">adapter hooks</text>
+
+<line class="d-edge" x1="506" y1="278" x2="506" y2="336" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="514" y="312">run_search(trial_fn)</text>
+<line class="d-edge" x1="674" y1="336" x2="674" y2="278" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="666" y="330" text-anchor="end">HpoResult</text>
+
+<line class="d-edge" x1="728" y1="245" x2="766" y2="245" marker-end="url(#dArrow)"/>
+<text class="d-lbl" x="747" y="236" text-anchor="middle">writes</text>
+</svg>

@@ -42,7 +42,7 @@ m = fs.to_model(
             # Score on scaffold folds of the training rows, NOT on the held-out phase1_test
             # rows — see the module docstring.
             "metric": "cv_mae",
-            # search_space defaults to "basic+lr" (capacity + LR schedule + batch size).
+            # search_space defaults to "basic+optimizer" (capacity + LR schedule + batch size).
             # The search only shortlists: its top rerank_top_k configs are re-scored against
             # these hyperparameters as-is, and the winner of *that* is published. So a search
             # that finds nothing real publishes the untuned baseline.

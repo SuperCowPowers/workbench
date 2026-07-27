@@ -50,7 +50,7 @@ _SEARCH_GROUPS = {
     },
     # Optimizer. learning_rate and batch_size interact (they scale together), and
     # weight_decay is the main explicit regularizer on a tabular MLP.
-    "lr": {
+    "optimizer": {
         "learning_rate": FloatRange(1e-4, 1e-2, log=True, default=1e-3),
         "weight_decay": FloatRange(1e-6, 1e-2, log=True, default=1e-4),
         "batch_size": Choice([32, 64, 128, 256, 512], default=64),
@@ -58,12 +58,12 @@ _SEARCH_GROUPS = {
 }
 
 
-def pytorch_search_space(groups=("basic", "lr")) -> dict:
+def pytorch_search_space(groups=("basic", "optimizer")) -> dict:
     """Build the default PyTorch search space for the named knob ``groups``.
 
     Args:
         groups: iterable of group names — ``"basic"`` (architecture capacity) and/or
-            ``"lr"`` (optimizer + batch size). Both by default.
+            ``"optimizer"`` (optimizer knobs + batch size). Both by default.
 
     Returns:
         dict: ``{knob: Spec}`` for :func:`workbench.training.hpo_harness.run_search`.
@@ -79,9 +79,9 @@ def pytorch_search_space(groups=("basic", "lr")) -> dict:
 def resolve_search_space(spec) -> dict:
     """Resolve an ``hpo['search_space']`` value into a ``{knob: Spec}`` space.
 
-    Accepts a shorthand string (``"basic"``, ``"basic+lr"``), an iterable of group
+    Accepts a shorthand string (``"basic"``, ``"basic+optimizer"``), an iterable of group
     names, or a ready ``{knob: Spec}`` dict (passed through for full custom control).
-    Defaults to all groups (``basic+lr``).
+    Defaults to all groups (``basic+optimizer``).
     """
     if spec is None:
         return pytorch_search_space()

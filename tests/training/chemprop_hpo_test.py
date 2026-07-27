@@ -15,7 +15,7 @@ from workbench.training.chemprop_hpo import (
 from workbench.training.hpo_harness import Choice, IntRange
 
 
-def test_default_space_is_basic_plus_lr():
+def test_default_space_is_basic_plus_optimizer():
     """The default space is both groups: capacity + LR schedule + batch size."""
     space = chemprop_search_space()
     assert set(space) == {
@@ -49,9 +49,9 @@ def test_ffn_options_are_scalar_widths_or_parseable_shapes():
     assert any(isinstance(o, str) for o in options)  # at least one tapered shape
 
 
-def test_lr_group_adds_schedule_knobs():
-    """The lr group carries max_lr (log), warmup_epochs, and batch_size."""
-    space = chemprop_search_space(("lr",))
+def test_optimizer_group_adds_schedule_knobs():
+    """The optimizer group carries max_lr (log), warmup_epochs, and batch_size."""
+    space = chemprop_search_space(("optimizer",))
     assert set(space) == {"max_lr", "warmup_epochs", "batch_size"}
     assert space["max_lr"].log is True
     assert isinstance(space["batch_size"], Choice)
@@ -68,9 +68,9 @@ def test_unknown_group_raises():
 def test_resolve_search_space_shorthands():
     """String/iterable/dict/None all resolve to a {knob: Spec} space."""
     assert set(resolve_search_space("basic")) == set(chemprop_search_space(("basic",)))
-    assert "max_lr" in resolve_search_space("basic+lr")
-    # basic+lr is a superset of basic
-    assert set(resolve_search_space("basic")) < set(resolve_search_space("basic+lr"))
+    assert "max_lr" in resolve_search_space("basic+optimizer")
+    # basic+optimizer is a superset of basic
+    assert set(resolve_search_space("basic")) < set(resolve_search_space("basic+optimizer"))
     assert set(resolve_search_space(None)) == set(chemprop_search_space())
     custom = {"depth": IntRange(3, 5, 1)}
     assert resolve_search_space(custom) is custom  # ready dict passes through

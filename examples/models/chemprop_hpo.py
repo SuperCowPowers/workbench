@@ -33,7 +33,7 @@ if recreate or not Model(model_name).exists():
                 "backend": "ray",
                 "max_parallel": 8,  # 4 GPUs x 2 trials each (see gpus_per_trial)
                 "n_trials": 60,  # 5 baseline trials (pruner warmup) + 55 pruned candidates
-                # search_space defaults to "basic+lr" (capacity + LR schedule + batch size);
+                # search_space defaults to "basic+optimizer" (capacity + LR schedule + batch size);
                 # pass "basic" to search architecture capacity only.
                 # The search only shortlists: its top rerank_top_k configs are then re-scored
                 # against these hyperparameters as-is, and the winner of *that* is published.

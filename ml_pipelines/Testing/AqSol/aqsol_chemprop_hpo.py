@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 "backend": "ray",
                 "max_parallel": 8,  # 4 GPUs x 2 trials each
                 "n_trials": 60,
-                # search_space defaults to "basic+lr" (capacity + LR schedule + batch size).
+                # search_space defaults to "basic+optimizer" (capacity + LR schedule + batch size).
                 "rerank_top_k": 5,
             },
         },
