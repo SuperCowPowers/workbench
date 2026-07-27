@@ -62,6 +62,7 @@ nav:
     - 3D Molecular Descriptors: blogs/3d_descriptors.md
     - A Weekend on the PXR Challenge: blogs/pxr_weekend_experiments.md
     - Feature Endpoints: blogs/feature_endpoints.md
+    - "HPO: WIP": blogs/hpo_winners_curse.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
