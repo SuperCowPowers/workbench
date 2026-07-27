@@ -54,6 +54,15 @@ class IntRange:
     step: int = 1
     default: Union[int, None] = None
 
+    def __post_init__(self):
+        if self.low >= self.high:
+            raise ValueError(f"IntRange needs low < high, got low={self.low}, high={self.high}")
+        if self.step < 1:
+            raise ValueError(f"IntRange step must be >= 1, got {self.step}")
+
+    def to_dict(self) -> dict:
+        return _spec_dict("int", {"low": self.low, "high": self.high, "step": self.step}, self.default)
+
 
 @dataclass(frozen=True)
 class FloatRange:
@@ -66,6 +75,16 @@ class FloatRange:
     log: bool = False
     default: Union[float, None] = None
 
+    def __post_init__(self):
+        if self.low >= self.high:
+            raise ValueError(f"FloatRange needs low < high, got low={self.low}, high={self.high}")
+        if self.log and self.low <= 0:
+            raise ValueError(f"FloatRange(log=True) needs low > 0, got low={self.low}")
+
+    def to_dict(self) -> dict:
+        fields = {"low": self.low, "high": self.high, "step": self.step, "log": self.log}
+        return _spec_dict("float", fields, self.default)
+
 
 @dataclass(frozen=True)
 class Choice:
@@ -74,9 +93,132 @@ class Choice:
     options: Sequence
     default: object = None
 
+    def __post_init__(self):
+        if not len(self.options):
+            raise ValueError("Choice needs at least one option")
+
+    def to_dict(self) -> dict:
+        return _spec_dict("choice", {"options": list(self.options)}, self.default)
+
 
 Spec = Union[IntRange, FloatRange, Choice]
-SearchSpace = dict
+
+# Frameworks with a defined search space. Each module exposes resolve_search_space(),
+# which accepts the same shorthand as the hpo["search_space"] key.
+SEARCH_SPACE_MODULES = {
+    "chemprop": "workbench.training.chemprop_hpo",
+    "xgboost": "workbench.training.xgb_hpo",
+    "pytorch": "workbench.training.pytorch_hpo",
+}
+
+_SPEC_CLASSES = {"int": IntRange, "float": FloatRange, "choice": Choice}
+
+
+def _spec_dict(dist: str, fields: dict, default) -> dict:
+    """A spec's wire form: ``dist`` plus its own fields, dropping anything unset."""
+    out = {"dist": dist, **{key: value for key, value in fields.items() if value is not None}}
+    if default is not None:
+        out["default"] = default
+    return out
+
+
+def spec_from_dict(spec: dict) -> Spec:
+    """Build a spec from its wire form. ``dist`` is required — ``low: 1`` versus ``low: 1.0``
+    is too thin a signal to infer an int knob from a float one."""
+    fields = dict(spec)
+    dist = fields.pop("dist", None)
+    if dist not in _SPEC_CLASSES:
+        raise ValueError(f"search space needs a 'dist' of {sorted(_SPEC_CLASSES)}, got {dist!r}")
+    try:
+        return _SPEC_CLASSES[dist](**fields)
+    except TypeError as e:
+        raise ValueError(f"bad fields for a '{dist}' knob: {e}") from e
+
+
+def _framework_space(framework: str) -> dict:
+    """The shipped ``{knob: Spec}`` space for a framework name."""
+    if framework not in SEARCH_SPACE_MODULES:
+        raise ValueError(f"No HPO search space for framework {framework!r} (have {sorted(SEARCH_SPACE_MODULES)})")
+
+    # Deferred: the framework modules import *from* this one, so a module-level import
+    # would be circular. They defer their own optuna/framework imports, which is what
+    # lets a lean environment (the dashboard) describe a space without them installed.
+    import importlib
+
+    return importlib.import_module(SEARCH_SPACE_MODULES[framework]).resolve_search_space(None)
+
+
+class SearchSpace(dict):
+    """A ``{knob: Spec}`` search space, with JSON in and out.
+
+    Subclasses ``dict`` so a plain dict works everywhere a SearchSpace does — the class is
+    an editor, never a requirement. Start from a framework's shipped space, adjust the knobs
+    you have an opinion about, and hand the JSON to ``hpo["search_space"]``::
+
+        space = SearchSpace("chemprop")
+        space["max_lr"] = FloatRange(1e-4, 1e-2, log=True, default=3e-3)
+        del space["ffn_num_layers"]
+        fs.to_model(..., hyperparameters={"hpo": {"search_space": space.to_dict()}})
+
+    What you pass is the *whole* space: a one-knob dict searches one knob.
+
+    Args:
+        framework (str): ``"chemprop"``, ``"xgboost"``, or ``"pytorch"``.
+        knobs (dict): an explicit ``{knob: Spec}`` mapping instead of a framework's.
+    """
+
+    def __init__(self, framework: str = None, knobs: dict = None):
+        if framework is not None and knobs is not None:
+            raise ValueError("SearchSpace takes a framework or knobs, not both")
+        self.framework = framework
+        super().__init__(_framework_space(framework) if framework is not None else (knobs or {}))
+
+    @classmethod
+    def from_dict(cls, spec: dict) -> "SearchSpace":
+        """Build from the JSON wire form — ``{knob: {"dist": ..., ...}}``."""
+        return cls(knobs={knob: spec_from_dict(fields) for knob, fields in spec.items()})
+
+    def to_dict(self) -> dict:
+        """The JSON wire form, suitable for ``hpo["search_space"]``."""
+        return {knob: spec.to_dict() for knob, spec in self.items()}
+
+    def to_frame(self):
+        """One row per knob: pinned ``knob``/``default``/``dist`` plus a ``spec`` JSON blob
+        carrying whatever fields that ``dist`` has."""
+        import json
+
+        import pandas as pd
+
+        rows = []
+        for knob, spec in self.items():
+            fields = spec.to_dict()
+            rows.append(
+                {
+                    "knob": knob,
+                    "default": fields.pop("default", None),
+                    "dist": fields.pop("dist"),
+                    "spec": json.dumps(fields),
+                }
+            )
+        # `default` holds each knob's native type (an int width, a float rate, a shape
+        # string), so the column is built as object rather than upcast to float.
+        return pd.DataFrame(
+            {
+                "knob": [row["knob"] for row in rows],
+                "default": pd.Series([row["default"] for row in rows], dtype=object),
+                "dist": [row["dist"] for row in rows],
+                "spec": [row["spec"] for row in rows],
+            }
+        )
+
+    def subset(self, groups) -> "SearchSpace":
+        """Narrow to named knob groups (``"basic"``, ``"basic+optimizer"``)."""
+        if self.framework is None:
+            raise ValueError("subset() needs a framework-built SearchSpace")
+        import importlib
+
+        module = importlib.import_module(SEARCH_SPACE_MODULES[self.framework])
+        return SearchSpace(knobs=module.resolve_search_space(groups))
 
 
 def space_defaults(search_space: SearchSpace) -> dict:

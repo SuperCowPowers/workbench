@@ -22,6 +22,26 @@ model.hpo_importance()     # which knobs actually moved the objective in that se
 
 For the block's other keys, read `run_hpo` in `workbench/training/hpo_runner.py`.
 
+## Setting your own ranges and defaults
+
+Two different mechanisms — reach for the simpler one first.
+
+**A default is just a hyperparameter.** Setting a knob alongside the `hpo` block makes it the
+baseline the search must beat, and the value for knobs outside the searched groups:
+`hyperparameters={"max_lr": 3e-3, "hpo": {...}}`. No special syntax.
+
+**A range needs a `SearchSpace`** — edit the shipped one and pass the JSON:
+
+```python
+from workbench.training.hpo_harness import SearchSpace, IntRange
+
+space = SearchSpace("xgboost")          # dict subclass; [] and del are the whole API
+space["max_depth"] = IntRange(4, 8, default=6)
+hpo={"search_space": space.to_dict()}
+```
+
+What you pass is the **whole** space, not a patch — a one-knob dict searches one knob.
+
 Cost differs sharply. A chemprop search is a multi-GPU box for hours, so it belongs on AWS
 Batch (see the `batch` guide). An XGBoost trial is seconds.
 

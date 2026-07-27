@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import os
 
-from workbench.training.hpo_harness import FloatRange, IntRange
+from workbench.training.hpo_harness import FloatRange, IntRange, SearchSpace
 from workbench.training.hpo_runner import HpoAdapter, run_hpo
 
 # Workbench knobs the template consumes itself — never forwarded to XGBoost.
@@ -83,6 +83,9 @@ def resolve_search_space(spec) -> dict:
     if isinstance(spec, str):
         return xgb_search_space(spec.split("+"))
     if isinstance(spec, dict):
+        # A dict of dicts is the JSON wire form; a dict of Specs is already a space
+        if spec and all(isinstance(v, dict) for v in spec.values()):
+            return SearchSpace.from_dict(spec)
         return spec
     return xgb_search_space(tuple(spec))
 

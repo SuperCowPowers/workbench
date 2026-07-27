@@ -15,7 +15,7 @@ Training-only; imported **only inside the PyTorch template's ``__main__``** (def
 
 from __future__ import annotations
 
-from workbench.training.hpo_harness import Choice, FloatRange
+from workbench.training.hpo_harness import Choice, FloatRange, SearchSpace
 from workbench.training.hpo_runner import HpoAdapter, run_hpo
 
 # Default per-knob search space, split into the two levers that matter for a tabular MLP.
@@ -88,6 +88,9 @@ def resolve_search_space(spec) -> dict:
     if isinstance(spec, str):
         return pytorch_search_space(spec.split("+"))
     if isinstance(spec, dict):
+        # A dict of dicts is the JSON wire form; a dict of Specs is already a space
+        if spec and all(isinstance(v, dict) for v in spec.values()):
+            return SearchSpace.from_dict(spec)
         return spec
     return pytorch_search_space(tuple(spec))
 

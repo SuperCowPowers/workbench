@@ -79,6 +79,50 @@ second lever does:
 So `hpo={"search_space": "basic"}` spends the whole budget on architecture — useful when you
 already trust your optimizer settings.
 
+### Your own ranges and defaults
+
+**A default is just a hyperparameter.** Set a knob normally alongside the `hpo` block and it
+becomes the baseline the search has to beat — and the value used for any knob outside the
+searched groups:
+
+```python
+hyperparameters={"uq_version": "v1", "max_lr": 3e-3, "depth": 4, "hpo": {"n_trials": 60}}
+```
+
+**A range needs a `SearchSpace`.** Start from the shipped space, change the knobs you have an
+opinion about, and hand the result to `hpo["search_space"]`:
+
+```python
+from workbench.training.hpo_harness import SearchSpace, IntRange, FloatRange
+
+space = SearchSpace("xgboost")                              # or "chemprop" / "pytorch"
+space["max_depth"] = IntRange(4, 8, default=6)              # your ceiling, not ours
+space["learning_rate"] = FloatRange(0.02, 0.06, log=True)
+del space["gamma"]                                          # not worth trials on this data
+
+fs.to_model(..., hyperparameters={"uq_version": "v1",
+                                  "hpo": {"n_trials": 60, "search_space": space.to_dict()}})
+```
+
+`SearchSpace` is a `dict` subclass, so ordinary `space[knob] = ...` and `del` are the whole
+editing API. `.subset("basic")` narrows to a group, and `.to_frame()` gives the same table
+`hpo_search_space()` returns, for checking your work.
+
+**What you pass is the whole space** — a one-knob dict searches one knob, it does not patch
+ours. That is what makes `space.to_dict()` the natural starting point.
+
+`to_dict()` emits plain JSON, which is also what `hpo["search_space"]` accepts directly if
+you would rather write it out:
+
+```python
+hpo={"search_space": {"max_depth": {"dist": "int", "low": 4, "high": 8, "default": 6},
+                      "learning_rate": {"dist": "float", "low": 0.02, "high": 0.06, "log": True}}}
+```
+
+`dist` is required — `"int"`, `"float"`, or `"choice"` — and `default` is optional, falling
+back to the framework's. Bad spaces fail immediately rather than on trial 40: an inverted
+range, a log scale starting at zero, or an empty option list all raise at construction.
+
 ## Selection is two-stage
 
 A search reports the *minimum* over many noisy estimates, so its winning value is
