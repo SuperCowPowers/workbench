@@ -79,12 +79,6 @@ second lever does:
 So `hpo={"search_space": "basic"}` spends the whole budget on architecture — useful when you
 already trust your optimizer settings.
 
-## Cost differs sharply by framework
-
-An XGBoost trial is seconds, which makes a 250-trial search the cheap way to try something.
-A ChemProp search trains a full ensemble per trial on a GPU — that is a multi-GPU box for
-hours, so it belongs on AWS Batch rather than run inline.
-
 ## Selection is two-stage
 
 A search reports the *minimum* over many noisy estimates, so its winning value is
@@ -104,31 +98,77 @@ search spent the compute and confirmed your existing configuration.
 
 ## Reading the results
 
+One call resolves the training job's artifacts — no hunting for S3 paths or CloudWatch
+logs. A `None` return doubles as the "was this model searched?" check.
+
 ```python
-results = model.hpo_results()       # None if the model was not searched
+results = model.hpo_results()
 ```
 
-That resolves the training job's artifacts for you — no need to hunt for S3 paths or
-CloudWatch logs. A `None` return doubles as the "was this model searched?" check.
+```python
+{'metric': 'cv_mae',
+ 'trial_counts': {'attempted': 100, 'completed': 34, 'pruned': 66, 'failed': 0},
+ 'best_config': {'layers': '128-64',
+                 'dropout': 0.25,
+                 'learning_rate': 0.0002846282635669909,
+                 'weight_decay': 0.0014020994043985207,
+                 'batch_size': 128},
+ 'best_value': 0.5106314063072205,
+ 'baseline_value': 0.5450914978981019,
+ ...}
+```
 
-It returns the published configuration, the values below, and `rerank` / `trials`
-DataFrames.
+**`best_config` is what shipped.** These are the model's hyperparameters now — you can hand
+the dict straight to another `to_model()` call to train a sibling on different data:
 
-There are two same-basis value pairs, and mixing them is the easy mistake:
+```python
+fs.to_model(name="pxr-reg-pytorch-v2", ..., hyperparameters={"uq_version": "v1", **results["best_config"]})
+```
 
-| pair | meaning |
-|---|---|
-| `best_value` vs `baseline_value` | the real margin the publish decision turned on — **the one to quote** |
-| `search_best_value` vs `search_baseline_value` | how the search itself went; same basis as the `trials` rows |
+**`best_value` vs `baseline_value` is the headline.** Both are `metric` (here `cv_mae`,
+lower is better) on the same basis, so their difference is the margin the publish decision
+turned on — quote this pair:
 
-When `rerank_fresh_split` is `true` the two pairs scored on different fold partitions, so a
-number from one is not comparable to the other and can even look better. Never present
-`search_best_value` as the model's improvement.
+```python
+gain = 100 * (results["baseline_value"] - results["best_value"]) / results["baseline_value"]
+print(f"{results['metric']}: {results['best_value']:.4f} vs {results['baseline_value']:.4f} baseline ({gain:+.1f}%)")
+# cv_mae: 0.5106 vs 0.5451 baseline (+6.3%)
+```
 
-Both DataFrames carry a `hyperparameters` column: a JSON object of every searched knob and
-the value it actually trained at, so each row is a complete, NaN-free record. The `trials`
-frame also carries a `kind` column — the trials plus one `baseline` row, which is the
-reference line any plot of the search needs.
+**`trial_counts` tells you whether the budget was spent well.** A high `pruned` count is the
+pruner working as intended — those trials were stopped early once they fell off the pace, so
+`completed` is what ran to term. Any `failed` at all is worth a look at the training log.
+
+### The trials frame
+
+```python
+trials = results["trials"]      # one row per trial, plus a `baseline` row
+```
+
+| number | value | completed | kind | hyperparameters |
+|---|---|---|---|---|
+| 0 | 0.516991 | True | trial | `{"layers": "256-128", ...}` |
+| 1 | 0.530321 | False | trial | `{"layers": "512-256-64", ...}` |
+
+`hyperparameters` is a JSON object of every searched knob and the value it actually trained
+at, so each row is complete and NaN-free — expand it with `json.loads` to get one column per
+knob:
+
+```python
+import json
+import pandas as pd
+
+df = pd.DataFrame([json.loads(h) for h in trials["hyperparameters"]])
+df["value"] = trials["value"].values
+df.nsmallest(5, "value")                        # the finalists the re-rank scored
+df.groupby("layers")["value"].agg(["count", "mean", "min"])
+```
+
+`completed=False` marks a pruned trial: its `value` is the last score before it was stopped,
+so it is a lower bound, not a finished result. The single `kind="baseline"` row is your own
+untuned config scored on the same basis as the trials — it is the reference line any plot of
+the search needs, and `results["rerank"]` holds the finalists' re-scores if you want the
+second stage's own numbers.
 
 ### Which knobs mattered
 
@@ -153,8 +193,26 @@ objective. A knob is worth tuning only when both are high; `depth` above holds a
 of very little. `best` is where the objective bottoms out with the other knobs averaged out,
 which is meaningless when `effect` is small.
 
-These are observational estimates from an adaptive sampler over a few dozen trials, not a
-controlled ablation — treat the ordering as directional.
+**How it's computed.** The trials are the dataset — knob values in, objective out — and a
+random forest is fit to that response surface. `importance` is the forest's split-based
+importance; `effect` and `best` come from a partial-dependence sweep, which pins one knob
+across its range while averaging over the others.
+
+That averaging is the point. A search is not a designed experiment: the sampler
+concentrates trials where it thinks the optimum is, so a knob's raw group means are
+confounded with whatever else it happened to be exploring at the time. Marginalizing the
+other knobs out is what makes one knob's effect readable on its own. A forest suits the job
+because the response is small-N, riddled with interactions, and often non-monotone — a
+learning rate with an interior optimum has a rank correlation near zero, which would read
+as "irrelevant" to a simpler measure. It is also the field standard: fANOVA, what Optuna
+reports, is random-forest-based too.
+
+Two limits worth knowing. Split-based importance is biased toward knobs with more distinct
+values, which is part of why `effect` is there as a differently-biased second opinion. And
+partial dependence extrapolates — where the sampler correlated two knobs, the sweep asks
+the forest about combinations the search never actually tried. These are observational
+estimates over a few dozen trials, not a controlled ablation, so treat the ordering as
+directional.
 
 ## How it fits together
 
