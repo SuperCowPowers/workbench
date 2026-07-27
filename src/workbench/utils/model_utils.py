@@ -104,11 +104,11 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
 def copy_model_artifacts(model: "Model", dst_name: str) -> str:
     """Stage a model copy's S3 artifacts under the destination's training dir.
 
-    Copies the frozen model.tar.gz plus the top-level training-capture files
-    (validation_predictions.csv, shap_*) into {models_s3_path}/{dst_name}/training/.
-    The frozen artifact lives in the copy's own dir so it's immune to the source's
-    delete-then-create churn. Top-level files only -- the source's timestamped
-    training-job output subdirs aren't needed by the copy.
+    Copies the frozen model.tar.gz and its sibling output.tar.gz (the training job's
+    output channel, which carries the HPO audit trail) plus the top-level
+    training-capture files (validation_predictions.csv, shap_*) into
+    {models_s3_path}/{dst_name}/training/. The frozen artifact lives in the copy's own
+    dir so it's immune to the source's delete-then-create churn.
 
     Args:
         model (Model): The source model being copied
@@ -121,10 +121,16 @@ def copy_model_artifacts(model: "Model", dst_name: str) -> str:
     dst_training_path = f"{model.models_s3_path}/{dst_name}/training"
     session = model.boto3_session
 
-    # Freeze the artifact under the copy's own training dir
+    # Freeze the artifact under the copy's own training dir, keeping output.tar.gz beside
+    # it so readers that resolve it from model_data_url() (get_hpo_results) work on the copy
+    src_dir = src_url.rsplit("/", 1)[0]
+    output_url = f"{src_dir}/output.tar.gz"
+    src_objs = [src_url]
+    if wr.s3.does_object_exist(output_url, boto3_session=session):
+        src_objs.append(output_url)
     wr.s3.copy_objects(
-        [src_url],
-        source_path=src_url.rsplit("/", 1)[0],
+        src_objs,
+        source_path=src_dir,
         target_path=dst_training_path,
         boto3_session=session,
     )
