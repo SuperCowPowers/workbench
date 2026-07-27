@@ -130,6 +130,32 @@ the value it actually trained at, so each row is a complete, NaN-free record. Th
 frame also carries a `kind` column — the trials plus one `baseline` row, which is the
 reference line any plot of the search needs.
 
+### Which knobs mattered
+
+`hpo_importance()` answers that from the search's own trials — useful for deciding where to
+spend the next budget, or whether a knob earns its place in the space at all:
+
+```python
+model.hpo_importance()          # None if the model was not searched
+```
+
+| knob | importance | effect | best |
+|---|---|---|---|
+| `max_lr` | 0.51 | 7.9% | 0.0043 |
+| `batch_size` | 0.37 | 7.8% | 512 |
+| `hidden_dim` | 0.07 | 2.4% | 100 |
+| `depth` | 0.02 | 0.5% | 5 |
+
+**Read the two numbers together.** `importance` is a share and always sums to 1, so in a
+search where nothing mattered something still looks important. `effect` is the absolute
+read — how far the objective moves across that knob's range, as a percentage of the
+objective. A knob is worth tuning only when both are high; `depth` above holds a real share
+of very little. `best` is where the objective bottoms out with the other knobs averaged out,
+which is meaningless when `effect` is small.
+
+These are observational estimates from an adaptive sampler over a few dozen trials, not a
+controlled ablation — treat the ordering as directional.
+
 ## How it fits together
 
 <figure style="text-align: center;">

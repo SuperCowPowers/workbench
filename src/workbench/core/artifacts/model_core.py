@@ -25,6 +25,7 @@ from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import (
+    get_hpo_importance,
     get_hpo_results,
     get_hpo_search_space,
     get_model_hyperparameters,
@@ -698,6 +699,20 @@ class ModelCore(Artifact):
                 has no HPO support.
         """
         return get_hpo_search_space(self)
+
+    def hpo_importance(self) -> Union[pd.DataFrame, None]:
+        """Which knobs actually moved the objective in this Model's search.
+
+        Read ``importance`` and ``effect`` together: importance is a share of the total and
+        always sums to 1, so it ranks knobs but cannot tell you whether the total was worth
+        anything. Effect is the absolute move as a percentage of the objective.
+
+        Returns:
+            pd.DataFrame: one row per searched knob, most important first, with ``knob``,
+                ``importance``, ``effect``, and ``best``. None if the model was not
+                searched, or had too few scored trials to estimate.
+        """
+        return get_hpo_importance(self)
 
     def summary(self) -> dict:
         """Summary information about this Model

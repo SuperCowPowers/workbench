@@ -12,11 +12,12 @@ Chemprop, XGBoost, and PyTorch, regression only:
 hyperparameters={"uq_version": "v1", "hpo": {"n_trials": 60}}
 ```
 
-Two methods on `Model` cover everything:
+Three methods on `Model` cover everything:
 
 ```python
 model.hpo_search_space()   # what this model's framework searches, and each knob untuned
 model.hpo_results()        # what its search found — None if the model was not searched
+model.hpo_importance()     # which knobs actually moved the objective in that search
 ```
 
 For the block's other keys, read `run_hpo` in `workbench/training/hpo_runner.py`.
@@ -56,6 +57,14 @@ plainly. If `baseline_value` is null too, the baseline never scored, so nothing 
 measured against it; say that instead.
 
 Winners clustering at a bound is not on its own a reason to widen it.
+
+## Which knobs mattered
+
+`hpo_importance()` ranks the searched knobs. It returns `importance` (a share, always sums
+to 1) and `effect` (the absolute move as a percent of the objective) — **quote both**. A
+high share of a negligible total is noise, so a knob is only worth tuning when both are
+high. `best` is meaningless when `effect` is small. Estimates come from an adaptive sampler
+over a few dozen trials, so report the ordering as directional, never as an ablation.
 
 ## What to expect
 

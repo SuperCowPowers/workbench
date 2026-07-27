@@ -14,7 +14,7 @@ import json
 import tempfile
 import tarfile
 import awswrangler as wr
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import Iterator, Optional, Dict, Any, TYPE_CHECKING
 from scipy.stats import norm
 
 if TYPE_CHECKING:
@@ -329,7 +329,7 @@ def safe_extract_tarfile(tar_path: str, extract_path: str) -> None:
 
 
 @contextmanager
-def extracted_artifact(artifact_uri: str):
+def extracted_artifact(artifact_uri: str) -> Iterator[Optional[str]]:
     """Download an S3 tarball and yield the temp directory it extracted into.
 
     Yields None when the object can't be fetched — callers name a specific artifact and a
@@ -515,6 +515,130 @@ def get_hpo_search_space(workbench_model: Any) -> Optional[pd.DataFrame]:
             "default": pd.Series([row["default"] for row in rows], dtype=object),
             "dist": [row["dist"] for row in rows],
             "spec": [row["spec"] for row in rows],
+        }
+    )
+
+
+# A search under this many scored trials cannot support an importance estimate.
+_MIN_TRIALS_FOR_IMPORTANCE = 10
+
+
+def _encode_knobs(hyperparameters: pd.Series) -> tuple[pd.DataFrame, dict]:
+    """Encode each knob's trial values as floats for the surrogate, keeping the originals.
+
+    Numeric knobs pass through. A categorical (``ffn_hidden_dim`` mixes int widths with
+    dash-string shapes) is ordinal-coded by its sorted distinct values — an arbitrary but
+    leak-free order, unlike ranking the categories by their objective.
+
+    Returns:
+        tuple[pd.DataFrame, dict]: the float-encoded frame, and ``{knob: (values, codes)}``
+        pairing the values a user would actually set with their encoded positions.
+    """
+    knobs = pd.DataFrame([json.loads(h) for h in hyperparameters], index=hyperparameters.index)
+    encoded, levels = pd.DataFrame(index=knobs.index), {}
+    for knob in knobs.columns:
+        numeric = pd.to_numeric(knobs[knob], errors="coerce")
+        if numeric.notna().all():
+            encoded[knob] = numeric.astype(float)
+            values = sorted(numeric.unique().tolist())
+            # An int knob reports an int back — a width of 7, not 7.0
+            if pd.api.types.is_integer_dtype(knobs[knob]):
+                values = [int(v) for v in values]
+            levels[knob] = (values, [float(v) for v in values])
+        else:
+            # Sorting on the string form keeps mixed cells orderable; the original value is
+            # carried alongside so a scalar width reports as 900, not "900".
+            as_text = knobs[knob].astype(str)
+            keys = sorted(as_text.unique().tolist())
+            originals = {text: knobs[knob][as_text == text].iloc[0] for text in keys}
+            encoded[knob] = as_text.map({text: i for i, text in enumerate(keys)}).astype(float)
+            levels[knob] = ([originals[text] for text in keys], [float(i) for i in range(len(keys))])
+    return encoded, levels
+
+
+def _partial_dependence(model: Any, x: pd.DataFrame, knob: str, grid: list) -> "np.ndarray":
+    """Mean surrogate prediction with ``knob`` pinned to each grid value, others left as-is.
+
+    Marginalizes the other knobs out, which is what makes this readable as one knob's own
+    effect — a search allocates trials adaptively, so raw per-value group means are
+    confounded by whatever else the sampler was exploring at the time.
+    """
+    means = []
+    for value in grid:
+        pinned = x.copy()
+        pinned[knob] = value
+        means.append(float(model.predict(pinned).mean()))
+    return np.array(means)
+
+
+def get_hpo_importance(workbench_model: Any) -> Optional[pd.DataFrame]:
+    """Rank a searched model's knobs by how much they moved the objective.
+
+    Fits a random-forest surrogate to the search's own trials, then reads two different
+    things off it. ``importance`` is the surrogate's split-based importance, normalized
+    across knobs — good for ranking, but it always sums to 1, so in a search where nothing
+    mattered something still looks important. ``effect`` is the absolute read: how far the
+    objective moves across that knob's range, as a percentage of the objective. **A knob is
+    only worth tuning when both are high** — a large share of a negligible total is noise.
+
+    These are observational estimates from an adaptive sampler, not a controlled ablation,
+    and a typical search is a few dozen trials over several knobs. Treat the ordering as
+    directional.
+
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        pd.DataFrame: one row per searched knob, most important first, with ``knob``,
+        ``importance`` (shares summing to 1), ``effect`` (percent of the objective), and
+        ``best`` (the knob's value where the objective is lowest, other knobs averaged
+        out — meaningless when ``effect`` is small). None when the model was not searched.
+    """
+    results = get_hpo_results(workbench_model)
+    if results is None or results.get("trials") is None:
+        return None
+
+    trials = results["trials"]
+    if "kind" in trials:
+        trials = trials[trials["kind"] == "trial"]
+    trials = trials.dropna(subset=["value"])
+    if len(trials) < _MIN_TRIALS_FOR_IMPORTANCE:
+        log.warning(f"Only {len(trials)} scored trials — too few to estimate hyperparameter importance")
+        return None
+
+    x, levels = _encode_knobs(trials["hyperparameters"])
+    y = trials["value"].astype(float)
+
+    from sklearn.ensemble import RandomForestRegressor
+
+    surrogate = RandomForestRegressor(n_estimators=500, random_state=42, min_samples_leaf=2).fit(x, y)
+
+    scale = abs(float(y.mean())) or 1.0
+    rows = []
+    for knob, importance in zip(x.columns, surrogate.feature_importances_):
+        values, codes = levels[knob]
+        if len(values) < 2:  # never varied, so the search says nothing about it
+            rows.append({"knob": knob, "importance": 0.0, "effect": 0.0, "best": values[0]})
+            continue
+        curve = _partial_dependence(surrogate, x, knob, codes)
+        rows.append(
+            {
+                "knob": knob,
+                "importance": float(importance),
+                "effect": 100 * float(curve.max() - curve.min()) / scale,
+                "best": values[int(curve.argmin())],
+            }
+        )
+
+    # `best` holds each knob's native type (an int width, a float rate, a shape string), so
+    # the column is built as object rather than letting pandas upcast the mix to float.
+    rows.sort(key=lambda row: row["importance"], reverse=True)
+    return pd.DataFrame(
+        {
+            "knob": [row["knob"] for row in rows],
+            "importance": [row["importance"] for row in rows],
+            "effect": [row["effect"] for row in rows],
+            "best": pd.Series([row["best"] for row in rows], dtype=object),
         }
     )
 
