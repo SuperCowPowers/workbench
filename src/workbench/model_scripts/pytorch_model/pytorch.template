@@ -94,7 +94,7 @@ TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "hyperparameters": "{{hyperparameters}}",
+    "hyperparameters": json.loads("{{hyperparameters}}"),
 }
 
 

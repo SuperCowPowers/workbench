@@ -129,7 +129,7 @@ TEMPLATE_PARAMS = {
     "feature_list": "{{feature_list}}",
     "id_column": "{{id_column}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "hyperparameters": "{{hyperparameters}}",
+    "hyperparameters": json.loads("{{hyperparameters}}"),
 }
 
 

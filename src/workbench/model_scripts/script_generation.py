@@ -9,6 +9,7 @@ template's placeholders and copies any framework-specific supporting files
 that live alongside the template.
 """
 
+import json
 import os
 import shutil
 import logging
@@ -23,6 +24,9 @@ def fill_template(template_path: str, params: dict, output_script: str, output_d
     """
     Fill in the placeholders in the template with the values provided in params,
     ensuring that the correct Python data types are used.
+
+    ``hyperparameters`` crosses as a JSON string that the template ``json.loads``.
+
     Args:
         template_path (str): The path to the template file.
         params (dict): A dictionary with placeholder keys and their corresponding values.
@@ -38,8 +42,10 @@ def fill_template(template_path: str, params: dict, output_script: str, output_d
 
     # Perform the replacements
     for key, value in params.items():
+        if key == "hyperparameters":
+            value = repr(json.dumps(value or {}))
         # For string values wrap them in quotes (except for model_imports and model_class)
-        if isinstance(value, str) and key not in ["model_imports", "model_class"]:
+        elif isinstance(value, str) and key not in ["model_imports", "model_class"]:
             value = f'"{value}"'
         # Replace the placeholder in the template
         placeholder = f'"{{{{{key}}}}}"'  # Double curly braces to match the template
