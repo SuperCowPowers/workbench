@@ -491,14 +491,14 @@ if __name__ == "__main__":
         print(f"{'='*50}")
 
         df_train = all_df.iloc[train_idx].reset_index(drop=True)
-        df_val = all_df.iloc[val_idx].reset_index(drop=True)
+        df_oof = all_df.iloc[val_idx].reset_index(drop=True)
 
         # Prepare data (using shared scaler for train/inference consistency)
         train_x_cont, train_x_cat, train_y, _, _ = prepare_data(
             df_train, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
         val_x_cont, val_x_cat, val_y, _, _ = prepare_data(
-            df_val, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
+            df_oof, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
 
         # Same trainer the HPO objective scores its trials with, so a searched config
@@ -526,31 +526,31 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     if n_folds == 1:
         # Single fold: only validation rows
-        val_mask = ~np.isnan(oof_predictions)
-        df_val = all_df[val_mask].copy()
-        predictions = oof_predictions[val_mask]
+        oof_mask = ~np.isnan(oof_predictions)
+        df_oof = all_df[oof_mask].copy()
+        predictions = oof_predictions[oof_mask]
         if oof_proba is not None:
-            oof_proba = oof_proba[val_mask]
+            oof_proba = oof_proba[oof_mask]
     else:
         # K-fold: all rows have out-of-fold predictions
-        df_val = all_df.copy()
+        df_oof = all_df.copy()
         predictions = oof_predictions
 
     # Decode labels for classification
     if model_type == "classifier":
-        df_val[target] = label_encoder.inverse_transform(df_val[target].astype(int))
-        df_val["prediction"] = label_encoder.inverse_transform(predictions.astype(int))
+        df_oof[target] = label_encoder.inverse_transform(df_oof[target].astype(int))
+        df_oof["prediction"] = label_encoder.inverse_transform(predictions.astype(int))
         if oof_proba is not None:
-            df_val["pred_proba"] = [p.tolist() for p in oof_proba]
-            df_val = expand_proba_column(df_val, label_encoder.classes_)
+            df_oof["pred_proba"] = [p.tolist() for p in oof_proba]
+            df_oof = expand_proba_column(df_oof, label_encoder.classes_)
     else:
-        df_val["prediction"] = predictions
+        df_oof["prediction"] = predictions
 
     # -------------------------------------------------------------------------
     # Compute and print metrics
     # -------------------------------------------------------------------------
-    y_true = df_val[target].values
-    y_pred = df_val["prediction"].values
+    y_true = df_oof[target].values
+    y_pred = df_oof["prediction"].values
 
     if model_type == "classifier":
         score_df = compute_classification_metrics(y_true, y_pred, label_encoder.classes_, target)
@@ -560,13 +560,13 @@ if __name__ == "__main__":
         # Calibrate VGMU classification confidence from ensemble probabilities
         if n_folds > 1:
             x_cont, x_cat, _, _, _ = prepare_data(
-                df_val, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
+                df_oof, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
             )
             all_probs = np.stack([predict(m, x_cont, x_cat) for m in ensemble_models])
             avg_probs = np.mean(all_probs, axis=0)
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs)
             classification_uq = calibrate_classification_confidence(raw_conf, y_true, y_pred)
-            df_val["confidence"] = apply_classification_confidence(
+            df_oof["confidence"] = apply_classification_confidence(
                 raw_conf, classification_uq["classification_confidence"]
             )
         else:
@@ -582,22 +582,22 @@ if __name__ == "__main__":
         if n_folds > 1:
             # Re-run inference with all models to get std
             x_cont, x_cat, _, _, _ = prepare_data(
-                df_val, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
+                df_oof, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
             )
             all_preds = [predict(m, x_cont, x_cat).flatten() for m in ensemble_models]
-            df_val["prediction_std"] = compress_std_outliers(np.std(np.stack(all_preds), axis=0))
+            df_oof["prediction_std"] = compress_std_outliers(np.std(np.stack(all_preds), axis=0))
             print(
-                f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}"
+                f"Ensemble std - mean: {df_oof['prediction_std'].mean():.4f}, max: {df_oof['prediction_std'].max():.4f}"
             )
         else:
-            df_val["prediction_std"] = 0.0
+            df_oof["prediction_std"] = 0.0
 
-        # Fit both UQ models on validation predictions and apply active to df_val.
+        # Fit both UQ models on validation predictions and apply active to df_oof.
         print("\n" + "=" * 50)
         print("Fitting UQ models")
         print("=" * 50)
-        val_ids = df_val[id_column].tolist()
-        val_std = df_val["prediction_std"].values
+        oof_ids = df_oof[id_column].tolist()
+        oof_std = df_oof["prediction_std"].values
 
         # V1/V2 need a fingerprint proximity set ('smiles'); with smiles we fit all
         # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
@@ -611,18 +611,18 @@ if __name__ == "__main__":
         uq_dict = fit_regression_uq(
             y_true=y_true,
             y_pred=y_pred,
-            y_std=val_std,
-            val_ids=val_ids,
+            y_std=oof_std,
+            oof_ids=oof_ids,
             prox_df=prox_df,
             id_column=id_column,
             target=target,
             active_version=hyperparameters.get("uq_version", "v0"),
         )
 
-        # Apply active UQ to df_val for validation_predictions.csv
-        uq_out = uq_dict["uq_model"].predict(val_ids, y_pred, val_std)
+        # Apply active UQ to df_oof for validation_predictions.csv
+        uq_out = uq_dict["uq_model"].predict(oof_ids, y_pred, oof_std)
         for col in uq_out.columns:
-            df_val[col] = uq_out[col].values
+            df_oof[col] = uq_out[col].values
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance (continuous features only)
@@ -634,8 +634,8 @@ if __name__ == "__main__":
     import shap
 
     # Sample up to 500 rows for SHAP computation
-    shap_sample_size = min(500, len(df_val))
-    shap_sample_df = df_val.sample(n=shap_sample_size, random_state=42)
+    shap_sample_size = min(500, len(df_oof))
+    shap_sample_df = df_oof.sample(n=shap_sample_size, random_state=42)
     shap_sample_ids = shap_sample_df[id_column]
 
     # Prepare background data (subset for efficiency)
@@ -740,7 +740,7 @@ if __name__ == "__main__":
     # The CV rows above are the model's standard metrics; the held-out set is an
     # independent read. Rows are marked with a `validation` column so downstream
     # tooling can separate the two; held-out MAE is printed as `holdout_mae`.
-    df_val["validation"] = False
+    df_oof["validation"] = False
     if len(holdout_df):
         print("\n" + "=" * 50)
         print(f"Scoring held-out validation set ({len(holdout_df)} rows)")
@@ -789,24 +789,24 @@ if __name__ == "__main__":
             )
 
         h_out["validation"] = True
-        df_val = pd.concat([df_val, h_out], ignore_index=True)
+        df_oof = pd.concat([df_oof, h_out], ignore_index=True)
 
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
     # -------------------------------------------------------------------------
     output_columns = []
-    if id_column in df_val.columns:
+    if id_column in df_oof.columns:
         output_columns.append(id_column)
     output_columns += [target, "prediction"]
 
     if model_type != "classifier":
         output_columns.append("prediction_std")
-    output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
+    output_columns += [c for c in df_oof.columns if c.startswith("q_") or c == "confidence"]
 
-    output_columns += [c for c in df_val.columns if c.endswith("_proba")]
+    output_columns += [c for c in df_oof.columns if c.endswith("_proba")]
     output_columns += ["validation"]
 
-    wr.s3.to_csv(df_val[output_columns], f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
+    wr.s3.to_csv(df_oof[output_columns], f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
 
     # -------------------------------------------------------------------------
     # Save model artifacts

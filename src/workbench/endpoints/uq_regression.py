@@ -5,7 +5,7 @@ regression UQ:
 
     1. Build a fingerprint-proximity reference set from the training data.
     2. Fit ``UQModelV0``, ``UQModelV1``, and ``UQModelV2`` on the same
-       validation predictions and ensemble std (V2 needs only the proximity).
+       out-of-fold predictions and ensemble std (V2 needs only the proximity).
     3. Save all three artifacts into the model bundle (V1 and V2 share
        ``uq_proximity.joblib``).
     4. At inference (``model_fn``), load whichever version
@@ -15,7 +15,7 @@ That logic lives here so each template can call:
 
     # ---- Training ----
     uq_dict = fit_regression_uq(...)
-    uq_out = uq_dict["uq_model"].predict(...)         # active for df_val cols
+    uq_out = uq_dict["uq_model"].predict(...)         # active for df_oof cols
     save_regression_uq(uq_dict, args.model_dir)       # writes V0, V1, V2
 
     # ---- Inference (model_fn) ----
@@ -25,6 +25,7 @@ That logic lives here so each template can call:
 For offline comparison of non-active versions, callers use
 ``Model.uq_model(version="v0"|"v1"|"v2")`` — that loads any version explicitly
 without going through the endpoint.
+
 """
 
 from __future__ import annotations
@@ -59,13 +60,13 @@ def fit_regression_uq(
     y_true,
     y_pred,
     y_std,
-    val_ids: list,
+    oof_ids: list,
     prox_df=None,
     id_column: str,
     target: str,
     active_version: str = "v0",
 ) -> dict:
-    """Fit the regression UQ models on the validation predictions.
+    """Fit the regression UQ models on the out-of-fold training predictions.
 
     V0 (isotonic calibration on prediction+std) needs no molecular structure and
     is always fit. V1 and V2 are fingerprint-proximity models, so they're fit only
@@ -77,10 +78,10 @@ def fit_regression_uq(
     building the proximity set in this one place so the templates just call this.
 
     Args:
-        y_true: True target values for the validation set, shape (n,).
-        y_pred: Predicted values (ensemble mean), shape (n,).
+        y_true: True target values for the out-of-fold rows, shape (n,).
+        y_pred: Out-of-fold predicted values (ensemble mean), shape (n,).
         y_std: Ensemble standard deviation, shape (n,).
-        val_ids: List of compound IDs aligned with the above arrays.
+        oof_ids: Compound IDs aligned with the above arrays.
         prox_df: DataFrame for the V1/V2 FingerprintProximity reference set, or
             None. When provided, must contain ``id_column``, a ``smiles`` column,
             and the target column (CV rows marked ``in_model=True``). When None,
@@ -108,7 +109,7 @@ def fit_regression_uq(
 
         log.info("Fitting UQModelV1 (proximity-augmented RF error model) ...")
         uq_model_v1 = UQModelV1(prox)
-        uq_model_v1.fit(val_ids, y_true, y_pred, y_std)
+        uq_model_v1.fit(oof_ids, y_true, y_pred, y_std)
 
         log.info("Fitting UQModelV2 (applicability-domain from proximity) ...")
         uq_model_v2 = UQModelV2.fit(prox)
@@ -118,7 +119,7 @@ def fit_regression_uq(
     if uq_model_active is None:
         log.warning(f"UQ version '{active}' not fit (no fingerprint/smiles data); using v0")
         uq_model_active = uq_model_v0
-    log.info(f"Active UQ version for training-time df_val columns: {active}")
+    log.info(f"Active UQ version for training-time df_oof columns: {active}")
 
     return {
         "uq_model": uq_model_active,

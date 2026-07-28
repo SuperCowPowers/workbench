@@ -110,10 +110,10 @@ class UQModelV1:
         predictions: Union[np.ndarray, pd.Series],
         prediction_std: Union[np.ndarray, pd.Series],
     ) -> "UQModelV1":
-        """Fit the error model and conformal calibration on validation predictions.
+        """Fit the error model and conformal calibration on out-of-fold predictions.
 
         Args:
-            ids: Validation row IDs (must exist in the proximity reference set).
+            ids: Out-of-fold row IDs (must exist in the proximity reference set).
             y_true: True target values for those rows.
             predictions: Model predictions (ensemble mean).
             prediction_std: Ensemble standard deviation (post log-compression if used upstream).
@@ -132,7 +132,7 @@ class UQModelV1:
                 f"predictions={len(predictions)}, prediction_std={len(prediction_std)}"
             )
 
-        log.info(f"Fitting UQModelV1 on {len(ids)} validation samples (k={self.k})")
+        log.info(f"Fitting UQModelV1 on {len(ids)} out-of-fold samples (k={self.k})")
 
         # 1. Compute neighborhood features
         feat = self.features.compute(

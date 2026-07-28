@@ -7,7 +7,7 @@ audit calibrator that doesn't depend on a similarity index.
 
 Algorithm:
 
-    Calibration  (y_val, y_pred, prediction_std):
+    Calibration  (y_oof, y_pred, prediction_std):
         1. Bin y_pred into N=10 quantile bins.
         2. Within each bin, fit IsotonicRegression(std -> |residual|),
            falling back to a global isotonic for bins with <20 samples.
@@ -154,7 +154,7 @@ class UQModelV0:
           because it has no reference index.
 
     Usage:
-        uq0 = UQModelV0.fit(y_val, y_pred_val, prediction_std_val)
+        uq0 = UQModelV0.fit(y_oof, y_pred_oof, prediction_std_oof)
         out = uq0.predict(ids, predictions, prediction_std)
 
         # Save / load (uq_metadata_v0.json)
@@ -183,18 +183,18 @@ class UQModelV0:
     @classmethod
     def fit(
         cls,
-        y_val: Union[np.ndarray, pd.Series],
-        y_pred_val: Union[np.ndarray, pd.Series],
-        prediction_std_val: Union[np.ndarray, pd.Series],
+        y_oof: Union[np.ndarray, pd.Series],
+        y_pred_oof: Union[np.ndarray, pd.Series],
+        prediction_std_oof: Union[np.ndarray, pd.Series],
         confidence_levels: Optional[List[float]] = None,
         verbose: bool = True,
     ) -> "UQModelV0":
-        """Fit the v0 calibrator on validation predictions.
+        """Fit the v0 calibrator on out-of-fold predictions.
 
         Args:
-            y_val: True target values, shape (n,).
-            y_pred_val: Predicted values from the model, shape (n,).
-            prediction_std_val: Ensemble std for each prediction, shape (n,).
+            y_oof: True target values, shape (n,).
+            y_pred_oof: Out-of-fold predicted values from the model, shape (n,).
+            prediction_std_oof: Ensemble std for each prediction, shape (n,).
             confidence_levels: Target coverage levels for prediction intervals.
                 Default: [0.50, 0.68, 0.80, 0.90, 0.95].
             verbose: If True, print per-level scale factor + empirical coverage.
@@ -205,19 +205,19 @@ class UQModelV0:
         if confidence_levels is None:
             confidence_levels = DEFAULT_CONFIDENCE_LEVELS
 
-        y_val = np.asarray(y_val, dtype=float).flatten()
-        y_pred_val = np.asarray(y_pred_val, dtype=float).flatten()
-        prediction_std_val = np.asarray(prediction_std_val, dtype=float).flatten()
+        y_oof = np.asarray(y_oof, dtype=float).flatten()
+        y_pred_oof = np.asarray(y_pred_oof, dtype=float).flatten()
+        prediction_std_oof = np.asarray(prediction_std_oof, dtype=float).flatten()
 
-        safe_std = np.maximum(prediction_std_val, 1e-10)
-        nonconformity_scores = np.abs(y_val - y_pred_val) / safe_std
+        safe_std = np.maximum(prediction_std_oof, 1e-10)
+        nonconformity_scores = np.abs(y_oof - y_pred_oof) / safe_std
 
         scale_factors = {}
         if verbose:
             log.info("Calibrating prediction intervals (v0) from ensemble std...")
-            log.info(f"  Validation samples: {len(y_val)}")
-            log.info(f"  Mean ensemble std: {np.mean(prediction_std_val):.4f}")
-            log.info(f"  Median ensemble std: {np.median(prediction_std_val):.4f}")
+            log.info(f"  Validation samples: {len(y_oof)}")
+            log.info(f"  Mean ensemble std: {np.mean(prediction_std_oof):.4f}")
+            log.info(f"  Median ensemble std: {np.median(prediction_std_oof):.4f}")
 
         for confidence_level in confidence_levels:
             n = len(nonconformity_scores)
@@ -225,15 +225,15 @@ class UQModelV0:
             q = float(np.quantile(nonconformity_scores, adjusted_quantile))
             scale_factors[f"{confidence_level:.2f}"] = q
             if verbose:
-                lower = y_pred_val - q * safe_std
-                upper = y_pred_val + q * safe_std
-                coverage = np.mean((y_val >= lower) & (y_val <= upper))
+                lower = y_pred_oof - q * safe_std
+                upper = y_pred_oof + q * safe_std
+                coverage = np.mean((y_oof >= lower) & (y_oof <= upper))
                 log.info(f"  {confidence_level * 100:.0f}% CI: scale_factor={q:.3f}, coverage={coverage * 100:.1f}%")
 
         # Per-bin isotonic calibrator + reference percentile distribution
-        abs_residual = np.abs(y_val - y_pred_val)
-        residual_calibrator = _fit_residual_calibrator(y_pred_val, prediction_std_val, abs_residual)
-        expected_residual_cal = _apply_residual_calibrator(y_pred_val, prediction_std_val, residual_calibrator)
+        abs_residual = np.abs(y_oof - y_pred_oof)
+        residual_calibrator = _fit_residual_calibrator(y_pred_oof, prediction_std_oof, abs_residual)
+        expected_residual_cal = _apply_residual_calibrator(y_pred_oof, prediction_std_oof, residual_calibrator)
         residual_percentiles = [float(np.percentile(expected_residual_cal, p)) for p in range(101)]
 
         if verbose:
