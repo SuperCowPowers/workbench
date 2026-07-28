@@ -30,21 +30,16 @@ Same applies to the id column — check rather than assuming `id`.
 
 ## Showing a molecule
 
-The REPL has `show()`, which renders a 2D structure image. It takes a **single
-SMILES string**, not a DataFrame or a Series:
+The REPL has `show()`, which renders a 2D structure image. Use it for a **single
+molecule** — to compare several, use `neighborhood_graph` (see `plotting`). It
+takes a SMILES string, not a DataFrame or a Series. **Always pass the compound id** —
+it is captioned under the structure, and an unlabeled window is hard to place:
 
 ```python
-show(df["smiles"].iloc[0])              # first compound
-show("CN1C=NC2=C1C(=O)N(C(=O)N2C)C")    # caffeine
-show(smiles, width=300, height=300)     # smaller; default is 500x500
-show(smiles, background="rgba(255, 255, 255, 0.5)")   # white/half alpha; default is dark grey
-```
-
-To look at several, loop — but keep it to a handful, since each opens an image:
-
-```python
-for smiles in df["smiles"].head(5):
-    show(smiles)
+show(row["smiles"], row["id"])                         # id captioned under it
+show("CN1C=NC2=C1C(=O)N(C(=O)N2C)C", "caffeine")
+show(smiles, cid, width=300, height=300)               # smaller; default is 500x500
+show(smiles, cid, background="rgba(64, 64, 64, 1)")    # dark grey; default is white
 ```
 
 `show()` needs RDKit, so it is only present when the chemistry extras are
@@ -61,7 +56,7 @@ a prediction came out the way it did. Pair the structure with the row:
 
 ```python
 row = df[df["id"] == compound_id].iloc[0]
-show(row["smiles"])
+show(row["smiles"], compound_id)
 print(row[["id", "solubility", "prediction"]])
 ```
 
