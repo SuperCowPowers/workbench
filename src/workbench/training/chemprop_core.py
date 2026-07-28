@@ -19,12 +19,11 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-import numpy as np
 import torch
 from chemprop import data, models, nn
 from lightning import pytorch as pl
 
-from workbench.endpoints.chemprop_utils import create_molecule_datapoints, safe_batch_size
+from workbench.endpoints.chemprop_utils import create_molecule_datapoints, predict_ensemble, safe_batch_size
 
 
 def load_foundation_weights(from_foundation: str) -> tuple:
@@ -391,6 +390,9 @@ def train_chemprop_fold(
 def predict_chemprop_frame(mpnn, spec: FoldSpec, df, targets=None, extra=None):
     """Predict a frame with a fitted chemprop model, in original target units.
 
+    One member's slice of :func:`workbench.endpoints.chemprop_utils.predict_ensemble`, the
+    shared forward pass the serving endpoint also runs.
+
     ``extra`` must be the *unscaled* descriptors — the model's ``x_d_transform`` applies
     its own scaling, so pre-scaled input would be double-scaled.
 
@@ -398,26 +400,4 @@ def predict_chemprop_frame(mpnn, spec: FoldSpec, df, targets=None, extra=None):
         np.ndarray: predictions shaped ``(n_rows, n_outputs)``.
     """
     dps, _ = create_molecule_datapoints(df[spec.smiles_column].tolist(), targets, extra)
-    dataset = data.MoleculeDataset(dps)
-    loader = data.build_dataloader(
-        dataset,
-        batch_size=safe_batch_size(len(dataset), spec.hyperparameters["batch_size"]),
-        shuffle=False,
-        num_workers=spec.num_workers,
-        pin_memory=True,
-    )
-    # fp32 (the Trainer default), not the training fit's "16-mixed": mixed precision is a
-    # training-throughput technique. All inference — OOF here, the manual std/calibration
-    # loops, and the serving endpoint — is fp32, so UQ calibration is fit on the same numbers
-    # production emits. Keep this fp32; don't "restore parity" with the fit's precision.
-    trainer = pl.Trainer(
-        accelerator="auto", devices=1, logger=False, enable_progress_bar=False, enable_checkpointing=False
-    )
-    mpnn.eval()
-    with torch.inference_mode():
-        preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, loader)], axis=0)
-    if preds.ndim == 3 and preds.shape[1] == 1:
-        preds = preds.squeeze(axis=1)
-    if preds.ndim == 1:  # single-target models can emit (n,); callers index [:, 0]
-        preds = preds.reshape(-1, 1)
-    return preds
+    return predict_ensemble([mpnn], dps, batch_size=spec.hyperparameters["batch_size"], num_workers=spec.num_workers)[0]

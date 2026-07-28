@@ -36,7 +36,7 @@ from rdkit import RDLogger
 
 RDLogger.logger().setLevel(RDLogger.ERROR)
 
-from chemprop import data, models
+from chemprop import models
 
 from workbench.endpoints.inference import (
     compress_std_outliers,
@@ -52,7 +52,7 @@ from workbench.endpoints.uq_harness import (
 from workbench.endpoints.chemprop_utils import (
     create_molecule_datapoints,
     find_smiles_column,
-    safe_batch_size,
+    predict_ensemble,
 )
 from workbench.endpoints.uq_regression import load_regression_uq
 
@@ -240,42 +240,12 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     if len(datapoints) == 0:
         return df
 
-    dataset = data.MoleculeDataset(datapoints)
-    # Note: Use dataset length as batch_size to prevent ChemProp's build_dataloader from
-    # dropping single-sample batches (its drop_last logic triggers when len(dataset) % batch_size == 1)
-    dataloader = data.build_dataloader(dataset, shuffle=False, batch_size=len(dataset))
+    # The shared forward pass — training out-of-fold predictions and the HPO objective run
+    # this same function, so a model is scored on the code path it serves on.
+    all_preds = predict_ensemble(ensemble_models, datapoints)
 
-    # Ensemble predictions using direct PyTorch inference (no Lightning Trainer)
-    all_preds = []
-    for model in ensemble_models:
-        model_preds = []
-        model.eval()
-        with torch.inference_mode():
-            for batch in dataloader:
-                # TrainingBatch contains (bmg, V_d, X_d, targets, weights, lt_mask, gt_mask)
-                # For inference we only need bmg, V_d, X_d
-                bmg, V_d, X_d, *_ = batch
-                output = model(bmg, V_d, X_d)
-                model_preds.append(output.detach().cpu().numpy())
-
-        if len(model_preds) == 0:
-            print(f"Warning: No predictions generated. Dataset size: {len(datapoints)}")
-            continue
-
-        preds = np.concatenate(model_preds, axis=0)
-        if preds.ndim == 3 and preds.shape[1] == 1:
-            preds = preds.squeeze(axis=1)
-        all_preds.append(preds)
-
-    if len(all_preds) == 0:
-        print("Error: No ensemble predictions generated")
-        return df
-
-    preds = np.mean(np.stack(all_preds), axis=0)
-    preds_std = np.std(np.stack(all_preds), axis=0)
-    if preds.ndim == 1:
-        preds, preds_std = preds.reshape(-1, 1), preds_std.reshape(-1, 1)
-    preds_std = compress_std_outliers(preds_std)
+    preds = np.mean(all_preds, axis=0)
+    preds_std = compress_std_outliers(np.std(all_preds, axis=0))
 
     print(f"Inference complete: {preds.shape[0]} predictions")
 
@@ -302,7 +272,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         # VGMU classification confidence
         classification_uq = model_dict.get("classification_uq")
         if classification_uq and "classification_confidence" in classification_uq:
-            all_probs_stack = np.stack(all_preds, axis=0)
+            all_probs_stack = all_preds
             if all_probs_stack.shape[2] == 1:
                 # Binary sigmoid → expand to 2-class for each model
                 all_probs_stack = np.concatenate([1 - all_probs_stack, all_probs_stack], axis=2)
@@ -716,32 +686,7 @@ if __name__ == "__main__":
         # Calibrate VGMU classification confidence from ensemble probabilities
         if len(ensemble_models) > 1:
             val_dps, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), None, val_extra_features)
-            cal_dataset = data.MoleculeDataset(val_dps)
-            infer_batch = min(len(cal_dataset), 4096)
-            cal_loader = data.build_dataloader(
-                cal_dataset,
-                batch_size=safe_batch_size(len(cal_dataset), infer_batch),
-                shuffle=False,
-            )
-
-            all_model_probs = []
-            for m in ensemble_models:
-                m.eval().to(device)
-                model_preds = []
-                with torch.inference_mode():
-                    for batch in cal_loader:
-                        bmg, V_d, X_d, *_ = batch
-                        bmg.to(device)
-                        V_d = V_d.to(device) if V_d is not None else None
-                        X_d = X_d.to(device) if X_d is not None else None
-                        output = m(bmg, V_d, X_d)
-                        model_preds.append(output.detach().cpu().numpy())
-                probs = np.concatenate(model_preds, axis=0)
-                if probs.ndim == 3 and probs.shape[1] == 1:
-                    probs = probs.squeeze(axis=1)
-                all_model_probs.append(probs)
-
-            all_probs_stack = np.stack(all_model_probs)  # (n_models, n_samples, n_classes)
+            all_probs_stack = predict_ensemble(ensemble_models, val_dps, device=device)
             if all_probs_stack.shape[2] == 1:
                 # Binary sigmoid → expand to 2-class for each model
                 all_probs_stack = np.concatenate([1 - all_probs_stack, all_probs_stack], axis=2)
@@ -758,46 +703,16 @@ if __name__ == "__main__":
         uq_dict = None
     else:
         classification_uq = None
-        # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
         if len(ensemble_models) > 1:
             _std_t0 = time.time()
-            print("Computing prediction_std from ensemble...", flush=True)
+            print(f"Computing prediction_std from {len(ensemble_models)} models...", flush=True)
             val_dps, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
-            std_dataset = data.MoleculeDataset(val_dps)
-            std_dataset.cache = True
-            infer_batch = min(len(std_dataset), 4096)
-            infer_workers = min(os.cpu_count() or 4, 8)
-            val_loader = data.build_dataloader(
-                std_dataset,
-                batch_size=safe_batch_size(len(std_dataset), infer_batch),
-                shuffle=False,
-                num_workers=infer_workers,
-                pin_memory=True,
+            all_ens_preds = predict_ensemble(
+                ensemble_models, val_dps, num_workers=min(os.cpu_count() or 4, 8), device=device
             )
-            print(f"  Dataset ready ({len(std_dataset)} samples), running {len(ensemble_models)} models...", flush=True)
-
-            all_ens_preds = []
-            for m in ensemble_models:
-                m.eval().to(device)
-                model_preds = []
-                with torch.inference_mode():
-                    for batch in val_loader:
-                        bmg, V_d, X_d, *_ = batch
-                        bmg.to(device)
-                        V_d = V_d.to(device) if V_d is not None else None
-                        X_d = X_d.to(device) if X_d is not None else None
-                        output = m(bmg, V_d, X_d)
-                        model_preds.append(output.detach().cpu().numpy())
-                ens_preds = np.concatenate(model_preds, axis=0)
-                if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
-                    ens_preds = ens_preds.squeeze(axis=1)
-                all_ens_preds.append(ens_preds)
             print(f"[timing] prediction_std (ensemble inference): {time.time() - _std_t0:.1f}s", flush=True)
-            preds_std = np.std(np.stack(all_ens_preds), axis=0)
-            if preds_std.ndim == 1:
-                preds_std = preds_std.reshape(-1, 1)
-            preds_std = compress_std_outliers(preds_std)
+            preds_std = compress_std_outliers(np.std(all_ens_preds, axis=0))
 
         print(f"[timing] post-training elapsed before metrics: {time.time() - _post_t0:.1f}s", flush=True)
         print("\n--- Per-target metrics ---")
@@ -967,33 +882,12 @@ if __name__ == "__main__":
         h_df = h_df.iloc[h_valid].reset_index(drop=True)
 
         if len(h_dps):
-            h_dataset = data.MoleculeDataset(h_dps)
-            h_loader = data.build_dataloader(
-                h_dataset, batch_size=safe_batch_size(len(h_dataset), min(len(h_dataset), 4096)), shuffle=False
-            )
-            all_ens = []
-            for m in ensemble_models:
-                m.eval().to(device)
-                model_preds = []
-                with torch.inference_mode():
-                    for batch in h_loader:
-                        bmg, V_d, X_d, *_ = batch
-                        bmg.to(device)
-                        V_d = V_d.to(device) if V_d is not None else None
-                        X_d = X_d.to(device) if X_d is not None else None
-                        model_preds.append(m(bmg, V_d, X_d).detach().cpu().numpy())
-                ens_preds = np.concatenate(model_preds, axis=0)
-                if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
-                    ens_preds = ens_preds.squeeze(axis=1)
-                all_ens.append(ens_preds)
-            h_preds = np.mean(np.stack(all_ens), axis=0)
-            h_std = np.std(np.stack(all_ens), axis=0)
-            if h_preds.ndim == 1:
-                h_preds, h_std = h_preds.reshape(-1, 1), h_std.reshape(-1, 1)
-            h_std = compress_std_outliers(h_std)
+            all_ens = predict_ensemble(ensemble_models, h_dps, device=device)
+            h_preds = np.mean(all_ens, axis=0)
+            h_std = compress_std_outliers(np.std(all_ens, axis=0))
 
             if model_type == "classifier":
-                all_probs_stack = np.stack(all_ens)  # (n_models, n_samples, n_classes or 1 sigmoid)
+                all_probs_stack = all_ens  # (n_models, n_samples, n_classes or 1 sigmoid)
                 if all_probs_stack.shape[2] == 1:
                     all_probs_stack = np.concatenate([1 - all_probs_stack, all_probs_stack], axis=2)
                 avg_probs = np.mean(all_probs_stack, axis=0)

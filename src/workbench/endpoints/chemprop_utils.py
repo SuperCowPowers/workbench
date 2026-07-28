@@ -11,6 +11,10 @@ import numpy as np
 
 from chemprop import data
 
+# Ceiling on rows per forward pass. Serving batches sit well under this and go through as a
+# single batch; training-set-sized frames get chunked rather than materializing at once.
+MAX_INFERENCE_BATCH = 4096
+
 
 def safe_batch_size(dataset_len: int, batch_size: int) -> int:
     """Compute a batch size that avoids ChemProp's drop_last behavior.
@@ -23,6 +27,76 @@ def safe_batch_size(dataset_len: int, batch_size: int) -> int:
     if dataset_len % batch_size == 1:
         return batch_size + 1
     return batch_size
+
+
+def predict_ensemble(
+    models, datapoints, batch_size: int | None = None, num_workers: int = 0, device=None
+) -> np.ndarray:
+    """Run every ensemble member over ``datapoints`` and return the raw per-member stack.
+
+    The one forward pass for chemprop — serving's ``predict_fn``, the training out-of-fold
+    predictions, and the HPO objective all reach the model through here, so a config is
+    scored on the same code path it is deployed on.
+
+    Reduction is the caller's: regression averages to a prediction and takes the standard
+    deviation, classification averages probabilities before argmax, and the HPO objective
+    scores the mean. Returning the stack keeps that policy out of this function.
+
+    Members and batches are placed on ``device``, defaulting to wherever the first member
+    already sits — CPU at serving, the accelerator mid-training. fp32 throughout; mixed
+    precision is a training-throughput technique, and UQ calibration is fit on the numbers
+    this emits.
+
+    Args:
+        models: fitted MPNN members, all sharing one architecture.
+        datapoints: :func:`create_molecule_datapoints` output — already RDKit-filtered, so
+            row *i* of the result corresponds to datapoint *i*.
+        batch_size: rows per forward pass, capped at ``MAX_INFERENCE_BATCH`` when None.
+        num_workers: dataloader worker processes.
+        device: torch device to run on; the first member's own device when None.
+
+    Returns:
+        np.ndarray: ``(n_members, n_rows, n_targets)``. Single-target members are reshaped
+        to a trailing axis of 1 so callers index ``[:, :, target_idx]`` unconditionally.
+    """
+    import torch
+
+    device = torch.device(device) if device is not None else next(models[0].parameters()).device
+
+    dataset = data.MoleculeDataset(datapoints)
+    # Every member iterates this same dataset, so featurizing each molecule once and reusing
+    # the molgraph pays for itself from the second member on.
+    dataset.cache = True
+    loader = data.build_dataloader(
+        dataset,
+        batch_size=safe_batch_size(len(dataset), min(batch_size or MAX_INFERENCE_BATCH, len(dataset))),
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=device.type == "cuda",
+    )
+
+    stack = []
+    for model in models:
+        model.eval().to(device)
+        batch_preds = []
+        with torch.inference_mode():
+            for batch in loader:
+                # TrainingBatch is (bmg, V_d, X_d, targets, weights, lt_mask, gt_mask); a
+                # forward pass needs only the first three.
+                bmg, V_d, X_d, *_ = batch
+                bmg.to(device)
+                V_d = None if V_d is None else V_d.to(device)
+                X_d = None if X_d is None else X_d.to(device)
+                batch_preds.append(model(bmg, V_d, X_d).detach().cpu().numpy())
+
+        preds = np.concatenate(batch_preds, axis=0)
+        if preds.ndim == 3 and preds.shape[1] == 1:
+            preds = preds.squeeze(axis=1)
+        if preds.ndim == 1:
+            preds = preds.reshape(-1, 1)
+        stack.append(preds)
+
+    return np.stack(stack)
 
 
 def find_smiles_column(columns: list[str]) -> str:
