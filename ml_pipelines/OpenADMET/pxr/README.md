@@ -47,13 +47,14 @@ The PXR datasets are published to the Workbench public data store and accessed v
 
 ```python
 from workbench.api import PublicData
-df = PublicData().get("comp_chem/openadmet_pxr/pxr_train")
+df = PublicData().get("comp_chem/openadmet/pxr/training/main")
 ```
 
 Provisioning (fetch from HuggingFace → publish to S3) lives with the rest of the
 public-data tooling, not here:
 
-- Pull: `data/public_data/pull_pxr_data.py` (writes CSVs to `output/openadmet_pxr/`)
+- Pull: `data/public_data/pull_openadmet_data.py --challenge pxr` (writes CSVs to
+  `output/comp_chem/openadmet/pxr/`)
 - Publish: `data/public_data/upload_data.py --apply` (uploads + merges `descriptions.json`)
 
 Source: <https://huggingface.co/datasets/openadmet/pxr-challenge-train-test> (Apache-2.0).

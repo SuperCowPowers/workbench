@@ -158,7 +158,7 @@ class SyntheticDataGenerator:
     # Overlap levels (feature space) are fixed on disk; target alignment is synthesized dynamically.
 
     # FIXME: Switch alignment partition reads to use PublicData()
-    _ALIGNMENT_S3_PREFIX = "s3://workbench-public-data/comp_chem/aqsol_alignment"
+    _ALIGNMENT_S3_PREFIX = "s3://workbench-public-data/comp_chem/aqsol/alignment"
     _ALIGNMENT_PARTITIONS = ["base", "high_overlap", "medium_overlap", "low_overlap"]
 
     def aqsol_alignment_data(
@@ -216,7 +216,7 @@ class SyntheticDataGenerator:
         """
         import awswrangler as wr
 
-        s3_path = f"{self._ALIGNMENT_S3_PREFIX}/aqsol_{partition}.csv"
+        s3_path = f"{self._ALIGNMENT_S3_PREFIX}/{partition}.csv"
         self.log.info(f"Loading {partition} partition from {s3_path}")
         return wr.s3.read_csv(s3_path)
 

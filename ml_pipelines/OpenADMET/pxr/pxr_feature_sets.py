@@ -49,10 +49,10 @@ def build_feature_set(fs_name: str, feature_endpoint: str, df: pd.DataFrame) -> 
     )
 
 
-train = PublicData().get("comp_chem/openadmet_pxr/pxr_train")[["molecule_name", "smiles", "pec50"]].copy()
+train = PublicData().get("comp_chem/openadmet/pxr/training/main")[["molecule_name", "smiles", "pec50"]].copy()
 train["split"] = "train"
 phase1 = (
-    PublicData().get("comp_chem/openadmet_pxr/pxr_test_phase1_unblinded")[["molecule_name", "smiles", "pec50"]].copy()
+    PublicData().get("comp_chem/openadmet/pxr/testing/phase1_unblinded")[["molecule_name", "smiles", "pec50"]].copy()
 )
 phase1["split"] = "phase1_test"
 df = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)

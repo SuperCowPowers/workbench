@@ -31,5 +31,5 @@ if recreate or not Endpoint(model_name).exists():
 
     # Pull test data for inference
     pub_data = PublicData()
-    df = pub_data.get("comp_chem/open_admet_expansionrx/test_logd")
+    df = pub_data.get("comp_chem/openadmet/expansionrx/testing/logd")
     end.inference(df, capture_name="test_hold_out")

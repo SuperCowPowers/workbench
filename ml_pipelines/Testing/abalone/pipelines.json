@@ -4,7 +4,7 @@
       {
         "script": "abalone.py",
         "inputs": [
-          "public:testing/abalone"
+          "public:common/abalone"
         ],
         "outputs": [
           "ds:abalone_data",

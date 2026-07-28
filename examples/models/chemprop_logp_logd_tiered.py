@@ -21,9 +21,9 @@ gradient share exceeds 50% (4,300 LogP vs 4,199 LogD) and negative transfer
 degrades LogD predictions across all tiers.
 
 Source datasets (built by data/public_data/build_logp_logd_overlap.py):
-    s3://workbench-public-data/comp_chem/experiments/logp_logd_overlap_07_10.csv
-    s3://workbench-public-data/comp_chem/experiments/logp_logd_overlap_03_07.csv
-    s3://workbench-public-data/comp_chem/experiments/logp_logd_overlap_00_03.csv
+    s3://workbench-public-data/comp_chem/logp_logd/overlap_07_10.csv
+    s3://workbench-public-data/comp_chem/logp_logd/overlap_03_07.csv
+    s3://workbench-public-data/comp_chem/logp_logd/overlap_00_03.csv
 """
 
 from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType, PublicData
@@ -46,7 +46,7 @@ def ensure_featureset(suffix: str, description_fragment: str) -> str:
     if not recreate and FeatureSet(fs_name).exists():
         return fs_name
 
-    public_key = f"comp_chem/experiments/logp_logd_overlap_{suffix}"
+    public_key = f"comp_chem/logp_logd/overlap_{suffix}"
     df = PublicData().get(public_key)
     if df is None:
         raise RuntimeError(f"Could not load {public_key} from public data")

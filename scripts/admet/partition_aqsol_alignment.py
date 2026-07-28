@@ -16,7 +16,7 @@ The max-Tanimoto for each pool compound is the highest Tanimoto similarity to
 ANY compound in the base set — this measures how well "covered" each compound
 is by the reference dataset.
 
-Outputs saved to S3: s3://workbench-public-data/comp_chem/aqsol_alignment/
+Outputs saved to S3: s3://workbench-public-data/comp_chem/aqsol/alignment/
 
 Usage:
     python partition_aqsol_alignment.py
@@ -37,7 +37,7 @@ log = logging.getLogger("workbench")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 # FIXME: Switch S3_DEST to use PublicData() for writes
-S3_DEST = "s3://workbench-public-data/comp_chem/aqsol_alignment"
+S3_DEST = "s3://workbench-public-data/comp_chem/aqsol/alignment"
 
 # Cumulative similarity thresholds for overlap partitions
 LOW_THRESHOLD = 0.35
@@ -179,10 +179,10 @@ def main():
     # Save to S3
     log.info(f"\nUploading partitions to {S3_DEST}/")
     for name, subset in [
-        ("aqsol_base", df_base),
-        ("aqsol_high_overlap", df_high),
-        ("aqsol_medium_overlap", df_medium),
-        ("aqsol_low_overlap", df_low),
+        ("base", df_base),
+        ("high_overlap", df_high),
+        ("medium_overlap", df_medium),
+        ("low_overlap", df_low),
     ]:
         s3_path = f"{S3_DEST}/{name}.csv"
         wr.s3.to_csv(subset, s3_path, index=False)

@@ -1,40 +1,19 @@
-# Public Lipophilicity Data (LogP / LogD)
+# Workbench Public Data
 
-**Maintainer scripts** that build the lipophilicity datasets published at
+**Maintainer scripts** that build and publish the datasets at
 `s3://workbench-public-data`. End users should consume the data via
 `PublicData()` — not by running anything in this directory.
 
 ```python
 from workbench.api import PublicData
 pub = PublicData()
-pub.list()                                  # discover datasets
-pub.get("comp_chem/logp/logp_all")          # DataFrame
-pub.describe("comp_chem/logd/logd_all")     # metadata dict
+pub.list()                                             # discover datasets
+pub.get("comp_chem/logp/logp_all")                     # DataFrame
+pub.describe("comp_chem/openadmet/pxr/training/main")  # metadata dict
 ```
 
-Two distinct properties live here. They are kept separate because they are
-different physicochemical measurements:
-
-- **LogP** — neutral-form octanol-water partition coefficient (single species,
-  no pH dependence)
-- **LogD** — pH-dependent octanol-water distribution coefficient that includes
-  ionized forms; nearly always reported at pH 7.4
-
-For non-ionizable compounds LogP ≈ LogD, but for acids/bases they can differ
-by several log units.
-
-## Maintainer Workflow
-
-```bash
-pip install -r requirements.txt
-
-python pull_logp_data.py        # populates output/logp/
-python pull_logd_data.py        # populates output/logd/
-
-# Push to S3 — maintainer-only, requires AWS credentials for the public bucket.
-# Dry run by default; --apply actually uploads.
-AWS_PROFILE=scp_sandbox_admin python upload_data.py --apply
-```
+Reads are anonymous — the bucket is public-read, so no AWS credentials are
+needed to `list()`, `get()`, or `describe()`.
 
 > **Have a public dataset you'd like to see hosted here?** We're happy to add
 > it — contact **support@supercowpowers.com** with the source and license info
@@ -42,66 +21,123 @@ AWS_PROFILE=scp_sandbox_admin python upload_data.py --apply
 
 ## Layout
 
+The S3 key mirrors the path under `output/`, so the local tree *is* the bucket
+layout. Datasets that ship a train/test split put them in `training/` and
+`testing/` subdirs.
+
 ```
-data/public_data/
-├── pull_logp_data.py     # LogP pipeline
-├── pull_logd_data.py     # LogD pipeline
-├── pull_common.py        # shared standardization / merge helpers
-├── alignment_utils.py    # post-merge sanity checks
-├── upload_data.py        # push CSVs + descriptions.json to S3
-├── descriptions.json     # local copy of the public-bucket index
-└── output/
-    ├── logp/
-    │   ├── logp_all.csv
-    │   ├── logp_opera_physprop.csv
-    │   └── logp_graphormer_logp.csv
-    └── logd/
-        ├── logd_all.csv
-        └── logd_astrazeneca_chembl.csv
+common/                              generic non-chemistry fixtures
+  abalone, wine_dataset, test_data
+comp_chem/
+  aqsol/                             AqSolDB solubility
+    aqsol_public_data
+    alignment/                       base, low/medium/high_overlap
+  compound_sets/                     structure/property reference sets (drugbank)
+  logp/                              logp_all + per-source files
+  logd/                              logd_all + per-source files
+  logp_logd/                         overlap_00_03, overlap_03_07, overlap_07_10
+  openadmet/                         OpenADMET Consortium challenges
+    expansionrx/{training,testing}/  all_endpoints + 9 per-endpoint files
+    pxr/{training,testing}/
+    asap/{training,testing}/         admet, potency
+    octant_cyp/                      inhibition, reactivity, mass_spec_response
+  reference_compounds/               curated fixtures backing Workbench tests
+  synthetic/multi_task/              controlled multi-task experiment set
 ```
 
-`upload_data.py` mirrors `output/<subdir>/<file>.csv` to
-`s3://workbench-public-data/comp_chem/<subdir>/<file>.csv` and merges entries
-from the local `descriptions.json` into the top-level
-`s3://workbench-public-data/descriptions.json` (existing remote entries for
-unrelated datasets are preserved).
+`descriptions.json` is the top-level index, keyed by full S3 path
+(`comp_chem/logp/logp_all.csv`). Every published dataset has an entry with a
+description, per-column meanings, row count, and source references. It is the
+authoritative list of what belongs in the bucket — `upload_data.py --prune`
+deletes anything remote it does not describe.
 
-## LogP Sources
+`output/` is gitignored, so a fresh clone starts empty. Uploading is
+incremental, so you only need to pull the datasets you are actually changing.
 
-All values are experimental octanol-water partition coefficients.
+## Maintainer Workflow
+
+```bash
+pip install -r requirements.txt
+
+python pull_logp_data.py            # -> output/comp_chem/logp/
+python pull_logd_data.py            # -> output/comp_chem/logd/
+python pull_openadmet_data.py       # -> output/comp_chem/openadmet/
+
+# Push to S3 — maintainer-only, requires AWS credentials for the public bucket.
+# Dry run by default; --apply actually uploads.
+AWS_PROFILE=scp_sandbox_admin python upload_data.py --apply
+```
+
+`upload_data.py` uploads changed CSVs (unchanged files are skipped so
+`LastModified` only moves on real content changes — ml_pipeline freshness keys
+off it) and merges the local `descriptions.json` into the remote one.
+
+Renames and removals need `--prune`, which treats `descriptions.json` as the
+authoritative picture of the bucket: remote keys it does not describe are
+deleted, and the remote index is replaced rather than merged. Since the index is
+committed and keyed by full S3 path, this stays correct no matter what the
+gitignored `output/` tree holds — `--prune` also warns about any local CSV with
+no entry, which would otherwise upload and then be pruned on the next run.
+
+```bash
+AWS_PROFILE=scp_sandbox_admin python upload_data.py --prune           # review the deletes
+AWS_PROFILE=scp_sandbox_admin python upload_data.py --prune --apply
+```
+
+## Sources
+
+### OpenADMET (`pull_openadmet_data.py`)
+
+All from the [OpenADMET Consortium](https://openadmet.org/) on HuggingFace.
+
+| Challenge | Contents | License |
+|-----------|----------|---------|
+| **expansionrx** | 9 ADMET endpoints (LogD, KSOL, HLM/MLM CLint, Caco-2 Papp/efflux, MPPB, MBPB, MGMB), 5,326 train / 2,282 test compounds. Published as one wide `all_endpoints` table plus a per-endpoint file filtered to measured rows. | CC-BY-4.0 |
+| **pxr** | hPXR induction pEC50/Emax — primary train set plus counter-assay, single-concentration, semi-pure and HT-chem library variants; blinded and phase-1-revealed test sets. | Apache-2.0 |
+| **asap** | ASAP Discovery / Polaris antiviral challenge: 5 ADMET endpoints (560 compounds) and SARS-CoV-2 / MERS-CoV Mpro potency (1,328 compounds), split on the source `Set` column. | MIT |
+| **octant_cyp** | Octant CYP3A4 inhibition dose-response, CYP3A4/CYP2J2 reactivity, and LC-MS ionization response for 11,353 compounds. Single release, no train/test split. | Apache-2.0 |
+
+### LogP (`pull_logp_data.py`)
+
+Experimental octanol-water partition coefficients — neutral form, single
+species, no pH dependence.
 
 | Source | Compounds | License | Notes |
 |--------|-----------|---------|-------|
 | **OPERA / PHYSPROP** | ~4,200 | MIT | EPA PHYSPROP curation, training data for OPERA/KOWWIN. [github.com/NIEHS/OPERA](https://github.com/NIEHS/OPERA) |
 | **GraphormerLogP (GLP)** | ~42,000 | MIT | Multi-source curation by CIMM Kazan (OpenChem, Huuskonen, SAMPL6/7, etc.). [github.com/cimm-kzn/GraphormerLogP](https://github.com/cimm-kzn/GraphormerLogP) |
+| **SangsterLogP** | ~26,000 | CC-BY-4.0 | The most rigorously curated source; its values win in `logp_all`. [Cirino et al., Sci Data 2026](https://doi.org/10.1038/s41597-026-07357-2) |
 
-## LogD Sources
+### LogD (`pull_logd_data.py`)
 
-All values are experimental octanol-water distribution coefficients at pH 7.4.
+Experimental octanol-water distribution coefficients at pH 7.4 — pH-dependent,
+includes ionized forms. For non-ionizable compounds LogP ≈ LogD, but for
+acids/bases they can differ by several log units, which is why the two are kept
+separate.
 
 | Source | Compounds | License | Notes |
 |--------|-----------|---------|-------|
-| **AstraZeneca / ChEMBL** | ~4,200 | MIT (MoleculeNet) | AstraZeneca-measured logD@7.4 from ChEMBL. Fetched directly from the MoleculeNet S3 mirror — single static CSV, no extra deps. Same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`). [moleculenet.org](https://moleculenet.org/datasets-1) |
+| **AstraZeneca / ChEMBL** | ~4,200 | MIT (MoleculeNet) | AstraZeneca-measured logD@7.4 from ChEMBL. Fetched from the MoleculeNet S3 mirror — single static CSV, no extra deps. Also redistributed by DeepChem and TDC (as `Lipophilicity_AstraZeneca`). [moleculenet.org](https://moleculenet.org/datasets-1) |
 
 ## LogP ↔ LogD Overlap
 
 Both pipelines run the same RDKit + ChEMBL standardization
-(`workbench.utils.chem_utils.mol_standardize.MolStandardizer`), so the
-canonical `smiles` column is directly joinable across the two merged files:
+(`workbench.utils.chem_utils.mol_standardize.MolStandardizer`), so the canonical
+`smiles` column is directly joinable across the two merged files:
 
 ```python
-import pandas as pd
-logp = pd.read_csv("output/logp/logp_all.csv")
-logd = pd.read_csv("output/logd/logd_all.csv")
-both = logp.merge(logd[["smiles", "logd"]], on="smiles")  # rows where both are reported
+both = pub.get("comp_chem/logp/logp_all").merge(
+    pub.get("comp_chem/logd/logd_all")[["smiles", "logd"]], on="smiles"
+)
 ```
 
-`pull_logd_data.py` prints the overlap count against `logp_all.csv` at the end
-of its run.
+`build_logp_logd_overlap.py` bins that join by |LogP − LogD| into the
+`comp_chem/logp_logd/overlap_*` files; `pull_logd_data.py` prints the overlap
+count against `logp_all.csv` at the end of its run.
 
 ## Output Format
 
-### Per-source files (`output/<assay>/<assay>_<source>.csv`)
+### Per-source files (`comp_chem/<assay>/<assay>_<source>.csv`)
 
 | Column | Description |
 |--------|-------------|
@@ -110,7 +146,7 @@ of its run.
 | `logp` *or* `logd` | Measured value |
 | `source` | Source identifier |
 
-### Merged files (`output/<assay>/<assay>_all.csv`)
+### Merged files (`comp_chem/<assay>/<assay>_all.csv`)
 
 Deduplicated on canonical SMILES; multi-source compounds are aggregated.
 
@@ -128,6 +164,7 @@ Deduplicated on canonical SMILES; multi-source compounds are aggregated.
 
 | Source | Reason |
 |--------|--------|
+| **Octant `*_wells.tsv`** | Raw per-well plate readings behind the CYP inhibition/reactivity summaries; the fitted curves are what models train on |
 | **PubChem XLogP** | *Computed* values (XLogP3 algorithm), not experimental — would dilute the experimental-only set |
 | **EPA CompTox Dashboard** | Mostly OPERA *predictions*; experimental subset already covered by PHYSPROP |
 | **DrugBank** | Mixed experimental/predicted; requires academic license |

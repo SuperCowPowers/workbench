@@ -17,11 +17,18 @@ pub_data.details()    # DataFrame: name, size (MB), modified
 
 Names are paths like `comp_chem/aqsol/aqsol_public_data`. The main groups:
 
-- `common/` — abalone, wine. Small, generic, good for smoke tests.
-- `comp_chem/` — the real cheminformatics data: `aqsol` (solubility), `logp`,
-  `logd`, `openadmet_pxr`, `open_admet_expansionrx` (train/test pairs),
-  `reference_compounds`, `synthetic/multi_task`.
-- `testing/` — fixtures for tests.
+- `common/` — abalone, wine, test_data. Small, generic fixtures for smoke tests.
+- `comp_chem/` — the real cheminformatics data: `aqsol` (solubility, plus
+  `aqsol/alignment` subsets), `logp`, `logd`, `logp_logd` (overlap bins),
+  `openadmet` (four challenges, below), `reference_compounds`,
+  `synthetic/multi_task`, `compound_sets`.
+
+Datasets that ship a train/test split put them in `training/` and `testing/`
+subdirs, so `comp_chem/openadmet/<challenge>/training/<endpoint>` is the shape
+to expect. The four challenges are `expansionrx` (9 ADMET endpoints, plus an
+`all_endpoints` wide table for multi-task), `pxr` (induction), `asap`
+(antiviral ADMET + potency), and `octant_cyp` (CYP3A4 inhibition/reactivity, no
+split).
 
 Two quirks worth knowing: `list()` returns names **without** the `.csv`
 extension while `details()` shows them **with** it, and `descriptions` appears
@@ -41,7 +48,8 @@ it (no `.csv`).
 pub_data.describe("comp_chem/logd/logd_all")   # source refs; None if undescribed
 ```
 
-Not every dataset has a description — `None` is normal, not an error.
+Every published dataset is described (source, license, per-column meanings), so
+`None` means the name is wrong.
 
 ## Into the pipeline
 

@@ -4,7 +4,7 @@
       {
         "script": "test_data.py",
         "inputs": [
-          "public:testing/test_data"
+          "public:common/test_data"
         ],
         "outputs": [
           "ds:test_data",

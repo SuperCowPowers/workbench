@@ -122,19 +122,8 @@ class PublicData:
         if not hasattr(self, "_descriptions"):
             self._descriptions = self._load_descriptions()
 
-        # Build candidate keys: exact, with extensions, and basename variants
-        import posixpath
-
-        basename = posixpath.basename(name)
-        # Strip extension from basename if present
-        stem = basename
-        for ext in (".parquet", ".csv", ".json"):
-            if stem.endswith(ext):
-                stem = stem[: -len(ext)]
-                break
-
-        candidates = [name, basename, stem, f"{stem}.csv", f"{stem}.parquet", f"{basename}.csv", f"{basename}.parquet"]
-        for key in candidates:
+        # Descriptions are keyed by full path; list() strips the extension, so try both
+        for key in (name, f"{name}.csv", f"{name}.parquet"):
             if key in self._descriptions:
                 return self._descriptions[key]
 

@@ -168,7 +168,7 @@ def test_linearize_threads_public_into_the_datasource_not_parallel():
     jobs = [
         _job(
             "abalone.py",
-            inputs=["public:testing/abalone"],
+            inputs=["public:common/abalone"],
             outputs=[
                 "ds:abalone_data",
                 "fs:abalone_features",
@@ -180,13 +180,13 @@ def test_linearize_threads_public_into_the_datasource_not_parallel():
     ]
     _, edges = _lin(jobs, "p")
     assert edges == {
-        ("public:testing/abalone", "ds:abalone_data"),
+        ("public:common/abalone", "ds:abalone_data"),
         ("ds:abalone_data", "fs:abalone_features"),
         ("fs:abalone_features", "model:abalone-regression"),
         ("model:abalone-regression", "endpoint:abalone-regression"),
     }
     # the bug: public paralleling ds straight into the featureset
-    assert ("public:testing/abalone", "fs:abalone_features") not in edges
+    assert ("public:common/abalone", "fs:abalone_features") not in edges
 
 
 def test_linearize_keeps_parallel_ds_and_public_inputs_into_one_featureset():
@@ -195,9 +195,9 @@ def test_linearize_keeps_parallel_ds_and_public_inputs_into_one_featureset():
     Both are inputs (neither is an output that chains), so they stay parallel into fs --
     this is why threading is role-aware rather than giving public its own band.
     """
-    jobs = [_job("featurize.py", inputs=["ds:existing", "public:testing/extra"], outputs=["fs:combined"], pipeline="p")]
+    jobs = [_job("featurize.py", inputs=["ds:existing", "public:common/extra"], outputs=["fs:combined"], pipeline="p")]
     _, edges = _lin(jobs, "p")
-    assert edges == {("ds:existing", "fs:combined"), ("public:testing/extra", "fs:combined")}
+    assert edges == {("ds:existing", "fs:combined"), ("public:common/extra", "fs:combined")}
 
 
 def test_get_pipeline_unknown_name_raises():

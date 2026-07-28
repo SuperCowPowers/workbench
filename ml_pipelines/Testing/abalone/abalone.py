@@ -24,7 +24,7 @@ FEATURES = [
 
 def main():
     # DataSource
-    DataSource(PublicData().get("testing/abalone"), name="abalone_data")
+    DataSource(PublicData().get("common/abalone"), name="abalone_data")
 
     # FeatureSet
     DataSource("abalone_data").to_features("abalone_features", id_column="auto")
