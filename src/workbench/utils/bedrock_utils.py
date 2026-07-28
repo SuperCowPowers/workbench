@@ -19,6 +19,7 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 # Preference order: the agent uses the first one available in the account.
 # Current-generation models only -- subscribe these in the Bedrock playground.
 CLAUDE_MODELS: List[str] = [
+    "us.anthropic.claude-opus-5",
     "us.anthropic.claude-opus-4-8",
     "us.anthropic.claude-sonnet-5",
 ]

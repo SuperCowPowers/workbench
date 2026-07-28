@@ -95,10 +95,3 @@ prox.neighbors(cid, radius=2.0)           # FeatureSpaceProximity: all within di
 
 The threshold overrides `n_neighbors` — use it when "how many are actually close"
 matters more than a fixed count.
-
-## Putting it together
-
-Neighbors + `neighborhood_graph` (`plotting` guide) is the activity-cliff view: pull a
-high-residual compound's neighbors, then render the query and its neighbors together,
-colored by activity. Near-identical scaffolds at opposite ends of the potency scale is
-the cliff. SMILES/id column conventions are in the `compounds` guide.

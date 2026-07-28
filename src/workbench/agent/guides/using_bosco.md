@@ -61,6 +61,20 @@ bosco.personality = "pirate"         # arr
 
 The voice only changes how Bosco talks; the ML work and the numbers never change.
 
+## Effort
+
+How hard Bosco works on a turn — thinking depth, not reply length. Lower is
+faster; the difference only shows up on questions hard enough to think about.
+
+```python
+bosco.effort = "low"      # quickest; fine for lookups
+bosco.effort = "high"     # default
+bosco.effort = "max"      # hardest analysis, slowest
+```
+
+Levels are `low`, `medium`, `high`, `xhigh`, `max`. Unlike code echo and voice,
+this one has no spoken toggle — set the attribute.
+
 ## Interrupting
 
 **Ctrl-C** stops you at any point — mid-thought, mid-query, mid-tool. The

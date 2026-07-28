@@ -262,14 +262,14 @@ def molecule_grid(
     caption_colors: list = None,
     ncols: int = 3,
     mol_size: int = 400,
+    background: str = "rgba(255, 255, 255, 0)",
     suptitle: str = None,
 ):
     """Lay out molecule structures in a labeled matplotlib grid.
 
     Handles the grid mechanics -- sizing, axis-off, invalid-SMILES gaps, blank
     trailing cells -- and leaves the domain choices (what each caption says, what
-    color it is) to the caller. Tiles render on a transparent background, so the grid
-    drops cleanly onto any page. Good for top-residual panels and arbitrary structure
+    color it is) to the caller. Good for top-residual panels and arbitrary structure
     sets where seeing the molecules side by side tells the story.
 
     Args:
@@ -281,6 +281,8 @@ def molecule_grid(
         ncols (int, optional): Columns in the grid. Defaults to 3.
         mol_size (int, optional): Rendered width of each molecule in pixels; the
             height is 2/3 of this. Defaults to 400.
+        background (str, optional): Tile background as `rgba(...)`. Defaults to transparent
+            over the figure's white; a dark value switches RDKit to light bonds.
         suptitle (str, optional): Figure-level title.
 
     Returns:
@@ -293,16 +295,14 @@ def molecule_grid(
     n = len(smiles)
     nrows = -(-n // ncols)  # ceil
     fig, axes = plt.subplots(nrows, ncols, figsize=(5 * ncols, 3.6 * nrows), constrained_layout=True)
-    fig.patch.set_alpha(0.0)  # transparent figure background
+    fig.patch.set_facecolor("white")  # opaque, or the plot window renders black behind it
     axes = list(axes.flat) if hasattr(axes, "flat") else [axes]
 
     for i, ax in enumerate(axes):
         ax.axis("off")
-        ax.patch.set_alpha(0.0)
         if i >= n:
             continue  # blank trailing cell
-        # White (non-dark) RGB keeps RDKit's dark bonds; alpha 0 makes the tile transparent
-        img = img_from_smiles(smiles[i], width=mol_size, height=mol_height, background="rgba(255, 255, 255, 0)")
+        img = img_from_smiles(smiles[i], width=mol_size, height=mol_height, background=background)
         if img is not None:
             ax.imshow(img)
         else:

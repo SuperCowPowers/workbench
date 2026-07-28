@@ -16,7 +16,7 @@ import anthropic
 from contextlib import contextmanager
 
 # Workbench Imports
-from workbench.utils.repl_utils import cprint, Spinner, render_markdown
+from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
 from workbench.utils.bedrock_utils import claude_client, DEFAULT_MODEL
 from workbench.agent.tools import (
@@ -43,7 +43,8 @@ _active_spinner = None
 class _RetryNotifier(logging.Handler):
     def emit(self, record):
         if _active_spinner is not None and "Retrying" in record.getMessage():
-            _active_spinner.message = "🐶  Bosco is waiting:"
+            # Only the word is red; the trailing code restores the spinner's own color.
+            _active_spinner.message = f"🐶  Bosco is {colors['red']}waiting{colors[_active_spinner.color]}:"
 
 
 _anthropic_log = logging.getLogger("anthropic")
@@ -54,7 +55,12 @@ _anthropic_log.handlers = [_RetryNotifier()]
 MAX_TOKENS = 8000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 
-# USD per token for the default model (Opus 4.8 on Bedrock, list pricing). Cache
+# How hard the model works per turn -- thinking depth and total token spend, not reply
+# length. Higher costs latency: on a moderate question low/medium/high run ~14/17/23s.
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
+DEFAULT_EFFORT = "high"
+
+# USD per token for the default model (Opus 5 on Bedrock, list pricing). Cache
 # write is the 1.25x (5-minute ephemeral) rate we use; read is 0.1x input.
 _RATES = {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write": 6.25e-6}
 
@@ -97,6 +103,15 @@ def _system_prompt() -> str:
         personality=personality_text(getattr(bosco, "personality", DEFAULT_PERSONALITY)).strip(),
         guides=guide_index() or "  (none)",
     )
+
+
+def _effort() -> str:
+    """The user's effort setting, falling back to the default when it isn't a valid level."""
+    level = getattr(bosco, "effort", DEFAULT_EFFORT)
+    if level not in EFFORT_LEVELS:
+        log.warning(f"Unknown bosco.effort {level!r}; using {DEFAULT_EFFORT!r} ({', '.join(EFFORT_LEVELS)})")
+        return DEFAULT_EFFORT
+    return level
 
 
 def _text_of(message) -> str:
@@ -207,6 +222,7 @@ def _run_turn(namespace: dict) -> None:
             response = _message_create(
                 model=DEFAULT_MODEL,
                 max_tokens=MAX_TOKENS,
+                output_config={"effort": _effort()},
                 system=_system_prompt(),
                 tools=TOOL_SCHEMAS,
                 messages=_cached_messages(),
@@ -278,6 +294,7 @@ def bosco(prompt: str = None):
 
     bosco.show_code = True        -> also echo the code Bosco runs
     bosco.personality = "pirate"  -> voice: chipper (default), professional, pirate
+    bosco.effort = "medium"       -> how hard to work: low, medium, high (default), xhigh, max
     bosco.usage                   -> session token counts + estimated cost_usd
     """
     if prompt:
@@ -292,6 +309,9 @@ bosco.show_code = False
 
 # The agent's voice: "chipper" (default), "professional", or "pirate".
 bosco.personality = DEFAULT_PERSONALITY
+
+# How hard Bosco works per turn; lower is faster. See EFFORT_LEVELS.
+bosco.effort = DEFAULT_EFFORT
 
 # Cumulative token counts + estimated USD for the session; type `bosco.usage` to see them.
 bosco.usage = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "calls": 0, "cost_usd": 0.0}
