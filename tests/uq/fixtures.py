@@ -21,7 +21,7 @@ Adding a regime: register it via ``@regime("my_regime")`` returning a
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -51,7 +51,9 @@ class UQFixture:
             present so future coverage tests can compute empirical metrics; the
             V0 equivalence script doesn't need it.
         prox_df: DataFrame with columns ``id``, ``target``, ``fingerprint``
-            (bit-string format expected by ``FingerprintProximity``). Used by
+            (bit-string format expected by ``FingerprintProximity``) and
+            ``in_model`` (neighbor eligibility; all True except in the
+            ``mixed_in_model`` regime). Used by
             V1/V2. For V0-only regimes this is still populated (random FPs) so
             V1/V2 can run on the same regime later — outputs just won't be
             meaningful.
@@ -145,8 +147,14 @@ def _build_prox_df(
     ids: List[str],
     targets: np.ndarray,
     density: float = 0.05,
+    in_model: Union[bool, np.ndarray] = True,
 ) -> tuple[pd.DataFrame, np.ndarray]:
     """Build a ``prox_df`` with random fingerprints + the matching bool array.
+
+    Args:
+        in_model: Neighbor eligibility flag(s). Scalar broadcasts to all rows.
+            Defaults to True, matching the k-fold path where every row trained
+            the model in k-1 folds.
 
     Returns:
         (prox_df, fingerprints_bool_array)
@@ -157,6 +165,7 @@ def _build_prox_df(
             "id": ids,
             "target": targets,
             "fingerprint": _fingerprints_to_strings(fps),
+            "in_model": np.broadcast_to(np.asarray(in_model, dtype=bool), (len(ids),)).copy(),
         }
     )
     return prox_df, fps
@@ -479,6 +488,56 @@ def _bin_edge_queries(seed: int) -> UQFixture:
 
     return UQFixture(
         regime="bin_edge_queries",
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
+        y_true_query=y_true_q,
+        y_pred_query=y_pred_q,
+        prediction_std_query=pred_std_q,
+        query_ids=query_ids,
+        prox_df=prox_df,
+        query_fingerprints=q_fps,
+    )
+
+
+@regime("mixed_in_model")
+def _mixed_in_model(seed: int) -> UQFixture:
+    """Single-split shape: ``prox_df`` is a superset of the calibration rows.
+
+    The 300 calibration rows carry ``in_model=False`` (held out of the fit); an
+    extra 700 rows that did train the model carry True. Exercises
+    ``ResidualFeatures``' ``training_only=True`` neighbor filter, which is a
+    no-op in the k-fold path where every row is True.
+    """
+    rng = np.random.default_rng(seed)
+    n_oof, n_train, n_query = 300, 700, 100
+
+    sigma_oof = rng.uniform(0.2, 0.6, size=n_oof)
+    y_true_oof = rng.normal(0, 2, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, sigma_oof)
+    pred_std_oof = sigma_oof
+
+    sigma_q = rng.uniform(0.2, 0.6, size=n_query)
+    y_true_q = rng.normal(0, 2, size=n_query)
+    y_pred_q = y_true_q + rng.normal(0, sigma_q)
+    pred_std_q = sigma_q
+
+    oof_ids = _ids("oof", n_oof)
+    train_ids = _ids("train", n_train)
+    query_ids = _ids("q", n_query)
+
+    # Held-out calibration rows: present as neighbors, but not eligible.
+    oof_prox, _ = _build_prox_df(rng, oof_ids, y_true_oof, in_model=False)
+    # Rows that actually trained the model: eligible neighbors.
+    y_true_train = rng.normal(0, 2, size=n_train)
+    train_prox, _ = _build_prox_df(rng, train_ids, y_true_train, in_model=True)
+    prox_df = pd.concat([oof_prox, train_prox], ignore_index=True)
+
+    _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
+
+    return UQFixture(
+        regime="mixed_in_model",
         y_true_oof=y_true_oof,
         y_pred_oof=y_pred_oof,
         prediction_std_oof=pred_std_oof,
