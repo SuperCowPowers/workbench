@@ -1,12 +1,47 @@
-"""Load the Open ADMET data using Workbench API"""
+"""Producer: the shared Open ADMET FeatureSets, one per assay.
+
+Sources both public ExpansionRx wide tables straight from PublicData:
+
+  - training/all_endpoints (5326 rows) -> one FeatureSet per assay
+  - testing/all_endpoints  (2282 rows) -> featurized and stashed in the DFStore
+
+Training and test rows are kept strictly apart: the FeatureSets carry *only*
+training rows. The test set is featurized here -- once, through the same feature
+endpoint the FeatureSets use -- and parked in the DFStore for the per-assay model
+scripts to score against, so the same 2282 molecules aren't featurized nine times.
+
+The test set is a distinct set of molecules rather than a subset of the training
+table, so it simply has no place in a FeatureSet. Keeping it in the DFStore also
+means the per-assay scripts share one consistent featurization -- the same
+smiles-to-2d-v1 columns the models were trained on -- which is what keeps the
+rx_test_* captures free of train/inference skew.
+
+Both tables get the same log transform (TRANSFORM_CONFIG) so the FeatureSets and
+the test frame live in the same space as the model targets.
+"""
 
 import numpy as np
 import pandas as pd
-from workbench.api import DataSource, FeatureSet, Endpoint, DFStore
+from workbench.api import Endpoint, FeatureSet, DFStore, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
-# Log transformation config from OpenADMET tutorial
-# Uses lowercase column names (matching what RDKit endpoint outputs)
+# The public wide tables (one row per compound, one column per assay)
+TRAIN_DATA = "comp_chem/openadmet/expansionrx/training/all_endpoints"
+TEST_DATA = "comp_chem/openadmet/expansionrx/testing/all_endpoints"
+
+# Where the featurized test set lands for the per-assay model scripts.
+# Deliberately NOT '/workbench/datasets/open_admet_test_featurized' -- that key holds
+# the *blinded* submission set used by support/run_inference.py. Different data.
+TEST_STORE_KEY = "/workbench/datasets/open_admet_rx_test_featurized"
+TRAIN_STORE_KEY = "/workbench/datasets/open_admet_rx_train_featurized"
+
+# Feature endpoints: 2D descriptors for the model feature space, fingerprints for
+# the FeatureSet's compressed column (proximity/neighbor work downstream).
+FEATURE_ENDPOINT = "smiles-to-2d-v1"
+FINGERPRINT_ENDPOINT = "smiles-to-fingerprints-v0"
+
+# Log transformation config from the OpenADMET tutorial.
+# Applied as log10((value + 1) * multiplier); multiplier converts uM -> M.
 TRANSFORM_CONFIG = {
     "logd": {"log_transform": False, "multiplier": 1.0},
     "ksol": {"log_transform": True, "multiplier": 1e-6},
@@ -23,105 +58,68 @@ CLASSIFICATION_LABELS = ["low", "moderate", "high"]
 
 
 def apply_log_transforms(df: pd.DataFrame) -> pd.DataFrame:
-    """Apply log10 transformations to assay columns based on OpenADMET tutorial."""
-    df_transformed = df.copy()
-
-    for col, config in TRANSFORM_CONFIG.items():
-        if col not in df_transformed.columns:
-            continue
-
-        if config["log_transform"]:
-            # Apply: log10((value + 1) * multiplier)
-            df_transformed[col] = np.log10((df_transformed[col] + 1) * config["multiplier"])
-
-    return df_transformed
-
-
-def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize column names: lowercase, replace spaces and special chars with underscores."""
+    """Apply log10 transformations to the assay columns present in df."""
     df = df.copy()
-    df.columns = df.columns.str.lower().str.replace(" ", "_").str.replace("-", "_").str.replace(">", "_")
-    # "Caco-2 …" normalizes to "caco_2_…"; collapse to "caco2_…" to match target/model naming
-    df.columns = df.columns.str.replace("caco_2", "caco2")
+    for col, config in TRANSFORM_CONFIG.items():
+        if col in df.columns and config["log_transform"]:
+            df[col] = np.log10((df[col] + 1) * config["multiplier"])
+    return df
+
+
+def load_public(data_name: str) -> pd.DataFrame:
+    """Pull a public wide table, align the id column, and log-transform the assays."""
+    df = PublicData().get(data_name)
+    df = df.rename(columns={"id": "molecule_name"})
+    df = apply_log_transforms(df)
+    print(f"Loaded {len(df)} rows from '{data_name}'")
+    return df
+
+
+def featurize(df: pd.DataFrame, fingerprints: bool = False) -> pd.DataFrame:
+    """Append 2D descriptor columns (and optionally fingerprints) via feature endpoints."""
+    if fingerprints:
+        df = Endpoint(FINGERPRINT_ENDPOINT).inference(df)
+    return Endpoint(FEATURE_ENDPOINT).inference(df)
+
+
+def add_class_column(df: pd.DataFrame, assay: str) -> pd.DataFrame:
+    """Add a 3-bin equal-width classification column for the assay."""
+    col_min, col_max = df[assay].min(), df[assay].max()
+    step = (col_max - col_min) / 3
+    bins = [-float("inf"), col_min + step, col_min + 2 * step, float("inf")]
+    df["class"] = pd.cut(df[assay], bins=bins, labels=CLASSIFICATION_LABELS).astype(str)
+    print(f"  Classification distribution: {df['class'].value_counts().to_dict()}")
     return df
 
 
 def main():
     df_store = DFStore()
+    features = Endpoint(FEATURE_ENDPOINT).output_columns()
 
-    # Load the original training data
-    """
-    df = pd.read_csv("train_data.csv")
-    print(f"Loaded {len(df)} rows from train_data.csv")
+    # --- Test set: featurize once, park it in the DFStore, never put it in a FeatureSet ---
+    test_df = featurize(load_public(TEST_DATA))
+    df_store.upsert(TEST_STORE_KEY, test_df)
+    print(f"Stored featurized test set ({len(test_df)} rows) at {TEST_STORE_KEY}")
 
-    # Normalize column names first (lowercase, underscores)
-    df = normalize_columns(df)
-    print(f"Normalized column names: {list(df.columns)}")
+    # --- Training set: featurize, then split into one FeatureSet per assay ---
+    train_df = featurize(load_public(TRAIN_DATA), fingerprints=True)
+    df_store.upsert(TRAIN_STORE_KEY, train_df)
 
-    # Apply log transformations to assay columns
-    print("Applying log transformations...")
-    df_transformed = apply_log_transforms(df)
-    print(f"Transformed columns: {list(TRANSFORM_CONFIG.keys())}")
-
-    # Save transformed data to CSV for DataSource creation
-    df_transformed.to_csv("train_data_xformed.csv", index=False)
-    print("Saved transformed data to train_data_xformed.csv")
-
-    # Create a new DataSource with transformed data
-    # ds = DataSource("train_data_xformed.csv", name="open_admet_xformed")
-    # df = ds.pull_dataframe()
-    """
-
-    # We've already created the DataSource "open_admet_xformed" in Workbench
-    df = DataSource("open_admet_xformed").pull_dataframe()
-    print(f"Pulled {len(df)} rows from DataSource 'open_admet_xformed'")
-
-    # The open_admet_xformed DataSource carries caco_2_* column names; align to caco2_*
-    # (no-op once the DataSource is regenerated with normalize_columns)
-    df = df.rename(columns={"caco_2_efflux": "caco2_efflux", "caco_2_papp_a_b": "caco2_papp_a_b"})
-
-    # Run the data through our Fingerprint Endpoint
-    fp_end = Endpoint("smiles-to-fingerprints-v0")
-    df_features = fp_end.inference(df)
-
-    # Run the data through our RDKit+Mordred Feature Endpoint
-    rdkit_end = Endpoint("smiles-to-2d-v1")
-    df_features = rdkit_end.inference(df_features)
-
-    # Shove this into the DFStore for inspection/use later
-    df_store.upsert("/workbench/datasets/open_admet_xformed_featurized", df_features)
-
-    features = Endpoint("smiles-to-2d-v1").output_columns()
-
-    # Now Split these into separate FeatureSets for each assay
-    for assay in TRANSFORM_CONFIG.keys():
+    for assay in TRANSFORM_CONFIG:
         fs_name = f"open_admet_{assay}"
 
-        # Pull all rows with non-null values for this assay
-        df_assay = df_features.dropna(subset=[assay])
+        # Rows with a measurement for this assay
+        df_assay = train_df.dropna(subset=[assay]).copy()
+        df_assay = add_class_column(df_assay, assay)
+        df_assay = df_assay[["molecule_name", "smiles", assay, "class"] + features + ["fingerprint"]]
 
-        # Add classification column: divide data range into 3 equal-width bins
-        col_min = df_assay[assay].min()
-        col_max = df_assay[assay].max()
-        step = (col_max - col_min) / 3
-        bins = [-float("inf"), col_min + step, col_min + 2 * step, float("inf")]
-        df_assay["class"] = pd.cut(df_assay[assay], bins=bins, labels=CLASSIFICATION_LABELS).astype(str)
-        print(f"  Classification distribution: {df_assay['class'].value_counts().to_dict()}")
-
-        # Just keep the molecule_name, smiles, assay, class, and feature columns
-        keep_columns = ["molecule_name", "smiles", assay, "class"] + features + ["fingerprint"]
-        df_assay = df_assay[keep_columns]
-
-        # Create a Feature Set
         print(f"Creating FeatureSet: {fs_name} with {len(df_assay)} entries")
         to_features = PandasToFeatures(fs_name)
         to_features.set_input(df_assay, id_column="molecule_name")
         to_features.set_output_tags(["open_admet", assay])
         to_features.transform()
 
-        # Set our compressed features for this FeatureSet
-        fs = FeatureSet(fs_name)
-        fs.set_compressed_features(["fingerprint"])
+        FeatureSet(fs_name).set_compressed_features(["fingerprint"])
 
 
 if __name__ == "__main__":

@@ -4,11 +4,41 @@ Open ADMET mgmb assay.
 Consumes the shared FeatureSet built by ../load_data/load_data.py and produces a model +
 endpoint per framework. SHAP importances from the XGBoost model drive the PyTorch and
 ChemProp-Hybrid feature lists.
+
+Each model is scored three ways:
+
+  - test_inference()          smoke test, not an evaluation
+  - cross_fold_inference()    out-of-fold metrics from training time
+  - inference(capture_name="rx_test_mgmb")  the held-out ExpansionRx test rows
+
+The test rows are never in the FeatureSet (see ../load_data/load_data.py), so the
+rx_test_* capture is a genuine held-out score -- the models never trained on, validated
+against, or calibrated UQ from those molecules. They arrive pre-featurized and
+pre-transformed in the DFStore, so scoring is a straight inference pass.
 """
 
-from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
+from workbench.api import DFStore, Endpoint, FeatureSet, Model, ModelType, ModelFramework
 
 FS_NAME = "open_admet_mgmb"
+
+# Featurized + log-transformed ExpansionRx test set, written by ../load_data/load_data.py
+TEST_STORE_KEY = "/workbench/datasets/open_admet_rx_test_featurized"
+
+# Which uncertainty-quantification model the endpoints serve. Training always fits and
+# bundles V0, V1 and V2; this only selects which one is active at inference time. V1 is
+# the proximity-augmented RandomForest error model (V0 is isotonic on prediction+std).
+# Compare versions offline without retraining via Model(name).uq_model(version="v0").
+UQ_VERSION = "v1"
+
+HYPERPARAMETERS = {"uq_version": UQ_VERSION}
+
+
+def capture_test_inference(end: Endpoint, target: str, features: list) -> None:
+    """Score the held-out ExpansionRx test rows for this assay and persist the run."""
+    test_df = DFStore().get(TEST_STORE_KEY).dropna(subset=[target])
+    columns = ["molecule_name", "smiles", target] + features
+    print(f"Running held-out test inference for {end.name} on {len(test_df)} rows")
+    end.inference(test_df[columns], capture_name=f"rx_test_{target}", id_column="molecule_name")
 
 
 def main():
@@ -28,14 +58,16 @@ def main():
         model_framework=ModelFramework.XGBOOST,
         target_column=target,
         feature_list=rdkit_features,
-        description=f"XGBoost model for {target} prediction",
+        description=f"XGBoost model for {target} prediction (UQ {UQ_VERSION})",
         tags=["open_admet", target, "regression", "xgboost"],
+        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "xgboost"], max_concurrency=1)
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()
+    capture_test_inference(end, target, rdkit_features)
 
     # SHAP importances from the XGBoost model drive the pytorch/hybrid feature lists
     importances = Model(xgb_name).shap_importance()
@@ -51,14 +83,16 @@ def main():
         model_framework=ModelFramework.PYTORCH,
         target_column=target,
         feature_list=non_zero_shap,
-        description=f"PyTorch Tabular model for {target} prediction",
+        description=f"PyTorch Tabular model for {target} prediction (UQ {UQ_VERSION})",
         tags=["open_admet", target, "regression", "pytorch"],
+        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "pytorch"], max_concurrency=1)
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()
+    capture_test_inference(end, target, non_zero_shap)
 
     # 3. ChemProp (SMILES only)
     chemprop_name = f"{short_name}-reg-chemprop"
@@ -69,14 +103,16 @@ def main():
         model_framework=ModelFramework.CHEMPROP,
         target_column=target,
         feature_list=["smiles"],
-        description=f"ChemProp D-MPNN for {target} prediction",
+        description=f"ChemProp D-MPNN for {target} prediction (UQ {UQ_VERSION})",
         tags=["open_admet", target, "regression", "chemprop"],
+        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "chemprop"], max_concurrency=1)
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()
+    capture_test_inference(end, target, [])
 
     # 4. ChemProp Hybrid (SMILES + top-50 SHAP features)
     hybrid_name = f"{short_name}-reg-chemprop-hybrid"
@@ -87,14 +123,16 @@ def main():
         model_framework=ModelFramework.CHEMPROP,
         target_column=target,
         feature_list=["smiles"] + top_50_shap,
-        description=f"ChemProp D-MPNN Hybrid for {target} prediction",
+        description=f"ChemProp D-MPNN Hybrid for {target} prediction (UQ {UQ_VERSION})",
         tags=["open_admet", target, "regression", "chemprop", "hybrid"],
+        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "chemprop", "hybrid"], max_concurrency=1)
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()
+    capture_test_inference(end, target, top_50_shap)
 
 
 if __name__ == "__main__":
