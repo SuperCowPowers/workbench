@@ -12,13 +12,12 @@ import codeop
 import keyword
 import builtins
 import logging
-import anthropic
 from contextlib import contextmanager
 
 # Workbench Imports
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
-from workbench.utils.bedrock_utils import claude_client, DEFAULT_MODEL
+from workbench.utils.bedrock_utils import message_stream, DEFAULT_MODEL
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
     dispatch,
@@ -68,9 +67,14 @@ _RATES = {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write
 # costs quadratically over a session. Roughly 50k tokens.
 MAX_HISTORY_CHARS = 200_000
 
+# Spinner wording per streamed content block, so a long turn reads as progress
+# rather than one opaque wait. Tool blocks are the model writing the call, not
+# running it -- _run_turn's own spinner covers execution.
+_PHASES = {"thinking": "thinking", "text": "writing"}
+_TOOL_PHASES = {"run_python": "writing code", "read_guide": "checking a guide"}
+
 # One conversation for the whole REPL session, shared by one-shot and chat
 _history = []
-_client = None
 
 # The runtime frame lives here; tunable behavior lives in guides/general.md,
 # injected below so a human can edit it without touching code.
@@ -197,29 +201,29 @@ def _track_usage(usage) -> None:
     bosco.usage["cost_usd"] = round(sum(bosco.usage[k] * rate for k, rate in _RATES.items()), 2)
 
 
-def _message_create(**kwargs):
-    """Create a message, rebuilding the client once on an expired token.
+def _phase_label(kind: str, tool_name: str) -> str:
+    """Spinner wording for a content block the model just started."""
+    if kind == "tool_use":
+        return _TOOL_PHASES.get(tool_name, "working")
+    return _PHASES.get(kind, "thinking")
 
-    claude_client() freezes credentials into the Anthropic client, so an SSO token
-    renewed elsewhere is only picked up when the client is rebuilt (Workbench's own
-    boto3 session refreshes on its own). Retry once on a 403 so a renewal takes
-    effect without restarting the REPL.
+
+def _show_phase(kind: str, tool_name: str) -> None:
+    """Follow the model through a turn on the spinner.
+
+    A retry sets its own red wording; the next block overwrites it, which is right --
+    events only resume once the retried request is producing content again.
     """
-    global _client
-    if _client is None:
-        _client = claude_client()
-    try:
-        return _client.messages.create(**kwargs)
-    except anthropic.PermissionDeniedError:
-        _client = claude_client()
-        return _client.messages.create(**kwargs)
+    if _active_spinner is not None:
+        _active_spinner.message = f"🐶  Bosco is {_phase_label(kind, tool_name)}:"
 
 
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
     for _ in range(MAX_TOOL_ROUNDS):
         with _spinner("🐶  Bosco is thinking:"):
-            response = _message_create(
+            response = message_stream(
+                on_phase=_show_phase,
                 model=DEFAULT_MODEL,
                 max_tokens=MAX_TOKENS,
                 output_config={"effort": _effort()},

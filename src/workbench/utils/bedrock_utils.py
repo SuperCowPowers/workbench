@@ -25,6 +25,9 @@ CLAUDE_MODELS: List[str] = [
 
 DEFAULT_MODEL = CLAUDE_MODELS[0]
 
+# Shared across calls so the credential-freezing client is built once per session.
+_client = None
+
 
 def bedrock_client():
     """Bedrock control-plane client on the Workbench assumed role."""
@@ -65,6 +68,66 @@ def claude_client():
         aws_session_token=creds.token,
         aws_region=clamp.region,
     )
+
+
+def _call_with_retry(fn):
+    """Run fn(client) against the shared client, rebuilding it once on an expired token.
+
+    claude_client() freezes credentials into the Anthropic client, so an SSO token
+    renewed elsewhere is only picked up when the client is rebuilt (Workbench's own
+    boto3 session refreshes on its own). Retrying once on a 403 means a renewal takes
+    effect without restarting the REPL.
+    """
+    global _client
+    import anthropic
+
+    if _client is None:
+        _client = claude_client()
+    try:
+        return fn(_client)
+    except anthropic.PermissionDeniedError:
+        _client = claude_client()
+        return fn(_client)
+
+
+def message_create(**kwargs):
+    """Send a message and return the complete reply.
+
+    Args:
+        **kwargs: Passed straight to the Messages API (model, messages, tools, ...).
+
+    Returns:
+        anthropic.types.Message: The completed message.
+    """
+    return _call_with_retry(lambda client: client.messages.create(**kwargs))
+
+
+def message_stream(on_phase=None, **kwargs):
+    """Send a message over a stream, reporting each content block as it starts.
+
+    Streaming is what makes a long turn observable: the caller learns when the model
+    moves from thinking to writing to requesting a tool, rather than waiting on one
+    opaque call. Nothing is printed here -- `on_phase` decides what the user sees.
+
+    Args:
+        on_phase (callable, optional): Called `on_phase(kind, tool_name)` as each
+            content block starts, where kind is "thinking", "text", or "tool_use",
+            and tool_name is the tool for a "tool_use" block, otherwise None.
+        **kwargs: Passed straight to the Messages API (model, messages, tools, ...).
+
+    Returns:
+        anthropic.types.Message: The assembled message, same shape as message_create().
+    """
+
+    def run(client):
+        with client.messages.stream(**kwargs) as stream:
+            for event in stream:
+                if on_phase is not None and event.type == "content_block_start":
+                    block = event.content_block
+                    on_phase(block.type, getattr(block, "name", None))
+            return stream.get_final_message()
+
+    return _call_with_retry(run)
 
 
 def ping_model(model_id: str) -> tuple:
