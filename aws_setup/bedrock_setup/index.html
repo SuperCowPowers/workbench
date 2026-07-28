@@ -5164,8 +5164,8 @@ pages for you.</p>
 </table>
 <div class="admonition note">
 <p class="admonition-title">Which model?</p>
-<p>The agent defaults to <strong>Claude Opus 4.8</strong>
-(<code>us.anthropic.claude-opus-4-8</code>). Any Claude model works. Non-Anthropic
+<p>The agent defaults to <strong>Claude Opus 5</strong>
+(<code>us.anthropic.claude-opus-5</code>). Any Claude model works. Non-Anthropic
 models (Llama, Mistral, Titan) are not supported.</p>
 </div>
 <h2 id="verify">Verify</h2>
@@ -5174,15 +5174,26 @@ models (Llama, Mistral, Titan) are not supported.</p>
 <p>Uses the same credentials and region as the Workbench REPL, and does a small
 round-trip against Claude:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Region: us-west-2
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Model:  us.anthropic.claude-opus-4-8
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Model:  us.anthropic.claude-opus-5
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Success: ready
 </span></code></pre></div>
 <p>To check a different model:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bedrock_verify<span class="w"> </span>us.anthropic.claude-sonnet-5
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bedrock_verify<span class="w"> </span>us.anthropic.claude-opus-4-8
 </span></code></pre></div>
 <h2 id="cost">Cost</h2>
 <p>Per-token against your AWS account, on the same bill as SageMaker. See
 <a href="../../admin/aws_service_limits/">AWS Service Limits</a> for quota monitoring.</p>
+<div class="admonition info">
+<p class="admonition-title">Model availability can lag</p>
+<p>A model listed in the Bedrock catalog is not always callable right away.
+AWS enables models per account, and a newly released one can return an
+access or Marketplace error for a while before it starts working — often
+without any action on your part. Some models also need to be enabled at the
+AWS Organization level, which is outside your account's control.</p>
+<p>If <code>bedrock_verify</code> fails on a model you expect to have, wait a few minutes
+and run it again. If it keeps failing, contact Workbench support and we'll
+help sort out where the model is gated.</p>
+</div>
 
 
 
