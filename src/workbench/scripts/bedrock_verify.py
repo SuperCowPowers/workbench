@@ -8,7 +8,7 @@ Usage:
 Example:
     bedrock_verify
     bedrock_verify --list
-    bedrock_verify anthropic.claude-sonnet-5
+    bedrock_verify us.anthropic.claude-opus-4-8
 
 Runs a tiny round-trip against Bedrock using the Workbench assumed role and
 region. See docs/aws_setup/bedrock_setup.md for setup.
@@ -21,7 +21,7 @@ from workbench.utils.repl_utils import cprint
 from workbench.utils.bedrock_utils import DEFAULT_MODEL, bedrock_client, ping_model
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-DOC_HINT = "See docs/aws_setup/bedrock_setup.md (Troubleshooting) for the usual causes."
+DOC_HINT = "See docs/aws_setup/bedrock_setup.md for setup and model availability."
 
 
 def list_models():
@@ -66,7 +66,8 @@ def main():
     if not ok:
         cprint("red", f"Bedrock call failed: {detail}")
         if "marketplace" in detail.lower():
-            cprint("lightblue", "Run 'bedrock_subscribe' with admin credentials (one time per account).")
+            cprint("lightblue", "AWS is still enabling this model for your account. Wait a few minutes")
+            cprint("lightblue", "and try again; if it keeps failing, contact Workbench support.")
         else:
             cprint("lightblue", "Run 'bedrock_verify --list' to see available models.")
         cprint("lightblue", DOC_HINT)

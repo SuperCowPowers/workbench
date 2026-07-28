@@ -21,7 +21,6 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 CLAUDE_MODELS: List[str] = [
     "us.anthropic.claude-opus-5",
     "us.anthropic.claude-opus-4-8",
-    "us.anthropic.claude-sonnet-5",
 ]
 
 DEFAULT_MODEL = CLAUDE_MODELS[0]
