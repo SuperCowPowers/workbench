@@ -25,6 +25,10 @@ if TYPE_CHECKING:
 # Workbench Logger
 log = logging.getLogger("workbench")
 
+# AWS error codes that mean "back off and try again". Glue answers an overloaded
+# catalog with OperationTimeoutException, which botocore does not treat as retryable.
+RETRYABLE_ERROR_CODES = {"ThrottlingException", "OperationTimeoutException"}
+
 
 def client_error_printout(err: botocore.exceptions.ClientError):
     """Helper method to get information about a botocore.exceptions.ClientError"""
@@ -44,7 +48,7 @@ def client_error_printout(err: botocore.exceptions.ClientError):
 
 def aws_throttle(func=None, retry_intervals=None):
     """
-    Decorator to handle AWS throttling exceptions with exponential backoff.
+    Decorator to handle retryable AWS exceptions (see RETRYABLE_ERROR_CODES) with exponential backoff.
 
     Args:
         func: This is a decorator detail just ignore it.
@@ -61,13 +65,16 @@ def aws_throttle(func=None, retry_intervals=None):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        last_error_code = "ThrottlingException"
         for attempt, delay in enumerate(intervals, start=1):
             try:
                 return func(*args, **kwargs)
             except ClientError as e:
-                if e.response["Error"]["Code"] == "ThrottlingException":
+                error_code = e.response["Error"]["Code"]
+                if error_code in RETRYABLE_ERROR_CODES:
                     log_level = log.critical if delay > 100 else log.error if delay > 30 else log.warning
-                    log_level(f"{func.__name__}: ThrottlingException ({attempt}): Retrying in {delay} seconds...")
+                    log_level(f"{func.__name__}: {error_code} ({attempt}): Retrying in {delay} seconds...")
+                    last_error_code = error_code
                     time.sleep(delay)
                 else:
                     raise
@@ -75,7 +82,7 @@ def aws_throttle(func=None, retry_intervals=None):
         raise ClientError(
             {
                 "Error": {
-                    "Code": "ThrottlingException",
+                    "Code": last_error_code,
                     "Message": f"{func.__name__} failed after {len(intervals)} retries",
                 }
             },

@@ -671,6 +671,7 @@ class AWSMeta:
         # Return the latest model package
         return model_package_list["ModelPackageSummaryList"][0]
 
+    @aws_throttle
     def _list_catalog_tables(self, database: str, views: bool = False) -> pd.DataFrame:
         """Internal method to retrieve and summarize Glue catalog tables or views.
 
