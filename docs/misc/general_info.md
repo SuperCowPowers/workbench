@@ -39,7 +39,6 @@ Image TBD
 - [Workbench Overview](https://docs.google.com/presentation/d/1ZiSy4ulEx5gfNQS76yRv8vgkehJ9gXRJ1PulutLKzis/edit?usp=sharing) Slides that cover and illustrate the Workbench Modeling Pipeline.
 - [Workbench Docs/Wiki](https://github.com/SuperCowPowers/workbench/wiki) Our general documentation for getting started with Workbench.
 - [Workbench AWS Onboarding](https://github.com/SuperCowPowers/workbench/wiki/Onboarding-Workbench-to-AWS) Deploy the Workbench Stack to your AWS Account. 
-- [Notebook: Start to Finish AWS ML Pipeline](https://nbviewer.org/github/SuperCowPowers/workbench/blob/main/notebooks/ML_Pipeline_with_Workbench.ipynb) Building an AWS® ML Pipeline from start to finish.
 - [Video: Coding with Workbench](https://drive.google.com/file/d/1iO7IuQtTYdx4BtQjxv9lI1aVJ2ZcAo43/view?usp=sharing) Informal coding + chatting while building a full ML pipeline.
 - Join our [Discord](https://discord.gg/WHAJuz8sw8) for questions and advice on using Workbench within your organization.
 
