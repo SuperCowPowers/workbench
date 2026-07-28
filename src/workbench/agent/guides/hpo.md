@@ -51,8 +51,8 @@ Batch (see the `batch` guide). An XGBoost trial is seconds.
 CloudWatch logs to answer "what did HPO pick" — logs diagnose a *run*, they don't hold
 results. `None` doubles as the "is this an HPO model?" check.
 
-It returns the published config, the values below, and `rerank` / `trials` DataFrames. See
-the `plotting` guide for parallel coordinates.
+It returns the published config, the values below, and `rerank` / `trials` DataFrames. To
+visualize the search, `hpo_plots.hpo_parallel_coordinates(model)` — see the `plotting` guide.
 
 ## Reading the numbers (the part that misleads)
 

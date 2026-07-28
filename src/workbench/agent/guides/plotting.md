@@ -78,46 +78,31 @@ readable instead of turning into a solid block.
 
 ## Parallel coordinates for HPO trials
 
-The default view of a hyperparameter search: one vertical axis per parameter, one
-line per trial, colored by the objective. It shows which regions the good trials
-cluster in and lets you trace a single config across every axis.
-
-Three methods build it, and each answers a different question (see the `hpo` guide):
+The default view of a hyperparameter search: one vertical axis per knob, one line per
+trial, colored by the objective. Shows which regions the good trials cluster in and lets
+you trace a single config across every axis.
 
 ```python
-model.hpo_search_space()   # the axes: what each knob is and what its range means
-model.hpo_results()        # the lines: one per trial, plus the baseline
-model.hpo_importance()     # the axis ORDER, and which axes are worth keeping
+from workbench.utils.hpo_plots import hpo_parallel_coordinates
+
+fig = hpo_parallel_coordinates(model)                    # None if the model wasn't searched
+fig.show()                                               # or fig.savefig(...) if asked
 ```
 
-Taking the axes from the space rather than inferring them from the trial values is what
-keeps a mixed-type knob from breaking the plot — and it keeps a knob on the chart even
-when every trial happened to pick the same value.
+Two knobs worth knowing, for when the user asks:
 
-What makes it readable:
+- `use_curves=False` — straight segments instead of curves. Lines curve by default, flat
+  where they cross each axis; some people prefer the plain polyline.
+- `completed_only=True` — leave pruned trials off. They are drawn by default, since where
+  the search looked is part of the picture.
 
-- **Order the axes by `importance`, most important on the left.** Only *adjacent* axes show
-  their relationship in a parallel-coordinates plot, so axis order decides what the chart
-  can reveal; an arbitrary order buries the structure.
-- Axis per knob, typed from `dist`: a `choice` knob is categorical (rank its `options`),
-  the rest are numeric. Log-scale where `spec` says `log`, and say so in the label.
-- Scale each axis to the declared `low`/`high`, not the observed min and max. That is
-  what makes a knob pinned against its own bound visible.
-- Clip every line to the axis range (`[0, 1]` normalized). A trial or reference value
-  outside a knob's declared bounds would otherwise draw off the axes.
-- Expand the `trials` frame's `hyperparameters` cell into one column per knob
-  (`json.loads`) and join to the axes. The space describes the framework's full set while a
-  search may have used a subset — the `importance` frame is exactly that subset, so driving
-  the axis list off it gets the right knobs and the right order in one step.
-- Color by the objective with a **divergent** colormap centered on the baseline
-  (`TwoSlopeNorm(vcenter=<baseline objective>)`), so hue answers the question that
-  matters — did this trial beat the user's own hyperparameters — rather than where
-  it ranks within the run. Set the direction so better-than-baseline gets the
-  favorable hue; for a minimized objective that means reversing the map (`RdBu_r`).
-- **Every trial line at `alpha=0.3`.** Only two lines break that: the `kind="baseline"` row
-  (the user's own hyperparameters, scored on the same basis as the trials) and the winner.
-  Draw those last, opaque and thicker, so they read on top of the crowd. A search plot
-  without the baseline can't show whether the search achieved anything.
+It handles the parts that are easy to get subtly wrong: axes ordered by
+`hpo_importance()` (only *adjacent* axes show their relationship, so the order decides
+what the chart can reveal), each scaled to the knob's declared bounds and clipped, color
+centered on the baseline so hue answers "did this trial beat the user's own
+hyperparameters", and the baseline and published config drawn as reference lines. The
+color scale is set by the completed trials, so a trial pruned early can't flatten it. See
+the `hpo` guide for reading the numbers.
 
 ## Compound neighborhood graph
 
