@@ -41,7 +41,7 @@ prox = fs.prox("features", feature_list=["mollogp", "tpsa"], target="logS")
 descriptors); `prox.space` reports which you got.
 
 Passing a **target** unlocks target-aware analysis on top of the proximity —
-`ActivityLandscape(prox)` (activity cliffs, isolated compounds) and `ResidualFeatures(prox)`
+`TargetLandscape(prox)` (duplicates, activity cliffs, isolated compounds) and `ResidualFeatures(prox)`
 — and adds the neighbor's target to results. Without a target you get plain nearest-neighbors.
 
 For a one-off DataFrame with no artifact, construct a backend directly:

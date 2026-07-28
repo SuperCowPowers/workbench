@@ -782,6 +782,107 @@ def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFra
     return output_df
 
 
+# Rows on a single value below this are the tail of a distribution, not a pileup.
+MIN_PILEUP_ROWS = 3
+
+
+def target_health(df: pd.DataFrame, target: str, pileup_percent: float = 2.0) -> pd.DataFrame:
+    """Check a regression target column for the pathologies that quietly cap model performance.
+
+    Assay data arrives censored (values clipped at a detection limit), discretized
+    (rounded to the reporting precision), and skewed (concentrations and clearance
+    rates are log-normal). None of these are visible in a scatter plot of predictions
+    vs actuals, and all of them change what a model can learn.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame
+        target (str): The target column to check
+        pileup_percent (float, optional): Percent of rows on a single value that counts
+            as a pileup. Defaults to 2.0.
+
+    Returns:
+        pd.DataFrame: One row per check with columns: check, severity (ok/info/warn),
+            value, detail.
+    """
+    findings = []
+
+    def add(check, severity, value, detail):
+        findings.append({"check": check, "severity": severity, "value": value, "detail": detail})
+
+    values = df[target]
+    n_rows = len(values)
+    n_nan = int(values.isna().sum())
+    clean = values.dropna()
+
+    add(
+        "missing",
+        "warn" if n_nan else "ok",
+        f"{n_nan} ({100 * n_nan / n_rows:.1f}%)" if n_rows else "0",
+        "rows with no target value" if n_nan else "no missing targets",
+    )
+    if clean.empty:
+        return pd.DataFrame(findings)
+
+    # Discretization: a target rounded to the assay's reporting precision can't be
+    # predicted more finely than that grid, which puts a floor under achievable RMSE.
+    n_unique = int(clean.nunique())
+    unique_ratio = n_unique / len(clean)
+    add(
+        "discretization",
+        "warn" if unique_ratio < 0.05 else "info" if unique_ratio < 0.25 else "ok",
+        f"{n_unique} unique / {len(clean)} rows",
+        f"target resolves to {n_unique} distinct values — model error can't go below the grid spacing",
+    )
+
+    # Pileups, and specifically pileups at the extremes: a stack of rows on the exact
+    # min or max is the signature of a censored assay ("> 300" recorded as 300).
+    counts = clean.value_counts()
+    top_value, top_count = counts.index[0], int(counts.iloc[0])
+    top_percent = 100 * top_count / len(clean)
+    lo, hi = clean.min(), clean.max()
+    boundary = {v: int(counts.get(v, 0)) for v in (lo, hi)}
+    # A couple of rows on the boundary is just the extremes of a distribution — a
+    # pileup needs both a real share and enough rows to be a stack.
+    boundary_hits = {
+        v: c for v, c in boundary.items() if c >= MIN_PILEUP_ROWS and 100 * c / len(clean) >= pileup_percent
+    }
+
+    add(
+        "censoring",
+        "warn" if boundary_hits else "ok",
+        ", ".join(f"{v:g}: {c} rows" for v, c in boundary_hits.items()) if boundary_hits else "none",
+        (
+            "rows stacked on the min/max — censored assay values, consider dropping or modeling as bounded"
+            if boundary_hits
+            else "no pileup at the target's min or max"
+        ),
+    )
+    add(
+        "pileup",
+        "info" if top_count >= MIN_PILEUP_ROWS and top_percent >= pileup_percent else "ok",
+        f"{top_value:g}: {top_count} rows ({top_percent:.1f}%)",
+        "most repeated single value",
+    )
+
+    # Skew: log-normal targets (solubility, clearance, IC50) trained untransformed let
+    # a handful of large values dominate the loss.
+    skew = float(clean.skew())
+    n_non_positive = int((clean <= 0).sum())
+    add(
+        "skew",
+        "warn" if abs(skew) > 2 else "info" if abs(skew) > 1 else "ok",
+        f"{skew:.2f}",
+        (
+            f"consider a log transform ({n_non_positive} non-positive values need an offset)"
+            if abs(skew) > 2 and n_non_positive
+            else "consider a log transform" if abs(skew) > 2 else "acceptable skew"
+        ),
+    )
+    add("range", "ok", f"[{lo:g}, {hi:g}]", f"mean={clean.mean():g} median={clean.median():g}")
+
+    return pd.DataFrame(findings)
+
+
 def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:
     """This method should be used with caution"""
 

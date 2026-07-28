@@ -87,13 +87,13 @@ def main():
     print(f"  Peak memory: {mem_peak_mb():.1f} MB")
     tracemalloc.stop()
 
-    # ----- Build (lazy precompute via ActivityLandscape — landscape analysis cost) -----
-    print("\n[Build] ActivityLandscape.proximity_stats() (triggers lazy nn_* precompute)")
-    from workbench.algorithms.dataframe.activity_landscape import ActivityLandscape
+    # ----- Build (lazy precompute via TargetLandscape — landscape analysis cost) -----
+    print("\n[Build] TargetLandscape.proximity_stats() (triggers lazy nn_* precompute)")
+    from workbench.algorithms.dataframe.target_landscape import TargetLandscape
 
     tracemalloc.start()
     with timed("build_precompute") as t_build_pre:
-        landscape = ActivityLandscape(prox)
+        landscape = TargetLandscape(prox)
         _ = landscape.proximity_stats()  # forces lazy precompute
     print(f"  Peak memory: {mem_peak_mb():.1f} MB")
     tracemalloc.stop()

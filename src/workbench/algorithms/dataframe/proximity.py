@@ -2,7 +2,7 @@
 
 Concrete subclasses (FingerprintProximity, FeatureSpaceProximity) provide different
 similarity definitions but share this query contract so downstream analysis classes
-(ActivityLandscape, ApplicabilityDomain) can be polymorphic over the backend.
+(TargetLandscape, ApplicabilityDomain) can be polymorphic over the backend.
 
 The ABC enforces:
     - Both id-based and novel-query lookups
@@ -223,7 +223,8 @@ class Proximity(ABC):
             distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
             flat_distances = distances.ravel()
             flat_indices = indices.ravel()
-            query_ids_repeated = np.repeat(query_ids, n_neighbors)
+            # k is clamped to the reference size, so repeat by what came back
+            query_ids_repeated = np.repeat(query_ids, distances.shape[1])
 
         # Vectorized neighbor lookup
         neighbor_ids = self.df[self.id_column].values[flat_indices]

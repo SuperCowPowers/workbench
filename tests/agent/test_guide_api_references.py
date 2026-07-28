@@ -20,6 +20,7 @@ import pytest
 
 from workbench.agent.tools import GUIDES_DIR
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+from workbench.algorithms.dataframe.target_landscape import TargetLandscape
 from workbench.api import (
     DataSource,
     DFStore,
@@ -69,6 +70,7 @@ CONVENTIONAL_VARS = {
     "end": Endpoint,
     "endpoint": Endpoint,
     "prox": FingerprintProximity,
+    "land": TargetLandscape,
 }
 
 RECEIVERS = {**CLASS_REFS, **CONVENTIONAL_VARS}

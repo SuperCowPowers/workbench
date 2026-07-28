@@ -22,7 +22,7 @@ prox = fs.prox("fingerprint", target="logS")
 prox = fs.prox("features", feature_list=["mollogp", "tpsa"], target="logS")
 ```
 
-`space` is `"fingerprint"` or `"features"`, and `prox.space` reports which one you got. Passing a `target` also enables target-aware analysis (`ActivityLandscape`, `ResidualFeatures`) and adds neighbor target values to the results.
+`space` is `"fingerprint"` or `"features"`, and `prox.space` reports which one you got. Passing a `target` also enables target-aware analysis (`TargetLandscape`, `ResidualFeatures`) and adds neighbor target values to the results.
 
 Query neighbors the same way on either backend:
 
