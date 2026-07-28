@@ -30,8 +30,26 @@ from workbench.agent.tools import (
 
 log = logging.getLogger("workbench")
 
-# The anthropic client logs every request at INFO, which buries Bosco's replies
+# httpx logs every request line at INFO, which buries Bosco's replies.
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# The Anthropic SDK logs "Retrying request ..." at INFO before each transient
+# backoff. Reflect that in the spinner instead of the terminal: the user sees the
+# wait is a retry rather than a hang, and the raw line stays off the root handler
+# (propagate off). Retries still happen; we just narrate them in one place.
+_active_spinner = None
+
+
+class _RetryNotifier(logging.Handler):
+    def emit(self, record):
+        if _active_spinner is not None and "Retrying" in record.getMessage():
+            _active_spinner.message = "🐶  Bosco is waiting:"
+
+
+_anthropic_log = logging.getLogger("anthropic")
+_anthropic_log.setLevel(logging.INFO)
+_anthropic_log.propagate = False
+_anthropic_log.handlers = [_RetryNotifier()]
 
 MAX_TOKENS = 8000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
@@ -88,12 +106,15 @@ def _text_of(message) -> str:
 @contextmanager
 def _spinner(message: str):
     """Animate while Bosco waits, then erase the line so replies stay clean."""
+    global _active_spinner
     spinner = Spinner("lightpurple", message)
+    _active_spinner = spinner
     spinner.start()
     try:
-        yield
+        yield spinner
     finally:
         spinner.stop(clear=True)
+        _active_spinner = None
 
 
 def _namespace() -> dict:
