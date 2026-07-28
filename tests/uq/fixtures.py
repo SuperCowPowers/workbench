@@ -39,12 +39,12 @@ FP_NBITS = 2048
 class UQFixture:
     """One regime of synthetic UQ inputs.
 
-    Calibration side (``*_val``) and query side (``*_query``) are shape-aligned
+    Calibration side (``*_oof``) and query side (``*_query``) are shape-aligned
     pairs. Proximity side is V1/V2 territory — V0 tests ignore it.
 
     Attributes:
         regime: Name of the regime that produced this fixture.
-        y_true_val / y_pred_val / prediction_std_val / val_ids: Calibration
+        y_true_oof / y_pred_oof / prediction_std_oof / oof_ids: Calibration
             set — what V0/V1 ``.fit(...)`` consumes.
         y_true_query / y_pred_query / prediction_std_query / query_ids: Held-out
             query set — what ``.predict(...)`` consumes. ``y_true_query`` is
@@ -63,10 +63,10 @@ class UQFixture:
     regime: str
 
     # Calibration set
-    y_true_val: np.ndarray
-    y_pred_val: np.ndarray
-    prediction_std_val: np.ndarray
-    val_ids: List[str]
+    y_true_oof: np.ndarray
+    y_pred_oof: np.ndarray
+    prediction_std_oof: np.ndarray
+    oof_ids: List[str]
 
     # Query set
     y_true_query: np.ndarray
@@ -119,7 +119,7 @@ def regime(name: str) -> Callable:
 # Helpers shared across regimes
 # ---------------------------------------------------------------------------
 def _ids(prefix: str, n: int) -> List[str]:
-    """Generate sequential string IDs like 'val-0001'."""
+    """Generate sequential string IDs like 'oof-0001'."""
     width = max(4, len(str(n)))
     return [f"{prefix}-{i:0{width}d}" for i in range(n)]
 
@@ -172,29 +172,29 @@ def _well_calibrated(seed: int) -> UQFixture:
     Sanity floor — every UQ version should look reasonable here.
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 300, 100
+    n_oof, n_query = 300, 100
 
-    sigma_val = rng.uniform(0.2, 0.6, size=n_val)
-    y_true_val = rng.normal(0, 2, size=n_val)
-    y_pred_val = y_true_val + rng.normal(0, sigma_val)
-    pred_std_val = sigma_val
+    sigma_oof = rng.uniform(0.2, 0.6, size=n_oof)
+    y_true_oof = rng.normal(0, 2, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, sigma_oof)
+    pred_std_oof = sigma_oof
 
     sigma_q = rng.uniform(0.2, 0.6, size=n_query)
     y_true_q = rng.normal(0, 2, size=n_query)
     y_pred_q = y_true_q + rng.normal(0, sigma_q)
     pred_std_q = sigma_q
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="well_calibrated",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,
@@ -211,29 +211,29 @@ def _overconfident(seed: int) -> UQFixture:
     Calibrator should widen intervals (large conformal scale factors).
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 300, 100
+    n_oof, n_query = 300, 100
 
-    actual_sigma = rng.uniform(0.5, 1.0, size=n_val)
-    reported_sigma_val = actual_sigma * 0.3
-    y_true_val = rng.normal(0, 2, size=n_val)
-    y_pred_val = y_true_val + rng.normal(0, actual_sigma)
+    actual_sigma = rng.uniform(0.5, 1.0, size=n_oof)
+    reported_sigma_oof = actual_sigma * 0.3
+    y_true_oof = rng.normal(0, 2, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, actual_sigma)
 
     actual_sigma_q = rng.uniform(0.5, 1.0, size=n_query)
     reported_sigma_q = actual_sigma_q * 0.3
     y_true_q = rng.normal(0, 2, size=n_query)
     y_pred_q = y_true_q + rng.normal(0, actual_sigma_q)
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="overconfident",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=reported_sigma_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=reported_sigma_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=reported_sigma_q,
@@ -250,29 +250,29 @@ def _underconfident(seed: int) -> UQFixture:
     Calibrator should narrow intervals (small conformal scale factors).
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 300, 100
+    n_oof, n_query = 300, 100
 
-    actual_sigma = rng.uniform(0.2, 0.4, size=n_val)
-    reported_sigma_val = actual_sigma * 3.0
-    y_true_val = rng.normal(0, 2, size=n_val)
-    y_pred_val = y_true_val + rng.normal(0, actual_sigma)
+    actual_sigma = rng.uniform(0.2, 0.4, size=n_oof)
+    reported_sigma_oof = actual_sigma * 3.0
+    y_true_oof = rng.normal(0, 2, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, actual_sigma)
 
     actual_sigma_q = rng.uniform(0.2, 0.4, size=n_query)
     reported_sigma_q = actual_sigma_q * 3.0
     y_true_q = rng.normal(0, 2, size=n_query)
     y_pred_q = y_true_q + rng.normal(0, actual_sigma_q)
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="underconfident",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=reported_sigma_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=reported_sigma_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=reported_sigma_q,
@@ -290,30 +290,30 @@ def _heteroskedastic(seed: int) -> UQFixture:
     pick up different std → |residual| slopes.
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 400, 120
+    n_oof, n_query = 400, 120
 
-    y_true_val = rng.uniform(-5, 5, size=n_val)
+    y_true_oof = rng.uniform(-5, 5, size=n_oof)
     # Sigma grows with |y|
-    actual_sigma = 0.1 + 0.4 * np.abs(y_true_val)
-    y_pred_val = y_true_val + rng.normal(0, actual_sigma)
-    pred_std_val = actual_sigma  # well-reported
+    actual_sigma = 0.1 + 0.4 * np.abs(y_true_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, actual_sigma)
+    pred_std_oof = actual_sigma  # well-reported
 
     y_true_q = rng.uniform(-5, 5, size=n_query)
     actual_sigma_q = 0.1 + 0.4 * np.abs(y_true_q)
     y_pred_q = y_true_q + rng.normal(0, actual_sigma_q)
     pred_std_q = actual_sigma_q
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="heteroskedastic",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,
@@ -332,30 +332,30 @@ def _biased(seed: int) -> UQFixture:
     we don't *correct* the bias by accident.
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 300, 100
+    n_oof, n_query = 300, 100
     bias = 0.5
 
-    sigma_val = rng.uniform(0.3, 0.6, size=n_val)
-    y_true_val = rng.normal(0, 2, size=n_val)
-    y_pred_val = y_true_val + bias + rng.normal(0, sigma_val)
-    pred_std_val = sigma_val
+    sigma_oof = rng.uniform(0.3, 0.6, size=n_oof)
+    y_true_oof = rng.normal(0, 2, size=n_oof)
+    y_pred_oof = y_true_oof + bias + rng.normal(0, sigma_oof)
+    pred_std_oof = sigma_oof
 
     sigma_q = rng.uniform(0.3, 0.6, size=n_query)
     y_true_q = rng.normal(0, 2, size=n_query)
     y_pred_q = y_true_q + bias + rng.normal(0, sigma_q)
     pred_std_q = sigma_q
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="biased",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,
@@ -373,12 +373,12 @@ def _ood_queries(seed: int) -> UQFixture:
     for future AD-sensitivity tests, harmless for V0 equivalence.
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 300, 80
+    n_oof, n_query = 300, 80
 
-    sigma_val = rng.uniform(0.2, 0.4, size=n_val)
-    y_true_val = rng.uniform(-1, 1, size=n_val)
-    y_pred_val = y_true_val + rng.normal(0, sigma_val)
-    pred_std_val = sigma_val
+    sigma_oof = rng.uniform(0.2, 0.4, size=n_oof)
+    y_true_oof = rng.uniform(-1, 1, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, sigma_oof)
+    pred_std_oof = sigma_oof
 
     # Queries land far from the cal-set support
     sigma_q = rng.uniform(0.2, 0.4, size=n_query)
@@ -386,17 +386,17 @@ def _ood_queries(seed: int) -> UQFixture:
     y_pred_q = y_true_q + rng.normal(0, sigma_q)
     pred_std_q = sigma_q
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="out_of_distribution_queries",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,
@@ -415,12 +415,12 @@ def _activity_cliff_queries(seed: int) -> UQFixture:
     matched preds/truths. Behavior should still be valid for V0 equivalence.
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 300, 80
+    n_oof, n_query = 300, 80
 
-    sigma_val = rng.uniform(0.2, 0.4, size=n_val)
-    y_true_val = rng.normal(0, 1, size=n_val)
-    y_pred_val = y_true_val + rng.normal(0, sigma_val)
-    pred_std_val = sigma_val
+    sigma_oof = rng.uniform(0.2, 0.4, size=n_oof)
+    y_true_oof = rng.normal(0, 1, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, sigma_oof)
+    pred_std_oof = sigma_oof
 
     # Queries: predictions look fine, but actual truth is shifted ("cliff")
     sigma_q = rng.uniform(0.2, 0.4, size=n_query)
@@ -428,17 +428,17 @@ def _activity_cliff_queries(seed: int) -> UQFixture:
     y_true_q = y_pred_q + rng.normal(2.0, 0.3, size=n_query)  # cliff!
     pred_std_q = sigma_q
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="activity_cliff_queries",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,
@@ -450,19 +450,19 @@ def _activity_cliff_queries(seed: int) -> UQFixture:
 
 @regime("bin_edge_queries")
 def _bin_edge_queries(seed: int) -> UQFixture:
-    """y_pred_val ~ Uniform(0, 10), so V0's 10 quantile bins land near
+    """y_pred_oof ~ Uniform(0, 10), so V0's 10 quantile bins land near
     integers 1, 2, ..., 9. Query predictions are set EXACTLY to those values,
     catching any off-by-one or strict-vs-loose inequality bug in V0's bin
     lookup.
     """
     rng = np.random.default_rng(seed)
-    n_val = 300
+    n_oof = 300
 
     # Sample y_pred uniformly so bin edges are predictable
-    y_pred_val = rng.uniform(0, 10, size=n_val)
-    actual_sigma = rng.uniform(0.2, 0.5, size=n_val)
-    y_true_val = y_pred_val - rng.normal(0, actual_sigma)
-    pred_std_val = actual_sigma
+    y_pred_oof = rng.uniform(0, 10, size=n_oof)
+    actual_sigma = rng.uniform(0.2, 0.5, size=n_oof)
+    y_true_oof = y_pred_oof - rng.normal(0, actual_sigma)
+    pred_std_oof = actual_sigma
 
     # Query predictions exactly at expected bin edges
     edges = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
@@ -472,17 +472,17 @@ def _bin_edge_queries(seed: int) -> UQFixture:
     # y_true at the query is irrelevant for V0 equivalence; pick something
     y_true_q = y_pred_q + rng.normal(0, 0.3, size=n_query)
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="bin_edge_queries",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,
@@ -499,29 +499,29 @@ def _tiny_calibration_set(seed: int) -> UQFixture:
     small-sample fallback path.
     """
     rng = np.random.default_rng(seed)
-    n_val, n_query = 30, 40
+    n_oof, n_query = 30, 40
 
-    sigma_val = rng.uniform(0.2, 0.5, size=n_val)
-    y_true_val = rng.normal(0, 1, size=n_val)
-    y_pred_val = y_true_val + rng.normal(0, sigma_val)
-    pred_std_val = sigma_val
+    sigma_oof = rng.uniform(0.2, 0.5, size=n_oof)
+    y_true_oof = rng.normal(0, 1, size=n_oof)
+    y_pred_oof = y_true_oof + rng.normal(0, sigma_oof)
+    pred_std_oof = sigma_oof
 
     sigma_q = rng.uniform(0.2, 0.5, size=n_query)
     y_true_q = rng.normal(0, 1, size=n_query)
     y_pred_q = y_true_q + rng.normal(0, sigma_q)
     pred_std_q = sigma_q
 
-    val_ids = _ids("val", n_val)
+    oof_ids = _ids("oof", n_oof)
     query_ids = _ids("q", n_query)
-    prox_df, _ = _build_prox_df(rng, val_ids, y_true_val)
+    prox_df, _ = _build_prox_df(rng, oof_ids, y_true_oof)
     _, q_fps = _build_prox_df(rng, query_ids, y_true_q)
 
     return UQFixture(
         regime="tiny_calibration_set",
-        y_true_val=y_true_val,
-        y_pred_val=y_pred_val,
-        prediction_std_val=pred_std_val,
-        val_ids=val_ids,
+        y_true_oof=y_true_oof,
+        y_pred_oof=y_pred_oof,
+        prediction_std_oof=pred_std_oof,
+        oof_ids=oof_ids,
         y_true_query=y_true_q,
         y_pred_query=y_pred_q,
         prediction_std_query=pred_std_q,

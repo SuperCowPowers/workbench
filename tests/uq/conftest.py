@@ -4,9 +4,9 @@ A test that wants the ``well_calibrated`` regime can ask for it directly::
 
     def test_v0_coverage(uq_well_calibrated):
         uq = UQModelV0.fit(
-            uq_well_calibrated.y_true_val,
-            uq_well_calibrated.y_pred_val,
-            uq_well_calibrated.prediction_std_val,
+            uq_well_calibrated.y_true_oof,
+            uq_well_calibrated.y_pred_oof,
+            uq_well_calibrated.prediction_std_oof,
         )
         ...
 
