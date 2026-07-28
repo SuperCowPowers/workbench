@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GroupKFold, GroupShuffleSplit
+from sklearn.model_selection import GroupShuffleSplit
 
 
 def get_scaffold(smiles: str) -> str:
@@ -228,18 +228,41 @@ def get_split_indices(
     else:
         raise ValueError(f"Unknown strategy: {strategy}. Use 'random', 'scaffold', or 'butina'")
 
-    # Generate splits using GroupKFold or GroupShuffleSplit
     if n_splits == 1:
         # Single split: use GroupShuffleSplit
         splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
         return list(splitter.split(df, groups=groups))
-    else:
-        # K-fold: use GroupKFold (ensures no group appears in both train and val)
-        # Note: GroupKFold doesn't shuffle, so we shuffle group order first
-        unique_groups = np.unique(groups)
-        rng = np.random.default_rng(random_state)
-        shuffled_group_map = {g: i for i, g in enumerate(rng.permutation(unique_groups))}
-        shuffled_groups = np.array([shuffled_group_map[g] for g in groups])
+    return group_folds(groups, n_splits=n_splits, random_state=random_state)
 
-        gkf = GroupKFold(n_splits=n_splits)
-        return list(gkf.split(df, groups=shuffled_groups))
+
+def group_folds(groups: np.ndarray, n_splits: int, random_state: int) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Partition grouped rows into ``n_splits`` folds, keeping every group intact.
+
+    Groups are visited in a seed-dependent random order and each lands in whichever fold
+    is currently lightest. The random order is what makes the partition depend on
+    ``random_state`` — including for the largest groups, which carry most of the rows and
+    so dominate how much two partitions differ. The greedy fill keeps fold sizes near-even,
+    which matters when a caller macro-averages a metric across folds.
+
+    Args:
+        groups: per-row group label; rows sharing a label never straddle a fold boundary.
+        n_splits: number of folds.
+        random_state: seed for the group ordering.
+
+    Returns:
+        List of (train_indices, val_indices) tuples, one per fold.
+    """
+    unique_groups, counts = np.unique(groups, return_counts=True)
+    if len(unique_groups) < n_splits:
+        raise ValueError(f"Cannot have n_splits={n_splits} greater than the number of groups ({len(unique_groups)})")
+
+    load = np.zeros(n_splits, dtype=np.int64)
+    group_to_fold = {}
+    for i in np.random.default_rng(random_state).permutation(len(unique_groups)):
+        fold = int(np.argmin(load))
+        group_to_fold[unique_groups[i]] = fold
+        load[fold] += counts[i]
+
+    fold_of_row = np.array([group_to_fold[g] for g in groups])
+    indices = np.arange(len(groups))
+    return [(indices[fold_of_row != f], indices[fold_of_row == f]) for f in range(n_splits)]
