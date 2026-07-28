@@ -178,7 +178,7 @@ def _configure_draw_options(options: Draw.MolDrawOptions, background: str) -> No
 
 
 def img_from_smiles(
-    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
+    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)", legend: str = None
 ) -> Optional:
     """Generate an image of the molecule from SMILES.
 
@@ -187,6 +187,7 @@ def img_from_smiles(
         width: Width of the image in pixels (default: 500)
         height: Height of the image in pixels (default: 500)
         background: Background color (default: dark grey)
+        legend: Caption drawn under the structure, typically the compound id
 
     Returns:
         PIL Image object or None if SMILES is invalid
@@ -200,7 +201,7 @@ def img_from_smiles(
     _configure_draw_options(dos, background)
 
     # Generate and return image
-    return Draw.MolToImage(mol, options=dos, size=(width, height))
+    return Draw.MolToImage(mol, options=dos, size=(width, height), legend=legend or "")
 
 
 def svg_from_smiles(
@@ -240,16 +241,23 @@ def svg_from_smiles(
     return f"data:image/svg+xml;base64,{encoded_svg}"
 
 
-def show(smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)") -> None:
+def show(
+    smiles: str,
+    compound_id: str = None,
+    width: int = 500,
+    height: int = 500,
+    background: str = "rgba(255, 255, 255, 1)",
+) -> None:
     """Display an image of the molecule.
 
     Args:
         smiles: SMILES string representing the molecule
+        compound_id: Id captioned under the structure, so the window says which compound it is
         width: Width of the image in pixels (default: 500)
         height: Height of the image in pixels (default: 500)
-        background: Background color (default: dark grey)
+        background: Background color (default: white); a dark value switches RDKit to light bonds
     """
-    img = img_from_smiles(smiles, width, height, background)
+    img = img_from_smiles(smiles, width, height, background, legend=compound_id)
     if img:
         img.show()
     else:
