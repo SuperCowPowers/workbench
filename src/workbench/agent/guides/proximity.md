@@ -9,7 +9,9 @@ very different activity.
 
 Two proximity flavors, same interface:
 
-- **FingerprintProximity** — structural similarity from SMILES/fingerprints (Tanimoto).
+- **FingerprintProximity** — structural similarity from SMILES/fingerprints. Ruzicka
+  (Tanimoto generalized to count vectors) on `count, radius=2, 4096 bits`; plain
+  Jaccard/Tanimoto if the fingerprints are binary.
   Results carry a `similarity` column (0–1); the search floor is `min_similarity`.
 - **FeatureSpaceProximity** — closeness in numeric descriptors (standardized Euclidean).
   Results carry a `distance` column; the search bound is `radius`.
@@ -61,10 +63,15 @@ One row per neighbor:
 |---|---|
 | `prox.id_column` | the query id (name varies by model — e.g. `id`, `molecule_name`) |
 | `neighbor_id` | the neighboring compound |
-| `similarity` / `distance` | Tanimoto similarity 0–1 (FingerprintProximity) or standardized Euclidean distance (FeatureSpaceProximity) |
+| `similarity` / `distance` | Ruzicka similarity 0–1 — Tanimoto generalized to count vectors (FingerprintProximity) — or standardized Euclidean distance (FeatureSpaceProximity) |
 | `<target>` | the neighbor's target value (may be `NaN` for a multi-task model's off-task rows) |
 
 Don't hardcode the query id column — it's `prox.id_column`. `neighbor_id` is stable.
+
+To visualize a neighborhood, `neighborhood_graph(query_id, nbrs, target_col=...)`
+(from `chem_utils.vis`) draws the query and its closest neighbors as a radial
+molecule graph — see the `plotting` guide. It needs a `smiles` column, so join one
+in from the FeatureSet if the result lacks it.
 
 ## Neighbors of a novel compound
 
@@ -91,7 +98,7 @@ matters more than a fixed count.
 
 ## Putting it together
 
-Neighbors + the structure grid (`plotting` guide) is the activity-cliff view: pull a
-high-residual compound's neighbors, then render the query and its neighbors side by
-side, captioned with activity. Near-identical scaffolds at opposite ends of the potency
-scale is the cliff. SMILES/id column conventions are in the `compounds` guide.
+Neighbors + `neighborhood_graph` (`plotting` guide) is the activity-cliff view: pull a
+high-residual compound's neighbors, then render the query and its neighbors together,
+colored by activity. Near-identical scaffolds at opposite ends of the potency scale is
+the cliff. SMILES/id column conventions are in the `compounds` guide.

@@ -450,10 +450,7 @@ def neighborhood_graph(
     cbar.set_label(target_col, fontsize=12)
 
     if title is None:
-        title = (
-            f"{query_id} + {len(neigh)} closest neighbors\n"
-            f"(ring = {target_col}, edge width = {similarity_col})"
-        )
+        title = f"{query_id} + {len(neigh)} closest neighbors\n" f"(ring = {target_col}, edge width = {similarity_col})"
     ax.set_title(title, fontsize=14, pad=16)
     fig.tight_layout()
     return fig

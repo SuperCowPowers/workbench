@@ -34,7 +34,9 @@ The choices that aren't obvious:
 - **Count, not binary.** Each bit holds how many times the substructure appears
   (clamped to 0–255), stored as a comma-separated string. Count fingerprints beat
   binary for ADMET property prediction — the citation is in the module docstring.
-- **radius=2** is ECFP4-equivalent; **4096 bits**.
+- **Describe it as `count, radius=2, 4096 bits`** — not just "ECFP4", which implies
+  folded *binary* bits and hides the width. Use that phrasing in plot titles and
+  when reporting what was computed.
 - **Largest fragment first.** Salts/counterions are stripped
   (`rdMolStandardize.LargestFragmentChooser`) before hashing, so the fingerprint
   describes the parent, not the salt.
@@ -72,6 +74,10 @@ What "standardized" means before a fingerprint or descriptor is computed:
 - `mol_tagging.py` → `tag_molecules(df)`, `filter_by_tags(...)`,
   `get_tag_summary(...)`, `admet_training_set(...)` — composition/structure/
   physchem/liability tags (PAINS and friends via RDKit FilterCatalog).
+- `toxicity.py` → `toxic_elements(mol)`, `toxic_groups(mol)`,
+  `contains_heavy_metals(mol)`, `halogen_toxicity_score(mol)` — per-molecule
+  structural liability checks. These take an RDKit `Mol` (`Chem.MolFromSmiles`),
+  not a DataFrame.
 
 ## Data-quality lenses (short pointers — hit the code for depth)
 

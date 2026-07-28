@@ -1,6 +1,6 @@
 # Plotting
 
-> readable matplotlib plots, including labeled molecule structure grids
+> readable matplotlib plots, including molecule structure and neighborhood views
 
 Use **matplotlib**. Make sure text, legends, and axis labels have enough space to
 be readable — a cramped plot is a useless plot.
@@ -119,32 +119,23 @@ What makes it readable:
   Draw those last, opaque and thicker, so they read on top of the crowd. A search plot
   without the baseline can't show whether the search achieved anything.
 
-## Molecule structure panels
+## Compound neighborhood graph
 
-When the point is chemistry — an activity cliff, nearest neighbors, the top
-residuals — render the actual structures in a labeled grid. Seeing near-identical
-scaffolds with opposite activity tells the story a scatter plot can't.
-
-`molecule_grid()` handles the layout (grid sizing, axis-off, invalid-SMILES gaps,
-blank cells). You supply three parallel lists — SMILES, captions, and caption
-colors — and it returns a matplotlib figure.
+For a proximity result, `neighborhood_graph` renders the query at the center with
+its closest neighbors around a ring — ring color = target value, edge width =
+similarity — so an activity cliff jumps out.
 
 ```python
-from workbench.utils.chem_utils.vis import molecule_grid
+from workbench.utils.chem_utils.vis import neighborhood_graph
 
-smiles_col = next(c for c in df.columns if c.lower() == "smiles")   # see `compounds`
-smiles = df[smiles_col].tolist()
-captions = [f"{r.id}\npec50 = {r.pec50:.2f}" for r in df.itertuples()]
-# Color captions by role so the pattern jumps out at a glance
-colors = ["gold" if r.is_query else "#87d75f" if r.pec50 >= 5 else "salmon" for r in df.itertuples()]
-
-fig = molecule_grid(smiles, captions, colors, suptitle="Activity cliff: OADMET-0002753 vs neighbors")
-fig.show()                                          # or fig.savefig(path, dpi=150, bbox_inches="tight")
+fig = neighborhood_graph(query_id, nbrs, target_col="pec50")   # nbrs from prox.neighbors(...)
+fig.show()                                                     # or fig.savefig(...) if asked
 ```
 
-- **Caption every tile** with the id and the values that matter (activity,
-  Tanimoto, predicted vs measured) — the structure alone isn't identifiable.
-- **Color-code by role** (query vs active vs inactive, hit vs miss). Captions sit
-  on the white figure, so any readable color works.
-- The caller owns the domain choices (caption text, colors); `molecule_grid`
-  just lays them out. It already guards unparseable SMILES.
+`nbrs` needs a `smiles` column and the query's own row (default `include_self=True`
+provides it, similarity 1.0) — join SMILES from the FeatureSet if the proximity
+result lacks it. See the `proximity` guide.
+
+For an arbitrary set of structures with no query/neighbor relation (e.g. a
+top-residuals panel), `vis.molecule_grid(smiles, captions, colors)` lays them out in
+a captioned grid.
