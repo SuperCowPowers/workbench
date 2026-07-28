@@ -148,6 +148,23 @@ AWS_MARKETPLACE_PRODUCT_CODE = "41c7xn73mrdq90y6g5ktdo7ye"
 _TAG_SAFE_RE = re.compile(r"^[A-Za-z0-9 _.:/=+@-]*$")
 
 
+def sso_login_hint(profile: str = None) -> str:
+    """The `aws sso login` command for the profile in play.
+
+    Boto refreshes SSO tokens on its own, so a token failure means the token is past
+    its refresh window and only a browser login will fix it. Naming the exact command
+    turns that dead end into a copy-paste.
+
+    Args:
+        profile (str, optional): Profile name; falls back to the AWS_PROFILE env var.
+
+    Returns:
+        str: The login command, with no profile flag when none is known.
+    """
+    profile = profile or os.environ.get("AWS_PROFILE")
+    return f"aws sso login --profile {profile}" if profile else "aws sso login"
+
+
 def tag_safe(value: str) -> bool:
     """True if value can be stored as a plain AWS tag (no encoding needed)"""
     # Force-encode anything that collides with our marker, so the read side stays unambiguous

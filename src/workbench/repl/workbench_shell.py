@@ -20,7 +20,6 @@ from IPython.terminal.ipapp import load_default_config
 from distutils.version import LooseVersion
 from pygments.token import Token
 import botocore
-import pandas as pd
 
 # Enable matplotlib's interactive mode so user plots show non-blocking.
 import matplotlib.pyplot as plt  # noqa: F401
@@ -46,6 +45,7 @@ from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.utils.log_utils import silence_logs, log_theme
+from workbench.utils.aws_utils import sso_login_hint
 
 # If we have RDKIT/Mordred let's pull in our cheminformatics utils
 try:
@@ -172,7 +172,6 @@ class WorkbenchShell:
         self.commands["log_warning"] = self.log_warning
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
-        self.commands["plot"] = self.plot_manager
         self.commands["log"] = logging.getLogger("workbench")
         self.commands["get_meta"] = self.get_meta
         self.commands["params"] = importlib.import_module("workbench.api.parameter_store").ParameterStore()
@@ -269,7 +268,7 @@ class WorkbenchShell:
                 aws_clamp.check_aws_identity()
                 cprint("lightgreen", "AWS Account Check AOK!")
             except RuntimeError:
-                cprint("red", "AWS Account Check Failed: Check AWS_PROFILE and/or Renew SSO Token...")
+                cprint("red", f"AWS Account Check Failed: renew with '{sso_login_hint(aws_profile)}'")
                 return False
         except botocore.exceptions.ProfileNotFound:
             cprint("red", "AWS Account Check Failed: Check AWS_PROFILE...")
@@ -601,50 +600,6 @@ class WorkbenchShell:
 
     def get_meta(self):
         return self.meta
-
-    def plot_manager(self, data, plot_type: str = "scatter", **kwargs):
-        """Plot Manager for Workbench"""
-        from workbench.web_interface.components.plugins import ag_table, graph_plot, scatter_plot
-
-        if plot_type == "table":
-            # Check what type of data we have
-            if isinstance(data, pd.DataFrame):
-                self.plot_plugin(ag_table.AGTable, data, **kwargs)
-            else:
-                # Does this object have a pull_dataframe() method?
-                if hasattr(data, "pull_dataframe"):
-                    data = data.pull_dataframe(limit=100)
-                    self.plot_plugin(ag_table.AGTable, data, **kwargs)
-                else:
-                    cprint("yellow", f"Unknown Data Type for Table Plot '{type(data)}'")
-        elif plot_type == "graph":
-            self.plot_plugin(graph_plot.GraphPlot, data, **kwargs)
-        elif plot_type == "scatter":
-            self.plot_plugin(scatter_plot.ScatterPlot, data, **kwargs)
-        else:
-            cprint("yellow", f"Unknown Plot Type '{plot_type}'")
-
-    @staticmethod
-    def plot_plugin(plugin_class, data=None, **kwargs):
-        """Plot data using a plugin.
-
-        Args:
-            plugin_class (PluginInterface): The plugin class to use.
-            input_data (Optional): Optional input data (e.g., DataSource, FeatureSet, etc.)
-            **kwargs: Additional keyword arguments for plugin properties.
-                theme (str): The theme to use for the Dash app (default: "dark")
-        """
-        from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
-
-        # Get kwargs
-        theme = kwargs.get("theme", "midnight_blue")
-
-        plugin_test = PluginUnitTest(plugin_class, theme=theme, input_data=data, **kwargs)
-
-        # Open the browser and run the dash server
-        url = f"http://127.0.0.1:{plugin_test.port}"
-        webbrowser.open(url)
-        plugin_test.run()
 
 
 # Launch Shell Entry Point

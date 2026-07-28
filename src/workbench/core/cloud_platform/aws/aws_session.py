@@ -45,11 +45,9 @@ class AWSSession:
                 self.region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION"))
                 self.region = boto3.Session().region_name if self.region is None else self.region
             except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
-                # Boto refreshes SSO tokens on its own, so getting here means the token is past
-                # its refresh window: a browser login is the only fix.
-                profile = profile or os.environ.get("AWS_PROFILE")
-                login = f"aws sso login --profile {profile}" if profile else "aws sso login"
-                msg = f"AWS SSO Token Failure: renew with '{login}' (or check AWS_PROFILE)"
+                from workbench.utils.aws_utils import sso_login_hint
+
+                msg = f"AWS SSO Token Failure: renew with '{sso_login_hint(profile)}' (or check AWS_PROFILE)"
                 self.log.critical(msg)
                 if is_running_in_ipython():
                     display_error_and_raise(msg)
