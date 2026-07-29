@@ -680,12 +680,13 @@ class WorkbenchCoreStack(Stack):
     ######################
     @staticmethod
     def models_discovery() -> iam.PolicyStatement:
-        """Discovery - list all SageMaker models, model packages, and model package groups."""
+        """Discovery - list all SageMaker models, model packages, groups, and training jobs."""
         return iam.PolicyStatement(
             actions=[
                 "sagemaker:ListModels",
                 "sagemaker:ListModelPackages",
                 "sagemaker:ListModelPackageGroups",
+                "sagemaker:ListTrainingJobs",
                 "sagemaker:Search",
             ],
             resources=["*"],  # Required for listing operations
