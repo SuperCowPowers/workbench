@@ -97,6 +97,25 @@ batch_jobs()              # recent jobs: name, status, created, runtime, reason
 batch_jobs("mppb_reg")    # filter to the one you launched, by the name you gave it
 ```
 
+### The training job underneath
+
+Batch records nothing about what it submitted, so the link to SageMaker is recovered
+from the job's own logs:
+
+```python
+from workbench.utils.batch_utils import batch_job_training_jobs, training_job_status
+
+names = batch_job_training_jobs("workbench_mppb_reg_20260722_141615")
+training_job_status(names[-1])   # the most recent one
+```
+
+`batch_job_training_jobs` returns names in submission order — a script that builds
+several models trains several times, and plenty of Batch work never trains at all, so
+expect anywhere from zero to many. `training_job_status` gives `{name, status,
+secondary_status, instance, age, in_status, message, waiting}`, or None for an unknown
+name. **`waiting=True` is the one to call out**: the job is queued for AWS capacity on
+its instance type, burning wall-clock without training.
+
 A job launched as `name="mppb_reg"` appears as `workbench_mppb_reg_<timestamp>`.
 It takes a few seconds to show up (SQS → Lambda → Batch), and terminated jobs are
 only retained for a limited window (at least ~24h, often several days) — a recent
