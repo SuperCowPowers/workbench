@@ -26,7 +26,7 @@ def test_default_space_is_basic_plus_optimizer():
         "max_lr",
         "batch_size",
     }
-    assert space["depth"] == IntRange(2, 6, 1, default=6)  # chemprop {2,3,4,5,6}
+    assert space["depth"] == IntRange(2, 6, 1, default=5)  # chemprop {2,3,4,5,6}
     assert space["hidden_dim"] == IntRange(100, 2400, 100, default=700)  # chemprop floor of 300 extended to 100
     assert space["ffn_num_layers"] == IntRange(1, 3, 1, default=2)  # chemprop {1,2,3}
     # dropout is held out of the default space to keep the budget on the capacity knobs.

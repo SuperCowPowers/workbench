@@ -66,16 +66,16 @@ DEFAULT_HYPERPARAMETERS = {
     "n_folds": 5,
     "max_epochs": 400,
     "patience": 40,
-    "batch_size": 64,
+    "batch_size": 128,
     # Message Passing (ignored when using foundation model)
     "hidden_dim": 700,
-    "depth": 6,
+    "depth": 5,
     "dropout": 0.1,  # Lower dropout - ensemble provides regularization
     # FFN. ffn_hidden_dim accepts a single int (uniform width, repeated
     # ffn_num_layers times) or an explicit per-layer shape — a dash-string
     # ("1024-256-64", the pytorch `layers` convention) or a list of ints. For a
     # shape, ffn_num_layers is ignored and depth is taken from its length.
-    "ffn_hidden_dim": 1800,
+    "ffn_hidden_dim": 300,
     "ffn_num_layers": 2,
     # Defaults match chemprop's own
     "warmup_epochs": 2,

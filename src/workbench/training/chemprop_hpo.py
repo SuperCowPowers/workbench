@@ -39,20 +39,21 @@ _SEARCH_GROUPS = {
         # ffn_hidden_dim ("1024-256-64", the pytorch `layers` convention) gives a tapered
         # head, which a scalar width cannot express — ffn_num_layers is ignored for a
         # shape (its length sets the depth). Every option is a scalar cell in the search
-        # records, so the knob plots directly.
-        "depth": IntRange(2, 6, 1, default=6),
+        # records, so the knob plots directly. Narrow heads dominate on the ADMET sets, so
+        # the flat rungs are coarse above 600 and the shapes all taper to a small tail.
+        "depth": IntRange(2, 6, 1, default=5),
         "hidden_dim": IntRange(100, 2400, 100, default=700),
         "ffn_num_layers": IntRange(1, 3, 1, default=2),
-        "ffn_hidden_dim": Choice([300, 600, 1200, 1800, 2400, "1024-256-64", "512-128"], default=1800),
+        "ffn_hidden_dim": Choice([300, 600, 1800, "300-100", "512-128", "512-128-32", "1024-256-64"], default=300),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
-    # interact (they scale together), so they search as one group. Memory headroom for the
-    # batch_size ceiling: a 60-trial 8-concurrent search peaks near 22% of a 4x L4 box.
+    # interact (they scale together), so they search as one group. The batch_size ceiling is
+    # bounded by GPU memory under concurrent trials, not by the objective.
     # init_lr/final_lr are tied to max_lr in merge_best_config; searched independently they
     # can produce init > max, which the Noam schedule rejects.
     "optimizer": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True, default=1e-3),
-        "batch_size": Choice([32, 64, 128, 256, 512], default=64),
+        "batch_size": Choice([64, 128, 256, 512, 1024], default=128),
     },
 }
 
