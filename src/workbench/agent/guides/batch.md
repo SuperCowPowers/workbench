@@ -93,7 +93,7 @@ Check status from the REPL with `batch_jobs()`:
 ```python
 from workbench.utils.batch_utils import batch_jobs
 
-batch_jobs()              # recent jobs: name, status, created, runtime, reason
+batch_jobs()              # last 48 hours: name, status, created, runtime, reason
 batch_jobs("mppb_reg")    # filter to the one you launched, by the name you gave it
 ```
 
@@ -116,8 +116,16 @@ secondary_status, instance, age, in_status, message, waiting}`, or None for an u
 name. **`waiting=True` is the one to call out**: the job is queued for AWS capacity on
 its instance type, burning wall-clock without training.
 
+To sweep every training job at once rather than starting from a Batch job:
+
+```python
+from workbench.utils.batch_utils import running_training_jobs
+
+running_training_jobs()   # DataFrame of everything in progress, waiting jobs first
+```
+
 A job launched as `name="mppb_reg"` appears as `workbench_mppb_reg_<timestamp>`.
-It takes a few seconds to show up (SQS → Lambda → Batch), and terminated jobs are
-only retained for a limited window (at least ~24h, often several days) — a recent
-view, not full history. For full logs, **AWS Batch → Jobs** / **CloudWatch**. The
-REPL won't block or report completion — poll `batch_jobs()` or check the console.
+It takes a few seconds to show up (SQS → Lambda → Batch). All of these views cover
+the last 48 hours, not full history. For full logs, **AWS Batch → Jobs** /
+**CloudWatch**. The REPL won't block or report completion — poll `batch_jobs()`
+or check the console.
