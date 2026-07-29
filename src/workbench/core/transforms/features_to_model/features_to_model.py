@@ -416,10 +416,7 @@ class FeaturesToModel(Transform):
             except CapacityTimeout:
                 if last_rung:
                     raise
-                self.log.warning(
-                    f"No {train_instance_type} capacity after {CAPACITY_WAIT_SECONDS // 60} minutes, "
-                    f"dropping to {instance_ladder[rung + 1]}..."
-                )
+                self.log.warning(f"Dropping from {train_instance_type} to {instance_ladder[rung + 1]}...")
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
