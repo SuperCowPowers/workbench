@@ -5,17 +5,37 @@ import re
 import time
 import logging
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 log = logging.getLogger("workbench")
 
 JOB_QUEUE = "workbench-job-queue"
-_JOB_STATUSES = ["SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING", "SUCCEEDED", "FAILED"]
+
+# Every view in here is a "what is happening now" view, so all of them are scoped to this
+# window. It also keeps the queries cheap: both AWS list calls scan history page by page.
+LOOKBACK = timedelta(hours=48)
 
 # A Batch job that trains logs one line per poll from features_to_model, which is the only
 # durable link back to SageMaker: nothing on the Batch job records what it submitted.
 _BATCH_LOG_GROUP = "/aws/batch/job"
 _TRAINING_JOB_RE = re.compile(r"Training job ([A-Za-z0-9._-]+) status")
+
+
+def _client(service: str):
+    """Boto3 client on the Workbench-assumed session. Imported lazily: the clamp pulls in core."""
+    from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+    return AWSAccountClamp().boto3_session.client(service)
+
+
+def _lookback() -> datetime:
+    """Start of the window these views cover."""
+    return datetime.now(timezone.utc) - LOOKBACK
+
+
+def _lookback_ms() -> str:
+    """Start of the window as epoch milliseconds (what the Batch and Logs APIs take)."""
+    return str(int(_lookback().timestamp() * 1000))
 
 
 def launch_batch(
@@ -69,16 +89,13 @@ def launch_batch(
 
 
 def batch_jobs(name: str = None):
-    """Recent AWS Batch jobs on the Workbench queue, newest first.
+    """AWS Batch jobs on the Workbench queue from the last LOOKBACK hours, newest first.
 
     Correlates with launch_batch: a job launched as `name="foo"` appears here as
     `workbench_foo_<timestamp>`, so pass a substring to find it.
 
-    Notes:
-        - A just-launched job takes a few seconds to appear (SQS -> Lambda ->
-          Batch), so an empty result right after a launch is normal.
-        - AWS keeps terminated jobs for a limited window (at least ~24h, often
-          several days), so this is a recent view, not full history.
+    Note: a just-launched job takes a few seconds to appear (SQS -> Lambda -> Batch), so an
+    empty result right after a launch is normal.
 
     Args:
         name (str, optional): Case-insensitive substring filter on the job name.
@@ -88,13 +105,18 @@ def batch_jobs(name: str = None):
             newest first. Empty if nothing matches.
     """
     import pandas as pd
-    from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-    batch = AWSAccountClamp().boto3_session.client("batch")
+    # An AFTER_CREATED_AT filter returns every status in one sweep (the API ignores
+    # jobStatus whenever a filter is set), so the window replaces a per-status query.
+    pages = (
+        _client("batch")
+        .get_paginator("list_jobs")
+        .paginate(jobQueue=JOB_QUEUE, filters=[{"name": "AFTER_CREATED_AT", "values": [_lookback_ms()]}])
+    )
 
     rows = []
-    for status in _JOB_STATUSES:
-        for job in batch.list_jobs(jobQueue=JOB_QUEUE, jobStatus=status).get("jobSummaryList", []):
+    for page in pages:
+        for job in page.get("jobSummaryList", []):
             started, stopped = job.get("startedAt"), job.get("stoppedAt")
             if started and stopped:
                 runtime = f"{(stopped - started) / 1000:.0f}s"
@@ -143,10 +165,7 @@ def batch_job_training_jobs(job_name: str) -> list:
         list[str]: Training job names, oldest first. Empty when the job trained nothing,
             has not started, or its logs have aged out.
     """
-    from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-
-    session = AWSAccountClamp().boto3_session
-    batch, logs = session.client("batch"), session.client("logs")
+    batch, logs = _client("batch"), _client("logs")
 
     summaries = batch.list_jobs(jobQueue=JOB_QUEUE, filters=[{"name": "JOB_NAME", "values": [job_name]}])
     summaries = summaries.get("jobSummaryList", [])
@@ -166,6 +185,7 @@ def batch_job_training_jobs(job_name: str) -> list:
             logGroupName=_BATCH_LOG_GROUP,
             logStreamNames=[stream],
             filterPattern='"Training job"',
+            startTime=int(_lookback_ms()),
             **({"nextToken": token} if token else {}),
         )
         for event in page.get("events", []):
@@ -191,17 +211,20 @@ def training_job_status(training_job_name: str) -> dict:
             or None if no training job by that name exists.
     """
     from botocore.exceptions import ClientError
-    from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-    sagemaker = AWSAccountClamp().boto3_session.client("sagemaker")
     try:
-        job = sagemaker.describe_training_job(TrainingJobName=training_job_name)
+        job = _client("sagemaker").describe_training_job(TrainingJobName=training_job_name)
     except ClientError as e:
         if e.response["Error"]["Code"] == "ValidationException":
             log.warning(f"No training job named {training_job_name!r}")
             return None
         raise
 
+    return _training_job_row(job)
+
+
+def _training_job_row(job: dict) -> dict:
+    """Flatten a describe_training_job payload into the status fields we report."""
     transitions = job.get("SecondaryStatusTransitions") or []
     current = transitions[-1] if transitions else {}
     return {
@@ -214,3 +237,32 @@ def training_job_status(training_job_name: str) -> dict:
         "message": current.get("StatusMessage", ""),
         "waiting": job["SecondaryStatus"] == "Pending",
     }
+
+
+def running_training_jobs():
+    """Every SageMaker training job currently in progress, and what each is doing.
+
+    The `waiting` column is the interesting one: those jobs are queued for AWS capacity on
+    their instance type, holding no instance and making no progress, so a nightly run that
+    never finishes usually has one of these behind it.
+
+    Returns:
+        pandas.DataFrame: training_job_status() fields as columns, capacity-blocked
+            first, then by name. Empty if nothing is in progress.
+    """
+    import pandas as pd
+
+    sagemaker = _client("sagemaker")
+    # The status filter is applied per page, so an unbounded call walks the account's whole
+    # training history a page at a time. CreationTimeAfter bounds the scan.
+    pages = sagemaker.get_paginator("list_training_jobs").paginate(
+        StatusEquals="InProgress",
+        CreationTimeAfter=_lookback(),
+        PaginationConfig={"PageSize": 100},
+    )
+    names = [summary["TrainingJobName"] for page in pages for summary in page["TrainingJobSummaries"]]
+
+    df = pd.DataFrame([_training_job_row(sagemaker.describe_training_job(TrainingJobName=n)) for n in names])
+    if df.empty:
+        return df
+    return df.sort_values(["waiting", "name"], ascending=[False, True]).reset_index(drop=True)
