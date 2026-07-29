@@ -78,7 +78,22 @@ def _curved_path(y):
     return np.concatenate(xs), np.concatenate(ys)
 
 
-def _attach_hover(fig, ax, artists: list, paths, records: list, metric: str, radius_px: float = 20.0):
+# Overlaid lines accumulate ink as 1-(1-alpha)^k, so holding the crowd's density steady
+# as trials grow means alpha ~ 1/n. Anchored where 0.35 reads well, then clamped: the cap
+# keeps small runs from going garish, the floor keeps one line from vanishing in a big one.
+_ALPHA_ANCHOR = (60, 0.35)  # (trials, opacity that reads well at that count)
+_ALPHA_LIMITS = (0.10, 0.35)
+
+
+def _line_alpha(n_trials: int) -> float:
+    """Per-line opacity for a run of this many trials."""
+    ref_trials, ref_alpha = _ALPHA_ANCHOR
+    return float(np.clip(ref_alpha * ref_trials / max(n_trials, 1), *_ALPHA_LIMITS))
+
+
+def _attach_hover(
+    fig, ax, artists: list, paths, records: list, metric: str, base_alpha: float, radius_px: float = 20.0
+):
     """Show a trial's config when the cursor is near its line, nearest line winning.
 
     Distances are measured in display pixels rather than data units, so "nearest" matches
@@ -126,7 +141,7 @@ def _attach_hover(fig, ax, artists: list, paths, records: list, metric: str, rad
         if winner == active[0]:
             return
         if active[0] is not None:
-            artists[active[0]].set(linewidth=2.2, alpha=0.35, zorder=2)
+            artists[active[0]].set(linewidth=2.2, alpha=base_alpha, zorder=2)
         if winner is None:
             note.set_visible(False)
         else:
@@ -306,10 +321,11 @@ def hpo_parallel_coordinates(
     # each axis, and splitting the population by outcome would break that read.
     # Worst first, so the better trials still land on top of the crowd.
     artists, paths, records = [], [], []
+    line_alpha = _line_alpha(len(values))
     for idx in values.sort_values(ascending=False).index:
         y = [_position(axis, knob_frame.at[idx, axis["knob"]]) for axis in axes_def]
         px, py = _path(y)
-        (artist,) = ax.plot(px, py, color=mappable.to_rgba(values[idx]), lw=2.2, alpha=0.35, zorder=2)
+        (artist,) = ax.plot(px, py, color=mappable.to_rgba(values[idx]), lw=2.2, alpha=line_alpha, zorder=2)
         artists.append(artist)
         paths.append(np.column_stack([px, py]))
         records.append(
@@ -404,7 +420,7 @@ def hpo_parallel_coordinates(
     if title is None:
         title = f"{getattr(model, 'name', 'model')} — HPO trials colored by {metric} vs baseline"
     ax.set_title(title, fontsize=14, pad=18)
-    _attach_hover(fig, ax, artists, paths, records, metric)
+    _attach_hover(fig, ax, artists, paths, records, metric, line_alpha)
 
     # Solve the layout once and freeze it. Left live, the solver re-runs on every redraw, so
     # a hover tooltip near an edge would shift the whole plot out from under the cursor.
