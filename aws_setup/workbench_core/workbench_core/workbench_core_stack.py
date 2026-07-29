@@ -737,9 +737,11 @@ class WorkbenchCoreStack(Stack):
         """
         return iam.PolicyStatement(
             # AddTags/DeleteTags: CreateTrainingJob with Tags (PRM attribution) requires AddTags
+            # StopTrainingJob: abandon a job still queued for an instance (see INSTANCE_LADDERS)
             actions=[
                 "sagemaker:CreateTrainingJob",
                 "sagemaker:DescribeTrainingJob",
+                "sagemaker:StopTrainingJob",
                 "sagemaker:AddTags",
                 "sagemaker:DeleteTags",
             ],
