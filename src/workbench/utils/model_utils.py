@@ -27,7 +27,13 @@ log = logging.getLogger("workbench")
 
 
 def model_instance_info() -> pd.DataFrame:
-    """Get the instance information for the Model"""
+    """Instance reference for the Model: hardware, us-east-1 on-demand price, and role.
+
+    Price per Hour is the rate for the instance's Usage — SageMaker charges a different
+    rate for the same instance hosting an endpoint versus running a training job. The
+    Training rows are the ladders in
+    ``workbench.core.transforms.features_to_model.INSTANCE_LADDERS``.
+    """
     data = [
         {
             "Instance Name": "ml.t2.medium",
@@ -36,6 +42,7 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.06,
             "Category": "General",
             "Architecture": "x86_64",
+            "Usage": "Hosting",
         },
         {
             "Instance Name": "ml.m7i.large",
@@ -44,6 +51,7 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.12,
             "Category": "General",
             "Architecture": "x86_64",
+            "Usage": "Hosting",
         },
         {
             "Instance Name": "ml.c7i.large",
@@ -52,6 +60,7 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.11,
             "Category": "Compute",
             "Architecture": "x86_64",
+            "Usage": "Hosting",
         },
         {
             "Instance Name": "ml.c7i.xlarge",
@@ -60,6 +69,7 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.21,
             "Category": "Compute",
             "Architecture": "x86_64",
+            "Usage": "Hosting",
         },
         {
             "Instance Name": "ml.c7g.large",
@@ -68,6 +78,7 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.09,
             "Category": "Compute",
             "Architecture": "arm64",
+            "Usage": "Hosting",
         },
         {
             "Instance Name": "ml.c7g.xlarge",
@@ -76,6 +87,52 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.17,
             "Category": "Compute",
             "Architecture": "arm64",
+            "Usage": "Hosting",
+        },
+        {
+            "Instance Name": "ml.m5.xlarge",
+            "vCPUs": 4,
+            "Memory": 16,
+            "Price per Hour": 0.23,
+            "Category": "General",
+            "Architecture": "x86_64",
+            "Usage": "Training",
+        },
+        {
+            "Instance Name": "ml.c7i.4xlarge",
+            "vCPUs": 16,
+            "Memory": 32,
+            "Price per Hour": 0.86,
+            "Category": "Compute",
+            "Architecture": "x86_64",
+            "Usage": "Training",
+        },
+        {
+            "Instance Name": "ml.g6.2xlarge",
+            "vCPUs": 8,
+            "Memory": 32,
+            "Price per Hour": 1.21,
+            "Category": "GPU",  # 1x NVIDIA L4 24GB
+            "Architecture": "x86_64",
+            "Usage": "Training",
+        },
+        {
+            "Instance Name": "ml.g6.12xlarge",
+            "vCPUs": 48,
+            "Memory": 192,
+            "Price per Hour": 5.61,
+            "Category": "GPU",  # 4x NVIDIA L4 24GB
+            "Architecture": "x86_64",
+            "Usage": "Training",
+        },
+        {
+            "Instance Name": "ml.g5.12xlarge",
+            "vCPUs": 48,
+            "Memory": 192,
+            "Price per Hour": 7.09,
+            "Category": "GPU",  # 4x NVIDIA A10G 24GB
+            "Architecture": "x86_64",
+            "Usage": "Training",
         },
     ]
     return pd.DataFrame(data)
@@ -87,12 +144,12 @@ def instance_architecture(instance_name: str) -> str:
     return info[info["Instance Name"] == instance_name]["Architecture"].values[0]
 
 
-def supported_instance_types(arch: str = "x86_64") -> list:
-    """Get the supported instance types for the Model/Model"""
+def supported_instance_types(arch: str = "x86_64", usage: str = "Hosting") -> list:
+    """Get the supported instance types for the given architecture and usage (Hosting/Training)"""
 
-    # Filter the instance types based on the architecture
     info = model_instance_info()
-    return info[info["Architecture"] == arch]["Instance Name"].tolist()
+    matches = (info["Architecture"] == arch) & (info["Usage"] == usage)
+    return info[matches]["Instance Name"].tolist()
 
 
 def get_custom_script_path(package: str, script_name: str) -> Path:
