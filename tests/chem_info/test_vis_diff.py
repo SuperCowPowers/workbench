@@ -61,11 +61,13 @@ def test_invalid_smiles_returns_none():
     assert structural_differences(CHROMIUM, "not_a_smiles") is None
 
 
-def test_diff_molecules_renders_two_panels():
-    """The side-by-side carries one SVG per molecule."""
-    svg = diff_molecules(CHROMIUM, CHROMIUM_TRIFLUORIDE, captions=["a", "b"])
+def test_diff_molecules_returns_a_showable_figure():
+    """Matches molecule_grid / neighborhood_graph so callers can just fig.show()."""
+    fig = diff_molecules(CHROMIUM, CHROMIUM_TRIFLUORIDE, captions=["a", "b"])
 
-    assert svg.count("<svg") == 2
+    assert hasattr(fig, "savefig")
+    assert len(fig.axes) == 2
+    assert [ax.get_title() for ax in fig.axes] == ["a", "b"]
 
 
 def test_diff_molecules_none_on_invalid_input():

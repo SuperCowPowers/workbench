@@ -138,9 +138,13 @@ their maximum common substructure highlighted:
 ```python
 from workbench.utils.chem_utils.vis import diff_molecules, structural_differences
 
-svg = diff_molecules(smiles_a, smiles_b, captions=[id_a, id_b])   # raw SVG markup
+fig = diff_molecules(smiles_a, smiles_b, captions=[id_a, id_b])
+fig.show()
 atoms, bonds = structural_differences(smiles_a, smiles_b)         # indices only
 ```
+
+`molecule_grid` takes the same `highlight_atoms` / `highlight_bonds` (one list per
+molecule) when you want highlighting across a larger panel.
 
 Read an **empty** highlight as a finding rather than a failure: MCS matches
 connectivity, so a pair that differs only in stereochemistry or double-bond geometry

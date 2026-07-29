@@ -323,50 +323,48 @@ def diff_molecules(
     captions: Optional[List[str]] = None,
     mol_size: int = 400,
     background: str = "rgba(255, 255, 255, 0)",
-) -> Optional[str]:
+    suptitle: str = None,
+):
     """Render two molecules side by side with everything outside their common core highlighted.
 
     The question behind a coincident pair — two structures that share a fingerprint but
     not a target value — is "what actually differs?". This answers it visually: the
     shared scaffold is drawn plainly and each molecule's unique atoms are highlighted.
 
-    Note that a pair differing only in stereochemistry or double-bond geometry highlights
-    nothing, since MCS matches connectivity. That empty result is itself the answer.
+    A pair differing only in stereochemistry or double-bond geometry highlights nothing,
+    since MCS matches connectivity. Read that empty result as the answer: extra
+    counterions and fragments light up, stereoisomers stay blank.
 
     Args:
         smiles_a: First SMILES
         smiles_b: Second SMILES
         captions: Labels drawn under each structure (typically the two compound ids)
-        mol_size: Size of each molecule panel in pixels (default: 400)
-        background: Background color (default: transparent)
+        mol_size: Rendered width of each molecule in pixels (default: 400)
+        background: Tile background as `rgba(...)`. Defaults to transparent.
+        suptitle: Figure-level title
 
     Returns:
-        Raw SVG markup of the two panels, or None if either SMILES is invalid
+        matplotlib.figure.Figure with the two panels, or None if either SMILES is
+        invalid. The caller shows or saves it: `fig.show()`, or
+        `fig.savefig(path, dpi=150, bbox_inches="tight")`.
     """
     diff_a = structural_differences(smiles_a, smiles_b)
     diff_b = structural_differences(smiles_b, smiles_a)
     if diff_a is None or diff_b is None:
         return None
 
-    captions = captions or ["", ""]
-    panels = []
-    for smiles, (atoms, bonds), caption in zip((smiles_a, smiles_b), (diff_a, diff_b), captions):
-        panels.append(
-            svg_from_smiles(
-                smiles,
-                width=mol_size,
-                height=mol_size,
-                background=background,
-                legend=caption,
-                highlight_atoms=atoms,
-                highlight_bonds=bonds,
-                encode=False,
-            )
-        )
-
-    if any(p is None for p in panels):
-        return None
-    return f'<div style="display:flex;gap:8px;flex-wrap:wrap">{"".join(panels)}</div>'
+    atoms_a, bonds_a = diff_a
+    atoms_b, bonds_b = diff_b
+    return molecule_grid(
+        [smiles_a, smiles_b],
+        captions=captions,
+        ncols=2,
+        mol_size=mol_size,
+        background=background,
+        suptitle=suptitle,
+        highlight_atoms=[atoms_a, atoms_b],
+        highlight_bonds=[bonds_a, bonds_b],
+    )
 
 
 def show(
@@ -400,6 +398,9 @@ def molecule_grid(
     mol_size: int = 400,
     background: str = "rgba(255, 255, 255, 0)",
     suptitle: str = None,
+    highlight_atoms: list = None,
+    highlight_bonds: list = None,
+    highlight_color: str = "rgba(255, 80, 80, 1)",
 ):
     """Lay out molecule structures in a labeled matplotlib grid.
 
@@ -420,6 +421,11 @@ def molecule_grid(
         background (str, optional): Tile background as `rgba(...)`. Defaults to transparent
             over the figure's white; a dark value switches RDKit to light bonds.
         suptitle (str, optional): Figure-level title.
+        highlight_atoms (list[list[int]], optional): Atom indices to highlight, one
+            list per molecule.
+        highlight_bonds (list[list[int]], optional): Bond indices to highlight, one
+            list per molecule.
+        highlight_color (str, optional): Highlight color as `rgba(...)`. Defaults to red.
 
     Returns:
         matplotlib.figure.Figure: The grid figure. The caller shows or saves it:
@@ -438,7 +444,15 @@ def molecule_grid(
         ax.axis("off")
         if i >= n:
             continue  # blank trailing cell
-        img = img_from_smiles(smiles[i], width=mol_size, height=mol_height, background=background)
+        img = img_from_smiles(
+            smiles[i],
+            width=mol_size,
+            height=mol_height,
+            background=background,
+            highlight_atoms=highlight_atoms[i] if highlight_atoms else None,
+            highlight_bonds=highlight_bonds[i] if highlight_bonds else None,
+            highlight_color=highlight_color,
+        )
         if img is not None:
             ax.imshow(img)
         else:
