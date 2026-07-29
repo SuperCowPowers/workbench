@@ -124,3 +124,26 @@ result lacks it. See the `proximity` guide.
 For an arbitrary set of structures with no query/neighbor relation (e.g. a
 top-residuals panel), `vis.molecule_grid(smiles, captions, colors)` lays them out in
 a captioned grid.
+
+## Highlighting and structure diffs
+
+`img_from_smiles` and `svg_from_smiles` take `highlight_atoms` / `highlight_bonds`
+(atom and bond indices) plus a `highlight_color`. `svg_from_smiles(..., encode=False)`
+returns raw SVG markup instead of a base64 data URI, for embedding in a report.
+
+To answer "these two structures share a fingerprint but not a target value — what
+actually differs?", `diff_molecules` draws them side by side with everything outside
+their maximum common substructure highlighted:
+
+```python
+from workbench.utils.chem_utils.vis import diff_molecules, structural_differences
+
+svg = diff_molecules(smiles_a, smiles_b, captions=[id_a, id_b])   # raw SVG markup
+atoms, bonds = structural_differences(smiles_a, smiles_b)         # indices only
+```
+
+Read an **empty** highlight as a finding rather than a failure: MCS matches
+connectivity, so a pair that differs only in stereochemistry or double-bond geometry
+highlights nothing. That distinguishes the two big classes of coincident pair — extra
+counterions and fragments light up, stereoisomers stay blank. See the `data_cleanup`
+guide.

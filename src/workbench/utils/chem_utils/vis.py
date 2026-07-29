@@ -3,9 +3,9 @@
 import logging
 import base64
 import sys
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 from rdkit import Chem
-from rdkit.Chem import AllChem, Draw
+from rdkit.Chem import AllChem, Draw, rdFMCS
 from rdkit.Chem.Draw import rdMolDraw2D
 from dash import html
 
@@ -178,7 +178,14 @@ def _configure_draw_options(options: Draw.MolDrawOptions, background: str) -> No
 
 
 def img_from_smiles(
-    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)", legend: str = None
+    smiles: str,
+    width: int = 500,
+    height: int = 500,
+    background: str = "rgba(64, 64, 64, 1)",
+    legend: str = None,
+    highlight_atoms: Optional[List[int]] = None,
+    highlight_bonds: Optional[List[int]] = None,
+    highlight_color: str = "rgba(255, 80, 80, 1)",
 ) -> Optional:
     """Generate an image of the molecule from SMILES.
 
@@ -188,6 +195,9 @@ def img_from_smiles(
         height: Height of the image in pixels (default: 500)
         background: Background color (default: dark grey)
         legend: Caption drawn under the structure, typically the compound id
+        highlight_atoms: Atom indices to highlight
+        highlight_bonds: Bond indices to highlight
+        highlight_color: Highlight color (default: red)
 
     Returns:
         PIL Image object or None if SMILES is invalid
@@ -201,11 +211,28 @@ def img_from_smiles(
     _configure_draw_options(dos, background)
 
     # Generate and return image
-    return Draw.MolToImage(mol, options=dos, size=(width, height), legend=legend or "")
+    color = _rgba_to_tuple(highlight_color)[:3]
+    return Draw.MolToImage(
+        mol,
+        options=dos,
+        size=(width, height),
+        legend=legend or "",
+        highlightAtoms=highlight_atoms,
+        highlightBonds=highlight_bonds,
+        highlightColor=color,
+    )
 
 
 def svg_from_smiles(
-    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
+    smiles: str,
+    width: int = 500,
+    height: int = 500,
+    background: str = "rgba(64, 64, 64, 1)",
+    legend: str = None,
+    highlight_atoms: Optional[List[int]] = None,
+    highlight_bonds: Optional[List[int]] = None,
+    highlight_color: str = "rgba(255, 80, 80, 1)",
+    encode: bool = True,
 ) -> Optional[str]:
     """Generate an SVG image of the molecule from SMILES.
 
@@ -214,9 +241,14 @@ def svg_from_smiles(
         width: Width of the image in pixels (default: 500)
         height: Height of the image in pixels (default: 500)
         background: Background color (default: dark grey)
+        legend: Caption drawn under the structure
+        highlight_atoms: Atom indices to highlight
+        highlight_bonds: Bond indices to highlight
+        highlight_color: Highlight color (default: red)
+        encode: Return a base64 data URI (default). False returns raw SVG markup.
 
     Returns:
-        Base64-encoded SVG data URI or None if SMILES is invalid
+        Base64-encoded SVG data URI, raw SVG markup, or None if SMILES is invalid
     """
     mol = _validate_molecule(smiles)
     if not mol:
@@ -232,13 +264,109 @@ def svg_from_smiles(
     _configure_draw_options(drawer.drawOptions(), background)
 
     # Draw molecule
-    drawer.DrawMolecule(mol)
+    color = _rgba_to_tuple(highlight_color)[:3]
+    atoms = list(highlight_atoms) if highlight_atoms else []
+    bonds = list(highlight_bonds) if highlight_bonds else []
+    rdMolDraw2D.PrepareAndDrawMolecule(
+        drawer,
+        mol,
+        legend=legend or "",
+        highlightAtoms=atoms,
+        highlightBonds=bonds,
+        highlightAtomColors={i: color for i in atoms},
+        highlightBondColors={i: color for i in bonds},
+    )
     drawer.FinishDrawing()
 
-    # Encode SVG as base64 data URI
     svg = drawer.GetDrawingText()
+    if not encode:
+        return svg
     encoded_svg = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
     return f"data:image/svg+xml;base64,{encoded_svg}"
+
+
+def structural_differences(smiles_a: str, smiles_b: str, timeout: int = 10) -> Optional[Tuple[List[int], List[int]]]:
+    """Find the atoms and bonds of `smiles_a` that are NOT in its common core with `smiles_b`.
+
+    Args:
+        smiles_a: SMILES to locate differences on
+        smiles_b: SMILES to compare against
+        timeout: Seconds to allow the MCS search (default: 10)
+
+    Returns:
+        (atom_indices, bond_indices) of the differing parts of `smiles_a`, or None if
+        either SMILES is invalid. Both lists are empty when `smiles_a` is entirely
+        contained in the common core.
+    """
+    mol_a = _validate_molecule(smiles_a)
+    mol_b = _validate_molecule(smiles_b)
+    if not mol_a or not mol_b:
+        return None
+
+    result = rdFMCS.FindMCS([mol_a, mol_b], timeout=timeout, ringMatchesRingOnly=True, completeRingsOnly=False)
+    core = Chem.MolFromSmarts(result.smartsString) if result.smartsString else None
+    match = mol_a.GetSubstructMatch(core) if core else ()
+
+    shared_atoms = set(match)
+    diff_atoms = [a.GetIdx() for a in mol_a.GetAtoms() if a.GetIdx() not in shared_atoms]
+    diff_bonds = [
+        b.GetIdx()
+        for b in mol_a.GetBonds()
+        if b.GetBeginAtomIdx() not in shared_atoms or b.GetEndAtomIdx() not in shared_atoms
+    ]
+    return diff_atoms, diff_bonds
+
+
+def diff_molecules(
+    smiles_a: str,
+    smiles_b: str,
+    captions: Optional[List[str]] = None,
+    mol_size: int = 400,
+    background: str = "rgba(255, 255, 255, 0)",
+) -> Optional[str]:
+    """Render two molecules side by side with everything outside their common core highlighted.
+
+    The question behind a coincident pair — two structures that share a fingerprint but
+    not a target value — is "what actually differs?". This answers it visually: the
+    shared scaffold is drawn plainly and each molecule's unique atoms are highlighted.
+
+    Note that a pair differing only in stereochemistry or double-bond geometry highlights
+    nothing, since MCS matches connectivity. That empty result is itself the answer.
+
+    Args:
+        smiles_a: First SMILES
+        smiles_b: Second SMILES
+        captions: Labels drawn under each structure (typically the two compound ids)
+        mol_size: Size of each molecule panel in pixels (default: 400)
+        background: Background color (default: transparent)
+
+    Returns:
+        Raw SVG markup of the two panels, or None if either SMILES is invalid
+    """
+    diff_a = structural_differences(smiles_a, smiles_b)
+    diff_b = structural_differences(smiles_b, smiles_a)
+    if diff_a is None or diff_b is None:
+        return None
+
+    captions = captions or ["", ""]
+    panels = []
+    for smiles, (atoms, bonds), caption in zip((smiles_a, smiles_b), (diff_a, diff_b), captions):
+        panels.append(
+            svg_from_smiles(
+                smiles,
+                width=mol_size,
+                height=mol_size,
+                background=background,
+                legend=caption,
+                highlight_atoms=atoms,
+                highlight_bonds=bonds,
+                encode=False,
+            )
+        )
+
+    if any(p is None for p in panels):
+        return None
+    return f'<div style="display:flex;gap:8px;flex-wrap:wrap">{"".join(panels)}</div>'
 
 
 def show(

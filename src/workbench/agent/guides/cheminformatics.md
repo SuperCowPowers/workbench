@@ -39,7 +39,12 @@ The choices that aren't obvious:
   when reporting what was computed.
 - **Largest fragment first.** Salts/counterions are stripped
   (`rdMolStandardize.LargestFragmentChooser`) before hashing, so the fingerprint
-  describes the parent, not the salt.
+  describes the parent, not the salt. For an organic drug with a counterion that's
+  what you want. For an **inorganic or multi-component record it destroys the
+  compound**: in `[Na+].[Na+].[O-][S]([O-])(=O)=O` the largest fragment is the
+  sulfate anion, so every sulfate salt in a dataset hashes identically no matter
+  which cation it carries — and the cation is what determines the property. Filter
+  these out before fingerprinting (next section); they cannot be represented.
 - **Unparseable SMILES are silently dropped** — the output can have fewer rows
   than the input. If counts don't line up, that's usually why.
 
@@ -74,6 +79,25 @@ What "standardized" means before a fingerprint or descriptor is computed:
 - `mol_tagging.py` → `tag_molecules(df)`, `filter_by_tags(...)`,
   `get_tag_summary(...)`, `admet_training_set(...)` — composition/structure/
   physchem/liability tags (PAINS and friends via RDKit FilterCatalog).
+
+**Filter before you fingerprint.** The records fingerprints cannot represent —
+inorganics, organometallics, mixtures, and lone atoms — are exactly the ones
+`curation:exclude:*` names, so drop them at the front of the pipeline rather than
+trying to clean up the collisions afterwards:
+
+```python
+tagged = tag_molecules(df)
+clean = filter_by_tags(tagged, exclude_prefix=["curation:exclude:"])
+```
+
+This is not a marginal trim. On the AqSol set it removes ~17% of rows
+(`exclude:mixture` 1098, `exclude:mw_too_low` 565, `exclude:inorganic` 325,
+`exclude:organometallic` 98) and eliminates over half of the coincident-structure
+groups outright. `admet_training_set(df)` applies the same policy in one call.
+
+One thing structural tagging can't catch: a record whose *name* says salt or mixture
+while its SMILES was recorded as the pure parent. Those pass every structural check
+and only surface as duplicate groups — see the `data_cleanup` guide.
 - `toxicity.py` → `toxic_elements(mol)`, `toxic_groups(mol)`,
   `contains_heavy_metals(mol)`, `halogen_toxicity_score(mol)` — per-molecule
   structural liability checks. These take an RDKit `Mol` (`Chem.MolFromSmiles`),

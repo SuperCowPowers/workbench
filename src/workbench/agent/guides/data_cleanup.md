@@ -10,14 +10,36 @@ Work in this order — each step changes what the next one sees:
 
 | step | finds | cost |
 |---|---|---|
+| `tag_molecules` + `filter_by_tags` | records fingerprints can't represent | one RDKit pass |
 | `target_health(df, target)` | censored / discretized / skewed target column | instant |
 | `land.duplicates()` | same structure, different answer | one NN pass |
 | `land.cliffs()` | steep target change between distinct neighbors | one NN pass |
 | `land.isolated()` | chemistry with no support in the set | free after the above |
 
-Duplicates before cliffs is not a preference. Coincident rows divide by a distance of
-zero, so their score is unbounded — on a set with duplicates they occupy every slot in
-the cliff ranking and hide the real ones.
+Two of these orderings matter. **Tagging comes first** because inorganics, mixtures and
+lone atoms collapse onto each other in fingerprint space, and left in they dominate the
+duplicate report with findings no labeling fix can touch. **Duplicates come before
+cliffs** because coincident rows divide by a distance of zero, so their score is
+unbounded — they occupy every slot in the cliff ranking and hide the real ones.
+
+## 0. Drop what can't be represented
+
+```python
+from workbench.utils.chem_utils.mol_tagging import tag_molecules, filter_by_tags, get_tag_summary
+
+tagged = tag_molecules(df)
+get_tag_summary(tagged).filter(like="curation:")          # see what's there first
+clean = filter_by_tags(tagged, exclude_prefix=["curation:exclude:"])
+```
+
+`curation:exclude:*` covers `inorganic`, `organometallic`, `mixture`, `mw_too_low`
+(lone atoms), and `mw_too_high`. On AqSol this drops ~17% of rows and removes more than
+half of the coincident groups — those groups were sulfate and carbonate salts whose
+counterion the fingerprint discards, not label noise. See the `cheminformatics` guide
+for why.
+
+Report what you dropped and why. Excluding a sixth of a dataset is a decision the user
+should see, not a silent preprocessing step.
 
 ## Getting a landscape
 
@@ -66,6 +88,13 @@ Note the limit of the `censoring` check: it fires on a *pileup* at the boundary.
 assay clipped at limits few compounds reach reports `ok` — read it alongside
 `discretization` and the reported `range` rather than on its own.
 
+On a **multi-task** FeatureSet, pass only the rows that carry the target — otherwise
+`missing` reports the shape of the blend rather than a defect:
+
+```python
+target_health(df[df["pec50"].notna()], "pec50")
+```
+
 ## 2. Duplicates
 
 ```python
@@ -87,12 +116,46 @@ them and move on. Wide groups are the real find: the same input mapped to two an
 so whatever the model learns there is noise. Aggregate to the median, or drop the group
 if the disagreement is too large to reconcile.
 
-Two caveats before calling a wide group an error:
+**Check the structures before calling a wide group an error.** Diff the members' `smiles`
+first: if they differ, the group is a fingerprint collision rather than a duplicate
+record, and collapsing it destroys a real distinction. On a diverse screening library
+this is the common case, not the exception — every coincident group in the PXR training
+set is a stereochemistry pair, so median-aggregating them would be wrong.
 
-- Morgan fingerprints don't encode chirality, so **enantiomers are coincident**. A large
-  spread between two stereoisomers may be real biology, not a bad record.
-- Salt forms and tautomers standardize to the same structure. Check `smiles` before
-  deleting anything.
+What Morgan fingerprints don't encode, in the order it bites:
+
+- **Chirality.** `[C@H](O)` and `C(O)` are coincident — a racemate and its single
+  enantiomer, or the same compound annotated to different completeness. Where the
+  FeatureSet carries an `undefined_chiral_centers` column, a `0` / `1` split across the
+  group's members identifies this immediately.
+- **Double-bond geometry.** `/C=C/` and `C=C` are coincident too, and
+  `undefined_chiral_centers` will *not* flag it — E/Z isn't a chiral center. Read the
+  SMILES for this one.
+- **Salt forms and tautomers**, which standardize to the same structure upstream.
+
+A wide spread between two genuine stereoisomers may be real biology. A wide spread
+between two records of the *same* structure is a defect. Only the second is safe to
+aggregate.
+
+To see the difference instead of reading SMILES by eye, `diff_molecules(a, b)` highlights
+everything outside the pair's common core — extra counterions and fragments light up,
+while a stereo-only pair highlights nothing. See the `plotting` guide.
+
+**Then check the names.** A group that survives step 0 and still disagrees is one of two
+things, and a `name` column tells them apart at a glance:
+
+- **Same name, different value** — a genuine curation error. On AqSol only 7 groups look
+  like this (propoxyphene, reserpine, simvastatin, rotenone, naproxen, nandrolone at
+  1–2.4 log units apart, both records reporting `sd = 0`). These are the ones to fix.
+- **Different names, one of them a salt or mixture** — `Terbinafine hydrochloride` vs
+  the free base, `niclosamide ethanolamine salt` vs `niclosamide`. The name says salt
+  but the SMILES was recorded as the pure parent, so no structural check catches it.
+  Treat as a record defect, not a measurement conflict.
+
+Where the dataset reports its own experimental error, use it. AqSol carries `sd` and
+`ocurrences` per record; 130 of its 141 wide groups disagree by more than 2× their own
+reported `sd`, which rules out replicate noise as the explanation and points at the
+structures instead.
 
 ## 3. Cliffs
 
