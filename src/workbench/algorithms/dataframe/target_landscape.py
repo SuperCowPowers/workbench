@@ -67,15 +67,21 @@ class TargetLandscape:
         df = self.prox.df
         log.info("Precomputing landscape metrics...")
 
-        # n=2 because index 0 is self
+        # n=2 so that self plus one true neighbor are always in range. A coincident
+        # duplicate ties with the row at distance 0 and can sort ahead of it, so the
+        # neighbor is "the first index that isn't this row" rather than index 1.
         X = self.prox._transform_features(df)
         distances, indices = self.prox.nn.kneighbors(X, n_neighbors=2)
 
-        df["nn_distance"] = distances[:, 1]
-        df["nn_id"] = df.iloc[indices[:, 1]][self.prox.id_column].values
+        rows = np.arange(len(df))
+        neighbor_slot = np.argmax(indices != rows[:, None], axis=1)
+        nn_rows = indices[rows, neighbor_slot]
+
+        df["nn_distance"] = distances[rows, neighbor_slot]
+        df["nn_id"] = df.iloc[nn_rows][self.prox.id_column].values
 
         if self.prox.target and self.prox.target in df.columns:
-            nn_target_values = df.iloc[indices[:, 1]][self.prox.target].values
+            nn_target_values = df.iloc[nn_rows][self.prox.target].values
             df["nn_target"] = nn_target_values
             df["nn_target_diff"] = np.abs(df[self.prox.target].values - nn_target_values)
             self.target_range = df[self.prox.target].max() - df[self.prox.target].min()
