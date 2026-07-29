@@ -69,8 +69,14 @@ def audit_all(reports: Reports, endpoint_map: dict, model_names: set) -> dict:
         name = location.removeprefix(CONTEST_PREFIX)
         df = reports.get(location)
         if df is None or df.empty:
-            results[name] = {"endpoint": None, "champion": None, "challengers": 0,
-                             "contested": False, "scored": None, "issues": ["empty report"]}
+            results[name] = {
+                "endpoint": None,
+                "champion": None,
+                "challengers": 0,
+                "contested": False,
+                "scored": None,
+                "issues": ["empty report"],
+            }
             continue
         results[name] = audit_contest(df, endpoint_map, model_names)
     return results
