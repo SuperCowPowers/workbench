@@ -38,7 +38,7 @@ TRAIN_STORE_KEY = "/workbench/datasets/open_admet_rx_train_featurized"
 # Feature endpoints: 2D descriptors for the model feature space, fingerprints for
 # the FeatureSet's compressed column (proximity/neighbor work downstream).
 FEATURE_ENDPOINT = "smiles-to-2d-v1"
-FINGERPRINT_ENDPOINT = "smiles-to-fingerprints-v0"
+FINGERPRINT_ENDPOINT = "smiles-to-fingerprints-v1"
 
 # Log transformation config from the OpenADMET tutorial.
 # Applied as log10((value + 1) * multiplier); multiplier converts uM -> M.

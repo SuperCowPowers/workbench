@@ -13,7 +13,7 @@ Models:
     - aqsol-mol-regression
     - aqsol-mol-class
     - smiles-to-2d-v1
-    - smiles-to-fingerprints-v0
+    - smiles-to-fingerprints-v1
     - tautomerize-v0
 
 Endpoints:
@@ -22,7 +22,7 @@ Endpoints:
     - aqsol-mol-regression
     - aqsol-mol-class
     - smiles-to-2d-v1
-    - smiles-to-fingerprints-v0
+    - smiles-to-fingerprints-v1
     - tautomerize-v0
 """
 
@@ -198,11 +198,11 @@ if __name__ == "__main__":
         )
 
     # An Transformer Model/Endpoint that computes Fingerprints
-    if recreate or not Model("smiles-to-fingerprints-v0").exists():
+    if recreate or not Model("smiles-to-fingerprints-v1").exists():
         script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-fingerprints-v0",
+            name="smiles-to-fingerprints-v1",
             model_type=ModelType.TRANSFORMER,
             model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
@@ -219,8 +219,8 @@ if __name__ == "__main__":
         # Run inference on the endpoint
         end.test_inference()
 
-    if recreate or not Endpoint("smiles-to-fingerprints-v0").exists():
-        m = Model("smiles-to-fingerprints-v0")
+    if recreate or not Endpoint("smiles-to-fingerprints-v1").exists():
+        m = Model("smiles-to-fingerprints-v1")
         end = m.to_endpoint(tags=["smiles", "morgan fingerprints"])
 
         # Run inference on the endpoint
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     if recreate or not FeatureSet("aqsol_fingerprints").exists():
 
         # Run the smiles through the fingerprint feature endpoint
-        end = Endpoint("smiles-to-fingerprints-v0")
+        end = Endpoint("smiles-to-fingerprints-v1")
         feature_set = FeatureSet("aqsol_features")
         input_df = feature_set.pull_dataframe()
         fingerprint_df = end.inference(input_df)
