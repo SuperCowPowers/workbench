@@ -29,36 +29,35 @@ from workbench.endpoints.chemprop_utils import create_molecule_datapoints, predi
 def load_foundation_weights(from_foundation: str) -> tuple:
     """Load pretrained MPNN weights from a foundation model.
 
+    Registered names (see :mod:`workbench.training.foundation_models`) resolve
+    through the local cache, then the staged copy in the Workbench bucket, then
+    the public origin URL as a last resort — so a fresh training container does
+    not depend on a public host being up.
+
     Args:
-        from_foundation: "CheMeleon" or a path to a .pt file.
+        from_foundation: A registered foundation name ("CheMeleon") or a path to
+            a local .pt file.
 
     Returns:
         tuple: (message_passing, aggregation) modules.
     """
-    import urllib.request
-    from pathlib import Path
+    from workbench.training.foundation_models import FOUNDATION_MODELS, resolve_foundation_checkpoint
 
     print(f"Loading foundation model: {from_foundation}")
 
-    if from_foundation.lower() == "chemeleon":
-        # Download from Zenodo if not cached
-        cache_dir = Path.home() / ".chemprop" / "foundation"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        chemeleon_path = cache_dir / "chemeleon_mp.pt"
-
-        if not chemeleon_path.exists():
-            print("  Downloading CheMeleon weights from Zenodo...")
-            urllib.request.urlretrieve("https://zenodo.org/records/15460715/files/chemeleon_mp.pt", chemeleon_path)
-            print(f"  Downloaded to {chemeleon_path}")
-
-        ckpt = torch.load(chemeleon_path, weights_only=True)
+    if from_foundation.lower() in FOUNDATION_MODELS:
+        ckpt_path = resolve_foundation_checkpoint(from_foundation)
+        ckpt = torch.load(ckpt_path, weights_only=True)
         mp = nn.BondMessagePassing(**ckpt["hyper_parameters"])
         mp.load_state_dict(ckpt["state_dict"])
-        print(f"  Loaded CheMeleon MPNN (hidden_dim={mp.output_dim})")
+        print(f"  Loaded {from_foundation} MPNN (hidden_dim={mp.output_dim})")
         return mp, nn.MeanAggregation()
 
     if not os.path.exists(from_foundation):
-        raise ValueError(f"Foundation model not found: {from_foundation}. Use 'CheMeleon' or a valid .pt path.")
+        raise ValueError(
+            f"Foundation model not found: {from_foundation}. "
+            f"Use one of {sorted(FOUNDATION_MODELS)} or a valid .pt path."
+        )
 
     ckpt = torch.load(from_foundation, weights_only=False)
     if "hyper_parameters" in ckpt and "state_dict" in ckpt:

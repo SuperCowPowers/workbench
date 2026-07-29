@@ -60,24 +60,25 @@ _SEARCH_GROUPS = {
 # Knobs outside the default space — the working list for when this is revisited, ordered by
 # expected payoff. The full cross-file backlog (infra + correctness items too) lives in the
 # "Backlog / follow-ups" section of docs/planning/hpo_support.md; this comment covers only
-# the search-space knobs. Capacity search (the `basic` group) is a modest lever: Yang et
-# al. 2019 measured ~2-5% from HPO on most datasets, and on AqSol the search drove
-# capacity to the floor for a small win. The bigger remaining lever is featurization — and
-# ensembling, which the n_folds publish already captures.
+# the search-space knobs. The optimizer group carries the search: `max_lr` holds 0.46-0.64 of
+# the knob importance in every run so far, `hidden_dim` and `batch_size` behind it, the FFN
+# head second-order. Capacity search alone is a modest lever — Yang et al. 2019 measured
+# ~2-5% from HPO on most datasets. Ensembling is the big one, and the n_folds publish already
+# captures it.
 #
-#   * featurization (atom-featurizer mode ORGANIC; RIGR for small datasets) — the biggest
-#     untapped lever and not even in chemprop's "all" keyword. A template featurizer swap,
-#     not a search range, so it lands as its own feature rather than a knob here.
 #   * `dropout` — chemprop searches it ({0.0,0.05,…,0.4}) and ensemble-scored trials can now
 #     select it honestly (a regularization knob is only meaningful against the ensemble it
 #     ships in). Low priority — coupled to the ensemble, small effect.
+#   * featurization (atom-featurizer mode ORGANIC; RIGR for small datasets) — not in
+#     chemprop's "all" keyword, and a template featurizer swap rather than a search range, so
+#     it lands as its own feature. RIGR's invariances don't suit ADMET endpoints.
 #   * `aggregation` (mean/sum/norm) — searchable in chemprop but unreachable from here:
 #     `chemprop_core.build_mpnn_model` constructs `NormAggregation` directly, so tuning it
 #     requires a model-construction change first.
 #   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword; smallest
 #     expected effect.
 #
-# Each added knob costs trials: the default space is already 7-dimensional, pruning reserves
+# Each added knob costs trials: the default space is already 6-dimensional, pruning reserves
 # the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines, and every trial trains a
 # full ensemble.
 
