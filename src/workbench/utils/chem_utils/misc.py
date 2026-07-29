@@ -48,35 +48,35 @@ def rollup_experimental_data(
 
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     """
-    Convert a pandas Series of concentrations in µM (micromolar) to their logarithmic values (log10).
+    Convert a pandas Series of concentrations in µM (micromolar) to log10 mol/L.
+
+    LogS = log10(µM + 1) - 6
+
+    The +1 pseudo-count is the community convention: it keeps 0 µM finite (-6) and is
+    negligible above ~100 µM, at the cost of compressing the sub-µM decade.
 
     Parameters:
-    series_uM (pd.Series): Series of concentrations in micromolar.
+    series_µM (pd.Series): Series of concentrations in micromolar.
 
     Returns:
-    pd.Series: Series of logarithmic values (log10).
+    pd.Series: Series of log10 mol/L values.
     """
-    # Replace 0 or negative values with a small number to avoid log errors
-    adjusted_series = series_µM.clip(lower=1e-9)  # Alignment with another project
-
-    series_mol_per_l = adjusted_series * 1e-6  # Convert µM/L to mol/L
-    log_series = np.log10(series_mol_per_l)
-    return log_series
+    return np.log10(series_µM.clip(lower=0) + 1.0) - 6.0
 
 
 def log_to_micromolar(log_series: pd.Series) -> pd.Series:
     """
-    Convert a pandas Series of logarithmic values (log10) back to concentrations in µM (micromolar).
+    Convert a pandas Series of log10 mol/L values back to concentrations in µM (micromolar).
+
+    µM = 10^(LogS + 6) - 1
 
     Parameters:
-    log_series (pd.Series): Series of logarithmic values (log10).
+    log_series (pd.Series): Series of log10 mol/L values.
 
     Returns:
     pd.Series: Series of concentrations in micromolar.
     """
-    series_mol_per_l = 10**log_series  # Convert log10 back to mol/L
-    series_µM = series_mol_per_l * 1e6  # Convert mol/L to µM
-    return series_µM
+    return 10 ** (log_series + 6.0) - 1.0
 
 
 def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: Optional[List[str]] = None) -> None:
