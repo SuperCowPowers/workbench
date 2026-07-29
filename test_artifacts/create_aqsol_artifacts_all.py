@@ -6,24 +6,28 @@ DataSources:
 FeatureSets:
     - aqsol_features
     - aqsol_mol_descriptors
+    - aqsol_fingerprints
 
 Models:
     - aqsol-regression
     - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-2d-v1
-    - smiles-to-fingerprints-v1
-    - tautomerize-v0
+    - aqsol-fingerprints
+    - aqsol-fingerprints-plus
+    - aqsol-fingerprints-plus-class
 
 Endpoints:
     - aqsol-regression
     - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-2d-v1
-    - smiles-to-fingerprints-v1
-    - tautomerize-v0
+    - aqsol-fingerprints
+    - aqsol-fingerprints-plus
+    - aqsol-fingerprints-plus-class
+
+The smiles-to-2d-v1 and smiles-to-fingerprints-v1 feature endpoints are assumed to
+exist; they are deployed from feature_endpoints/.
 """
 
 import logging
@@ -31,7 +35,6 @@ import pandas as pd
 
 from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
-from workbench.utils.model_utils import get_custom_script_path
 
 log = logging.getLogger("workbench")
 
@@ -183,50 +186,8 @@ if __name__ == "__main__":
         # Run inference on the endpoint
         end.test_inference()
 
-    # A 'Model' to Compute Molecular Descriptors Features
-    if recreate or not Model("smiles-to-2d-v1").exists():
-        script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
-        feature_set = FeatureSet("aqsol_features")
-        feature_set.to_model(
-            name="smiles-to-2d-v1",
-            model_type=ModelType.TRANSFORMER,
-            model_framework=ModelFramework.TRANSFORMER,
-            feature_list=["smiles"],
-            description="Smiles to Molecular Descriptors",
-            tags=["smiles", "molecular descriptors", "stereo"],
-            custom_script=script_path,
-        )
-
-    # An Transformer Model/Endpoint that computes Fingerprints
-    if recreate or not Model("smiles-to-fingerprints-v1").exists():
-        script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
-        feature_set = FeatureSet("aqsol_features")
-        feature_set.to_model(
-            name="smiles-to-fingerprints-v1",
-            model_type=ModelType.TRANSFORMER,
-            model_framework=ModelFramework.TRANSFORMER,
-            feature_list=["smiles"],
-            description="Smiles to Morgan Fingerprints",
-            tags=["smiles", "morgan fingerprints"],
-            custom_script=script_path,
-        )
-
-    # Endpoints for our Transformer/Custom Models
-    if recreate or not Endpoint("smiles-to-2d-v1").exists():
-        m = Model("smiles-to-2d-v1")
-        end = m.to_endpoint(tags=["smiles", "molecular descriptors", "stereo"])
-
-        # Run inference on the endpoint
-        end.test_inference()
-
-    if recreate or not Endpoint("smiles-to-fingerprints-v1").exists():
-        m = Model("smiles-to-fingerprints-v1")
-        end = m.to_endpoint(tags=["smiles", "morgan fingerprints"])
-
-        # Run inference on the endpoint
-        end.test_inference()
-
-    # Fingerprint FeatureSet
+    # Fingerprint FeatureSet (consumes the smiles-to-fingerprints-v1 feature endpoint,
+    # which is deployed from feature_endpoints/smiles_to_fingerprints_v1.py)
     if recreate or not FeatureSet("aqsol_fingerprints").exists():
 
         # Run the smiles through the fingerprint feature endpoint
