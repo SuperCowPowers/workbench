@@ -171,7 +171,7 @@ Foundation models start from pretrained MPNN weights instead of random initializ
 
 ### CheMeleon
 
-Workbench supports [CheMeleon](https://github.com/JacksonBurns/chemeleon), a foundation model pretrained on 1M PubChem molecules to predict Mordred molecular descriptors. The pretrained weights are automatically downloaded on first use.
+Workbench supports [CheMeleon](https://github.com/JacksonBurns/chemeleon), a foundation model pretrained on 1M PubChem molecules to predict Mordred molecular descriptors. The pretrained weights are fetched on first use (see [Foundation Weight Storage](#foundation-weight-storage)).
 
 ```python
 model = feature_set.to_model(
@@ -256,7 +256,7 @@ model = feature_set.to_model(
 
 ### Custom Pretrained Weights
 
-You can also provide your own pretrained ChemProp model:
+You can also provide your own pretrained ChemProp model, either as a local `.pt` path or as an `s3://` URI:
 
 ```python
 hyperparameters={
@@ -265,6 +265,29 @@ hyperparameters={
     "max_epochs": 50,
 }
 ```
+
+```python
+hyperparameters={
+    "from_foundation": "s3://my-bucket/foundation-models/my_pretrained_model.pt",
+    "max_epochs": 50,
+}
+```
+
+### Foundation Weight Storage
+
+Registered foundation names (`"CheMeleon"`) resolve through three rungs, in order:
+
+1. **Local cache** — `~/.chemprop/foundation/`
+2. **Workbench bucket** — `s3://$WORKBENCH_BUCKET/foundation-models/<model>/<release>/<file>.pt`
+3. **Public origin URL** — last resort, logs a warning
+
+Training jobs receive `WORKBENCH_BUCKET` from the container environment, so rung 2 works out of the box once the weights are staged. Stage them with:
+
+```bash
+python scripts/admin/push_chemeleon_models.py
+```
+
+The script verifies size and checksum against the registry in `src/workbench/training/foundation_models.py`, confirms the file loads as a ChemProp checkpoint, then uploads the `.pt` plus a `SOURCE.json` provenance sidecar. Run with `--dry-run` to preview and `--force` to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.
 
 ## Hyperparameters
 
@@ -352,7 +375,7 @@ All ChemProp model types share a common set of tunable hyperparameters:
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">from_foundation</td>
       <td style="padding: 8px 16px;">None</td>
-      <td style="padding: 8px 16px;">"CheMeleon" or path to pretrained .pt file</td>
+      <td style="padding: 8px 16px;">"CheMeleon", an s3:// URI, or a path to a pretrained .pt file</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">freeze_mpnn_epochs</td>

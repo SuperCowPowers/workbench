@@ -8,6 +8,10 @@ CheMeleon is a descriptor-based foundation model pretrained on 1M PubChem molecu
 to predict Mordred molecular descriptors. This gives the MPNN a strong prior for
 molecular representation learning.
 
+Weights resolve from the local cache, then the Workbench bucket, then the public
+origin URL. Stage them in your bucket with scripts/admin/push_chemeleon_models.py
+so training jobs never reach the public internet.
+
 References:
 - CheMeleon: https://github.com/JacksonBurns/chemeleon
 - Paper: https://arxiv.org/abs/2506.15792
@@ -200,7 +204,7 @@ if recreate or not Model("my-custom-foundation-model").exists():
         feature_list=["smiles"],
         description="Fine-tuned from custom pretrained model",
         hyperparameters={
-            "from_foundation": "/path/to/my_pretrained_model.pt",  # Path to .pt file
+            "from_foundation": "/path/to/my_pretrained_model.pt",  # Local .pt path or an s3:// URI
             "freeze_mpnn_epochs": 5,
             "max_epochs": 50,
         },

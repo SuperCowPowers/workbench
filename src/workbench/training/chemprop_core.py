@@ -35,15 +35,23 @@ def load_foundation_weights(from_foundation: str) -> tuple:
     not depend on a public host being up.
 
     Args:
-        from_foundation: A registered foundation name ("CheMeleon") or a path to
-            a local .pt file.
+        from_foundation: A registered foundation name ("CheMeleon"), an ``s3://``
+            URI of a staged checkpoint, or a path to a local .pt file.
 
     Returns:
         tuple: (message_passing, aggregation) modules.
     """
-    from workbench.training.foundation_models import FOUNDATION_MODELS, resolve_foundation_checkpoint
+    from workbench.training.foundation_models import (
+        FOUNDATION_MODELS,
+        fetch_s3_checkpoint,
+        resolve_foundation_checkpoint,
+    )
 
     print(f"Loading foundation model: {from_foundation}")
+
+    # An explicit s3:// URI: pull it local, then fall through to the file branches below
+    if from_foundation.startswith("s3://"):
+        from_foundation = str(fetch_s3_checkpoint(from_foundation))
 
     if from_foundation.lower() in FOUNDATION_MODELS:
         ckpt_path = resolve_foundation_checkpoint(from_foundation)

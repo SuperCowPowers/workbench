@@ -340,6 +340,9 @@ class FeaturesToModel(Transform):
         # and then bundles inference code/metadata into the model artifacts
         self.model_trainer = ModelTrainer(
             training_image=image,
+            # The image carries no site config, so hand the container the bucket it needs
+            # (chemprop foundation weights, df_store, ...) explicitly.
+            environment={"WORKBENCH_BUCKET": self.workbench_bucket},
             source_code=SourceCode(
                 source_dir=source_dir,
                 command=f"python training_harness.py {entry_point}",
