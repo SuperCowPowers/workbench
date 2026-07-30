@@ -13,6 +13,12 @@ set -e
 # Source is installed via `pip install --no-deps <workbench>` so the layer also
 # carries workbench's dist metadata -- the version banner reports the real
 # version instead of "unknown".
+#
+# The workbench version is pinned (WORKBENCH_VERSION), matching how the ML
+# pipeline image pins it, so a build is reproducible from its inputs alone.
+# --local builds from the working tree instead, for testing layer-carried changes
+# before a release; those publish to a separate "-dev" layer that is NOT made
+# public, keeping unreleased source off the shared layer.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 WORKBENCH_ROOT="$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)"
@@ -20,6 +26,7 @@ WORKBENCH_ROOT="$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)"
 AWS_ACCOUNT_ID="507740646243"
 REGION_LIST=("us-east-1" "us-west-2")
 PYTHON_VERSION="3.12"
+WORKBENCH_VERSION="0.8.438"   # keep in lockstep with the image's ARG WORKBENCH_VERSION
 LAMBDA_ARCH="manylinux2014_x86_64"
 
 GREEN='\033[0;32m'
@@ -27,20 +34,25 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 usage() {
-  echo "Usage: $(basename "$0") [--deploy] [--python-version X.Y]"
-  echo "  (default) build the layer zip locally"
+  echo "Usage: $(basename "$0") [--deploy] [--local] [--python-version X.Y] [--workbench-version X.Y.Z]"
+  echo "  (default) build the layer zip from workbench==$WORKBENCH_VERSION (PyPI)"
   echo "  --deploy             publish to AWS Lambda in: ${REGION_LIST[*]} (requires AWS_PROFILE)"
+  echo "  --local              build from the working tree; publishes to a private '-dev' layer"
   echo "  --python-version     target Python (default: $PYTHON_VERSION)"
+  echo "  --workbench-version  workbench release to bundle (default: $WORKBENCH_VERSION)"
   exit 1
 }
 
 DEPLOY=false
+LOCAL=false
 while [ $# -gt 0 ]; do
   case $1 in
-    --deploy)         DEPLOY=true ;;
-    --python-version) PYTHON_VERSION=$2; shift ;;
-    -h|--help)        usage ;;
-    *)                echo "Unknown option: $1" && usage ;;
+    --deploy)            DEPLOY=true ;;
+    --local)             LOCAL=true ;;
+    --python-version)    PYTHON_VERSION=$2; shift ;;
+    --workbench-version) WORKBENCH_VERSION=$2; shift ;;
+    -h|--help)           usage ;;
+    *)                   echo "Unknown option: $1" && usage ;;
   esac
   shift
 done
@@ -57,14 +69,22 @@ fi
 # -- build --------------------------------------------------------------------
 echo "======================================"
 echo -e "${YELLOW}🏗️  Building workbench Lambda layer ($PYVER_TAG)${NC}"
+if [ "$LOCAL" = true ]; then
+  echo -e "${YELLOW}⚠️   --local: building from the working tree, not a release${NC}"
+fi
 echo "======================================"
 
 rm -rf "$BUILD_DIR" "$ZIP_PATH"
 mkdir -p "$PY_DIR"
 
 # All workbench source (+ dist metadata), no third-party deps.
-echo "Installing workbench source (--no-deps)..."
-pip install --no-deps --target "$PY_DIR" "$WORKBENCH_ROOT"
+if [ "$LOCAL" = true ]; then
+  WORKBENCH_SPEC="$WORKBENCH_ROOT"
+else
+  WORKBENCH_SPEC="workbench==$WORKBENCH_VERSION"
+fi
+echo "Installing workbench source (--no-deps): $WORKBENCH_SPEC"
+pip install --no-deps --target "$PY_DIR" "$WORKBENCH_SPEC"
 
 # Only the allowlisted deps, as Lambda-target wheels.
 echo "Installing bundled deps for $PYVER_TAG / $LAMBDA_ARCH..."
@@ -94,15 +114,23 @@ echo "======================================"
 echo "🚀  Publishing layer to: ${REGION_LIST[*]}"
 echo "======================================"
 
-for region in "${REGION_LIST[@]}"; do
+if [ "$LOCAL" = true ]; then
+  NAME_SUFFIX="dev"                    # working-tree source stays off the shared layer
+  DESCRIPTION="workbench working-tree build (unreleased)"
+else
   # -wip suffix while the layer's contents are churning -- keeps the rapid version
   # bumps off the "real" layer name. Drop -wip once the contents settle.
-  layer_name="workbench-lambda-layer-${region}-${PYVER_TAG}-wip"
+  NAME_SUFFIX="wip"
+  DESCRIPTION="workbench $WORKBENCH_VERSION + networkx + pandas (boto3 from runtime)"
+fi
+
+for region in "${REGION_LIST[@]}"; do
+  layer_name="workbench-lambda-layer-${region}-${PYVER_TAG}-${NAME_SUFFIX}"
   echo "Publishing $layer_name in $region..."
 
   version=$(aws lambda publish-layer-version \
     --layer-name "$layer_name" \
-    --description "workbench source + networkx + pandas (boto3 from runtime)" \
+    --description "$DESCRIPTION" \
     --zip-file "fileb://$ZIP_PATH" \
     --compatible-runtimes "python${PYTHON_VERSION}" \
     --compatible-architectures x86_64 \
@@ -111,20 +139,26 @@ for region in "${REGION_LIST[@]}"; do
     --query Version --output text)
 
   # Make the layer version readable by any account, so clients attach it by ARN
-  # without us granting per-account permissions.
-  aws lambda add-layer-version-permission \
-    --layer-name "$layer_name" \
-    --version-number "$version" \
-    --statement-id public-read \
-    --principal '*' \
-    --action lambda:GetLayerVersion \
-    --region "$region" \
-    --profile "$AWS_PROFILE" >/dev/null
+  # without us granting per-account permissions. A --local build stays private.
+  if [ "$LOCAL" = false ]; then
+    aws lambda add-layer-version-permission \
+      --layer-name "$layer_name" \
+      --version-number "$version" \
+      --statement-id public-read \
+      --principal '*' \
+      --action lambda:GetLayerVersion \
+      --region "$region" \
+      --profile "$AWS_PROFILE" >/dev/null
+  fi
 
   arn="arn:aws:lambda:${region}:${AWS_ACCOUNT_ID}:layer:${layer_name}:${version}"
   echo -e "${GREEN}✅  $arn${NC}"
 done
 
 echo "======================================"
-echo -e "${GREEN}✅  Publish complete. Update docs/lambda_layer/index.md with the ARNs above.${NC}"
+if [ "$LOCAL" = true ]; then
+  echo -e "${GREEN}✅  Publish complete (private -dev layer, not for docs).${NC}"
+else
+  echo -e "${GREEN}✅  Publish complete. Update docs/lambda_layer/index.md with the ARNs above.${NC}"
+fi
 echo "======================================"

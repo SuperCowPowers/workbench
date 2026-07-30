@@ -22,9 +22,22 @@ which fails if any `lambda_layer` module imports outside the budget.
 AWS_PROFILE=<profile> ./build_deploy.sh --deploy   # publish to us-east-1, us-west-2
 ```
 
+The bundled workbench is pinned by `WORKBENCH_VERSION` in `build_deploy.sh` and
+installed from PyPI, so a build is reproducible from its inputs. Keep that pin in
+lockstep with the ML pipeline image's `ARG WORKBENCH_VERSION`; `--workbench-version`
+overrides it for a one-off build.
+
 Published layer versions are made public (`lambda:GetLayerVersion` to `*`), so
 client accounts attach them by ARN with no per-account permission grants. After
 `--deploy`, copy the printed ARNs into [`docs/lambda_layer/index.md`](../docs/lambda_layer/index.md).
+
+To test a layer-carried change before it's released, `--local` builds from the
+working tree instead. Those publish to a separate `-dev` layer name and are **not**
+made public, so unreleased source never lands on the shared layer:
+
+```bash
+AWS_PROFILE=<profile> ./build_deploy.sh --local --deploy
+```
 
 ## Using it from a lambda
 
