@@ -73,8 +73,8 @@ one it ties up the session for the whole train.
   endpoint.
 - Set `hyperparameters={"uq_version": "v1"}` on new models — strongest
   uncertainty quantification and keeps comparisons consistent.
-- Check `fs.columns` (a property) and `fs.column_details()` before choosing a
-  `feature_list`. Don't guess column names.
+- Check `fs.columns` (a property), or pull a DataFrame and read `df.dtypes`,
+  before choosing a `feature_list`. Don't guess column names.
 
 ## Weights, validation, and exclusions
 

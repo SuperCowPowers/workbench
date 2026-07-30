@@ -62,14 +62,10 @@ checked" — read it as healthy.
 
 ```python
 fs = FeatureSet("aqsol_features")
-fs.columns                # property, not a method
-fs.column_details()      # names + types
-fs.pull_dataframe()      # the whole thing -- check row count first
-fs.query("SELECT ... FROM ...")   # Athena, for anything large
+df = fs.pull_dataframe()   # then pandas for everything else
 ```
 
-Prefer `query()` over `pull_dataframe()` when the FeatureSet is big; pulling a
-million rows into the REPL to compute a mean wastes minutes.
+Same call on a DataSource. See `data_and_features`.
 
 ## Models
 

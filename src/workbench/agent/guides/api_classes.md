@@ -46,8 +46,8 @@ art.health_check()     # [] means healthy
 art.delete()
 ```
 
-DataSource and FeatureSet also share their data accessors — `columns`,
-`column_details()`, `pull_dataframe()`, `query()`.
+DataSource and FeatureSet share the rest of their API too — same `columns`, same
+`pull_dataframe()`.
 
 ## DataFrame in, DataFrame out
 

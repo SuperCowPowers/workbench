@@ -56,7 +56,7 @@ Plot what the model actually produced rather than recomputing it:
 model = Model("pxr-reg-chemprop")
 df = model.get_inference_predictions()      # has the target and prediction columns
 fs = FeatureSet("aqsol_features")
-df = fs.pull_dataframe()                # or fs.query(...) if it is large
+df = fs.pull_dataframe()
 ```
 
 Check the column names before plotting — don't guess which column holds the
