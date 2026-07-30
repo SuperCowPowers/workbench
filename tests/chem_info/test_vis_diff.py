@@ -3,6 +3,7 @@
 from workbench.utils.chem_utils.vis import (
     diff_molecules,
     img_from_smiles,
+    stereo_differences,
     structural_differences,
     svg_from_smiles,
 )
@@ -14,6 +15,19 @@ CHROMIUM_TRIFLUORIDE = "[F].[F].[F].[Cr]"
 # Bupivacaine, defined vs undefined stereocenter.
 STEREO_DEFINED = "CCCCN1CCCC[C@H]1C(=O)NC1=C(C)C=CC=C1C"
 STEREO_UNDEFINED = "CCCCN1CCCCC1C(=O)NC1=C(C)C=CC=C1C"
+
+# Alanine enantiomers, and 2-butene geometry.
+L_ALANINE = "C[C@H](N)C(=O)O"
+D_ALANINE = "C[C@@H](N)C(=O)O"
+TRANS_BUTENE = r"C/C=C/C"
+CIS_BUTENE = r"C/C=C\C"
+
+# Tartaric acid: two centers on a symmetric skeleton. The meso form written from either
+# end is the same molecule with its R/S centers swapped in index order.
+MESO_TARTARIC = "O[C@@H](C(=O)O)[C@H](O)C(=O)O"
+MESO_TARTARIC_REVERSED = "O[C@H](C(=O)O)[C@@H](O)C(=O)O"
+RR_TARTARIC = "O[C@@H](C(=O)O)[C@@H](O)C(=O)O"
+SS_TARTARIC = "O[C@H](C(=O)O)[C@H](O)C(=O)O"
 
 
 def test_extra_fragments_are_reported_as_differences():
@@ -38,13 +52,62 @@ def test_counterions_are_the_difference_between_two_salts():
     assert len(atoms) == 2  # the two sodiums
 
 
-def test_stereo_only_pair_highlights_nothing():
-    """MCS matches connectivity, so a stereo-only difference is invisible here.
-
-    This is documented behavior, and the empty result is itself diagnostic: a
-    coincident pair with no structural diff differs only in stereo or geometry.
-    """
+def test_stereo_only_pair_has_no_structural_difference():
+    """MCS matches connectivity, so a stereo-only pair is identical to it."""
     assert structural_differences(STEREO_DEFINED, STEREO_UNDEFINED) == ([], [])
+
+
+def test_enantiomers_differ_at_the_stereocenter():
+    """Opposite R/S on the same skeleton flags the center atom and nothing else."""
+    atoms, bonds = stereo_differences(L_ALANINE, D_ALANINE)
+
+    assert atoms == [1]  # the alpha carbon
+    assert bonds == []
+
+
+def test_undefined_stereocenter_counts_as_a_difference():
+    """Assigned versus undefined is a real difference, not a match."""
+    atoms, _ = stereo_differences(STEREO_DEFINED, STEREO_UNDEFINED)
+
+    assert len(atoms) == 1
+
+
+def test_double_bond_geometry_is_reported_as_a_bond():
+    """E versus Z flags the double bond rather than an atom."""
+    atoms, bonds = stereo_differences(TRANS_BUTENE, CIS_BUTENE)
+
+    assert atoms == []
+    assert len(bonds) == 1
+
+
+def test_symmetric_molecule_does_not_differ_from_itself():
+    """A symmetric skeleton maps on several ways; the wrong one invents a difference."""
+    assert stereo_differences(MESO_TARTARIC, MESO_TARTARIC_REVERSED) == ([], [])
+
+
+def test_both_centers_flip_between_enantiomers():
+    """(R,R) versus (S,S) differs at both centers, not one."""
+    atoms, _ = stereo_differences(RR_TARTARIC, SS_TARTARIC)
+
+    assert len(atoms) == 2
+
+
+def test_diastereomers_differ_at_one_center():
+    """(R,R) versus meso shares a center, so only the other one is flagged."""
+    atoms, _ = stereo_differences(RR_TARTARIC, MESO_TARTARIC)
+
+    assert len(atoms) == 1
+
+
+def test_connectivity_change_is_not_a_stereo_difference():
+    """The two comparisons stay independent — an amine swap carries no stereo."""
+    assert stereo_differences("c1ccccc1CCO", "c1ccccc1CCN") == ([], [])
+
+
+def test_stereo_differences_invalid_smiles_returns_none():
+    """Matches structural_differences: None rather than raising."""
+    assert stereo_differences("not_a_smiles", CHROMIUM) is None
+    assert stereo_differences(CHROMIUM, "not_a_smiles") is None
 
 
 def test_substituent_change_reports_atom_and_bond():
@@ -68,6 +131,13 @@ def test_diff_molecules_returns_a_showable_figure():
     assert hasattr(fig, "savefig")
     assert len(fig.axes) == 2
     assert [ax.get_title() for ax in fig.axes] == ["a", "b"]
+
+
+def test_diff_molecules_renders_a_stereo_only_pair():
+    """Enantiomers reach the renderer; what gets highlighted is covered by the diff tests."""
+    fig = diff_molecules(L_ALANINE, D_ALANINE, captions=["L", "D"])
+
+    assert len(fig.axes) == 2
 
 
 def test_diff_molecules_none_on_invalid_input():

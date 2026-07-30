@@ -136,18 +136,19 @@ actually differs?", `diff_molecules` draws them side by side with everything out
 their maximum common substructure highlighted:
 
 ```python
-from workbench.utils.chem_utils.vis import diff_molecules, structural_differences
+from workbench.utils.chem_utils.vis import diff_molecules, stereo_differences, structural_differences
 
 fig = diff_molecules(smiles_a, smiles_b, captions=[id_a, id_b])
 fig.show()
-atoms, bonds = structural_differences(smiles_a, smiles_b)         # indices only
+structural_differences(smiles_a, smiles_b)    # indices only: connectivity
+stereo_differences(smiles_a, smiles_b)        # indices only: R/S centers and E/Z bonds
 ```
+
+`diff_molecules` highlights both kinds, so **stereoisomers are marked at the
+stereocenter or double bond** rather than coming back blank. Use the two index
+functions when you want to say *which* kind it is: extra counterions and fragments
+show up in `structural_differences`, enantiomers and geometry in
+`stereo_differences`. See the `data_cleanup` guide.
 
 `molecule_grid` takes the same `highlight_atoms` / `highlight_bonds` (one list per
 molecule) when you want highlighting across a larger panel.
-
-Read an **empty** highlight as a finding rather than a failure: MCS matches
-connectivity, so a pair that differs only in stereochemistry or double-bond geometry
-highlights nothing. That distinguishes the two big classes of coincident pair — extra
-counterions and fragments light up, stereoisomers stay blank. See the `data_cleanup`
-guide.

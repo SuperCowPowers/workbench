@@ -5,7 +5,7 @@ import base64
 import sys
 from typing import List, Optional, Tuple
 from rdkit import Chem
-from rdkit.Chem import AllChem, Draw, rdFMCS
+from rdkit.Chem import AllChem, Draw, rdCIPLabeler, rdFMCS
 from rdkit.Chem.Draw import rdMolDraw2D
 from dash import html
 
@@ -317,6 +317,90 @@ def structural_differences(smiles_a: str, smiles_b: str, timeout: int = 10) -> O
     return diff_atoms, diff_bonds
 
 
+_MAX_STEREO_MAPPINGS = 1000
+
+
+def _atom_mappings(mol_a: Chem.Mol, mol_b: Chem.Mol, timeout: int = 10) -> List[dict]:
+    """Candidate atom-index mappings of `mol_a` onto `mol_b`, ignoring stereochemistry.
+
+    Full-graph matches when the two share connectivity, which is the stereoisomer case;
+    otherwise the MCS core, which maps only the shared atoms. A symmetric molecule maps
+    onto its partner several ways and not all of them line the stereocenters up, so this
+    returns every mapping (up to a cap) and leaves the choice to the caller.
+    """
+    matches = mol_b.GetSubstructMatches(mol_a, useChirality=False, uniquify=False, maxMatches=_MAX_STEREO_MAPPINGS)
+    if matches:
+        return [dict(enumerate(match)) for match in matches]
+
+    result = rdFMCS.FindMCS([mol_a, mol_b], timeout=timeout, ringMatchesRingOnly=True, completeRingsOnly=False)
+    core = Chem.MolFromSmarts(result.smartsString) if result.smartsString else None
+    if core is None:
+        return []
+    core_b = mol_b.GetSubstructMatch(core)
+    if not core_b:
+        return []
+    core_a = mol_a.GetSubstructMatches(core, uniquify=False, maxMatches=_MAX_STEREO_MAPPINGS)
+    return [dict(zip(match, core_b)) for match in core_a]
+
+
+def _stereo_labels(mol: Chem.Mol) -> Tuple[dict, dict]:
+    """CIP labels for every atom and bond: R/S for centers, E/Z for double bonds, None otherwise.
+
+    CIP labels are absolute, so they compare directly between two molecules -- unlike
+    RDKit's raw bond stereo, which is relative to each molecule's own stereo atoms.
+    """
+    rdCIPLabeler.AssignCIPLabels(mol)
+    atoms = {a.GetIdx(): a.GetPropsAsDict().get("_CIPCode") for a in mol.GetAtoms()}
+    bonds = {b.GetIdx(): b.GetPropsAsDict().get("_CIPCode") for b in mol.GetBonds()}
+    return atoms, bonds
+
+
+def stereo_differences(smiles_a: str, smiles_b: str, timeout: int = 10) -> Optional[Tuple[List[int], List[int]]]:
+    """Find the atoms and bonds of `smiles_a` whose stereochemistry differs from `smiles_b`.
+
+    The companion to `structural_differences`, which compares connectivity only and so
+    reports nothing for a stereoisomer pair. An atom differs when its CIP code does
+    (R vs S, or assigned vs undefined); a bond differs when its geometry does (E vs Z).
+
+    Args:
+        smiles_a: SMILES to locate differences on
+        smiles_b: SMILES to compare against
+        timeout: Seconds to allow the MCS search, used only when connectivity differs (default: 10)
+
+    Returns:
+        (atom_indices, bond_indices) of `smiles_a` where the stereochemistry differs, or
+        None if either SMILES is invalid. Both lists are empty when the two agree
+        everywhere they can be compared.
+    """
+    mol_a = _validate_molecule(smiles_a)
+    mol_b = _validate_molecule(smiles_b)
+    if not mol_a or not mol_b:
+        return None
+
+    atom_labels_a, bond_labels_a = _stereo_labels(mol_a)
+    atom_labels_b, bond_labels_b = _stereo_labels(mol_b)
+
+    def differences(mapping: dict) -> Tuple[List[int], List[int]]:
+        atoms = [a_idx for a_idx, b_idx in mapping.items() if atom_labels_a[a_idx] != atom_labels_b[b_idx]]
+        bonds = []
+        for bond in mol_a.GetBonds():
+            begin, end = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+            if begin not in mapping or end not in mapping:
+                continue  # part of the structural diff, not a stereo comparison
+            other = mol_b.GetBondBetweenAtoms(mapping[begin], mapping[end])
+            if other and bond_labels_a[bond.GetIdx()] != bond_labels_b[other.GetIdx()]:
+                bonds.append(bond.GetIdx())
+        return atoms, bonds
+
+    mappings = _atom_mappings(mol_a, mol_b, timeout)
+    if not mappings:
+        return [], []  # nothing comparable; structural_differences carries the whole answer
+
+    # Symmetry makes several mappings valid but only some line the stereocenters up, and a
+    # wrong one reads a molecule as differing from itself. Fewest disagreements is the real one.
+    return min((differences(mapping) for mapping in mappings), key=lambda diff: len(diff[0]) + len(diff[1]))
+
+
 def diff_molecules(
     smiles_a: str,
     smiles_b: str,
@@ -331,9 +415,8 @@ def diff_molecules(
     not a target value — is "what actually differs?". This answers it visually: the
     shared scaffold is drawn plainly and each molecule's unique atoms are highlighted.
 
-    A pair differing only in stereochemistry or double-bond geometry highlights nothing,
-    since MCS matches connectivity. Read that empty result as the answer: extra
-    counterions and fragments light up, stereoisomers stay blank.
+    Stereochemistry counts as a difference: a pair differing only in an R/S center or E/Z
+    geometry highlights that atom or bond, so a stereoisomer pair doesn't come back blank.
 
     Args:
         smiles_a: First SMILES
@@ -348,13 +431,18 @@ def diff_molecules(
         invalid. The caller shows or saves it: `fig.show()`, or
         `fig.savefig(path, dpi=150, bbox_inches="tight")`.
     """
-    diff_a = structural_differences(smiles_a, smiles_b)
-    diff_b = structural_differences(smiles_b, smiles_a)
-    if diff_a is None or diff_b is None:
+    struct_a = structural_differences(smiles_a, smiles_b)
+    struct_b = structural_differences(smiles_b, smiles_a)
+    stereo_a = stereo_differences(smiles_a, smiles_b)
+    stereo_b = stereo_differences(smiles_b, smiles_a)
+    if any(diff is None for diff in (struct_a, struct_b, stereo_a, stereo_b)):
         return None
 
-    atoms_a, bonds_a = diff_a
-    atoms_b, bonds_b = diff_b
+    # Each molecule highlights its own connectivity and stereo differences together
+    atoms_a = sorted(set(struct_a[0]) | set(stereo_a[0]))
+    bonds_a = sorted(set(struct_a[1]) | set(stereo_a[1]))
+    atoms_b = sorted(set(struct_b[0]) | set(stereo_b[0]))
+    bonds_b = sorted(set(struct_b[1]) | set(stereo_b[1]))
     return molecule_grid(
         [smiles_a, smiles_b],
         captions=captions,

@@ -124,8 +124,8 @@ One row per group member, sorted by `group_spread` descending: `group_id`, `grou
 **Check the structures before calling a wide group an error.** If the members' `smiles`
 differ it's a fingerprint collision, not a duplicate record, and collapsing it destroys a
 real distinction. On a diverse library this is the common case rather than the exception.
-`diff_molecules(a, b)` highlights everything outside the pair's common core — see
-`plotting`, and note that an empty highlight is itself the answer.
+`diff_molecules(a, b)` highlights everything outside the pair's common core, plus any
+stereocenter or double bond whose configuration differs — see `plotting`.
 
 What Morgan fingerprints don't encode:
 
