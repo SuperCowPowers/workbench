@@ -42,8 +42,7 @@ mon.create_monitoring_schedule(schedule="hourly") # or "daily"
 
 Order matters — `create_monitoring_schedule()` bails with a warning if no
 baseline exists. `create_baseline()` is a no-op when one is already there unless
-you pass `recreate=True`, and it writes three files: `baseline.csv`,
-`constraints.json`, `statistics.json`.
+you pass `recreate=True`.
 
 Data capture is also what feeds `capture_name` inference runs, so it is worth
 enabling even on endpoints that can't be scheduled.
@@ -64,16 +63,7 @@ by itself mean the model got worse; check predictions before concluding that.
 If a constraint is too strict for a column that is legitimately variable,
 `update_constraints()` adjusts it rather than disabling monitoring.
 
-## Housekeeping
-
-```python
-mon.baseline_exists()
-mon.monitoring_schedule_exists()
-mon.delete_monitoring_schedule()
-mon.setup_alerts(notification_email, threshold=1)
-```
-
-`setup_alerts()` sends email on violations — an outward-facing action, so
+`mon.setup_alerts()` sends email on violations — an outward-facing action, so
 confirm the address with the user before calling it.
 
 ## Drift vs. applicability domain

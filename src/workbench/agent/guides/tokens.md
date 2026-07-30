@@ -8,19 +8,12 @@ Every LLM call is billed on input (everything sent) plus output (what's
 generated). In an agentic loop the input is resent on *every* round, so the same
 context gets paid for repeatedly. Bosco's design is built around that.
 
-## Fixed cost per call
-
-| | tokens |
-|---|---|
-| System prompt (frame + `general.md`) | ~700 |
-| Tool schemas | ~197 |
-| **All guides, if they were always loaded** | **~10,900 (avoided)** |
-
 ## Lazy guides
 
-The guides total ~10.9k tokens across 15 files, but only `general.md` is
-always loaded. The rest are read on demand via `read_guide`, so a typical call
-carries ~900 tokens of fixed overhead instead of ~11k.
+Only `general.md` is always loaded; the rest are read on demand via `read_guide`.
+So the fixed per-call overhead is the frame plus one short guide, not the whole
+library — which is well over an order of magnitude larger. (For the current
+numbers, measure: `guides/` on disk, ~4 chars per token.)
 
 This is the main lever, and it shapes where a rule belongs:
 

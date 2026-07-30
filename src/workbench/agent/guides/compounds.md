@@ -38,8 +38,6 @@ it is captioned under the structure, and an unlabeled window is hard to place:
 ```python
 show(row["smiles"], row["id"])                         # id captioned under it
 show("CN1C=NC2=C1C(=O)N(C(=O)N2C)C", "caffeine")
-show(smiles, cid, width=300, height=300)               # smaller; default is 500x500
-show(smiles, cid, background="rgba(64, 64, 64, 1)")    # dark grey; default is white
 ```
 
 `show()` needs RDKit, so it is only present when the chemistry extras are

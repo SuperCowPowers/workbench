@@ -70,10 +70,6 @@ A training script must build the **whole chain** — model, endpoint, and both
 inference runs — because the job is headless. A `to_model()` that stops there
 leaves a model with no endpoint and no metrics (see `making_models`).
 
-`launch_batch` writes the code to a temp file, uploads it, and submits the job. It
-prints the submission log (message id, monitoring locations) and returns
-`{"name", "size", "s3_path"}`.
-
 ## The script is standalone — not the REPL
 
 The job runs in a **fresh process**, so the code does not see the REPL namespace.
@@ -111,10 +107,9 @@ training_job_status(names[-1])   # the most recent one
 
 `batch_job_training_jobs` returns names in submission order — a script that builds
 several models trains several times, and plenty of Batch work never trains at all, so
-expect anywhere from zero to many. `training_job_status` gives `{name, status,
-secondary_status, instance, age, in_status, message, waiting}`, or None for an unknown
-name. **`waiting=True` is the one to call out**: the job is queued for AWS capacity on
-its instance type, burning wall-clock without training.
+expect anywhere from zero to many. In `training_job_status`, **`waiting=True` is the
+one to call out**: the job is queued for AWS capacity on its instance type, burning
+wall-clock without training.
 
 To sweep every training job at once rather than starting from a Batch job:
 

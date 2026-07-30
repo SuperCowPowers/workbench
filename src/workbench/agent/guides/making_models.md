@@ -90,18 +90,12 @@ model = fs.to_model(
 )
 ```
 
-- **`sample_weights`** — a `{id: weight}` dict (or a `[id_column,
-  "sample_weight"]` DataFrame), forwarded to the model script as-is. Ids not
-  listed default to `1.0`. It carries **no** role semantics: a weight of `0.0`
-  is just a zero weight, **not** an exclusion. To drop a row, use `exclude_ids`.
-- **`validation_ids`** — kept in the training view and marked, but routed out of
-  training and scored as a genuine held-out set. That scoring tells you how the
-  *model* generalizes; for the ground truth on *deployed* performance, run
-  `endpoint.inference()` on those same ids — it exercises the real serving path
-  (container, feature pipeline, prediction aliasing) end to end.
-- **`exclude_ids`** — dropped from the training view entirely; no model ever
-  sees them. Use for outliers and anomalies. On overlap it **takes precedence**
-  over `validation_ids`.
+- `sample_weights` carries **no** role semantics: a weight of `0.0` is a zero
+  weight, **not** an exclusion. To drop a row, use `exclude_ids`.
+- `exclude_ids` **takes precedence** over `validation_ids` on overlap.
+- `validation_ids` scoring tells you how the *model* generalizes. For the ground
+  truth on *deployed* performance, run `endpoint.inference()` on those same ids —
+  it exercises the real serving path end to end.
 
 ## Cost
 
@@ -113,15 +107,7 @@ that one with the user first.
 
 ## Inspecting
 
-```python
-model.details()                          # metadata, hyperparameters
-model.list_inference_runs()              # capture names available on this model
-model.get_inference_metrics(capture)     # metrics for a capture (rmse, mae, r2, spearmanr, ...)
-```
-
-`get_inference_metrics(capture_name="default")` returns a one-row metrics
-DataFrame (or `None` if that capture doesn't exist — check
-`list_inference_runs()` first). There is no `performance_metrics()` method.
+See `exploring`. There is no `performance_metrics()` method.
 
 ## Model / Endpoint interaction
 

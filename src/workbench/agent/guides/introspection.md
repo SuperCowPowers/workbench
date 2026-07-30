@@ -78,27 +78,6 @@ print(inspect.getsource(vis.neighborhood_graph))
 [f for f in dir(vis) if not f.startswith("_")]   # what the submodule offers
 ```
 
-## One helper to do it all
-
-```python
-def explain(obj):
-    """Signature (if callable), docstring, and where it's defined."""
-    import inspect
-    if callable(obj):
-        try:
-            print(f"{getattr(obj, '__name__', obj)}{inspect.signature(obj)}\n")
-        except (TypeError, ValueError):
-            pass
-    print(inspect.getdoc(obj) or "(no docstring)")
-    try:
-        print(f"\n-- {inspect.getsourcefile(obj)}:{inspect.getsourcelines(obj)[1]}")
-    except (TypeError, OSError):
-        pass
-
-explain(Endpoint.cross_fold_inference)
-explain(vis.neighborhood_graph)
-```
-
 ## Answer from what you found
 
 Quote the real signature and defaults, and cite the location as

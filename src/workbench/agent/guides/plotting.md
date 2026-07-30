@@ -62,25 +62,10 @@ df = fs.pull_dataframe()
 Check the column names before plotting — don't guess which column holds the
 prediction.
 
-## Common plots
-
-- **Parity (predicted vs actual):** scatter plus a `y = x` reference line. Set
-  `ax.set_aspect("equal")` and match the axis limits, otherwise the diagonal
-  lies about the fit.
-- **Residuals:** residual against predicted, with `ax.axhline(0)`. Reveals bias
-  and heteroskedasticity that a parity plot hides.
-- **Distributions:** `ax.hist(..., bins=50)`, or overlay train vs holdout to
-  check for drift.
-- **Model comparison:** horizontal bar chart of a metric across models, sorted.
-
-For large scatter plots use `alpha=0.3` and `s=10` so the dense regions stay
-readable instead of turning into a solid block.
-
 ## Parallel coordinates for HPO trials
 
 The default view of a hyperparameter search: one vertical axis per knob, one line per
-trial, colored by the objective. Shows which regions the good trials cluster in and lets
-you trace a single config across every axis.
+trial, colored by the objective.
 
 ```python
 from workbench.utils.hpo_plots import hpo_parallel_coordinates
@@ -89,20 +74,9 @@ fig = hpo_parallel_coordinates(model)                    # None if the model was
 fig.show()                                               # or fig.savefig(...) if asked
 ```
 
-Two knobs worth knowing, for when the user asks:
-
-- `use_curves=False` — straight segments instead of curves. Lines curve by default, flat
-  where they cross each axis; some people prefer the plain polyline.
-- `completed_only=True` — leave pruned trials off. They are drawn by default, since where
-  the search looked is part of the picture.
-
-It handles the parts that are easy to get subtly wrong: axes ordered by
-`hpo_importance()` (only *adjacent* axes show their relationship, so the order decides
-what the chart can reveal), each scaled to the knob's declared bounds and clipped, color
-centered on the baseline so hue answers "did this trial beat the user's own
-hyperparameters", and the baseline and published config drawn as reference lines. The
-color scale is set by the completed trials, so a trial pruned early can't flatten it. See
-the `hpo` guide for reading the numbers.
+Only *adjacent* axes show their relationship, so axis order decides what the chart can
+reveal — the function orders by `hpo_importance()`. See the `hpo` guide for reading the
+numbers.
 
 ## Compound neighborhood graph
 
@@ -127,9 +101,8 @@ a captioned grid.
 
 ## Highlighting and structure diffs
 
-`img_from_smiles` and `svg_from_smiles` take `highlight_atoms` / `highlight_bonds`
-(atom and bond indices) plus a `highlight_color`. `svg_from_smiles(..., encode=False)`
-returns raw SVG markup instead of a base64 data URI, for embedding in a report.
+`img_from_smiles`, `svg_from_smiles`, and `molecule_grid` all take atom and bond
+indices to highlight.
 
 To answer "these two structures share a fingerprint but not a target value — what
 actually differs?", `diff_molecules` draws them side by side with everything outside
@@ -149,6 +122,3 @@ stereocenter or double bond** rather than coming back blank. Use the two index
 functions when you want to say *which* kind it is: extra counterions and fragments
 show up in `structural_differences`, enantiomers and geometry in
 `stereo_differences`. See the `data_cleanup` guide.
-
-`molecule_grid` takes the same `highlight_atoms` / `highlight_bonds` (one list per
-molecule) when you want highlighting across a larger panel.

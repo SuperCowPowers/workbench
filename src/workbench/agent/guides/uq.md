@@ -70,8 +70,7 @@ typically near censoring boundaries. Kinetic solubility assays cap around
 value is -5.5 gets all 5 members converging on -3.6. Agreement is genuine but
 uninformative — *confidently wrong*, and raw std cannot see it. v1's
 `knn_target_std` (do the neighbors even agree on the label?) and
-`local_pred_gap` catch exactly this. Its five features are
-`[prediction, prediction_std, knn_distance, knn_target_std, local_pred_gap]`.
+`local_pred_gap` catch exactly this.
 
 **v2's distinctive bit:** intervals come from the neighbors' target values
 centered on the neighbor *median*, not the prediction. So when the model's

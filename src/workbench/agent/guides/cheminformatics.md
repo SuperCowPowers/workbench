@@ -90,10 +90,9 @@ tagged = tag_molecules(df)
 clean = filter_by_tags(tagged, exclude_prefix=["curation:exclude:"])
 ```
 
-This is not a marginal trim. On the AqSol set it removes ~17% of rows
-(`exclude:mixture` 1098, `exclude:mw_too_low` 565, `exclude:inorganic` 325,
-`exclude:organometallic` 98) and eliminates over half of the coincident-structure
-groups outright. `admet_training_set(df)` applies the same policy in one call.
+This is not a marginal trim — on aggregated public data it can take a sixth of the
+rows and over half the coincident-structure groups. `admet_training_set(df)` applies
+the same policy in one call.
 
 One thing structural tagging can't catch: a record whose *name* says salt or mixture
 while its SMILES was recorded as the pure parent. Those pass every structural check

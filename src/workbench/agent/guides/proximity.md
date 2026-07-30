@@ -63,7 +63,7 @@ One row per neighbor:
 |---|---|
 | `prox.id_column` | the query id (name varies by model — e.g. `id`, `molecule_name`) |
 | `neighbor_id` | the neighboring compound |
-| `similarity` / `distance` | Ruzicka similarity 0–1 — Tanimoto generalized to count vectors (FingerprintProximity) — or standardized Euclidean distance (FeatureSpaceProximity) |
+| `similarity` / `distance` | per the flavor above |
 | `<target>` | the neighbor's target value (may be `NaN` for a multi-task model's off-task rows) |
 
 Don't hardcode the query id column — it's `prox.id_column`. `neighbor_id` is stable.

@@ -41,7 +41,8 @@ endpoints()
 These return DataFrames. Filter them rather than eyeballing:
 
 ```python
-models()[models()["Model Type"] == "regressor"]
+models_df = models(details=True)
+models_df[models_df["Type"] == "regressor"]
 ```
 
 ## Health

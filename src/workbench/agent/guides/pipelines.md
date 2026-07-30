@@ -63,18 +63,8 @@ groups = CachedMeta().pipelines()
 ```
 
 The result is **nested groups**, not a flat list — each entry is
-`{name, subgroups, pipelines}`, and `subgroups` recurses. Walk it:
-
-```python
-def walk(groups, depth=0):
-    for g in groups:
-        print("  " * depth + f"{g['name']}: {list(g['pipelines'])}")
-        walk(g["subgroups"], depth + 1)
-
-walk(groups)
-```
-
-Each pipeline is `{"nodes": [...], "links": [...]}` — note the key is **links**,
+`{name, subgroups, pipelines}`, and `subgroups` recurses, so walk it rather than
+iterating once. Each pipeline is `{"nodes": [...], "links": [...]}` — note the key is **links**,
 not "edges":
 
 ```python

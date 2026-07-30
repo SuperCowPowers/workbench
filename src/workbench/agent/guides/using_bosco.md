@@ -24,12 +24,9 @@ reply to you, not code.
 
 ### Shift+Enter
 
-It doesn't work out of the box, and that's a terminal limitation rather than a
-Workbench one: terminals send the same byte for Shift+Enter as for Enter, so
-nothing can tell them apart. The CSI-u protocol that *can* encode it must be
-negotiated by the application, and the REPL doesn't negotiate it.
-
-Map it to Ctrl-J in the terminal and it works:
+It doesn't work out of the box — terminals send the same byte for Shift+Enter as
+for Enter, so nothing can tell them apart. Map it to Ctrl-J in the terminal and it
+works:
 
 | Terminal | Setting |
 |---|---|
