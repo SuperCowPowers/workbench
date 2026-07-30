@@ -26,9 +26,12 @@ def split_s3_path(s3_path: str) -> tuple[str, str]:
         tuple[str, str]: (bucket, key)
 
     Raises:
-        ValueError: If the URI names no key/prefix (e.g., s3://bucket-name).
+        ValueError: If not an s3:// URI, or it names no key/prefix (e.g., s3://bucket-name).
     """
+    if not s3_path.startswith("s3://"):
+        raise ValueError(f"Not an S3 URI: {s3_path!r}")
     bucket, _, key = s3_path.removeprefix("s3://").partition("/")
+    key = key.lstrip("/")  # "s3://bucket//key" addresses "key", not "/key"
     if not bucket or not key:
         raise ValueError(f"S3 path must include a bucket and a key/prefix: {s3_path!r}")
     return bucket, key
