@@ -743,7 +743,7 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
         print()
 
 
-def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]):
+def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str], root: Path):
     """Execute all pipeline runs (local or SQS).
 
     Args:
@@ -751,8 +751,16 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
         args (argparse.Namespace): Parsed launcher arguments
         extra_args (list[str]): Args after the ``--`` separator, forwarded
             verbatim to each underlying pipeline script
+        root (Path): Discovery root; its ``pipeline_utils/`` (when present) is
+            uploaded with each job and put on the script's import path
     """
     serverless = not args.realtime
+
+    # Shared pipeline_utils package: local runs import it off PYTHONPATH, SQS runs
+    # get the local copy uploaded so Batch resolves imports the same way.
+    utils_dir = root / "pipeline_utils"
+    if not utils_dir.is_dir():
+        utils_dir = None
 
     # Countdown before launching (skip for local runs)
     if not args.local:
@@ -777,6 +785,9 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
         if args.local:
             env = os.environ.copy()
             env["PIPELINE_META"] = pipeline_meta
+            if utils_dir:
+                existing = env.get("PYTHONPATH")
+                env["PYTHONPATH"] = f"{root}{os.pathsep}{existing}" if existing else str(root)
             print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
             print(f"{'─' * 60}\n")
             cmd = [sys.executable, str(script), *extra_args]
@@ -796,6 +807,8 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
                 cmd.extend(["--outputs", ",".join(job.outputs)])
             if job.inputs:
                 cmd.extend(["--inputs", ",".join(job.inputs)])
+            if utils_dir:
+                cmd.extend(["--utils-dir", str(utils_dir)])
             print(f"{'─' * 60}")
             print(f"Running: {' '.join(cmd)}\n")
             result = subprocess.run(cmd)
@@ -906,6 +919,7 @@ def main():
     args, extra_args = parse_args()
 
     # Discover all pipelines and DAG definitions
+    root = find_discovery_root(Path.cwd())  # owns plugins/ and pipeline_utils/
     all_pipelines, all_dags = get_all_pipelines()
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
@@ -931,7 +945,6 @@ def main():
         print("ERROR: pipelines.json references scripts not found on disk:")
         for m in missing:
             print(f"   {m}")
-        root = find_discovery_root(Path.cwd())
         print(f"\n(plugin: refs resolve to {root}/plugins/<path> -- verify the file exists there)")
         sys.exit(1)
 
@@ -977,7 +990,7 @@ def main():
         print("Dry run complete. No pipelines were launched.\n")
         return
 
-    run_pipelines(plan, args, extra_args)
+    run_pipelines(plan, args, extra_args, root)
 
 
 if __name__ == "__main__":

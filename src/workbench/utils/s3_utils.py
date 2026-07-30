@@ -176,27 +176,78 @@ def compute_parquet_hash(s3_url: str, session: boto3.session.Session) -> str:
 
 
 def copy_s3_files_to_local(s3_path: str, local_path: str):
-    """Copies all files from S3 to a local directory, maintaining the subdirectory structure.
+    """Copies an S3 object or prefix to local, maintaining the subdirectory structure.
+
     Args:
-        s3_path (str): S3 Path to the set of files (e.g., s3://bucket-name/path/to/files).
-        local_path (str): Local directory to copy the files to.
+        s3_path (str): S3 object or prefix (e.g., s3://bucket-name/path/to/files).
+        local_path (str): Local destination. For a single object, an existing directory
+            (or a trailing "/") means "into this directory"; otherwise it's the exact
+            destination file. For a prefix, the directory to mirror into.
     """
     s3_client = boto3.client("s3")
     bucket, key = s3_path.replace("s3://", "").split("/", 1)
 
+    def _download(obj_key: str, dest: str):
+        if os.path.dirname(dest):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+        log.important(f"Downloading {bucket}/{obj_key} to {dest}")
+        s3_client.download_file(bucket, obj_key, dest)
+
+    def _is_object(k: str) -> bool:
+        try:
+            s3_client.head_object(Bucket=bucket, Key=k)
+            return True
+        except ClientError:
+            return False
+
+    if not key.endswith("/") and _is_object(key):
+        into_dir = local_path.endswith(("/", os.sep)) or os.path.isdir(local_path)
+        _download(key, os.path.join(local_path, os.path.basename(key)) if into_dir else local_path)
+        return
+
+    # Prefix: the trailing "/" keeps a sibling prefix (plugins_v2) from aliasing into plugins
+    prefix = key.rstrip("/") + "/"
     paginator = s3_client.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=bucket, Prefix=key):
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
         for obj in page.get("Contents", []):
-            # Correctly handle object keys to ensure paths are relative
-            relative_key = obj["Key"][len(key) :].lstrip("/")  # Remove the S3 prefix and leading slashes
-            local_file_path = os.path.join(local_path, relative_key)
+            relative_key = obj["Key"][len(prefix) :].lstrip("/")
+            if not relative_key:  # the prefix's own placeholder object
+                continue
+            _download(obj["Key"], os.path.join(local_path, relative_key))
 
-            # Ensure the subdirectory structure exists locally
-            os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
 
-            # Download the object to the local file path
-            log.important(f"Downloading {bucket}/{obj['Key']} to {local_file_path}")
-            s3_client.download_file(bucket, obj["Key"], local_file_path)
+def copy_local_files_to_s3(local_path: str, s3_path: str):
+    """Copies a local file or directory tree to S3, maintaining the subdirectory structure.
+
+    Compiled Python artifacts (``__pycache__`` dirs and ``.pyc`` files) are skipped.
+
+    Args:
+        local_path (str): Local file or directory to copy.
+        s3_path (str): S3 destination (e.g., s3://bucket-name/path/to/files). For a
+            single file, a trailing "/" means "into this prefix"; otherwise it's the
+            exact destination key.
+    """
+    s3_client = boto3.client("s3")
+    bucket, key = s3_path.replace("s3://", "").split("/", 1)
+
+    def _upload(source: str, dest_key: str):
+        log.important(f"Uploading {source} to {bucket}/{dest_key}")
+        s3_client.upload_file(source, bucket, dest_key)
+
+    if os.path.isfile(local_path):
+        dest_key = f"{key.rstrip('/')}/{os.path.basename(local_path)}" if key.endswith("/") else key
+        _upload(local_path, dest_key)
+        return
+
+    prefix = key.rstrip("/")
+    for root, dirs, files in os.walk(local_path):
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for name in files:
+            if name.endswith(".pyc"):
+                continue
+            source = os.path.join(root, name)
+            relative = os.path.relpath(source, local_path)
+            _upload(source, f"{prefix}/{relative}")
 
 
 if __name__ == "__main__":

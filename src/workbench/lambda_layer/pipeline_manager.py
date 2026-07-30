@@ -250,6 +250,7 @@ class PipelineManager:
     Orchestration API (shared by the launcher + DT Lambda):
         plan(mtime_fn=None, force=None) -> list[PlanItem]    -- what runs, and why
         blocked_by_missing_sources(mtime_fn=None)            -- jobs doomed by an absent source
+        utils_ref                                            -- shared pipeline_utils location
     """
 
     def __init__(self, path: str | Path, session=None):
@@ -258,6 +259,7 @@ class PipelineManager:
         # None and gets the default client (region from AWS_REGION). Kept as a
         # plain boto3 Session so the manager needs no workbench import.
         self._session = session
+        self._root = str(path)
         self._init_from_jobs(self._discover(str(path)))
 
     @classmethod
@@ -265,8 +267,24 @@ class PipelineManager:
         """Build from an in-memory job list, bypassing pipelines.json discovery."""
         obj = cls.__new__(cls)
         obj._session = session
+        obj._root = None
         obj._init_from_jobs(list(jobs))
         return obj
+
+    @property
+    def utils_ref(self) -> str | None:
+        """Location of the shared ``pipeline_utils`` package.
+
+        A sibling of ``plugins/`` at the discovery root, staged onto the Batch
+        container's PYTHONPATH so pipeline scripts can import shared code.
+
+        Returns:
+            str | None: The ``pipeline_utils`` prefix, or None when built via
+                :meth:`from_jobs` (in-memory jobs have no discovery root).
+        """
+        if self._root is None:
+            return None
+        return f"{self._root.rstrip('/')}/pipeline_utils/"
 
     # -- discovery ------------------------------------------------------------
 

@@ -8,7 +8,7 @@ from pathlib import Path
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.s3_utils import upload_content_to_s3
+from workbench.utils.s3_utils import copy_local_files_to_s3
 from workbench.utils.cloudwatch_utils import get_cloudwatch_logs_url
 
 log = logging.getLogger("workbench")
@@ -83,7 +83,7 @@ def run_batch_job(
     # Upload script to S3
     s3_path = f"s3://{workbench_bucket}/batch-jobs/{Path(script_path).name}"
     log.info(f"Uploading script to {s3_path}")
-    upload_content_to_s3(Path(script_path).read_text(), s3_path)
+    copy_local_files_to_s3(script_path, s3_path)
 
     # Submit job
     job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
