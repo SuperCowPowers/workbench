@@ -91,8 +91,5 @@ challenger becomes the champion, so a contest is the evidence behind that
 decision — which is why the `Δ` columns and a shared `inference_run` matter:
 all rows must be scored on the same data for the comparison to mean anything.
 
-**Champions are usually dated copies.** Promotion copies the winner to
-`<base-name>-YYMMDD` and gives that copy the endpoint, so a champion like
-`pxr-reg-chemprop-mt-logd-260715` is the promoted form of the pipeline's
-`pxr-reg-chemprop-mt-logd`. Strip the suffix when tracing it back to the
-pipeline that produced it (see the `pipelines` guide).
+**Champions are usually dated copies** (`<base-name>-YYMMDD`) — see `promotion`
+for the mechanism and `pipelines` for tracing one back.

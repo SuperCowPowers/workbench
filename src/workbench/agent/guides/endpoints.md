@@ -89,14 +89,14 @@ subset = df[df["split"] == "phase1_test"]
 results = end.inference(subset, capture_name="phase1_test")
 ```
 
-When the rows you want are defined by how the model was *trained* (a `split`
-column, sample weights, the validation flag), go through the model's own
-training view instead — it has those columns:
+A `split` column is your own — it lives in the FeatureSet like any other. Only
+`sample_weight` and `validation` are added by the training view, so go there when
+those are what define the rows:
 
 ```python
 model = Model(end.get_input())
 df = model.training_view().pull_dataframe()
-subset = df[df["split"] == "phase1_test"]
+held_out = df[df["validation"]]
 ```
 
 See `data_and_features` for training view vs FeatureSet.

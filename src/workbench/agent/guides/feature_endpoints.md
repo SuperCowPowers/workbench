@@ -15,22 +15,12 @@ source of silent model degradation.
 
 ## DataFrame in, DataFrame out
 
-Every Workbench endpoint — feature and predictor alike — follows the same
-contract: pass a DataFrame, get a DataFrame back. A feature endpoint returns
-your rows with descriptor columns **appended**, so the output is a superset of
-the input, not a replacement.
+A feature endpoint appends descriptor columns, so the output is a superset of the
+input — which is exactly the input a predictor endpoint expects:
 
 ```python
-end = Endpoint("smiles-to-2d-v1")
-df_features = end.inference(df)        # df + ~315 descriptor columns
-```
-
-That contract is what lets you chain them: the output of a feature endpoint is
-already the input a predictor endpoint expects.
-
-```python
-df_features = Endpoint("smiles-to-2d-v1").inference(input_df)
-predictions  = Endpoint("my-admet-model").inference(df_features)
+df_features = Endpoint("smiles-to-2d-v1").inference(input_df)   # + ~315 columns
+predictions = Endpoint("my-admet-model").inference(df_features)
 ```
 
 ## Available endpoints

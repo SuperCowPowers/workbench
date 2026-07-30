@@ -67,7 +67,7 @@ df = model.training_view().pull_dataframe()   # what training saw
 
 The training view is that FeatureSet minus its excluded rows, plus
 `sample_weight` and `validation`. Reach for it when the question is about
-training — split membership, weights, residuals per row. For everything about
+training — which rows were held out, weights, residuals per row. For everything about
 the data — quality, distributions, cleanup — go to the FeatureSet, which still
 has the excluded rows.
 
