@@ -759,8 +759,7 @@ class EndpointCore(Artifact):
         Args:
             date_column (str): Name of the date column.
             after_date (str): Run inference on rows strictly after this date.
-            exclude_ids (list): IDs to exclude from the holdout set (e.g., anomalous
-                compounds from compute_sample_weights).
+            exclude_ids (list): IDs to exclude from the holdout set (e.g., anomalous compounds).
 
         Returns:
             pd.DataFrame: DataFrame with the inference results (empty if no hold-out rows)
