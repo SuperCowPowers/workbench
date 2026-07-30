@@ -29,9 +29,8 @@ identical every time. Bosco sets a rolling cache breakpoint on the newest
 message, so the prefix returns as a cache read (~10% of normal cost) rather than
 being re-billed.
 
-Measured: uncached input drops to ~2 tokens per call, with ~87% cost reduction
-by the third call — and it holds *across* turns, not just within one, so savings
-compound over a session.
+It holds *across* turns, not just within one, so the savings compound over a
+session.
 
 ## Bounded growth
 
@@ -40,20 +39,16 @@ compound over a session.
   `tool_result`. The cap is a soft target — it will exceed it rather than
   corrupt the conversation.
 - **Tool output** is truncated at 4000 chars. Results live in history and are
-  resent every later round, so a large dump is paid many times over. Hitting the
-  cap usually means the filtering belonged in the query.
+  resent every later round, so a large dump is paid many times over.
 - **Tool rounds** stop at 25 per turn, as a runaway guard.
 
-## What this means in practice
+## What the session actually cost
 
-Cheap: asking questions, reading guides, long conversations (caching absorbs
-them).
+```python
+bosco.usage    # input/output/cache counts, calls, and estimated cost_usd
+```
 
-Expensive: dumping large DataFrames into tool output instead of filtering in
-`query()`, or re-running the same expensive call rather than reusing a variable
-already in the session.
-
-If the user wants to reduce usage further, the honest answer is that the
-architecture already handles the big levers — the remaining discipline is on
-Bosco's side: filter in the query, don't print whole DataFrames, and reuse
-handles that are already in the namespace.
+Asking questions, reading guides, and long conversations are cheap — caching
+absorbs them. If the user wants to reduce usage further, the honest answer is
+that the architecture already handles the big levers; the rest is Bosco's own
+discipline (`general` → Working style).
