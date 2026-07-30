@@ -50,10 +50,10 @@ def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     """
     Convert a pandas Series of concentrations in µM (micromolar) to log10 mol/L.
 
-    LogS = log10(µM + 1) - 6
+    LogS = log10(µM) - 6, with concentrations floored at 1 µM (LogS = -6)
 
-    The +1 pseudo-count is the community convention: it keeps 0 µM finite (-6) and is
-    negligible above ~100 µM, at the cost of compressing the sub-µM decade.
+    The floor keeps zero/negative values finite and is exact above 1 µM. Sub-µM readings
+    are typically below assay detection limits, so they all collapse to -6.
 
     Parameters:
     series_µM (pd.Series): Series of concentrations in micromolar.
@@ -61,14 +61,14 @@ def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     Returns:
     pd.Series: Series of log10 mol/L values.
     """
-    return np.log10(series_µM.clip(lower=0) + 1.0) - 6.0
+    return np.log10(series_µM.clip(lower=1.0)) - 6.0
 
 
 def log_to_micromolar(log_series: pd.Series) -> pd.Series:
     """
     Convert a pandas Series of log10 mol/L values back to concentrations in µM (micromolar).
 
-    µM = 10^(LogS + 6) - 1
+    µM = 10^(LogS + 6)
 
     Parameters:
     log_series (pd.Series): Series of log10 mol/L values.
@@ -76,7 +76,7 @@ def log_to_micromolar(log_series: pd.Series) -> pd.Series:
     Returns:
     pd.Series: Series of concentrations in micromolar.
     """
-    return 10 ** (log_series + 6.0) - 1.0
+    return 10 ** (log_series + 6.0)
 
 
 def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: Optional[List[str]] = None) -> None:
