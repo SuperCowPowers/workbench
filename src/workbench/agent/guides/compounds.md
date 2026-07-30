@@ -47,17 +47,6 @@ nothing appearing usually means a bad structure, not a broken call.
 For embedding rather than displaying, `workbench.utils.chem_utils.vis` also has
 `img_from_smiles()` and `svg_from_smiles()`.
 
-## Useful context
-
-When a user is looking at a compound, the interesting question is usually *why*
-a prediction came out the way it did. Pair the structure with the row:
-
-```python
-row = df[df["id"] == compound_id].iloc[0]
-show(row["smiles"], compound_id)
-print(row[["id", "solubility", "prediction"]])
-```
-
 ## Descriptors and features
 
 Don't compute molecular descriptors by hand. Feature endpoints do it
