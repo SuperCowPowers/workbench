@@ -2,23 +2,16 @@ import os
 import sys
 import json
 import subprocess
-import boto3
 import logging
-from urllib.parse import urlparse
 import workbench
+from workbench.utils.s3_utils import copy_s3_files_to_local
 
 # Set up logging
 log = logging.getLogger("workbench")
 
-
-def download_ml_pipeline_from_s3(s3_path: str, local_path: str):
-    """Download ML Pipeline from S3 to local filesystem."""
-    parsed = urlparse(s3_path)
-    bucket = parsed.netloc
-    key = parsed.path.lstrip("/")
-    log.info(f"Downloading {s3_path} to {local_path}")
-    s3_client = boto3.client("s3")
-    s3_client.download_file(bucket, key, local_path)
+# Import root for the shared pipeline_utils package. Dedicated (rather than /tmp
+# itself) so the downloaded pipeline script isn't also on the import path.
+UTILS_ROOT = "/tmp/pipeline_utils_root"
 
 
 def resolve_script_ref(ref: str) -> str:
@@ -39,22 +32,38 @@ def resolve_script_ref(ref: str) -> str:
 
     # Default: a full S3 URI -> download to /tmp
     local = f"/tmp/{os.path.basename(ref)}"
-    download_ml_pipeline_from_s3(ref, local)
+    copy_s3_files_to_local(ref, local)
     return local
 
 
-def run_ml_pipeline(script_path: str, script_args: list[str] | None = None):
+def stage_pipeline_utils(s3_prefix: str) -> str:
+    """Materialize the shared pipeline_utils package from S3.
+
+    Args:
+        s3_prefix (str): S3 prefix holding the pipeline_utils package contents
+
+    Returns:
+        str: The import root to put on PYTHONPATH (the package's parent dir)
+    """
+    dest = os.path.join(UTILS_ROOT, "pipeline_utils")
+    log.info(f"Staging pipeline utils from {s3_prefix} to {dest}")
+    copy_s3_files_to_local(s3_prefix, dest)
+    return UTILS_ROOT
+
+
+def run_ml_pipeline(script_path: str, script_args: list[str] | None = None, env: dict | None = None):
     """Execute the ML pipeline script.
 
     Args:
         script_path (str): Local path to the downloaded pipeline script
         script_args (list[str] | None): Args forwarded verbatim to the script
+        env (dict | None): Environment for the subprocess; None inherits ours
     """
     cmd = [sys.executable, script_path, *(script_args or [])]
     log.info(f"Executing ML pipeline: {' '.join(cmd)}")
     try:
         # Run the script with python (don't raise on non-zero exit)
-        result = subprocess.run(cmd, check=False, text=True)
+        result = subprocess.run(cmd, check=False, text=True, env=env)
         if result.returncode == 0:
             log.info("ML pipeline completed successfully")
         else:
@@ -86,8 +95,16 @@ def main():
         # Resolve the script ref to a local path (download only if needed)
         local_script_path = resolve_script_ref(script_ref)
 
+        # Shared pipeline_utils package, when the submitter declared one
+        env = os.environ.copy()
+        utils_ref = os.environ.get("ML_PIPELINE_UTILS")
+        if utils_ref:
+            utils_root = stage_pipeline_utils(utils_ref)
+            existing = env.get("PYTHONPATH")
+            env["PYTHONPATH"] = f"{utils_root}{os.pathsep}{existing}" if existing else utils_root
+
         # Execute the ML pipeline
-        exit_code = run_ml_pipeline(local_script_path, script_args)
+        exit_code = run_ml_pipeline(local_script_path, script_args, env=env)
 
         # Clean up only what we downloaded (in-package/plugin scripts run in place)
         if local_script_path.startswith("/tmp/"):

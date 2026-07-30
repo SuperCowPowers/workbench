@@ -8,7 +8,7 @@ from pathlib import Path
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.lambda_layer.pipeline_manager import is_schemed_script
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.s3_utils import upload_content_to_s3
+from workbench.utils.s3_utils import copy_local_files_to_s3
 
 log = logging.getLogger("workbench")
 cm = ConfigManager()
@@ -27,6 +27,7 @@ def submit_to_sqs(
     outputs: list[str] | None = None,
     inputs: list[str] | None = None,
     script_args: list[str] | None = None,
+    utils_dir: str | None = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -44,6 +45,8 @@ def submit_to_sqs(
         inputs (list[str] | None): Artifact refs this job consumes (its dependencies)
         script_args (list[str] | None): Args forwarded verbatim to the pipeline script,
             passed to the Batch container as the PIPELINE_ARGS environment variable
+        utils_dir (str | None): Local ``pipeline_utils`` directory to upload alongside
+            the script; the container puts it on PYTHONPATH via ML_PIPELINE_UTILS
 
     Raises:
         ValueError: If size is invalid or script file not found
@@ -67,7 +70,6 @@ def submit_to_sqs(
         script_file = Path(script_path)
         if not script_file.exists():
             raise FileNotFoundError(f"Script not found: {script_path}")
-        script_content = script_file.read_text()
         script_name = script_file.name
 
     if group_id is None:
@@ -116,11 +118,27 @@ def submit_to_sqs(
         print(f"   Source: {script_path}")
         print(f"   Destination: {s3_path}")
         try:
-            upload_content_to_s3(script_content, s3_path)
+            copy_local_files_to_s3(script_path, s3_path)
             print("  Script uploaded successfully")
         except Exception as e:
             print(f"  Upload failed: {e}")
             raise
+
+    # Upload the local pipeline_utils alongside the script, so the run imports the
+    # utils the launcher just saw (the S3-synced tree only tracks the last branch sync).
+    utils_s3_path = None
+    if utils_dir:
+        utils_s3_path = f"s3://{workbench_bucket}/batch-jobs/pipeline_utils/"
+        print("\n  Uploading pipeline utils to S3...")
+        print(f"   Source: {utils_dir}")
+        print(f"   Destination: {utils_s3_path}")
+        try:
+            copy_local_files_to_s3(utils_dir, utils_s3_path)
+            print("  Pipeline utils uploaded successfully")
+        except Exception as e:
+            print(f"  Upload failed: {e}")
+            raise
+
     # Get queue URL and info
     queue_name = "workbench-ml-pipeline-queue.fifo"
     print("\n  Getting queue information...")
@@ -157,6 +175,8 @@ def submit_to_sqs(
         message["environment"]["PIPELINE_META"] = pipeline_meta
     if script_args:
         message["environment"]["PIPELINE_ARGS"] = json.dumps(script_args)
+    if utils_s3_path:
+        message["environment"]["ML_PIPELINE_UTILS"] = utils_s3_path
 
     # Artifact dependency info for batch_trigger
     if outputs:
@@ -255,6 +275,11 @@ def main():
         default=None,
         help='JSON-encoded list of args forwarded verbatim to the pipeline script (e.g., \'["--epochs", "10"]\')',
     )
+    parser.add_argument(
+        "--utils-dir",
+        default=None,
+        help="Local pipeline_utils directory to upload alongside the script",
+    )
     args = parser.parse_args()
 
     outputs = args.outputs.split(",") if args.outputs else []
@@ -274,6 +299,7 @@ def main():
             outputs=outputs,
             inputs=inputs,
             script_args=script_args,
+            utils_dir=args.utils_dir,
         )
     except Exception as e:
         print(f"\n  ERROR: {e}")
