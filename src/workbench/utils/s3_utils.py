@@ -4,7 +4,6 @@ import os
 import io
 import json
 import boto3
-from urllib.parse import urlparse
 import awswrangler as wr
 from botocore.exceptions import ClientError
 import hashlib
@@ -15,6 +14,24 @@ import logging
 from workbench.utils.performance_utils import performance
 
 log = logging.getLogger("workbench")
+
+
+def split_s3_path(s3_path: str) -> tuple[str, str]:
+    """Split an S3 URI into its bucket and key/prefix.
+
+    Args:
+        s3_path (str): S3 URI (e.g., s3://bucket-name/path/to/files).
+
+    Returns:
+        tuple[str, str]: (bucket, key)
+
+    Raises:
+        ValueError: If the URI names no key/prefix (e.g., s3://bucket-name).
+    """
+    bucket, _, key = s3_path.removeprefix("s3://").partition("/")
+    if not bucket or not key:
+        raise ValueError(f"S3 path must include a bucket and a key/prefix: {s3_path!r}")
+    return bucket, key
 
 
 def upload_content_to_s3(content, path):
@@ -42,9 +59,9 @@ def read_s3_json(s3_uri: str, session: boto3.session.Session) -> Optional[dict]:
         Optional[dict]: The parsed JSON, or None if the object does not exist.
     """
     s3 = session.client("s3")
-    parsed = urlparse(s3_uri)
+    bucket, key = split_s3_path(s3_uri)
     try:
-        obj = s3.get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
+        obj = s3.get_object(Bucket=bucket, Key=key)
         return json.loads(obj["Body"].read().decode("utf-8"))
     except s3.exceptions.NoSuchKey:
         return None
@@ -68,8 +85,7 @@ def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:
     s3 = session.client("s3")
 
     try:
-        # Parse bucket and key from the S3 URI
-        bucket, key = s3_uri.replace("s3://", "").split("/", 1)
+        bucket, key = split_s3_path(s3_uri)
         response = s3.head_object(Bucket=bucket, Key=key)
         return response.get("ETag", "").strip('"')  # Remove quotes from ETag
     except s3.exceptions.ClientError:
@@ -119,10 +135,7 @@ def compute_s3_object_hash(s3_url: str, session: boto3.session.Session) -> str:
     """
     log.important(f"Computing S3 Object Hash: {s3_url}")
 
-    # Parse the S3 URL
-    parsed_url = urlparse(s3_url)
-    bucket_name = parsed_url.netloc
-    object_key = parsed_url.path.lstrip("/")
+    bucket_name, object_key = split_s3_path(s3_url)
 
     s3_client = session.client("s3")
     file_hash = hashlib.md5()
@@ -150,10 +163,7 @@ def compute_parquet_hash(s3_url: str, session: boto3.session.Session) -> str:
     log = logging.getLogger("workbench")
     s3_client = session.client("s3")
 
-    # Parse bucket and prefix from the S3 URL
-    parsed_url = urlparse(s3_url)
-    bucket_name = parsed_url.netloc
-    prefix = parsed_url.path.lstrip("/")
+    bucket_name, prefix = split_s3_path(s3_url)
 
     # Ensure the prefix ends with a slash to match the exact directory
     if not prefix.endswith("/"):
@@ -185,7 +195,7 @@ def copy_s3_files_to_local(s3_path: str, local_path: str):
             destination file. For a prefix, the directory to mirror into.
     """
     s3_client = boto3.client("s3")
-    bucket, key = s3_path.replace("s3://", "").split("/", 1)
+    bucket, key = split_s3_path(s3_path)
 
     def _download(obj_key: str, dest: str):
         if os.path.dirname(dest):
@@ -194,11 +204,15 @@ def copy_s3_files_to_local(s3_path: str, local_path: str):
         s3_client.download_file(bucket, obj_key, dest)
 
     def _is_object(k: str) -> bool:
+        # Only "it isn't there" means prefix; AccessDenied and friends must surface,
+        # otherwise a permissions failure looks like an empty download.
         try:
             s3_client.head_object(Bucket=bucket, Key=k)
             return True
-        except ClientError:
-            return False
+        except ClientError as e:
+            if e.response["Error"]["Code"] in ("404", "NoSuchKey", "NotFound"):
+                return False
+            raise
 
     if not key.endswith("/") and _is_object(key):
         into_dir = local_path.endswith(("/", os.sep)) or os.path.isdir(local_path)
@@ -226,9 +240,14 @@ def copy_local_files_to_s3(local_path: str, s3_path: str):
         s3_path (str): S3 destination (e.g., s3://bucket-name/path/to/files). For a
             single file, a trailing "/" means "into this prefix"; otherwise it's the
             exact destination key.
+
+    Raises:
+        FileNotFoundError: If local_path doesn't exist.
     """
+    if not os.path.exists(local_path):
+        raise FileNotFoundError(f"Nothing to upload, path not found: {local_path}")
     s3_client = boto3.client("s3")
-    bucket, key = s3_path.replace("s3://", "").split("/", 1)
+    bucket, key = split_s3_path(s3_path)
 
     def _upload(source: str, dest_key: str):
         log.important(f"Uploading {source} to {bucket}/{dest_key}")
