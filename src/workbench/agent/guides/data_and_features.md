@@ -58,19 +58,18 @@ Consequences:
   col = next(c for c in df.columns if c.lower() == "smiles")
   ```
 
-## A model's training data
-
-**`model.training_view().pull_dataframe()`** — always. It resolves the right
-view for that model and carries training-only columns the raw FeatureSet pull
-lacks: `sample_weight`, `validation`, and any `split` column.
+## A model's data
 
 ```python
-df = model.training_view().pull_dataframe()
+fs = FeatureSet(model.get_input())        # the data itself
+df = model.training_view().pull_dataframe()   # what training saw
 ```
 
-Never go looking for a training view on the FeatureSet — there isn't one to
-find, and guessing a name logs "cannot be auto-created" then fails with a
-confusing `TABLE_NOT_FOUND` on the follow-up query.
+The training view is that FeatureSet minus its excluded rows, plus
+`sample_weight` and `validation`. Reach for it when the question is about
+training — split membership, weights, residuals per row. For everything about
+the data — quality, distributions, cleanup — go to the FeatureSet, which still
+has the excluded rows.
 
 ## Provenance
 

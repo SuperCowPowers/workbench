@@ -13,8 +13,6 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
   blanks. Column names and the `Type`/`Model Group` gotchas: `exploring` guide.
 - **Empty health tags mean healthy.** No news is good news — never report it as
   unknown, missing, or not-yet-computed.
-- **A model's training data is `model.training_view().pull_dataframe()`** —
-  never a FeatureSet view.
 - **Name every variable predictably** — intermediates and scratch too, not just
   final handles; everything you assign persists in the user's session.
   - DataFrames end in `_df`, or plain `df` when there's only one (`models_df`,

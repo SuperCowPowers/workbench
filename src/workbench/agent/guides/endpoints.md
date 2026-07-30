@@ -99,8 +99,7 @@ df = model.training_view().pull_dataframe()
 subset = df[df["split"] == "phase1_test"]
 ```
 
-Never hunt for a view name on the FeatureSet; `model.training_view()` resolves
-it. See the views note in `data_and_features`.
+See `data_and_features` for training view vs FeatureSet.
 
 Other flavors:
 
