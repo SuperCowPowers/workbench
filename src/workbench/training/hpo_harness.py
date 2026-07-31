@@ -548,12 +548,14 @@ def _run_ray(
         except Exception as exc:
             if not _is_oom(exc):
                 raise
-            # Ray reports an errored trial to Optuna as FAIL, and TPE draws only on COMPLETE
-            # and PRUNED trials — so an OOM teaches the sampler nothing and it keeps proposing
-            # the corner that cannot fit. A null metric makes Ray report the trial as PRUNED
-            # instead, which TPE does model, ranked at the bottom.
-            log.warning(f"Trial out of GPU memory, reporting as pruned: {exc}")
-            tune.report({metric: None, time_attr: last_step + 1})
+            # Letting the OOM escape gets the trial reported to Optuna as FAIL, and TPE draws
+            # only on COMPLETE and PRUNED — so the sampler learns nothing and keeps proposing
+            # a corner that cannot fit. Swallowing it instead ends the trial with no result,
+            # which Ray reports as PRUNED (`val is None`, `error=False`); TPE does model those,
+            # ranked below every scored trial. Reporting a null *metric* is not an option: Ray
+            # routes every report through `OptunaSearch.on_trial_result`, which indexes the
+            # metric directly and hands it to `optuna.Trial.report`, rejecting None.
+            log.warning(f"Trial out of GPU memory, ending it unscored: {exc}")
             return
         # Final objective, one tick past the last epoch (time_attr must increase). done_flag
         # marks a full run so winner selection can exclude ASHA-stopped partial ensembles.
@@ -584,8 +586,20 @@ def _run_ray(
     # Rank only among trials that ran the full ensemble. An ASHA-stopped trial's last value
     # is a *partial* ensemble mean, which can read lower than a completed one and would
     # otherwise be published — the very regime mismatch the ensemble objective removes.
-    completed = [r for r in results if r.metrics.get(done_flag)]
-    pool = completed or list(results)  # fall back if pruning stopped everything
+    completed = [r for r in results if (r.metrics or {}).get(done_flag)]
+    # Fall back to any *scored* trial if pruning stopped everything. Never to an unscored
+    # one: a trial that died carries neither a value nor a config, so ranking it would
+    # publish `None` as the winning config.
+    pool = completed or [r for r in results if (r.metrics or {}).get(metric) is not None]
+    if not pool:
+        # Mirror the Optuna path's actionable failure. Ray otherwise surfaces this as an
+        # AttributeError deep in config resolution, on the box that costs the most to rent.
+        errored = sum(1 for r in results if r.error is not None)
+        raise RuntimeError(
+            f"HPO search produced no usable trial ({len(results)} trials, {errored} errored). "
+            "If trials errored, check the logs above for the first traceback — an OOM or a "
+            "NaN objective (e.g. an unlabeled target column) is the usual cause."
+        )
 
     def _objective(r):
         # Missing/None metric sorts to the worst end regardless of mode — a signed default

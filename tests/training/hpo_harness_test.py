@@ -199,3 +199,91 @@ def test_gpu_fence_is_a_noop_without_a_gpu_allocation():
     _fence_gpu_memory(None)
     _fence_gpu_memory({})
     _fence_gpu_memory({"cpu": 4})  # the XGBoost-on-ray shape
+
+
+def test_fence_leaves_headroom_for_co_tenant_cuda_contexts():
+    """Shares that sum to a whole card must still fence below it.
+
+    ``set_per_process_memory_fraction`` is a fraction of *total* memory, so two trials
+    fenced at a literal 0.5 leave nothing for their CUDA contexts — which the driver
+    allocates outside the caching allocator.
+    """
+    from workbench.training.hpo_harness import _FENCE_HEADROOM
+
+    assert _FENCE_HEADROOM < 1.0
+    assert 2 * (0.5 * _FENCE_HEADROOM) < 1.0
+
+
+# --- Ray backend ------------------------------------------------------------
+# Ray is a test dependency (via the `training` extra, which `test` pulls in), so these
+# run in the default suite. They cover the trial plumbing — space translation, terminal
+# state reporting, winner selection — on CPU. Real parallelism still needs a GPU box.
+
+
+def test_ray_space_maps_choices_to_indices():
+    """``Choice`` knobs sample as an index so unhashable options survive Optuna."""
+    from workbench.training.hpo_harness import _to_ray_space
+
+    space, options = _to_ray_space(
+        {"width": IntRange(2, 10, 2), "shape": Choice([[1, 2], [3, 4]]), "lr": FloatRange(1e-4, 1e-1, log=True)}
+    )
+    assert options["shape"] == [[1, 2], [3, 4]]
+    assert "width" not in options and "lr" not in options
+    assert set(space) == {"width", "shape", "lr"}
+
+
+def test_ray_search_finds_minimum(ray_cluster):
+    """End-to-end on the Ray backend: the reported winner is the sampled optimum."""
+    from hpo_ray_trials import quadratic
+
+    result = run_search(quadratic, SPACE, n_trials=6, backend="ray", pruning=False)
+
+    assert isinstance(result, HpoResult)
+    assert result.best_value == pytest.approx(min(t["value"] for t in result.trials))
+    assert set(result.best_config) == set(SPACE)
+
+
+def test_ray_oom_trial_is_scored_none_rather_than_erroring(ray_cluster):
+    """An out-of-memory trial reports a null objective instead of dying.
+
+    Ray tells Optuna FAIL for an *errored* trial, and TPE draws only on COMPLETE/PRUNED —
+    so a crashed trial teaches the sampler nothing and the corner gets re-proposed for the
+    rest of the search. A null objective lands it in the pruned bucket, which TPE models.
+    """
+    pytest.importorskip("torch")
+    from hpo_ray_trials import oom_above_depth_3
+
+    result = run_search(oom_above_depth_3, {"depth": IntRange(2, 6)}, n_trials=8, backend="ray", pruning=False)
+
+    oomed = [t for t in result.trials if t["config"]["depth"] >= 4]
+    assert oomed, "search never sampled the failing region"
+    assert all(t["value"] is None for t in oomed)
+    assert all(not t["completed"] for t in oomed)
+    # The winner still comes from the trials that actually ran.
+    assert result.best_value is not None
+    assert result.best_config["depth"] < 4
+
+
+def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
+    """No usable trial must name the problem, not die resolving a None config.
+
+    The Optuna backend already does this; the Ray backend used to fall back to ranking
+    errored trials, whose ``config`` is None, and surface an AttributeError from deep
+    inside config resolution — on the GPU box that costs the most to rent.
+    """
+    pytest.importorskip("torch")
+    from hpo_ray_trials import always_oom
+
+    with pytest.raises(RuntimeError, match="no usable trial"):
+        run_search(always_oom, {"depth": IntRange(2, 6)}, n_trials=2, backend="ray", pruning=False)
+
+
+def test_is_oom_discriminates():
+    """``_is_oom`` keys on torch's exception type, never on message text."""
+    torch = pytest.importorskip("torch")
+
+    from workbench.training.hpo_harness import _is_oom
+
+    assert _is_oom(torch.cuda.OutOfMemoryError("CUDA out of memory"))
+    assert not _is_oom(RuntimeError("CUDA out of memory"))  # same words, wrong type
+    assert not _is_oom(ValueError("boom"))
