@@ -539,6 +539,11 @@ def get_hpo_search_space(workbench_model: Any) -> Optional[pd.DataFrame]:
 # A search under this many scored trials cannot support an importance estimate.
 _MIN_TRIALS_FOR_IMPORTANCE = 10
 
+# How far above a random column's importance the top knob must sit to be worth reading.
+# A knob merely *beating* noise is not evidence — the two estimates carry comparable
+# uncertainty at these trial counts.
+_NOISE_FLOOR_MARGIN = 1.5
+
 
 def _encode_knobs(hyperparameters: pd.Series) -> tuple[pd.DataFrame, dict]:
     """Encode each knob's trial values as floats for the surrogate, keeping the originals.
@@ -588,6 +593,38 @@ def _partial_dependence(model: Any, x: pd.DataFrame, knob: str, grid: list) -> "
     return np.array(means)
 
 
+def _warn_if_below_noise_floor(x, y, importances) -> None:
+    """Log a warning when the top knob's importance is within reach of pure noise.
+
+    Impurity importance is biased toward whatever offers the most split points, so a
+    continuous knob outranks a 3-level one even when neither carries signal (Strobl et al.,
+    BMC Bioinformatics 2007). Measure that directly: refit with two junk columns — one
+    continuous, one 3-level — and read the importance the continuous one earns. Anything at
+    or below it is unmeasured, however large its normalized share looks.
+
+    Fitted separately so the reported numbers are unchanged; the junk columns would
+    otherwise compete for splits and shift every share.
+    """
+    import numpy as np
+    from sklearn.ensemble import RandomForestRegressor
+
+    rng = np.random.default_rng(42)
+    probe = x.copy()
+    probe["_noise_continuous"] = rng.uniform(size=len(x))
+    probe["_noise_categorical"] = rng.integers(0, 3, size=len(x))
+
+    floor_model = RandomForestRegressor(n_estimators=500, random_state=42, min_samples_leaf=2).fit(probe, y)
+    floor = float(dict(zip(probe.columns, floor_model.feature_importances_))["_noise_continuous"])
+
+    top = float(max(importances)) if len(importances) else 0.0
+    if top <= floor * _NOISE_FLOOR_MARGIN:
+        log.warning(
+            f"Hyperparameter importance is at the noise floor: top knob scores {top:.3f} against "
+            f"{floor:.3f} for a random column on the same {len(x)} trials. Rank the knobs by "
+            "'effect' against your run-to-run spread instead — the shares are not separable here."
+        )
+
+
 def get_hpo_importance(workbench_model: Any) -> Optional[pd.DataFrame]:
     """Rank a searched model's knobs by how much they moved the objective.
 
@@ -629,6 +666,7 @@ def get_hpo_importance(workbench_model: Any) -> Optional[pd.DataFrame]:
     from sklearn.ensemble import RandomForestRegressor
 
     surrogate = RandomForestRegressor(n_estimators=500, random_state=42, min_samples_leaf=2).fit(x, y)
+    _warn_if_below_noise_floor(x, y, surrogate.feature_importances_)
 
     scale = abs(float(y.mean())) or 1.0
     rows = []

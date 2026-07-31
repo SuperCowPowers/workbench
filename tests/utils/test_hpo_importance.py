@@ -6,6 +6,7 @@ Model.hpo_importance().
 """
 
 import json
+import logging
 
 import numpy as np
 import pandas as pd
@@ -156,3 +157,59 @@ def test_unsearched_model_returns_none(monkeypatch):
     """None from get_hpo_results carries straight through."""
     monkeypatch.setattr(model_utils, "get_hpo_results", lambda model: None)
     assert get_hpo_importance(object()) is None
+
+
+def _pure_noise(n=24):
+    """A search where nothing drives the objective — the regime the floor warning is for."""
+    rng = np.random.default_rng(7)
+    records = [
+        {"lr": float(v), "depth": int(d), "layers": int(k)}
+        for v, d, k in zip(rng.uniform(1e-4, 5e-3, n), rng.integers(2, 7, n), rng.integers(1, 4, n))
+    ]
+    return _trials(records, rng.standard_normal(n).tolist())
+
+
+@pytest.fixture
+def workbench_warnings(caplog):
+    """Capture warnings off the ``workbench`` logger.
+
+    It sets ``propagate=False`` and owns its own handler, so caplog's root handler never
+    sees these records — attach it to the logger directly.
+    """
+    logger = logging.getLogger("workbench")
+    logger.addHandler(caplog.handler)
+    caplog.set_level(logging.WARNING, logger="workbench")
+    yield caplog
+    logger.removeHandler(caplog.handler)
+
+
+def test_noise_floor_warning_fires_when_nothing_is_measurable(stub_results, workbench_warnings):
+    """A search with no signal must say so, not hand back a confident-looking ranking."""
+    stub_results(_pure_noise())
+
+    importance = get_hpo_importance("model")
+
+    assert importance is not None  # the frame is still returned; the caller is just warned
+    assert any("noise floor" in record.message for record in workbench_warnings.records)
+
+
+def test_no_noise_floor_warning_when_a_knob_really_drives_the_objective(stub_results, workbench_warnings):
+    """A planted signal must clear the floor, or the warning is useless."""
+    stub_results(_planted())
+
+    get_hpo_importance("model")
+
+    assert not any("noise floor" in record.message for record in workbench_warnings.records)
+
+
+def test_noise_floor_probe_does_not_change_the_reported_shares(stub_results):
+    """The probe fits its own forest — reported importances must be untouched by it."""
+    stub_results(_planted())
+    before = get_hpo_importance("model")
+
+    stub_results(_planted())
+    after = get_hpo_importance("model")
+
+    assert list(before["knob"]) == list(after["knob"])
+    assert before["importance"].tolist() == pytest.approx(after["importance"].tolist())
+    assert before["importance"].sum() == pytest.approx(1.0)
