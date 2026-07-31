@@ -48,12 +48,15 @@ _SEARCH_GROUPS = {
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
     # interact (they scale together), so they search as one group. The batch_size ceiling is
-    # bounded by GPU memory under concurrent trials, not by the objective.
+    # bounded by GPU memory under concurrent trials, not by the objective; the default
+    # matches chemprop's own (64) and the template's, so an untuned model and the search's
+    # baseline train alike. On ADMET-scale sets the optimizers in the literature pick the
+    # bottom of whatever batch range they are offered.
     # init_lr/final_lr are tied to max_lr in merge_best_config; searched independently they
     # can produce init > max, which the Noam schedule rejects.
     "optimizer": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True, default=1e-3),
-        "batch_size": Choice([64, 128, 256, 512, 1024], default=128),
+        "batch_size": Choice([64, 128, 256, 512, 1024], default=64),
     },
 }
 
