@@ -468,6 +468,21 @@ def _suggest_optuna(trial, search_space) -> dict:
 # and needs a GPU box for real parallelism); the Optuna backend is what CI covers.
 
 
+# The fence is a fraction of the card's *total* memory, so co-tenant trials whose shares sum
+# to 1.0 leave nothing for their CUDA contexts (a few hundred MB each, allocated by the driver
+# outside the caching allocator). Scaling every share down keeps that space free.
+_FENCE_HEADROOM = 0.9
+
+
+def _is_oom(exc: BaseException) -> bool:
+    """True for a CUDA out-of-memory error. False when torch isn't installed."""
+    try:
+        import torch
+    except ImportError:
+        return False
+    return isinstance(exc, torch.cuda.OutOfMemoryError)
+
+
 def _fence_gpu_memory(resources_per_trial) -> None:
     """Cap this trial process at the share of the GPU it was scheduled for.
 
@@ -487,7 +502,7 @@ def _fence_gpu_memory(resources_per_trial) -> None:
     except ImportError:
         return
     if torch.cuda.is_available():
-        torch.cuda.set_per_process_memory_fraction(min(1.0, float(share)), 0)
+        torch.cuda.set_per_process_memory_fraction(min(1.0, float(share) * _FENCE_HEADROOM), 0)
 
 
 def _run_ray(
@@ -528,7 +543,18 @@ def _run_ray(
             last_step = step if step is not None else last_step + 1
             tune.report({**metrics, time_attr: last_step})
 
-        value = trial_fn(config, report)
+        try:
+            value = trial_fn(config, report)
+        except Exception as exc:
+            if not _is_oom(exc):
+                raise
+            # Ray reports an errored trial to Optuna as FAIL, and TPE draws only on COMPLETE
+            # and PRUNED trials — so an OOM teaches the sampler nothing and it keeps proposing
+            # the corner that cannot fit. A null metric makes Ray report the trial as PRUNED
+            # instead, which TPE does model, ranked at the bottom.
+            log.warning(f"Trial out of GPU memory, reporting as pruned: {exc}")
+            tune.report({metric: None, time_attr: last_step + 1})
+            return
         # Final objective, one tick past the last epoch (time_attr must increase). done_flag
         # marks a full run so winner selection can exclude ASHA-stopped partial ensembles.
         tune.report({metric: value, time_attr: last_step + 1, done_flag: 1})
