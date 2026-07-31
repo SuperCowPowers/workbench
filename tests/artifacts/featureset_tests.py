@@ -36,5 +36,36 @@ def test():
     # my_features.delete()
 
 
+def test_query_table_overwrite():
+    """query() resolves the FeatureSet name to the versioned Athena table"""
+    my_features = FeatureSetCore("test_features")
+    name, table = my_features.name, my_features.athena_table
+
+    # Capture the rewritten SQL instead of running it against Athena
+    captured = []
+    my_features.data_source.query = lambda q: captured.append(q)
+
+    def rewrite(query: str) -> str:
+        captured.clear()
+        my_features.query(query)
+        return captured[0]
+
+    # The name resolves wherever it sits: mid-line, end of string, before a newline, or quoted
+    assert rewrite(f"SELECT * FROM {name} WHERE x = 1") == f"SELECT * FROM {table} WHERE x = 1"
+    assert rewrite(f"SELECT *\nFROM {name}") == f"SELECT *\nFROM {table}"
+    assert rewrite(f"SELECT *\nFROM {name}\nLIMIT 3") == f"SELECT *\nFROM {table}\nLIMIT 3"
+    assert rewrite(f'SELECT * FROM "{name}"') == f'SELECT * FROM "{table}"'
+
+    # Whole-word only: an already-resolved table and a longer sibling name are both left alone
+    assert rewrite(f"SELECT * FROM {table}") == f"SELECT * FROM {table}"
+    assert rewrite(f"SELECT * FROM {name}_holdout") == f"SELECT * FROM {name}_holdout"
+
+    # overwrite=False opts out entirely
+    captured.clear()
+    my_features.query(f"SELECT * FROM {name}", overwrite=False)
+    assert captured[0] == f"SELECT * FROM {name}"
+
+
 if __name__ == "__main__":
     test()
+    test_query_table_overwrite()
