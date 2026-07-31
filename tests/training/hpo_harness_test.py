@@ -264,6 +264,30 @@ def test_ray_oom_trial_is_scored_none_rather_than_erroring(ray_cluster):
     assert result.best_config["depth"] < 4
 
 
+def test_asha_gives_a_fold_search_more_than_one_rung():
+    """A fold-reporting search must get a second look before a config is dropped.
+
+    Rungs sit at ``grace_period * reduction_factor ** k``. Under Ray's default factor of 4
+    the second rung lands at 8 — past the end of a 5-fold run — so the whole search turns on
+    one comparison made after two folds. Reads Ray's bracket internals deliberately: the
+    rung ladder is the behavior under test, and it is not otherwise observable.
+    """
+    from ray.tune.schedulers import ASHAScheduler
+
+    from workbench.training.hpo_harness import PRUNE_REDUCTION_FACTOR
+
+    scheduler = ASHAScheduler(
+        metric="holdout_mae",
+        mode="min",
+        time_attr="step",
+        grace_period=2,
+        reduction_factor=PRUNE_REDUCTION_FACTOR,
+    )
+    rungs = sorted(rung for rung, _ in scheduler._brackets[0]._rungs)
+
+    assert len([r for r in rungs if r <= 5]) >= 2, f"a 5-fold search sees only rungs {rungs}"
+
+
 def test_partial_trials_reach_optuna_as_pruned_not_complete():
     """A scheduler-stopped trial must not enter TPE's fit as a completed observation.
 

@@ -29,6 +29,11 @@ import os
 # Trials report once per completed fold, so a trial is eligible for pruning only after its
 # second member has trained. One fold is too noisy a basis to kill a config on: a config can
 # lag on a single scaffold fold and still make the better ensemble.
+#
+# This also anchors ASHA's rung ladder, which sits at this value times
+# PRUNE_REDUCTION_FACTOR ** k — 2 and 4 for a 5-fold search. Raising it moves every rung:
+# at 3 the second rung lands at 6, past the last fold, leaving one all-or-nothing cull.
+# Check the ladder against n_folds before changing this.
 FOLD_PRUNE_WARMUP = 2
 
 # Finalists re-scored in phase 1.5 (plus the baseline, always). See rerank_finalists.

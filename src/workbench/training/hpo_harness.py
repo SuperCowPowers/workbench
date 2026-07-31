@@ -235,6 +235,15 @@ def space_defaults(search_space: SearchSpace) -> dict:
 PRUNE_WARMUP_STEPS = 20
 PRUNE_STARTUP_TRIALS = 5
 
+# ASHA rungs sit at ``grace_period * reduction_factor ** k``, and each cull keeps the top
+# ``1 / reduction_factor``. Ray's default of 4 puts the second rung at 8 — past the end of a
+# fold-reporting search, which therefore gets a single decision that discards 75% of trials
+# on the evidence of two folds. Halving instead lands rungs at 2 and 4, so a config gets a
+# second look before it is dropped and no single comparison is decisive. Same fraction
+# surviving, spread over two decisions; costs roughly a fifth more fold-training, since
+# twice as many trials clear the first rung.
+PRUNE_REDUCTION_FACTOR = 2
+
 
 @dataclass
 class HpoResult:
@@ -590,7 +599,15 @@ def _run_ray(
     # grace_period defaults to 1 (prune after a single report) — far too eager; give each
     # trial the same warmup the Optuna path gets.
     scheduler = (
-        ASHAScheduler(metric=metric, mode=mode, time_attr=time_attr, grace_period=prune_warmup) if pruning else None
+        ASHAScheduler(
+            metric=metric,
+            mode=mode,
+            time_attr=time_attr,
+            grace_period=prune_warmup,
+            reduction_factor=PRUNE_REDUCTION_FACTOR,
+        )
+        if pruning
+        else None
     )
     tuner = tune.Tuner(
         trainable_res,
