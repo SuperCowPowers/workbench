@@ -525,6 +525,7 @@ def molecule_grid(
     n = len(smiles)
     nrows = -(-n // ncols)  # ceil
     fig, axes = plt.subplots(nrows, ncols, figsize=(5 * ncols, 3.6 * nrows), constrained_layout=True)
+    fig.get_layout_engine().set(h_pad=0.12)  # captions are axes titles; the default pad clips them at the edge
     fig.patch.set_facecolor("white")  # opaque, or the plot window renders black behind it
     axes = list(axes.flat) if hasattr(axes, "flat") else [axes]
 
