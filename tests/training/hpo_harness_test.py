@@ -1,10 +1,12 @@
-"""Fast unit tests for ``workbench.training.hpo_harness`` (Optuna backend).
+"""Fast unit tests for ``workbench.training.hpo_harness``, both backends.
 
-Pure synthetic objectives — no chemprop/GPU/AWS, so these run in the default
-suite. The Ray backend needs a ray-enabled container and is not covered here.
+Pure synthetic objectives — no chemprop, no GPU, no AWS — so these run in the
+default suite. The Ray backend's real parallelism needs a GPU box, but its trial
+plumbing runs on CPU: space translation, terminal-state reporting, rung layout,
+winner selection.
 
-Optuna is a test dependency (the `dev` extra), so a missing one is a broken
-environment rather than a reason to skip.
+optuna, ray and torch all arrive with the `modeling` extra, which every tox test
+env installs — a missing one is a broken environment, not a reason to skip.
 """
 
 import pytest
@@ -250,7 +252,6 @@ def test_ray_oom_trial_is_scored_none_rather_than_erroring(ray_cluster):
     so a crashed trial teaches the sampler nothing and the corner gets re-proposed for the
     rest of the search. A null objective lands it in the pruned bucket, which TPE models.
     """
-    pytest.importorskip("torch")
     from hpo_ray_trials import oom_above_depth_3
 
     result = run_search(oom_above_depth_3, {"depth": IntRange(2, 6)}, n_trials=8, backend="ray", pruning=False)
@@ -262,6 +263,34 @@ def test_ray_oom_trial_is_scored_none_rather_than_erroring(ray_cluster):
     # The winner still comes from the trials that actually ran.
     assert result.best_value is not None
     assert result.best_config["depth"] < 4
+
+
+def test_a_trial_that_died_before_reporting_does_not_sink_the_record():
+    """A killed worker records no config; the other trials' results must still come back.
+
+    Ray leaves ``config``/``metrics`` unset when a trial dies before it runs — an OOM-killed
+    worker, a missing dep in the image, actor construction failing. Reading those unguarded
+    raised an AttributeError from config resolution, discarding a search that had already
+    been paid for in full.
+    """
+    from workbench.training.hpo_harness import _resolve_trial_records
+
+    class _Dead:
+        config = None
+        metrics = None
+
+    class _Good:
+        config = {"depth": 3}
+        metrics = {"holdout_mae": 0.25, "_hpo_completed": 1}
+
+    records = _resolve_trial_records(
+        [_Good(), _Dead(), _Good()], metric="holdout_mae", done_flag="_hpo_completed", choice_options={}
+    )
+
+    assert [r["completed"] for r in records] == [True, False, True]
+    assert records[1]["value"] is None
+    assert records[1]["config"] == {}
+    assert records[0]["value"] == 0.25
 
 
 def test_asha_gives_a_fold_search_more_than_one_rung():
@@ -330,7 +359,6 @@ def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
     errored trials, whose ``config`` is None, and surface an AttributeError from deep
     inside config resolution — on the GPU box that costs the most to rent.
     """
-    pytest.importorskip("torch")
     from hpo_ray_trials import always_oom
 
     with pytest.raises(RuntimeError, match="no usable trial"):
@@ -339,7 +367,7 @@ def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
 
 def test_is_oom_discriminates():
     """``_is_oom`` keys on torch's exception type, never on message text."""
-    torch = pytest.importorskip("torch")
+    import torch
 
     from workbench.training.hpo_harness import _is_oom
 

@@ -484,12 +484,17 @@ _FENCE_HEADROOM = 0.9
 
 
 def _is_oom(exc: BaseException) -> bool:
-    """True for a CUDA out-of-memory error. False when torch isn't installed."""
+    """True for a CUDA out-of-memory error. False when torch isn't installed.
+
+    Called from an ``except`` block, so it must not raise: anything it raises would replace
+    the exception being handled. ``OutOfMemoryError`` only exists on torch >= 1.13.
+    """
     try:
         import torch
     except ImportError:
         return False
-    return isinstance(exc, torch.cuda.OutOfMemoryError)
+    oom_error = getattr(torch.cuda, "OutOfMemoryError", None)
+    return oom_error is not None and isinstance(exc, oom_error)
 
 
 def _fence_gpu_memory(resources_per_trial) -> None:
@@ -511,7 +516,15 @@ def _fence_gpu_memory(resources_per_trial) -> None:
     except ImportError:
         return
     if torch.cuda.is_available():
-        torch.cuda.set_per_process_memory_fraction(min(1.0, float(share) * _FENCE_HEADROOM), 0)
+        # Headroom covers the *co-tenant* CUDA contexts the fraction cannot see — the driver
+        # allocates them outside the caching allocator, so shares summing to 1.0 would leave
+        # them nowhere to live. A trial holding the whole card has only its own context and
+        # needs no such reserve; taking it anyway would shrink the multi-task path, which
+        # already sits near the card's limit.
+        fraction = float(share)
+        if fraction < 1.0:
+            fraction *= _FENCE_HEADROOM
+        torch.cuda.set_per_process_memory_fraction(min(1.0, fraction), 0)
 
 
 def _partial_aware_search(done_flag: str, **kwargs):
@@ -538,6 +551,30 @@ def _partial_aware_search(done_flag: str, **kwargs):
             super().on_trial_complete(trial_id, result=result, error=error)
 
     return _PartialAware(**kwargs)
+
+
+def _resolve_choices(config, choice_options) -> dict:
+    """Map ``Choice`` knobs back from the indices the trainable sampled them as."""
+    return {k: (choice_options[k][v] if k in choice_options else v) for k, v in (config or {}).items()}
+
+
+def _resolve_trial_records(results, *, metric, done_flag, choice_options) -> list:
+    """One record per trial, defensive about trials that never reported.
+
+    A trial killed before it ran — an OOM-killed worker, a missing dependency in the image,
+    actor construction failing — comes back with ``config`` and ``metrics`` unset. Those
+    still belong in the record as the unscored trials they are; reading them unguarded
+    discards a search that has already been paid for in full.
+    """
+    return [
+        {
+            "number": i,
+            "value": (r.metrics or {}).get(metric),
+            "config": _resolve_choices(r.config, choice_options),
+            "completed": bool((r.metrics or {}).get(done_flag)),
+        }
+        for i, r in enumerate(results)
+    ]
 
 
 def _run_ray(
@@ -621,10 +658,6 @@ def _run_ray(
     )
     results = tuner.fit()
 
-    def _resolve(config):
-        # config holds Choice knobs as indices (see trainable); map them back to values.
-        return {k: (choice_options[k][v] if k in choice_options else v) for k, v in config.items()}
-
     # Rank only among trials that ran the full ensemble. An ASHA-stopped trial's last value
     # is a *partial* ensemble mean, which can read lower than a completed one and would
     # otherwise be published — the very regime mismatch the ensemble objective removes.
@@ -646,24 +679,16 @@ def _run_ray(
     def _objective(r):
         # Missing/None metric sorts to the worst end regardless of mode — a signed default
         # (e.g. -inf in max mode) would otherwise make an unscored trial win.
-        v = r.metrics.get(metric)
+        v = (r.metrics or {}).get(metric)
         if v is None:
             return float("inf")
         return v if mode == "min" else -v
 
     best = min(pool, key=_objective)
-    trials = [
-        {
-            "number": i,
-            "value": r.metrics.get(metric),
-            "config": _resolve(r.config),
-            "completed": bool(r.metrics.get(done_flag)),
-        }
-        for i, r in enumerate(results)
-    ]
+    trials = _resolve_trial_records(results, metric=metric, done_flag=done_flag, choice_options=choice_options)
     return HpoResult(
-        best_config=_resolve(best.config),
-        best_value=best.metrics.get(metric),
+        best_config=_resolve_choices(best.config, choice_options),
+        best_value=(best.metrics or {}).get(metric),
         metric=metric,
         mode=mode,
         n_trials=len(trials),
