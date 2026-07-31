@@ -85,12 +85,16 @@ ui = [
     "dash-bootstrap-components >= 1.6.0",
     "dash_ag_grid >= 33.3.3",
 ]
-# Training-container-only deps (the workbench.training surface). Never installed
-# in endpoint containers — being a non-dev extra, these auto-extend the
-# endpoint-import-smoke forbidden list, so any leak into workbench.endpoints fails CI.
-training = [
+# The ML stack the training and inference images carry: the HPO search backends plus the
+# model frameworks. Grouped by what they are, not by which image ships them — being a
+# non-dev extra they auto-extend the endpoint-import-smoke forbidden list, which is the
+# single rule that covers all of them: `workbench.endpoints` modules may import any of
+# these lazily, never at module scope, or they break in the container that lacks them.
+modeling = [
     "ray[tune]",
     "optuna",
+    "torch",
+    "chemprop",
 ]
 # Dev tooling only — no runtime deps. Skipped when deriving the endpoint-import-smoke
 # forbidden list (see ci/endpoint_import_smoke.py), so nothing here constrains the
@@ -106,25 +110,6 @@ dev = [
     "black",
     "aws-cdk-lib",
 ]
-# The ML runtimes the `pytorch_chem` container carries. Opt-in (`tox -e heavy`) because
-# torch's default linux wheel bundles the CUDA runtime — GBs that a CPU test run never
-# uses. Installing these makes the chemprop training path runnable locally, and backs the
-# HPO harness's CUDA-OOM check (`torch.cuda.OutOfMemoryError` is a real class on a CPU-only
-# build). Deliberately NOT dev-ignored: endpoint modules may only import torch/chemprop
-# lazily, so these belong on the forbidden list.
-dev-heavy = [
-    "torch",
-    "chemprop",
-]
-# What a test run needs: the dev tooling plus every runtime surface the suite imports.
-# `training` rides along here rather than in `all` — the suite exercises both HPO backends,
-# but a plain `pip install workbench[all]` has no reason to pull a Ray cluster.
-test = [
-    "workbench[dev]",
-    "workbench[ui]",
-    "workbench[misc]",
-    "workbench[training]",
-]
 # Docs toolchain (mkdocs site + mkdocstrings API reference). Kept in sync with .github/workflows/deploy-docs.yml
 docs = [
     # Cap mkdocs/material below 2.0/10 — MkDocs 2.0 is a breaking rewrite that Material 10 will require
@@ -133,11 +118,14 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
 ]
-# Everything, heavy runtimes included. `test` is the leaner target the tox envs install.
+# Everything. This is what the tox test envs install: the suite exercises both HPO backends
+# and type-checks the harness's CUDA-OOM handling against torch's own exception class.
 all = [
-    "workbench[test]",
+    "workbench[ui]",
+    "workbench[modeling]",
+    "workbench[misc]",
+    "workbench[dev]",
     "workbench[docs]",
-    "workbench[dev-heavy]",
 ]
 
 [project.urls]
@@ -199,8 +187,7 @@ norecursedirs = [".tox", ".git", "*.egg-info", "__pycache__", "dist", "build"]
 markers = [
     "medium: marks heavier validation tests excluded from quick runs (run with 'tox -e medium')",
     "long: marks tests as long (deselect with '-m \"not long\"')",
-    "corner_case: marks corner case tests not run by default (deselect with '-m \"not corner_case\"')",
-    "heavy: marks tests needing the dev-heavy runtimes, torch/chemprop (run with 'tox -e heavy')"
+    "corner_case: marks corner case tests not run by default (deselect with '-m \"not corner_case\"')"
 ]
 
 [tool.coverage.run]
