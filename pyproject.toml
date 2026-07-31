@@ -92,11 +92,9 @@ training = [
     "ray[tune]",
     "optuna",
 ]
-# `optuna` is here as well as in `training`: the test suite exercises the HPO harness's
-# Optuna backend, and `training` is deliberately outside `all`. Listing it in both keeps
-# it on the endpoint-import-smoke forbidden list (derived from non-dev extras) while
-# still reaching the test environment. `ray[tune]` stays training-only — the Ray backend
-# needs a ray-enabled container and has no test coverage here.
+# Dev tooling only — no runtime deps. Skipped when deriving the endpoint-import-smoke
+# forbidden list (see ci/endpoint_import_smoke.py), so nothing here constrains the
+# endpoint contract.
 dev = [
     "tox",
     "pytest",
@@ -107,7 +105,25 @@ dev = [
     "flake8",
     "black",
     "aws-cdk-lib",
-    "optuna",
+]
+# The ML runtimes the `pytorch_chem` container carries. Opt-in (`tox -e heavy`) because
+# torch's default linux wheel bundles the CUDA runtime — GBs that a CPU test run never
+# uses. Installing these makes the chemprop training path runnable locally, and backs the
+# HPO harness's CUDA-OOM check (`torch.cuda.OutOfMemoryError` is a real class on a CPU-only
+# build). Deliberately NOT dev-ignored: endpoint modules may only import torch/chemprop
+# lazily, so these belong on the forbidden list.
+dev-heavy = [
+    "torch",
+    "chemprop",
+]
+# What a test run needs: the dev tooling plus every runtime surface the suite imports.
+# `training` rides along here rather than in `all` — the suite exercises both HPO backends,
+# but a plain `pip install workbench[all]` has no reason to pull a Ray cluster.
+test = [
+    "workbench[dev]",
+    "workbench[ui]",
+    "workbench[misc]",
+    "workbench[training]",
 ]
 # Docs toolchain (mkdocs site + mkdocstrings API reference). Kept in sync with .github/workflows/deploy-docs.yml
 docs = [
@@ -117,11 +133,11 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
 ]
+# Everything, heavy runtimes included. `test` is the leaner target the tox envs install.
 all = [
-    "workbench[ui]",
-    "workbench[dev]",
-    "workbench[misc]",
+    "workbench[test]",
     "workbench[docs]",
+    "workbench[dev-heavy]",
 ]
 
 [project.urls]
@@ -183,7 +199,8 @@ norecursedirs = [".tox", ".git", "*.egg-info", "__pycache__", "dist", "build"]
 markers = [
     "medium: marks heavier validation tests excluded from quick runs (run with 'tox -e medium')",
     "long: marks tests as long (deselect with '-m \"not long\"')",
-    "corner_case: marks corner case tests not run by default (deselect with '-m \"not corner_case\"')"
+    "corner_case: marks corner case tests not run by default (deselect with '-m \"not corner_case\"')",
+    "heavy: marks tests needing the dev-heavy runtimes, torch/chemprop (run with 'tox -e heavy')"
 ]
 
 [tool.coverage.run]
