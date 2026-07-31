@@ -264,6 +264,41 @@ def test_ray_oom_trial_is_scored_none_rather_than_erroring(ray_cluster):
     assert result.best_config["depth"] < 4
 
 
+def test_partial_trials_reach_optuna_as_pruned_not_complete():
+    """A scheduler-stopped trial must not enter TPE's fit as a completed observation.
+
+    Its last value is a partial ensemble — worse than a full one by construction — so
+    recording it as COMPLETE mixes two objectives in the quantile split and labels every
+    pruned region worse than it is.
+    """
+    import optuna
+
+    from workbench.training.hpo_harness import _partial_aware_search
+
+    from ray import tune
+
+    search = _partial_aware_search(
+        "_hpo_completed", space={"x": tune.uniform(0.0, 1.0)}, metric="holdout_mae", mode="min", seed=42
+    )
+
+    finished, stopped = "trial_finished", "trial_stopped"
+    for trial_id in (finished, stopped):
+        search.suggest(trial_id)
+
+    search.on_trial_complete(finished, result={"holdout_mae": 0.5, "_hpo_completed": 1})
+    search.on_trial_complete(stopped, result={"holdout_mae": 0.4})  # better-looking, but partial
+
+    states = {t.state for t in search._ot_study.trials}
+    assert optuna.trial.TrialState.COMPLETE in states
+    assert optuna.trial.TrialState.PRUNED in states
+
+    completed = [t for t in search._ot_study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    assert len(completed) == 1
+    assert completed[0].value == pytest.approx(0.5)
+    # The partial trial's flattering 0.4 must not be sitting in the completed pool.
+    assert all(t.value != pytest.approx(0.4) for t in completed)
+
+
 def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
     """No usable trial must name the problem, not die resolving a None config.
 

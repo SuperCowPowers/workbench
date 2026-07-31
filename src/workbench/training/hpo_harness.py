@@ -505,13 +505,38 @@ def _fence_gpu_memory(resources_per_trial) -> None:
         torch.cuda.set_per_process_memory_fraction(min(1.0, float(share) * _FENCE_HEADROOM), 0)
 
 
+def _partial_aware_search(done_flag: str, **kwargs):
+    """An ``OptunaSearch`` that tells Optuna a scheduler-stopped trial is *pruned*.
+
+    Ray ends a stopped trial by handing the searcher that trial's last result, and
+    ``OptunaSearch`` records any result carrying the metric as a COMPLETE observation. For
+    an ensemble objective that last value is a *partial* ensemble — systematically worse
+    than the full one — so TPE's quantile split ends up fitting a mixture of two different
+    objectives, with every pruned region labelled worse than it is. That entrenches whatever
+    the first rung decided.
+
+    Dropping the result for any trial that never set ``done_flag`` maps it to PRUNED, which
+    TPE ranks by the intermediate values it already recorded — the comparison ASHA actually
+    made — instead of by a value on the wrong scale. Winner selection guards the same
+    distinction independently, on the harness's own records.
+    """
+    from ray.tune.search.optuna import OptunaSearch
+
+    class _PartialAware(OptunaSearch):
+        def on_trial_complete(self, trial_id, result=None, error=False):
+            if result is not None and not result.get(done_flag):
+                result = None
+            super().on_trial_complete(trial_id, result=result, error=error)
+
+    return _PartialAware(**kwargs)
+
+
 def _run_ray(
     trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed, resources_per_trial
 ) -> HpoResult:
     import ray
     from ray import tune
     from ray.tune.schedulers import ASHAScheduler
-    from ray.tune.search.optuna import OptunaSearch
 
     # Trials run in their own worker processes, so the allocator setting has to travel in the
     # runtime env rather than the driver's os.environ. Expandable segments let the caching
@@ -573,7 +598,7 @@ def _run_ray(
         tune_config=tune.TuneConfig(
             num_samples=n_trials,
             max_concurrent_trials=max_parallel,
-            search_alg=OptunaSearch(metric=metric, mode=mode, seed=seed),
+            search_alg=_partial_aware_search(done_flag, metric=metric, mode=mode, seed=seed),
             scheduler=scheduler,
         ),
     )
