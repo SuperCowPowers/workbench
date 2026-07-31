@@ -1,5 +1,6 @@
 """FeatureSet: Workbench Feature Set accessible through Athena"""
 
+import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -277,7 +278,9 @@ class FeatureSetCore(Artifact):
             pd.DataFrame: The results of the query
         """
         if overwrite:
-            query = query.replace(" " + self.name + " ", " " + self.athena_table + " ")
+            # Whole-word match, so the name resolves wherever it appears: end of string,
+            # before a newline, or quoted. An already-suffixed table name won't re-match.
+            query = re.sub(rf"\b{re.escape(self.name)}\b", self.athena_table, query)
         return self.data_source.query(query)
 
     def pull_dataframe(self, limit: int = 100000, include_aws_columns=False) -> pd.DataFrame:
