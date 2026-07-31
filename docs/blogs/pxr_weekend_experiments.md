@@ -73,7 +73,7 @@ It's a **partial win**. With 26 features instead of 74, v2 nudges the right way:
 
 If no single descriptor model beats Chemprop, maybe a blend does. We combined the natural trio — XGBoost, PyTorch, Chemprop:
 
-- **Learned-weight blend:** 0.578 — indistinguishable from Chemprop alone (0.577*); the optimizer just put nearly all weight on Chemprop.
+- **Learned-weight blend:** 0.578 — indistinguishable from Chemprop alone (0.577); the optimizer just put nearly all weight on Chemprop.
 - **Equal-weight blend:** 0.596 — *worse*; averaging in weaker, correlated members drags the strong one down.
 - **De-shrinkage:** the held-out predictions are slightly regressed to the mean (slope ≈ 0.94), but correcting for it on held-out data doesn't transfer (0.586).
 
@@ -93,7 +93,7 @@ The trendy idea: warm-start the Chemprop MPNN from a pretrained foundation model
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; font-weight: bold;">Chemprop (baseline)</td><td style="padding: 8px 16px;">none — from scratch</td><td style="padding: 8px 16px; font-weight: bold;">0.577*</td><td style="padding: 8px 16px;">253</td></tr>
+    <tr><td style="padding: 8px 16px; font-weight: bold;">Chemprop (baseline)</td><td style="padding: 8px 16px;">none — from scratch</td><td style="padding: 8px 16px; font-weight: bold;">0.577</td><td style="padding: 8px 16px;">253</td></tr>
     <tr><td style="padding: 8px 16px;">Chemprop + CheMeleon</td><td style="padding: 8px 16px;">freeze 0 (full fine-tune)</td><td style="padding: 8px 16px; color: #c0392b;">0.696</td><td style="padding: 8px 16px;">253</td></tr>
     <tr><td style="padding: 8px 16px;">Chemprop + CheMeleon</td><td style="padding: 8px 16px;">freeze 10 (LP-FT)</td><td style="padding: 8px 16px; color: #c0392b;">0.704</td><td style="padding: 8px 16px;">253</td></tr>
     <tr><td style="padding: 8px 16px;">Chemprop + CheMeleon</td><td style="padding: 8px 16px;">freeze 20 (LP-FT)</td><td style="padding: 8px 16px; color: #c0392b;">0.706</td><td style="padding: 8px 16px;">253</td></tr>
@@ -167,24 +167,48 @@ None of this is a verdict on 3D descriptors, ensembles, or foundation models in 
 
 ## Reproducing This
 
-The whole thing is a small Workbench DAG: a feature-set producer, one model script per experiment, and a Chemprop baseline. Each model captures a `pxr_phase1_test` inference on the revealed Analog Set 1, so the held-out numbers land on every endpoint.
+The whole thing is a small Workbench DAG: a feature-set producer, one model script per experiment, and a Chemprop baseline. Here's the winner — a multi-task Chemprop model, trained and deployed:
 
 ```python
-import numpy as np
-from workbench.api import Model
+"""PXR phase-2 submission: multi-task Chemprop (pEC50 + logD + logP).
 
-def held_out_rae(model_name):
-    """RAE on the revealed Analog Set 1 (lower is better; 1.0 = mean-only)."""
-    df = Model(model_name).get_inference_predictions("pxr_phase1_test")
-    y, p = df["pec50"].to_numpy(float), df["prediction"].to_numpy(float)
-    return np.abs(y - p).mean() / np.abs(y - y.mean()).mean()
+pEC50 is the primary head; logD + logP auxiliaries supervise the shared MPNN.
+Trains on all pEC50 rows (train + revealed phase-1) plus the public logP/logD
+aux data, then predicts the 513-compound blinded phase-2 test set.
+"""
+from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 
-print(held_out_rae("pxr-reg-chemprop"))             # single-task baseline, ~0.569
-print(held_out_rae("pxr-2d-3dv2-reg-pytorch-339"))  # best descriptor model, ~0.671
-print(held_out_rae("pxr-reg-chemprop-mt-both"))     # multi-task winner, ~0.556
+targets = ["pec50", "logp", "logd"]  # pec50 first (primary)
+tags = ["openadmet_pxr", "chemprop", "multi_task", "phase2"]
+
+m = FeatureSet("openadmet_pxr_mt").to_model(
+    name="pxr-reg-chemprop-mt-phase2",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.CHEMPROP,
+    feature_list=["smiles"],
+    target_column=targets,
+    description="PXR phase-2 multi-task Chemprop (pEC50 + logD + logP aux; trains on train + phase-1)",
+    tags=tags,
+    hyperparameters={"uq_version": "v1", "task_weights": [1.0, 0.2, 0.3]},
+)
+
+# Create the endpoint and run cross-fold inference on the training set (train + phase-1)
+end = m.to_endpoint(tags=tags)
+end.cross_fold_inference()
+
+# Predict the blinded phase-2 test set -> submission CSV (SMILES, Molecule Name, pEC50)
+blinded = PublicData().get("comp_chem/openadmet/pxr/testing/blinded")[["molecule_name", "smiles"]]
+preds = end.inference(blinded)
+
+# Write the submission CSV with the required column names
+submission = preds[["smiles", "molecule_name", "prediction"]].rename(
+    columns={"smiles": "SMILES", "molecule_name": "Molecule Name", "prediction": "pEC50"}
+)
+submission.to_csv("phase2_chemprop_mt_submission.csv", index=False)
+print(f"Wrote phase2_chemprop_mt_submission.csv ({len(submission)} rows)")
 ```
 
-*\* Two from-scratch Chemprop numbers appear above (0.569 and 0.577): same recipe, where 0.569 is the deployed full-pool model and 0.577 zero-weights Analog Set 1 out of training (the matched control for the later experiments). The ~0.008 gap is training stochasticity, not signal.*
+Source: [pxr_chemprop_mt_phase2.py](https://github.com/SuperCowPowers/workbench/blob/main/ml_pipelines/OpenADMET/pxr/phase2/pxr_chemprop_mt_phase2.py)
 
 ## References
 

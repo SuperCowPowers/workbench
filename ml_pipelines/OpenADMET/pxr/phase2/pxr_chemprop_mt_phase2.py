@@ -12,13 +12,11 @@ Build the FeatureSet first: python ../pxr_chemprop_mt_feature_sets.py
 
 from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 
-fs_name = "openadmet_pxr_mt"
-model_name = "pxr-reg-chemprop-mt-phase2"
 targets = ["pec50", "logp", "logd"]  # pec50 first (primary)
 tags = ["openadmet_pxr", "chemprop", "multi_task", "phase2"]
 
-m = FeatureSet(fs_name).to_model(
-    name=model_name,
+m = FeatureSet("openadmet_pxr_mt").to_model(
+    name="pxr-reg-chemprop-mt-phase2",
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],
@@ -27,15 +25,16 @@ m = FeatureSet(fs_name).to_model(
     tags=tags,
     hyperparameters={"uq_version": "v1", "task_weights": [1.0, 0.2, 0.3]},
 )
-m.set_owner("open_admet_pxr")
+
+# Create the endpoint and run cross-fold inference on the training set (train + phase-1)
 end = m.to_endpoint(tags=tags)
-end.set_owner("open_admet_pxr")
-end.test_inference()
 end.cross_fold_inference()
 
 # Predict the blinded phase-2 test set -> submission CSV (SMILES, Molecule Name, pEC50)
 blinded = PublicData().get("comp_chem/openadmet/pxr/testing/blinded")[["molecule_name", "smiles"]]
 preds = end.inference(blinded)
+
+# Write the submission CSV with the required column names
 submission = preds[["smiles", "molecule_name", "prediction"]].rename(
     columns={"smiles": "SMILES", "molecule_name": "Molecule Name", "prediction": "pEC50"}
 )
