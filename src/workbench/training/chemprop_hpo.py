@@ -47,16 +47,23 @@ _SEARCH_GROUPS = {
         "ffn_hidden_dim": Choice([300, 600, 1800, "300-100", "512-128", "512-128-32", "1024-256-64"], default=300),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
-    # interact (they scale together), so they search as one group. The batch_size ceiling is
-    # bounded by GPU memory under concurrent trials, not by the objective; the default
-    # matches chemprop's own (64) and the template's, so an untuned model and the search's
-    # baseline train alike. On ADMET-scale sets the optimizers in the literature pick the
-    # bottom of whatever batch range they are offered.
+    # interact (they scale together), so they search as one group. The default matches
+    # chemprop's own (64) and the template's, so an untuned model and the search's baseline
+    # train alike; on ADMET-scale sets the optimizers in the literature pick the bottom of
+    # whatever batch range they are offered.
+    #
+    # The ceiling is 512. Activation memory goes as depth x hidden_dim x bonds-per-batch, and
+    # 1024 pushed the product past a shared card: measured over one 60-trial search, every
+    # failure sat at 1024 and none below it, while 13 trials at hidden_dim>=1600 (up to 2300)
+    # ran clean at smaller batches — capacity was never the problem, the product was. It also
+    # costs nothing to drop: B_opt scales with dataset size (Smith & Le, arXiv:1710.06451), so
+    # 1024 is well past useful for a few thousand molecules.
+    #
     # init_lr/final_lr are tied to max_lr in merge_best_config; searched independently they
     # can produce init > max, which the Noam schedule rejects.
     "optimizer": {
         "max_lr": FloatRange(1e-4, 5e-3, log=True, default=1e-3),
-        "batch_size": Choice([64, 128, 256, 512, 1024], default=64),
+        "batch_size": Choice([64, 128, 256, 512], default=64),
     },
 }
 

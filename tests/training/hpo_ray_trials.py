@@ -28,3 +28,19 @@ def always_oom(config, report):
     import torch
 
     raise torch.cuda.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+
+def oom_before_any_report(config, report):
+    """OOM on the first fold, before the trial has reported anything.
+
+    The case that matters: a trial that finishes without ever reporting the metric trips the
+    scheduler's strict metric check, which raises out of the tuner and takes the whole search
+    with it.
+    """
+    import torch
+
+    if config["depth"] >= 4:
+        raise torch.cuda.OutOfMemoryError("CUDA out of memory (synthetic)")
+    for step in (1, 2, 3):
+        report(step=step, holdout_mae=float(config["depth"]))
+    return float(config["depth"])

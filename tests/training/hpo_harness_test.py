@@ -374,3 +374,29 @@ def test_is_oom_discriminates():
     assert _is_oom(torch.cuda.OutOfMemoryError("CUDA out of memory"))
     assert not _is_oom(RuntimeError("CUDA out of memory"))  # same words, wrong type
     assert not _is_oom(ValueError("boom"))
+
+
+def test_ray_oom_with_pruning_does_not_take_down_the_search(ray_cluster):
+    """An OOM must not kill the tuner when a scheduler is attached.
+
+    The scheduler rejects a finished trial that never reported its metric, and Ray injects the
+    flattened config into the result, so the "no result was ever received" exemption does not
+    apply. That raises out of `tuner.fit()` and loses every other trial in the search.
+    """
+    from hpo_ray_trials import oom_before_any_report
+
+    result = run_search(
+        oom_before_any_report,
+        {"depth": IntRange(2, 6)},
+        n_trials=8,
+        backend="ray",
+        pruning=True,
+        prune_warmup=2,
+    )
+
+    oomed = [t for t in result.trials if t["config"]["depth"] >= 4]
+    assert oomed, "search never sampled the failing region"
+    # NaN is a transport detail for the scheduler's benefit; it must not reach the records.
+    assert all(t["value"] is None for t in oomed)
+    assert all(not t["completed"] for t in oomed)
+    assert result.best_value is not None and result.best_config["depth"] < 4

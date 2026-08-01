@@ -558,6 +558,17 @@ def _resolve_choices(config, choice_options) -> dict:
     return {k: (choice_options[k][v] if k in choice_options else v) for k, v in (config or {}).items()}
 
 
+def _scored_value(result, metric):
+    """A trial's objective, or None when it never produced a usable one.
+
+    An OOM'd trial reports NaN so the scheduler's strict metric check is satisfied. That NaN
+    must not survive into rankings or records: it compares as neither better nor worse than
+    anything, so `min()` would seat it wherever iteration order happened to put it.
+    """
+    value = (getattr(result, "metrics", None) or {}).get(metric)
+    return None if value is None or value != value else value  # value != value catches NaN
+
+
 def _resolve_trial_records(results, *, metric, done_flag, choice_options) -> list:
     """One record per trial, defensive about trials that never reported.
 
@@ -569,7 +580,7 @@ def _resolve_trial_records(results, *, metric, done_flag, choice_options) -> lis
     return [
         {
             "number": i,
-            "value": (r.metrics or {}).get(metric),
+            "value": _scored_value(r, metric),
             "config": _resolve_choices(r.config, choice_options),
             "completed": bool((r.metrics or {}).get(done_flag)),
         }
@@ -621,12 +632,21 @@ def _run_ray(
                 raise
             # Letting the OOM escape gets the trial reported to Optuna as FAIL, and TPE draws
             # only on COMPLETE and PRUNED — so the sampler learns nothing and keeps proposing
-            # a corner that cannot fit. Swallowing it instead ends the trial with no result,
-            # which Ray reports as PRUNED (`val is None`, `error=False`); TPE does model those,
-            # ranked below every scored trial. Reporting a null *metric* is not an option: Ray
-            # routes every report through `OptunaSearch.on_trial_result`, which indexes the
-            # metric directly and hands it to `optuna.Trial.report`, rejecting None.
+            # a corner that cannot fit. Reporting NaN under the metric ends the trial without
+            # a usable score while keeping every consumer happy:
+            #
+            # * the scheduler's strict metric check needs the key present. Returning nothing
+            #   is only exempt when the result carries no other keys, and Ray injects the
+            #   flattened `config/*` into it — so an unreported trial takes down the tuner.
+            # * `nanpercentile` skips NaN, so a dead trial cannot move a rung's cutoff, and
+            #   `nan < cutoff` is False, so it is never mistaken for a prunable live trial.
+            # * `_partial_aware_search` drops the result for want of `done_flag`, so Optuna is
+            #   told PRUNED with no value — never a NaN objective, which it rejects.
+            #
+            # None is not an option in its place: Ray hands the metric straight to
+            # `optuna.Trial.report`, which requires a float.
             log.warning(f"Trial out of GPU memory, ending it unscored: {exc}")
+            tune.report({metric: float("nan"), time_attr: last_step + 1})
             return
         # Final objective, one tick past the last epoch (time_attr must increase). done_flag
         # marks a full run so winner selection can exclude ASHA-stopped partial ensembles.
@@ -665,7 +685,7 @@ def _run_ray(
     # Fall back to any *scored* trial if pruning stopped everything. Never to an unscored
     # one: a trial that died carries neither a value nor a config, so ranking it would
     # publish `None` as the winning config.
-    pool = completed or [r for r in results if (r.metrics or {}).get(metric) is not None]
+    pool = completed or [r for r in results if _scored_value(r, metric) is not None]
     if not pool:
         # Mirror the Optuna path's actionable failure. Ray otherwise surfaces this as an
         # AttributeError deep in config resolution, on the box that costs the most to rent.
@@ -679,7 +699,7 @@ def _run_ray(
     def _objective(r):
         # Missing/None metric sorts to the worst end regardless of mode — a signed default
         # (e.g. -inf in max mode) would otherwise make an unscored trial win.
-        v = (r.metrics or {}).get(metric)
+        v = _scored_value(r, metric)
         if v is None:
             return float("inf")
         return v if mode == "min" else -v
@@ -688,7 +708,7 @@ def _run_ray(
     trials = _resolve_trial_records(results, metric=metric, done_flag=done_flag, choice_options=choice_options)
     return HpoResult(
         best_config=_resolve_choices(best.config, choice_options),
-        best_value=(best.metrics or {}).get(metric),
+        best_value=_scored_value(best, metric),
         metric=metric,
         mode=mode,
         n_trials=len(trials),
