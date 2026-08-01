@@ -5248,7 +5248,7 @@
 
 <div class="admonition tip inline end">
 <p class="admonition-title">Workbench Lambda Layer</p>
-<p>AWS Lambda is a great way to run lightweight, scheduled Workbench jobs. The Workbench Lambda layer ships a dependency-minimal slice of Workbench you can import directly — no packaging, no container.</p>
+<p>Run lightweight, scheduled Workbench jobs on AWS Lambda — no packaging, no container.</p>
 </div>
 <p>The <strong>Workbench Lambda layer</strong> is a dependency-minimal slice of Workbench, published
 per region and Python version. It bundles <strong>all of Workbench's source</strong> plus only
@@ -5257,17 +5257,17 @@ dependencies (torch, awswrangler, sagemaker, ...) are intentionally absent, so t
 layer stays small and imports fast.</p>
 <div class="admonition warning inline end">
 <p class="admonition-title">Scope</p>
-<p>The layer carries the <a href="https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/lambda_layer"><code>workbench.lambda_layer</code></a> subpackage — today, the <code>PipelineManager</code> that powers <a href="../ml_pipelines/">ML Pipelines</a>. It does <strong>not</strong> carry the full Workbench API (e.g. <code>Meta</code>/<code>Model</code>), which needs the heavy dependencies.</p>
+<p>Allows importing anything from <a href="https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/lambda_layer"><code>workbench.lambda_layer</code></a> The full API (<code>Meta</code>/<code>Model</code>) isn't available.</p>
 </div>
 <h2 id="published-arns">Published ARNs</h2>
 <p>Attach the ARN matching your region and Python version (3.12):</p>
 <p><strong>us-east-1</strong></p>
 <ul>
-<li><code>arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:3</code></li>
+<li><code>arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:5</code></li>
 </ul>
 <p><strong>us-west-2</strong></p>
 <ul>
-<li><code>arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:3</code></li>
+<li><code>arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:5</code></li>
 </ul>
 <p>The published versions are made public (<code>lambda:GetLayerVersion</code> to <code>*</code>), so you
 attach them by ARN with no per-account permission grants. Need a different region or
@@ -5275,8 +5275,10 @@ Python version? Let us know and we'll publish it.</p>
 <div class="admonition note">
 <p class="admonition-title">The <code>-wip</code> suffix</p>
 <p>The layer name carries <code>-wip</code> while its contents are still settling, and the
-version (<code>:1</code>) bumps on each re-publish. Pin the exact version your function uses.</p>
+version bumps on each re-publish. Pin the exact version your function uses.</p>
 </div>
+<p>Each published version bundles a pinned Workbench release (<code>:5</code> carries 0.8.438),
+so the layer's contents are reproducible from the ARN alone.</p>
 <h2 id="using-it-from-a-lambda">Using it from a Lambda</h2>
 <p>In the Lambda console, <strong>Add a layer → Specify an ARN</strong> and paste the ARN above.
 Then import and use <code>PipelineManager</code> directly:</p>
@@ -5296,10 +5298,13 @@ no Workbench config is required.</p>
 <p>The execution role needs read access to whatever artifacts the manager resolves
 modification times against (plus the bucket it discovers <code>pipelines.json</code> from):</p>
 <ul>
-<li><code>glue:GetTable</code> — DataSource update times</li>
-<li><code>sagemaker:DescribeFeatureGroup</code>, <code>sagemaker:ListModelPackages</code> — FeatureSet/Model times</li>
+<li><code>glue:GetTable</code> — DataSource (<code>ds:</code>) update times</li>
+<li><code>sagemaker:DescribeFeatureGroup</code>, <code>sagemaker:ListModelPackages</code>,
+  <code>sagemaker:DescribeEndpoint</code> — FeatureSet/Model/Endpoint times</li>
 <li><code>s3:GetObject</code>, <code>s3:ListBucket</code> — discovering <code>pipelines.json</code> files</li>
 </ul>
+<p><code>public:</code> refs resolve against the public data bucket with an unsigned client, so
+they need no permissions.</p>
 <p>See <a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">Workbench Access Controls</a>.</p>
 <h3 id="runnable-example">Runnable example</h3>
 <p>A read-only example handler plus an offline smoke test (loads the <em>built</em> layer and
