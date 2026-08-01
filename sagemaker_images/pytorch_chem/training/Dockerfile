@@ -6,10 +6,17 @@
 # play nicely with the python:3.12-slim multi-stage pattern.
 FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
 
-# Install pip and build tools (Python 3.12 is included in Ubuntu 24.04)
+# Install pip and build tools (Python 3.12 is included in Ubuntu 24.04).
+# The libX* packages are for cuik-molmaker-pin, which chemprop imports unconditionally
+# (chemprop/featurizers/molgraph/molecule.py) — its native extension links against the X11
+# client libs, which no CUDA base image carries. Without them `import chemprop` dies with
+# "libXrender.so.1: cannot open shared object file" before any model script runs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     build-essential \
+    libxrender1 \
+    libxext6 \
+    libsm6 \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
