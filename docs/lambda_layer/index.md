@@ -1,5 +1,5 @@
 !!! tip inline end "Workbench Lambda Layer"
-    AWS Lambda is a great way to run lightweight, scheduled Workbench jobs. The Workbench Lambda layer ships a dependency-minimal slice of Workbench you can import directly — no packaging, no container.
+    Run lightweight, scheduled Workbench jobs on AWS Lambda — no packaging, no container.
 
 The **Workbench Lambda layer** is a dependency-minimal slice of Workbench, published
 per region and Python version. It bundles **all of Workbench's source** plus only
@@ -8,7 +8,7 @@ dependencies (torch, awswrangler, sagemaker, ...) are intentionally absent, so t
 layer stays small and imports fast.
 
 !!! warning inline end "Scope"
-    The layer carries the [`workbench.lambda_layer`](https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/lambda_layer) subpackage — today, the `PipelineManager` that powers [ML Pipelines](../ml_pipelines/index.md). It does **not** carry the full Workbench API (e.g. `Meta`/`Model`), which needs the heavy dependencies.
+    Allows importing anything from [`workbench.lambda_layer`](https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/lambda_layer) The full API (`Meta`/`Model`) isn't available.
 
 ## Published ARNs
 
@@ -16,11 +16,11 @@ Attach the ARN matching your region and Python version (3.12):
 
 **us-east-1**
 
-- `arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:3`
+- `arn:aws:lambda:us-east-1:507740646243:layer:workbench-lambda-layer-us-east-1-python312-wip:5`
 
 **us-west-2**
 
-- `arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:3`
+- `arn:aws:lambda:us-west-2:507740646243:layer:workbench-lambda-layer-us-west-2-python312-wip:5`
 
 The published versions are made public (`lambda:GetLayerVersion` to `*`), so you
 attach them by ARN with no per-account permission grants. Need a different region or
@@ -28,7 +28,10 @@ Python version? Let us know and we'll publish it.
 
 !!! note "The `-wip` suffix"
     The layer name carries `-wip` while its contents are still settling, and the
-    version (`:1`) bumps on each re-publish. Pin the exact version your function uses.
+    version bumps on each re-publish. Pin the exact version your function uses.
+
+Each published version bundles a pinned Workbench release (`:5` carries 0.8.438),
+so the layer's contents are reproducible from the ARN alone.
 
 ## Using it from a Lambda
 
@@ -56,9 +59,13 @@ no Workbench config is required.
 The execution role needs read access to whatever artifacts the manager resolves
 modification times against (plus the bucket it discovers `pipelines.json` from):
 
-- `glue:GetTable` — DataSource update times
-- `sagemaker:DescribeFeatureGroup`, `sagemaker:ListModelPackages` — FeatureSet/Model times
+- `glue:GetTable` — DataSource (`ds:`) update times
+- `sagemaker:DescribeFeatureGroup`, `sagemaker:ListModelPackages`,
+  `sagemaker:DescribeEndpoint` — FeatureSet/Model/Endpoint times
 - `s3:GetObject`, `s3:ListBucket` — discovering `pipelines.json` files
+
+`public:` refs resolve against the public data bucket with an unsigned client, so
+they need no permissions.
 
 See [Workbench Access Controls](https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing).
 
