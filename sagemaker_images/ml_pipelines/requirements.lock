@@ -680,7 +680,7 @@ pyyaml==6.0.3
     #   omegaconf
     #   sagemaker-core
     #   sagemaker-train
-rdkit==2026.3.3
+rdkit==2026.3.4
     # via
     #   -c ci/.uv-constraints.txt
     #   workbench (pyproject.toml)

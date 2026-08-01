@@ -36,6 +36,7 @@ from rdkit import RDLogger
 
 RDLogger.logger().setLevel(RDLogger.ERROR)
 
+import chemprop
 from chemprop import models
 
 from workbench.endpoints.inference import (
@@ -56,7 +57,11 @@ from workbench.endpoints.chemprop_utils import (
 )
 from workbench.endpoints.uq_regression import load_regression_uq
 
-print(f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported", flush=True)
+print(
+    f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported "
+    f"(chemprop {chemprop.__version__}, torch {torch.__version__})",
+    flush=True,
+)
 
 # =============================================================================
 # Default Hyperparameters

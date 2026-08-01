@@ -117,7 +117,7 @@ pyyaml==6.0.3
     # via
     #   -c ci/.uv-constraints.txt
     #   optuna
-rdkit==2026.3.3
+rdkit==2026.3.4
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in

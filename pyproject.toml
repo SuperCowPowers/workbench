@@ -12,11 +12,10 @@ dynamic = ["version"]
 description = "Workbench: A Dashboard and Python API for creating and deploying AWS SageMaker Model Pipelines"
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["SageMaker", "Machine Learning", "AWS", "Python", "Utilities"]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -94,7 +93,7 @@ modeling = [
     "ray[tune]",
     "optuna",
     "torch",
-    "chemprop",
+    "chemprop >= 2.3.0",
 ]
 # Dev tooling only — no runtime deps. Skipped when deriving the endpoint-import-smoke
 # forbidden list (see ci/endpoint_import_smoke.py), so nothing here constrains the
@@ -174,7 +173,7 @@ constraint-dependencies = ["torch >= 2.13"]
 line-length = 120
 # Supported Python versions; keeps black from auto-targeting a newer one and
 # warning when run under an older interpreter.
-target-version = ["py310", "py311", "py312", "py313"]
+target-version = ["py311", "py312", "py313"]
 # Also format the model-script .template files (valid Python; jinja placeholders
 # live inside string literals). Default include is (\.pyi?)$.
 include = '(\.pyi?|\.template)$'

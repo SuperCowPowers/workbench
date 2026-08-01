@@ -129,7 +129,7 @@ pytz==2026.2
     # via
     #   -c ci/.uv-constraints.txt
     #   pandas
-rdkit==2026.3.3
+rdkit==2026.3.4
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/inference/requirements.in
