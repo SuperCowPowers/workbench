@@ -26,7 +26,8 @@ Don't hardcode either spelling. Find it:
 smiles_col = next(c for c in df.columns if c.lower() == "smiles")
 ```
 
-Same applies to the id column — check rather than assuming `id`.
+The id column is different — on a FeatureSet it's `fs.id_column`, which is
+authoritative (see `data_and_features`). Only sniff for it on a raw file.
 
 ## Showing a molecule
 

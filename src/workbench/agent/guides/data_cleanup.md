@@ -29,7 +29,7 @@ recognize.
 compound id *and* a batch id, so a row is one measurement rather than one compound.
 
 ```python
-df[id_column].duplicated().any()       # is the artifact's id per-compound or per-batch?
+df[fs.id_column].duplicated().any()    # is the artifact's id per-compound or per-batch?
 ```
 
 - **Id repeats** (id is the compound): roll up first. Proximity needs unique ids —

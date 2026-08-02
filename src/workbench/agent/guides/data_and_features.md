@@ -35,6 +35,11 @@ for a Workbench accessor that does the same thing.
 
 `fs.columns` is a property (no parens) if you just want the names without a pull.
 
+`fs.id_column` is the id, and it is authoritative — often not `"id"`. It is the
+one join key for the whole chain: chosen from a DataSource column at
+`to_features()`, used to build the model's training view, and resolved back off
+the FeatureSet when an endpoint needs an id at inference. Read it, never guess it.
+
 For a targeted pull, `query()` takes SQL. Use `fs.table` in the FROM clause — it
 is the resolved Athena table, which carries a version suffix the FeatureSet name
 does not:
