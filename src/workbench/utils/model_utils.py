@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 import pandas as pd
 import numpy as np
 from scipy.stats import spearmanr
@@ -37,7 +38,8 @@ def model_instance_info() -> pd.DataFrame:
     data = [
         {
             "Instance Name": "ml.t2.medium",
-            "vCPUs": 2,
+            "Num CPUs": 2,
+            "Num GPUs": 0,
             "Memory": 4,
             "Price per Hour": 0.06,
             "Category": "General",
@@ -46,7 +48,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.m7i.large",
-            "vCPUs": 2,
+            "Num CPUs": 2,
+            "Num GPUs": 0,
             "Memory": 8,
             "Price per Hour": 0.12,
             "Category": "General",
@@ -55,7 +58,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.c7i.large",
-            "vCPUs": 2,
+            "Num CPUs": 2,
+            "Num GPUs": 0,
             "Memory": 4,
             "Price per Hour": 0.11,
             "Category": "Compute",
@@ -64,7 +68,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.c7i.xlarge",
-            "vCPUs": 4,
+            "Num CPUs": 4,
+            "Num GPUs": 0,
             "Memory": 8,
             "Price per Hour": 0.21,
             "Category": "Compute",
@@ -73,7 +78,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.c7g.large",
-            "vCPUs": 2,
+            "Num CPUs": 2,
+            "Num GPUs": 0,
             "Memory": 4,
             "Price per Hour": 0.09,
             "Category": "Compute",
@@ -82,7 +88,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.c7g.xlarge",
-            "vCPUs": 4,
+            "Num CPUs": 4,
+            "Num GPUs": 0,
             "Memory": 8,
             "Price per Hour": 0.17,
             "Category": "Compute",
@@ -91,7 +98,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.m5.xlarge",
-            "vCPUs": 4,
+            "Num CPUs": 4,
+            "Num GPUs": 0,
             "Memory": 16,
             "Price per Hour": 0.23,
             "Category": "General",
@@ -100,7 +108,8 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.c7i.4xlarge",
-            "vCPUs": 16,
+            "Num CPUs": 16,
+            "Num GPUs": 0,
             "Memory": 32,
             "Price per Hour": 0.86,
             "Category": "Compute",
@@ -109,28 +118,31 @@ def model_instance_info() -> pd.DataFrame:
         },
         {
             "Instance Name": "ml.g6.2xlarge",
-            "vCPUs": 8,
+            "Num CPUs": 8,
+            "Num GPUs": 1,
             "Memory": 32,
             "Price per Hour": 1.21,
-            "Category": "GPU",  # 1x NVIDIA L4 24GB
+            "Category": "GPU",  # NVIDIA L4 24GB
             "Architecture": "x86_64",
             "Usage": "Training",
         },
         {
             "Instance Name": "ml.g6.12xlarge",
-            "vCPUs": 48,
+            "Num CPUs": 48,
+            "Num GPUs": 4,
             "Memory": 192,
             "Price per Hour": 5.61,
-            "Category": "GPU",  # 4x NVIDIA L4 24GB
+            "Category": "GPU",  # NVIDIA L4 24GB
             "Architecture": "x86_64",
             "Usage": "Training",
         },
         {
             "Instance Name": "ml.g5.12xlarge",
-            "vCPUs": 48,
+            "Num CPUs": 48,
+            "Num GPUs": 4,
             "Memory": 192,
             "Price per Hour": 7.09,
-            "Category": "GPU",  # 4x NVIDIA A10G 24GB
+            "Category": "GPU",  # NVIDIA A10G 24GB
             "Architecture": "x86_64",
             "Usage": "Training",
         },
@@ -710,6 +722,157 @@ def get_hpo_importance(workbench_model: Any) -> Optional[pd.DataFrame]:
             "best": pd.Series([row["best"] for row in rows], dtype=object),
         }
     )
+
+
+_UTILIZATION_METRICS = {
+    "cpu": "CPUUtilization",
+    "memory": "MemoryUtilization",
+    "gpu": "GPUUtilization",
+    "gpu_memory": "GPUMemoryUtilization",
+    "disk": "DiskUtilization",
+}
+
+# The metrics CloudWatch sums across devices, and the per-device column derived from each
+_PER_DEVICE_COLUMNS = {"cpu": "cpu_per_core", "gpu": "gpu_per_device"}
+
+
+def get_training_utilization_details(workbench_model: Any) -> Optional[pd.DataFrame]:
+    """Per-minute utilization for a model's training job, as SageMaker publishes it.
+
+    ``cpu`` and ``gpu`` are summed across devices, so a busy 16-core box reads 1600;
+    ``cpu_per_core`` and ``gpu_per_device`` are the per-device reads. An HPO run is one
+    training job, so this covers the whole search rather than any single trial.
+
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        pd.DataFrame: one row per minute, indexed by UTC timestamp, with ``attrs`` carrying
+            the job name, instance type/count, and device counts. None for a model copy, or
+            a job past CloudWatch's 15-day retention of 1-minute data.
+    """
+    job_name = workbench_model.training_job_name
+    if job_name is None:
+        log.warning(f"No training job for {workbench_model.name} (a model copy has none)")
+        return None
+
+    session = workbench_model.boto3_session
+    job = session.client("sagemaker").describe_training_job(TrainingJobName=job_name)
+    resources = job["ResourceConfig"]
+    instance_type, instance_count = resources["InstanceType"], resources["InstanceCount"]
+
+    # The job's own window, so the query spans exactly the training run
+    start, end = job["TrainingStartTime"], job.get("TrainingEndTime", datetime.now(timezone.utc))
+
+    # One dimension per instance: SageMaker names them algo-1, algo-2, ... and each reports
+    # its own utilization, so a distributed job needs a query per host.
+    queries = [
+        {
+            "Id": f"m{i}_{key}",
+            "Label": f"{key}|algo-{i + 1}",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": "/aws/sagemaker/TrainingJobs",
+                    "MetricName": metric_name,
+                    "Dimensions": [{"Name": "Host", "Value": f"{job_name}/algo-{i + 1}"}],
+                },
+                "Period": 60,
+                "Stat": "Average",
+            },
+        }
+        for i in range(instance_count)
+        for key, metric_name in _UTILIZATION_METRICS.items()
+    ]
+
+    cloudwatch = session.client("cloudwatch")
+    results = []
+    paginator = cloudwatch.get_paginator("get_metric_data")
+    for page in paginator.paginate(MetricDataQueries=queries, StartTime=start, EndTime=end):
+        results.extend(page["MetricDataResults"])
+
+    # Metrics the instance does not report (GPU on a CPU box) come back empty and are dropped
+    series = {}
+    for result in results:
+        if not result["Timestamps"]:
+            continue
+        label = result["Label"]
+        column = label.split("|")[0] if instance_count == 1 else label.replace("|", "_")
+        series[column] = pd.Series(result["Values"], index=pd.to_datetime(result["Timestamps"]))
+
+    if not series:
+        log.warning(f"No utilization datapoints for {job_name} (past CloudWatch's 15-day retention?)")
+        return None
+
+    df = pd.DataFrame(series).sort_index()
+    df.index.name = "timestamp"
+
+    # Per-device reads, when the instance's hardware counts are known. Only cpu and gpu are
+    # summed across devices; gpu_memory and the rest are already true percentages.
+    info = model_instance_info()
+    match = info[info["Instance Name"] == instance_type]
+    num_cpus = int(match["Num CPUs"].iloc[0]) if not match.empty else None
+    num_gpus = int(match["Num GPUs"].iloc[0]) if not match.empty else None
+
+    counts = {"cpu": num_cpus, "gpu": num_gpus}
+    for base, derived in _PER_DEVICE_COLUMNS.items():
+        if not counts[base]:
+            continue
+        for column in [c for c in df.columns if c == base or c.startswith(f"{base}_algo-")]:
+            df[column.replace(base, derived, 1)] = df[column] / counts[base]
+
+    # Each per-device column sits beside the metric it normalizes
+    ordered = []
+    for base in _UTILIZATION_METRICS:
+        for name in (base, _PER_DEVICE_COLUMNS.get(base)):
+            if name:
+                ordered.extend(c for c in df.columns if c == name or c.startswith(f"{name}_algo-"))
+    df = df[ordered + [c for c in df.columns if c not in ordered]]
+
+    df.attrs.update(
+        training_job_name=job_name,
+        instance_type=instance_type,
+        instance_count=instance_count,
+        num_cpus=num_cpus,
+        num_gpus=num_gpus,
+    )
+    return df
+
+
+def get_training_utilization(workbench_model: Any) -> Optional[pd.DataFrame]:
+    """Was the training instance the right pick? One row per metric, over the whole job.
+
+    A ``gpu_per_device`` median above ~70% means GPU-bound and sized about right; below ~30%
+    means the GPU sat idle. High ``cpu_per_core`` beside low ``gpu_per_device`` points at
+    featurization rather than the model. Median × device count is the sustained load in whole
+    devices — 4 GPUs at a 60% median is 2.4 GPUs of work. ``peak`` is a 1-minute average, too
+    coarse to rule out a brief burst.
+
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        pd.DataFrame: one row per metric with ``mean``, ``median``, and ``peak``, the hardware
+            on the index name. None when :func:`get_training_utilization_details` finds
+            nothing to summarize.
+    """
+    df = get_training_utilization_details(workbench_model)
+    if df is None:
+        return None
+
+    summary = pd.DataFrame({"mean": df.mean(), "median": df.median(), "peak": df.max()}).round(1)
+
+    # The hardware rides on the index name so it shows up in the frame's own repr
+    attrs = df.attrs
+    hardware = [attrs["instance_type"]]
+    counts = [f"{attrs[key]} {label}" for key, label in (("num_cpus", "CPUs"), ("num_gpus", "GPUs")) if attrs[key]]
+    if counts:
+        hardware.append(f"({', '.join(counts)})")
+    if attrs["instance_count"] > 1:
+        hardware.append(f"x{attrs['instance_count']} instances")
+    summary.index.name = " ".join(hardware)
+
+    summary.attrs.update(attrs)
+    return summary
 
 
 def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:

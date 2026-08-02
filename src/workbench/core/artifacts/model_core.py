@@ -29,6 +29,7 @@ from workbench.utils.model_utils import (
     get_hpo_results,
     get_hpo_search_space,
     get_model_hyperparameters,
+    get_training_utilization,
     copy_model_artifacts,
 )
 
@@ -713,6 +714,20 @@ class ModelCore(Artifact):
                 searched, or had too few scored trials to estimate.
         """
         return get_hpo_importance(self)
+
+    def training_utilization(self) -> Union[pd.DataFrame, None]:
+        """Was this Model's training instance the right pick?
+
+        A ``gpu_per_device`` median above ~70% means GPU-bound and sized about right; below
+        ~30% means the GPU sat idle. High ``cpu_per_core`` beside low ``gpu_per_device``
+        points at featurization rather than the model.
+
+        Returns:
+            pd.DataFrame: one row per metric with ``mean``, ``median``, and ``peak``, the
+                hardware on the index name. None for a model copy, or a job past
+                CloudWatch's 15-day retention of 1-minute data.
+        """
+        return get_training_utilization(self)
 
     def summary(self) -> dict:
         """Summary information about this Model
