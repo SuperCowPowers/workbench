@@ -35,6 +35,14 @@ for a Workbench accessor that does the same thing.
 
 `fs.columns` is a property (no parens) if you just want the names without a pull.
 
+For a targeted pull, `query()` takes SQL. Use `fs.table` in the FROM clause — it
+is the resolved Athena table, which carries a version suffix the FeatureSet name
+does not:
+
+```python
+df = fs.query(f'SELECT smiles, logd FROM "{fs.table}" WHERE logd > 3')
+```
+
 ## Column names are lowercase
 
 This is **AWS behavior, not a Workbench choice**. Glue lowercases column names
@@ -58,7 +66,7 @@ Consequences:
   col = next(c for c in df.columns if c.lower() == "smiles")
   ```
 
-## A model's data
+## A model's input data
 
 ```python
 fs = FeatureSet(model.get_input())        # the data itself
