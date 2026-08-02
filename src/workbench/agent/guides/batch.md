@@ -67,7 +67,7 @@ end.test_inference()
 end.cross_fold_inference()
 '''
 
-job = launch_batch(code, name="pxr_reg_sweep", size="medium")   # small | medium | large
+job = launch_batch(code, name="pxr_reg_sweep")
 ```
 
 A training script must build the **whole chain** — model, endpoint, and both
