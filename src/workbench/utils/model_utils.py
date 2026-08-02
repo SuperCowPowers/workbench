@@ -660,6 +660,15 @@ def get_hpo_importance(workbench_model: Any) -> Optional[pd.DataFrame]:
     trials = results["trials"]
     if "kind" in trials:
         trials = trials[trials["kind"] == "trial"]
+    # Pruned trials only ever scored a partial ensemble — fewer members than a full run, which
+    # on a holdout objective reads systematically worse rather than merely noisier. Fitting the
+    # surrogate to both is fitting it to a mixture of two objectives, and since a trial is
+    # pruned precisely for looking bad early, the mixture lines up with the knobs being ranked.
+    # The Ray backend records ``completed``; the Optuna backend records a ``state``.
+    if "completed" in trials:
+        trials = trials[trials["completed"].astype(bool)]
+    elif "state" in trials:
+        trials = trials[trials["state"] == "COMPLETE"]
     trials = trials.dropna(subset=["value"])
     if len(trials) < _MIN_TRIALS_FOR_IMPORTANCE:
         log.warning(f"Only {len(trials)} scored trials — too few to estimate hyperparameter importance")

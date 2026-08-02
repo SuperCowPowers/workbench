@@ -213,3 +213,32 @@ def test_noise_floor_probe_does_not_change_the_reported_shares(stub_results):
     assert list(before["knob"]) == list(after["knob"])
     assert before["importance"].tolist() == pytest.approx(after["importance"].tolist())
     assert before["importance"].sum() == pytest.approx(1.0)
+
+
+def test_partial_trials_are_left_out_of_the_surrogate(stub_results):
+    """A pruned trial scored a partial ensemble — a different objective, not a noisier one.
+
+    Its value is what got it pruned, so pooling it lines the mixture up with the very knobs
+    being ranked. Both backends are covered: Ray records `completed`, Optuna a `state`.
+    """
+    frame = _planted(n=40)
+    # Half the rows are partials carrying an absurd value; if they reach the fit, `effect`
+    # blows past anything the planted signal can produce.
+    frame["completed"] = [True] * 20 + [False] * 20
+    frame.loc[20:, "value"] = 500.0
+    stub_results(frame)
+
+    assert get_hpo_importance("model")["effect"].max() < 100
+
+    state = _planted(n=40)
+    state["state"] = ["COMPLETE"] * 20 + ["PRUNED"] * 20
+    state.loc[20:, "value"] = 500.0
+    stub_results(state)
+
+    assert get_hpo_importance("model")["effect"].max() < 100
+
+
+def test_records_without_a_completion_column_still_work(stub_results):
+    """Older records carry neither column — they must not be filtered to nothing."""
+    stub_results(_planted(n=30))
+    assert get_hpo_importance("model") is not None
