@@ -9,6 +9,7 @@ per-framework objectives are covered by ``chemprop_hpo_test.py`` and ``xgb_hpo_t
 from workbench.training.hpo_runner import (
     HpoAdapter,
     best_config_record,
+    resolve_max_parallel,
     shortlist_configs,
     trial_completed,
     trial_records,
@@ -20,6 +21,31 @@ def test_split_kwargs_default_is_empty():
     """The base adapter adds nothing to get_split_indices — frameworks with a molecule
     column (chemprop) override to name it."""
     assert HpoAdapter().split_kwargs() == {}
+
+
+def test_max_parallel_divides_the_cards_by_the_per_trial_share():
+    """The whole point of deriving it: concurrency is the box, not a hand-set number."""
+    assert resolve_max_parallel({}, {"gpu": 0.5}, 4) == 8  # g6.12xlarge, single-task
+    assert resolve_max_parallel({}, {"gpu": 1.0}, 4) == 4  # g6.12xlarge, multi-task
+
+
+def test_max_parallel_stays_sane_on_a_one_gpu_box():
+    """Laddering down to g6.2xlarge must pack the single card, not ask for cards it lacks."""
+    assert resolve_max_parallel({}, {"gpu": 0.5}, 1) == 2
+    assert resolve_max_parallel({}, {"gpu": 1.0}, 1) == 1
+
+
+def test_max_parallel_falls_back_to_serial_without_gpus():
+    """No GPU, or a backend that requested no resources, means one trial at a time."""
+    assert resolve_max_parallel({}, {"gpu": 0.5}, 0) == 1  # CPU-only box
+    assert resolve_max_parallel({}, None, 4) == 1  # optuna: no resource request
+    assert resolve_max_parallel({}, {}, 4) == 1
+
+
+def test_an_explicit_max_parallel_still_wins():
+    """The derived value is a default, not a policy — a caller can override it."""
+    assert resolve_max_parallel({"max_parallel": 3}, {"gpu": 0.5}, 4) == 3
+    assert resolve_max_parallel({"max_parallel": 0}, {"gpu": 0.5}, 4) == 1  # never below 1
 
 
 def test_trial_completed_reads_both_backend_shapes():

@@ -334,11 +334,13 @@ class FeaturesToModel(Transform):
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
 
         # Use user-specified instance or pick a ladder from the workload. Only a *parallel*
-        # search needs a multi-GPU box (one trial per GPU) — a serial search (optuna, or
-        # max_parallel=1) stays on the normal single-GPU instance.
+        # search needs a multi-GPU box — a serial search (optuna, or an explicit
+        # max_parallel=1) stays on the normal single-GPU instance. The job derives its own
+        # concurrency from the cards it lands on, so an unset max_parallel means "pack the
+        # box" and has to be given a box worth packing.
         hpo = (kwargs.get("hyperparameters") or {}).get("hpo") or {}
         hpo_requested = bool(hpo)
-        hpo_parallel = hpo.get("backend", "auto") != "optuna" and hpo.get("max_parallel", 1) > 1
+        hpo_parallel = hpo.get("backend", "auto") != "optuna" and hpo.get("max_parallel") != 1
         gpu_framework = self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]
         train_instance_type = kwargs.get("training_instance")
         if train_instance_type:

@@ -102,6 +102,40 @@ class HpoAdapter:
         return None
 
 
+def visible_gpus() -> int:
+    """GPUs the training container can actually see. 0 when torch is absent or CPU-only."""
+    try:
+        import torch
+    except ImportError:
+        return 0
+    return torch.cuda.device_count()
+
+
+def resolve_max_parallel(hpo_block, resources, n_gpus: int) -> int:
+    """How many trials to run at once, derived from the GPUs actually present.
+
+    The adapter's ``resources_per_trial`` already sets a trial's GPU share, so the cards on
+    the box divide by that share to give the concurrency they support. Deriving it keeps the
+    packing decision in one place: a hand-set ``max_parallel`` can contradict the share, and
+    only the container knows which rung of the instance ladder capacity actually granted.
+
+    Args:
+        hpo_block: the ``hpo`` block; an explicit ``max_parallel`` overrides the derived value.
+        resources: the adapter's per-trial resource request, or None.
+        n_gpus: GPUs visible to this process.
+
+    Returns:
+        int: concurrent trials, at least 1.
+    """
+    requested = hpo_block.get("max_parallel")
+    if requested is not None:
+        return max(1, int(requested))
+    share = (resources or {}).get("gpu")
+    if not share or not n_gpus:
+        return 1
+    return max(1, int(n_gpus / share))
+
+
 def use_holdout(requested_metric, n_val_rows: int) -> bool:
     """Whether the designated validation rows should drive the search objective.
 
@@ -162,8 +196,9 @@ def run_hpo(
         train_df: training rows (validation rows already removed).
         val_df: the designated validation rows, or an empty frame.
         base_hyperparameters: the caller's hyperparameters, including the ``hpo`` block.
-        hpo_block: the ``hpo`` block — ``n_trials``, ``backend``, ``max_parallel``,
-            ``metric``, ``rerank_top_k``, ``n_folds``.
+        hpo_block: the ``hpo`` block — ``n_trials``, ``backend``, ``metric``,
+            ``rerank_top_k``, ``n_folds``, and the packing overrides ``max_parallel`` /
+            ``gpus_per_trial``, both derived from the box when unset.
         adapter: the framework's :class:`HpoAdapter`.
         search_space: resolved ``{knob: Spec}`` for the framework.
         primary_target: the target column the objective scores.
@@ -234,9 +269,15 @@ def run_hpo(
     )
 
     backend = hpo_block.get("backend", "auto")
-    max_parallel = max(1, hpo_block.get("max_parallel", 1))
     resources = adapter.resources_per_trial(hpo_block, backend)
-    print(f"[hpo] {max_parallel} concurrent trial(s), knobs={list(search_space)}")
+    n_gpus = visible_gpus()
+    n_trials = int(hpo_block.get("n_trials", 60))
+    max_parallel = resolve_max_parallel(hpo_block, resources, n_gpus)
+    print(f"[hpo] {max_parallel} concurrent trial(s) on {n_gpus} GPU(s), knobs={list(search_space)}")
+    if max_parallel == 1:
+        # Serial turns a multi-hour search into a multiple of that. Say so up front rather
+        # than leaving it to be inferred from a job that ran long or hit its timeout.
+        print(f"[hpo] WARNING: {n_trials} trials will run one at a time; expect a long job.")
 
     trial_fn = adapter.make_trial_fn(
         train_df=train_df,
@@ -255,7 +296,7 @@ def run_hpo(
     result = run_search(
         trial_fn,
         search_space,
-        n_trials=hpo_block.get("n_trials", 60),
+        n_trials=n_trials,
         backend=backend,
         max_parallel=max_parallel,
         metric=metric,

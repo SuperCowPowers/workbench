@@ -44,7 +44,8 @@ deployed and used exactly like any other.
 | `metric` | `cv_mae` | objective: `cv_mae` (out-of-fold) or `holdout_mae` |
 | `rerank_top_k` | `5` | finalists re-scored in the second stage (`0` disables it) |
 | `backend` | `auto` | `optuna` (serial) or `ray` (parallel, needs a GPU box) |
-| `max_parallel` | `1` | concurrent trials (Ray only) |
+| `gpus_per_trial` | `0.5`, or `1.0` multi-task | GPU share one trial claims (Ray only) |
+| `max_parallel` | GPUs ÷ `gpus_per_trial` | concurrent trials (Ray only) — derived from the box, set it only to override |
 | `n_folds` | model's `n_folds` | ensemble size per trial — for cheap validation runs only |
 
 The searched knobs differ per framework, and a model knows its own — `hpo_search_space()`
