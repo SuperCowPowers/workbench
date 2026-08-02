@@ -25,12 +25,14 @@ from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import (
+    get_model_hyperparameters,
+    copy_model_artifacts,
+)
+from workbench.utils.training_job_utils import (
     get_hpo_importance,
     get_hpo_results,
     get_hpo_search_space,
-    get_model_hyperparameters,
     get_training_utilization,
-    copy_model_artifacts,
 )
 
 

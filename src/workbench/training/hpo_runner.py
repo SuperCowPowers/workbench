@@ -5,7 +5,7 @@ framework module (:mod:`workbench.training.chemprop_hpo`,
 :mod:`workbench.training.xgb_hpo`). Everything a search does *around* training a
 candidate lives here: objective selection, fold construction, the same-basis baseline,
 the phase-1.5 re-rank, and the ``best_config.json`` / ``hpo_trials.csv`` /
-``hpo_rerank.csv`` artifacts that :func:`workbench.utils.model_utils.get_hpo_results`
+``hpo_rerank.csv`` artifacts that :func:`workbench.utils.training_job_utils.get_hpo_results`
 reads.
 
 A framework supplies an :class:`HpoAdapter` — how to train and score one candidate, and
@@ -334,7 +334,7 @@ def run_hpo(
 def best_config_record(result, *, metric, counts, best_config, rerank, search_baseline_value) -> dict:
     """The ``best_config.json`` payload — the search's decision and what it turned on.
 
-    Read by :func:`workbench.utils.model_utils.get_hpo_results`. The two value pairs are
+    Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. The two value pairs are
     on *different bases* and must not be mixed:
 
     * ``best_value`` / ``baseline_value`` — the re-rank's basis, so their difference is
@@ -374,7 +374,7 @@ def best_config_record(result, *, metric, counts, best_config, rerank, search_ba
 def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseline_value) -> list:
     """The ``hpo_trials.csv`` rows — every trial plus the baseline, one schema.
 
-    Read by :func:`workbench.utils.model_utils.get_hpo_results`. Columns:
+    Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. Columns:
 
     * ``number`` — the trial's index; ``-1`` for the baseline row.
     * ``value`` — the objective. On a ``completed`` trial this is the full-ensemble

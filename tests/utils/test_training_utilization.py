@@ -17,7 +17,7 @@ import pytest
 
 # Workbench Imports
 from workbench.api import Model
-from workbench.utils.model_utils import get_training_utilization, get_training_utilization_details
+from workbench.utils.training_job_utils import get_training_utilization, get_training_utilization_details
 
 CPU_MODEL = "aqsol-regression"  # ml.m5.xlarge, from test_artifacts/create_aqsol_artifacts.py
 HPO_MODEL = "aqsol-chemprop-hpo"  # ml.g6.12xlarge, one job covering the whole search

@@ -13,8 +13,8 @@ import pandas as pd
 import pytest
 
 # Workbench Imports
-from workbench.utils import model_utils
-from workbench.utils.model_utils import get_hpo_importance
+from workbench.utils import training_job_utils
+from workbench.utils.training_job_utils import get_hpo_importance
 
 
 def _trials(records, values, kind="trial"):
@@ -43,7 +43,7 @@ def stub_results(monkeypatch):
     """Point get_hpo_importance at a trials frame we control."""
 
     def _install(frame):
-        monkeypatch.setattr(model_utils, "get_hpo_results", lambda model: {"trials": frame})
+        monkeypatch.setattr(training_job_utils, "get_hpo_results", lambda model: {"trials": frame})
 
     return _install
 
@@ -155,7 +155,7 @@ def test_too_few_trials_returns_none(stub_results):
 
 def test_unsearched_model_returns_none(monkeypatch):
     """None from get_hpo_results carries straight through."""
-    monkeypatch.setattr(model_utils, "get_hpo_results", lambda model: None)
+    monkeypatch.setattr(training_job_utils, "get_hpo_results", lambda model: None)
     assert get_hpo_importance(object()) is None
 
 

@@ -19,9 +19,9 @@ from workbench.api import Model
 from workbench.utils.model_utils import (
     _load_json_from_artifact,
     extracted_artifact,
-    get_hpo_results,
     load_hyperparameters_from_s3,
 )
+from workbench.utils.training_job_utils import get_hpo_results
 
 # XGBoost rather than chemprop: a search is minutes on a CPU box, so regenerating the
 # fixtures is cheap. Both come from test_artifacts/create_aqsol_artifacts.py.

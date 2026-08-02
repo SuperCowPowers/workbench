@@ -11,7 +11,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifacts.model_core import ModelFramework
-from workbench.utils.model_utils import get_hpo_search_space
+from workbench.utils.training_job_utils import get_hpo_search_space
 
 
 class _StubModel:
