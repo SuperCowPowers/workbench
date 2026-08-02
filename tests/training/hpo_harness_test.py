@@ -293,28 +293,28 @@ def test_a_trial_that_died_before_reporting_does_not_sink_the_record():
     assert records[0]["value"] == 0.25
 
 
-def test_asha_gives_a_fold_search_more_than_one_rung():
-    """A fold-reporting search must get a second look before a config is dropped.
+def test_a_surviving_trial_runs_every_fold(ray_cluster):
+    """A trial is judged once, at the warmup step, and then left to finish.
 
-    Rungs sit at ``grace_period * reduction_factor ** k``. Under Ray's default factor of 4
-    the second rung lands at 8 — past the end of a 5-fold run — so the whole search turns on
-    one comparison made after two folds. Reads Ray's bracket internals deliberately: the
-    rung ladder is the behavior under test, and it is not otherwise observable.
+    Rungs sit at grace_period * reduction_factor ** k, so asking for a 50% cull also buys
+    rungs at 4, 8, ... — and a trial reaching fold 4 of 5 has paid 80% of its cost, so
+    stopping it saves one fold and forfeits its place in the ranking pool. Runs the real
+    search rather than inspecting the ladder, because what matters is that a survivor is
+    never cut off partway.
     """
-    from ray.tune.schedulers import ASHAScheduler
+    from hpo_ray_trials import five_step_objective
 
-    from workbench.training.hpo_harness import PRUNE_REDUCTION_FACTOR
-
-    scheduler = ASHAScheduler(
-        metric="holdout_mae",
-        mode="min",
-        time_attr="step",
-        grace_period=2,
-        reduction_factor=PRUNE_REDUCTION_FACTOR,
+    result = run_search(
+        five_step_objective,
+        {"depth": IntRange(2, 6)},
+        n_trials=6,
+        backend="ray",
+        pruning=True,
+        prune_warmup=2,
     )
-    rungs = sorted(rung for rung, _ in scheduler._brackets[0]._rungs)
 
-    assert len([r for r in rungs if r <= 5]) >= 2, f"a 5-fold search sees only rungs {rungs}"
+    assert any(t["completed"] for t in result.trials), "every trial was stopped at the rung"
+    assert result.best_value is not None
 
 
 def test_partial_trials_reach_optuna_as_pruned_not_complete():

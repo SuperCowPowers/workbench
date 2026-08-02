@@ -44,3 +44,11 @@ def oom_before_any_report(config, report):
     for step in (1, 2, 3):
         report(step=step, holdout_mae=float(config["depth"]))
     return float(config["depth"])
+
+
+def five_step_objective(config, report):
+    """Reports five steps, as a five-fold ensemble trial does."""
+    value = float(config["depth"])
+    for step in range(1, 6):
+        report(step=step, holdout_mae=value)
+    return value

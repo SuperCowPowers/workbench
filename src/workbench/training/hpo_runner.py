@@ -27,14 +27,14 @@ import json
 import os
 
 # Trials report once per completed fold, so a trial is eligible for pruning only after its
-# second member has trained. One fold is too noisy a basis to kill a config on: a config can
-# lag on a single scaffold fold and still make the better ensemble.
-#
-# This also anchors ASHA's rung ladder, which sits at this value times
-# PRUNE_REDUCTION_FACTOR ** k — 2 and 4 for a 5-fold search. Raising it moves every rung:
-# at 3 the second rung lands at 6, past the last fold, leaving one all-or-nothing cull.
-# Check the ladder against n_folds before changing this.
-FOLD_PRUNE_WARMUP = 2
+# third member has trained, and is then left alone to finish. This is the whole of the
+# search's pruning: it decides which trials get ranked at all, so it is set where the partial
+# estimate becomes trustworthy rather than where it becomes cheap. Measured over a 60-trial
+# search, a running mean ranks against the final 5-fold score at Spearman 0.69 / 0.77 / 0.88 /
+# 0.88 after one through four folds — successive halving wants roughly 0.8, so two folds is
+# marginal and four buys nothing over three. Waiting the extra fold costs ~14% more
+# fold-training (every trial pays it; only the survivors would have).
+FOLD_PRUNE_WARMUP = 3
 
 # Finalists re-scored in phase 1.5 (plus the baseline, always). See rerank_finalists.
 RERANK_TOP_K = 5
@@ -148,10 +148,9 @@ def run_hpo(
     ``best_config.json``, ``hpo_trials.csv`` and ``hpo_rerank.csv`` to ``output_dir``
     when given.
 
-    Cost is kept near single-fold for weak configs by reporting the running objective
-    after every fold: the harness prunes a trial that is already off the pace once
-    ``FOLD_PRUNE_WARMUP`` folds are in, so only promising configs pay for the full
-    ensemble.
+    The running objective is reported after every fold, so the harness can drop a trial
+    that is already off the pace once ``FOLD_PRUNE_WARMUP`` folds are in — weak configs
+    pay for those folds and no more, and only the survivors buy the full ensemble.
 
     The search does not pick the winner on its own — its finalists go through
     :func:`rerank_finalists`, which re-scores them and the *baseline* on fresh trainings

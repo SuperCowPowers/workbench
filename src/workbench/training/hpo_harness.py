@@ -235,13 +235,9 @@ def space_defaults(search_space: SearchSpace) -> dict:
 PRUNE_WARMUP_STEPS = 20
 PRUNE_STARTUP_TRIALS = 5
 
-# ASHA rungs sit at ``grace_period * reduction_factor ** k``, and each cull keeps the top
-# ``1 / reduction_factor``. Ray's default of 4 puts the second rung at 8 — past the end of a
-# fold-reporting search, which therefore gets a single decision that discards 75% of trials
-# on the evidence of two folds. Halving instead lands rungs at 2 and 4, so a config gets a
-# second look before it is dropped and no single comparison is decisive. Same fraction
-# surviving, spread over two decisions; costs roughly a fifth more fold-training, since
-# twice as many trials clear the first rung.
+# Each ASHA cull keeps the top ``1 / reduction_factor``. Ray's default of 4 discards 75% of
+# trials on the evidence of two folds, which is most of the search budget spent on one noisy
+# comparison; halving keeps 50% instead.
 PRUNE_REDUCTION_FACTOR = 2
 
 
@@ -655,6 +651,10 @@ def _run_ray(
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
     # grace_period defaults to 1 (prune after a single report) — far too eager; give each
     # trial the same warmup the Optuna path gets.
+    # One rung, at prune_warmup. Rungs sit at grace_period * reduction_factor ** k, so a 50%
+    # cull also buys rungs at 4, 8, ... — a bad trade here, since a trial reaching fold 4 of 5
+    # has paid 80% of its cost and stopping it saves one fold while forfeiting its place in the
+    # ranking pool. max_t bounds the ladder and, with stop_last_trials off, does nothing else.
     scheduler = (
         ASHAScheduler(
             metric=metric,
@@ -662,6 +662,8 @@ def _run_ray(
             time_attr=time_attr,
             grace_period=prune_warmup,
             reduction_factor=PRUNE_REDUCTION_FACTOR,
+            max_t=prune_warmup + 1,
+            stop_last_trials=False,
         )
         if pruning
         else None
