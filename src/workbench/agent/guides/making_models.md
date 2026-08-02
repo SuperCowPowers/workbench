@@ -16,7 +16,7 @@ built from. **Prefer the shortest chain.** In priority order:
 |---|---|---|
 | **FeatureSet** | `fs.to_model()` | **recommended** — one call |
 | **DataSource** | `ds.to_features()` → `fs.to_model()` | one extra step |
-| **PublicData** | `pub_data.get()` → `DataSource` → `to_features()` → `to_model()` | |
+| **DataFrame** | `PandasToFeatures()` → `fs.to_model()` | incl. `pub_data.get()` |
 | **S3 / local file** | `DataSource(path)` → `to_features()` → `to_model()` | |
 
 **Always check for an existing FeatureSet first:**

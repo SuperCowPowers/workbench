@@ -53,12 +53,16 @@ Every published dataset is described (source, license, per-column meanings), so
 
 ## Into the pipeline
 
-A fetched DataFrame is an ordinary DataSource source, so the usual flow applies:
+`get()` hands back a DataFrame, so go straight to a FeatureSet — no DataSource in
+between (see `data_and_features`):
 
 ```python
+from workbench.core.transforms.pandas_transforms import PandasToFeatures
+
 df = pub_data.get("comp_chem/aqsol/aqsol_public_data")
-ds = DataSource(df, name="aqsol_data")      # name required for a DataFrame
-fs = ds.to_features("aqsol_features", id_column="id")
+to_features = PandasToFeatures("aqsol_features")
+to_features.set_input(df, id_column="id")
+to_features.transform()
 ```
 
 Check the columns before choosing an `id_column` — these are external datasets

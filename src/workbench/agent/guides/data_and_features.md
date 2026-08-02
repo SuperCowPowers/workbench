@@ -8,9 +8,20 @@ feature store behind it.
 
 ## DataSource to FeatureSet
 
+Have a DataSource? `ds.to_features()`. Have a DataFrame? `PandasToFeatures()`
+
 ```python
 ds = DataSource("s3://bucket/data.csv", name="my_data")   # or a local path, or a DataFrame
 fs = ds.to_features("my_features", id_column="id", tags=["my_data"])
+```
+
+```python
+from workbench.core.transforms.pandas_transforms import PandasToFeatures
+
+to_features = PandasToFeatures("my_features")
+to_features.set_input(df, id_column="id")
+to_features.set_output_tags(["my_data"])
+to_features.transform()
 ```
 
 - Names must be lowercase, and a DataFrame needs an explicit `name` — there's no
