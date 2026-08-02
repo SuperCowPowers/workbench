@@ -452,11 +452,12 @@ if __name__ == "__main__":
     # objective, else a scaffold split) and train the winner below. Trials run in-process
     # and ephemerally — no Workbench models/endpoints are created for them. The raw
     # holdout is aligned by the adapter through the spec's fitted preprocessing.
+    # An empty block is a real request: it asks for a search on every default.
     hpo_block = hyperparameters.get("hpo")
-    if hpo_block and model_type == "classifier":
+    if hpo_block is not None and model_type == "classifier":
         print("[hpo] NOTE: hyperparameter search is regression-only (v1); ignoring the `hpo` block.")
         hpo_block = None
-    if hpo_block:
+    if hpo_block is not None:
         from dataclasses import replace
 
         from workbench.training.pytorch_hpo import run_pytorch_hpo

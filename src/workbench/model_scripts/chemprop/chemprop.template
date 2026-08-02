@@ -538,11 +538,12 @@ if __name__ == "__main__":
     # When an `hpo` block is present, search for the best config (held-out holdout_df
     # objective, else a scaffold split) and train the winner below. Trials run in-process
     # and ephemerally — no Workbench models/endpoints are created for them.
+    # An empty block is a real request: it asks for a search on every default.
     hpo_block = hyperparameters.get("hpo")
-    if hpo_block and model_type == "classifier":
+    if hpo_block is not None and model_type == "classifier":
         print("[hpo] NOTE: hyperparameter search is regression-only (v1); ignoring the `hpo` block.")
         hpo_block = None
-    if hpo_block:
+    if hpo_block is not None:
         from workbench.training.chemprop_hpo import run_chemprop_hpo
 
         hyperparameters = run_chemprop_hpo(

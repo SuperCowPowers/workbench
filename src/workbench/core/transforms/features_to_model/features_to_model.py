@@ -56,6 +56,30 @@ CAPACITY_WAIT_SECONDS = 30 * 60
 MAX_PENDING_SECONDS = 7200
 
 
+def training_workload(hyperparameters, *, gpu_framework: bool) -> str:
+    """Which :data:`INSTANCE_LADDERS` entry a training job should ask for.
+
+    Only a *parallel* search needs a multi-GPU box; a serial one (optuna, or an explicit
+    ``max_parallel=1``) stays on the normal single-GPU instance. The job derives its own
+    concurrency from the cards it lands on, so an unset ``max_parallel`` means "pack the
+    box" and has to be given a box worth packing.
+
+    Args:
+        hyperparameters: the model's hyperparameters, or None.
+        gpu_framework: whether the framework trains on a GPU.
+
+    Returns:
+        str: a key into :data:`INSTANCE_LADDERS`.
+    """
+    hpo = (hyperparameters or {}).get("hpo")
+    if hpo is None:  # an empty block is a real request: a search on every default
+        return "gpu" if gpu_framework else "cpu"
+    if not gpu_framework:
+        return "cpu_hpo"
+    serial = hpo.get("backend", "auto") == "optuna" or hpo.get("max_parallel") == 1
+    return "gpu" if serial else "gpu_parallel_hpo"
+
+
 class CapacityTimeout(RuntimeError):
     """A training job was stopped without ever getting the instance it asked for."""
 
@@ -333,24 +357,15 @@ class FeaturesToModel(Transform):
         # Create a Sagemaker Model with our script
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
 
-        # Use user-specified instance or pick a ladder from the workload. Only a *parallel*
-        # search needs a multi-GPU box — a serial search (optuna, or an explicit
-        # max_parallel=1) stays on the normal single-GPU instance. The job derives its own
-        # concurrency from the cards it lands on, so an unset max_parallel means "pack the
-        # box" and has to be given a box worth packing.
-        hpo = (kwargs.get("hyperparameters") or {}).get("hpo") or {}
-        hpo_requested = bool(hpo)
-        hpo_parallel = hpo.get("backend", "auto") != "optuna" and hpo.get("max_parallel") != 1
-        gpu_framework = self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]
+        # Use user-specified instance or pick a ladder from the workload.
+        hpo_requested = (kwargs.get("hyperparameters") or {}).get("hpo") is not None
         train_instance_type = kwargs.get("training_instance")
         if train_instance_type:
             instance_ladder = [train_instance_type]
             self.log.important(f"Using user-specified instance {train_instance_type}")
         else:
-            if gpu_framework:
-                workload = "gpu_parallel_hpo" if hpo_parallel else "gpu"
-            else:
-                workload = "cpu_hpo" if hpo_requested else "cpu"
+            gpu_framework = self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]
+            workload = training_workload(kwargs.get("hyperparameters"), gpu_framework=gpu_framework)
             instance_ladder = INSTANCE_LADDERS[workload]
             self.log.important(f"Using {workload} instances {instance_ladder} for {self.model_framework.value}")
 
