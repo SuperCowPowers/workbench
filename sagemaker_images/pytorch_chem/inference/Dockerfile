@@ -27,13 +27,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Final runtime image
 FROM python:3.12-slim
 
-# Runtime system deps. The libX* packages are for cuik-molmaker-pin, which chemprop imports
-# unconditionally (chemprop/featurizers/molgraph/molecule.py) — its native extension links
-# against the X11 client libs, which the slim base does not carry. The builder stage copies
-# site-packages across but not system libraries, so they have to be installed here or
-# `import chemprop` dies with "libXrender.so.1: cannot open shared object file".
+# Runtime system deps. The libX*/libexpat packages are for cuik-molmaker-pin, which chemprop
+# imports unconditionally (chemprop/featurizers/molgraph/molecule.py). Its bundled cairo and
+# fontconfig link against the X11 client libs and expat, none of which the slim base carries,
+# and the builder stage copies site-packages across but not system libraries — so without
+# these `import chemprop` dies at container start with "cannot open shared object file".
+# Verified against the base image: ldd reports no unresolved libraries with this set.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends vim libxrender1 libxext6 libsm6 && \
+    apt-get install -y --no-install-recommends vim libxrender1 libxext6 libsm6 libexpat1 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
