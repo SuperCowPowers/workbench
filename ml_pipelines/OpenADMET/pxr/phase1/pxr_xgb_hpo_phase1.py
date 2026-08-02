@@ -5,11 +5,10 @@ training via validation_ids and captured), on the 2D descriptor columns. The sea
 inside the single training job — trials are ephemeral, so only the winning config is
 published as this model.
 
-The search objective is `cv_mae` on scaffold folds of the *training* rows, forced with
-hpo["metric"]. Without that override the designated validation rows would become the
-objective, which would tune the model on Analog Set 1 and make the pxr_phase1_test
-capture optimistic — and unfair against the other phase-1 models, which never see those
-labels during fitting.
+The search objective is `cv_mae` on scaffold folds of the *training* rows — the default,
+and the one that matters here. Setting hpo["metric"]="holdout_mae" would tune the model on
+Analog Set 1 and make the pxr_phase1_test capture optimistic, and unfair against the other
+phase-1 models, which never see those labels during fitting.
 
 An XGBoost trial is seconds rather than minutes, so this searches a wider space on a
 larger budget than the chemprop variants and still finishes in a fraction of the time.
@@ -46,14 +45,6 @@ m = fs.to_model(
             # spreads across every core, so the search is serial by design.
             "backend": "optuna",
             "n_trials": 250,
-            # Score on scaffold folds of the training rows, NOT on the held-out phase1_test
-            # rows — see the module docstring.
-            "metric": "cv_mae",
-            # search_space defaults to "basic+reg" (capacity/boosting + sampling/penalties).
-            # The search only shortlists: its top rerank_top_k configs are re-scored against
-            # these hyperparameters as-is, and the winner of *that* is published. So a search
-            # that finds nothing real publishes the untuned baseline.
-            "rerank_top_k": 5,
         },
     },
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)

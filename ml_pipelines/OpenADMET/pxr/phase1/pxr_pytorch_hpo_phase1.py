@@ -5,11 +5,10 @@ training via validation_ids and captured), on the 2D descriptor columns. The sea
 inside the single training job — trials are ephemeral, so only the winning config is
 published as this model.
 
-The search objective is `cv_mae` on scaffold folds of the *training* rows, forced with
-hpo["metric"]. Without that override the designated validation rows would become the
-objective, which would tune the model on Analog Set 1 and make the pxr_phase1_test
-capture optimistic — and unfair against the other phase-1 models, which never see those
-labels during fitting.
+The search objective is `cv_mae` on scaffold folds of the *training* rows — the default,
+and the one that matters here. Setting hpo["metric"]="holdout_mae" would tune the model on
+Analog Set 1 and make the pxr_phase1_test capture optimistic, and unfair against the other
+phase-1 models, which never see those labels during fitting.
 
 Build the FeatureSet first: python ../pxr_feature_sets.py
 """
@@ -17,6 +16,7 @@ Build the FeatureSet first: python ../pxr_feature_sets.py
 import logging
 
 from workbench.api import Endpoint, FeatureSet, ModelFramework, ModelType
+from workbench.training.hpo_harness import SearchSpace
 
 log = logging.getLogger("workbench")
 
@@ -33,6 +33,20 @@ phase1 = df[df["split"] == "phase1_test"]
 features = [c for c in Endpoint("smiles-to-2d-v1").output_columns() if c in df.columns]
 log.info(f"=== {model_name} — {fs_name} ({len(features)} features, {len(phase1)} held-out rows) ===")
 
+# The knobs to search — PyTorch's shipped space, unchanged:
+#
+#   layers         Choice(["128-64", "256-128", "512-256", "512-256-128", "1024-512-256",
+#                          "512-512-512", "1024-512-256-128"], default="512-256-128")
+#   dropout        FloatRange(0.0, 0.4, step=0.05, default=0.05)
+#   learning_rate  FloatRange(1e-4, 1e-2, log=True, default=1e-3)
+#   weight_decay   FloatRange(1e-6, 1e-2, log=True, default=1e-4)
+#   batch_size     Choice([32, 64, 128, 256, 512], default=64)
+#
+# It is a dict, so narrowing a range is `space["dropout"] = FloatRange(0.0, 0.2)` and dropping
+# a knob is `del space["weight_decay"]`. space.to_frame() reads back what will be sampled.
+# IntRange / FloatRange / Choice come from workbench.training.hpo_harness.
+space = SearchSpace("pytorch")
+
 m = fs.to_model(
     name=model_name,
     model_type=ModelType.UQ_REGRESSOR,
@@ -43,20 +57,9 @@ m = fs.to_model(
     tags=tags,
     hyperparameters={
         "uq_version": "v1",
-        "hpo": {
-            # "ray" + max_parallel > 1 runs trials concurrently (ASHA) on a 4-GPU instance.
-            "backend": "ray",
-            "max_parallel": 8,  # 4 GPUs x 2 trials each
-            "n_trials": 100,
-            # Score on scaffold folds of the training rows, NOT on the held-out phase1_test
-            # rows — see the module docstring.
-            "metric": "cv_mae",
-            # search_space defaults to "basic+optimizer" (layer shape + dropout, optimizer, batch size).
-            # The search only shortlists: its top rerank_top_k configs are re-scored against
-            # these hyperparameters as-is, and the winner of *that* is published. So a search
-            # that finds nothing real publishes the untuned baseline.
-            "rerank_top_k": 5,
-        },
+        # The search budget is what the job costs, so it is worth stating. Everything else
+        # defaults: https://supercowpowers.github.io/workbench/models/hpo/
+        "hpo": {"n_trials": 100, "search_space": space.to_dict()},
     },
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
 )

@@ -7,10 +7,25 @@ live in ``workbench.training.chemprop_hpo``.
 """
 
 from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType
+from workbench.training.hpo_harness import SearchSpace
 
 # Recreate flag in case you want to recreate the artifacts
 recreate = True
 model_name = "aqsol-chemprop-hpo"
+
+# The knobs to search — Chemprop's shipped space, unchanged:
+#
+#   depth           IntRange(2, 6, step=1, default=5)
+#   hidden_dim      IntRange(100, 2400, step=100, default=700)
+#   ffn_num_layers  IntRange(1, 3, step=1, default=2)
+#   ffn_hidden_dim  Choice([300, 600, 1800, "300-100", "512-128", "512-128-32", "1024-256-64"])
+#   max_lr          FloatRange(1e-4, 5e-3, log=True, default=1e-3)
+#   batch_size      Choice([64, 128, 256, 512], default=64)
+#
+# It is a dict, so narrowing a range is `space["depth"] = IntRange(3, 5)` and dropping a knob
+# is `del space["ffn_num_layers"]`. space.to_frame() reads back what will be sampled.
+# IntRange / FloatRange / Choice come from workbench.training.hpo_harness.
+space = SearchSpace("chemprop")
 
 # =============================================================================
 # Hyperparameter-searched Chemprop Regression Model
@@ -27,23 +42,13 @@ if recreate or not Model(model_name).exists():
         tags=["aqsol", "chemprop", "hpo"],
         hyperparameters={
             "uq_version": "v1",
-            "hpo": {
-                # "ray" + max_parallel > 1 runs trials concurrently (ASHA) and puts the job
-                # on a 4-GPU instance; "optuna" is the serial single-GPU path.
-                "backend": "ray",
-                "max_parallel": 8,  # 4 GPUs x 2 trials each (see gpus_per_trial)
-                "n_trials": 60,  # 5 baseline trials (pruner warmup) + 55 pruned candidates
-                # search_space defaults to "basic+optimizer" (capacity + LR schedule + batch size);
-                # pass "basic" to search architecture capacity only.
-                # The search only shortlists: its top rerank_top_k configs are then re-scored
-                # against these hyperparameters as-is, and the winner of *that* is published.
-                # So a search that finds nothing real publishes the untuned baseline.
-                "rerank_top_k": 5,
-            },
+            # The search budget is what the job costs, so it is worth stating. Everything
+            # else defaults: https://supercowpowers.github.io/workbench/models/hpo/
+            "hpo": {"n_trials": 60, "search_space": space.to_dict()},
         },
-        # For an honest out-of-distribution objective, pass validation_ids=[...]: those
-        # rows are held out of training and scored as `holdout_mae`. Without them the
-        # search optimizes `cv_mae` on a single scaffold split of the training rows.
+        # The objective is `cv_mae` over scaffold folds of the training rows. For an
+        # out-of-distribution one, pass validation_ids=[...] *and* set
+        # hpo["metric"]="holdout_mae"; those rows are held out of training either way.
     )
     m.set_owner("BW")
 

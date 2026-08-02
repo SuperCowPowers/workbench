@@ -80,7 +80,6 @@ if __name__ == "__main__":
                 "backend": "optuna",
                 "n_trials": 100,
                 "search_space": custom_space(),
-                "rerank_top_k": 5,
             },
         },
     )

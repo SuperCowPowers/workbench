@@ -59,8 +59,6 @@ if __name__ == "__main__":
                 # already spreads across every core, so the search is serial by design.
                 "backend": "optuna",
                 "n_trials": 250,
-                # search_space defaults to "basic+reg" (capacity/boosting + sampling/penalties).
-                "rerank_top_k": 5,
             },
         },
         # For an out-of-distribution objective, pass validation_ids=[...] and set

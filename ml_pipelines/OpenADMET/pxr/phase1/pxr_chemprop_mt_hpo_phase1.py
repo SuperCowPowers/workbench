@@ -23,6 +23,7 @@ Build the FeatureSet first: python ../pxr_chemprop_mt_feature_sets.py
 """
 
 from workbench.api import FeatureSet, ModelFramework, ModelType
+from workbench.training.hpo_harness import SearchSpace
 
 fs_name = "openadmet_pxr_mt"
 model_name = "pxr-reg-chemprop-mt-logd-hpo"
@@ -31,6 +32,20 @@ tags = ["openadmet_pxr", "chemprop", "multi_task", "mt-logd", "hpo", "phase1"]
 fs = FeatureSet(fs_name)
 df = fs.pull_dataframe()
 phase1 = df[df["split"] == "phase1_test"]
+
+# The knobs to search — Chemprop's shipped space, unchanged:
+#
+#   depth           IntRange(2, 6, step=1, default=5)
+#   hidden_dim      IntRange(100, 2400, step=100, default=700)
+#   ffn_num_layers  IntRange(1, 3, step=1, default=2)
+#   ffn_hidden_dim  Choice([300, 600, 1800, "300-100", "512-128", "512-128-32", "1024-256-64"])
+#   max_lr          FloatRange(1e-4, 5e-3, log=True, default=1e-3)
+#   batch_size      Choice([64, 128, 256, 512], default=64)
+#
+# It is a dict, so narrowing a range is `space["depth"] = IntRange(3, 5)` and dropping a knob
+# is `del space["ffn_num_layers"]`. space.to_frame() reads back what will be sampled.
+# IntRange / FloatRange / Choice come from workbench.training.hpo_harness.
+space = SearchSpace("chemprop")
 
 m = fs.to_model(
     name=model_name,
@@ -43,20 +58,10 @@ m = fs.to_model(
     hyperparameters={
         "uq_version": "v1",
         "task_weights": [1.0, 0.3],  # matches pxr-reg-chemprop-mt-logd, so the comparison is clean
-        "hpo": {
-            # "ray" runs trials concurrently (ASHA) across the GPUs. A multi-task search
-            # claims a whole card per trial, so this fills 4 GPUs with 4 trials.
-            "backend": "ray",
-            "max_parallel": 8,
-            "n_trials": 60,
-            # Score on scaffold folds of the training rows, never on the held-out
-            # phase1_test rows — tuning on those would cost them their role as a benchmark.
-            "metric": "cv_mae",
-            # The search only shortlists: its top rerank_top_k configs are re-scored against
-            # these hyperparameters as-is, and the winner of *that* is published. So a search
-            # that finds nothing real publishes the untuned baseline.
-            "rerank_top_k": 5,
-        },
+        # The search budget is what the job costs, so it is worth stating. Everything else
+        # defaults: https://supercowpowers.github.io/workbench/models/hpo/ — including the
+        # concurrency, which a multi-task search derives as one whole card per trial.
+        "hpo": {"n_trials": 60, "search_space": space.to_dict()},
     },
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
 )
