@@ -5395,9 +5395,14 @@ deployed and used exactly like any other.</p>
 <td><code>optuna</code> (serial) or <code>ray</code> (parallel, needs a GPU box)</td>
 </tr>
 <tr>
+<td><code>gpus_per_trial</code></td>
+<td><code>0.5</code>, or <code>1.0</code> multi-task</td>
+<td>GPU share one trial claims (Ray only)</td>
+</tr>
+<tr>
 <td><code>max_parallel</code></td>
-<td><code>1</code></td>
-<td>concurrent trials (Ray only)</td>
+<td>GPUs ÷ <code>gpus_per_trial</code></td>
+<td>concurrent trials (Ray only) — derived from the box, set it only to override</td>
 </tr>
 <tr>
 <td><code>n_folds</code></td>
