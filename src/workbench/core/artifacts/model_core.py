@@ -1263,6 +1263,11 @@ class ModelCore(Artifact):
         Notes:
             This may or may not exist based on whether we have access to TrainingJobAnalytics
         """
+        # A model copy has no training job of its own, so it keeps the metrics carried over with it
+        if self.training_job_name is None:
+            self.log.important(f"No training job for {self.name}, keeping existing training metrics")
+            return
+
         try:
             # V3: Use TrainingJob.get() and final_metric_data_list
             training_job = TrainingJob.get(self.training_job_name, session=self.boto3_session)
@@ -1417,15 +1422,23 @@ class ModelCore(Artifact):
         return df
 
     def _extract_training_job_name(self) -> Union[str, None]:
-        """Internal: Extract the training job name from the ModelDataUrl"""
-        try:
-            model_data_url = self.container_info()["ModelDataUrl"]
-            parsed_url = urllib.parse.urlparse(model_data_url)
-            training_job_name = parsed_url.path.lstrip("/").split("/")[0]
-            return training_job_name
-        except KeyError:
-            self.log.warning(f"Could not extract training job name from {model_data_url}")
+        """Internal: Extract the training job name from the ModelDataUrl
+
+        SageMaker writes a training job's artifact to <training_path>/<job_name>/output/model.tar.gz.
+        A promoted model copy holds a frozen artifact directly in its training dir, so it has no
+        training job of its own and returns None.
+        """
+        info = self.container_info()
+        model_data_url = info.get("ModelDataUrl") if info else None
+        if model_data_url is None:
+            self.log.warning(f"No ModelDataUrl for {self.name}, cannot determine training job")
             return None
+
+        parts = urllib.parse.urlparse(model_data_url).path.lstrip("/").split("/")
+        if len(parts) >= 3 and parts[-2] == "output":
+            return parts[-3]
+        self.log.info(f"No training job in the artifact path for {self.name}: {model_data_url}")
+        return None
 
     @staticmethod
     def _process_classification_metrics(df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
