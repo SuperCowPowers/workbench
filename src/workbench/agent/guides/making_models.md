@@ -56,13 +56,15 @@ training runs** — inline or on Batch, the full chain (`to_model` → `to_endpo
 polling until the training finishes. For a quick model that's fine; for a heavy
 one it ties up the session for the whole train.
 
-- **Quick** — XGBoost / sklearn on a modest set: call `to_model()` inline.
+**Ask the user which way to go** — it's their call, every time (`batch`).
+
+- **Quick** — XGBoost / sklearn on a modest set: `to_model()` inline is the
+  natural recommendation.
 - **Heavy** — chemprop or pytorch (a real GNN / neural train), an HPO sweep, or a
-  large FeatureSet: **don't run it inline.** Put the **whole chain** in a script
-  and launch it on Batch, so the REPL stays free (see the `batch` guide). The
-  Batch process is headless — no one is there to run the follow-up steps
-  interactively — so the script must build the endpoint and score it itself, or
-  you get a model with no metrics.
+  large FeatureSet: recommend Batch, with the **whole chain** in a script so the
+  REPL stays free. The Batch process is headless — no one is there to run the
+  follow-up steps interactively — so the script must build the endpoint and score
+  it itself, or you get a model with no metrics.
 
 ## Conventions
 

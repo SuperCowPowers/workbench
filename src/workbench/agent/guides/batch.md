@@ -10,9 +10,13 @@ Workbench image at scale, off the interactive session.
 
 ## When to launch vs. run inline
 
-Estimate the weight of the work and decide. The honest signal is the operation
-plus the data scale — check it at runtime (`ds.num_rows()`, `fs.num_rows()`, the
-length of the eval set) rather than guessing a clock.
+**Creating an artifact — DataSource, FeatureSet, Model, Endpoint — is always the
+user's call.** Recommend inline or Batch, say why, and wait. The lists below are
+how you form that recommendation, not a decision to make on your own.
+
+The honest signal is the operation plus the data scale — check it at runtime
+(`ds.num_rows()`, `fs.num_rows()`, the length of the eval set) rather than
+guessing a clock.
 
 **Launch to Batch:**
 
@@ -34,8 +38,8 @@ length of the eval set) rather than guessing a clock.
 - Inference on a handful of compounds.
 - XGBoost or similar on a small set.
 
-The rule is the spirit, not a stopwatch: if the work is heavy or large-scale,
-launch it; if it's quick and interactive, keep it inline.
+The rule is the spirit, not a stopwatch: heavy or large-scale leans Batch, quick
+and interactive leans inline. Lean, then ask.
 
 ## Ephemeral compute — no cost gate
 
