@@ -2304,14 +2304,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/hpo_winners_curse/" class="md-nav__link">
+      <a href="../../blogs/hpo_reranking/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    HPO: WIP
+    Re-ranking HPO Searches
   
 
     
@@ -5363,8 +5363,12 @@ fine-tuning (<code>from_foundation</code>, <code>freeze_mpnn_epochs</code>), and
 (SMILES + descriptors), and Foundation (CheMeleon) — that compose freely. On Databricks,
 ChemProp is available through community guides and the Genesis Workbench accelerator, but
 you assemble and maintain the training and serving code yourself.</p>
-<p><strong>Current gaps:</strong> Workbench has no AutoML, and hyperparameter optimization is designed but
-not yet shipped. Databricks integrates Optuna and Ray Tune today.</p>
+<p>Workbench ships hyperparameter search for ChemProp, XGBoost, and PyTorch regression — Optuna
+or Ray Tune inside a single training job, with a second stage that re-scores the finalists
+against your own untuned settings before publishing. Databricks integrates the same two
+libraries with no framework restriction, and can distribute a search across a cluster rather
+than one instance.</p>
+<p><strong>Current gap:</strong> Workbench has no AutoML.</p>
 <h2 id="3-visibility">3. Visibility</h2>
 <p>Workbench provides dedicated dashboard pages with drill-downs for DataSources, FeatureSets,
 Models, Endpoints, ML Pipelines, and Model Contests.</p>
@@ -5388,7 +5392,10 @@ metrics live per-model and per-contest, not as a queryable run history.</p>
 <ul>
 <li><strong>Any framework.</strong> Workbench supports a curated set; Databricks supports whatever you write.</li>
 <li><strong>Experiment tracking.</strong> MLflow run history and comparison. Workbench has none.</li>
-<li><strong>AutoML and HPO.</strong> Optuna/Ray Tune integration today.</li>
+<li><strong>AutoML.</strong> Databricks has it; Workbench does not.</li>
+<li><strong>HPO breadth.</strong> Both integrate Optuna and Ray Tune, but Databricks searches any framework
+  and distributes across a cluster; Workbench covers three frameworks, regression only,
+  within one training job.</li>
 <li><strong>Model versioning.</strong> Unity Catalog keeps version history with aliases; Workbench promotion
   is current-only.</li>
 <li><strong>Traffic splitting.</strong> Percentage-based routing for A/B tests and gradual rollout;

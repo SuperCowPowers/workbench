@@ -2167,14 +2167,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blogs/hpo_winners_curse/" class="md-nav__link">
+      <a href="../../../blogs/hpo_reranking/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    HPO: WIP
+    Re-ranking HPO Searches
   
 
     
@@ -7801,6 +7801,7 @@ box" and has to be given a box worth packing.</p>
                 <code>hyperparameters</code>
             </td>
             <td>
+                  <code><span title="typing.Union">Union</span>[<span title="dict">dict</span>, None]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -7877,7 +7878,7 @@ box" and has to be given a box worth packing.</p>
 <span class="normal"><a href="#__codelineno-0-77">77</a></span>
 <span class="normal"><a href="#__codelineno-0-78">78</a></span>
 <span class="normal"><a href="#__codelineno-0-79">79</a></span>
-<span class="normal"><a href="#__codelineno-0-80">80</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="k">def</span><span class="w"> </span><span class="nf">training_workload</span><span class="p">(</span><span class="n">hyperparameters</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">gpu_framework</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-80">80</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="k">def</span><span class="w"> </span><span class="nf">training_workload</span><span class="p">(</span><span class="n">hyperparameters</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">gpu_framework</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Which :data:`INSTANCE_LADDERS` entry a training job should ask for.</span>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">    Only a *parallel* search needs a multi-GPU box; a serial one (optuna, or an explicit</span>

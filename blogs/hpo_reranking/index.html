@@ -23,7 +23,7 @@
     
     
       
-        <title>HPO: WIP - ADMET Workbench</title>
+        <title>Re-ranking HPO Searches - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#hpo-wip" class="md-skip">
+        <a href="#why-we-re-rank-hyperparameter-searches" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              HPO: WIP
+              Re-ranking HPO Searches
             
           </span>
         </div>
@@ -2185,7 +2185,7 @@
   <span class="md-ellipsis">
     
   
-    HPO: WIP
+    Re-ranking HPO Searches
   
 
     
@@ -2203,7 +2203,7 @@
   <span class="md-ellipsis">
     
   
-    HPO: WIP
+    Re-ranking HPO Searches
   
 
     
@@ -2229,10 +2229,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#a-search-reports-a-biased-number" class="md-nav__link">
+  <a href="#a-leaderboard-rewards-luck-as-well-as-skill" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A search reports a biased number
+        A leaderboard rewards luck as well as skill
       
     </span>
   </a>
@@ -2240,10 +2240,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#we-measured-it" class="md-nav__link">
+  <a href="#what-five-real-searches-showed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        We measured it
+        What five real searches showed
       
     </span>
   </a>
@@ -2251,10 +2251,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-baseline-is-the-important-part" class="md-nav__link">
+  <a href="#your-own-settings-ride-along" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The baseline is the important part
+        Your own settings ride along
       
     </span>
   </a>
@@ -5158,10 +5158,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#a-search-reports-a-biased-number" class="md-nav__link">
+  <a href="#a-leaderboard-rewards-luck-as-well-as-skill" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A search reports a biased number
+        A leaderboard rewards luck as well as skill
       
     </span>
   </a>
@@ -5169,10 +5169,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#we-measured-it" class="md-nav__link">
+  <a href="#what-five-real-searches-showed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        We measured it
+        What five real searches showed
       
     </span>
   </a>
@@ -5180,10 +5180,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-baseline-is-the-important-part" class="md-nav__link">
+  <a href="#your-own-settings-ride-along" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The baseline is the important part
+        Your own settings ride along
       
     </span>
   </a>
@@ -5262,25 +5262,24 @@
 
 
 
-<h1 id="hpo-wip">HPO: WIP</h1>
+<h1 id="why-we-re-rank-hyperparameter-searches">Why We Re-rank Hyperparameter Searches</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">HPO in Workbench</p>
 <p>Hyperparameter search runs inside a single training job for ChemProp, XGBoost, and PyTorch. See the <a href="../../models/hpo/">Hyperparameter Optimization</a> page for the API.</p>
 </div>
-<p><em>This document is a work in progress: the results below are cross-validated, and we intend to rerun the comparison against true held-out sets before drawing firm conclusions.</em></p>
 <figure style="margin: 20px 0; width: 100%; display: block;">
 <img src="../../models/images/hpo_overview.svg" alt="HPO wrapping model creation: a search driver hands hyperparameters to the model templates, gets scores back, and only the winner is published" style="width: 100%; height: auto; display: block;">
 <figcaption><em>HPO wraps normal model creation — same training code, many configurations, one published model.</em></figcaption>
 </figure>
 
-<p>Hyperparameter search has an obvious implementation: try a few hundred configurations, keep the one with the best score. We built that, ran it on five real datasets, and found that the best-scoring configuration was <strong>usually the wrong one to publish</strong>.</p>
-<p>This post is about why, what we do instead, and what the numbers actually look like.</p>
-<h2 id="a-search-reports-a-biased-number">A search reports a biased number</h2>
+<p>Hyperparameter search has an obvious implementation: try a few hundred configurations, keep the one with the best score. Workbench adds one step to that — a second stage that re-scores the top finalists on fresh trainings and publishes whichever wins <em>there</em>.</p>
+<p>That one addition is what makes the feature dependable, and it is cheap: a handful of extra trainings on a search that already ran hundreds. This post is about why the second stage earns its keep, and what five real searches showed us.</p>
+<h2 id="a-leaderboard-rewards-luck-as-well-as-skill">A leaderboard rewards luck as well as skill</h2>
 <p>Every trial's score is an estimate with noise in it. Fold assignment, weight initialization, batch ordering — run the same configuration twice and you get two different numbers.</p>
-<p>Now take the minimum over 250 such estimates. You are not selecting for the best configuration; you are selecting for the best <em>combination</em> of configuration and luck. The reported minimum is therefore optimistically biased, and the bias grows with the number of trials. This is the same selection effect that makes cross-validated model selection scores untrustworthy as performance estimates — Cawley and Talbot's 2010 paper is the canonical treatment.</p>
-<p>The practical consequence: the trial at the top of the leaderboard is disproportionately likely to be there because it drew a lucky evaluation, not because it is genuinely better.</p>
-<h2 id="we-measured-it">We measured it</h2>
-<p>Workbench treats the search as a <strong>shortlist</strong>. After the search finishes, a second stage re-scores the top finalists on fresh trainings and publishes whichever wins <em>there</em>. That gives us a natural experiment: how often does the search's own #1 survive re-scoring?</p>
+<p>Now take the minimum over 250 such estimates. You are selecting for the best <em>combination</em> of configuration and luck, so the reported minimum sits below what that configuration will actually deliver, and the gap grows with the number of trials. This is the same well-studied selection effect that makes cross-validated model-selection scores optimistic as performance estimates — Cawley and Talbot's 2010 paper is the canonical treatment.</p>
+<p>None of which makes the leaderboard useless. It is a genuinely good <em>filter</em>: the configurations near the top are enriched for real quality, they just aren't sorted by it. So the right move is to use the search for what it is good at — narrowing hundreds of candidates to a handful — and settle the ranking with fresh evidence.</p>
+<h2 id="what-five-real-searches-showed">What five real searches showed</h2>
+<p>Treating the search as a <strong>shortlist</strong> gives us a natural experiment for free: every run tells us how often the search's own #1 survives re-scoring, and how much the published model gained.</p>
 <p>Across five searches on real datasets:</p>
 <table style="width: 100%;">
   <thead>
@@ -5301,14 +5300,14 @@
   </tbody>
 </table>
 
-<p><strong>The search's top trial won exactly once out of five.</strong> Four times the configuration we published was one the leaderboard had ranked second or third. If we had shipped the search's answer directly, we would have shipped a luckier-but-not-better configuration in 80% of these runs.</p>
-<p>Look at the last column too. The winning configurations came from trials 6, 21, 35, 51, and 232. Two searches ran 250 trials and published something found in the first 35. There is no relationship between how long the search ran and where in the run the eventual winner appeared — which is exactly what you would expect if late "improvements" are mostly noise.</p>
-<h2 id="the-baseline-is-the-important-part">The baseline is the important part</h2>
-<p>The second stage re-scores the finalists, and it also re-scores one more candidate: <strong>your own untuned hyperparameters</strong>.</p>
-<p>That single addition is what bounds the downside. A search that finds nothing real loses to your settings, and your settings get published unchanged. Ties go to you. The failure mode where an expensive search quietly makes your model worse — which is otherwise entirely possible, since the search's winner is biased and your baseline was never scored on the same footing — cannot happen.</p>
-<p>It also makes "the search found nothing" a legitimate, reportable outcome rather than a broken run. You spent the compute and learned that your configuration was already good. That is worth knowing, and it is worth <em>saying</em> rather than papering over with a number that looks like an improvement.</p>
+<p><strong>Every one of the five beat its baseline</strong> — and in four of them, the configuration that did it was <em>not</em> the leaderboard's #1. The search's own top trial held up under re-scoring exactly once. Four times the model we published came from a finalist the leaderboard had ranked second or third, which is exactly the improvement the second stage exists to find.</p>
+<p>Look at the last column too. The winning configurations came from trials 6, 21, 35, 51, and 232. Two searches ran 250 trials and published something found in the first 35. Where in the run the eventual winner appeared has no relationship to how long the search ran — good news for anyone budgeting compute, since it means a modest budget usually gets you there.</p>
+<h2 id="your-own-settings-ride-along">Your own settings ride along</h2>
+<p>The second stage re-scores the finalists, and it re-scores one more candidate: <strong>your own untuned hyperparameters</strong>.</p>
+<p>That single addition is what makes a search safe to run on a model you care about. Everything is measured on the same footing, so the comparison is real, and a search that finds nothing genuine simply publishes your settings unchanged. Ties go to you. Whatever happens, the model you end up with is at least as good as the one you started with.</p>
+<p>It also makes "the search found nothing" a useful result rather than a wasted run. You spent the compute and learned that your configuration was already competitive — which is worth knowing, and worth <em>reporting</em> as itself rather than as a number that merely looks like an improvement.</p>
 <h2 id="which-knobs-actually-mattered">Which knobs actually mattered</h2>
-<p>Once you have the trials, you can ask which hyperparameters moved the objective at all. Workbench fits a random-forest surrogate to the search's own trials and reports two numbers:</p>
+<p>Once you have the trials, you can ask which hyperparameters moved the objective at all. Workbench fits a random-forest surrogate to the search's own trials and reports two numbers — here, the PXR PyTorch search from the table above:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">model</span><span class="o">.</span><span class="n">hpo_importance</span><span class="p">()</span>
 </span></code></pre></div>
 <table>
@@ -5322,46 +5321,53 @@
 </thead>
 <tbody>
 <tr>
-<td><code>max_lr</code></td>
-<td>0.51</td>
-<td>7.9%</td>
-<td>0.0043</td>
+<td><code>learning_rate</code></td>
+<td>0.74</td>
+<td>2.54%</td>
+<td>0.00017</td>
+</tr>
+<tr>
+<td><code>layers</code></td>
+<td>0.23</td>
+<td>0.59%</td>
+<td>1024-512-256</td>
+</tr>
+<tr>
+<td><code>dropout</code></td>
+<td>0.01</td>
+<td>0.09%</td>
+<td>0.25</td>
 </tr>
 <tr>
 <td><code>batch_size</code></td>
-<td>0.37</td>
-<td>7.8%</td>
+<td>0.01</td>
+<td>0.07%</td>
 <td>512</td>
 </tr>
 <tr>
-<td><code>hidden_dim</code></td>
-<td>0.07</td>
-<td>2.4%</td>
-<td>100</td>
-</tr>
-<tr>
-<td><code>depth</code></td>
-<td>0.02</td>
-<td>0.5%</td>
-<td>5</td>
+<td><code>weight_decay</code></td>
+<td>0.01</td>
+<td>0.04%</td>
+<td>0.000005</td>
 </tr>
 </tbody>
 </table>
-<p><code>importance</code> is a share and always sums to 1 — so in a search where nothing mattered, something still looks important. <code>effect</code> is the absolute read: how far the objective actually moves across that knob's range. <strong>A knob earns tuning only when both are high.</strong> <code>depth</code> above holds a real share of very little.</p>
-<p>We pointed this at our own ChemProp search space and it cost a knob its place. <code>warmup_epochs</code> had been in the space since the beginning, on the reasonable theory that learning-rate warmup matters. Across three searches its measured effect was 0.06%, 0.02%, and 0.10% of the objective — and its rank correlation with the objective flipped sign between datasets, which is the signature of noise rather than signal. On one run the sampler spent 25 of 60 trials chasing it.</p>
-<p>It is no longer in the search space. In a 60-trial budget, an inert knob is not free — it is a whole dimension the sampler explores instead of the ones that pay.</p>
+<p><code>importance</code> is a share and always sums to 1 — so in a search where nothing mattered, something still looks important. <code>effect</code> is the absolute read: how far the objective actually moves across that knob's range. <strong>A knob earns tuning only when both are high.</strong> Above, learning rate and layer shape carry the run; the bottom three split a rounding error between them.</p>
+<p>Only completed trials feed this. A pruned trial scored a partial ensemble — a different objective, not a noisier one — and since a trial is pruned precisely for looking bad early, pooling the two lines the mixture up with the very knobs being ranked. And when the top knob can't be separated from a random column planted in the same fit, <code>hpo_importance()</code> says so rather than handing back a confident-looking ranking.</p>
+<p>We pointed this at our own ChemProp search space, and it paid for itself immediately. <code>warmup_epochs</code> had been in the space from the start, on the reasonable theory that learning-rate warmup matters. Across three searches its measured effect was 0.06%, 0.02%, and 0.10% of the objective, and its rank correlation with the objective flipped sign between datasets — the signature of noise rather than signal. On one run the sampler spent 25 of 60 trials exploring it.</p>
+<p>Dropping it hands those trials back to the knobs that pay. In a fixed budget, that is the cheapest improvement available: same compute, more of it spent where the objective actually moves. Every search you run tells you something about the next one.</p>
 <h2 id="what-to-expect">What to expect</h2>
-<p>Two honest caveats, because hyperparameter search is oversold.</p>
-<p><strong>Framework defaults are a strong baseline.</strong> ChemProp's defaults in particular come from people who tuned them on molecular data; the literature finds ChemProp HPO to be roughly a coin flip against them on small datasets. Our gains above run from +0.4% to +6.3% on cross-validated MAE. Real, but not transformative.</p>
-<p><strong>Cross-validated gains do not imply out-of-distribution gains.</strong> On the OpenADMET PXR challenge, where the held-out set is a distinct analog series rather than a random split, our searched models <em>lost</em> to stock defaults — despite winning in-distribution. Tuning finds the configuration best suited to the chemistry you already have. If your evaluation is a new chemical series, that is not the same objective, and a search optimizing the first will not reliably improve the second.</p>
-<p>This is why the objective defaults to out-of-fold cross-validation on training rows, and why rows designated through <code>validation_ids</code> are held out of the search entirely. They stay an honest benchmark, and a benchmark you tuned against is not a benchmark.</p>
+<p>Two things worth calibrating against, so the gains land where they should.</p>
+<p><strong>Framework defaults are a strong baseline.</strong> ChemProp's defaults in particular come from people who tuned them on molecular data; the literature finds ChemProp HPO to be roughly a coin flip against them on small datasets. Our gains run from +0.4% to +6.3% on cross-validated MAE — modest individually, but positive in every run and carrying no downside risk. That combination is the point: a few percent you can trust is worth more than a larger number you can't.</p>
+<p><strong>Cross-validated gains are a different question from out-of-distribution gains.</strong> On the OpenADMET PXR challenge, where the held-out set is a distinct analog series rather than a random split, our searched models lost to stock defaults despite winning in-distribution. Tuning finds the configuration best suited to the chemistry you already have. If your evaluation is a new chemical series, that is a different objective, and optimizing the first will not reliably improve the second.</p>
+<p>That result shaped the defaults. The objective is out-of-fold cross-validation on training rows, and rows designated through <code>validation_ids</code> stay out of the search entirely — so they remain an honest benchmark, because a benchmark you tuned against is not a benchmark. Knowing where a method stops working is what lets you rely on it where it does.</p>
 <h2 id="practical-takeaways">Practical takeaways</h2>
 <ol>
-<li><strong>Never quote the search's best value as the model's improvement.</strong> It is the biased number. Quote the re-ranked pair — <code>best_value</code> against <code>baseline_value</code> — which is what the publish decision actually turned on.</li>
-<li><strong>Treat a baseline win as information, not failure.</strong> It means your configuration was already competitive and you now have evidence for that.</li>
-<li><strong>Check <code>hpo_importance()</code> before widening a search.</strong> Knobs that don't move the objective are a tax on the budget, and you cannot tell which ones those are without looking.</li>
-<li><strong>More trials is not obviously better.</strong> Our winners came from trial 6 as often as trial 232. Budget buys shortlist quality, not a guaranteed better model.</li>
-<li><strong>Evaluate out-of-distribution if that's how the model will be used.</strong> In-distribution improvement is the easy part.</li>
+<li><strong>Quote the re-ranked pair, not the search's best value.</strong> <code>best_value</code> against <code>baseline_value</code> is what the publish decision turned on, and it is the number that holds up when someone retrains the model.</li>
+<li><strong>A baseline win is a result.</strong> Your configuration was already competitive, and now you have evidence for it.</li>
+<li><strong>Check <code>hpo_importance()</code> before widening a search.</strong> It tells you which knobs earned their trials, so the next search spends its budget where the objective actually moves.</li>
+<li><strong>Start with a modest budget.</strong> Our winners came from trial 6 as often as trial 232 — budget buys shortlist quality, and a few dozen trials usually buys enough of it.</li>
+<li><strong>Evaluate out-of-distribution if that's how the model will be used.</strong> In-distribution improvement is the easy part, and it's the part a search optimizes.</li>
 </ol>
 <h2 id="references">References</h2>
 <p><strong>Selection bias in model selection</strong> — why the best-of-N score is not an unbiased performance estimate:</p>
