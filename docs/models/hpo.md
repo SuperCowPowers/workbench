@@ -226,17 +226,24 @@ model.hpo_importance()          # None if the model was not searched
 
 | knob | importance | effect | best |
 |---|---|---|---|
-| `max_lr` | 0.51 | 7.9% | 0.0043 |
-| `batch_size` | 0.37 | 7.8% | 512 |
-| `hidden_dim` | 0.07 | 2.4% | 100 |
-| `depth` | 0.02 | 0.5% | 5 |
+| `learning_rate` | 0.74 | 2.54% | 0.00017 |
+| `layers` | 0.23 | 0.59% | 1024-512-256 |
+| `dropout` | 0.01 | 0.09% | 0.25 |
+| `batch_size` | 0.01 | 0.07% | 512 |
+| `weight_decay` | 0.01 | 0.04% | 0.000005 |
 
 **Read the two numbers together.** `importance` is a share and always sums to 1, so in a
 search where nothing mattered something still looks important. `effect` is the absolute
 read — how far the objective moves across that knob's range, as a percentage of the
-objective. A knob is worth tuning only when both are high; `depth` above holds a real share
-of very little. `best` is where the objective bottoms out with the other knobs averaged out,
-which is meaningless when `effect` is small.
+objective. A knob is worth tuning only when both are high; the bottom three above hold a
+real share of very little. `best` is where the objective bottoms out with the other knobs
+averaged out, which is meaningless when `effect` is small.
+
+**Only completed trials feed the fit.** A pruned trial scored a partial ensemble — a
+different objective, not a noisier one — and a trial is pruned precisely for looking bad
+early, so pooling the two aligns the mixture with the knobs being ranked. And when the top
+knob's share cannot be separated from a random column planted in the same fit, the call logs
+a warning rather than returning a confident-looking ranking.
 
 **How it's computed.** The trials are the dataset — knob values in, objective out — and a
 random forest is fit to that response surface. `importance` is the forest's split-based

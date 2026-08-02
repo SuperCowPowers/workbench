@@ -84,8 +84,13 @@ Workbench also ships four ChemProp model shapes — Single-Task, Multi-Task, Hyb
 ChemProp is available through community guides and the Genesis Workbench accelerator, but
 you assemble and maintain the training and serving code yourself.
 
-**Current gaps:** Workbench has no AutoML, and hyperparameter optimization is designed but
-not yet shipped. Databricks integrates Optuna and Ray Tune today.
+Workbench ships hyperparameter search for ChemProp, XGBoost, and PyTorch regression — Optuna
+or Ray Tune inside a single training job, with a second stage that re-scores the finalists
+against your own untuned settings before publishing. Databricks integrates the same two
+libraries with no framework restriction, and can distribute a search across a cluster rather
+than one instance.
+
+**Current gap:** Workbench has no AutoML.
 
 ## 3. Visibility
 
@@ -115,7 +120,10 @@ metrics live per-model and per-contest, not as a queryable run history.
 
 - **Any framework.** Workbench supports a curated set; Databricks supports whatever you write.
 - **Experiment tracking.** MLflow run history and comparison. Workbench has none.
-- **AutoML and HPO.** Optuna/Ray Tune integration today.
+- **AutoML.** Databricks has it; Workbench does not.
+- **HPO breadth.** Both integrate Optuna and Ray Tune, but Databricks searches any framework
+  and distributes across a cluster; Workbench covers three frameworks, regression only,
+  within one training job.
 - **Model versioning.** Unity Catalog keeps version history with aliases; Workbench promotion
   is current-only.
 - **Traffic splitting.** Percentage-based routing for A/B tests and gradual rollout;

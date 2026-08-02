@@ -26,7 +26,7 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 - **[Feature Endpoints: From Training to LiveDesign](feature_endpoints.md):** How Workbench uses SageMaker-hosted feature endpoints to guarantee identical feature computation — whether the request comes from a training pipeline, an inference endpoint, or a drug discovery platform like LiveDesign or StarDrop. We compare this approach to feature stores, platform UDFs (Databricks/Tecton), and open-source alternatives.
 
-- **[HPO: WIP](hpo_winners_curse.md):** *(work in progress)* A hyperparameter search reports the minimum over many noisy estimates, so its top trial is disproportionately lucky rather than good. Across five real searches, that top trial survived re-scoring exactly once — the configuration we published was usually the leaderboard's second or third. We cover the two-stage selection that catches it, why carrying your own hyperparameters through the second stage bounds the downside, and why cross-validated gains didn't transfer to a held-out analog series.
+- **[Why We Re-rank Hyperparameter Searches](hpo_reranking.md):** A search reports the minimum over many noisy estimates, so its top trial is as much lucky as good. Workbench treats the search as a shortlist and re-scores the finalists — plus your own untuned hyperparameters — on fresh trainings. Across five real searches every one beat its baseline, though the leaderboard's #1 held up only once. We cover how the second stage works, why carrying your own settings through it removes the downside, and what the searches told us about which knobs are worth tuning at all.
 
 ## Questions?
 <img align="right" src="../images/scp.png" width="180">

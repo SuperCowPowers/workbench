@@ -56,7 +56,7 @@ CAPACITY_WAIT_SECONDS = 30 * 60
 MAX_PENDING_SECONDS = 7200
 
 
-def training_workload(hyperparameters, *, gpu_framework: bool) -> str:
+def training_workload(hyperparameters: Union[dict, None], *, gpu_framework: bool) -> str:
     """Which :data:`INSTANCE_LADDERS` entry a training job should ask for.
 
     Only a *parallel* search needs a multi-GPU box; a serial one (optuna, or an explicit
