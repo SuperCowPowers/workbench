@@ -421,7 +421,7 @@ def diff_molecules(
     Args:
         smiles_a: First SMILES
         smiles_b: Second SMILES
-        captions: Labels drawn under each structure (typically the two compound ids)
+        captions: Labels drawn above each structure (typically the two compound ids)
         mol_size: Rendered width of each molecule in pixels (default: 400)
         background: Tile background as `rgba(...)`. Defaults to transparent.
         suptitle: Figure-level title
@@ -499,7 +499,7 @@ def molecule_grid(
 
     Args:
         smiles (list[str]): One SMILES per molecule.
-        captions (list[str], optional): Caption under each molecule (id, metrics).
+        captions (list[str], optional): Caption above each molecule (id, metrics).
             None for no captions.
         caption_colors (list[str], optional): Per-caption color (any matplotlib
             color, e.g. "gold", "#87d75f"). Defaults to black.
