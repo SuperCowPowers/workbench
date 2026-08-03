@@ -180,12 +180,13 @@ def current_user() -> str:
 
     try:
         arn = boto3.client("sts").get_caller_identity()["Arn"]
-        user = arn.rstrip("/").split("/")[-1]
+        # SSO session names are email-shaped; the local part is the person.
+        user = arn.rstrip("/").split("/")[-1].split("@")[0]
         if user and not user.startswith("workbench-"):
             return slugify(user)
     except Exception as e:
         log.warning(f"Could not resolve AWS identity ({e}), falling back to the local user...")
-    return slugify(getpass.getuser())
+    return slugify(getpass.getuser().split("@")[0])
 
 
 def slugify(name: str) -> str:
