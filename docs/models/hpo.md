@@ -124,6 +124,13 @@ hpo={"search_space": {"max_depth": {"dist": "int", "low": 4, "high": 8, "default
 back to the framework's. Bad spaces fail immediately rather than on trial 40: an inverted
 range, a log scale starting at zero, or an empty option list all raise at construction.
 
+Chemprop adds one rule, checked when the search starts. The FFN head is one knob:
+`ffn_hidden_dim` holds per-layer shapes (`"512-128"` is a 512→128 head), so its length is the
+layer count. Searching `ffn_num_layers` beside shape-valued widths is rejected — the sampled
+layer count would be recorded in the trials and the published config without ever being
+built. Chemprop's own two-knob spelling stays available for a custom space: give
+`ffn_hidden_dim` int widths only, and `ffn_num_layers` is live in every trial.
+
 ## Selection is two-stage
 
 A search reports the *minimum* over many noisy estimates, so its winning value is

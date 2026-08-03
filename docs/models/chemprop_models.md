@@ -40,7 +40,7 @@ model = feature_set.to_model(
 
 ### Per-Layer FFN Dimensions
 
-The feed-forward head can now **taper** across layers instead of using one fixed width — just pass a list to `ffn_hidden_dim`:
+The feed-forward head can **taper** across layers instead of using one fixed width — pass a list to `ffn_hidden_dim`:
 
 ```python
 model = feature_set.to_model(
@@ -55,7 +55,9 @@ model = feature_set.to_model(
 )
 ```
 
-A single int (e.g. `"ffn_hidden_dim": 2000`) still works and applies that width to every layer, with `ffn_num_layers` setting the count. When you pass a **list**, its length sets the number of layers and `ffn_num_layers` is ignored.
+A single int (e.g. `"ffn_hidden_dim": 2000`) applies that width to every layer, with `ffn_num_layers` setting the count. When you pass a **list**, its length sets the number of layers and `ffn_num_layers` is ignored.
+
+Hyperparameter search uses the list form exclusively — see [HPO](hpo.md).
 
 ## Single-Task ChemProp
 
