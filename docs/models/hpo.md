@@ -64,7 +64,7 @@ without leaving holes:
 |---|---|---|---|
 | `max_depth` | 7 | int | `{"low": 3, "high": 16, "step": 1}` |
 | `learning_rate` | 0.05 | float | `{"low": 0.003, "high": 0.3, "log": true}` |
-| `ffn_hidden_dim` | 1800 | choice | `{"options": [300, 600, "1024-256-64", ...]}` |
+| `ffn_hidden_dim` | "300-300" | choice | `{"options": ["300", "600", "300-100", "1024-256-64", ...]}` |
 
 `json.loads` the `spec` cell to read it. This is always the framework's full space.
 

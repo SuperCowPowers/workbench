@@ -21,31 +21,30 @@ def test_default_space_is_basic_plus_optimizer():
     assert set(space) == {
         "depth",
         "hidden_dim",
-        "ffn_num_layers",
         "ffn_hidden_dim",
         "max_lr",
         "batch_size",
     }
     assert space["depth"] == IntRange(2, 6, 1, default=5)  # chemprop {2,3,4,5,6}
     assert space["hidden_dim"] == IntRange(100, 2400, 100, default=700)  # chemprop floor of 300 extended to 100
-    assert space["ffn_num_layers"] == IntRange(1, 3, 1, default=2)  # chemprop {1,2,3}
+    # The head is the shape knob alone: a searched ffn_num_layers is ignored for a shape.
+    assert "ffn_num_layers" not in space
     # dropout is held out of the default space to keep the budget on the capacity knobs.
     assert "dropout" not in space
     assert isinstance(space["ffn_hidden_dim"], Choice)
     assert "1024-256-64" in space["ffn_hidden_dim"].options  # tapered head is a choice
+    assert space["ffn_hidden_dim"].default == "300-300"  # the template's untuned head
 
 
-def test_ffn_options_are_scalar_widths_or_parseable_shapes():
-    """Every ffn_hidden_dim option is an int width or a dash-string shape (the pytorch
-    `layers` convention) — one scalar cell per record, so the knob plots directly."""
+def test_ffn_options_are_parseable_shapes():
+    """Every ffn_hidden_dim option is a dash-string shape (the pytorch `layers` convention):
+    one scalar cell per record, and the layer count is always the one that gets built."""
     options = chemprop_search_space(("basic",))["ffn_hidden_dim"].options
     for opt in options:
-        if isinstance(opt, str):
-            widths = [int(x) for x in opt.split("-")]
-            assert len(widths) >= 2 and all(w > 0 for w in widths)
-        else:
-            assert isinstance(opt, int) and opt > 0
-    assert any(isinstance(o, str) for o in options)  # at least one tapered shape
+        assert isinstance(opt, str)
+        widths = [int(x) for x in opt.split("-")]
+        assert widths and all(w > 0 for w in widths)
+    assert any("-" in opt for opt in options)  # at least one multi-layer shape
 
 
 def test_optimizer_group_adds_schedule_knobs():
@@ -73,6 +72,36 @@ def test_resolve_search_space_shorthands():
     assert set(resolve_search_space(None)) == set(chemprop_search_space())
     custom = {"depth": IntRange(3, 5, 1)}
     assert resolve_search_space(custom) is custom  # ready dict passes through
+
+
+def test_custom_space_may_search_ffn_num_layers_with_int_widths():
+    """chemprop's own spelling stays legal: int widths make the layer count live."""
+    custom = {"ffn_hidden_dim": IntRange(300, 900, 300), "ffn_num_layers": IntRange(1, 3, 1)}
+    assert resolve_search_space(custom) is custom
+    both = {"ffn_hidden_dim": Choice([300, 600]), "ffn_num_layers": IntRange(1, 3, 1)}
+    assert resolve_search_space(both) is both
+
+
+def test_custom_space_rejects_ffn_num_layers_beside_shapes():
+    """A shape carries its own depth, so a searched layer count would be recorded and
+    never built — caught at resolve time, not after a search has been paid for."""
+    custom = {"ffn_hidden_dim": Choice([300, "512-128"]), "ffn_num_layers": IntRange(1, 3, 1)}
+    try:
+        resolve_search_space(custom)
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "ffn_num_layers" in str(e)
+
+    # Same check on the JSON wire form, which is how a search space arrives from to_model
+    wire = {
+        "ffn_hidden_dim": {"dist": "choice", "options": [300, "512-128"]},
+        "ffn_num_layers": {"dist": "int", "low": 1, "high": 3},
+    }
+    try:
+        resolve_search_space(wire)
+        assert False, "expected ValueError"
+    except ValueError as e:
+        assert "ffn_num_layers" in str(e)
 
 
 def test_merge_drops_hpo_block_and_applies_winner():
@@ -113,7 +142,8 @@ def test_spec_defaults_match_the_template():
 
     The template's DEFAULT_HYPERPARAMETERS is what trains; a spec default is what the search
     records report for a knob nobody overrode. If the two disagree, the baseline row
-    describes a model that was never built.
+    describes a model that was never built. The FFN head compares as the widths it builds,
+    since the template spells it as a width plus a layer count and the space as a shape.
     """
     import ast
     from pathlib import Path
@@ -126,13 +156,18 @@ def test_spec_defaults_match_the_template():
         if isinstance(node, ast.Assign)
         and any(getattr(t, "id", None) == "DEFAULT_HYPERPARAMETERS" for t in node.targets)
     )
+    space = chemprop_search_space()
 
     mismatched = {
         knob: (spec.default, defaults.get(knob))
-        for knob, spec in chemprop_search_space().items()
-        if knob in defaults and spec.default != defaults[knob]
+        for knob, spec in space.items()
+        if knob in defaults and knob != "ffn_hidden_dim" and spec.default != defaults[knob]
     }
     assert not mismatched, f"spec default != template default for {mismatched}"
+
+    searched_head = [int(width) for width in space["ffn_hidden_dim"].default.split("-")]
+    template_head = [defaults["ffn_hidden_dim"]] * defaults["ffn_num_layers"]
+    assert searched_head == template_head, f"baseline head {searched_head} != template head {template_head}"
 
 
 def test_every_searched_knob_declares_a_default():

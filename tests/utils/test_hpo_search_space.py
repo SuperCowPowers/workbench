@@ -93,7 +93,7 @@ def test_spec_blob_carries_the_fields_for_its_dist():
 
     choices = json.loads(frame.loc["ffn_hidden_dim", "spec"])
     assert frame.loc["ffn_hidden_dim", "dist"] == "choice"
-    assert 300 in choices["options"]
+    assert "300" in choices["options"]
     assert "low" not in choices
 
 

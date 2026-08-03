@@ -34,17 +34,37 @@ from workbench.training.hpo_runner import HpoAdapter, run_hpo
 # split_strategy, criterion, seed — stays fixed at its configured value.
 _SEARCH_GROUPS = {
     "basic": {
-        # depth / ffn_num_layers follow chemprop's canonical search space. hidden_dim spans
-        # 100-2400; small datasets select capacity at the low end. A dash-string
-        # ffn_hidden_dim ("1024-256-64", the pytorch `layers` convention) gives a tapered
-        # head, which a scalar width cannot express — ffn_num_layers is ignored for a
-        # shape (its length sets the depth). Every option is a scalar cell in the search
-        # records, so the knob plots directly. Narrow heads dominate on the ADMET sets, so
-        # the flat rungs are coarse above 600 and the shapes all taper to a small tail.
+        # depth follows chemprop's canonical search space; hidden_dim spans 100-2400, and
+        # small datasets select capacity at the low end.
+        #
+        # The head is one knob. ffn_hidden_dim is a dash-string per-layer shape (the pytorch
+        # `layers` convention), so its length sets the depth and its values set the widths —
+        # a spelling that covers chemprop's (width, ffn_num_layers) pair and adds the tapered
+        # heads the pair cannot express. ffn_num_layers is therefore never searched: it is
+        # ignored for a shape, so a searched value would be recorded but never built. Every
+        # option is a scalar cell in the search records, so the knob plots directly.
+        #
+        # Ten options, split evenly between uniform widths and tapered shapes, and spread
+        # across depth 1-3 so width and depth are not confounded. Ten levels is about the
+        # ceiling at a 60-trial budget — a categorical wants several draws per level.
+        # The default is the template's untuned head.
         "depth": IntRange(2, 6, 1, default=5),
         "hidden_dim": IntRange(100, 2400, 100, default=700),
-        "ffn_num_layers": IntRange(1, 3, 1, default=2),
-        "ffn_hidden_dim": Choice([300, 600, 1800, "300-100", "512-128", "512-128-32", "1024-256-64"], default=300),
+        "ffn_hidden_dim": Choice(
+            [
+                "300",
+                "600",
+                "1200",
+                "1800",
+                "300-300",
+                "300-100",
+                "512-128",
+                "1024-256",
+                "512-128-32",
+                "1024-256-64",
+            ],
+            default="300-300",
+        ),
     },
     # The optimizer knobs the chemprop maintainers recommend tuning. batch_size and LR
     # interact (they scale together), so they search as one group. The default matches
@@ -111,12 +131,42 @@ def chemprop_search_space(groups=("basic", "optimizer")) -> dict:
     return space
 
 
+def validate_search_space(space: dict) -> dict:
+    """Check a resolved space for knobs that cannot both be honored, returning it unchanged.
+
+    ``ffn_num_layers`` only reaches the model when ``ffn_hidden_dim`` is a plain int width;
+    a shape carries its own depth. Searching the two together means every shape trial
+    records a layer count it never built, which lands in the trial plots, the knob
+    importance, and the published winner's hyperparameters. Either search widths as ints
+    beside ``ffn_num_layers``, or search shapes alone.
+
+    Args:
+        space: a resolved ``{knob: Spec}`` space.
+
+    Returns:
+        dict: the same space.
+
+    Raises:
+        ValueError: if ``ffn_num_layers`` is searched beside shape-valued widths.
+    """
+    width = space.get("ffn_hidden_dim")
+    shapes = [option for option in getattr(width, "options", ()) if not isinstance(option, int)]
+    if "ffn_num_layers" in space and shapes:
+        raise ValueError(
+            f"ffn_num_layers cannot be searched beside shaped ffn_hidden_dim options ({shapes}): a shape "
+            "sets its own layer count, so the sampled ffn_num_layers would be recorded but never built. "
+            "Drop ffn_num_layers, or give ffn_hidden_dim int widths only."
+        )
+    return space
+
+
 def resolve_search_space(spec) -> dict:
     """Resolve an ``hpo['search_space']`` value into a ``{knob: Spec}`` space.
 
     Accepts a shorthand string (``"basic"``, ``"basic+optimizer"``), an iterable of group
     names, or a ready ``{knob: Spec}`` dict (passed through for full custom control).
-    Defaults to all groups (``basic+optimizer``).
+    Defaults to all groups (``basic+optimizer``). Custom spaces are checked by
+    :func:`validate_search_space`.
     """
     if spec is None:
         return chemprop_search_space()
@@ -125,8 +175,8 @@ def resolve_search_space(spec) -> dict:
     if isinstance(spec, dict):
         # A dict of dicts is the JSON wire form; a dict of Specs is already a space
         if spec and all(isinstance(v, dict) for v in spec.values()):
-            return SearchSpace.from_dict(spec)
-        return spec
+            return validate_search_space(SearchSpace.from_dict(spec))
+        return validate_search_space(spec)
     return chemprop_search_space(tuple(spec))
 
 

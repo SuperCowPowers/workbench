@@ -157,7 +157,7 @@ class SearchSpace(dict):
 
         space = SearchSpace("chemprop")
         space["max_lr"] = FloatRange(1e-4, 1e-2, log=True, default=3e-3)
-        del space["ffn_num_layers"]
+        del space["depth"]
         fs.to_model(..., hyperparameters={"hpo": {"search_space": space.to_dict()}})
 
     What you pass is the *whole* space: a one-knob dict searches one knob.

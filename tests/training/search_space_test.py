@@ -46,7 +46,7 @@ def test_editing_a_space_is_ordinary_dict_work():
     original = len(space)
 
     space["max_lr"] = FloatRange(1e-4, 1e-2, log=True, default=3e-3)
-    del space["ffn_num_layers"]
+    del space["depth"]
 
     assert len(space) == original - 1
     assert space.to_dict()["max_lr"] == {"dist": "float", "low": 1e-4, "high": 1e-2, "log": True, "default": 3e-3}

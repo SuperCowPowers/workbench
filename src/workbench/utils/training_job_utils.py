@@ -110,9 +110,9 @@ _NOISE_FLOOR_MARGIN = 3.0
 def _encode_knobs(hyperparameters: pd.Series) -> tuple[pd.DataFrame, dict]:
     """Encode each knob's trial values as floats for the surrogate, keeping the originals.
 
-    Numeric knobs pass through. A categorical (``ffn_hidden_dim`` mixes int widths with
-    dash-string shapes) is ordinal-coded by its sorted distinct values — an arbitrary but
-    leak-free order, unlike ranking the categories by their objective.
+    Numeric knobs pass through. A categorical (``ffn_hidden_dim`` holds dash-string FFN
+    shapes) is ordinal-coded by its sorted distinct values — an arbitrary but leak-free
+    order, unlike ranking the categories by their objective.
 
     Returns:
         tuple[pd.DataFrame, dict]: the float-encoded frame, and ``{knob: (values, codes)}``
