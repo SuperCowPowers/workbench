@@ -29,7 +29,7 @@ What earns its place:
 - **Decisions** — what was chosen, and why the alternative lost.
 - **Open threads** — what was left undone, and any dead end worth not repeating.
 
-The report is capped at 5000 characters, which is generous when you **name
+The report is capped at 6000 characters, which is generous when you **name
 artifacts instead of restating them**. `logd_value_f1` is thirteen characters and
 re-derivable; its column list is not. If a report won't fit, it is carrying data
 rather than conclusions — park the data in a `DFStore` frame and name the key.

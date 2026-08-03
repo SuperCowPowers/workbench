@@ -20,7 +20,7 @@ SESSION_ROOT = "/workbench/bosco/sessions"
 
 # Reports are distilled, not dumped. Past this the content belongs in a DFStore frame
 # that the report points at. The Parameter Store compresses above 4KB on its own.
-MAX_REPORT_CHARS = 5000
+MAX_REPORT_CHARS = 6000
 
 
 def session_path(name: str, user: str = None) -> str:

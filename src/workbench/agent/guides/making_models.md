@@ -50,21 +50,13 @@ this costs nothing to leave up. **This is the deliverable regardless of where
 training runs** — inline or on Batch, the full chain (`to_model` → `to_endpoint`
 → `test_inference` → `cross_fold_inference`) is what makes a usable model.
 
-## Where it runs: inline vs. Batch
+## Where it runs
 
-`to_model()` launches a SageMaker training job and then **blocks the REPL**,
-polling until the training finishes. For a quick model that's fine; for a heavy
-one it ties up the session for the whole train.
-
-**Ask the user which way to go** — it's their call, every time (`batch`).
-
-- **Quick** — XGBoost / sklearn on a modest set: `to_model()` inline is the
-  natural recommendation.
-- **Heavy** — chemprop or pytorch (a real GNN / neural train), an HPO sweep, or a
-  large FeatureSet: recommend Batch, with the **whole chain** in a script so the
-  REPL stays free. The Batch process is headless — no one is there to run the
-  follow-up steps interactively — so the script must build the endpoint and score
-  it itself, or you get a model with no metrics.
+Every `to_*()` above is a create: ask first, then default to Batch (`batch`).
+`to_model()` blocks the REPL until the SageMaker training job finishes, so a
+heavy train ties up the whole session. On Batch, put the **whole chain** in the
+script — the process is headless, so a `to_model()` that stops there leaves a
+model with no endpoint and no metrics.
 
 ## Conventions
 

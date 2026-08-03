@@ -8,38 +8,21 @@ live inference over tens of thousands of rows, or a whole multi-step sub-pipelin
 run end to end. Run those on **AWS Batch**: the same code, executed in the
 Workbench image at scale, off the interactive session.
 
-## When to launch vs. run inline
+## Creating an artifact
 
-**Creating an artifact — DataSource, FeatureSet, Model, Endpoint — is always the
-user's call.** Recommend inline or Batch, say why, and wait. The lists below are
-how you form that recommendation, not a decision to make on your own.
+**Every DataSource, FeatureSet, Model, and Endpoint is the user's call.** Name
+what you intend to create and wait for a yes in their next message. Not
+conditional on size, speed, or cost — a 200-row FeatureSet needs the same yes as
+a chemprop ensemble, and approving an experiment is not approval to build its
+artifacts.
 
-The honest signal is the operation plus the data scale — check it at runtime
-(`ds.num_rows()`, `fs.num_rows()`, the length of the eval set) rather than
-guessing a clock.
+Then **default to Batch**. Nearly all artifact creation belongs there. Inline is
+the exception and needs a reason you can say out loud: no neural training, no
+descriptor or conformer generation, small data you actually checked
+(`ds.num_rows()`, `fs.num_rows()`, `len(df)`), finishing in seconds.
 
-**Launch to Batch:**
-
-- Any neural / chemprop training, or an HPO sweep.
-- A heavy `to_features()` build — molecular descriptors, fingerprints, or
-  conformers over a large DataSource.
-- Live inference (`end.inference(df)`) over a large set — roughly tens of
-  thousands of rows or a whole FeatureSet — where the endpoint scores every row.
-  (Not `cross_fold_inference()`, which just pulls training-time predictions from
-  S3 and stays quick regardless of size — keep that inline.)
-- A multi-step sub-pipeline (`ds → fs → model → endpoint`) run end to end, where
-  any one stage is heavy or the whole chain is long.
-- Anything you'd expect to run for many minutes.
-
-**Run inline (REPL):**
-
-- Metrics pulls, plots, inspecting a single model or artifact.
-- A small DataSource / FeatureSet build over a modest set.
-- Inference on a handful of compounds.
-- XGBoost or similar on a small set.
-
-The rule is the spirit, not a stopwatch: heavy or large-scale leans Batch, quick
-and interactive leans inline. Lean, then ask.
+Reads create nothing — metrics pulls, plots, `cross_fold_inference()`, inspecting
+artifacts, inference on a handful of compounds. Run those inline, no ask.
 
 ## Ephemeral compute — no cost gate
 
