@@ -2,14 +2,16 @@
 !!! tip inline end "HPO in Workbench"
     Hyperparameter search runs inside a single training job for ChemProp, XGBoost, and PyTorch. See the [Hyperparameter Optimization](../models/hpo.md) page for the API.
 
+Hyperparameter search has an obvious implementation: try a few hundred configurations, keep the one with the best score. Workbench adds one step to that — a second stage that re-scores the top finalists on fresh trainings and publishes whichever wins *there*.
+
+That one addition is what makes the feature dependable, and it is cheap: a handful of extra trainings on a search that already ran hundreds. This post is about why the second stage earns its keep, and what five real searches showed us.
+
 <figure style="margin: 20px 0; width: 100%; display: block;">
 <img src="../../models/images/hpo_overview.svg" alt="HPO wrapping model creation: a search driver hands hyperparameters to the model templates, gets scores back, and only the winner is published" style="width: 100%; height: auto; display: block;">
 <figcaption><em>HPO wraps normal model creation — same training code, many configurations, one published model.</em></figcaption>
 </figure>
 
-Hyperparameter search has an obvious implementation: try a few hundred configurations, keep the one with the best score. Workbench adds one step to that — a second stage that re-scores the top finalists on fresh trainings and publishes whichever wins *there*.
 
-That one addition is what makes the feature dependable, and it is cheap: a handful of extra trainings on a search that already ran hundreds. This post is about why the second stage earns its keep, and what five real searches showed us.
 
 ## A leaderboard rewards luck as well as skill
 
