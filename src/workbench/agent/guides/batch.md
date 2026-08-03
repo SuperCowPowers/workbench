@@ -56,6 +56,10 @@ job = launch_batch(code, name="pxr_reg_sweep")   # {"name": "pxr_reg_sweep", ...
 `job["name"]` is the stem, which is what `batch_jobs()` matches on — the full job
 name (`workbench_pxr_reg_sweep_<timestamp>`) is stamped downstream at submit time.
 
+**Independent work goes in separate jobs**, launched together so it runs in
+parallel. Only chain steps into one script when one artifact depends on
+another.
+
 Launching also starts a watcher that polls every five minutes and reports the
 outcome. You'll see it as a `[Batch update: <job> SUCCEEDED]` line at the top of a
 later turn — **lead with it**, since the user may not have been at the terminal,

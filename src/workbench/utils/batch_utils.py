@@ -83,8 +83,10 @@ def launch_batch(
         code (str): The Python source to run on Batch. Self-contained.
         name (str): Script name; becomes the S3 key and the job label. Give it a
             clear, descriptive stem (e.g. "pxr_hpo_sweep").
-        size (str, optional): Batch size tier -- "small" (default), "medium", or
-            "large".
+        size (str, optional): Container size for the script runner, which only
+            orchestrates -- `to_model()` submits a SageMaker job that gets its own
+            right-sized instance. Leave at "small" unless the script itself holds
+            something big in memory.
         script_args (list[str], optional): Args forwarded to the script as the
             PIPELINE_ARGS environment variable.
         realtime (bool, optional): Run with serverless=False. Defaults to
