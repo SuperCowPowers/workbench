@@ -5504,6 +5504,12 @@ you would rather write it out:</p>
 <p><code>dist</code> is required — <code>"int"</code>, <code>"float"</code>, or <code>"choice"</code> — and <code>default</code> is optional, falling
 back to the framework's. Bad spaces fail immediately rather than on trial 40: an inverted
 range, a log scale starting at zero, or an empty option list all raise at construction.</p>
+<p>Chemprop adds one rule, checked when the search starts. The FFN head is one knob:
+<code>ffn_hidden_dim</code> holds per-layer shapes (<code>"512-128"</code> is a 512→128 head), so its length is the
+layer count. Searching <code>ffn_num_layers</code> beside shape-valued widths is rejected — the sampled
+layer count would be recorded in the trials and the published config without ever being
+built. Chemprop's own two-knob spelling stays available for a custom space: give
+<code>ffn_hidden_dim</code> int widths only, and <code>ffn_num_layers</code> is live in every trial.</p>
 <h2 id="selection-is-two-stage">Selection is two-stage</h2>
 <p>A search reports the <em>minimum</em> over many noisy estimates, so its winning value is
 optimistically biased — the winner may simply have drawn the luckiest evaluation. Workbench
