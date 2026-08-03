@@ -5267,13 +5267,13 @@
 <p class="admonition-title">HPO in Workbench</p>
 <p>Hyperparameter search runs inside a single training job for ChemProp, XGBoost, and PyTorch. See the <a href="../../models/hpo/">Hyperparameter Optimization</a> page for the API.</p>
 </div>
+<p>Hyperparameter search has an obvious implementation: try a few hundred configurations, keep the one with the best score. Workbench adds one step to that — a second stage that re-scores the top finalists on fresh trainings and publishes whichever wins <em>there</em>.</p>
+<p>That one addition is what makes the feature dependable, and it is cheap: a handful of extra trainings on a search that already ran hundreds. This post is about why the second stage earns its keep, and what five real searches showed us.</p>
 <figure style="margin: 20px 0; width: 100%; display: block;">
 <img src="../../models/images/hpo_overview.svg" alt="HPO wrapping model creation: a search driver hands hyperparameters to the model templates, gets scores back, and only the winner is published" style="width: 100%; height: auto; display: block;">
 <figcaption><em>HPO wraps normal model creation — same training code, many configurations, one published model.</em></figcaption>
 </figure>
 
-<p>Hyperparameter search has an obvious implementation: try a few hundred configurations, keep the one with the best score. Workbench adds one step to that — a second stage that re-scores the top finalists on fresh trainings and publishes whichever wins <em>there</em>.</p>
-<p>That one addition is what makes the feature dependable, and it is cheap: a handful of extra trainings on a search that already ran hundreds. This post is about why the second stage earns its keep, and what five real searches showed us.</p>
 <h2 id="a-leaderboard-rewards-luck-as-well-as-skill">A leaderboard rewards luck as well as skill</h2>
 <p>Every trial's score is an estimate with noise in it. Fold assignment, weight initialization, batch ordering — run the same configuration twice and you get two different numbers.</p>
 <p>Now take the minimum over 250 such estimates. You are selecting for the best <em>combination</em> of configuration and luck, so the reported minimum sits below what that configuration will actually deliver, and the gap grows with the number of trials. This is the same well-studied selection effect that makes cross-validated model-selection scores optimistic as performance estimates — Cawley and Talbot's 2010 paper is the canonical treatment.</p>
