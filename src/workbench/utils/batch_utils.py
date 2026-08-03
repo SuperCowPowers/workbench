@@ -3,9 +3,15 @@
 import os
 import re
 import time
+import atexit
 import logging
 import tempfile
+import threading
+from collections import deque
 from datetime import datetime, timedelta, timezone
+
+# Workbench Imports
+from workbench.utils.color_utils import cprint
 
 log = logging.getLogger("workbench")
 
@@ -14,6 +20,24 @@ JOB_QUEUE = "workbench-job-queue"
 # Every view in here is a "what is happening now" view, so all of them are scoped to this
 # window. It also keeps the queries cheap: both AWS list calls scan history page by page.
 LOOKBACK = timedelta(hours=48)
+
+# Watcher cadence, and how long a launched job gets to appear on the queue at all
+# (SQS -> Lambda -> Batch is normally seconds).
+WATCH_INTERVAL = 300
+APPEAR_TIMEOUT = 900
+_TERMINAL_STATUS = {"SUCCEEDED", "FAILED"}
+
+# Batch names a job `workbench_<script stem>_<%Y%m%d_%H%M%S>` (see ml_pipeline_batch).
+_JOB_PREFIX = "workbench_"
+
+# Watchers are daemon threads, so the interpreter exits without them; the event wakes
+# them out of a poll interval first rather than tearing down mid-sleep.
+_shutdown = threading.Event()
+atexit.register(_shutdown.set)
+
+# Finished jobs waiting to be reported into an agent turn. Bounded: nothing guarantees
+# anyone ever drains it.
+_completed = deque(maxlen=20)
 
 # A Batch job that trains logs one line per poll from features_to_model, which is the only
 # durable link back to SageMaker: nothing on the Batch job records what it submitted.
@@ -67,8 +91,10 @@ def launch_batch(
             serverless.
 
     Returns:
-        dict: {"name", "size", "s3_path"} identifying the submitted job. The full
-            submission log (message id, monitoring locations) is printed by the
+        dict: {"name", "size", "s3_path"} identifying the submitted job. ``name`` is
+            the stem, which is what `batch_jobs` matches on -- the full job name
+            (``workbench_<stem>_<timestamp>``) is stamped downstream at submit time.
+            The submission log (message id, monitoring locations) is printed by the
             submitter.
     """
     from workbench.scripts.ml_pipeline_sqs import submit_to_sqs
@@ -84,8 +110,89 @@ def launch_batch(
 
     submit_to_sqs(script_path, size=size, realtime=realtime, script_args=script_args)
 
+    stem = name[: -len(".py")]
+    watch_batch_job(stem)
+
     bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
-    return {"name": name, "size": size, "s3_path": f"s3://{bucket}/batch-jobs/{name}"}
+    return {"name": stem, "size": size, "s3_path": f"s3://{bucket}/batch-jobs/{name}"}
+
+
+def watch_batch_job(name: str, interval: int = WATCH_INTERVAL) -> threading.Thread:
+    """Poll a launched job in the background until it finishes, then report it.
+
+    Reporting happens twice, because the launcher may be looking at neither: a banner
+    is printed to the terminal, and the outcome is queued for `drain_completed`.
+
+    Args:
+        name (str): Job stem, as returned by `launch_batch` (matched as a substring).
+        interval (int, optional): Seconds between polls. Defaults to WATCH_INTERVAL.
+
+    Returns:
+        threading.Thread: The started daemon thread.
+    """
+    thread = threading.Thread(target=_watch, args=(name, interval), daemon=True, name=f"batch-watch-{name}")
+    thread.start()
+    return thread
+
+
+def _watch(name: str, interval: int) -> None:
+    """Poll until the job reaches a terminal status, report it, and stop."""
+    # The queue holds every job from the last 48 hours, so identity matters twice over.
+    # The stem must run to the timestamp -- a bare prefix would let "pxr_reg_sweep" claim
+    # "pxr_reg_sweep_v2" -- and the job must postdate this launch, since a re-run stem
+    # has finished predecessors sitting in the same window.
+    pattern = rf"^{_JOB_PREFIX}{re.escape(name)}_\d{{8}}_\d{{6}}$"
+    launched = datetime.now(timezone.utc).replace(tzinfo=None)
+    job_name = None
+    waited = 0
+
+    while not _shutdown.wait(interval):
+        try:
+            df = batch_jobs(job_name or name)
+        except Exception as e:
+            log.warning(f"Batch watcher for '{name}' could not list jobs: {e}")
+            continue
+
+        if job_name is None:
+            # Oldest post-launch match is ours; anything newer is a separate launch.
+            df = df[df["name"].str.match(pattern) & (df["created"] >= launched)]
+            if df.empty:
+                waited += interval
+                if waited >= APPEAR_TIMEOUT:
+                    _report({"name": name, "status": "NOT_FOUND", "reason": "never reached the Batch queue"})
+                    return
+                continue
+            job_name = df.iloc[-1]["name"]
+
+        row = df[df["name"] == job_name]
+        if row.empty:
+            continue
+
+        row = row.iloc[0].to_dict()
+        if row["status"] in _TERMINAL_STATUS:
+            _report(row)
+            return
+
+
+def _report(row: dict) -> None:
+    """Announce a finished job and queue it for the next agent turn."""
+    _completed.append(row)
+    runtime = f" after {row['runtime']}" if row.get("runtime") else ""
+    reason = f" -- {row['reason']}" if row.get("reason") else ""
+    color = "lightgreen" if row["status"] == "SUCCEEDED" else "red"
+    cprint(color, f"\nBatch job {row['name']} {row['status']}{runtime}{reason}")
+
+
+def drain_completed() -> list:
+    """Pop every job that has finished since the last call.
+
+    Returns:
+        list[dict]: Job rows (name, status, runtime, reason), oldest first.
+    """
+    rows = []
+    while _completed:
+        rows.append(_completed.popleft())
+    return rows
 
 
 def batch_jobs(name: str = None):

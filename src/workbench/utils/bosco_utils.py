@@ -1,4 +1,4 @@
-"""Bosco session reports: a distilled summary of where a session ended up.
+"""Support for the Bosco agent: session reports and turn-time notifications.
 
 A session report is prose, not a transcript and not a variable dump. It records the
 goal, the artifacts involved (by name, since those are re-derivable), what was
@@ -135,3 +135,31 @@ def recent_sessions(all_users: bool = False) -> pd.DataFrame:
             "when": df["modified"].dt.strftime("%Y-%m-%d %H:%M"),
         }
     )
+
+
+def batch_updates(prompt: str) -> str:
+    """Prefix a turn with any Batch jobs that finished since the last one.
+
+    The watcher already printed a banner, but that scrolls past. This is what puts
+    the outcome in front of the agent so it can speak to it and go look at what the
+    job produced.
+
+    Args:
+        prompt (str): The user's prompt for this turn.
+
+    Returns:
+        str: The prompt, preceded by one bracketed line per finished job.
+    """
+    from workbench.utils.batch_utils import drain_completed
+
+    rows = drain_completed()
+    if not rows:
+        return prompt
+    updates = "\n".join(
+        f"[Batch update: {r['name']} {r['status']}"
+        + (f" after {r['runtime']}" if r.get("runtime") else "")
+        + (f" -- {r['reason']}" if r.get("reason") else "")
+        + "]"
+        for r in rows
+    )
+    return f"{updates}\n\n{prompt}"

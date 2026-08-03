@@ -50,8 +50,16 @@ end.test_inference()
 end.cross_fold_inference()
 '''
 
-job = launch_batch(code, name="pxr_reg_sweep")
+job = launch_batch(code, name="pxr_reg_sweep")   # {"name": "pxr_reg_sweep", ...}
 ```
+
+`job["name"]` is the stem, which is what `batch_jobs()` matches on — the full job
+name (`workbench_pxr_reg_sweep_<timestamp>`) is stamped downstream at submit time.
+
+Launching also starts a watcher that polls every five minutes and reports the
+outcome. You'll see it as a `[Batch update: <job> SUCCEEDED]` line at the top of a
+later turn — **lead with it**, since the user may not have been at the terminal,
+then go look at what the job produced.
 
 A training script must build the **whole chain** — model, endpoint, and both
 inference runs — because the job is headless. A `to_model()` that stops there
