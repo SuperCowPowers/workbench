@@ -13,6 +13,7 @@ import pandas as pd
 
 from workbench.api import ParameterStore
 from workbench.utils.aws_utils import current_user, slugify
+from workbench.utils.color_utils import cprint, render_markdown
 
 log = logging.getLogger("workbench")
 
@@ -79,6 +80,23 @@ def read_session(name: str, user: str = None) -> str:
         listing = ", ".join(available) if available else "none saved yet"
         return f"No session at '{path}'. Available: {listing}"
     return report
+
+
+def show_session(name: str = None) -> None:
+    """Print a session report as rendered markdown.
+
+    Args:
+        name (str): Session name, or "<user>/<name>" for someone else's. Defaults to
+            the most recently saved session (any user).
+    """
+    if name is None:
+        recent = list_sessions(all_users=True)
+        if recent.empty:
+            cprint("darkyellow", "No sessions saved yet.")
+            return
+        name = recent.iloc[0]["session"]
+    cprint("lightpurple", f"\n{name}")
+    render_markdown(read_session(name))
 
 
 def list_sessions(all_users: bool = False) -> pd.DataFrame:

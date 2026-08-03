@@ -55,13 +55,15 @@ to the user.
 To see what is available, most recent first:
 
 ```python
-from workbench.utils.bosco_utils import recent_sessions
 recent_sessions()                  # yours -- [session, saved, when], for showing a person
 recent_sessions(all_users=True)    # everyone's
+show_session("eromm/caco2-er-class-xgb")   # rendered markdown; no arg = most recent
 ```
 
-`list_sessions()` is the same rows with a real timestamp column, for when you need
-to compare or filter in code rather than show someone.
+`recent_sessions` and `show_session` are REPL commands, so the user can run them
+too — point them at `show_session` rather than reading a report back to them.
+`list_sessions()` (import from `workbench.utils.bosco_utils`) is the same rows with
+a real timestamp column, for comparing or filtering in code.
 
 Empty is a real answer: no sessions have been saved yet. Say so rather than
 reporting it as a lookup failure.

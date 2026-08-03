@@ -190,6 +190,9 @@ class WorkbenchShell:
         # Bosco is opt-in (ENABLE_BOSCO); when off, the agent, prompt tag, and router stay dark
         if self.bosco_enabled:
             self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
+            bosco_utils = importlib.import_module("workbench.utils.bosco_utils")
+            self.commands["show_session"] = bosco_utils.show_session
+            self.commands["recent_sessions"] = bosco_utils.recent_sessions
 
             # Bosco needs Bedrock; light the prompt tag only when it's actually reachable
             if self.aws_status:
