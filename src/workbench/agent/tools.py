@@ -7,6 +7,9 @@ import traceback
 from pathlib import Path
 from typing import List
 
+from workbench.utils import bosco_utils
+from workbench.utils.bosco_utils import MAX_REPORT_CHARS
+
 GUIDES_DIR = Path(__file__).parent / "guides"
 PERSONALITIES_FILE = Path(__file__).parent / "personalities.md"
 DEFAULT_PERSONALITY = "chipper"
@@ -192,6 +195,33 @@ TOOL_SCHEMAS = [
             "required": ["name"],
         },
     },
+    {
+        "name": "save_session",
+        "description": (
+            "Save a report on where this session ended up, when the user asks. Distill: "
+            "the goal, artifacts by name, what was concluded, what is still open. Not a "
+            "transcript. Read the 'sessions' guide for the format."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Short session name, e.g. 'logd-cleanup'"},
+                "report": {"type": "string", "description": f"Report markdown, under {MAX_REPORT_CHARS} chars"},
+            },
+            "required": ["name", "report"],
+        },
+    },
+    {
+        "name": "read_session",
+        "description": (
+            "Recall a saved session report. Use the bare name for your own, or " "'<user>/<name>' for someone else's."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"name": {"type": "string", "description": "Session name, or '<user>/<name>'"}},
+            "required": ["name"],
+        },
+    },
 ]
 
 
@@ -201,4 +231,11 @@ def dispatch(name: str, tool_input: dict, namespace: dict) -> str:
         return run_python(tool_input["code"], namespace)
     if name == "read_guide":
         return read_guide(tool_input["name"])
+    if name == "read_session":
+        return bosco_utils.read_session(tool_input["name"])
+    if name == "save_session":
+        try:
+            return f"Saved to {bosco_utils.save_session(tool_input['name'], tool_input['report'])}"
+        except ValueError as e:
+            return str(e)
     return f"Unknown tool: {name}"

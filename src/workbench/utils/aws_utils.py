@@ -165,6 +165,34 @@ def sso_login_hint(profile: str = None) -> str:
     return f"aws sso login --profile {profile}" if profile else "aws sso login"
 
 
+def current_user() -> str:
+    """The person running this session, slugified.
+
+    Deliberately the *base* identity rather than ``AWSAccountClamp``: the clamp assumes
+    a shared Workbench role, so its ARN names the role and not the person. Falls back to
+    the local OS user when there is no AWS identity to read.
+
+    Returns:
+        str: e.g. "briford"
+    """
+    import boto3
+    import getpass
+
+    try:
+        arn = boto3.client("sts").get_caller_identity()["Arn"]
+        user = arn.rstrip("/").split("/")[-1]
+        if user and not user.startswith("workbench-"):
+            return slugify(user)
+    except Exception as e:
+        log.warning(f"Could not resolve AWS identity ({e}), falling back to the local user...")
+    return slugify(getpass.getuser())
+
+
+def slugify(name: str) -> str:
+    """Lowercase and strip anything unsafe for a path or AWS name."""
+    return re.sub(r"[^a-z0-9_.-]+", "-", name.strip().lower()).strip("-")
+
+
 def tag_safe(value: str) -> bool:
     """True if value can be stored as a plain AWS tag (no encoding needed)"""
     # Force-encode anything that collides with our marker, so the read side stays unambiguous
