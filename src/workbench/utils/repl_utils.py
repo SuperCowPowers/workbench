@@ -10,6 +10,29 @@ import sys
 from workbench.utils.color_utils import colors, cprint, render_markdown  # noqa: F401
 
 
+def cprint_above_prompt(color: str, text: str) -> None:
+    """cprint that survives an active REPL prompt, callable from any thread.
+
+    A background thread printing while the user is mid-edit would land on the input
+    line. prompt_toolkit's ``run_in_terminal`` hides the prompt, prints, and redraws
+    it -- but it must be scheduled on the event loop that owns the prompt.
+
+    Args:
+        color (str): Palette name, as for `cprint`.
+        text (str): The text to print.
+    """
+    from asyncio import ensure_future
+    from IPython import get_ipython
+    from prompt_toolkit.application import run_in_terminal
+
+    app = getattr(getattr(get_ipython(), "pt_app", None), "app", None)
+    if app is None or not app.is_running:
+        # No prompt to protect: not a terminal IPython, or output is already scrolling.
+        cprint(color, text)
+        return
+    app.loop.call_soon_threadsafe(lambda: ensure_future(run_in_terminal(lambda: cprint(color, text))))
+
+
 def status_lights(status_colors: list[str]):
     """
     Create status lights (circles) in color.

@@ -11,7 +11,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 
 # Workbench Imports
-from workbench.utils.color_utils import cprint
+from workbench.utils.repl_utils import cprint_above_prompt
 
 log = logging.getLogger("workbench")
 
@@ -180,7 +180,7 @@ def _report(row: dict) -> None:
     runtime = f" after {row['runtime']}" if row.get("runtime") else ""
     reason = f" -- {row['reason']}" if row.get("reason") else ""
     color = "lightgreen" if row["status"] == "SUCCEEDED" else "red"
-    cprint(color, f"\nBatch job {row['name']} {row['status']}{runtime}{reason}")
+    cprint_above_prompt(color, f"\nBatch job {row['name']} {row['status']}{runtime}{reason}")
 
 
 def drain_completed() -> list:
