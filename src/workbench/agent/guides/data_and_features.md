@@ -51,9 +51,9 @@ one join key for the whole chain: chosen from a DataSource column at
 `to_features()`, used to build the model's training view, and resolved back off
 the FeatureSet when an endpoint needs an id at inference. Read it, never guess it.
 
-For a targeted pull, `query()` takes SQL. Use `fs.table` in the FROM clause — it
-is the resolved Athena table, which carries a version suffix the FeatureSet name
-does not:
+For a targeted pull, `query()` takes SQL. Pulling FeatureSet data, the FROM clause
+is `{fs.table}`; if the user asked for a model's training data specifically, it is
+`{model.training_view().table}`.
 
 ```python
 df = fs.query(f'SELECT smiles, logd FROM "{fs.table}" WHERE logd > 3')
