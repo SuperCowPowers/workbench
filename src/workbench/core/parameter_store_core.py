@@ -52,10 +52,11 @@ class ParameterStoreCore:
         """List all parameters in the AWS Parameter Store, optionally filtering by a prefix.
 
         Args:
-            prefix (str, optional): A prefix to filter the parameters by. Defaults to None.
+            prefix (str, optional): A hierarchy path to list under, e.g. "/workbench/models".
+                Matches whole path segments, not arbitrary string prefixes. Defaults to None.
             details (bool, optional): Return ``{"name", "modified"}`` dicts instead of bare
-                names. The describe call already carries the timestamp, so this costs
-                nothing extra. Defaults to False.
+                names. The timestamp rides along on the same call, so this costs nothing
+                extra. Defaults to False.
 
         Returns:
             list: Parameter names, or dicts of name + last-modified when details is True.
@@ -65,29 +66,23 @@ class ParameterStoreCore:
             return {"name": param["Name"], "modified": param.get("LastModifiedDate")} if details else param["Name"]
 
         try:
-            # Set up parameters for the query
-            params = {"MaxResults": 50}
-
-            # If a prefix is provided, add the 'ParameterFilters' for optimization
-            if prefix:
-                params["ParameterFilters"] = [{"Key": "Name", "Option": "BeginsWith", "Values": [prefix]}]
-
-            # Initialize the list to collect parameter names
             all_parameters = []
 
-            # Make the initial call to describe parameters
-            response = self._call_with_retry(self.ssm_client.describe_parameters, **params)
+            if prefix:
+                # Path-indexed, so the cost tracks the number of matches. A BeginsWith filter
+                # on describe_parameters would instead page the whole store to find them.
+                call, params = self.ssm_client.get_parameters_by_path, {"Path": prefix.rstrip("/"), "Recursive": True}
+            else:
+                # No prefix: describe returns metadata only, rather than every parameter's value.
+                call, params = self.ssm_client.describe_parameters, {"MaxResults": 50}
 
-            # Aggregate the names from the initial response
+            response = self._call_with_retry(call, **params)
             all_parameters.extend(_entry(param) for param in response["Parameters"])
 
             # Continue to paginate if there's a NextToken
             while "NextToken" in response:
-                # Update the parameters with the NextToken for subsequent calls
                 params["NextToken"] = response["NextToken"]
-                response = self._call_with_retry(self.ssm_client.describe_parameters, **params)
-
-                # Aggregate the names from the subsequent responses
+                response = self._call_with_retry(call, **params)
                 all_parameters.extend(_entry(param) for param in response["Parameters"])
 
         except Exception as e:
