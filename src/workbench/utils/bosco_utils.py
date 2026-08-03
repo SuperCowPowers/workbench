@@ -7,6 +7,9 @@ on the account can recall one, including someone else's.
 """
 
 import logging
+from datetime import datetime, timezone
+
+import pandas as pd
 
 from workbench.api import ParameterStore
 from workbench.utils.aws_utils import current_user, slugify
@@ -72,20 +75,63 @@ def read_session(name: str, user: str = None) -> str:
     path = session_path(name, user)
     report = ParameterStore().get(path)
     if report is None:
-        available = list_sessions(all_users=True)
+        available = list_sessions(all_users=True)["session"].tolist()
         listing = ", ".join(available) if available else "none saved yet"
         return f"No session at '{path}'. Available: {listing}"
     return report
 
 
-def list_sessions(all_users: bool = False) -> list:
-    """Saved session reports, as "<user>/<name>".
+def list_sessions(all_users: bool = False) -> pd.DataFrame:
+    """Saved session reports, most recently written first.
 
     Args:
         all_users (bool): Include other users' sessions. Defaults to False.
 
     Returns:
-        list[str]: e.g. ["briford/logd-cleanup", "alice/pxr-hpo"]
+        pd.DataFrame: columns [session, modified], where session is "<user>/<name>".
     """
     prefix = SESSION_ROOT if all_users else f"{SESSION_ROOT}/{current_user()}"
-    return [p[len(SESSION_ROOT) + 1 :] for p in ParameterStore().list(prefix)]
+    rows = [
+        {"session": p["name"][len(SESSION_ROOT) + 1 :], "modified": p["modified"]}
+        for p in ParameterStore().list(prefix, details=True)
+    ]
+    df = pd.DataFrame(rows, columns=["session", "modified"])
+    return df.sort_values("modified", ascending=False, na_position="last").reset_index(drop=True)
+
+
+def _age(when) -> str:
+    """Compact age for a timestamp: "just now", "20m ago", "3h ago", "5d ago"."""
+    if pd.isna(when):
+        return "unknown"
+    minutes = int((datetime.now(timezone.utc) - when).total_seconds() // 60)
+    if minutes < 1:
+        return "just now"
+    if minutes < 60:
+        return f"{minutes}m ago"
+    if minutes < 60 * 24:
+        return f"{minutes // 60}h ago"
+    return f"{minutes // (60 * 24)}d ago"
+
+
+def recent_sessions(all_users: bool = False) -> pd.DataFrame:
+    """Saved sessions in a form worth showing a person.
+
+    Same rows as ``list_sessions``, with the timestamp rendered as a relative age and
+    a minute-resolution date instead of a microsecond one.
+
+    Args:
+        all_users (bool): Include other users' sessions. Defaults to False.
+
+    Returns:
+        pd.DataFrame: columns [session, saved, when]. Empty when nothing is saved.
+    """
+    df = list_sessions(all_users)
+    if df.empty:
+        return pd.DataFrame(columns=["session", "saved", "when"])
+    return pd.DataFrame(
+        {
+            "session": df["session"],
+            "saved": df["modified"].apply(_age),
+            "when": df["modified"].dt.strftime("%Y-%m-%d %H:%M"),
+        }
+    )

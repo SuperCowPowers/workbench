@@ -52,10 +52,16 @@ A report is a record of what was true when it was written. If it names a model o
 a metric, check the artifact still exists and still says that before repeating it
 to the user.
 
-To see what is available:
+To see what is available, most recent first:
 
 ```python
-from workbench.utils.bosco_utils import list_sessions
-list_sessions()                  # yours
-list_sessions(all_users=True)    # everyone's
+from workbench.utils.bosco_utils import recent_sessions
+recent_sessions()                  # yours -- [session, saved, when], for showing a person
+recent_sessions(all_users=True)    # everyone's
 ```
+
+`list_sessions()` is the same rows with a real timestamp column, for when you need
+to compare or filter in code rather than show someone.
+
+Empty is a real answer: no sessions have been saved yet. Say so rather than
+reporting it as a lookup failure.

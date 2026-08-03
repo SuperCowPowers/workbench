@@ -48,15 +48,22 @@ class ParameterStoreCore:
         # Create a Systems Manager (SSM) client for Parameter Store operations
         self.ssm_client = self.boto3_session.client("ssm")
 
-    def list(self, prefix: str = None) -> list:
+    def list(self, prefix: str = None, details: bool = False) -> list:
         """List all parameters in the AWS Parameter Store, optionally filtering by a prefix.
 
         Args:
             prefix (str, optional): A prefix to filter the parameters by. Defaults to None.
+            details (bool, optional): Return ``{"name", "modified"}`` dicts instead of bare
+                names. The describe call already carries the timestamp, so this costs
+                nothing extra. Defaults to False.
 
         Returns:
-            list: A list of parameter names and details.
+            list: Parameter names, or dicts of name + last-modified when details is True.
         """
+
+        def _entry(param: dict):
+            return {"name": param["Name"], "modified": param.get("LastModifiedDate")} if details else param["Name"]
+
         try:
             # Set up parameters for the query
             params = {"MaxResults": 50}
@@ -72,7 +79,7 @@ class ParameterStoreCore:
             response = self._call_with_retry(self.ssm_client.describe_parameters, **params)
 
             # Aggregate the names from the initial response
-            all_parameters.extend(param["Name"] for param in response["Parameters"])
+            all_parameters.extend(_entry(param) for param in response["Parameters"])
 
             # Continue to paginate if there's a NextToken
             while "NextToken" in response:
@@ -81,7 +88,7 @@ class ParameterStoreCore:
                 response = self._call_with_retry(self.ssm_client.describe_parameters, **params)
 
                 # Aggregate the names from the subsequent responses
-                all_parameters.extend(param["Name"] for param in response["Parameters"])
+                all_parameters.extend(_entry(param) for param in response["Parameters"])
 
         except Exception as e:
             self.log.error(f"Failed to list parameters: {e}")
