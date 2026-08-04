@@ -45,7 +45,7 @@ def set_rprompt(shell, text_fn, token=None) -> None:
         shell: The IPython shell; its ``pt_app`` is the prompt session.
         text_fn (callable): Returns either a plain string or ``[(Token, str), ...]``
             for per-piece color, as the left prompt does. Return empty to show nothing.
-        token: Pygments token styling a plain string. Defaults to ``Token.Grey``,
+        token: Pygments token styling a plain string. Defaults to ``Token.Blue``,
             which the REPL's style overrides map to the palette.
     """
     from pygments.token import Token
@@ -54,7 +54,7 @@ def set_rprompt(shell, text_fn, token=None) -> None:
     app = getattr(shell, "pt_app", None)
     if app is None:  # simple prompt / no terminal
         return
-    token = token or Token.Grey
+    token = token or Token.Blue
 
     def rprompt():
         content = text_fn()

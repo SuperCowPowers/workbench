@@ -39,7 +39,7 @@ except ImportError:
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
-from workbench.utils.color_utils import hex_color
+from workbench.utils.repl_themes import prompt_styles
 from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
@@ -82,21 +82,6 @@ log.addFilter(
         record.getMessage().startswith("Async: Metadata") or record.getMessage().startswith("Updated Metadata")
     )
 )
-
-
-# Prompt token colors, all sourced from the color_utils palette (single source
-# of truth) so they can't drift from the cprint / markdown colors.
-prompt_styles = {
-    Token.Workbench: hex_color("lightpurple"),
-    Token.AWSProfile: hex_color("darkyellow"),
-    Token.Darkyellow: hex_color("darkyellow"),
-    Token.Lightpurple: hex_color("lightpurple"),
-    Token.Lightgreen: hex_color("lightgreen"),
-    Token.Orange: hex_color("orange"),
-    Token.Red: hex_color("red"),
-    Token.Blue: hex_color("royalblue"),
-    Token.Grey: hex_color("lightgrey"),
-}
 
 
 # Note: Hack so the Prompt Class can access these variables
@@ -185,6 +170,7 @@ class WorkbenchShell:
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
+        self.commands["theme"] = importlib.import_module("workbench.utils.repl_themes").set_theme
         self.commands["log_theme"] = log_theme
         self.commands["reconnect"] = self.check_aws_account
         self.commands["pub_data"] = importlib.import_module("workbench.api.public_data").PublicData()
@@ -453,14 +439,14 @@ class WorkbenchShell:
         for row in rows:
             name = (row["contest"] + " " * 24)[:24]
             flag = "contested" if row["contested"] else "stable"
-            flag_color = "lightgreen" if row["contested"] else "grey"
+            flag_color = "lightgreen" if row["contested"] else "royalblue"
             when = row["timestamp"].strftime("%Y-%m-%d") if row["timestamp"] is not None else ""
             segments = [
                 "lightpurple",
                 "\t" + name,
                 flag_color,
                 (flag + " " * 10)[:10],
-                "grey",
+                "royalblue",
                 f" ({row['challengers']} challengers)  {when}",
             ]
             if row.get("recent_change"):

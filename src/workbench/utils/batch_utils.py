@@ -206,7 +206,7 @@ def batch_lights():
     if not _watched:
         return []
     dots = [(getattr(Token, _LIGHT_TOKENS[state]), "●") for state in _watched.values()]
-    return [(Token.Grey, "Batch "), (Token.Blue, "[")] + dots + [(Token.Blue, "]")]
+    return [(Token.Blue, "Batch [")] + dots + [(Token.Blue, "]")]
 
 
 def install_batch_lights() -> None:
