@@ -39,7 +39,7 @@ except ImportError:
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
-from workbench.utils.repl_themes import prompt_styles
+from workbench.utils.repl_themes import prompt_styles, current_theme
 from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
@@ -224,7 +224,10 @@ class WorkbenchShell:
         # Start IPython with the config and commands in the namespace
         try:
             if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
-                ipython_argv = ["--no-tip", "--theme", "linux"]
+                # IPython's own theme colors the text being typed, so it has to
+                # follow REPL_THEME or the input is unreadable on that background.
+                ipython_theme = "lightbg" if current_theme() == "light" else "linux"
+                ipython_argv = ["--no-tip", "--theme", ipython_theme]
             else:
                 ipython_argv = []
             start_ipython(ipython_argv, user_ns=locs, config=config)
