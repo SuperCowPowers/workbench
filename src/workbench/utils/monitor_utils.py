@@ -2,7 +2,9 @@
 
 import json
 import logging
+import numpy as np
 import pandas as pd
+from collections import Counter, defaultdict
 from typing import Dict, Any, Union
 from io import StringIO
 import awswrangler as wr
@@ -12,6 +14,11 @@ from workbench.utils.s3_utils import read_content_from_s3
 
 # Setup logging
 log = logging.getLogger("workbench")
+
+# SageMaker stores captured payloads base64-encoded unless the endpoint's capture config
+# declares the exact content types. Responses carry a charset suffix, so both forms are needed.
+CAPTURE_CSV_CONTENT_TYPES = ["text/csv", "text/csv; charset=utf-8"]
+CAPTURE_JSON_CONTENT_TYPES = ["application/json", "application/json; charset=utf-8"]
 
 
 def pull_data_capture_for_testing(data_capture_path, max_files=1) -> Union[pd.DataFrame, None]:
@@ -66,61 +73,105 @@ def pull_data_capture_for_testing(data_capture_path, max_files=1) -> Union[pd.Da
     return pd.concat(all_data, ignore_index=True)
 
 
-def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def extract_capture_payloads(df: pd.DataFrame) -> tuple[list, list]:
     """
-    Process the captured data DataFrame to extract input and output data.
-    Handles cases where input or output might not be captured.
+    Extract the raw input and output payloads from captured data records.
 
     Args:
         df (DataFrame): DataFrame with captured data.
     Returns:
-        tuple[DataFrame, DataFrame]: Input and output DataFrames.
+        tuple[list, list]: Input and output payload dicts.
     """
-
-    def parse_endpoint_data(data: dict) -> pd.DataFrame:
-        """Parse endpoint data based on encoding type."""
-        encoding = data["encoding"].upper()
-
-        if encoding == "CSV":
-            return pd.read_csv(StringIO(data["data"]))
-        elif encoding == "JSON":
-            json_data = json.loads(data["data"])
-            if isinstance(json_data, dict):
-                return pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
-            else:
-                return pd.DataFrame(json_data)
-        else:
-            return None  # Unknown encoding
-
-    input_dfs = []
-    output_dfs = []
+    input_payloads = []
+    output_payloads = []
 
     # Use itertuples() instead of iterrows() for better performance
     for row in df.itertuples(index=True):
         try:
             capture_data = row.captureData
-
-            # Process input data if present
             if "endpointInput" in capture_data:
-                input_df = parse_endpoint_data(capture_data["endpointInput"])
-                if input_df is not None:
-                    input_dfs.append(input_df)
-
-            # Process output data if present
+                input_payloads.append(capture_data["endpointInput"])
             if "endpointOutput" in capture_data:
-                output_df = parse_endpoint_data(capture_data["endpointOutput"])
-                if output_df is not None:
-                    output_dfs.append(output_df)
-
+                output_payloads.append(capture_data["endpointOutput"])
         except Exception as e:
             log.debug(f"Row {row.Index}: Failed to process row: {e}")
             continue
 
-    # Combine and return results
-    return (
-        pd.concat(input_dfs, ignore_index=True) if input_dfs else pd.DataFrame(),
-        pd.concat(output_dfs, ignore_index=True) if output_dfs else pd.DataFrame(),
-    )
+    return input_payloads, output_payloads
+
+
+def parse_payloads(payloads: list) -> tuple[pd.DataFrame, Union[np.ndarray, None]]:
+    """
+    Parse capture payloads into a single DataFrame.
+
+    Args:
+        payloads (list): Capture payload dicts (endpointInput or endpointOutput entries).
+    Returns:
+        tuple[DataFrame, ndarray | None]: The parsed data, plus the originating payload index for
+                                          each row (None when that mapping can't be established).
+    """
+
+    def parse_json(payload: dict) -> pd.DataFrame:
+        """Parse a single JSON payload."""
+        json_data = json.loads(payload["data"])
+        if isinstance(json_data, dict):
+            return pd.DataFrame({k: v if isinstance(v, list) else [v] for k, v in json_data.items()})
+        return pd.DataFrame(json_data)
+
+    frames = []
+    row_sources = []  # Per-frame arrays of originating payload index
+    sources_valid = True
+    unsupported = Counter()
+
+    # CSV payloads sharing a header are parsed in a single pass, so dtypes are inferred once
+    # across every row and the result is block-consolidated instead of one block per column
+    csv_groups = defaultdict(list)  # header -> [(payload index, body), ...]
+    for index, payload in enumerate(payloads):
+        encoding = payload["encoding"].upper()
+        if encoding == "CSV":
+            header, _, body = payload["data"].strip().partition("\n")
+            csv_groups[header].append((index, body))
+        elif encoding == "JSON":
+            try:
+                frames.append(parse_json(payload))
+                row_sources.append(np.full(len(frames[-1]), index))
+            except Exception as e:
+                log.debug(f"Failed to parse JSON payload: {e}")
+        else:
+            unsupported[encoding] += 1
+
+    # An unsupported encoding means the endpoint's capture content types are misconfigured
+    for encoding, count in unsupported.items():
+        log.warning(f"Skipped {count} capture payloads with unsupported encoding: {encoding}")
+
+    for header, entries in csv_groups.items():
+        bodies = [body for _, body in entries]
+        try:
+            frame = pd.read_csv(StringIO("\n".join([header, *bodies])), low_memory=False)
+        except Exception as e:
+            log.warning(f"Skipping {len(bodies)} payloads, CSV parse failed: {e}")
+            continue
+
+        frames.append(frame)
+
+        # Each body contributes one row per line, which lets us map rows back to payloads.
+        # Anything that breaks that (an embedded newline, a blank line) invalidates the mapping.
+        counts = [body.count("\n") + 1 if body else 0 for body in bodies]
+        if sum(counts) == len(frame):
+            row_sources.append(np.repeat([index for index, _ in entries], counts))
+        else:
+            sources_valid = False
+
+    if not frames:
+        return pd.DataFrame(), np.array([], dtype=int)
+
+    # Concatenating payloads with differing schemas aligns columns individually, leaving one
+    # block per column; copy() consolidates so downstream operations aren't crippled
+    combined = frames[0] if len(frames) == 1 else pd.concat(frames, ignore_index=True).copy()
+    if not sources_valid:
+        log.warning("Capture rows could not be mapped back to their payloads.")
+        return combined, None
+    return combined, np.concatenate(row_sources)
 
 
 def get_monitor_json_data(s3_path: str) -> Union[dict, None]:
@@ -233,13 +284,13 @@ if __name__ == "__main__":
     print(df.head())
 
     # Test processing data capture
-    input_processed, output_processed = process_data_capture(df)
+    input_payloads, output_payloads = extract_capture_payloads(df)
 
     print("\nProcessed Input:")
-    print(input_processed)
+    print(parse_payloads(input_payloads)[0])
 
     print("\nProcessed Output:")
-    print(output_processed)
+    print(parse_payloads(output_payloads)[0])
 
     # Test preprocessing script
     script = preprocessing_script(["feature1", "feature2", "feature3"])

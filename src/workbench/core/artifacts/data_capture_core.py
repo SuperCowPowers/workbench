@@ -6,6 +6,7 @@ import re
 import time
 from datetime import datetime
 from typing import Tuple
+import numpy as np
 import pandas as pd
 from sagemaker.core.model_monitor import DataCaptureConfig
 import awswrangler as wr
@@ -13,7 +14,12 @@ import awswrangler as wr
 # Workbench Imports
 from workbench.core.artifacts.endpoint_core import EndpointCore
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.utils.monitor_utils import process_data_capture
+from workbench.utils.monitor_utils import (
+    CAPTURE_CSV_CONTENT_TYPES,
+    CAPTURE_JSON_CONTENT_TYPES,
+    extract_capture_payloads,
+    parse_payloads,
+)
 
 # Setup logging
 log = logging.getLogger("workbench")
@@ -98,6 +104,8 @@ class DataCaptureCore:
             sampling_percentage=capture_percentage,
             destination_s3_uri=self.data_capture_path,
             capture_options=capture_options,
+            csv_content_types=CAPTURE_CSV_CONTENT_TYPES,
+            json_content_types=CAPTURE_JSON_CONTENT_TYPES,
         )
 
         # Update endpoint with the new capture configuration
@@ -290,42 +298,48 @@ class DataCaptureCore:
         # Process files using concurrent.futures
         start_time = time.time()
 
-        def process_single_file(file_path):
-            """Process a single file and return input/output DataFrames."""
+        def read_capture_file(file_path):
+            """Read a single file and return its raw input/output payloads."""
             try:
-                log.debug(f"Processing file: {file_path}...")
+                log.debug(f"Reading file: {file_path}...")
                 df = wr.s3.read_json(path=file_path, lines=True)
-                if not df.empty:
-                    input_df, output_df = process_data_capture(df)
-                    if add_timestamp and file_path in timestamps:
-                        output_df["timestamp"] = timestamps[file_path]["LastModified"]
-                    return input_df, output_df
-                return pd.DataFrame(), pd.DataFrame()
+                return extract_capture_payloads(df) if not df.empty else ([], [])
             except Exception as e:
                 self.log.warning(f"Error processing {file_path}: {e}")
-                return pd.DataFrame(), pd.DataFrame()
+                return [], []
 
         # Use ThreadPoolExecutor for I/O-bound operations
         from concurrent.futures import ThreadPoolExecutor
 
         max_workers = min(32, len(files))  # Cap at 32 threads or number of files
 
-        all_input_dfs, all_output_dfs = [], []
+        # Payloads are gathered across every file and parsed in one pass, which keeps dtypes
+        # consistent for the whole dataset. Each payload carries its file's timestamp.
+        input_payloads, output_payloads = [], []
+        input_stamps, output_stamps = [], []
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(process_single_file, file_path) for file_path in files]
-            for future in futures:
-                input_df, output_df = future.result()
-                if not input_df.empty:
-                    all_input_dfs.append(input_df)
-                if not output_df.empty:
-                    all_output_dfs.append(output_df)
+            futures = [(file_path, executor.submit(read_capture_file, file_path)) for file_path in files]
+            for file_path, future in futures:
+                file_inputs, file_outputs = future.result()
+                file_stamp = timestamps.get(file_path, {}).get("LastModified")
+                input_payloads.extend(file_inputs)
+                input_stamps.extend([file_stamp] * len(file_inputs))
+                output_payloads.extend(file_outputs)
+                output_stamps.extend([file_stamp] * len(file_outputs))
 
-        if not all_input_dfs:
+        if not input_payloads and not output_payloads:
             self.log.warning("No valid data was processed.")
             return pd.DataFrame(), pd.DataFrame()
 
-        input_df = pd.concat(all_input_dfs, ignore_index=True)
-        output_df = pd.concat(all_output_dfs, ignore_index=True)
+        def parse(payloads, stamps):
+            """Parse the payloads and attach the timestamp column."""
+            frame, row_sources = parse_payloads(payloads)
+            if add_timestamp and not frame.empty and row_sources is not None:
+                frame["timestamp"] = pd.to_datetime(np.asarray(stamps, dtype=object)[row_sources])
+            return frame
+
+        input_df = parse(input_payloads, input_stamps)
+        output_df = parse(output_payloads, output_stamps)
 
         elapsed_time = time.time() - start_time
         self.log.info(f"Processed {len(files)} files in {elapsed_time:.2f} seconds.")

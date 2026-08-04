@@ -1,11 +1,14 @@
-"""Check that captured predictions match live endpoint inference.
+"""Check that stored inference predictions match live endpoint inference.
 
 This is a sanity check — when models/endpoints are recreated all captures are deleted,
 so for a given endpoint + capture the stored predictions should exactly match what the
 endpoint produces when re-run on the same compounds.
 
+This covers inference captures (Model.get_inference_predictions). For SageMaker data
+capture, see data_capture_report.py.
+
 Usage:
-    python scripts/admin/capture_check.py
+    python scripts/admin/inference_capture_check.py
 """
 
 from workbench.api import Endpoint, Model, FeatureSet

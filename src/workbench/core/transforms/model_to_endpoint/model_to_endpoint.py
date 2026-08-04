@@ -21,6 +21,7 @@ from sagemaker.core.shapes.shapes import (
     ProductionVariant,
     ProductionVariantServerlessConfig,
     DataCaptureConfig as DataCaptureConfigShape,
+    CaptureContentTypeHeader,
     CaptureOption,
     Tag,
 )
@@ -43,6 +44,10 @@ from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     register_autoscaling,
 )
 from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE  # noqa: E402
+from workbench.utils.monitor_utils import (  # noqa: E402
+    CAPTURE_CSV_CONTENT_TYPES,
+    CAPTURE_JSON_CONTENT_TYPES,
+)
 
 
 class ModelToEndpoint(Transform):
@@ -240,6 +245,10 @@ class ModelToEndpoint(Transform):
                     CaptureOption(capture_mode="Input"),
                     CaptureOption(capture_mode="Output"),
                 ],
+                capture_content_type_header=CaptureContentTypeHeader(
+                    csv_content_types=CAPTURE_CSV_CONTENT_TYPES,
+                    json_content_types=CAPTURE_JSON_CONTENT_TYPES,
+                ),
             )
         elif data_capture and self.serverless:
             self.log.warning(
