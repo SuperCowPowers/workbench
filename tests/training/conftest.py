@@ -1,5 +1,6 @@
 """Shared fixtures for the training tests."""
 
+import os
 from pathlib import Path
 
 import pytest
@@ -7,21 +8,23 @@ import pytest
 
 @pytest.fixture(scope="session")
 def ray_cluster():
-    """A Ray cluster whose workers can import this directory's trial modules.
+    """Let Ray workers import this directory's trial modules.
 
-    ``_run_ray`` calls ``ray.init(..., ignore_reinit_error=True)``, so initializing first
-    here wins: the runtime env set below is the one the workers get. Adding this directory
-    to their ``PYTHONPATH`` is what lets a worker import ``hpo_ray_trials`` — without it
-    every trial dies with ``ModuleNotFoundError`` before the harness is exercised at all.
+    The harness owns a Ray session per run and tears it down on the way out, so a fixture
+    cannot hold one open for the tests. Workers inherit the driver's environment, so putting
+    this directory on ``PYTHONPATH`` here reaches them whichever session they belong to —
+    without it every trial dies with ``ModuleNotFoundError`` before the harness is exercised
+    at all. ``RAY_num_cpus`` keeps the toy trials from fanning out across every core.
     """
-    ray = pytest.importorskip("ray")
+    pytest.importorskip("ray")
 
-    ray.init(
-        runtime_env={"env_vars": {"PYTHONPATH": str(Path(__file__).parent)}},
-        num_cpus=2,
-        include_dashboard=False,
-        ignore_reinit_error=True,
-        configure_logging=False,
-    )
+    here = str(Path(__file__).parent)
+    previous = {key: os.environ.get(key) for key in ("PYTHONPATH", "RAY_num_cpus")}
+    os.environ["PYTHONPATH"] = os.pathsep.join(filter(None, [here, previous["PYTHONPATH"]]))
+    os.environ["RAY_num_cpus"] = "2"
     yield
-    ray.shutdown()
+    for key, value in previous.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value

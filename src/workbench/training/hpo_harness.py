@@ -28,6 +28,7 @@ knobs).
 
 from __future__ import annotations
 
+import functools
 import logging
 from dataclasses import dataclass, field
 from typing import Callable, Sequence, Union
@@ -365,6 +366,36 @@ def evaluate_configs(
     return values
 
 
+def _ray_session(func):
+    """Give the wrapped function its own Ray session, torn down when it returns.
+
+    Tune's actor manager does not survive a second ``Tuner`` in a session it did not start:
+    scheduling races the previous run's teardown and lands on an actor already dropped from
+    the manager's tables, which raises "Tracked actor is not managed by this event manager".
+    A session per run keeps those tables from outliving the run that filled them.
+
+    Trials run in their own worker processes, so the allocator setting has to travel in the
+    runtime env rather than the driver's ``os.environ``. Expandable segments let the caching
+    allocator grow a segment instead of demanding one contiguous block, which is what
+    fragments when several trials share a card.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        import ray
+
+        ray.init(
+            runtime_env={"env_vars": {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}},
+            ignore_reinit_error=True,
+        )
+        try:
+            return func(*args, **kwargs)
+        finally:
+            ray.shutdown()
+
+    return wrapper
+
+
 def _resolve_backend(backend: str) -> str:
     """Resolve ``"auto"`` to ``"ray"`` when ray is importable, else ``"optuna"``."""
     if backend != "auto":
@@ -584,21 +615,12 @@ def _resolve_trial_records(results, *, metric, done_flag, choice_options) -> lis
     ]
 
 
+@_ray_session
 def _run_ray(
     trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed, resources_per_trial
 ) -> HpoResult:
-    import ray
     from ray import tune
     from ray.tune.schedulers import ASHAScheduler
-
-    # Trials run in their own worker processes, so the allocator setting has to travel in the
-    # runtime env rather than the driver's os.environ. Expandable segments let the caching
-    # allocator grow a segment instead of demanding one contiguous block, which is what
-    # fragments when several trials share a card.
-    ray.init(
-        runtime_env={"env_vars": {"PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"}},
-        ignore_reinit_error=True,
-    )
 
     # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
     # Optuna path): OptunaSearch's categorical rejects unhashable options (list-valued
@@ -718,6 +740,7 @@ def _run_ray(
     )
 
 
+@_ray_session
 def _evaluate_ray(eval_fn, configs, *, max_parallel, resources_per_trial):
     """Fan :func:`evaluate_configs` out across the node's GPUs via Ray."""
     from ray import tune

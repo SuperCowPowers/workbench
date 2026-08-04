@@ -317,6 +317,38 @@ def test_a_surviving_trial_runs_every_fold(ray_cluster):
     assert result.best_value is not None
 
 
+def test_a_ray_run_leaves_no_session_behind(ray_cluster):
+    """Each Ray entry point owns its session, so nothing outlives the run that started it."""
+    import ray
+
+    from hpo_ray_trials import quadratic, quadratic_score
+
+    run_search(quadratic, SPACE, n_trials=3, backend="ray", pruning=False)
+    assert not ray.is_initialized()
+
+    evaluate_configs(quadratic_score, [{"x": 1.0, "depth": 3}], backend="ray")
+    assert not ray.is_initialized()
+
+
+def test_a_rerank_can_follow_a_search_in_the_same_process(ray_cluster):
+    """The production sequence: search, then re-rank its finalists, one process.
+
+    Tune's actor manager does not survive a second ``Tuner`` in a session it did not start
+    — scheduling races the previous run's teardown and raises "Tracked actor is not managed
+    by this event manager", which degrades the re-rank to publishing the search's own
+    biased winner.
+    """
+    from hpo_ray_trials import quadratic, quadratic_score
+
+    result = run_search(quadratic, SPACE, n_trials=6, backend="ray", pruning=False)
+    finalists = [t["config"] for t in sorted(result.trials, key=lambda t: t["value"])[:3]]
+
+    values = evaluate_configs(quadratic_score, finalists, backend="ray", max_parallel=2)
+
+    assert len(values) == len(finalists)
+    assert all(v is not None for v in values)
+
+
 def test_partial_trials_reach_optuna_as_pruned_not_complete():
     """A scheduler-stopped trial must not enter TPE's fit as a completed observation.
 

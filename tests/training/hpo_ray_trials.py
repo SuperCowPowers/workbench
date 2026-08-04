@@ -14,6 +14,11 @@ def quadratic(config, report):
     return value
 
 
+def quadratic_score(config, index):
+    """The same bowl under the ``evaluate_configs`` contract — ``(config, index)``, no report."""
+    return (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
+
+
 def oom_above_depth_3(config, report):
     """Raises a real ``torch.cuda.OutOfMemoryError`` in the upper half of the range."""
     import torch
