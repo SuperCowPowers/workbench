@@ -44,7 +44,7 @@ from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
-from workbench.utils.log_utils import silence_logs, log_theme
+from workbench.utils.log_utils import silence_logs
 from workbench.utils.aws_utils import sso_login_hint
 
 # If we have RDKIT/Mordred let's pull in our cheminformatics utils
@@ -97,7 +97,7 @@ class WorkbenchPrompt(Prompts):
             lights = []
         else:
             lights = workbench_shell.status_lights()
-        aws_profile_prompt = [(Token.Blue, ":"), (Token.AWSProfile, f"{aws_profile}")]
+        aws_profile_prompt = [(Token.Blue, ":"), (Token.Darkyellow, f"{aws_profile}")]
         prompt = lights + [(Token.Workbench, "Workbench")] + aws_profile_prompt
         if workbench_shell is not None and workbench_shell.bedrock_status:
             prompt += [(Token.Blue, ":"), (Token.Lightgreen, "Bosco")]
@@ -171,7 +171,6 @@ class WorkbenchShell:
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
         self.commands["theme"] = importlib.import_module("workbench.utils.repl_themes").set_theme
-        self.commands["log_theme"] = log_theme
         self.commands["reconnect"] = self.check_aws_account
         self.commands["pub_data"] = importlib.import_module("workbench.api.public_data").PublicData()
         # Bosco is opt-in (ENABLE_BOSCO); when off, the agent, prompt tag, and router stay dark
@@ -408,13 +407,13 @@ class WorkbenchShell:
                     examples = examples[:70] + "..."
 
             # Print the summary
-            cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "purple_blue", examples])
+            cprint(["lightpurple", "\t" + name, "lightgreen", str(df.shape[0]) + "  ", "darkblue", examples])
 
     def cow_pun(self):
         """Print a random cow pun -- the REPL greeting's opening moo."""
         question, punchline = random_cow_pun()
         cprint("lightpurple", f"\n🐄  {question}")
-        cprint("purple_blue", f"       {punchline}")
+        cprint("darkblue", f"       {punchline}")
         print()
 
     def contests(self):
@@ -439,14 +438,14 @@ class WorkbenchShell:
         for row in rows:
             name = (row["contest"] + " " * 24)[:24]
             flag = "contested" if row["contested"] else "stable"
-            flag_color = "lightgreen" if row["contested"] else "royalblue"
+            flag_color = "lightgreen" if row["contested"] else "darkblue"
             when = row["timestamp"].strftime("%Y-%m-%d") if row["timestamp"] is not None else ""
             segments = [
                 "lightpurple",
                 "\t" + name,
                 flag_color,
                 (flag + " " * 10)[:10],
-                "royalblue",
+                "tan",
                 f" ({row['challengers']} challengers)  {when}",
             ]
             if row.get("recent_change"):

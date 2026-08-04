@@ -13,7 +13,7 @@ import pandas as pd
 
 from workbench.api import ParameterStore
 from workbench.utils.aws_utils import current_user, slugify
-from workbench.utils.color_utils import cprint, render_markdown
+from workbench.utils.repl_color_utils import cprint, render_markdown
 
 log = logging.getLogger("workbench")
 

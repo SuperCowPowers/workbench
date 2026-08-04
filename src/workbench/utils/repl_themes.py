@@ -31,13 +31,11 @@ _DARK = {
     "lighttan": "#d7af87",
     "yellow": "#ffff00",
     "green": "#00af00",
-    "blue": "#0000ff",
     "purple": "#8700af",
-    "purple_blue": "#5f5fff",
+    "darkblue": "#5f5fff",
     "lightgrey": "#bcbcbc",
     "grey": "#808080",
     "darkgrey": "#585858",
-    "royalblue": "#4444d7",
 }
 
 # The same roles darkened for a light terminal. Not an inversion -- each value is
@@ -55,13 +53,11 @@ _LIGHT = {
     "lighttan": "#9a7550",
     "yellow": "#8a8a00",
     "green": "#007000",
-    "blue": "#0000cc",
     "purple": "#6a008a",
-    "purple_blue": "#3a3ac7",
+    "darkblue": "#3a3ac7",
     "lightgrey": "#6a6a6a",
     "grey": "#565656",
     "darkgrey": "#3a3a3a",
-    "royalblue": "#2a2a9a",
 }
 
 THEMES = {"dark": _DARK, "light": _LIGHT}
@@ -69,13 +65,12 @@ THEMES = {"dark": _DARK, "light": _LIGHT}
 # Which palette color plays each role in the REPL prompt.
 _PROMPT_ROLES = {
     Token.Workbench: "lightpurple",
-    Token.AWSProfile: "darkyellow",
     Token.Darkyellow: "darkyellow",
     Token.Lightpurple: "lightpurple",
     Token.Lightgreen: "lightgreen",
     Token.Orange: "orange",
     Token.Red: "red",
-    Token.Blue: "royalblue",
+    Token.Blue: "darkblue",
     Token.Grey: "lightgrey",
 }
 
@@ -133,9 +128,17 @@ def set_theme(name: str) -> None:
 
 def _set_log_theme(name: str) -> None:
     """Point the log formatter at the matching theme, re-styling live handlers."""
-    from workbench.utils.log_utils import log_theme
+    from workbench.utils.workbench_logging import ColoredFormatter
 
-    log_theme(name)
+    ColoredFormatter.set_theme(name)
+    for handler in logging.getLogger("workbench").handlers:
+        if isinstance(handler.formatter, ColoredFormatter):
+            handler.setFormatter(
+                ColoredFormatter(
+                    "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                )
+            )
 
 
 def _restyle_prompt() -> None:

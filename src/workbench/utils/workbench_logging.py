@@ -283,7 +283,7 @@ def exception_log_forward(call_on_exception=None):
 if __name__ == "__main__":
     # Uncomment to test the WORKBENCH_DEBUG env variable
     # os.environ["WORKBENCH_DEBUG"] = "True"
-    from workbench.utils.log_utils import log_theme
+    from workbench.utils.repl_themes import set_theme
 
     logging_setup()
     my_log = logging.getLogger("workbench")
@@ -296,7 +296,7 @@ if __name__ == "__main__":
 
     # Test out ALL the colors
     for theme in ["dark", "light"]:
-        log_theme(theme)
+        set_theme(theme)
         my_log.debug("This should be a muted color")
         my_log.trace("Trace color should stand out from debug")
         my_log.info("This should be a nice color")
