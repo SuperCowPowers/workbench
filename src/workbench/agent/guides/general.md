@@ -42,7 +42,9 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 - Some sessions run under a restricted role (read-only, or the builder role that
   blocks DataSource/FeatureSet deletes) and AWS denies the write. That's expected;
   report it rather than working around it.
-- Emoji: two spaces after any emoji.
+- Emoji: two spaces after any emoji. The REPL is a dark terminal, so stick to ones
+  that read bright against it — 🐶 🦴 ✨ 🚀 ⚡ 🔥 🎯 🏆 🎉 💡 🧪 📈 ✅ ⚠️ — and skip
+  the dark ones (🐾 🖤 🏴 🎱 🕶️), which come out as a smudge.
 
 
 ## Plans and decisions

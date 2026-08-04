@@ -63,7 +63,8 @@ another.
 Launching also starts a watcher that polls every five minutes and reports the
 outcome. You'll see it as a `[Batch update: <job> SUCCEEDED]` line at the top of a
 later turn — **lead with it**, since the user may not have been at the terminal,
-then go look at what the job produced.
+then go look at what the job produced. The right side of the prompt carries a dot
+per job launched this session: yellow running, green succeeded, red failed.
 
 A training script must build the **whole chain** — model, endpoint, and both
 inference runs — because the job is headless. A `to_model()` that stops there

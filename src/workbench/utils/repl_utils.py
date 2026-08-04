@@ -33,6 +33,38 @@ def cprint_above_prompt(color: str, text: str) -> None:
     app.loop.call_soon_threadsafe(lambda: ensure_future(run_in_terminal(lambda: cprint(color, text))))
 
 
+def set_rprompt(shell, text_fn, token=None) -> None:
+    """Put dynamic text on the right side of the REPL prompt.
+
+    ``text_fn`` is called on every render, so the text tracks state without anything
+    having to push an update. prompt_toolkit hides the whole thing rather than let it
+    collide with a long input line, so this is for ambient status, not anything that
+    must stay visible.
+
+    Args:
+        shell: The IPython shell; its ``pt_app`` is the prompt session.
+        text_fn (callable): Returns either a plain string or ``[(Token, str), ...]``
+            for per-piece color, as the left prompt does. Return empty to show nothing.
+        token: Pygments token styling a plain string. Defaults to ``Token.Grey``,
+            which the REPL's style overrides map to the palette.
+    """
+    from pygments.token import Token
+    from prompt_toolkit.formatted_text import PygmentsTokens
+
+    app = getattr(shell, "pt_app", None)
+    if app is None:  # simple prompt / no terminal
+        return
+    token = token or Token.Grey
+
+    def rprompt():
+        content = text_fn()
+        if not content:
+            return ""
+        return PygmentsTokens([(token, content)] if isinstance(content, str) else content)
+
+    app.rprompt = rprompt
+
+
 def status_lights(status_colors: list[str]):
     """
     Create status lights (circles) in color.

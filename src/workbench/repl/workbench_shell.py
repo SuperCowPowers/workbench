@@ -89,6 +89,7 @@ log.addFilter(
 prompt_styles = {
     Token.Workbench: hex_color("lightpurple"),
     Token.AWSProfile: hex_color("darkyellow"),
+    Token.Darkyellow: hex_color("darkyellow"),
     Token.Lightpurple: hex_color("lightpurple"),
     Token.Lightgreen: hex_color("lightgreen"),
     Token.Orange: hex_color("orange"),
@@ -224,9 +225,12 @@ class WorkbenchShell:
         config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
         config.TerminalInteractiveShell.banner1 = ""
 
-        # Install the `bosco <text>` line router once the shell exists (only when Bosco is enabled)
+        # Wire up the shell once it exists: Batch job lights on the right prompt, and
+        # the `bosco <text>` line router when Bosco is enabled.
+        exec_lines = ["from workbench.utils.batch_utils import install_batch_lights; install_batch_lights()"]
         if self.bosco_enabled:
-            config.InteractiveShellApp.exec_lines = ["from workbench.agent.bosco import register; register()"]
+            exec_lines.append("from workbench.agent.bosco import register; register()")
+        config.InteractiveShellApp.exec_lines = exec_lines
 
         # Merge custom commands and globals into the namespace
         locs = self.commands.copy()  # Copy the custom commands
