@@ -16,9 +16,10 @@ from workbench.utils.s3_utils import read_content_from_s3
 log = logging.getLogger("workbench")
 
 # SageMaker stores captured payloads base64-encoded unless the endpoint's capture config
-# declares the exact content types. Responses carry a charset suffix, so both forms are needed.
-CAPTURE_CSV_CONTENT_TYPES = ["text/csv", "text/csv; charset=utf-8"]
-CAPTURE_JSON_CONTENT_TYPES = ["application/json", "application/json; charset=utf-8"]
+# declares the content types. These are base media types: the API rejects parameters such
+# as a charset suffix, so SageMaker matches on the media type alone.
+CAPTURE_CSV_CONTENT_TYPES = ["text/csv"]
+CAPTURE_JSON_CONTENT_TYPES = ["application/json"]
 
 
 def pull_data_capture_for_testing(data_capture_path, max_files=1) -> Union[pd.DataFrame, None]:
