@@ -537,7 +537,7 @@ def _resolve_trial_records(results, *, metric, choice_options) -> list:
         {
             "number": i,
             "value": value,
-            "config": _resolve_choices(r.config, choice_options),
+            "config": _resolve_choices(getattr(r, "config", None), choice_options),
             # Every trial runs its full ensemble, so this marks the one thing left that can
             # cost a trial its place: dying without an objective (OOM, a killed worker).
             "completed": value is not None,

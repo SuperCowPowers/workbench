@@ -183,9 +183,10 @@ class PyTorchAdapter(HpoAdapter):
 
             if holdout:
                 return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
-                # Pooled, not a mean of per-fold means: every row weighs the same, which is
-                # what the model's own cross-fold metrics report. Fold sizes differ under a
-                # scaffold split, so the two are not the same number.
+
+            # Pooled, not a mean of per-fold means: every row weighs the same, which is what
+            # the model's own cross-fold metrics report. Fold sizes differ under a scaffold
+            # split, so the two are not the same number.
             return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
 
         return trial_fn
