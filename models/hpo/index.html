@@ -5371,8 +5371,8 @@ deployed and used exactly like any other.</p>
 <tbody>
 <tr>
 <td><code>n_trials</code></td>
-<td><code>60</code></td>
-<td>search budget — how many configurations to try</td>
+<td>per framework</td>
+<td>search budget — 40 (ChemProp), 100 (PyTorch), 250 (XGBoost), sized to what one trial costs</td>
 </tr>
 <tr>
 <td><code>search_space</code></td>
@@ -5477,7 +5477,7 @@ already trust your optimizer settings.</p>
 <p><strong>A default is just a hyperparameter.</strong> Set a knob normally alongside the <code>hpo</code> block and it
 becomes the baseline the search has to beat — and the value used for any knob outside the
 searched groups:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;max_lr&quot;</span><span class="p">:</span> <span class="mf">3e-3</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">}}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="s2">&quot;max_lr&quot;</span><span class="p">:</span> <span class="mf">3e-3</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">}}</span>
 </span></code></pre></div>
 <p><strong>A range needs a <code>SearchSpace</code>.</strong> Start from the shipped space, change the knobs you have an
 opinion about, and hand the result to <code>hpo["search_space"]</code>:</p>
@@ -5489,7 +5489,7 @@ opinion about, and hand the result to <code>hpo["search_space"]</code>:</p>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">del</span> <span class="n">space</span><span class="p">[</span><span class="s2">&quot;gamma&quot;</span><span class="p">]</span>                                          <span class="c1"># not worth trials on this data</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>                                  <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s2">&quot;search_space&quot;</span><span class="p">:</span> <span class="n">space</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()}})</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>                                  <span class="s2">&quot;hpo&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;n_trials&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">&quot;search_space&quot;</span><span class="p">:</span> <span class="n">space</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()}})</span>
 </span></code></pre></div>
 <p><code>SearchSpace</code> is a <code>dict</code> subclass, so ordinary <code>space[knob] = ...</code> and <code>del</code> are the whole
 editing API. <code>.subset("basic")</code> narrows to a group, and <code>.to_frame()</code> gives the same table
@@ -5515,7 +5515,7 @@ built. Chemprop's own two-knob spelling stays available for a custom space: give
 optimistically biased — the winner may simply have drawn the luckiest evaluation. Workbench
 therefore treats the search as a <strong>shortlist</strong>, not a decision:</p>
 <ol>
-<li><strong>Search</strong> — sample the space, and prune configurations that are already off the pace.</li>
+<li><strong>Search</strong> — sample the space; every candidate trains its full ensemble, so the values are all on one basis.</li>
 <li><strong>Re-rank</strong> — re-score the top finalists <em>and your own untuned hyperparameters</em> on fresh
    trainings, then publish whichever wins.</li>
 </ol>
@@ -5530,7 +5530,7 @@ logs. A <code>None</code> return doubles as the "was this model searched?" check
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">hpo_results</span><span class="p">()</span>
 </span></code></pre></div>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;cv_mae&#39;</span><span class="p">,</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a> <span class="s1">&#39;trial_counts&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;attempted&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">34</span><span class="p">,</span> <span class="s1">&#39;pruned&#39;</span><span class="p">:</span> <span class="mi">66</span><span class="p">,</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a> <span class="s1">&#39;trial_counts&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;attempted&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a> <span class="s1">&#39;best_config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;layers&#39;</span><span class="p">:</span> <span class="s1">&#39;128-64&#39;</span><span class="p">,</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>                 <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>                 <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.0002846282635669909</span><span class="p">,</span>
@@ -5551,9 +5551,9 @@ turned on — quote this pair:</p>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;metric&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;best_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;baseline_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> baseline (</span><span class="si">{</span><span class="n">gain</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># cv_mae: 0.5106 vs 0.5451 baseline (+6.3%)</span>
 </span></code></pre></div>
-<p><strong><code>trial_counts</code> tells you whether the budget was spent well.</strong> A high <code>pruned</code> count is the
-pruner working as intended — those trials were stopped early once they fell off the pace, so
-<code>completed</code> is what ran to term. Any <code>failed</code> at all is worth a look at the training log.</p>
+<p><strong><code>trial_counts</code> tells you whether the budget was spent well.</strong> Every trial trains its full
+ensemble, so <code>completed</code> should equal <code>attempted</code> — any <code>failed</code> at all is worth a look at
+the training log (CUDA OOM is the usual cause when trials share a GPU).</p>
 <h3 id="the-trials-frame">The trials frame</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">trials</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;trials&quot;</span><span class="p">]</span>      <span class="c1"># one row per trial, plus a `baseline` row</span>
 </span></code></pre></div>
@@ -5595,8 +5595,8 @@ knob:</p>
 </span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">df</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>                        <span class="c1"># the finalists the re-rank scored</span>
 </span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;layers&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
 </span></code></pre></div>
-<p><code>completed=False</code> marks a pruned trial: its <code>value</code> is the last score before it was stopped,
-so it is a lower bound, not a finished result. The single <code>kind="baseline"</code> row is your own
+<p><code>completed=False</code> marks a trial that died before producing an objective and has no <code>value</code>.
+The single <code>kind="baseline"</code> row is your own
 untuned config scored on the same basis as the trials — it is the reference line any plot of
 the search needs, and <code>results["rerank"]</code> holds the finalists' re-scores if you want the
 second stage's own numbers.</p>
@@ -5653,11 +5653,9 @@ read — how far the objective moves across that knob's range, as a percentage o
 objective. A knob is worth tuning only when both are high; the bottom three above hold a
 real share of very little. <code>best</code> is where the objective bottoms out with the other knobs
 averaged out, which is meaningless when <code>effect</code> is small.</p>
-<p><strong>Only completed trials feed the fit.</strong> A pruned trial scored a partial ensemble — a
-different objective, not a noisier one — and a trial is pruned precisely for looking bad
-early, so pooling the two aligns the mixture with the knobs being ranked. And when the top
-knob's share cannot be separated from a random column planted in the same fit, the call logs
-a warning rather than returning a confident-looking ranking.</p>
+<p><strong>Only scored trials feed the fit.</strong> And when the top knob's share cannot be separated from
+a random column planted in the same fit, the call logs a warning rather than returning a
+confident-looking ranking.</p>
 <p><strong>How it's computed.</strong> The trials are the dataset — knob values in, objective out — and a
 random forest is fit to that response surface. <code>importance</code> is the forest's split-based
 importance; <code>effect</code> and <code>best</code> come from a partial-dependence sweep, which pins one knob
