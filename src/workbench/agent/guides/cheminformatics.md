@@ -34,17 +34,11 @@ The choices that aren't obvious:
 - **Count, not binary.** Each bit holds how many times the substructure appears
   (clamped to 0–255), stored as a comma-separated string. Count fingerprints beat
   binary for ADMET property prediction — the citation is in the module docstring.
-- **Describe it as `count, radius=2, 4096 bits`** — not just "ECFP4", which implies
-  folded *binary* bits and hides the width. Use that phrasing in plot titles and
-  when reporting what was computed.
 - **Largest fragment first.** Salts/counterions are stripped
   (`rdMolStandardize.LargestFragmentChooser`) before hashing, so the fingerprint
-  describes the parent, not the salt. For an organic drug with a counterion that's
-  what you want. For an **inorganic or multi-component record it destroys the
-  compound**: in `[Na+].[Na+].[O-][S]([O-])(=O)=O` the largest fragment is the
-  sulfate anion, so every sulfate salt in a dataset hashes identically no matter
-  which cation it carries — and the cation is what determines the property. Filter
-  these out before fingerprinting (next section); they cannot be represented.
+  describes the parent. For an organic drug with a counterion that's what you want;
+  for inorganic or multi-component records it destroys the compound — filter those
+  out first (next section), they can't be represented.
 - **Unparseable SMILES are silently dropped** — the output can have fewer rows
   than the input. If counts don't line up, that's usually why.
 
@@ -79,6 +73,10 @@ What "standardized" means before a fingerprint or descriptor is computed:
 - `mol_tagging.py` → `tag_molecules(df)`, `filter_by_tags(...)`,
   `get_tag_summary(...)`, `admet_training_set(...)` — composition/structure/
   physchem/liability tags (PAINS and friends via RDKit FilterCatalog).
+- `toxicity.py` → `toxic_elements(mol)`, `toxic_groups(mol)`,
+  `contains_heavy_metals(mol)`, `halogen_toxicity_score(mol)` — per-molecule
+  structural liability checks. These take an RDKit `Mol` (`Chem.MolFromSmiles`),
+  not a DataFrame.
 
 **Filter before you fingerprint.** The records fingerprints cannot represent —
 inorganics, organometallics, mixtures, and lone atoms — are exactly the ones
@@ -90,28 +88,22 @@ tagged = tag_molecules(df)
 clean = filter_by_tags(tagged, exclude_prefix=["curation:exclude:"])
 ```
 
-This is not a marginal trim — on aggregated public data it can take a sixth of the
-rows and over half the coincident-structure groups. `admet_training_set(df)` applies
-the same policy in one call.
+This is not a marginal trim — on aggregated public data it can drop a large fraction
+of rows. `admet_training_set(df)` applies the same policy in one call.
 
 One thing structural tagging can't catch: a record whose *name* says salt or mixture
 while its SMILES was recorded as the pure parent. Those pass every structural check
 and only surface as duplicate groups — see the `data_cleanup` guide.
-- `toxicity.py` → `toxic_elements(mol)`, `toxic_groups(mol)`,
-  `contains_heavy_metals(mol)`, `halogen_toxicity_score(mol)` — per-molecule
-  structural liability checks. These take an RDKit `Mol` (`Chem.MolFromSmiles`),
-  not a DataFrame.
 
 ## Data-quality lenses (short pointers — hit the code for depth)
 
 The "what's actually wrong in my dataset" checks. Each is a jump-off:
 
 - **Missing stereochemistry** — `mol_descriptors.compute_stereochemistry_features(mol)`
-  is what Workbench extracts; RDKit `Chem.FindMolChiralCenters(mol, useLegacyImplementation=False)`
-  finds centers, and a SMILES with none of `@ / \` carries no stereo. Note that
-  count-Morgan on the largest fragment collapses enantiomers and salts — so a pair
-  that looks identical in fingerprint space may differ only in stereo, which makes
-  an "activity cliff" (`proximity`) an artifact rather than real SAR.
+  is what Workbench extracts. Note that count-Morgan on the largest fragment collapses
+  enantiomers and salts — so a pair that looks identical in fingerprint space may
+  differ only in stereo, which makes an "activity cliff" (`proximity`) an artifact
+  rather than real SAR.
 - **Duplicate / unresolved structures** — `misc.feature_resolution_issues(df, features)`
   surfaces rows that collide on features.
 - **Units** — `misc.micromolar_to_log(series)` / `log_to_micromolar(...)`,
