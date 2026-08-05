@@ -731,6 +731,8 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
     print(f"Mode: {mode_display}")
     print(f"Execution: {'Local' if args.local else 'SQS → Batch'}")
     print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
+    if args.environment:
+        print(f"Environment: {args.environment}")
     print("\nPipeline DAGs:")
     for line in plan.display_lines:
         print(line)
@@ -785,6 +787,8 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
         if args.local:
             env = os.environ.copy()
             env["PIPELINE_META"] = pipeline_meta
+            if args.environment:
+                env["ENVIRONMENT"] = args.environment
             if utils_dir:
                 existing = env.get("PYTHONPATH")
                 env["PYTHONPATH"] = f"{root}{os.pathsep}{existing}" if existing else str(root)
@@ -799,6 +803,8 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]
             if args.realtime:
                 cmd.append("--realtime")
             cmd.extend(["--pipeline-meta", pipeline_meta])
+            if args.environment:
+                cmd.extend(["--environment", args.environment])
             if extra_args:
                 cmd.extend(["--script-args", json.dumps(extra_args)])
             if job.group:  # dependency-group id for DAG jobs; standalone falls back to the SQS default
@@ -863,6 +869,13 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
         "--local",
         action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
+    )
+    parser.add_argument(
+        "--environment",
+        default=None,
+        choices=["sandbox", "dev", "stage", "prod"],
+        help="Set ENVIRONMENT on each run (scripts branch on it for prod-only behavior). "
+        "The nightly Lambda sets this itself; supply it to match that behavior from a manual launch.",
     )
 
     # Mode flags (mutually exclusive)

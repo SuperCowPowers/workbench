@@ -28,6 +28,7 @@ def submit_to_sqs(
     inputs: list[str] | None = None,
     script_args: list[str] | None = None,
     utils_dir: str | None = None,
+    environment: str | None = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -47,6 +48,8 @@ def submit_to_sqs(
             passed to the Batch container as the PIPELINE_ARGS environment variable
         utils_dir (str | None): Local ``pipeline_utils`` directory to upload alongside
             the script; the container puts it on PYTHONPATH via ML_PIPELINE_UTILS
+        environment (str | None): AWS environment name (sandbox/dev/stage/prod) set as
+            ENVIRONMENT in the container; scripts branch on it for prod-only behavior
 
     Raises:
         ValueError: If size is invalid or script file not found
@@ -81,6 +84,8 @@ def submit_to_sqs(
     print(f"  DynamicTraining: {dt}")
     print(f"  Promote: {promote}")
     print(f"  Temporal Split: {temporal_split}")
+    if environment:
+        print(f"  Environment: {environment}")
     if pipeline_meta:
         print(f"  Pipeline Meta: {pipeline_meta}")
     if script_args:
@@ -177,6 +182,8 @@ def submit_to_sqs(
         message["environment"]["PIPELINE_ARGS"] = json.dumps(script_args)
     if utils_s3_path:
         message["environment"]["ML_PIPELINE_UTILS"] = utils_s3_path
+    if environment:
+        message["environment"]["ENVIRONMENT"] = environment
 
     # Artifact dependency info for batch_trigger
     if outputs:
@@ -209,6 +216,8 @@ def submit_to_sqs(
     print(f"  DynamicTraining: {dt}")
     print(f"  Promote: {promote}")
     print(f"  Temporal Split: {temporal_split}")
+    if environment:
+        print(f"  Environment: {environment}")
     if outputs:
         print(f"  Outputs: {outputs}")
     if inputs:
@@ -280,6 +289,12 @@ def main():
         default=None,
         help="Local pipeline_utils directory to upload alongside the script",
     )
+    parser.add_argument(
+        "--environment",
+        default=None,
+        choices=["sandbox", "dev", "stage", "prod"],
+        help="Set ENVIRONMENT in the container (scripts branch on it for prod-only behavior)",
+    )
     args = parser.parse_args()
 
     outputs = args.outputs.split(",") if args.outputs else []
@@ -300,6 +315,7 @@ def main():
             inputs=inputs,
             script_args=script_args,
             utils_dir=args.utils_dir,
+            environment=args.environment,
         )
     except Exception as e:
         print(f"\n  ERROR: {e}")
