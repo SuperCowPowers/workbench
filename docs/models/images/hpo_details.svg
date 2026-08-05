@@ -70,7 +70,7 @@ framework-agnostic and shared.</desc>
 
 <rect class="d-tbox" x="456" y="340" width="268" height="58" rx="4"/>
 <text class="d-tt" x="590" y="364" text-anchor="middle">hpo_harness.py</text>
-<text class="d-ts" x="590" y="382" text-anchor="middle">Optuna · Ray Tune + ASHA</text>
+<text class="d-ts" x="590" y="382" text-anchor="middle">Optuna · Ray Tune</text>
 
 <rect class="d-card" x="770" y="216" width="180" height="58" rx="4"/>
 <text class="d-nt" x="860" y="240" text-anchor="middle">HPO artifacts (S3)</text>

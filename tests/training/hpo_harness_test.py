@@ -2,8 +2,8 @@
 
 Pure synthetic objectives — no chemprop, no GPU, no AWS — so these run in the
 default suite. The Ray backend's real parallelism needs a GPU box, but its trial
-plumbing runs on CPU: space translation, terminal-state reporting, rung layout,
-winner selection.
+plumbing runs on CPU: space translation, terminal-state reporting, winner
+selection.
 
 optuna, ray and torch all arrive with the `modeling` extra, which every tox test
 env installs — a missing one is a broken environment, not a reason to skip.
@@ -22,11 +22,9 @@ from workbench.training.hpo_harness import (
 )
 
 
-def _quadratic_objective(config, report):
-    """A smooth bowl minimized at x=3.0, depth=4; reports one intermediate step."""
-    value = (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
-    report(step=1, holdout_mae=value)  # exercise the report/prune path
-    return value
+def _quadratic_objective(config):
+    """A smooth bowl minimized at x=3.0, depth=4."""
+    return (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
 
 
 SPACE = {
@@ -60,7 +58,7 @@ def test_choice_with_list_options():
     """Unhashable Choice options (a tapered ffn head) resolve to real values."""
     options = [2000, 1000, [1024, 256, 64]]
 
-    def obj(config, report):
+    def obj(config):
         ffn = config["ffn_hidden_dim"]
         # Prefer the tapered list; scalars score worse.
         return 0.0 if isinstance(ffn, list) else float(ffn)
@@ -74,7 +72,7 @@ def test_choice_with_list_options():
 def test_maximize_mode():
     """mode='max' flips the optimization direction."""
 
-    def obj(config, report):
+    def obj(config):
         return -((config["x"] - 2.0) ** 2)  # peak at x=2
 
     space = {"x": FloatRange(0.0, 4.0)}
@@ -95,40 +93,11 @@ def test_invalid_backend_raises():
         run_search(_quadratic_objective, SPACE, n_trials=1, backend="optuaa")
 
 
-def test_default_pruning_respects_warmup():
-    """With pruning on, trials reporting fewer steps than the warmup are never pruned.
-
-    Guards the grace period: an over-eager pruner kills configs before they're rankable
-    (which collapsed a real 10-trial search down to 2 usable evaluations).
-    """
+def test_every_trial_runs_to_completion():
+    """No trial is stopped early, so every value in the record is on one basis."""
     result = run_search(_quadratic_objective, SPACE, n_trials=12, backend="optuna")
     assert all(t["state"] == "COMPLETE" for t in result.trials)
-
-
-def test_pruning_disabled_runs_all_trials():
-    """With pruning off, every trial completes (none pruned)."""
-    result = run_search(_quadratic_objective, SPACE, n_trials=15, backend="optuna", pruning=False)
-    assert all(t["state"] == "COMPLETE" for t in result.trials)
-
-
-def _multistep_objective(config, report):
-    """Reports 10 intermediate steps so a warmup window has room to apply."""
-    err = abs(config["x"] - 3.0)
-    for step in range(1, 11):
-        report(step=step, holdout_mae=err)
-    return err
-
-
-def test_prune_warmup_above_reported_steps_disables_pruning():
-    """A non-default prune_warmup beyond every trial's reported steps makes nothing prunable.
-
-    Exercises that prune_warmup is actually threaded (not just the module default): trials
-    report 10 steps, warmup is 50, so no trial ever becomes eligible and all complete.
-    """
-    result = run_search(
-        _multistep_objective, {"x": FloatRange(0.0, 6.0)}, n_trials=20, backend="optuna", prune_warmup=50
-    )
-    assert all(t["state"] == "COMPLETE" for t in result.trials)
+    assert all(t["value"] is not None for t in result.trials)
 
 
 # --- evaluate_configs (the re-rank primitive) ------------------------------
@@ -177,7 +146,7 @@ def test_all_nan_objective_raises_actionable_error():
     surfaces, so the message has to name the cause.
     """
 
-    def nan_objective(config, report):
+    def nan_objective(config):
         return float("nan")
 
     with pytest.raises(RuntimeError, match="no usable trial"):
@@ -187,7 +156,7 @@ def test_all_nan_objective_raises_actionable_error():
 def test_partial_nan_objective_still_finds_the_best():
     """Some trials NaN-ing out doesn't sink the search — the scorable ones still rank."""
 
-    def sometimes_nan(config, report):
+    def sometimes_nan(config):
         return config["x"] if config["x"] < 0.5 else float("nan")
 
     result = run_search(sometimes_nan, {"x": FloatRange(0.0, 1.0)}, n_trials=25, backend="optuna")
@@ -238,7 +207,7 @@ def test_ray_search_finds_minimum(ray_cluster):
     """End-to-end on the Ray backend: the reported winner is the sampled optimum."""
     from hpo_ray_trials import quadratic
 
-    result = run_search(quadratic, SPACE, n_trials=6, backend="ray", pruning=False)
+    result = run_search(quadratic, SPACE, n_trials=6, backend="ray")
 
     assert isinstance(result, HpoResult)
     assert result.best_value == pytest.approx(min(t["value"] for t in result.trials))
@@ -254,7 +223,7 @@ def test_ray_oom_trial_is_scored_none_rather_than_erroring(ray_cluster):
     """
     from hpo_ray_trials import oom_above_depth_3
 
-    result = run_search(oom_above_depth_3, {"depth": IntRange(2, 6)}, n_trials=8, backend="ray", pruning=False)
+    result = run_search(oom_above_depth_3, {"depth": IntRange(2, 6)}, n_trials=8, backend="ray")
 
     oomed = [t for t in result.trials if t["config"]["depth"] >= 4]
     assert oomed, "search never sampled the failing region"
@@ -281,40 +250,14 @@ def test_a_trial_that_died_before_reporting_does_not_sink_the_record():
 
     class _Good:
         config = {"depth": 3}
-        metrics = {"holdout_mae": 0.25, "_hpo_completed": 1}
+        metrics = {"holdout_mae": 0.25}
 
-    records = _resolve_trial_records(
-        [_Good(), _Dead(), _Good()], metric="holdout_mae", done_flag="_hpo_completed", choice_options={}
-    )
+    records = _resolve_trial_records([_Good(), _Dead(), _Good()], metric="holdout_mae", choice_options={})
 
     assert [r["completed"] for r in records] == [True, False, True]
     assert records[1]["value"] is None
     assert records[1]["config"] == {}
     assert records[0]["value"] == 0.25
-
-
-def test_a_surviving_trial_runs_every_fold(ray_cluster):
-    """A trial is judged once, at the warmup step, and then left to finish.
-
-    Rungs sit at grace_period * reduction_factor ** k, so asking for a 50% cull also buys
-    rungs at 4, 8, ... — and a trial reaching fold 4 of 5 has paid 80% of its cost, so
-    stopping it saves one fold and forfeits its place in the ranking pool. Runs the real
-    search rather than inspecting the ladder, because what matters is that a survivor is
-    never cut off partway.
-    """
-    from hpo_ray_trials import five_step_objective
-
-    result = run_search(
-        five_step_objective,
-        {"depth": IntRange(2, 6)},
-        n_trials=6,
-        backend="ray",
-        pruning=True,
-        prune_warmup=2,
-    )
-
-    assert any(t["completed"] for t in result.trials), "every trial was stopped at the rung"
-    assert result.best_value is not None
 
 
 def test_a_ray_run_leaves_no_session_behind(ray_cluster):
@@ -323,7 +266,7 @@ def test_a_ray_run_leaves_no_session_behind(ray_cluster):
 
     from hpo_ray_trials import quadratic, quadratic_score
 
-    run_search(quadratic, SPACE, n_trials=3, backend="ray", pruning=False)
+    run_search(quadratic, SPACE, n_trials=3, backend="ray")
     assert not ray.is_initialized()
 
     evaluate_configs(quadratic_score, [{"x": 1.0, "depth": 3}], backend="ray")
@@ -340,48 +283,13 @@ def test_a_rerank_can_follow_a_search_in_the_same_process(ray_cluster):
     """
     from hpo_ray_trials import quadratic, quadratic_score
 
-    result = run_search(quadratic, SPACE, n_trials=6, backend="ray", pruning=False)
+    result = run_search(quadratic, SPACE, n_trials=6, backend="ray")
     finalists = [t["config"] for t in sorted(result.trials, key=lambda t: t["value"])[:3]]
 
     values = evaluate_configs(quadratic_score, finalists, backend="ray", max_parallel=2)
 
     assert len(values) == len(finalists)
     assert all(v is not None for v in values)
-
-
-def test_partial_trials_reach_optuna_as_pruned_not_complete():
-    """A scheduler-stopped trial must not enter TPE's fit as a completed observation.
-
-    Its last value is a partial ensemble — worse than a full one by construction — so
-    recording it as COMPLETE mixes two objectives in the quantile split and labels every
-    pruned region worse than it is.
-    """
-    import optuna
-
-    from workbench.training.hpo_harness import _partial_aware_search
-
-    from ray import tune
-
-    search = _partial_aware_search(
-        "_hpo_completed", space={"x": tune.uniform(0.0, 1.0)}, metric="holdout_mae", mode="min", seed=42
-    )
-
-    finished, stopped = "trial_finished", "trial_stopped"
-    for trial_id in (finished, stopped):
-        search.suggest(trial_id)
-
-    search.on_trial_complete(finished, result={"holdout_mae": 0.5, "_hpo_completed": 1})
-    search.on_trial_complete(stopped, result={"holdout_mae": 0.4})  # better-looking, but partial
-
-    states = {t.state for t in search._ot_study.trials}
-    assert optuna.trial.TrialState.COMPLETE in states
-    assert optuna.trial.TrialState.PRUNED in states
-
-    completed = [t for t in search._ot_study.trials if t.state == optuna.trial.TrialState.COMPLETE]
-    assert len(completed) == 1
-    assert completed[0].value == pytest.approx(0.5)
-    # The partial trial's flattering 0.4 must not be sitting in the completed pool.
-    assert all(t.value != pytest.approx(0.4) for t in completed)
 
 
 def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
@@ -394,7 +302,7 @@ def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
     from hpo_ray_trials import always_oom
 
     with pytest.raises(RuntimeError, match="no usable trial"):
-        run_search(always_oom, {"depth": IntRange(2, 6)}, n_trials=2, backend="ray", pruning=False)
+        run_search(always_oom, {"depth": IntRange(2, 6)}, n_trials=2, backend="ray")
 
 
 def test_is_oom_discriminates():
@@ -406,29 +314,3 @@ def test_is_oom_discriminates():
     assert _is_oom(torch.cuda.OutOfMemoryError("CUDA out of memory"))
     assert not _is_oom(RuntimeError("CUDA out of memory"))  # same words, wrong type
     assert not _is_oom(ValueError("boom"))
-
-
-def test_ray_oom_with_pruning_does_not_take_down_the_search(ray_cluster):
-    """An OOM must not kill the tuner when a scheduler is attached.
-
-    The scheduler rejects a finished trial that never reported its metric, and Ray injects the
-    flattened config into the result, so the "no result was ever received" exemption does not
-    apply. That raises out of `tuner.fit()` and loses every other trial in the search.
-    """
-    from hpo_ray_trials import oom_before_any_report
-
-    result = run_search(
-        oom_before_any_report,
-        {"depth": IntRange(2, 6)},
-        n_trials=8,
-        backend="ray",
-        pruning=True,
-        prune_warmup=2,
-    )
-
-    oomed = [t for t in result.trials if t["config"]["depth"] >= 4]
-    assert oomed, "search never sampled the failing region"
-    # NaN is a transport detail for the scheduler's benefit; it must not reach the records.
-    assert all(t["value"] is None for t in oomed)
-    assert all(not t["completed"] for t in oomed)
-    assert result.best_value is not None and result.best_config["depth"] < 4

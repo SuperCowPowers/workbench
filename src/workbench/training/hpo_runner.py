@@ -26,16 +26,6 @@ from __future__ import annotations
 import json
 import os
 
-# Trials report once per completed fold, so a trial is eligible for pruning only after its
-# third member has trained, and is then left alone to finish. This is the whole of the
-# search's pruning: it decides which trials get ranked at all, so it is set where the partial
-# estimate becomes trustworthy rather than where it becomes cheap. Measured over a 60-trial
-# search, a running mean ranks against the final 5-fold score at Spearman 0.69 / 0.77 / 0.88 /
-# 0.88 after one through four folds — successive halving wants roughly 0.8, so two folds is
-# marginal and four buys nothing over three. Waiting the extra fold costs ~14% more
-# fold-training (every trial pays it; only the survivors would have).
-FOLD_PRUNE_WARMUP = 3
-
 # Finalists re-scored in phase 1.5 (plus the baseline, always). See rerank_finalists.
 RERANK_TOP_K = 5
 
@@ -52,6 +42,11 @@ class HpoAdapter:
     defaults.
     """
 
+    # Search budget when the caller sets no ``hpo["n_trials"]``. Sized against what one
+    # trial costs: an XGBoost fit is seconds, a chemprop ensemble is hours. A subclass that
+    # says nothing gets a middling budget rather than a wrong one.
+    default_n_trials = 60
+
     def prepare_frame(self, df):
         """Align a frame to what training expects — row filtering, fitted transforms.
 
@@ -66,23 +61,19 @@ class HpoAdapter:
         """Extra ``get_split_indices`` kwargs, e.g. the SMILES column for scaffold folds."""
         return {}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
-        """Build the ``(config, report) -> float`` objective for one search pass.
+    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
+        """Build the ``(config) -> float`` objective for one search pass.
 
         Each call closes over a specific fold partition, so the search and the re-rank get
         their own. A trial trains the full ensemble the winner is published as and returns
-        ``metric`` — ``holdout_mae`` (ensemble mean prediction on ``val_df``) when ``val_df``
-        is non-empty, else ``cv_mae`` (mean of the per-fold out-of-fold errors).
-
-        Report the running objective after each fold via ``report(step=..., **{metric: ...})``
-        so the harness can prune a config that is already off the pace.
+        its objective: the ensemble's mean prediction on ``val_df`` (``holdout_mae``) when
+        ``val_df`` is non-empty, else the pooled out-of-fold error (``cv_mae``).
 
         Args:
             train_df: the rows the folds index into.
             folds: ``[(train_idx, val_idx), ...]``.
             val_df: the holdout frame; empty means score out-of-fold.
             hyperparameters: the caller's base hyperparameters, which a trial config overlays.
-            metric: the objective key to report under.
             concurrency: how many trials run at once, for sizing per-trial CPU use.
         """
         raise NotImplementedError
@@ -182,9 +173,8 @@ def run_hpo(
     ``best_config.json``, ``hpo_trials.csv`` and ``hpo_rerank.csv`` to ``output_dir``
     when given.
 
-    The running objective is reported after every fold, so the harness can drop a trial
-    that is already off the pace once ``FOLD_PRUNE_WARMUP`` folds are in — weak configs
-    pay for those folds and no more, and only the survivors buy the full ensemble.
+    Every trial trains its full ensemble, so every value in the record is on one basis
+    and directly comparable to every other.
 
     The search does not pick the winner on its own — its finalists go through
     :func:`rerank_finalists`, which re-scores them and the *baseline* on fresh trainings
@@ -271,7 +261,7 @@ def run_hpo(
     backend = hpo_block.get("backend", "auto")
     resources = adapter.resources_per_trial(hpo_block, backend)
     n_gpus = visible_gpus()
-    n_trials = int(hpo_block.get("n_trials", 60))
+    n_trials = int(hpo_block.get("n_trials", adapter.default_n_trials))
     max_parallel = resolve_max_parallel(hpo_block, resources, n_gpus)
     print(f"[hpo] {max_parallel} concurrent trial(s) on {n_gpus} GPU(s), knobs={list(search_space)}")
     if max_parallel == 1:
@@ -284,13 +274,12 @@ def run_hpo(
         folds=folds,
         val_df=val_df,
         hyperparameters=base_hyperparameters,
-        metric=metric,
         concurrency=max_parallel,
     )
     # A same-basis reference for every trial: the caller's own hyperparameters ({} overrides
     # nothing) scored on the search folds and seed. Without it the search's numbers and the
     # trials plot have nothing to anchor against, so it always runs.
-    search_baseline_value = float(trial_fn({}, lambda **_: None))
+    search_baseline_value = float(trial_fn({}))
     print(f"[hpo] baseline {metric}={search_baseline_value:.4f} (caller's hyperparameters, search basis)")
 
     result = run_search(
@@ -301,7 +290,6 @@ def run_hpo(
         max_parallel=max_parallel,
         metric=metric,
         mode="min",
-        prune_warmup=FOLD_PRUNE_WARMUP,
         seed=seed,
         resources_per_trial=resources,
     )
@@ -311,25 +299,16 @@ def run_hpo(
         f"config={result.best_config}"
     )
 
-    # Only completed trials are shortlist-eligible, so an unnoticed pile of failures shrinks
+    # Only scored trials are shortlist-eligible, so an unnoticed pile of failures shrinks
     # the real search budget without shrinking the reported one.
     counts = summarize_trials(result.trials)
-    print(
-        f"[hpo] trials: {counts['completed']} completed, {counts['pruned']} pruned, "
-        f"{counts['failed']} FAILED (of {counts['attempted']})"
-    )
+    print(f"[hpo] trials: {counts['completed']} completed, {counts['failed']} FAILED (of {counts['attempted']})")
     if counts["failed"]:
         print(
             f"[hpo] WARNING: {counts['failed']} trial(s) raised and produced no score. With trials "
             "sharing a GPU, CUDA OOM is the usual cause — check the log for OutOfMemoryError and "
             "consider hpo['gpus_per_trial']=1.0."
         )
-    if counts["completed"] < max(1, counts["attempted"] // 4):
-        print(
-            f"[hpo] WARNING: only {counts['completed']} of {counts['attempted']} trials ran the full "
-            "ensemble, so the re-rank shortlist came from a small pool — treat the margin as weak."
-        )
-
     # Phase 1.5 refines a result the search has already produced, so its failure degrades to
     # the unrefined winner rather than discarding a search that has already run to completion.
     try:
@@ -388,9 +367,9 @@ def best_config_record(result, *, metric, counts, best_config, rerank, search_ba
     Args:
         result: the :class:`~workbench.training.hpo_harness.HpoResult` from the search.
         metric: the objective key (``cv_mae`` or ``holdout_mae``).
-        counts: :func:`summarize_trials` output — completed/pruned/failed. Only
-            ``completed`` trials were shortlist-eligible, so this is how much of the
-            budget actually backed the result.
+        counts: :func:`summarize_trials` output — completed/failed. Only scored trials
+            were shortlist-eligible, so this is how much of the budget actually backed
+            the result.
         best_config: the config being published.
         rerank: :func:`rerank_finalists`' info dict (empty when it was skipped).
         search_baseline_value: the caller's own hyperparameters on the search basis.
@@ -418,11 +397,10 @@ def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseli
     Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. Columns:
 
     * ``number`` — the trial's index; ``-1`` for the baseline row.
-    * ``value`` — the objective. On a ``completed`` trial this is the full-ensemble
-      score; on a pruned one it is a *partial*-ensemble score, which can read lower.
+    * ``value`` — the full-ensemble objective, or empty for a trial that died before
+      scoring.
     * ``completed`` — bool, normalized across backends (Optuna reports a state name,
-      Ray a flag). Pruned vs failed stays recoverable: an incomplete trial with a
-      ``value`` was pruned, one without ever scored.
+      Ray a flag). False marks a trial that never produced an objective.
     * ``hyperparameters`` — every searched knob and the value it actually trained at,
       so the table is rectangular and NaN-free (see :func:`effective_config`).
     * ``kind`` — ``trial`` or ``baseline``. The baseline is the caller's own
@@ -491,26 +469,21 @@ def effective_config(config: dict, base_hyperparameters: dict, search_space: dic
 
 
 def summarize_trials(trials) -> dict:
-    """Split a search's trials into completed / pruned / failed.
+    """Count a search's trials: how many scored, and how many died trying.
 
-    The three are not interchangeable and only ``completed`` is comparable. A *pruned*
-    trial was stopped early by the scheduler and its value is a partial-ensemble score; a
-    *failed* trial never produced a value at all (it raised — CUDA OOM is the usual cause
-    when trials share a GPU). Failures are indistinguishable from prunes by the completion
-    flag alone, which is how a run can lose a third of its budget and still look fine.
+    A failed trial never produced a value at all (it raised — CUDA OOM is the usual cause
+    when trials share a GPU), which is how a run can lose a chunk of its budget and still
+    look fine from the trial count alone.
     """
-    completed = [t for t in trials if trial_completed(t)]
-    unfinished = [t for t in trials if not trial_completed(t)]
     return {
         "attempted": len(trials),
-        "completed": len(completed),
-        "pruned": len([t for t in unfinished if t.get("value") is not None]),
-        "failed": len([t for t in unfinished if t.get("value") is None]),
+        "completed": len([t for t in trials if trial_completed(t)]),
+        "failed": len([t for t in trials if not trial_completed(t)]),
     }
 
 
 def trial_completed(trial: dict) -> bool:
-    """Whether a trial ran to completion (not pruned) — both backends' record shapes."""
+    """Whether a trial produced a usable objective — both backends' record shapes."""
     if "completed" in trial:  # ray
         return bool(trial["completed"])
     return trial.get("state") == "COMPLETE"  # optuna
@@ -603,12 +576,11 @@ def rerank_finalists(
         folds=rerank_folds,
         val_df=val_df,
         hyperparameters=base_hyperparameters,
-        metric=metric,
         concurrency=rerank_parallel,
     )
 
     def evaluate(config, index):
-        return rerank_fn({**config, "seed": rerank_seed}, lambda **_: None)
+        return rerank_fn({**config, "seed": rerank_seed})
 
     values = evaluate_configs(
         evaluate, candidates, backend=backend, max_parallel=rerank_parallel, resources_per_trial=resources

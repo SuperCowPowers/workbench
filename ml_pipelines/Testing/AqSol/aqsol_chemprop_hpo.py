@@ -49,7 +49,7 @@ if __name__ == "__main__":
             "uq_version": "v1",
             # The search budget is what the job costs, so it is worth stating. Everything
             # else defaults: https://supercowpowers.github.io/workbench/models/hpo/
-            "hpo": {"n_trials": 60, "search_space": space.to_dict()},
+            "hpo": {"n_trials": 40, "search_space": space.to_dict()},
         },
         # For an out-of-distribution objective, pass validation_ids=[...] and set
         # hpo["metric"]="holdout_mae"; those rows are held out of training either way.

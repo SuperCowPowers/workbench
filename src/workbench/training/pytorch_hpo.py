@@ -113,13 +113,16 @@ class PyTorchAdapter(HpoAdapter):
 
         return align_frame(self.spec, df)
 
+    # A tabular trial is minutes, so the budget buys breadth cheaply.
+    default_n_trials = 100
+
     def resources_per_trial(self, hpo_block, backend):
         """Two trials per GPU roughly saturates one without spilling. Ray only."""
         if backend == "optuna":
             return None
         return {"gpu": hpo_block.get("gpus_per_trial", 0.5)}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
+    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
         """Build the ensemble PyTorch ``trial_fn`` (closes over the folds and eval data).
 
         Each trial trains one MLP per fold through
@@ -129,8 +132,8 @@ class PyTorchAdapter(HpoAdapter):
 
         * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
           members' mean prediction, i.e. the real ensemble's held-out error.
-        * ``cv_mae`` — each member is scored on its own out-of-fold rows and the objective is
-          the mean across folds.
+        * ``cv_mae`` — each member predicts its own out-of-fold rows; the objective is one
+          MAE over those pooled predictions, so every row weighs the same.
         """
         from dataclasses import replace
 
@@ -164,27 +167,27 @@ class PyTorchAdapter(HpoAdapter):
             eval_cont, eval_cat, _ = prep(val_df, with_target=False)
             eval_y = val_df[spec.target].to_numpy(dtype=float)
 
-        def trial_fn(config, report):
+        def trial_fn(config):
             trial_spec = replace(spec, hyperparameters=self.merge_config(hyperparameters, config), verbose=False)
 
-            member_preds, fold_maes = [], []
+            member_preds, oof_pred, oof_true = [], [], []
             for fold_idx, (train_tensors, val_tensors) in enumerate(prepared):
                 model, _ = train_pytorch_fold(trial_spec, train_tensors, val_tensors, fold_idx=fold_idx)
 
                 if holdout:
                     member_preds.append(predict(model, eval_cont, eval_cat).flatten())
-                    running = float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
                 else:
                     va_cont, va_cat, va_y = val_tensors
-                    fold_preds = predict(model, va_cont, va_cat).flatten()
-                    fold_maes.append(float(np.nanmean(np.abs(fold_preds - va_y.numpy().flatten()))))
-                    running = float(np.mean(fold_maes))
+                    oof_pred.append(predict(model, va_cont, va_cat).flatten())
+                    oof_true.append(va_y.numpy().flatten())
 
-                # Fold-granular pruning: a config already off the pace stops here rather than
-                # paying for the remaining members.
-                report(step=fold_idx + 1, **{metric: running})
+            if holdout:
+                return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
 
-            return running
+            # Pooled, not a mean of per-fold means: every row weighs the same, which is what
+            # the model's own cross-fold metrics report. Fold sizes differ under a scaffold
+            # split, so the two are not the same number.
+            return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
 
         return trial_fn
 

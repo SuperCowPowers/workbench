@@ -58,7 +58,11 @@ def test_trial_completed_reads_both_backend_shapes():
 
 
 def test_shortlist_ranks_completed_trials_best_first():
-    """Pruned/unscored trials are excluded and the rest sort by objective."""
+    """Unscored trials are excluded and the rest sort by objective.
+
+    Records written before pruning was removed still carry PRUNED states and partial
+    values, so the filter has to keep reading them.
+    """
     trials = [
         {"value": 0.9, "state": "COMPLETE", "config": {"depth": 2}},
         {"value": 0.5, "state": "COMPLETE", "config": {"depth": 3}},
@@ -130,34 +134,27 @@ def test_default_adapter_passes_frames_through():
     assert HpoAdapter().resources_per_trial({}, "ray") is None
 
 
-def test_summarize_trials_separates_pruned_from_failed():
-    """A pruned trial has a partial value; a failed one has none. Both are 'not completed'."""
+def test_summarize_trials_counts_the_ones_that_died():
+    """Every trial runs its full ensemble, so the only way to lose one is to raise."""
     from workbench.training.hpo_runner import summarize_trials
 
     counts = summarize_trials(
         [
             {"completed": True, "value": 0.5},
             {"completed": True, "value": 0.6},
-            {"completed": False, "value": 0.9},  # ASHA-stopped, partial ensemble
             {"completed": False, "value": None},  # raised (e.g. CUDA OOM)
             {"completed": False, "value": None},
         ]
     )
-    assert counts == {"attempted": 5, "completed": 2, "pruned": 1, "failed": 2}
+    assert counts == {"attempted": 4, "completed": 2, "failed": 2}
 
 
 def test_summarize_trials_reads_the_optuna_shape():
     """Optuna records a state name rather than a completion flag."""
     from workbench.training.hpo_runner import summarize_trials
 
-    counts = summarize_trials(
-        [
-            {"state": "COMPLETE", "value": 0.5},
-            {"state": "PRUNED", "value": 0.8},
-            {"state": "FAIL", "value": None},
-        ]
-    )
-    assert counts == {"attempted": 3, "completed": 1, "pruned": 1, "failed": 1}
+    counts = summarize_trials([{"state": "COMPLETE", "value": 0.5}, {"state": "FAIL", "value": None}])
+    assert counts == {"attempted": 2, "completed": 1, "failed": 1}
 
 
 def _space():
@@ -277,13 +274,11 @@ class _StubAdapter(HpoAdapter):
     def __init__(self, fail_baseline=False):
         self.fail_baseline = fail_baseline
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
-        def trial_fn(config, report):
+    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
+        def trial_fn(config):
             if self.fail_baseline and "x" not in config:
                 raise RuntimeError("baseline failed to train")
-            value = float(config.get("x", hyperparameters.get("x", 5.0)))
-            report(step=1, **{metric: value})
-            return value
+            return float(config.get("x", hyperparameters.get("x", 5.0)))
 
         return trial_fn
 

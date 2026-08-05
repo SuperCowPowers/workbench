@@ -76,7 +76,7 @@ model.hpo_importance()
 
 `importance` is a share and always sums to 1 — so in a search where nothing mattered, something still looks important. `effect` is the absolute read: how far the objective actually moves across that knob's range. **A knob earns tuning only when both are high.** Above, learning rate and layer shape carry the run; the bottom three split a rounding error between them.
 
-Only completed trials feed this. A pruned trial scored a partial ensemble — a different objective, not a noisier one — and since a trial is pruned precisely for looking bad early, pooling the two lines the mixture up with the very knobs being ranked. And when the top knob can't be separated from a random column planted in the same fit, `hpo_importance()` says so rather than handing back a confident-looking ranking.
+Only scored trials feed this — every candidate trains its full ensemble, so the values going into the surrogate are all on one basis. And when the top knob can't be separated from a random column planted in the same fit, `hpo_importance()` says so rather than handing back a confident-looking ranking.
 
 We pointed this at our own ChemProp search space, and it paid for itself immediately. `warmup_epochs` had been in the space from the start, on the reasonable theory that learning-rate warmup matters. Across three searches its measured effect was 0.06%, 0.02%, and 0.10% of the objective, and its rank correlation with the objective flipped sign between datasets — the signature of noise rather than signal. On one run the sampler spent 25 of 60 trials exploring it.
 
