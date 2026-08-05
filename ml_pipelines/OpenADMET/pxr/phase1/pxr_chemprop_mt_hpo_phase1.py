@@ -61,7 +61,7 @@ m = fs.to_model(
         # The search budget is what the job costs, so it is worth stating. Everything else
         # defaults: https://supercowpowers.github.io/workbench/models/hpo/ — including the
         # concurrency, which a multi-task search derives as one whole card per trial.
-        "hpo": {"n_trials": 60, "search_space": space.to_dict()},
+        "hpo": {"n_trials": 40, "search_space": space.to_dict()},
     },
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
 )

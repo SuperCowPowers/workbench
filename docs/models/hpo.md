@@ -39,7 +39,7 @@ deployed and used exactly like any other.
 
 | key | default | what it does |
 |---|---|---|
-| `n_trials` | `60` | search budget — how many configurations to try |
+| `n_trials` | per framework | search budget — 40 (ChemProp), 100 (PyTorch), 250 (XGBoost), sized to what one trial costs |
 | `search_space` | all groups | which knob groups to search — see below |
 | `metric` | `cv_mae` | objective: `cv_mae` (out-of-fold) or `holdout_mae` |
 | `rerank_top_k` | `5` | finalists re-scored in the second stage (`0` disables it) |
@@ -87,7 +87,7 @@ becomes the baseline the search has to beat — and the value used for any knob 
 searched groups:
 
 ```python
-hyperparameters={"uq_version": "v1", "max_lr": 3e-3, "depth": 4, "hpo": {"n_trials": 60}}
+hyperparameters={"uq_version": "v1", "max_lr": 3e-3, "depth": 4, "hpo": {"n_trials": 40}}
 ```
 
 **A range needs a `SearchSpace`.** Start from the shipped space, change the knobs you have an
@@ -102,7 +102,7 @@ space["learning_rate"] = FloatRange(0.02, 0.06, log=True)
 del space["gamma"]                                          # not worth trials on this data
 
 fs.to_model(..., hyperparameters={"uq_version": "v1",
-                                  "hpo": {"n_trials": 60, "search_space": space.to_dict()}})
+                                  "hpo": {"n_trials": 250, "search_space": space.to_dict()}})
 ```
 
 `SearchSpace` is a `dict` subclass, so ordinary `space[knob] = ...` and `del` are the whole
@@ -137,7 +137,7 @@ A search reports the *minimum* over many noisy estimates, so its winning value i
 optimistically biased — the winner may simply have drawn the luckiest evaluation. Workbench
 therefore treats the search as a **shortlist**, not a decision:
 
-1. **Search** — sample the space, and prune configurations that are already off the pace.
+1. **Search** — sample the space; every candidate trains its full ensemble, so the values are all on one basis.
 2. **Re-rank** — re-score the top finalists *and your own untuned hyperparameters* on fresh
    trainings, then publish whichever wins.
 
@@ -159,7 +159,7 @@ results = model.hpo_results()
 
 ```python
 {'metric': 'cv_mae',
- 'trial_counts': {'attempted': 100, 'completed': 34, 'pruned': 66, 'failed': 0},
+ 'trial_counts': {'attempted': 100, 'completed': 100, 'failed': 0},
  'best_config': {'layers': '128-64',
                  'dropout': 0.25,
                  'learning_rate': 0.0002846282635669909,
@@ -187,9 +187,9 @@ print(f"{results['metric']}: {results['best_value']:.4f} vs {results['baseline_v
 # cv_mae: 0.5106 vs 0.5451 baseline (+6.3%)
 ```
 
-**`trial_counts` tells you whether the budget was spent well.** A high `pruned` count is the
-pruner working as intended — those trials were stopped early once they fell off the pace, so
-`completed` is what ran to term. Any `failed` at all is worth a look at the training log.
+**`trial_counts` tells you whether the budget was spent well.** Every trial trains its full
+ensemble, so `completed` should equal `attempted` — any `failed` at all is worth a look at
+the training log (CUDA OOM is the usual cause when trials share a GPU).
 
 ### The trials frame
 
@@ -216,8 +216,8 @@ df.nsmallest(5, "value")                        # the finalists the re-rank scor
 df.groupby("layers")["value"].agg(["count", "mean", "min"])
 ```
 
-`completed=False` marks a pruned trial: its `value` is the last score before it was stopped,
-so it is a lower bound, not a finished result. The single `kind="baseline"` row is your own
+`completed=False` marks a trial that died before producing an objective and has no `value`.
+The single `kind="baseline"` row is your own
 untuned config scored on the same basis as the trials — it is the reference line any plot of
 the search needs, and `results["rerank"]` holds the finalists' re-scores if you want the
 second stage's own numbers.
@@ -246,11 +246,9 @@ objective. A knob is worth tuning only when both are high; the bottom three abov
 real share of very little. `best` is where the objective bottoms out with the other knobs
 averaged out, which is meaningless when `effect` is small.
 
-**Only completed trials feed the fit.** A pruned trial scored a partial ensemble — a
-different objective, not a noisier one — and a trial is pruned precisely for looking bad
-early, so pooling the two aligns the mixture with the knobs being ranked. And when the top
-knob's share cannot be separated from a random column planted in the same fit, the call logs
-a warning rather than returning a confident-looking ranking.
+**Only scored trials feed the fit.** And when the top knob's share cannot be separated from
+a random column planted in the same fit, the call logs a warning rather than returning a
+confident-looking ranking.
 
 **How it's computed.** The trials are the dataset — knob values in, objective out — and a
 random forest is fit to that response surface. `importance` is the forest's split-based

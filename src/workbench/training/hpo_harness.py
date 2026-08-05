@@ -5,20 +5,15 @@ for the parallel offload, ``ray[tune]``); templates import this **only inside th
 ``__main__``**.
 
 The harness owns the *search*: it samples a space, runs trials through a backend
-(Optuna serial for local runs, Ray Tune + ASHA for the parallel GPU offload),
-prunes weak trials early, and returns the best config. It is framework-agnostic —
+(Optuna serial for local runs, Ray Tune for the parallel GPU offload), and returns
+the best config. It is framework-agnostic —
 each model framework supplies a ``trial_fn`` that builds/trains/scores one
 candidate plus a default search space (e.g. :mod:`workbench.training.chemprop_hpo`).
 
-``trial_fn(config, report) -> float`` contract:
-
-* build + train the framework model for ``config``,
-* call ``report(step=<tick>, <metric>=<value>)`` as the trial progresses so the
-  backend can prune weak trials early (ASHA / successive halving). ``step`` is
-  whatever unit of progress the framework reports — an epoch, or a completed
-  ensemble fold — and ``prune_warmup`` must be set to match that unit,
-* return the final objective value (the same ``<metric>``), which the harness
-  minimizes or maximizes per ``mode``.
+``trial_fn(config) -> float`` contract: build + train the framework model for
+``config`` and return its objective value, which the harness minimizes or
+maximizes per ``mode``. Every trial runs to completion — the harness ranks whole
+candidates, never partial ones.
 
 The search space is expressed with backend-agnostic specs (:class:`IntRange`,
 :class:`FloatRange`, :class:`Choice`) that each backend translates to its own
@@ -227,21 +222,6 @@ def space_defaults(search_space: SearchSpace) -> dict:
     return {knob: spec.default for knob, spec in search_space.items()}
 
 
-# Pruning grace. Successive-halving/ASHA defaults judge a trial almost immediately,
-# which wrecks a small search (tens of trials): configs get killed before they've
-# trained enough to rank. No trial is eligible for pruning until it has reported this
-# many steps, and Optuna additionally needs this many completed trials as baselines
-# before it prunes anything. The default suits per-epoch reporters; callers reporting
-# a coarser step (e.g. one per ensemble fold) pass a smaller ``prune_warmup``.
-PRUNE_WARMUP_STEPS = 20
-PRUNE_STARTUP_TRIALS = 5
-
-# Each ASHA cull keeps the top ``1 / reduction_factor``. Ray's default of 4 discards 75% of
-# trials on the evidence of two folds, which is most of the search budget spent on one noisy
-# comparison; halving keeps 50% instead.
-PRUNE_REDUCTION_FACTOR = 2
-
-
 @dataclass
 class HpoResult:
     """Outcome of a search: the winning config plus a record of every trial."""
@@ -263,27 +243,22 @@ def run_search(
     max_parallel: int = 1,
     metric: str = "holdout_mae",
     mode: str = "min",
-    pruning: bool = True,
-    prune_warmup: int = PRUNE_WARMUP_STEPS,
     seed: int = 42,
     resources_per_trial: Union[dict, None] = None,
 ) -> HpoResult:
     """Search ``search_space`` for the ``trial_fn`` config that best optimizes ``metric``.
 
     Args:
-        trial_fn: ``(config, report) -> float`` — trains one candidate and returns
-            its objective value (see module docstring for the ``report`` protocol).
+        trial_fn: ``(config) -> float`` — trains one candidate and returns its
+            objective value.
         search_space: ``{name: Spec}`` mapping knob names to :class:`IntRange` /
             :class:`FloatRange` / :class:`Choice`.
         n_trials: search budget (number of candidate configs).
-        backend: ``"optuna"`` (serial), ``"ray"`` (parallel + ASHA), or ``"auto"``
-            (ray when importable, else optuna).
+        backend: ``"optuna"`` (serial), ``"ray"`` (parallel), or ``"auto"`` (ray when
+            importable, else optuna).
         max_parallel: concurrent trials (Optuna: thread jobs; Ray: max concurrency).
-        metric: the objective key reported by ``trial_fn``/``report``.
+        metric: the objective key ``trial_fn`` optimizes.
         mode: ``"min"`` or ``"max"``.
-        pruning: enable early-stopping of weak trials (successive halving / ASHA).
-        prune_warmup: steps a trial must report before it is eligible for pruning —
-            in the same unit ``trial_fn`` reports (epochs, folds, ...).
         seed: sampler seed for reproducible searches.
         resources_per_trial: Ray only — e.g. ``{"gpu": 1}`` (one trial per GPU).
 
@@ -307,8 +282,6 @@ def run_search(
             max_parallel=max_parallel,
             metric=metric,
             mode=mode,
-            pruning=pruning,
-            prune_warmup=prune_warmup,
             seed=seed,
             resources_per_trial=resources_per_trial,
         )
@@ -319,8 +292,6 @@ def run_search(
         max_parallel=max_parallel,
         metric=metric,
         mode=mode,
-        pruning=pruning,
-        prune_warmup=prune_warmup,
         seed=seed,
     )
 
@@ -335,9 +306,9 @@ def evaluate_configs(
 ) -> list:
     """Score a fixed list of configs — no sampling, no pruning.
 
-    The counterpart to :func:`run_search`, for a confirmation/re-rank pass: every config
-    runs to completion, so the returned values are directly comparable to each other in a
-    way the search's own (pruned, selection-biased) values are not.
+    The counterpart to :func:`run_search`, for a confirmation/re-rank pass: it scores a
+    known list on a fresh fold partition, so the values answer "which of these is best"
+    without the selection bias in the search's own minimum.
 
     Args:
         eval_fn: ``(config, index) -> float`` — scores one config.
@@ -411,36 +382,19 @@ def _resolve_backend(backend: str) -> str:
 # --- Optuna backend (local, serial) ----------------------------------------
 
 
-def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed):
+def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, seed):
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     sampler = optuna.samplers.TPESampler(seed=seed)
-    # MedianPruner rather than successive halving: at our trial budgets, halving prunes
-    # before configs are rankable. Median prunes a trial only once baselines exist and it
-    # is worse than the median at the same step.
-    pruner = (
-        optuna.pruners.MedianPruner(n_startup_trials=PRUNE_STARTUP_TRIALS, n_warmup_steps=prune_warmup)
-        if pruning
-        else optuna.pruners.NopPruner()
-    )
-    study = optuna.create_study(direction="minimize" if mode == "min" else "maximize", sampler=sampler, pruner=pruner)
+    study = optuna.create_study(direction="minimize" if mode == "min" else "maximize", sampler=sampler)
 
     def objective(trial):
         config = _suggest_optuna(trial, search_space)
         # Stash the resolved (real-valued) config so best_config/trials report
         # actual values, not the categorical indices used for unhashable Choices.
         trial.set_user_attr("config", config)
-
-        def report(step=None, **metrics):
-            value = metrics.get(metric)
-            if value is None or step is None:
-                return
-            trial.report(value, step)
-            if trial.should_prune():
-                raise optuna.TrialPruned()
-
-        return trial_fn(config, report)
+        return trial_fn(config)
 
     # Serial: n_jobs>1 runs trials on threads in one process, racing pl.seed_everything's
     # global RNG and contending on the single GPU. Real parallelism is the Ray offload's job.
@@ -499,7 +453,7 @@ def _suggest_optuna(trial, search_space) -> dict:
     return config
 
 
-# --- Ray Tune backend (offload, parallel + ASHA) ---------------------------
+# --- Ray Tune backend (offload, parallel) ----------------------------------
 # Exercised only in a ray-enabled training container (ray is the `training` extra
 # and needs a GPU box for real parallelism); the Optuna backend is what CI covers.
 
@@ -554,32 +508,6 @@ def _fence_gpu_memory(resources_per_trial) -> None:
         torch.cuda.set_per_process_memory_fraction(min(1.0, fraction), 0)
 
 
-def _partial_aware_search(done_flag: str, **kwargs):
-    """An ``OptunaSearch`` that tells Optuna a scheduler-stopped trial is *pruned*.
-
-    Ray ends a stopped trial by handing the searcher that trial's last result, and
-    ``OptunaSearch`` records any result carrying the metric as a COMPLETE observation. For
-    an ensemble objective that last value is a *partial* ensemble — systematically worse
-    than the full one — so TPE's quantile split ends up fitting a mixture of two different
-    objectives, with every pruned region labelled worse than it is. That entrenches whatever
-    the first rung decided.
-
-    Dropping the result for any trial that never set ``done_flag`` maps it to PRUNED, which
-    TPE ranks by the intermediate values it already recorded — the comparison ASHA actually
-    made — instead of by a value on the wrong scale. Winner selection guards the same
-    distinction independently, on the harness's own records.
-    """
-    from ray.tune.search.optuna import OptunaSearch
-
-    class _PartialAware(OptunaSearch):
-        def on_trial_complete(self, trial_id, result=None, error=False):
-            if result is not None and not result.get(done_flag):
-                result = None
-            super().on_trial_complete(trial_id, result=result, error=error)
-
-    return _PartialAware(**kwargs)
-
-
 def _resolve_choices(config, choice_options) -> dict:
     """Map ``Choice`` knobs back from the indices the trainable sampled them as."""
     return {k: (choice_options[k][v] if k in choice_options else v) for k, v in (config or {}).items()}
@@ -588,15 +516,16 @@ def _resolve_choices(config, choice_options) -> dict:
 def _scored_value(result, metric):
     """A trial's objective, or None when it never produced a usable one.
 
-    An OOM'd trial reports NaN so the scheduler's strict metric check is satisfied. That NaN
-    must not survive into rankings or records: it compares as neither better nor worse than
-    anything, so `min()` would seat it wherever iteration order happened to put it.
+    An OOM'd trial reports NaN rather than dying, so the sampler records it as an
+    unpromising region instead of learning nothing. That NaN must not survive into rankings
+    or records: it compares as neither better nor worse than anything, so `min()` would seat
+    it wherever iteration order happened to put it.
     """
     value = (getattr(result, "metrics", None) or {}).get(metric)
     return None if value is None or value != value else value  # value != value catches NaN
 
 
-def _resolve_trial_records(results, *, metric, done_flag, choice_options) -> list:
+def _resolve_trial_records(results, *, metric, choice_options) -> list:
     """One record per trial, defensive about trials that never reported.
 
     A trial killed before it ran — an OOM-killed worker, a missing dependency in the image,
@@ -607,109 +536,61 @@ def _resolve_trial_records(results, *, metric, done_flag, choice_options) -> lis
     return [
         {
             "number": i,
-            "value": _scored_value(r, metric),
+            "value": value,
             "config": _resolve_choices(r.config, choice_options),
-            "completed": bool((r.metrics or {}).get(done_flag)),
+            # Every trial runs its full ensemble, so this marks the one thing left that can
+            # cost a trial its place: dying without an objective (OOM, a killed worker).
+            "completed": value is not None,
         }
         for i, r in enumerate(results)
+        for value in [_scored_value(r, metric)]
     ]
 
 
 @_ray_session
-def _run_ray(
-    trial_fn, search_space, *, n_trials, max_parallel, metric, mode, pruning, prune_warmup, seed, resources_per_trial
-) -> HpoResult:
+def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, seed, resources_per_trial) -> HpoResult:
     from ray import tune
-    from ray.tune.schedulers import ASHAScheduler
+    from ray.tune.search.optuna import OptunaSearch
 
     # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
     # Optuna path): OptunaSearch's categorical rejects unhashable options (list-valued
     # knobs), so passing the raw list only works by warning-and-degrading.
     param_space, choice_options = _to_ray_space(search_space)
 
-    # ASHA advances on this attribute. Reporting the caller's `step` (the model's epoch)
-    # under it — rather than leaving Ray's default training_iteration to count report()
-    # calls — keeps pruning decisions aligned with the model's notion of progress.
-    time_attr = "step"
-    done_flag = "_hpo_completed"
-
     def trainable(config):
         _fence_gpu_memory(resources_per_trial)
         config = {k: (choice_options[k][v] if k in choice_options else v) for k, v in config.items()}
-        last_step = 0
-
-        def report(step=None, **metrics):
-            nonlocal last_step
-            last_step = step if step is not None else last_step + 1
-            tune.report({**metrics, time_attr: last_step})
-
         try:
-            value = trial_fn(config, report)
+            value = trial_fn(config)
         except Exception as exc:
             if not _is_oom(exc):
                 raise
-            # Letting the OOM escape gets the trial reported to Optuna as FAIL, and TPE draws
-            # only on COMPLETE and PRUNED — so the sampler learns nothing and keeps proposing
-            # a corner that cannot fit. Reporting NaN under the metric ends the trial without
-            # a usable score while keeping every consumer happy:
-            #
-            # * the scheduler's strict metric check needs the key present. Returning nothing
-            #   is only exempt when the result carries no other keys, and Ray injects the
-            #   flattened `config/*` into it — so an unreported trial takes down the tuner.
-            # * `nanpercentile` skips NaN, so a dead trial cannot move a rung's cutoff, and
-            #   `nan < cutoff` is False, so it is never mistaken for a prunable live trial.
-            # * `_partial_aware_search` drops the result for want of `done_flag`, so Optuna is
-            #   told PRUNED with no value — never a NaN objective, which it rejects.
-            #
-            # None is not an option in its place: Ray hands the metric straight to
+            # Letting the OOM escape reports the trial to Optuna as FAIL, and TPE draws only
+            # on COMPLETE and PRUNED — so the sampler learns nothing and keeps proposing a
+            # corner that cannot fit. NaN ends the trial without a usable score instead:
+            # `_scored_value` reads it back as None, so it never reaches a ranking. None is
+            # not an option in its place, since Ray hands the metric straight to
             # `optuna.Trial.report`, which requires a float.
             log.warning(f"Trial out of GPU memory, ending it unscored: {exc}")
-            tune.report({metric: float("nan"), time_attr: last_step + 1})
+            tune.report({metric: float("nan")})
             return
-        # Final objective, one tick past the last epoch (time_attr must increase). done_flag
-        # marks a full run so winner selection can exclude ASHA-stopped partial ensembles.
-        tune.report({metric: value, time_attr: last_step + 1, done_flag: 1})
+        tune.report({metric: value})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
-    # grace_period defaults to 1 (prune after a single report) — far too eager; give each
-    # trial the same warmup the Optuna path gets.
-    # One rung, at prune_warmup. Rungs sit at grace_period * reduction_factor ** k, so a 50%
-    # cull also buys rungs at 4, 8, ... — a bad trade here, since a trial reaching fold 4 of 5
-    # has paid 80% of its cost and stopping it saves one fold while forfeiting its place in the
-    # ranking pool. max_t bounds the ladder and, with stop_last_trials off, does nothing else.
-    scheduler = (
-        ASHAScheduler(
-            metric=metric,
-            mode=mode,
-            time_attr=time_attr,
-            grace_period=prune_warmup,
-            reduction_factor=PRUNE_REDUCTION_FACTOR,
-            max_t=prune_warmup + 1,
-            stop_last_trials=False,
-        )
-        if pruning
-        else None
-    )
     tuner = tune.Tuner(
         trainable_res,
         param_space=param_space,
         tune_config=tune.TuneConfig(
             num_samples=n_trials,
             max_concurrent_trials=max_parallel,
-            search_alg=_partial_aware_search(done_flag, metric=metric, mode=mode, seed=seed),
-            scheduler=scheduler,
+            search_alg=OptunaSearch(metric=metric, mode=mode, seed=seed),
         ),
     )
     results = tuner.fit()
 
-    # Rank only among trials that ran the full ensemble. An ASHA-stopped trial's last value
-    # is a *partial* ensemble mean, which can read lower than a completed one and would
-    # otherwise be published — the very regime mismatch the ensemble objective removes.
-    completed = [r for r in results if (r.metrics or {}).get(done_flag)]
-    # Fall back to any *scored* trial if pruning stopped everything. Never to an unscored
-    # one: a trial that died carries neither a value nor a config, so ranking it would
-    # publish `None` as the winning config.
-    pool = completed or [r for r in results if _scored_value(r, metric) is not None]
+    # Never rank an unscored trial: one that died carries neither a value nor a config, so
+    # ranking it would publish `None` as the winning config.
+    pool = [r for r in results if _scored_value(r, metric) is not None]
     if not pool:
         # Mirror the Optuna path's actionable failure. Ray otherwise surfaces this as an
         # AttributeError deep in config resolution, on the box that costs the most to rent.
@@ -729,7 +610,7 @@ def _run_ray(
         return v if mode == "min" else -v
 
     best = min(pool, key=_objective)
-    trials = _resolve_trial_records(results, metric=metric, done_flag=done_flag, choice_options=choice_options)
+    trials = _resolve_trial_records(results, metric=metric, choice_options=choice_options)
     return HpoResult(
         best_config=_resolve_choices(best.config, choice_options),
         best_value=_scored_value(best, metric),

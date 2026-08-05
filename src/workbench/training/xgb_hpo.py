@@ -119,13 +119,16 @@ class XGBAdapter(HpoAdapter):
 
         return align_frame(df, self.category_mappings, self.orig_features, self.compressed_features)
 
+    # A trial is seconds, so the space can be covered densely.
+    default_n_trials = 250
+
     def resources_per_trial(self, hpo_block, backend):
         """Ray only. One trial claims the cores its estimator is configured to use."""
         if backend == "optuna":
             return None
         return {"cpu": _xgb_threads(max(1, hpo_block.get("max_parallel", 1)))}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
+    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
         """Build the ensemble XGBoost ``trial_fn`` (closes over the folds and eval data).
 
         Each trial trains one regressor per fold the way the template publishes them —
@@ -134,8 +137,8 @@ class XGBAdapter(HpoAdapter):
 
         * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
           members' mean prediction, i.e. the real ensemble's held-out error.
-        * ``cv_mae`` — each member is scored on its own out-of-fold rows and the objective is
-          the mean across folds.
+        * ``cv_mae`` — each member predicts its own out-of-fold rows; the objective is one
+          MAE over those pooled predictions, so every row weighs the same.
         """
         import numpy as np
 
@@ -149,10 +152,10 @@ class XGBAdapter(HpoAdapter):
         eval_y = val_df[self.target].to_numpy(dtype=float) if holdout else None
         weights = train_df["sample_weight"] if "sample_weight" in train_df.columns else None
 
-        def trial_fn(config, report):
+        def trial_fn(config):
             merged = {**self.merge_config(hyperparameters, config), "n_jobs": n_jobs}
 
-            member_preds, fold_maes = [], []
+            member_preds, oof_pred, oof_true = [], [], []
             for fold_idx, (tr_idx, va_idx) in enumerate(folds):
                 model = train_xgb_fold(
                     merged,
@@ -166,17 +169,16 @@ class XGBAdapter(HpoAdapter):
                     # Each member predicts the held-out rows; the objective is the ensemble's
                     # mean prediction, so the objective set never influences model selection.
                     member_preds.append(model.predict(val_df[self.features]))
-                    running = float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
                 else:
-                    fold_preds = model.predict(train_df.iloc[va_idx][self.features])
-                    fold_maes.append(float(np.nanmean(np.abs(fold_preds - all_y[va_idx]))))
-                    running = float(np.mean(fold_maes))
+                    oof_pred.append(model.predict(train_df.iloc[va_idx][self.features]))
+                    oof_true.append(all_y[va_idx])
 
-                # Fold-granular pruning: a config already off the pace stops here rather than
-                # paying for the remaining members.
-                report(step=fold_idx + 1, **{metric: running})
-
-            return running
+            if holdout:
+                return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
+                # Pooled, not a mean of per-fold means: every row weighs the same, which is
+                # what the model's own cross-fold metrics report. Fold sizes differ under a
+                # scaffold split, so the two are not the same number.
+            return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
 
         return trial_fn
 

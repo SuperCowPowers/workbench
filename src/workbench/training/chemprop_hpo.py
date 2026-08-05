@@ -108,9 +108,8 @@ _SEARCH_GROUPS = {
 #   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword; smallest
 #     expected effect.
 #
-# Each added knob costs trials: the default space is already 6-dimensional, pruning reserves
-# the first PRUNE_STARTUP_TRIALS trials as un-pruned baselines, and every trial trains a
-# full ensemble.
+# Each added knob costs trials: the default space is already 6-dimensional and every trial
+# trains a full ensemble.
 
 
 def chemprop_search_space(groups=("basic", "optimizer")) -> dict:
@@ -235,6 +234,9 @@ class ChempropAdapter(HpoAdapter):
     def merge_config(self, hyperparameters, config) -> dict:
         return merge_best_config(hyperparameters, config)
 
+    # A trial is a full D-MPNN ensemble — hours on a multi-GPU box.
+    default_n_trials = 40
+
     def resources_per_trial(self, hpo_block, backend):
         """GPU share per trial. Ray only; ``hpo['gpus_per_trial']`` overrides.
 
@@ -248,7 +250,7 @@ class ChempropAdapter(HpoAdapter):
         default = 1.0 if len(self.target_columns) > 1 else 0.5
         return {"gpu": hpo_block.get("gpus_per_trial", default)}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, metric, concurrency):
+    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
         """Build the ensemble chemprop ``trial_fn`` (closes over the folds and eval data).
 
         Each trial trains one model per fold through
@@ -258,11 +260,10 @@ class ChempropAdapter(HpoAdapter):
 
         * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
           members' mean prediction, i.e. the real ensemble's held-out error.
-        * ``cv_mae`` — each member is scored on its own out-of-fold rows and the objective is
-          the mean across folds.
+        * ``cv_mae`` — each member predicts its own out-of-fold rows; the objective is one
+          MAE over those pooled predictions, so every row weighs the same.
 
-        Epoch-level early stopping stays with chemprop's ``EarlyStopping`` callback; the
-        runner's harness prunes at fold granularity.
+        Epoch-level early stopping stays with chemprop's ``EarlyStopping`` callback.
         """
         import tempfile
 
@@ -278,7 +279,7 @@ class ChempropAdapter(HpoAdapter):
         all_y = train_df[target_columns].to_numpy(dtype=float)
         eval_y = val_df[target_columns].to_numpy(dtype=float)[:, 0] if holdout else None
 
-        def trial_fn(config, report):
+        def trial_fn(config):
             spec = FoldSpec(
                 hyperparameters=merge_best_config(hyperparameters, config),
                 smiles_column=self.smiles_column,
@@ -289,7 +290,7 @@ class ChempropAdapter(HpoAdapter):
                 **self.model_shape,
             )
 
-            member_preds, fold_maes = [], []
+            member_preds, oof_pred, oof_true = [], [], []
             for fold_idx, (tr_idx, va_idx) in enumerate(folds):
                 fold_val_df = train_df.iloc[va_idx].reset_index(drop=True)
                 # Checkpoints are scratch: the trial keeps the model object, not the file.
@@ -312,16 +313,16 @@ class ChempropAdapter(HpoAdapter):
                     # mean prediction. The fold's own val rows drive early stopping only, so
                     # the objective set never influences model selection.
                     member_preds.append(predict_chemprop_frame(mpnn, spec, val_df)[:, 0])
-                    running = float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
                 else:
-                    fold_maes.append(float(np.nanmean(np.abs(fold_preds[:, 0] - all_y[va_idx][:, 0]))))
-                    running = float(np.mean(fold_maes))
+                    oof_pred.append(fold_preds[:, 0])
+                    oof_true.append(all_y[va_idx][:, 0])
 
-                # Fold-granular pruning: a config already off the pace stops here rather than
-                # paying for the remaining members.
-                report(step=fold_idx + 1, **{metric: running})
-
-            return running
+            if holdout:
+                return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
+                # Pooled, not a mean of per-fold means: every row weighs the same, which is
+                # what the model's own cross-fold metrics report. Fold sizes differ under a
+                # scaffold split, so the two are not the same number.
+            return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
 
         return trial_fn
 
