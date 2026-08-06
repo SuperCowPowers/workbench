@@ -641,6 +641,7 @@ if __name__ == "__main__":
 
         # Held-out rows are novel to the UQ proximity reference (they were split out
         # before it was built), so score them the way inference scores a new molecule.
+        # Regression only: uq_dict is None for classifiers, which have no prediction_std.
         # V0 needs no query payload; V1/V2 need smiles/fingerprint, same as predict_fn.
         prox_cols = [c for c in ("smiles", "fingerprint") if c in holdout_df.columns]
         if uq_dict is not None and (prox_cols or uq_dict["uq_model"].UQ_VERSION == "v0"):
