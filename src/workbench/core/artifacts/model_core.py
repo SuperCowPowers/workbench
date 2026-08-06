@@ -1189,7 +1189,7 @@ class ModelCore(Artifact):
 
         # Delete anything we might have stored in the Parameter Store
         cls.log.info("Deleting Parameter Store Entries...")
-        cls.param_store.delete_recursive(f"workbench/models/{model_group_name}")
+        cls.param_store.delete_recursive(f"/workbench/models/{model_group_name}")
 
     @classmethod
     def _delete_model_training_artifacts(cls, model_group_name: str):
