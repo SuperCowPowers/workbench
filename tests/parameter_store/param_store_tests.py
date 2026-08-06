@@ -3,6 +3,8 @@
 import logging
 from random import random, choices
 
+import pytest
+
 # Workbench Imports
 from workbench.api import ParameterStore
 
@@ -65,16 +67,10 @@ def test_relative_path_rejected():
     """Path-based operations require an absolute path; AWS rejects anything else."""
     param_store = ParameterStore()
     for bad in ("workbench/models", "workbench/test/"):
-        try:
+        with pytest.raises(ValueError):
             param_store.list(bad)
-            raise AssertionError(f"list({bad!r}) should have raised ValueError")
-        except ValueError as e:
-            print("Caught expected ValueError:", e)
-        try:
+        with pytest.raises(ValueError):
             param_store.delete_recursive(bad)
-            raise AssertionError(f"delete_recursive({bad!r}) should have raised ValueError")
-        except ValueError as e:
-            print("Caught expected ValueError:", e)
 
 
 def test_deletion():
