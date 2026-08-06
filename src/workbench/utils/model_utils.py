@@ -169,12 +169,43 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
+def pull_oof_predictions(model: "Model") -> Optional[pd.DataFrame]:
+    """Pull a model's out-of-fold predictions from its training artifacts.
+
+    Models that have not been retrained since the two-file split hold a single
+    ``validation_predictions.csv`` carrying both out-of-fold and held-out rows,
+    distinguished by a ``validation`` column. Those are read and filtered down to
+    the out-of-fold rows, with a warning naming the model to retrain.
+
+    Args:
+        model (Model): The model to pull out-of-fold predictions for
+
+    Returns:
+        pd.DataFrame: The out-of-fold predictions, or None if the model has none
+    """
+    from workbench.utils.aws_utils import pull_s3_data
+
+    df = pull_s3_data(f"{model.model_training_path}/oof_predictions.csv")
+    if df is not None:
+        return df
+
+    legacy_path = f"{model.model_training_path}/validation_predictions.csv"
+    df = pull_s3_data(legacy_path)
+    if df is None:
+        return None
+
+    log.warning(f"{model.name}: reading out-of-fold rows from {legacy_path}. Retrain this model.")
+    if "validation" in df.columns:
+        df = df[~df["validation"].astype(bool)].reset_index(drop=True)
+    return df.drop(columns=["validation"], errors="ignore")
+
+
 def copy_model_artifacts(model: "Model", dst_name: str) -> str:
     """Stage a model copy's S3 artifacts under the destination's training dir.
 
     Copies the frozen model.tar.gz and its sibling output.tar.gz (the training job's
     output channel, which carries the HPO audit trail) plus the top-level
-    training-capture files (validation_predictions.csv, shap_*) into
+    training-capture files (oof_predictions.csv, val_predictions.csv, shap_*) into
     {models_s3_path}/{dst_name}/training/. The frozen artifact lives in the copy's own
     dir so it's immune to the source's delete-then-create churn.
 

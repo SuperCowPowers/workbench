@@ -643,7 +643,7 @@ class EndpointCore(Artifact):
         primary_target = target_list[0]
 
         # Templates don't save smiles or user-specified meta columns to
-        # validation_predictions.csv — merge them in from the FeatureSet so
+        # oof_predictions.csv — merge them in from the FeatureSet so
         # cross_fold captures match the live-inference column set.
         meta_cols = self.workbench_meta().get("inference_meta", []) or []
         merge_candidates = ["smiles"] + [c for c in meta_cols if c != "smiles"]

@@ -46,15 +46,15 @@ def test_retrieval_with_capture_name(model_class):
         pprint(model_class.confusion_matrix(capture_name))
 
 
-def test_validation_predictions(model_reg, model_class):
-    print("\n\n*** Validation Predictions ***")
-    # "model_training" routes to the validation predictions through the public API
-    reg_val_preds = model_reg.get_inference_predictions("model_training")
-    assert reg_val_preds is not None, f"{model_reg.name} has no validation predictions"
-    pprint(reg_val_preds.head())
-    class_val_preds = model_class.get_inference_predictions("model_training")
-    assert class_val_preds is not None, f"{model_class.name} has no validation predictions"
-    pprint(class_val_preds.head())
+def test_oof_predictions(model_reg, model_class):
+    print("\n\n*** Out of Fold Predictions ***")
+    # "model_training" routes to the out-of-fold predictions through the public API
+    reg_oof_preds = model_reg.get_inference_predictions("model_training")
+    assert reg_oof_preds is not None, f"{model_reg.name} has no out-of-fold predictions"
+    pprint(reg_oof_preds.head())
+    class_oof_preds = model_class.get_inference_predictions("model_training")
+    assert class_oof_preds is not None, f"{model_class.name} has no out-of-fold predictions"
+    pprint(class_oof_preds.head())
 
 
 @pytest.mark.medium
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     test_list_inference_runs(reg_model, class_model)
     test_performance_metrics(reg_model, class_model)
     test_retrieval_with_capture_name(class_model)
-    test_validation_predictions(reg_model, class_model)
+    test_oof_predictions(reg_model, class_model)
     test_inference_predictions(class_model)
     test_confusion_matrix(reg_model, class_model)
     test_shap_values(reg_model, class_model)

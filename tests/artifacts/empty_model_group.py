@@ -39,13 +39,13 @@ def test_retrieval_with_capture_name(model):
         pprint(model.confusion_matrix(capture_name))
 
 
-def test_validation_predictions(model):
-    print("\n\n*** Validation Predictions ***")
-    val_predictions = model._get_validation_predictions()
-    if val_predictions is None:
-        print(f"Model {model.name} has no validation predictions!")
+def test_oof_predictions(model):
+    print("\n\n*** Out of Fold Predictions ***")
+    oof_predictions = model._get_oof_predictions()
+    if oof_predictions is None:
+        print(f"Model {model.name} has no out-of-fold predictions!")
     else:
-        pprint(val_predictions.head())
+        pprint(oof_predictions.head())
 
 
 def test_confusion_matrix(model):
@@ -76,6 +76,6 @@ if __name__ == "__main__":
     test_list_inference_runs(empty_model)
     test_performance_metrics(empty_model)
     test_retrieval_with_capture_name(empty_model)
-    test_validation_predictions(empty_model)
+    test_oof_predictions(empty_model)
     test_confusion_matrix(empty_model)
     test_metrics_with_capture_name(empty_model)
