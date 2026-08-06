@@ -150,9 +150,11 @@ if __name__ == "__main__":
         # Add predictions to the validation DataFrame
         df_val["prediction"] = preds
 
-        # Save the validation predictions to S3
+        # Save the held-out validation predictions to S3. These models train on a single
+        # split rather than folds, so oof_predictions.csv is written empty.
         output_columns = [target, "prediction"] + [col for col in df_val.columns if col.endswith("_proba")]
-        wr.s3.to_csv(df_val[output_columns], path=f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
+        wr.s3.to_csv(df_val[output_columns], path=f"{model_metrics_s3_path}/val_predictions.csv", index=False)
+        wr.s3.to_csv(df_val[output_columns].iloc[:0], path=f"{model_metrics_s3_path}/oof_predictions.csv", index=False)
 
     elif model_type == "clusterer":
         # Unsupervised Clustering Models: Assign cluster labels

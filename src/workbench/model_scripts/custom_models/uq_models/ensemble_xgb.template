@@ -19,6 +19,7 @@ import pandas as pd
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
+    "id_column": "{{id_column}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
 }
 
@@ -73,6 +74,7 @@ if __name__ == "__main__":
     # Template Parameters
     features = TEMPLATE_PARAMS["features"]
     target = TEMPLATE_PARAMS["target"]
+    id_column = TEMPLATE_PARAMS["id_column"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     models = {}
 
@@ -126,6 +128,7 @@ if __name__ == "__main__":
     kf = KFold(n_splits=5, shuffle=True, random_state=42)
     cv_residuals = []
     cv_uncertainties = []
+    oof_frames = []
 
     for fold_idx, (train_idx, val_idx) in enumerate(kf.split(X)):
         print(f"Processing calibration fold {fold_idx + 1}/5...")
@@ -152,6 +155,13 @@ if __name__ == "__main__":
         # Store residuals and uncertainties
         fold_residuals = (y_cv_val - cv_mean).values
         fold_uncertainties = cv_std.values
+
+        # Keep this fold's held-out predictions — each row scored only by models that
+        # never saw it, which is what makes the OOF file a leak-free estimate
+        fold_oof = pd.DataFrame({target: y_cv_val.values, "prediction": cv_mean.values, "std_uc": cv_std.values})
+        if id_column in df.columns:
+            fold_oof.insert(0, id_column, df[id_column].iloc[val_idx].values)
+        oof_frames.append(fold_oof)
 
         print(f"Fold {fold_idx + 1}: {len(fold_residuals)} residuals, {len(fold_uncertainties)} uncertainties")
 
@@ -182,45 +192,22 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "calibration_params.json"), "w") as fp:
         json.dump(cal_params, fp)
 
-    # Run predictions for each model on full dataset for evaluation
-    all_predictions = {model_name: model.predict(X) for model_name, model in models.items()}
+    # Save out-of-fold predictions to S3, calibrating their uncertainty the same way
+    # inference does. This model has no held-out validation path, so val_predictions.csv
+    # is written empty (header only).
+    df_oof = pd.concat(oof_frames, ignore_index=True)
+    df_oof["prediction_std"] = cal_a * df_oof["std_uc"] + cal_b
+    oof_columns = [c for c in [id_column, target, "prediction", "prediction_std"] if c in df_oof.columns]
+    wr.s3.to_csv(df_oof[oof_columns], path=f"{model_metrics_s3_path}/oof_predictions.csv", index=False)
+    wr.s3.to_csv(df_oof[oof_columns].iloc[:0], path=f"{model_metrics_s3_path}/val_predictions.csv", index=False)
 
-    # Create a copy of the provided DataFrame and add the new columns
-    result_df = df[[target]].copy()
-
-    # Add the model predictions to the DataFrame
-    for name, preds in all_predictions.items():
-        result_df[name] = preds
-
-    # Add the main prediction to the DataFrame (mean of all models)
-    result_df["prediction"] = result_df[[name for name in result_df.columns if name.startswith("m_")]].mean(axis=1)
-
-    # Compute uncalibrated uncertainty
-    result_df["prediction_std_uc"] = result_df[[name for name in result_df.columns if name.startswith("m_")]].std(
-        axis=1
-    )
-
-    # Apply calibration to uncertainty
-    result_df["prediction_std"] = cal_a * result_df["prediction_std_uc"] + cal_b
-
-    # Now compute residuals on the prediction
-    result_df["residual"] = result_df[target] - result_df["prediction"]
-    result_df["residual_abs"] = result_df["residual"].abs()
-
-    # Save the results dataframe to S3
-    wr.s3.to_csv(
-        result_df,
-        path=f"{model_metrics_s3_path}/validation_predictions.csv",
-        index=False,
-    )
-
-    # Report Performance Metrics
-    rmse = root_mean_squared_error(result_df[target], result_df["prediction"])
-    mae = mean_absolute_error(result_df[target], result_df["prediction"])
-    medae = median_absolute_error(result_df[target], result_df["prediction"])
-    r2 = r2_score(result_df[target], result_df["prediction"])
-    spearman_corr = spearmanr(result_df[target], result_df["prediction"]).correlation
-    support = len(result_df)
+    # Report Performance Metrics (out-of-fold, matching oof_predictions.csv)
+    rmse = root_mean_squared_error(df_oof[target], df_oof["prediction"])
+    mae = mean_absolute_error(df_oof[target], df_oof["prediction"])
+    medae = median_absolute_error(df_oof[target], df_oof["prediction"])
+    r2 = r2_score(df_oof[target], df_oof["prediction"])
+    spearman_corr = spearmanr(df_oof[target], df_oof["prediction"]).correlation
+    support = len(df_oof)
     print(f"rmse: {rmse:.3f}")
     print(f"mae: {mae:.3f}")
     print(f"medae: {medae:.3f}")

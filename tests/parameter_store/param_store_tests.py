@@ -3,6 +3,8 @@
 import logging
 from random import random, choices
 
+import pytest
+
 # Workbench Imports
 from workbench.api import ParameterStore
 
@@ -59,6 +61,16 @@ def test_dicts():
     param_store.upsert("/workbench/my_data", value)
     return_value = param_store.get("/workbench/my_data")
     assert return_value == value
+
+
+def test_relative_path_rejected():
+    """Path-based operations require an absolute path; AWS rejects anything else."""
+    param_store = ParameterStore()
+    for bad in ("workbench/models", "workbench/test/"):
+        with pytest.raises(ValueError):
+            param_store.list(bad)
+        with pytest.raises(ValueError):
+            param_store.delete_recursive(bad)
 
 
 def test_deletion():
@@ -123,6 +135,7 @@ if __name__ == "__main__":
     test_simple_values()
     test_lists()
     test_dicts()
+    test_relative_path_rejected()
     test_deletion()
     test_4k_limit()
     test_compressed_failure()

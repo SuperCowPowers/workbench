@@ -60,7 +60,14 @@ class ParameterStoreCore:
 
         Returns:
             list: Parameter names, or dicts of name + last-modified when details is True.
+
+        Raises:
+            ValueError: If prefix is not an absolute path.
         """
+        # A relative prefix is a caller bug: AWS rejects it, and the error would otherwise
+        # be logged and flattened into an empty list, which reads as "no parameters".
+        if prefix and not prefix.startswith("/"):
+            raise ValueError(f"Parameter paths must be absolute (start with '/'), got: {prefix!r}")
 
         def _entry(param: dict):
             return {"name": param["Name"], "modified": param.get("LastModifiedDate")} if details else param["Name"]
@@ -262,16 +269,20 @@ class ParameterStoreCore:
             self.log.error(f"Failed to delete parameter '{name}': {e}")
 
     def delete_recursive(self, prefix: str):
-        """Delete all parameters with a given prefix from the AWS Parameter Store.
+        """Delete every parameter under a given path in the AWS Parameter Store.
+
+        Deletes the parameters *under* the path. A parameter whose name is exactly
+        ``prefix`` is a sibling of that path, not a child, so delete it with
+        :meth:`delete`.
 
         Args:
-            prefix (str): The prefix of the parameters to delete.
+            prefix (str): Absolute path to delete under, e.g. "/workbench/models/my-model".
+
+        Raises:
+            ValueError: If prefix is not an absolute path.
         """
-        # Make sure prefix ends with a slash
-        if not prefix.endswith("/"):
-            prefix += "/"
-        # List all parameters with the given prefix
-        parameters = self.list(prefix=prefix)
+        # List all parameters under the given path (raises on a relative prefix)
+        parameters = self.list(prefix=prefix.rstrip("/"))
         for param in parameters:
             self.delete(param)
 

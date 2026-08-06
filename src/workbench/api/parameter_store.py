@@ -89,4 +89,4 @@ if __name__ == "__main__":
     # Recursive delete test
     param_store.upsert("/workbench/test/test1", "value1")
     param_store.upsert("/workbench/test/test2", "value2")
-    param_store.delete_recursive("workbench/test/")
+    param_store.delete_recursive("/workbench/test/")

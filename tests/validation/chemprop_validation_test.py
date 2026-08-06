@@ -28,12 +28,25 @@ def _assert_holdout(model: Model, id_column: str, validation_ids: list):
     non_val = [i for i in view_ids if i not in set(validation_ids)]
     assert not val_flag.loc[non_val].any(), "non-validation rows incorrectly marked"
 
-    # 2) The held-out rows were scored (present + non-null) in validation_predictions.csv
-    preds = model.get_inference_predictions("model_training")
-    assert preds is not None and "validation" in preds.columns, "validation_predictions missing validation column"
-    held = preds[preds["validation"].astype(bool)]
-    assert len(held) > 0, "no held-out rows in validation_predictions"
+    # 2) The held-out rows were scored (present + non-null) in val_predictions.csv
+    held = model._get_val_predictions()
+    assert held is not None and len(held) > 0, "no held-out rows in val_predictions"
     assert held["prediction"].notna().all(), "held-out rows were not scored"
+
+    # 3) The out-of-fold file holds only training rows — the two estimators stay separate
+    oof = model._get_oof_predictions()
+    assert oof is not None and len(oof) > 0, "no rows in oof_predictions"
+    assert not set(oof[id_column]) & set(validation_ids), "held-out rows leaked into oof_predictions"
+
+    # 4) Both files carry the same columns, so a reader can move between them
+    assert list(held.columns) == list(oof.columns), "oof and val schemas diverged"
+
+    # 5) Held-out rows carry real UQ, scored through the same novel-query path
+    #    inference uses. Not "all non-null": v1/v2 deliberately NaN a query their
+    #    proximity set can't resolve, matching what inference produces.
+    uq_cols = [c for c in oof.columns if c.startswith("q_") or c == "confidence"]
+    for col in uq_cols:
+        assert held[col].notna().any(), f"held-out rows have no {col} values"
 
 
 @pytest.mark.long
@@ -52,6 +65,9 @@ def test_chemprop_validation_set():
         tags=["test", "aqsol", "validation-test"],
         description="AqSol ChemProp (validation-set smoke)",
         validation_ids=validation_ids,
+        # v1 is proximity-based, so held-out rows go through the novel-query path
+        # (fingerprints from smiles) rather than v0's no-payload shortcut.
+        hyperparameters={"uq_version": "v1"},
     )
     try:
         _assert_holdout(model, id_column, validation_ids)

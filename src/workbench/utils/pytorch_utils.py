@@ -9,8 +9,8 @@ from typing import Any, Tuple
 import awswrangler as wr
 import pandas as pd
 
-from workbench.utils.aws_utils import pull_s3_data
 from workbench.utils.metrics_utils import compute_metrics_from_predictions
+from workbench.utils.model_utils import pull_oof_predictions
 
 log = logging.getLogger("workbench")
 
@@ -38,9 +38,9 @@ def download_and_extract_model(s3_uri: str, model_dir: str) -> None:
 def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Pull cross-validation results from AWS training artifacts.
 
-    This retrieves the validation predictions saved during model training and
-    computes metrics directly from them. For PyTorch models trained with
-    n_folds > 1, these are out-of-fold predictions from k-fold cross-validation.
+    This retrieves the out-of-fold predictions saved during model training and
+    computes metrics directly from them. Each row is scored by the one fold model
+    that held it out, so these are leak-free single-model predictions.
 
     Args:
         workbench_model: Workbench model object
@@ -48,16 +48,19 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     Returns:
         Tuple of:
             - DataFrame with computed metrics
-            - DataFrame with validation predictions
+            - DataFrame with out-of-fold predictions
     """
-    # Get the validation predictions from S3
-    s3_path = f"{workbench_model.model_training_path}/validation_predictions.csv"
-    predictions_df = pull_s3_data(s3_path)
+    # Get the out-of-fold predictions from the model's training artifacts
+    predictions_df = pull_oof_predictions(workbench_model)
 
     if predictions_df is None:
-        raise ValueError(f"No validation predictions found at {s3_path}")
+        raise ValueError(f"No out-of-fold predictions for {workbench_model.name} (retrain the model to generate them)")
 
-    log.info(f"Pulled {len(predictions_df)} validation predictions from {s3_path}")
+    if predictions_df.empty:
+        log.warning(f"No out-of-fold predictions for {workbench_model.name}")
+        return pd.DataFrame(), predictions_df
+
+    log.info(f"Pulled {len(predictions_df)} out-of-fold predictions for {workbench_model.name}")
 
     # Compute metrics from predictions
     target = workbench_model.target()

@@ -73,7 +73,7 @@ def test_validation_ids_holdout():
     Marks 50 rows as validation, verifies those rows ARE retained in the model's
     training view (unlike exclude) and carry ``validation = True``, while the rest
     carry ``validation = False``. The held-out rows are scored (not trained) by the
-    model script — surfaced as ``validation``-marked rows in validation_predictions.
+    model script — surfaced in val_predictions, separate from the out-of-fold rows.
     """
     fs = FeatureSet("abalone_features")
     id_column = fs.id_column

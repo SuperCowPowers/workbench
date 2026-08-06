@@ -27,6 +27,7 @@ from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import (
     get_model_hyperparameters,
     copy_model_artifacts,
+    pull_oof_predictions,
 )
 from workbench.utils.training_job_utils import (
     get_hpo_importance,
@@ -1058,7 +1059,7 @@ class ModelCore(Artifact):
 
         Clones the model package (container spec + a frozen copy of the model
         artifact), the workbench metadata, and the training-capture files
-        (validation_predictions.csv + SHAP) so cross_fold_inference resolves on
+        (oof_predictions.csv, val_predictions.csv + SHAP) so cross_fold_inference resolves on
         the copy. Used to snapshot a winning challenger into a stable, date-stamped
         promoted model. Overwrites dst if it exists.
 
@@ -1189,7 +1190,7 @@ class ModelCore(Artifact):
 
         # Delete anything we might have stored in the Parameter Store
         cls.log.info("Deleting Parameter Store Entries...")
-        cls.param_store.delete_recursive(f"workbench/models/{model_group_name}")
+        cls.param_store.delete_recursive(f"/workbench/models/{model_group_name}")
 
     @classmethod
     def _delete_model_training_artifacts(cls, model_group_name: str):
@@ -1417,26 +1418,54 @@ class ModelCore(Artifact):
 
         # Special case for model_training
         if capture_name == "model_training":
-            return self._get_validation_predictions()
+            return self._get_oof_predictions()
 
         # Construct the S3 path for the Inference Predictions
         s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_predictions.csv"
         return pull_s3_data(s3_path)
 
-    def _get_validation_predictions(self) -> Union[pd.DataFrame, None]:
-        """Internal: Retrieve the captured prediction results for this model
+    def _get_oof_predictions(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the out-of-fold predictions captured during training
+
+        Each row is scored by the one fold model that held it out, so these are
+        leak-free single-model predictions.
 
         Returns:
-            pd.DataFrame: DataFrame of the Captured Validation Predictions (might be None)
+            pd.DataFrame: DataFrame of the out-of-fold predictions (might be None)
         """
         # Sanity check the training path (which may or may not exist)
         if self.model_training_path is None:
-            self.log.warning(f"No Validation Predictions for {self.name}...")
+            self.log.warning(f"No out-of-fold predictions for {self.name}...")
             return None
-        self.log.important(f"Grabbing Validation Predictions for {self.name}...")
-        s3_path = f"{self.model_training_path}/validation_predictions.csv"
-        df = pull_s3_data(s3_path)
-        return df
+        self.log.important(f"Grabbing out-of-fold predictions for {self.name}...")
+        return pull_oof_predictions(self)
+
+    def _get_val_predictions(self) -> Union[pd.DataFrame, None]:
+        """Internal: Retrieve the held-out validation predictions captured during training
+
+        These rows are scored by the full ensemble and are only present when the model
+        was trained with validation_ids.
+
+        Returns:
+            pd.DataFrame: DataFrame of the held-out validation predictions (might be None)
+        """
+        return self._get_training_predictions("val_predictions.csv")
+
+    def _get_training_predictions(self, file_name: str) -> Union[pd.DataFrame, None]:
+        """Internal: Pull a prediction capture from this model's training path
+
+        Args:
+            file_name (str): Capture file name (e.g. "oof_predictions.csv")
+
+        Returns:
+            pd.DataFrame: DataFrame of the captured predictions (might be None)
+        """
+        # Sanity check the training path (which may or may not exist)
+        if self.model_training_path is None:
+            self.log.warning(f"No {file_name} for {self.name}...")
+            return None
+        self.log.important(f"Grabbing {file_name} for {self.name}...")
+        return pull_s3_data(f"{self.model_training_path}/{file_name}")
 
     def _extract_training_job_name(self) -> Union[str, None]:
         """Internal: Extract the training job name from the ModelDataUrl

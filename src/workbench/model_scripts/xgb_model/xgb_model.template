@@ -592,10 +592,10 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Score the held-out validation set (honest, never-trained rows)
     # -------------------------------------------------------------------------
-    # The CV rows above are the model's standard metrics; the held-out set is an
-    # independent read. Rows are marked with a `validation` column so downstream
-    # tooling can separate the two; held-out MAE is printed as `holdout_mae`.
-    df_oof["validation"] = False
+    # The CV rows above are per-fold single-model predictions; held-out rows are scored
+    # by the full ensemble. The two estimators are saved to separate files. Starts as an
+    # empty frame with the OOF columns so val_predictions.csv always has a header row.
+    df_val = df_oof.iloc[:0].copy()
     if len(holdout_df):
         print("\n" + "=" * 50)
         print(f"Scoring held-out validation set ({len(holdout_df)} rows)")
@@ -612,14 +612,13 @@ if __name__ == "__main__":
             y_h_true = holdout_df[target].values
             score_df = compute_classification_metrics(y_h_true, h_pred, label_encoder.classes_, target)
             print_classification_metrics(score_df, target, label_encoder.classes_)
-            h_out = pd.DataFrame({id_column: holdout_df[id_column].values, target: y_h_true, "prediction": h_pred})
-            # Carry per-class probabilities (+ confidence) so held-out rows aren't NaN in the
-            # proba columns after the concat below — the downstream ROC-AUC read requires them.
-            h_out["pred_proba"] = [p.tolist() for p in avg_probs]
-            h_out = expand_proba_column(h_out, label_encoder.classes_)
+            df_val = pd.DataFrame({id_column: holdout_df[id_column].values, target: y_h_true, "prediction": h_pred})
+            # Carry per-class probabilities (+ confidence) — the downstream ROC-AUC read requires them.
+            df_val["pred_proba"] = [p.tolist() for p in avg_probs]
+            df_val = expand_proba_column(df_val, label_encoder.classes_)
             if classification_uq and "classification_confidence" in classification_uq:
                 raw_conf = compute_vgmu_confidence(avg_probs, all_probs)
-                h_out["confidence"] = apply_classification_confidence(
+                df_val["confidence"] = apply_classification_confidence(
                     raw_conf, classification_uq["classification_confidence"]
                 )
         else:
@@ -631,7 +630,7 @@ if __name__ == "__main__":
             print("Held-out validation metrics:")
             print_regression_metrics(metrics)
             print(f"holdout_mae: {metrics['mae']:.3f}")
-            h_out = pd.DataFrame(
+            df_val = pd.DataFrame(
                 {
                     id_column: holdout_df[id_column].values,
                     target: y_h_true,
@@ -640,25 +639,34 @@ if __name__ == "__main__":
                 }
             )
 
-        h_out["validation"] = True
-        df_oof = pd.concat([df_oof, h_out], ignore_index=True)
+        # Held-out rows are novel to the UQ proximity reference (they were split out
+        # before it was built), so score them the way inference scores a new molecule.
+        # Regression only: uq_dict is None for classifiers, which have no prediction_std.
+        # V0 needs no query payload; V1/V2 need smiles/fingerprint, same as predict_fn.
+        prox_cols = [c for c in ("smiles", "fingerprint") if c in holdout_df.columns]
+        if uq_dict is not None and (prox_cols or uq_dict["uq_model"].UQ_VERSION == "v0"):
+            val_uq = uq_dict["uq_model"].predict(
+                holdout_df[prox_cols] if prox_cols else None,
+                df_val["prediction"].values,
+                df_val["prediction_std"].values,
+            )
+            for col in val_uq.columns:
+                df_val[col] = val_uq[col].values
 
     # -------------------------------------------------------------------------
-    # Save validation predictions to S3
+    # Save out-of-fold and held-out validation predictions to S3
     # -------------------------------------------------------------------------
-    output_columns = []
-    if id_column in df_oof.columns:
-        output_columns.append(id_column)
-    output_columns += [target, "prediction"]
-
+    output_columns = [id_column, target, "prediction"]
     if model_type != "classifier":
         output_columns.append("prediction_std")
     output_columns += [c for c in df_oof.columns if c.startswith("q_") or c == "confidence"]
-
     output_columns += [c for c in df_oof.columns if c.endswith("_proba")]
-    output_columns += ["validation"]
+    output_columns = [c for c in output_columns if c in df_oof.columns]
 
-    wr.s3.to_csv(df_oof[output_columns], f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
+    # Both files carry the same columns; reindex covers anything the held-out path
+    # didn't produce (e.g. UQ columns when the active version needs fingerprints).
+    wr.s3.to_csv(df_oof[output_columns], f"{model_metrics_s3_path}/oof_predictions.csv", index=False)
+    wr.s3.to_csv(df_val.reindex(columns=output_columns), f"{model_metrics_s3_path}/val_predictions.csv", index=False)
 
     # -------------------------------------------------------------------------
     # Save model artifacts
