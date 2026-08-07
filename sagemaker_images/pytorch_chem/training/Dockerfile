@@ -38,9 +38,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         --index-strategy unsafe-best-match \
         -r /tmp/requirements.lock
 
-# Layer 2: Workbench + bridges — rebuilds per version bump, ~20 MB delta.
-# workbench-bridges==0.2.10 retained for backward compat with existing
-# deployed-endpoint model bundles.
+# Layer 2: Workbench — rebuilds per version bump, ~20 MB delta.
 ARG WORKBENCH_VERSION=0.8.450
-RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-deps "workbench-bridges==0.2.10"
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"

@@ -45,12 +45,9 @@ RUN apt-get update && apt-get upgrade -y openssl && \
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Layer 2: Workbench + Bridges (changes often, small layer)
-# workbench-bridges==0.2.10 pinned for reproducibility while we still depend
-# on it; on track for deprecation once nothing references workbench_bridges.
+# Layer 2: Workbench (changes often, small layer)
 ARG WORKBENCH_VERSION=0.8.450
-RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-deps "workbench-bridges==0.2.10"
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Layer 3: App code (tiny, changes rarely)
 COPY ml_pipelines/ml_pipeline_runner.py /app/ml_pipeline_runner.py
