@@ -155,7 +155,7 @@ if __name__ == "__main__":
         log.important(f"Holding out {len(validation_ids)} of {len(all_ids)} rows as the validation set")
         m = fs.to_model(
             name="abalone-regression-val",
-            model_type=ModelType.REGRESSOR,
+            model_type=ModelType.UQ_REGRESSOR,
             model_framework=ModelFramework.XGBOOST,
             feature_list=abalone_feature_list,
             target_column="class_number_of_rings",
