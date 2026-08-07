@@ -49,7 +49,7 @@ def capture_test_inference(end: Endpoint, target: str, features: list) -> None:
     test_df = DFStore().get(TEST_STORE_KEY).dropna(subset=[target])
     columns = ["molecule_name", "smiles", target] + features
     print(f"Running held-out test inference for {end.name} on {len(test_df)} rows")
-    end.inference(test_df[columns], capture_name=f"rx_test_{target}", id_column="molecule_name")
+    end.inference(test_df[columns], capture_name=f"rx_test_{target}")
 
 
 def main():

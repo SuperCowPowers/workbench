@@ -74,6 +74,6 @@ if __name__ == "__main__":
     end.set_owner("test")
 
     eval_df = fs.pull_dataframe().query("id in @val_ids")
-    end.inference(eval_df, capture_name="mlflow_holdout", id_column="id")
+    end.inference(eval_df, capture_name="mlflow_holdout")
 
     print(Model("aqsol-regression-test-holdout").get_inference_metrics("mlflow_holdout"))
