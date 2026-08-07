@@ -43,7 +43,7 @@ Workbench ships **three regression UQ versions**, all built on the same ensemble
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Status</th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Approach</th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Inputs</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Needs SMILES?</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Needs neighbors?</th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Best for</th>
     </tr>
   </thead>
@@ -54,28 +54,28 @@ Workbench ships **three regression UQ versions**, all built on the same ensemble
       <td style="padding: 8px 16px;">Isotonic calibrator on <code>(prediction, std)</code> — no neighborhood</td>
       <td style="padding: 8px 16px;">prediction, prediction_std</td>
       <td style="padding: 8px 16px;">No</td>
-      <td style="padding: 8px 16px;">Lightweight default; no-SMILES models; audit-simple</td>
+      <td style="padding: 8px 16px;">Fallback when no neighborhood is available; audit-simple</td>
     </tr>
     <tr>
       <td class="text-teal" style="padding: 8px 16px; font-weight: bold;">v1</td>
       <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span> <span style="background:#2e7d32; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">RECOMMENDED</span></td>
       <td style="padding: 8px 16px;">Conformalized residual-estimator — RandomForest error model on neighborhood features</td>
-      <td style="padding: 8px 16px;">prediction, std, + fingerprint neighbors</td>
+      <td style="padding: 8px 16px;">prediction, std, + neighbors (fingerprint or feature space)</td>
       <td style="padding: 8px 16px;">Yes</td>
       <td style="padding: 8px 16px;">Structure-aware confidence that catches dense-region failures</td>
     </tr>
     <tr>
       <td class="text-teal" style="padding: 8px 16px; font-weight: bold;">v2</td>
       <td style="padding: 8px 16px;"><span style="background:#8e44ad; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">EXPERIMENTAL</span></td>
-      <td style="padding: 8px 16px;">Pure applicability-domain score from fingerprint proximity — no model fitting</td>
-      <td style="padding: 8px 16px;">fingerprint neighbors only</td>
+      <td style="padding: 8px 16px;">Pure applicability-domain score from neighbor proximity — no model fitting</td>
+      <td style="padding: 8px 16px;">neighbors only (fingerprint or feature space)</td>
       <td style="padding: 8px 16px;">Yes</td>
       <td style="padding: 8px 16px;">Interpretable "how well-supported is this query?" + cliff diagnostics</td>
     </tr>
   </tbody>
 </table>
 
-**Which should you use?** **v1** is the code default (`uq_version` defaults to `"v1"`) — its structure-aware error model is the most robust across endpoints and under distribution shift. **v0** needs no molecular structure, so it's the automatic fallback for models without a SMILES column; it's also the easiest to audit. **v2** is experimental and best treated as an applicability-domain diagnostic rather than a calibrated confidence. The rest of this blog focuses on v1, then covers v0 and v2 in turn.
+**Which should you use?** **v1** is the code default (`uq_version` defaults to `"v1"`) — its structure-aware error model is the most robust across endpoints and under distribution shift. **v0** needs no neighborhood at all, so it's the fallback when neither a SMILES column nor usable numeric features are available; it's also the easiest to audit. **v2** is experimental and best treated as an applicability-domain diagnostic rather than a calibrated confidence. The rest of this blog focuses on v1, then covers v0 and v2 in turn.
 
 ---
 
@@ -223,7 +223,7 @@ Accuracy should increase monotonically across bins, and calibrated confidence sh
 
 # Using the Versions
 
-All three regression versions are fit and saved at training time. To pick the active one, set the `uq_version` hyperparameter (`"v0"`, `"v1"`, or `"v2"`; default `"v1"`). v1 and v2 require a SMILES column so a fingerprint proximity reference set can be built — without one, only v0 is fit and used, and training logs a warning. For offline comparison, load any saved version explicitly:
+All three regression versions are fit and saved at training time. To pick the active one, set the `uq_version` hyperparameter (`"v0"`, `"v1"`, or `"v2"`; default `"v1"`). v1 and v2 need a proximity reference set: a SMILES column builds a fingerprint neighborhood, otherwise the model's feature columns build a feature-space one. Only when neither is available is v0 fit alone, and training logs a warning. For offline comparison, load any saved version explicitly:
 
 ```python
 from workbench.api import Model

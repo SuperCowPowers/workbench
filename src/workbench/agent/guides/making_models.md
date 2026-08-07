@@ -65,8 +65,9 @@ model with no endpoint and no metrics.
 - Name models by role: `-reg` regression, `-class` classification. Endpoints are
   serverless by default; only add a `-rt` suffix for a realtime (`serverless=False`)
   endpoint.
-- `uq_version` defaults to `"v1"` (strongest uncertainty quantification). It needs
-  a `smiles` column; without one, training warns and falls back to `"v0"`.
+- `uq_version` defaults to `"v1"` (strongest uncertainty quantification). It builds
+  neighborhoods from a `smiles` column when present, otherwise from the model's
+  features; only a model with neither falls back to `"v0"`.
 - Check `fs.columns` (a property), or pull a DataFrame and read `df.dtypes`,
   before choosing a `feature_list`. Don't guess column names.
 
