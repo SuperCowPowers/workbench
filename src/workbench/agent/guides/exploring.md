@@ -8,7 +8,7 @@ already in the account.
 ## Inventory
 
 ```python
-from workbench.cached.cached_meta import CachedMeta
+from workbench.api import CachedMeta
 
 meta = CachedMeta()
 meta.models()               # fast, partial columns

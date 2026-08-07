@@ -13,6 +13,9 @@ from workbench.core.cloud_platform.cloud_meta import CloudMeta
 class Meta(CloudMeta):
     """Meta: A class that provides metadata functionality for Cloud Platform Artifacts.
 
+    Note: CachedMeta is the recommended class for metadata retrieval. Use Meta when you
+    need to bypass the cache entirely (admin scripts, migrations).
+
     Common Usage:
        ```python
        from workbench.api import Meta

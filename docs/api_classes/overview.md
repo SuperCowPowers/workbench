@@ -12,7 +12,8 @@ These classes provide high-level APIs for the Workbench package, they enable you
 - **[Endpoint](endpoint.md):** Manages the deployment and invocations/inference on AWS Endpoints (auto-routes to the async transport when deployed with `async_endpoint=True`)
 - **[MetaEndpoint](../models/meta_endpoints.md):** Endpoint backed by a DAG of child endpoints + aggregation nodes — feature pipelines and ensembles
 - **[Monitor](monitor.md):** Manages the setup and deployment of AWS Endpoint Monitors
-- **[Meta](meta.md):** API to retrieve AWS metadata for the above artifacts
+- **[CachedMeta](../cached/cached_meta.md):** API to retrieve AWS metadata for the above artifacts (**recommended**)
+- **[Meta](meta.md):** Direct, uncached metadata API — use when you need to bypass the cache
 - **[InferenceCache](inference_cache.md):** Client-side S3 caching wrapper around an Endpoint's `inference()`
 - **[ParameterStore](parameter_store.md):** Manages AWS Parameter Store (workbench-bucket config, model metadata, feature lists)
 - **[DFStore](df_store.md):** Manages DataFrames in AWS S3 (Parquet/Snappy)

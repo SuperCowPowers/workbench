@@ -4,9 +4,8 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 
 ## Always
 
-- Use `CachedMeta()` rather than `Meta()` — much faster. `Meta()` only when the
-  user explicitly wants live/uncached values. Not in the REPL namespace, so
-  `from workbench.cached.cached_meta import CachedMeta`.
+- Use `CachedMeta()` — much faster, and a 30-second TTL, so it is current. Not in
+  the REPL namespace, so `from workbench.api import CachedMeta`.
 - **Always pass `details=True` when retrieving metadata** — `models()`,
   `endpoints()`, `feature_sets()`, `data_sources()`. The default summary leaves
   Health, Type, Framework, metrics, and counts **empty**, so without it you report

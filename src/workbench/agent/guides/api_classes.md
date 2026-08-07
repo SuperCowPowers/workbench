@@ -9,7 +9,7 @@ locking you into one path.
 ```python
 from workbench.api import (
     DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint,
-    MetaEndpoint, InferenceCache, Meta, ParameterStore, DFStore, Reports,
+    MetaEndpoint, InferenceCache, CachedMeta, ParameterStore, DFStore, Reports,
     InferenceStore, PublicData, Monitor,
 )
 ```
@@ -94,11 +94,11 @@ is what makes them stackable:
 ## Discovery
 
 ```python
-from workbench.cached.cached_meta import CachedMeta
+from workbench.api import CachedMeta
 meta = CachedMeta()      # models(), endpoints(), feature_sets(), pipelines()
 ```
 
-`Meta`/`CachedMeta` is the index over everything above — use it to find what
+`CachedMeta` is the index over everything above — use it to find what
 exists before building something new.
 
 ## More

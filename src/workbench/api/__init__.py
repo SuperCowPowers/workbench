@@ -14,7 +14,8 @@ These class provide high-level APIs for the Workbench package, offering easy acc
   endpoints + aggregation nodes. Use ``MetaEndpoint.create(name, dag)`` for
   both feature pipelines and ensembles.
 - InferenceCache: Client-side S3 caching wrapper around an Endpoint's inference()
-- Meta: Provides an API to retrieve AWS Metadata for the above classes
+- CachedMeta: Cached API to retrieve AWS Metadata for the above classes (preferred)
+- Meta: Direct, uncached API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store
 - DFStore: Manages DataFrames in AWS S3
 - Reports: Published analysis reports (a DFStore scoped to the /reports subtree)
@@ -28,6 +29,7 @@ from .model import Model, ModelType, ModelFramework
 from .endpoint import Endpoint
 from .meta_endpoint import MetaEndpoint
 from .inference_cache import InferenceCache
+from workbench.cached.cached_meta import CachedMeta
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
@@ -45,6 +47,7 @@ __all__ = [
     "Endpoint",
     "MetaEndpoint",
     "InferenceCache",
+    "CachedMeta",
     "Meta",
     "ParameterStore",
     "DFStore",

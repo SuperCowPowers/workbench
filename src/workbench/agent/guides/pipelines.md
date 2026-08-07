@@ -58,7 +58,7 @@ model.
 ## Inspecting from the REPL
 
 ```python
-from workbench.cached.cached_meta import CachedMeta
+from workbench.api import CachedMeta
 groups = CachedMeta().pipelines()
 ```
 

@@ -1,8 +1,8 @@
 from pprint import pprint
-from workbench.api import Meta
+from workbench.api import CachedMeta
 
-# Create our Meta Class and get a list of our Endpoints
-meta = Meta()
+# Create our CachedMeta Class and get a list of our Endpoints
+meta = CachedMeta()
 endpoint_df = meta.endpoints()
 print(f"Number of Endpoints: {len(endpoint_df)}")
 print(endpoint_df)

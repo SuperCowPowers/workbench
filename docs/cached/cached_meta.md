@@ -1,5 +1,9 @@
 # CachedMeta
 
+!!! success "The recommended metadata class"
+    `CachedMeta` is the default choice for listing and describing artifacts. It has the same interface as
+    [Meta](../api_classes/meta.md) but is much faster, with a 30-second TTL so results stay current.
+
 !!! tip inline end "CachedMeta Examples"
     Examples of using the CachedMeta class are listed at the bottom of this page [Examples](#examples).
     
@@ -13,8 +17,8 @@ These example show how to use the `CachedMeta()` class to pull lists of artifact
     If you'd like to see **exactly** what data/details you get back from the `CachedMeta()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
 ```py title="Using Workbench REPL"
-CachedMeta = CachedMeta()
-model_df = CachedMeta.models()
+meta = CachedMeta()
+model_df = meta.models()
 model_df
                Model Group   Health Owner  ...             Input     Status                Description
 0      wine-classification  healthy     -  ...     wine_features  Completed  Wine Classification Model
@@ -27,11 +31,11 @@ model_df
 **List the Models in AWS**
 
 ```python
-from workbench.cached.cached_meta import CachedMeta
+from workbench.api import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
-CachedMeta = CachedMeta()
-model_df = CachedMeta.models()
+meta = CachedMeta()
+model_df = meta.models()
 
 print(f"Number of Models: {len(model_df)}")
 print(model_df)
@@ -39,7 +43,7 @@ print(model_df)
 # Get more details data on the Models
 model_names = model_df["Model Group"].tolist()
 for name in model_names:
-    pprint(CachedMeta.model(name))
+    pprint(meta.model(name))
 ```
 
 **Output**
@@ -60,11 +64,11 @@ abalone-regression
 **Getting Model Performance Metrics**
 
 ```python
-from workbench.cached.cached_meta import CachedMeta
+from workbench.api import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
-CachedMeta = CachedMeta()
-model_df = CachedMeta.models()
+meta = CachedMeta()
+model_df = meta.models()
 
 print(f"Number of Models: {len(model_df)}")
 print(model_df)
@@ -72,9 +76,9 @@ print(model_df)
 # Get more details data on the Models
 model_names = model_df["Model Group"].tolist()
 for name in model_names[:5]:
-    model_details = CachedMeta.model(name)
+    model_details = meta.model(name)
     print(f"\n\nModel: {name}")
-    performance_metrics = model_details["workbench_CachedMeta"]["workbench_inference_metrics"]
+    performance_metrics = model_details["workbench_meta"]["workbench_inference_metrics"]
     print(f"\tPerformance Metrics: {performance_metrics}")
 ```
 
@@ -100,18 +104,18 @@ abalone-regression
 
 ```python
 from pprint import pprint
-from workbench.cached.cached_meta import CachedMeta
+from workbench.api import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Endpoints
-CachedMeta = CachedMeta()
-endpoint_df = CachedMeta.endpoints()
+meta = CachedMeta()
+endpoint_df = meta.endpoints()
 print(f"Number of Endpoints: {len(endpoint_df)}")
 print(endpoint_df)
 
 # Get more details data on the Endpoints
 endpoint_names = endpoint_df["Name"].tolist()
 for name in endpoint_names:
-    pprint(CachedMeta.endpoint(name))
+    pprint(meta.endpoint(name))
 ```
 
 **Output**

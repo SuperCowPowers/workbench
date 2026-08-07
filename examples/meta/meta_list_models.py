@@ -1,8 +1,8 @@
 from pprint import pprint
-from workbench.api import Meta
+from workbench.api import CachedMeta
 
-# Create our Meta Class and get a list of our Models
-meta = Meta()
+# Create our CachedMeta Class and get a list of our Models
+meta = CachedMeta()
 model_df = meta.models()
 
 print(f"Number of Models: {len(model_df)}")

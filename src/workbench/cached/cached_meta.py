@@ -66,9 +66,12 @@ def cache_result(method):
 class CachedMeta(CloudMeta):
     """CachedMeta: Singleton class for caching list-level metadata.
 
+    The recommended class for metadata retrieval: same interface as Meta, much faster,
+    with a 30-second TTL so results stay current.
+
     Common Usage:
        ```python
-       from workbench.cached.cached_meta import CachedMeta
+       from workbench.api import CachedMeta
        meta = CachedMeta()
 
        # Get the AWS Account Info

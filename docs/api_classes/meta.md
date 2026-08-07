@@ -1,5 +1,10 @@
 # Meta
 
+!!! warning "Use CachedMeta instead"
+    [CachedMeta](../cached/cached_meta.md) is the recommended class for metadata retrieval — same interface,
+    much faster, and a 30-second TTL keeps it current. Reach for `Meta()` only when you need to bypass
+    the cache entirely (admin scripts, migrations).
+
 !!! tip inline end "Meta Examples"
     Examples of using the Meta class are listed at the bottom of this page [Examples](#examples).
     
