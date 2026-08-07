@@ -4,7 +4,9 @@ Same FeatureSet, target, framework, and held-out validation rows — the only di
 is the ``uq_version`` hyperparameter, so the three endpoints are directly comparable on
 their confidence and quantile columns. The validation set is a Bemis-Murcko scaffold
 hold-out: those scaffolds never appear in training, so the rows are genuinely
-out-of-distribution and the v0/v1/v2 differences actually separate.
+out-of-distribution and the v0/v1/v2 differences actually separate. Each endpoint
+then scores those same rows through the serving path, captured as
+``scaffold_holdout``.
 
 Requires the open_admet_logd FeatureSet (ml_pipelines/OpenADMET/load_data).
 
@@ -61,6 +63,10 @@ if __name__ == "__main__":
     validation_ids = scaffold_validation_ids(fs)
     log.important(f"Scaffold hold-out: {len(validation_ids)} validation rows")
 
+    # The held-out rows themselves, scored through each endpoint below
+    val_df = fs.pull_dataframe()
+    val_df = val_df[val_df[ID_COLUMN].isin(validation_ids)]
+
     for version in UQ_VERSIONS:
         name = f"logd-chemprop-uq-{version}"
         tags = ["open_admet", "chemprop", "uq_compare", version]
@@ -84,5 +90,10 @@ if __name__ == "__main__":
             end.set_owner("test")
             end.test_inference()
             end.cross_fold_inference()
+
+            # Score the scaffold hold-out through the real serving path. Same rows,
+            # same capture name across all three, so the confidence and q_* columns
+            # line up row-for-row when comparing versions.
+            end.inference(val_df, capture_name="scaffold_holdout", include_quantiles=True)
 
     log.important("UQ compare model creation complete.")
