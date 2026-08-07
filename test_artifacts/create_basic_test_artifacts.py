@@ -10,10 +10,12 @@ Models:
     - test-regression
     - test-classification
     - abalone-regression
+    - abalone-regression-val  (20% held-out validation set)
 Endpoints:
     - test-regression
     - test-classification
     - abalone-regression-end
+    - abalone-regression-val
 """
 
 import sys
@@ -107,19 +109,23 @@ if __name__ == "__main__":
         ds = DataSource("abalone_data")
         ds.to_features("abalone_features")
 
+    # Shared by both abalone models below (defined outside the guards so it's
+    # available whichever model needs creating)
+    abalone_feature_list = [
+        "length",
+        "diameter",
+        "height",
+        "whole_weight",
+        "shucked_weight",
+        "viscera_weight",
+        "shell_weight",
+        "sex",
+    ]
+
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
         fs = FeatureSet("abalone_features")
-        features = [
-            "length",
-            "diameter",
-            "height",
-            "whole_weight",
-            "shucked_weight",
-            "viscera_weight",
-            "shell_weight",
-            "sex",
-        ]
+        features = abalone_feature_list
         m = fs.to_model(
             name="abalone-regression",
             model_type=ModelType.REGRESSOR,
@@ -138,3 +144,32 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.test_inference()
+
+    # Create an abalone Model with a designated validation set. Holding out 20% of the
+    # rows gives this model a populated val_predictions.csv alongside oof_predictions.csv,
+    # so both training captures have a fixture to exercise.
+    if recreate or not Model("abalone-regression-val").exists():
+        fs = FeatureSet("abalone_features")
+        all_ids = fs.pull_dataframe()[fs.id_column]
+        validation_ids = all_ids.sample(frac=0.2, random_state=42).tolist()
+        log.important(f"Holding out {len(validation_ids)} of {len(all_ids)} rows as the validation set")
+        m = fs.to_model(
+            name="abalone-regression-val",
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            feature_list=abalone_feature_list,
+            target_column="class_number_of_rings",
+            tags=["abalone", "regression", "validation"],
+            description="Abalone Regression Model (20% held-out validation set)",
+            validation_ids=validation_ids,
+        )
+        m.set_owner("test")
+
+    # Create the abalone-regression-val Endpoint
+    if recreate or not Endpoint("abalone-regression-val").exists():
+        model = Model("abalone-regression-val")
+        end = model.to_endpoint(name="abalone-regression-val", tags=["abalone", "regression", "validation"])
+
+        # test_inference populates a capture; cross_fold_inference reads oof_predictions.csv
+        end.test_inference()
+        end.cross_fold_inference()

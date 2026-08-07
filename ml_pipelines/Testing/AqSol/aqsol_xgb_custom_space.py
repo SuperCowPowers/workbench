@@ -71,7 +71,6 @@ if __name__ == "__main__":
         description="AQSol XGBoost regressor (custom search space)",
         tags=["aqsol", "xgboost", "hpo"],
         hyperparameters={
-            "uq_version": "v1",
             # A knob set here is the baseline the search must beat, and the value for any
             # knob the space leaves out — gamma and colsample_bytree train at these.
             "gamma": 0.0,

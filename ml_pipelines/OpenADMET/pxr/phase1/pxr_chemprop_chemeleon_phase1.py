@@ -34,7 +34,7 @@ for frz in FREEZE_EPOCHS:
         target_column="pec50",
         description=f"PXR phase-1 Chemprop, CheMeleon warm-start, freeze={frz} (phase1_test held out)",
         tags=tags,
-        hyperparameters={"uq_version": "v1", "from_foundation": "CheMeleon", "freeze_mpnn_epochs": frz},
+        hyperparameters={"from_foundation": "CheMeleon", "freeze_mpnn_epochs": frz},
         validation_ids=validation_ids,
     )
     m.set_owner("open_admet_pxr")

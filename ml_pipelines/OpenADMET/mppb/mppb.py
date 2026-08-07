@@ -24,14 +24,6 @@ FS_NAME = "open_admet_mppb"
 # Featurized + log-transformed ExpansionRx test set, written by ../load_data/load_data.py
 TEST_STORE_KEY = "/workbench/datasets/open_admet_rx_test_featurized"
 
-# Which uncertainty-quantification model the endpoints serve. Training always fits and
-# bundles V0, V1 and V2; this only selects which one is active at inference time. V1 is
-# the proximity-augmented RandomForest error model (V0 is isotonic on prediction+std).
-# Compare versions offline without retraining via Model(name).uq_model(version="v0").
-UQ_VERSION = "v1"
-
-HYPERPARAMETERS = {"uq_version": UQ_VERSION}
-
 
 def capture_test_inference(end: Endpoint, target: str, features: list) -> None:
     """Score the held-out ExpansionRx test rows for this assay and persist the run."""
@@ -58,9 +50,8 @@ def main():
         model_framework=ModelFramework.XGBOOST,
         target_column=target,
         feature_list=rdkit_features,
-        description=f"XGBoost model for {target} prediction (UQ {UQ_VERSION})",
+        description=f"XGBoost model for {target} prediction",
         tags=["open_admet", target, "regression", "xgboost"],
-        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "xgboost"], max_concurrency=1)
@@ -83,9 +74,8 @@ def main():
         model_framework=ModelFramework.PYTORCH,
         target_column=target,
         feature_list=non_zero_shap,
-        description=f"PyTorch Tabular model for {target} prediction (UQ {UQ_VERSION})",
+        description=f"PyTorch Tabular model for {target} prediction",
         tags=["open_admet", target, "regression", "pytorch"],
-        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "pytorch"], max_concurrency=1)
@@ -103,9 +93,8 @@ def main():
         model_framework=ModelFramework.CHEMPROP,
         target_column=target,
         feature_list=["smiles"],
-        description=f"ChemProp D-MPNN for {target} prediction (UQ {UQ_VERSION})",
+        description=f"ChemProp D-MPNN for {target} prediction",
         tags=["open_admet", target, "regression", "chemprop"],
-        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "chemprop"], max_concurrency=1)
@@ -123,9 +112,8 @@ def main():
         model_framework=ModelFramework.CHEMPROP,
         target_column=target,
         feature_list=["smiles"] + top_50_shap,
-        description=f"ChemProp D-MPNN Hybrid for {target} prediction (UQ {UQ_VERSION})",
+        description=f"ChemProp D-MPNN Hybrid for {target} prediction",
         tags=["open_admet", target, "regression", "chemprop", "hybrid"],
-        hyperparameters=HYPERPARAMETERS,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["open_admet", target, "chemprop", "hybrid"], max_concurrency=1)

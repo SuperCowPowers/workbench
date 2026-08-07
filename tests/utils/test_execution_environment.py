@@ -1,9 +1,7 @@
 """Tests for workbench.utils.execution_environment.
 
-Ported from workbench-bridges/tests/utils/execution_env_tests.py during
-the bridges→workbench consolidation. Covers the running_on_* / running_as_service
-detection that gates whether the lightweight boto_session helper attempts
-Workbench role assumption.
+Covers the running_on_* / running_as_service detection that gates whether the
+lightweight boto_session helper attempts Workbench role assumption.
 """
 
 import os

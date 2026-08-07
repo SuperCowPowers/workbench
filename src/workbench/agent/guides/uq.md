@@ -33,8 +33,10 @@ model = fs.to_model(
 )
 ```
 
-Always set `uq_version: "v1"` on new models. The code default is **`v0`**, so
-leaving it unset silently gives the weaker calibrator.
+`v1` is the default for new models, so setting it explicitly is optional. v1
+builds its neighborhoods from a `smiles` column when the data has one, otherwise
+from the model's own feature columns. Only a model with neither falls back to
+`v0`, with a warning.
 
 ## What comes back
 
@@ -54,15 +56,16 @@ default — pass `True` to persist the `q_*` columns.
 All three are fit at training time and saved in the bundle; `uq_version` picks
 the active one.
 
-| | Status | Approach | SMILES? |
+| | Status | Approach | Neighborhood? |
 |---|---|---|---|
-| **v0** | beta, code default | Binned isotonic `(std -> \|residual\|)` + split conformal | No |
-| **v1** | beta, **recommended** | RandomForest error model on neighborhood features + normalized conformal | Yes |
-| **v2** | experimental | Pure applicability-domain score from fingerprint proximity | Yes |
+| **v0** | beta, last-resort fallback | Binned isotonic `(std -> \|residual\|)` + split conformal | None |
+| **v1** | beta, **code default** | RandomForest error model on neighborhood features + normalized conformal | Yes |
+| **v2** | experimental | Pure applicability-domain score from neighbor proximity | Yes |
 
-**v1 and v2 require a SMILES column** to build the fingerprint proximity set.
-Without one, only v0 is fit and used — so a no-SMILES model silently gets v0
-regardless of what you asked for.
+**v1 and v2 need a proximity reference set.** A `smiles` column builds a
+fingerprint (structure) neighborhood — the stronger signal; without one they
+fall back to a feature-space neighborhood over the model's `feature_list`. Only
+a model with neither gets v0, and training logs a warning when that happens.
 
 **The failure v1 fixes:** the ensemble can agree unanimously and still be wrong,
 typically near censoring boundaries. Kinetic solubility assays cap around

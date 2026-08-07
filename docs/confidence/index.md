@@ -26,7 +26,7 @@ Every Workbench model — XGBoost, PyTorch, or ChemProp — is a **5-model ensem
 
 ## UQ Versions (v0 / v1 / v2)
 
-The regression confidence calibrator comes in **three versions**, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the `uq_version` hyperparameter (default `"v0"`), and any can be loaded offline via `Model.uq_model(version=...)`.
+The regression confidence calibrator comes in **three versions**, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the `uq_version` hyperparameter (default `"v1"`, falling back to `"v0"` only when no proximity reference set can be built), and any can be loaded offline via `Model.uq_model(version=...)`.
 
 <table style="width: 100%;">
   <thead>
@@ -42,24 +42,24 @@ The regression confidence calibrator comes in **three versions**, all built on t
       <td style="padding: 8px 16px; font-weight: bold;">v0</td>
       <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span></td>
       <td style="padding: 8px 16px;">Isotonic calibrator on <code>(prediction, std)</code> — no neighborhood, no SMILES needed</td>
-      <td style="padding: 8px 16px;">Lightweight default; no-SMILES models; audit-simple</td>
+      <td style="padding: 8px 16px;">Fallback when no neighborhood is available; audit-simple</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">v1</td>
       <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span> <span style="background:#2e7d32; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">RECOMMENDED</span></td>
-      <td style="padding: 8px 16px;">RandomForest error model on neighborhood features + normalized conformal (needs SMILES)</td>
+      <td style="padding: 8px 16px;">RandomForest error model on neighborhood features + normalized conformal</td>
       <td style="padding: 8px 16px;">Structure-aware confidence that catches dense-region failures</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">v2</td>
       <td style="padding: 8px 16px;"><span style="background:#8e44ad; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">EXPERIMENTAL</span></td>
-      <td style="padding: 8px 16px;">Pure applicability-domain score from fingerprint proximity — no model fitting</td>
+      <td style="padding: 8px 16px;">Pure applicability-domain score from neighbor proximity — no model fitting</td>
       <td style="padding: 8px 16px;">Interpretable "how well-supported is this query?" + cliff diagnostics</td>
     </tr>
   </tbody>
 </table>
 
-**v1** is the recommended version; **v0** is the current default (needs no molecular structure); **v2** is an experimental applicability-domain diagnostic. See the [Model Confidence Blog](../blogs/model_confidence.md) for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.
+**v1** is the default; **v0** is the fallback when no neighborhood can be built; **v2** is an experimental applicability-domain diagnostic. See the [Model Confidence Blog](../blogs/model_confidence.md) for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.
 
 ## Three-Step Pipeline
 

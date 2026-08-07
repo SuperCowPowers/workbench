@@ -23,7 +23,6 @@ m = fs.to_model(
     target_column="pec50",
     description="PXR phase-1 pEC50 Chemprop (SMILES only; phase1_test held out of training)",
     tags=tags,
-    hyperparameters={"uq_version": "v1"},  # active confidence = v1; v0/v2 also saved
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
 )
 m.set_owner("open_admet_pxr")

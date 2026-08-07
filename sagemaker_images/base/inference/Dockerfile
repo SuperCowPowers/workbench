@@ -32,13 +32,9 @@ RUN apt-get update && \
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Layer 2: Workbench + bridges — rebuilds per version bump, ~20 MB delta.
-# workbench-bridges==0.2.10 retained for backward compat with existing
-# deployed-endpoint model bundles; drop in a future image rev once no
-# production endpoint references workbench_bridges.
+# Layer 2: Workbench — rebuilds per version bump, ~20 MB delta.
 ARG WORKBENCH_VERSION=0.8.450
-RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-deps "workbench-bridges==0.2.10"
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Add the shared serve script
 COPY shared/serve /usr/local/bin/

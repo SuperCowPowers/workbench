@@ -1,7 +1,7 @@
-"""UQModelV2: applicability-domain confidence from fingerprint proximity.
+"""UQModelV2: applicability-domain confidence from proximity neighbors.
 
 V2 is a pure AD score — no model fitting, no ensemble std, no error model.
-For each query, look at its k unique nearest fingerprint neighbors and ask:
+For each query, look at its k unique nearest neighbors and ask:
 
     1. Are they close?         (low mean Tanimoto distance)
     2. Do they agree on the    (low std of neighbor targets)
@@ -29,7 +29,7 @@ V2 is best for: "given training-similar compounds, how well-supported is
 this query?" V2 is NOT a residual estimator — its confidence is a relative
 ranking, not a calibrated P(correct) or error magnitude.
 
-V2 reuses V1's fingerprint proximity artifact (``uq_proximity.joblib``) when
+V2 reuses V1's proximity artifact (``uq_proximity.joblib``) when
 both are present in a model bundle — no separate proximity file is written.
 """
 
@@ -44,18 +44,11 @@ import joblib
 import numpy as np
 import pandas as pd
 
-# Sibling-import fallback for the in-bundle case (matches V1 pattern)
-try:
-    from workbench.algorithms.dataframe.proximity import Proximity
-    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
-except ImportError:
-    from .proximity import Proximity  # noqa: F401
-    from .fingerprint_proximity import FingerprintProximity  # noqa: F401
+from workbench.algorithms.dataframe.proximity import Proximity
 
 log = logging.getLogger("workbench")
 
-# Re-exported so model bundles can unpickle Proximity backends via this module
-__all__ = ["UQModelV2", "Proximity", "FingerprintProximity"]
+__all__ = ["UQModelV2"]
 
 
 # All neighbor-target quantiles V2 emits (numeric percentile → column name)
@@ -75,16 +68,27 @@ _NEIGHBOR_QUANTILES = {
 
 
 def _unique_neighbors_per_query(raw_nbrs: pd.DataFrame, query_col: str, k: int) -> pd.DataFrame:
-    """Dedup raw neighbors to k unique per query (keeping highest similarity)."""
-    # neighbors() returns rows already sorted by similarity desc within each query.
+    """Dedup raw neighbors to k unique per query (keeping the nearest)."""
+    # neighbors() returns rows already sorted nearest-first within each query.
     # Drop duplicate (query, neighbor) pairs (caused by replicate measurements),
     # then take the top k per query.
     deduped = raw_nbrs.drop_duplicates(subset=[query_col, "neighbor_id"], keep="first")
     return deduped.groupby(query_col, group_keys=False).head(k)
 
 
+def _with_distance(nbrs: pd.DataFrame) -> pd.DataFrame:
+    """Normalize neighbor results to a 'distance' column across proximity backends.
+
+    FingerprintProximity reports Tanimoto ``similarity``; feature-space backends
+    report Euclidean ``distance`` directly.
+    """
+    if "similarity" in nbrs.columns:
+        return nbrs.assign(distance=1.0 - nbrs["similarity"])
+    return nbrs
+
+
 class UQModelV2:
-    """Pure applicability-domain UQ from fingerprint proximity.
+    """Pure applicability-domain UQ from proximity neighbors.
 
     Companion to :class:`UQModelV0` (isotonic) and :class:`UQModelV1`
     (proximity + RandomForest). Shares V0's / V1's ``.predict(query, predictions,
@@ -141,7 +145,7 @@ class UQModelV2:
     ):
         """
         Args:
-            prox: FingerprintProximity backend (target required) for neighborhood lookups.
+            prox: Proximity backend (target required) for neighborhood lookups.
             k: Number of unique nearest neighbors per query (default 10).
             distance_percentiles: 0..100 percentiles of mean-neighbor-distance across
                 the training set. Populated by fit() or load().
@@ -198,7 +202,7 @@ class UQModelV2:
         unique_nbrs = _unique_neighbors_per_query(raw_nbrs, query_col=id_col, k=k)
 
         # Per-query stats: mean distance, std of neighbor targets
-        unique_nbrs = unique_nbrs.assign(distance=1.0 - unique_nbrs["similarity"])
+        unique_nbrs = _with_distance(unique_nbrs)
         stats = unique_nbrs.groupby(id_col).agg(
             mean_distance=("distance", "mean"),
             target_std=(target_col, "std"),
@@ -295,7 +299,7 @@ class UQModelV2:
             )
 
         unique_nbrs = _unique_neighbors_per_query(raw_nbrs, query_col=query_col, k=self.k)
-        unique_nbrs = unique_nbrs.assign(distance=1.0 - unique_nbrs["similarity"])
+        unique_nbrs = _with_distance(unique_nbrs)
 
         # Per-query aggregates
         agg = unique_nbrs.groupby(query_col).agg(

@@ -24,14 +24,8 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 
-# Cross-module imports: workbench package path for library use; in-package
-# sibling import when symlinked into a script bundle's model_script_utils/ package.
-try:
-    from workbench.algorithms.dataframe.proximity import Proximity
-    from workbench.algorithms.dataframe.residual_features import ResidualFeatures
-except ImportError:
-    from .proximity import Proximity
-    from .residual_features import ResidualFeatures
+from workbench.algorithms.dataframe.proximity import Proximity
+from workbench.algorithms.dataframe.residual_features import ResidualFeatures
 
 import logging
 
@@ -415,20 +409,23 @@ class UQModelV1:
             - `target` column   — for aggregating into knn_target_mean / knn_target_std
 
         Everything else gets dropped:
-            - `fingerprint` (count-FP strings, ~4 KB/row — the bulk of the artifact)
+            - `fingerprint` (count-FP strings, ~4 KB/row) or the feature columns,
+              depending on the backend — the bulk of the artifact either way
             - `smiles` (novel queries supply their own)
             - `in_model` (training-time neighbor eligibility, never read at inference)
             - `prediction` / `_proba` / `residual` pass-throughs (generic Proximity
               feature for other use cases, never consumed by ResidualFeatures)
 
-        For non-FingerprintProximity backends this is a no-op pass-through.
+        Requires a backend whose `_transform_features` can answer id-based queries
+        from its cached matrix (signalled by `_id_to_row`); anything else is passed
+        through untouched, since dropping columns would break its lookups.
         """
         import copy
 
-        slim = copy.copy(prox)  # shallow copy; we'll swap the df reference
-        if not hasattr(prox, "_X_sparse") and not hasattr(prox, "fingerprint_column"):
-            return prox  # Not a FingerprintProximity — leave as-is
+        if not hasattr(prox, "_id_to_row"):
+            return prox  # No id-based fast path — dropping columns would break it
 
+        slim = copy.copy(prox)  # shallow copy; we'll swap the df reference
         keep_cols = [prox.id_column]
         if prox.target and prox.target in prox.df.columns:
             keep_cols.append(prox.target)

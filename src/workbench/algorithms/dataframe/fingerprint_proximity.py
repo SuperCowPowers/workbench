@@ -6,19 +6,11 @@ from sklearn.neighbors import NearestNeighbors
 from typing import List, Optional, Union
 import logging
 
-# Cross-module imports: try the workbench package path first (Jupyter / library use);
-# fall back to in-package sibling imports when this module is symlinked into a
-# SageMaker script bundle's `model_script_utils/` package (no workbench installed).
-try:
-    from workbench.algorithms.dataframe.proximity import Proximity
-    from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
-except ImportError:
-    from .proximity import Proximity
-    from .fingerprints import compute_morgan_fingerprints
+from workbench.algorithms.dataframe.proximity import Proximity
+from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
 
-# Note: Projection2D is imported lazily inside project_2d() — it's only needed
-# for visualization, not for inference, and we don't want to pay its import cost
-# (or fail to import the module) in a bundle context.
+# Note: Projection2D is imported lazily inside project_2d() — it's only needed for
+# visualization, and it pulls umap, which endpoint containers shouldn't pay for.
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -454,7 +446,7 @@ class FingerprintProximity(Proximity):
 
         Returns the reference DataFrame with 'x' / 'y' columns added.
 
-        Note: Projection2D is imported lazily so the module loads in script bundles
+        Note: Projection2D is imported lazily — it pulls umap, which inference doesn't need
         that don't have UMAP / workbench's projection helper installed.
         """
         from workbench.algorithms.dataframe.projection_2d import Projection2D

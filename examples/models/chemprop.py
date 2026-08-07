@@ -25,7 +25,6 @@ if recreate or not Model(model_name).exists():
         feature_list=["smiles"],
         description="AQSol Chemprop regressor (hand-tuned baseline)",
         tags=["aqsol", "chemprop"],
-        hyperparameters={"uq_version": "v1"},
     )
     m.set_owner("BW")
 

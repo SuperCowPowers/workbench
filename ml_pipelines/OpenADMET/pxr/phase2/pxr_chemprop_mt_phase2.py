@@ -23,7 +23,7 @@ m = FeatureSet("openadmet_pxr_mt").to_model(
     target_column=targets,
     description="PXR phase-2 multi-task Chemprop (pEC50 + logD + logP aux; trains on train + phase-1)",
     tags=tags,
-    hyperparameters={"uq_version": "v1", "task_weights": [1.0, 0.2, 0.3]},
+    hyperparameters={"task_weights": [1.0, 0.2, 0.3]},
 )
 
 # Create the endpoint and run cross-fold inference on the training set (train + phase-1)
