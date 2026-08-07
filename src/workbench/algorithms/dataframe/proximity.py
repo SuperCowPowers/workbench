@@ -91,7 +91,7 @@ class Proximity(ABC):
     @property
     @abstractmethod
     def space(self) -> str:
-        """The space this proximity operates in: ``"fingerprint"`` or ``"feature"``."""
+        """The space this proximity operates in: ``"fingerprint"`` or ``"features"``."""
 
     # ------------------------------------------------------------------
     # Concrete neighbor query API (the ABC contract)

@@ -30,12 +30,7 @@ import numpy as np
 from typing import Optional, Union, List
 import logging
 
-# Cross-module imports: workbench package path for library use; in-package
-# sibling import when symlinked into a script bundle's model_script_utils/ package.
-try:
-    from workbench.algorithms.dataframe.proximity import Proximity
-except ImportError:
-    from .proximity import Proximity
+from workbench.algorithms.dataframe.proximity import Proximity
 
 log = logging.getLogger("workbench")
 

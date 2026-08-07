@@ -56,7 +56,7 @@ from workbench.endpoints.chemprop_utils import (
     find_smiles_column,
     predict_ensemble,
 )
-from workbench.endpoints.uq_regression import load_regression_uq
+from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 print(
     f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported "
@@ -122,13 +122,13 @@ DEFAULT_HYPERPARAMETERS = {
     # common scheme. Ignored when n_targets == 1.
     "task_weights": None,
     # UQ version to use as the primary confidence source at inference:
-    #   "v0": isotonic on (prediction, std), no proximity required
+    #   "v0": isotonic on (prediction, std), no neighborhood required
     #   "v1" (default): proximity-augmented RandomForest error model
-    #   "v2": pure applicability-domain confidence from fingerprint neighbors
-    # v1/v2 need a 'smiles' column to build the fingerprint proximity set; without
-    # one they can't be fit and the active version falls back to v0 with a warning.
-    # All fittable versions are always saved when regression UQ is enabled, so the
-    # other versions stay available for comparison via Model.uq_model(version=...).
+    #   "v2": pure applicability-domain confidence from neighbors
+    # v1/v2 need a proximity reference set: a 'smiles' column gives structure-based
+    # neighborhoods, otherwise the model's own features do. All fittable versions are
+    # saved when regression UQ is enabled, so the other versions stay available for
+    # comparison via Model.uq_model(version=...).
     "uq_version": "v1",
 }
 
@@ -305,8 +305,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         # in the new pipeline — only the primary target gets full UQ treatment.
         uq_model = model_dict.get("uq_model")
         if uq_model is not None:
-            if "smiles" in df.columns:
-                query_df = df.loc[valid_mask, ["smiles"]]
+            # V1/V2 ask their proximity backend what to send; V0 takes None.
+            query_df = uq_query_df(uq_model, df.loc[valid_mask])
+            if query_df is not None or uq_model.UQ_VERSION == "v0":
                 primary = target_columns[0]
                 uq_out = uq_model.predict(
                     query_df,
@@ -317,10 +318,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                     df[col] = np.nan
                     df.loc[valid_mask, col] = uq_out[col].values
             else:
-                print(
-                    "[uq] Skipping UQModel inference: input DataFrame has no "
-                    "'smiles' column for neighborhood lookups."
-                )
+                print("[uq] Skipping UQModel inference: batch can't satisfy the proximity backend.")
 
     return df
 

@@ -41,13 +41,11 @@ import logging
 log = logging.getLogger("workbench")
 
 
-# Defaults preserved from v0.8.338
 DEFAULT_CONFIDENCE_LEVELS = [0.50, 0.68, 0.80, 0.90, 0.95]
 DEFAULT_RESIDUAL_CALIBRATOR_BINS = 10
 MIN_SAMPLES_PER_BIN = 20
 
-# Quantile column names by confidence level — matched to the current UQModel
-# output so v0 and current can be compared row-for-row.
+# Quantile column names by confidence level (shared across all UQ versions)
 _QUANTILE_COLUMNS = {
     0.50: ("q_25", "q_75"),
     0.68: ("q_16", "q_84"),
@@ -58,7 +56,7 @@ _QUANTILE_COLUMNS = {
 
 
 # =============================================================================
-# Internal calibrator (per-bin isotonic) — preserved verbatim from v0.8.338
+# Internal calibrator (per-bin isotonic)
 # =============================================================================
 def _fit_residual_calibrator(
     y_pred: np.ndarray,
@@ -340,16 +338,13 @@ class UQModelV0:
             "residual_percentiles": list(self.residual_percentiles),
         }
 
-    def save(self, model_dir: str, filename: Optional[str] = None) -> None:
+    def save(self, model_dir: str) -> None:
         """Save to JSON.
 
         Args:
             model_dir: Directory to save the metadata file.
-            filename: Override the filename (default: ``uq_metadata_v0.json``).
-                Pass ``"uq_metadata.json"`` to write a file that the old
-                v0.8.338 model_script_utils.uq_harness loaders accept verbatim.
         """
-        path = os.path.join(model_dir, filename or self.METADATA_FILENAME)
+        path = os.path.join(model_dir, self.METADATA_FILENAME)
         with open(path, "w") as fp:
             json.dump(self.to_dict(), fp, indent=2)
         log.info(f"Saved UQModelV0 metadata to {path}")

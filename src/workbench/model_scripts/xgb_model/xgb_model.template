@@ -37,7 +37,7 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from workbench.endpoints.uq_regression import load_regression_uq
+from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 log = logging.getLogger("workbench")
 
@@ -75,13 +75,13 @@ DEFAULT_HYPERPARAMETERS = {
     # Random seed
     "seed": 42,
     # UQ version to use as the primary confidence source at inference:
-    #   "v0": isotonic on (prediction, std), no proximity required
+    #   "v0": isotonic on (prediction, std), no neighborhood required
     #   "v1" (default): proximity-augmented RandomForest error model
-    #   "v2": pure applicability-domain confidence from fingerprint neighbors
-    # v1/v2 need a 'smiles' column to build the fingerprint proximity set; without
-    # one they can't be fit and the active version falls back to v0 with a warning.
-    # All fittable versions are always saved when regression UQ is enabled, so the
-    # other versions stay available for comparison via Model.uq_model(version=...).
+    #   "v2": pure applicability-domain confidence from neighbors
+    # v1/v2 need a proximity reference set: a 'smiles' column gives structure-based
+    # neighborhoods, otherwise the model's own features do. All fittable versions are
+    # saved when regression UQ is enabled, so the other versions stay available for
+    # comparison via Model.uq_model(version=...).
     "uq_version": "v1",
 }
 
@@ -207,24 +207,19 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = np.mean(ensemble_preds, axis=0)
         df["prediction_std"] = compress_std_outliers(np.std(ensemble_preds, axis=0))
 
-        # UQModel UQ: expected_residual, confidence, and conformal intervals
+        # UQModel UQ: expected_residual, confidence, and conformal intervals.
+        # V1/V2 need a neighbor-lookup payload — smiles/fingerprint or the feature
+        # columns, whichever their proximity backend indexes on. V0 has no backend,
+        # so uq_query_df returns None and it scores from prediction + std alone.
         if uq_model is not None:
-            # Build a query DataFrame for novel-query AD lookups. Requires either a
-            # 'smiles' column or a 'fingerprint' column in the inference batch.
-            if "smiles" in df.columns or "fingerprint" in df.columns:
-                uq_out = uq_model.predict(
-                    df[[c for c in ("smiles", "fingerprint") if c in df.columns]],
-                    df["prediction"].values,
-                    df["prediction_std"].values,
-                )
+            query = uq_query_df(uq_model, matched_df)
+            if query is not None or uq_model.UQ_VERSION == "v0":
+                uq_out = uq_model.predict(query, df["prediction"].values, df["prediction_std"].values)
                 # Merge UQ columns into df (uq_out is indexed positionally for novel queries)
                 for col in uq_out.columns:
                     df[col] = uq_out[col].values
             else:
-                print(
-                    "[uq] Skipping UQModel inference: input DataFrame has no "
-                    "'smiles' or 'fingerprint' column for neighborhood lookups."
-                )
+                print("[uq] Skipping UQModel inference: batch can't satisfy the proximity backend.")
 
     print(f"Inference complete: {len(df)} predictions, {len(ensemble_models)} ensemble members")
     return df
@@ -501,14 +496,11 @@ if __name__ == "__main__":
         oof_ids = df_oof[id_column].tolist()
         oof_std = df_oof["prediction_std"].values
 
-        # V1/V2 need a fingerprint proximity set ('smiles'); with smiles we fit all
-        # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
-        if "smiles" in all_df.columns:
-            prox_df = all_df[[id_column, "smiles", target]].copy()
-            prox_df["in_model"] = in_model_mask
-        else:
-            prox_df = None
-            log.warning("No 'smiles' column: fitting UQ V0 only (V1/V2 need fingerprints)")
+        # V1/V2 neighbor reference set: 'smiles' gives fingerprint proximity, otherwise
+        # the model's features give feature-space proximity (fit_regression_uq picks).
+        prox_cols = [id_column, target] + (["smiles"] if "smiles" in all_df.columns else features)
+        prox_df = all_df[[c for c in dict.fromkeys(prox_cols) if c in all_df.columns]].copy()
+        prox_df["in_model"] = in_model_mask
 
         uq_dict = fit_regression_uq(
             y_true=y_true,
@@ -518,6 +510,7 @@ if __name__ == "__main__":
             prox_df=prox_df,
             id_column=id_column,
             target=target,
+            features=features,
             active_version=hyperparameters.get("uq_version", "v1"),
         )
 
@@ -647,16 +640,18 @@ if __name__ == "__main__":
         # Held-out rows are novel to the UQ proximity reference (they were split out
         # before it was built), so score them the way inference scores a new molecule.
         # Regression only: uq_dict is None for classifiers, which have no prediction_std.
-        # V0 needs no query payload; V1/V2 need smiles/fingerprint, same as predict_fn.
-        prox_cols = [c for c in ("smiles", "fingerprint") if c in holdout_df.columns]
-        if uq_dict is not None and (prox_cols or uq_dict["uq_model"].UQ_VERSION == "v0"):
-            val_uq = uq_dict["uq_model"].predict(
-                holdout_df[prox_cols] if prox_cols else None,
-                df_val["prediction"].values,
-                df_val["prediction_std"].values,
-            )
-            for col in val_uq.columns:
-                df_val[col] = val_uq[col].values
+        # V0 needs no query payload; V1/V2 query their backend, same as predict_fn.
+        if uq_dict is not None:
+            uq_active = uq_dict["uq_model"]
+            query = uq_query_df(uq_active, holdout_df)
+            if query is not None or uq_active.UQ_VERSION == "v0":
+                val_uq = uq_active.predict(
+                    query,
+                    df_val["prediction"].values,
+                    df_val["prediction_std"].values,
+                )
+                for col in val_uq.columns:
+                    df_val[col] = val_uq[col].values
 
     # -------------------------------------------------------------------------
     # Save out-of-fold and held-out validation predictions to S3

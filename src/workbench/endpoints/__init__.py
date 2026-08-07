@@ -19,7 +19,8 @@ Three kinds of modules live here:
 * **Re-exports** of code that lives at its "real" location in
   ``workbench.algorithms`` or ``workbench.utils`` — :mod:`uq_model_v0`,
   :mod:`uq_model_v1`, :mod:`uq_model_v2`, :mod:`uq_regression`,
-  :mod:`fingerprint_proximity`, :mod:`proximity`, :mod:`residual_features`,
+  :mod:`fingerprint_proximity`, :mod:`feature_space_proximity`,
+  :mod:`proximity`, :mod:`residual_features`,
   :mod:`fingerprints`, :mod:`meta_endpoint_dag`. Keeps internal moves
   invisible to deployed model scripts.
 * **Endpoint-friendly variants** of api classes — :mod:`df_store`,

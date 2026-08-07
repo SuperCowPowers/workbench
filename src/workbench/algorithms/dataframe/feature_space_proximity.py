@@ -65,15 +65,42 @@ class FeatureSpaceProximity(Proximity):
     def _build_model(self) -> None:
         """Standardize features and fit Nearest Neighbors model."""
         self.scaler = StandardScaler()
-        X = self.scaler.fit_transform(self.df[self.features])
-        self.nn = NearestNeighbors().fit(X)
+        self.X = self.scaler.fit_transform(self.df[self.features])
+        self.nn = NearestNeighbors().fit(self.X)
+
+        # Cache: id → row index in the reference set. Lets _transform_features answer
+        # id-based queries from self.X, which works even after the artifact is slimmed
+        # by UQModelV1._slim_proximity (feature columns dropped).
+        self._id_to_row = {row_id: i for i, row_id in enumerate(self.df[self.id_column].values)}
 
     def _transform_features(self, df: pd.DataFrame) -> np.ndarray:
-        """Transform features using the fitted scaler.
+        """Transform features for querying the NN model.
 
-        For novel-input queries via `neighbors_from_query_df`, the query DataFrame
-        must contain the same feature columns this model was built with.
+        Three paths, in order of cost:
+            1. Identity fast path: when df is the reference DataFrame itself,
+               return the cached scaled matrix directly.
+            2. ID-based row lookup: when all IDs in `df[id_column]` are known in
+               the reference set, slice rows from `self.X` directly. No rescaling,
+               and it works even after the artifact is slimmed.
+            3. Novel-query path: scale the query's feature columns, which must
+               match the ones this model was built with.
         """
+        # Path 1: reference DataFrame itself
+        if df is self.df:
+            return self.X
+
+        # Path 2: id-based row lookup. Cheap and works post-slim.
+        if self.id_column in df.columns:
+            id_to_row = getattr(self, "_id_to_row", None)
+            if id_to_row is not None:
+                try:
+                    ids = df[self.id_column].values
+                    indices = np.fromiter((id_to_row[i] for i in ids), dtype=np.int64, count=len(ids))
+                    return self.X[indices]
+                except KeyError:
+                    pass  # Unknown id — fall through to the novel-query path
+
+        # Path 3: novel-query path
         return self.scaler.transform(df[self.features])
 
     def project_2d(self) -> pd.DataFrame:
