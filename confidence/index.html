@@ -4665,6 +4665,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../release_notes/0_8_450/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.450
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../release_notes/0_8_441/" class="md-nav__link">
         
   
@@ -5521,7 +5549,7 @@
 </table>
 
 <h2 id="uq-versions-v0-v1-v2">UQ Versions (v0 / v1 / v2)</h2>
-<p>The regression confidence calibrator comes in <strong>three versions</strong>, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the <code>uq_version</code> hyperparameter (default <code>"v0"</code>), and any can be loaded offline via <code>Model.uq_model(version=...)</code>.</p>
+<p>The regression confidence calibrator comes in <strong>three versions</strong>, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the <code>uq_version</code> hyperparameter (default <code>"v1"</code>, falling back to <code>"v0"</code> only when no proximity reference set can be built), and any can be loaded offline via <code>Model.uq_model(version=...)</code>.</p>
 <table style="width: 100%;">
   <thead>
     <tr>
@@ -5536,24 +5564,24 @@
       <td style="padding: 8px 16px; font-weight: bold;">v0</td>
       <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span></td>
       <td style="padding: 8px 16px;">Isotonic calibrator on <code>(prediction, std)</code> — no neighborhood, no SMILES needed</td>
-      <td style="padding: 8px 16px;">Lightweight default; no-SMILES models; audit-simple</td>
+      <td style="padding: 8px 16px;">Fallback when no neighborhood is available; audit-simple</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">v1</td>
       <td style="padding: 8px 16px;"><span style="background:#f0ad4e; color:#1b2026; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">BETA</span> <span style="background:#2e7d32; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">RECOMMENDED</span></td>
-      <td style="padding: 8px 16px;">RandomForest error model on neighborhood features + normalized conformal (needs SMILES)</td>
+      <td style="padding: 8px 16px;">RandomForest error model on neighborhood features + normalized conformal</td>
       <td style="padding: 8px 16px;">Structure-aware confidence that catches dense-region failures</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">v2</td>
       <td style="padding: 8px 16px;"><span style="background:#8e44ad; color:white; padding:2px 8px; border-radius:10px; font-size:0.8em; font-weight:700;">EXPERIMENTAL</span></td>
-      <td style="padding: 8px 16px;">Pure applicability-domain score from fingerprint proximity — no model fitting</td>
+      <td style="padding: 8px 16px;">Pure applicability-domain score from neighbor proximity — no model fitting</td>
       <td style="padding: 8px 16px;">Interpretable "how well-supported is this query?" + cliff diagnostics</td>
     </tr>
   </tbody>
 </table>
 
-<p><strong>v1</strong> is the recommended version; <strong>v0</strong> is the current default (needs no molecular structure); <strong>v2</strong> is an experimental applicability-domain diagnostic. See the <a href="../blogs/model_confidence/">Model Confidence Blog</a> for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.</p>
+<p><strong>v1</strong> is the default; <strong>v0</strong> is the fallback when no neighborhood can be built; <strong>v2</strong> is an experimental applicability-domain diagnostic. See the <a href="../blogs/model_confidence/">Model Confidence Blog</a> for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.</p>
 <h2 id="three-step-pipeline">Three-Step Pipeline</h2>
 <h3 id="1-ensemble-disagreement">1. Ensemble Disagreement</h3>
 <p>Each fold of the 5-fold cross-validation produces a model trained on a different slice of the data. At inference time, all 5 models make a prediction and we take the average. The <strong>standard deviation</strong> across the 5 predictions (<code>prediction_std</code>) is the raw uncertainty signal.</p>

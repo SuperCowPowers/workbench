@@ -4908,6 +4908,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_450/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.450
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_441/" class="md-nav__link">
         
   
@@ -7973,7 +8001,7 @@
 </span><span id="__span-0-643"><a id="__codelineno-0-643" name="__codelineno-0-643"></a>        <span class="n">primary_target</span> <span class="o">=</span> <span class="n">target_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </span><span id="__span-0-644"><a id="__codelineno-0-644" name="__codelineno-0-644"></a>
 </span><span id="__span-0-645"><a id="__codelineno-0-645" name="__codelineno-0-645"></a>        <span class="c1"># Templates don&#39;t save smiles or user-specified meta columns to</span>
-</span><span id="__span-0-646"><a id="__codelineno-0-646" name="__codelineno-0-646"></a>        <span class="c1"># validation_predictions.csv — merge them in from the FeatureSet so</span>
+</span><span id="__span-0-646"><a id="__codelineno-0-646" name="__codelineno-0-646"></a>        <span class="c1"># oof_predictions.csv — merge them in from the FeatureSet so</span>
 </span><span id="__span-0-647"><a id="__codelineno-0-647" name="__codelineno-0-647"></a>        <span class="c1"># cross_fold captures match the live-inference column set.</span>
 </span><span id="__span-0-648"><a id="__codelineno-0-648" name="__codelineno-0-648"></a>        <span class="n">meta_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_meta&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
 </span><span id="__span-0-649"><a id="__codelineno-0-649" name="__codelineno-0-649"></a>        <span class="n">merge_candidates</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">meta_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s2">&quot;smiles&quot;</span><span class="p">]</span>
@@ -9426,7 +9454,7 @@
 </span><span id="__span-0-643"><a id="__codelineno-0-643" name="__codelineno-0-643"></a>    <span class="n">primary_target</span> <span class="o">=</span> <span class="n">target_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </span><span id="__span-0-644"><a id="__codelineno-0-644" name="__codelineno-0-644"></a>
 </span><span id="__span-0-645"><a id="__codelineno-0-645" name="__codelineno-0-645"></a>    <span class="c1"># Templates don&#39;t save smiles or user-specified meta columns to</span>
-</span><span id="__span-0-646"><a id="__codelineno-0-646" name="__codelineno-0-646"></a>    <span class="c1"># validation_predictions.csv — merge them in from the FeatureSet so</span>
+</span><span id="__span-0-646"><a id="__codelineno-0-646" name="__codelineno-0-646"></a>    <span class="c1"># oof_predictions.csv — merge them in from the FeatureSet so</span>
 </span><span id="__span-0-647"><a id="__codelineno-0-647" name="__codelineno-0-647"></a>    <span class="c1"># cross_fold captures match the live-inference column set.</span>
 </span><span id="__span-0-648"><a id="__codelineno-0-648" name="__codelineno-0-648"></a>    <span class="n">meta_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_meta&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
 </span><span id="__span-0-649"><a id="__codelineno-0-649" name="__codelineno-0-649"></a>    <span class="n">merge_candidates</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">meta_cols</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s2">&quot;smiles&quot;</span><span class="p">]</span>
