@@ -5172,7 +5172,8 @@
 <li><strong><a href="../endpoint/">Endpoint</a>:</strong> Manages the deployment and invocations/inference on AWS Endpoints (auto-routes to the async transport when deployed with <code>async_endpoint=True</code>)</li>
 <li><strong><a href="../../models/meta_endpoints/">MetaEndpoint</a>:</strong> Endpoint backed by a DAG of child endpoints + aggregation nodes — feature pipelines and ensembles</li>
 <li><strong><a href="../monitor/">Monitor</a>:</strong> Manages the setup and deployment of AWS Endpoint Monitors</li>
-<li><strong><a href="../meta/">Meta</a>:</strong> API to retrieve AWS metadata for the above artifacts</li>
+<li><strong><a href="../../cached/cached_meta/">CachedMeta</a>:</strong> API to retrieve AWS metadata for the above artifacts (<strong>recommended</strong>)</li>
+<li><strong><a href="../meta/">Meta</a>:</strong> Direct, uncached metadata API — use when you need to bypass the cache</li>
 <li><strong><a href="../inference_cache/">InferenceCache</a>:</strong> Client-side S3 caching wrapper around an Endpoint's <code>inference()</code></li>
 <li><strong><a href="../parameter_store/">ParameterStore</a>:</strong> Manages AWS Parameter Store (workbench-bucket config, model metadata, feature lists)</li>
 <li><strong><a href="../df_store/">DFStore</a>:</strong> Manages DataFrames in AWS S3 (Parquet/Snappy)</li>
