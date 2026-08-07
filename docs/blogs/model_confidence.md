@@ -75,7 +75,7 @@ Workbench ships **three regression UQ versions**, all built on the same ensemble
   </tbody>
 </table>
 
-**Which should you use?** **v1** is the recommended version — its structure-aware error model is the most robust across endpoints and under distribution shift. **v0** is currently the code default (`uq_version` defaults to `"v0"`) because it needs no molecular structure and is the automatic fallback for models without a SMILES column; it's also the easiest to audit. **v2** is experimental and best treated as an applicability-domain diagnostic rather than a calibrated confidence. The rest of this blog focuses on v1, then covers v0 and v2 in turn.
+**Which should you use?** **v1** is the code default (`uq_version` defaults to `"v1"`) — its structure-aware error model is the most robust across endpoints and under distribution shift. **v0** needs no molecular structure, so it's the automatic fallback for models without a SMILES column; it's also the easiest to audit. **v2** is experimental and best treated as an applicability-domain diagnostic rather than a calibrated confidence. The rest of this blog focuses on v1, then covers v0 and v2 in turn.
 
 ---
 
@@ -223,7 +223,7 @@ Accuracy should increase monotonically across bins, and calibrated confidence sh
 
 # Using the Versions
 
-All three regression versions are fit and saved at training time. To pick the active one, set the `uq_version` hyperparameter (`"v0"`, `"v1"`, or `"v2"`; default `"v0"`). v1 and v2 require a SMILES column so a fingerprint proximity reference set can be built — without one, only v0 is fit and used. For offline comparison, load any saved version explicitly:
+All three regression versions are fit and saved at training time. To pick the active one, set the `uq_version` hyperparameter (`"v0"`, `"v1"`, or `"v2"`; default `"v1"`). v1 and v2 require a SMILES column so a fingerprint proximity reference set can be built — without one, only v0 is fit and used, and training logs a warning. For offline comparison, load any saved version explicitly:
 
 ```python
 from workbench.api import Model

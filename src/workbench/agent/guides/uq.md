@@ -33,8 +33,9 @@ model = fs.to_model(
 )
 ```
 
-Always set `uq_version: "v1"` on new models. The code default is **`v0`**, so
-leaving it unset silently gives the weaker calibrator.
+`v1` is the default for new models, so setting it explicitly is optional. v1
+needs a `smiles` column to build its fingerprint proximity set — without one it
+can't be fit and training falls back to `v0` with a warning.
 
 ## What comes back
 
@@ -56,8 +57,8 @@ the active one.
 
 | | Status | Approach | SMILES? |
 |---|---|---|---|
-| **v0** | beta, code default | Binned isotonic `(std -> \|residual\|)` + split conformal | No |
-| **v1** | beta, **recommended** | RandomForest error model on neighborhood features + normalized conformal | Yes |
+| **v0** | beta, no-SMILES fallback | Binned isotonic `(std -> \|residual\|)` + split conformal | No |
+| **v1** | beta, **code default** | RandomForest error model on neighborhood features + normalized conformal | Yes |
 | **v2** | experimental | Pure applicability-domain score from fingerprint proximity | Yes |
 
 **v1 and v2 require a SMILES column** to build the fingerprint proximity set.

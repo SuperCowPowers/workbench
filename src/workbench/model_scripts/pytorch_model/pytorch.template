@@ -14,6 +14,7 @@
 # Heavy imports (sklearn, awswrangler) are deferred to training time.
 
 import json
+import logging
 import os
 
 import joblib
@@ -42,6 +43,8 @@ from workbench.endpoints.uq_harness import (
     load_classification_uq,
 )
 from workbench.endpoints.uq_regression import load_regression_uq
+
+log = logging.getLogger("workbench")
 
 # =============================================================================
 # Default Hyperparameters
@@ -78,12 +81,14 @@ DEFAULT_HYPERPARAMETERS = {
     # Random seed
     "seed": 42,
     # UQ version to use as the primary confidence source at inference:
-    #   "v0" (default): isotonic on (prediction, std), no proximity required
-    #   "v1": proximity-augmented RandomForest error model
+    #   "v0": isotonic on (prediction, std), no proximity required
+    #   "v1" (default): proximity-augmented RandomForest error model
     #   "v2": pure applicability-domain confidence from fingerprint neighbors
-    # All three are always fit + saved when regression UQ is enabled, so the
+    # v1/v2 need a 'smiles' column to build the fingerprint proximity set; without
+    # one they can't be fit and the active version falls back to v0 with a warning.
+    # All fittable versions are always saved when regression UQ is enabled, so the
     # other versions stay available for comparison via Model.uq_model(version=...).
-    "uq_version": "v0",
+    "uq_version": "v1",
 }
 
 # Template parameters (filled in by Workbench)
@@ -607,7 +612,7 @@ if __name__ == "__main__":
             prox_df["in_model"] = True  # see XGB template for rationale on CV folds
         else:
             prox_df = None
-            print("No 'smiles' column: fitting UQ V0 only (V1/V2 need fingerprints)")
+            log.warning("No 'smiles' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
         uq_dict = fit_regression_uq(
             y_true=y_true,
@@ -617,7 +622,7 @@ if __name__ == "__main__":
             prox_df=prox_df,
             id_column=id_column,
             target=target,
-            active_version=hyperparameters.get("uq_version", "v0"),
+            active_version=hyperparameters.get("uq_version", "v1"),
         )
 
         # Apply active UQ to df_oof for oof_predictions.csv

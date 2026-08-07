@@ -56,7 +56,6 @@ m = fs.to_model(
     description="PXR phase-1 multi-task Chemprop, aux=logd, hyperparameter-searched (phase1_test held out)",
     tags=tags,
     hyperparameters={
-        "uq_version": "v1",
         "task_weights": [1.0, 0.3],  # matches pxr-reg-chemprop-mt-logd, so the comparison is clean
         # The search budget is what the job costs, so it is worth stating. Everything else
         # defaults: https://supercowpowers.github.io/workbench/models/hpo/ — including the

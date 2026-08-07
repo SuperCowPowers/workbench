@@ -8,8 +8,8 @@ regression UQ:
        out-of-fold predictions and ensemble std (V2 needs only the proximity).
     3. Save all three artifacts into the model bundle (V1 and V2 share
        ``uq_proximity.joblib``).
-    4. At inference (``model_fn``), load whichever version
-       ``hyperparameters["uq_version"]`` selects (default ``"v0"``).
+    4. At inference (``model_fn``), load whichever version the bundle's
+       ``hyperparameters["uq_version"]`` selects.
 
 That logic lives here so each template can call:
 
@@ -64,7 +64,7 @@ def fit_regression_uq(
     prox_df=None,
     id_column: str,
     target: str,
-    active_version: str = "v0",
+    active_version: str = "v1",
 ) -> dict:
     """Fit the regression UQ models on the out-of-fold training predictions.
 
@@ -89,8 +89,8 @@ def fit_regression_uq(
         id_column: Name of the ID column in ``prox_df``.
         target: Name of the target column in ``prox_df``.
         active_version: Which version is the "primary" one (``"v0"``, ``"v1"``,
-            or ``"v2"``). If the requested version wasn't fit (no ``prox_df``),
-            falls back to v0.
+            or ``"v2"``), defaulting to ``"v1"``. If the requested version
+            wasn't fit (no ``prox_df``), falls back to v0 with a warning.
 
     Returns:
         dict with keys ``uq_model`` (the active instance), ``v0``, ``v1``, ``v2``
@@ -117,7 +117,7 @@ def fit_regression_uq(
     active_lookup = {"v0": uq_model_v0, "v1": uq_model_v1, "v2": uq_model_v2}
     uq_model_active = active_lookup.get(active)
     if uq_model_active is None:
-        log.warning(f"UQ version '{active}' not fit (no fingerprint/smiles data); using v0")
+        log.warning(f"UQ '{active}' needs a 'smiles' column for fingerprint proximity; falling back to v0")
         uq_model_active = uq_model_v0
     log.info(f"Active UQ version for training-time df_oof columns: {active}")
 

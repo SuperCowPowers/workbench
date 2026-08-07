@@ -12,6 +12,7 @@
 # Heavy imports (lightning, sklearn, awswrangler) are deferred to training time.
 
 import json
+import logging
 import os
 import time
 
@@ -62,6 +63,8 @@ print(
     f"(chemprop {chemprop.__version__}, torch {torch.__version__})",
     flush=True,
 )
+
+log = logging.getLogger("workbench")
 
 # =============================================================================
 # Default Hyperparameters
@@ -119,12 +122,14 @@ DEFAULT_HYPERPARAMETERS = {
     # common scheme. Ignored when n_targets == 1.
     "task_weights": None,
     # UQ version to use as the primary confidence source at inference:
-    #   "v0" (default): isotonic on (prediction, std), no proximity required
-    #   "v1": proximity-augmented RandomForest error model
+    #   "v0": isotonic on (prediction, std), no proximity required
+    #   "v1" (default): proximity-augmented RandomForest error model
     #   "v2": pure applicability-domain confidence from fingerprint neighbors
-    # All three are always fit + saved when regression UQ is enabled, so the
+    # v1/v2 need a 'smiles' column to build the fingerprint proximity set; without
+    # one they can't be fit and the active version falls back to v0 with a warning.
+    # All fittable versions are always saved when regression UQ is enabled, so the
     # other versions stay available for comparison via Model.uq_model(version=...).
-    "uq_version": "v0",
+    "uq_version": "v1",
 }
 
 # Template parameters (filled in by Workbench)
@@ -761,7 +766,7 @@ if __name__ == "__main__":
                 prox_df["in_model"] = in_model_mask  # see XGB template for rationale on CV folds
             else:
                 prox_df = None
-                print(f"No '{smiles_column}' column: fitting UQ V0 only (V1/V2 need fingerprints)")
+                log.warning(f"No '{smiles_column}' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
             uq_dict = fit_regression_uq(
                 y_true=val_y,
@@ -771,7 +776,7 @@ if __name__ == "__main__":
                 prox_df=prox_df,
                 id_column=id_column,
                 target=primary,
-                active_version=hyperparameters.get("uq_version", "v0"),
+                active_version=hyperparameters.get("uq_version", "v1"),
             )
 
             # Apply active UQ to df_oof columns for oof_predictions.csv

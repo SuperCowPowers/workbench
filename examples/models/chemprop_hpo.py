@@ -43,7 +43,6 @@ if recreate or not Model(model_name).exists():
         description="AQSol Chemprop regressor (hyperparameter-searched)",
         tags=["aqsol", "chemprop", "hpo"],
         hyperparameters={
-            "uq_version": "v1",
             # The search budget is what the job costs, so it is worth stating. Everything
             # else defaults: https://supercowpowers.github.io/workbench/models/hpo/
             "hpo": {"n_trials": 40, "search_space": space.to_dict()},

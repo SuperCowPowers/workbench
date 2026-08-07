@@ -19,7 +19,6 @@ m = FeatureSet(fs_name).to_model(
     target_column="pec50",
     description="PXR phase-2 pEC50 Chemprop (SMILES only; trains on all rows = train + phase-1)",
     tags=tags,
-    hyperparameters={"uq_version": "v1"},  # active confidence = v1; v0/v2 also saved
 )
 m.set_owner("open_admet_pxr")
 end = m.to_endpoint(tags=tags)

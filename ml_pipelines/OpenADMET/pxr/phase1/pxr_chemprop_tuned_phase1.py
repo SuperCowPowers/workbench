@@ -29,7 +29,6 @@ m = fs.to_model(
     description="PXR phase-1 pEC50 Chemprop, regularization-tuned (tapered FFN + more dropout + gentler LR)",
     tags=tags,
     hyperparameters={
-        "uq_version": "v1",
         "ffn_hidden_dim": [1024, 256, 64],  # tapered head (vs default 1800x2)
         "dropout": 0.2,  # vs default 0.1
         "warmup_epochs": 5,  # gentler schedule

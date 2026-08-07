@@ -64,7 +64,6 @@ def build(fs, name, framework, feats, validation_ids, extra_tags, desc) -> None:
         description=desc,
         tags=TAGS + extra_tags,
         validation_ids=validation_ids,
-        hyperparameters={"uq_version": "v1"},  # v1 = proximity-augmented RF error model
     )
     model.set_owner("open_admet_pxr")
     end = model.to_endpoint(tags=TAGS + extra_tags, max_concurrency=1)

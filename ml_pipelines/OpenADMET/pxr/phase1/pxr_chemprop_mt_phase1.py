@@ -45,7 +45,7 @@ for suffix, targets, task_weights in VARIANTS:
         target_column=targets,  # pec50 first (primary); aux head(s) follow
         description=f"PXR phase-1 multi-task Chemprop, aux={'+'.join(targets[1:])} (phase1_test held out)",
         tags=tags,
-        hyperparameters={"uq_version": "v1", "task_weights": task_weights},
+        hyperparameters={"task_weights": task_weights},
         validation_ids=validation_ids,
     )
     m.set_owner("open_admet_pxr")

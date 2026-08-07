@@ -65,8 +65,8 @@ model with no endpoint and no metrics.
 - Name models by role: `-reg` regression, `-class` classification. Endpoints are
   serverless by default; only add a `-rt` suffix for a realtime (`serverless=False`)
   endpoint.
-- Set `hyperparameters={"uq_version": "v1"}` on new models — strongest
-  uncertainty quantification and keeps comparisons consistent.
+- `uq_version` defaults to `"v1"` (strongest uncertainty quantification). It needs
+  a `smiles` column; without one, training warns and falls back to `"v0"`.
 - Check `fs.columns` (a property), or pull a DataFrame and read `df.dtypes`,
   before choosing a `feature_list`. Don't guess column names.
 

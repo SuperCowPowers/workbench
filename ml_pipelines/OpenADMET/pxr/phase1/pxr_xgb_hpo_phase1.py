@@ -39,7 +39,6 @@ m = fs.to_model(
     description="PXR phase-1 pEC50 XGBoost (hyperparameter-searched; phase1_test held out of training)",
     tags=tags,
     hyperparameters={
-        "uq_version": "v1",
         "hpo": {
             # The base training image carries optuna, not ray — and one XGBoost fit already
             # spreads across every core, so the search is serial by design.

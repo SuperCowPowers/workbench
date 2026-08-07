@@ -54,6 +54,11 @@ if __name__ == "__main__":
     Model.managed_delete("aqsol-quantile-reg")
     Endpoint.managed_delete("aqsol-qr")
 
+    # UQ Compare Models
+    for uq_version in ["v0", "v1", "v2"]:
+        Model.managed_delete(f"logd-chemprop-uq-{uq_version}")
+        Endpoint.managed_delete(f"logd-chemprop-uq-{uq_version}")
+
     # Scikit Learn Models
     Model.managed_delete("abalone-knn-reg")
     Endpoint.managed_delete("abalone-knn")

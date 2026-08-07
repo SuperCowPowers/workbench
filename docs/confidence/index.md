@@ -26,7 +26,7 @@ Every Workbench model — XGBoost, PyTorch, or ChemProp — is a **5-model ensem
 
 ## UQ Versions (v0 / v1 / v2)
 
-The regression confidence calibrator comes in **three versions**, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the `uq_version` hyperparameter (default `"v0"`), and any can be loaded offline via `Model.uq_model(version=...)`.
+The regression confidence calibrator comes in **three versions**, all built on the ensemble-std signal below. All three are fit at training and saved into the model bundle; the active one is chosen by the `uq_version` hyperparameter (default `"v1"`, falling back to `"v0"` when the data has no `smiles` column), and any can be loaded offline via `Model.uq_model(version=...)`.
 
 <table style="width: 100%;">
   <thead>
