@@ -148,11 +148,12 @@ if __name__ == "__main__":
     # Create an abalone Model with a designated validation set. Holding out 20% of the
     # rows gives this model a populated val_predictions.csv alongside oof_predictions.csv,
     # so both training captures have a fixture to exercise.
+    fs = FeatureSet("abalone_features")
+    abalone_df = fs.pull_dataframe()
+    validation_ids = abalone_df[fs.id_column].sample(frac=0.2, random_state=42).tolist()
+
     if recreate or not Model("abalone-regression-val").exists():
-        fs = FeatureSet("abalone_features")
-        all_ids = fs.pull_dataframe()[fs.id_column]
-        validation_ids = all_ids.sample(frac=0.2, random_state=42).tolist()
-        log.important(f"Holding out {len(validation_ids)} of {len(all_ids)} rows as the validation set")
+        log.important(f"Holding out {len(validation_ids)} of {len(abalone_df)} rows as the validation set")
         m = fs.to_model(
             name="abalone-regression-val",
             model_type=ModelType.UQ_REGRESSOR,
@@ -173,3 +174,8 @@ if __name__ == "__main__":
         # test_inference populates a capture; cross_fold_inference reads oof_predictions.csv
         end.test_inference()
         end.cross_fold_inference()
+
+        # Score the held-out rows through the serving path — the deployed-path
+        # counterpart to the val_predictions.csv the training job wrote.
+        val_df = abalone_df[abalone_df[fs.id_column].isin(validation_ids)]
+        end.inference(val_df, capture_name="validation_holdout", include_quantiles=True)
