@@ -371,3 +371,35 @@ def test_a_seeded_point_is_never_stopped_early():
     assert steps_run[9.5] == 5
     baseline = next(t for t in result.trials if t["config"].get("x") == 9.5)
     assert baseline["state"] == "COMPLETE" and baseline["value"] == 9.5
+
+
+def test_a_nan_objective_after_reporting_is_failed_not_stopped():
+    """Optuna marks a NaN-returning trial FAILED, but it may already have reported
+    intermediates. Backfilling its value from those would file a genuine failure as a
+    scheduler stop, hiding the one count that means the budget was lost."""
+    from workbench.training.hpo_harness import FloatRange
+    from workbench.training.hpo_runner import summarize_trials
+
+    max_steps = 4
+
+    def trial_fn(config, report):
+        report(1, config["x"])  # reports before failing
+        if config["x"] > 5.0:
+            return float("nan")
+        for step in range(2, max_steps + 1):
+            report(step, config["x"])
+        return config["x"]
+
+    result = run_search(
+        trial_fn,
+        {"x": FloatRange(0.0, 10.0, default=5.0)},
+        n_trials=12,
+        backend="optuna",
+        mode="min",
+        max_steps=max_steps,
+    )
+    died = [t for t in result.trials if t["state"] == "FAIL"]
+    assert died, "expected some trials to produce a NaN objective"
+    assert all(t["value"] is None for t in died), "a failed trial must not carry a partial value"
+    counts = summarize_trials(result.trials)
+    assert counts["failed"] == len(died)

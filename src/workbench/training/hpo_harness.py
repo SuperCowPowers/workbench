@@ -412,7 +412,10 @@ def _run_optuna(
     trials = [
         {
             "number": t.number,
-            "value": t.value if t.value is not None else _last_intermediate(t),
+            # Only a PRUNED trial keeps its partial value. A FAILED one can also have
+            # reported before it raised, and backfilling from those would file a genuine
+            # failure as a scheduler stop — hiding the count that matters.
+            "value": t.value if t.value is not None else (_last_intermediate(t) if t.state.name == "PRUNED" else None),
             "state": t.state.name,
             "config": t.user_attrs.get("config", {}),
             "step": max(t.intermediate_values, default=max_steps if t.value is not None else None),
@@ -587,15 +590,16 @@ def _resolve_trial_records(results, *, metric, choice_options, max_steps) -> lis
 
     ``completed`` means ranked-eligible: it scored *and* ran every step. A trial stopped at
     a rung keeps its partial value but is not completed, which is what separates "stopped
-    early" from "died" downstream.
+    early" from "died" downstream. A trial that *raised* keeps no value even if it reported
+    before raising — otherwise a genuine failure files itself as a scheduler stop.
     """
     return [
         {
             "number": i,
-            "value": value,
+            "value": None if getattr(r, "error", None) is not None else value,
             "config": _resolve_choices(getattr(r, "config", None), choice_options),
             "step": (getattr(r, "metrics", None) or {}).get(_STEP),
-            "completed": value is not None and _reached_full(r, max_steps),
+            "completed": value is not None and getattr(r, "error", None) is None and _reached_full(r, max_steps),
         }
         for i, r in enumerate(results)
         for value in [_scored_value(r, metric)]

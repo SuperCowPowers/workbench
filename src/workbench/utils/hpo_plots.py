@@ -406,7 +406,14 @@ def hpo_parallel_coordinates(
     # baseline sits at zero and the published config at its own margin. Drawing raw objective
     # values here would put both lines off the end of the scale.
     bar.ax.axhline(0.0, color="black", linestyle="--", lw=1.5)
-    published_value = _trial_value(results.get("best_config"), runs, knob_frame)
+    # Looked up across *all* scored rows, baseline included: a baseline win is a supported
+    # outcome, and that row is not in `runs`.
+    scored = trials.dropna(subset=["value"])
+    published_value = _trial_value(
+        results.get("best_config"),
+        scored,
+        pd.DataFrame([_as_dict(h) for h in scored["hyperparameters"]], index=scored.index),
+    )
     if published_value is not None:
         rule = bar.ax.axhline(published_value - center, color="#00d451", lw=3.5)
         # A white halo so it reads against the dark end of the colormap.

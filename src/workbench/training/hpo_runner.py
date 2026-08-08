@@ -285,15 +285,20 @@ def trial_records(trials, base_hyperparameters: dict, search_space: dict) -> lis
       else ``trial``. The baseline is the reference line any plot of the search needs.
     """
     baseline = effective_config({}, base_hyperparameters, search_space)
-    rows = []
+    rows, seen_baseline = [], False
     for trial in trials:
         effective = effective_config(trial.get("config") or {}, base_hyperparameters, search_space)
+        # First match only. The seeded point runs first, but a sampler can land on the same
+        # config again on a discrete space — and a second `baseline` row would drop a real
+        # trial out of the plots and make the reference line ambiguous.
+        is_baseline = not seen_baseline and effective == baseline
+        seen_baseline = seen_baseline or is_baseline
         rows.append(
             {
                 **{k: v for k, v in trial.items() if k not in ("config", "state", "completed")},
                 "completed": trial_completed(trial),
                 "hyperparameters": effective,
-                "kind": "baseline" if effective == baseline else "trial",
+                "kind": "baseline" if is_baseline else "trial",
             }
         )
     return rows

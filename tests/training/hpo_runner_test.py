@@ -113,6 +113,18 @@ def test_trial_records_are_rectangular_and_mark_the_baseline():
     assert baseline_value(rows) == 0.9
 
 
+def test_only_the_first_matching_row_is_the_baseline():
+    """A sampler can land on the caller's own config again on a discrete space. A second
+    `baseline` row would drop a real trial out of the plots (which filter on kind) and make
+    the reference line ambiguous."""
+    same = {"number": 0, "value": 0.9, "state": "COMPLETE", "config": {"x": 5.0}}
+    rows = trial_records(
+        [same, dict(same, number=1, value=0.8), {**same, "number": 2, "config": {"x": 1.0}}], {}, _space()
+    )
+    assert [r["kind"] for r in rows] == ["baseline", "trial", "trial"]
+    assert baseline_value(rows) == 0.9  # the seeded one, which ran first
+
+
 def test_baseline_value_is_none_when_the_baseline_never_scored():
     """A failed baseline costs the plots their reference line, not the search its winner."""
     rows = trial_records([{"number": 0, "value": None, "state": "FAIL", "config": {"x": 5.0}}], {}, _space())
