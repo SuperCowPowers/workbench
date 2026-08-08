@@ -10,6 +10,31 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 
+def _rerank_margins(search_margins, hyperparameters, results, metric):
+    """Search margins, with the re-rank's finalists swapped in at their own margin.
+
+    A finalist's re-rank score is what the publish decision turned on, so it is the number
+    worth showing -- but the re-rank uses a fresh fold partition, and its baseline can sit a
+    whole search-margin away from the search's own. Subtracting each side's baseline is what
+    makes the two comparable in one plot.
+    """
+    rerank = results.get("rerank")
+    rerank = pd.DataFrame([] if rerank is None else rerank)
+    if not len(rerank) or metric not in rerank or "candidate" not in rerank:
+        return search_margins
+    base = rerank[rerank["candidate"].eq("baseline")]
+    if not len(base):
+        return search_margins
+
+    center = float(base[metric].iloc[0])
+    key = lambda cell: json.dumps(_as_dict(cell), sort_keys=True, default=str)  # noqa: E731
+    by_config = {key(h): float(v) - center for h, v in zip(rerank["hyperparameters"], rerank[metric])}
+    return pd.Series(
+        [by_config.get(key(h), m) for h, m in zip(hyperparameters, search_margins)],
+        index=search_margins.index,
+    )
+
+
 def _as_dict(cell) -> dict:
     """Read a JSON cell; the HPO frames carry these as strings."""
     if isinstance(cell, dict):
@@ -225,16 +250,16 @@ def hpo_parallel_coordinates(
 
     Color is centered on the baseline -- the user's own untuned hyperparameters, scored on
     the same basis -- so hue answers "did this trial beat my defaults" rather than where it
-    ranks within the run. The baseline and the published config are drawn as reference
-    lines; a search plot without the baseline can't show whether the search achieved
-    anything.
+    ranks within the run. The scale reaches as far as the published config beat the
+    baseline, so the hues resolve the margin actually won; worse trials saturate. The
+    baseline and the published config are drawn as reference lines; a search plot without
+    the baseline can't show whether the search achieved anything.
 
     Args:
         model: A searched Workbench model (`hpo_results()` returns None if it wasn't).
-        completed_only (bool): Plot only the trials that ran to completion. Pruned ones are
-            otherwise drawn alongside them, identically, since where the search looked is
-            part of the picture. Their scores are partial-ensemble ones, which is why the
-            color scale is set by the completed trials. Defaults to False.
+        completed_only (bool): Plot only the trials that produced an objective. Trials that
+            died are otherwise drawn alongside them, since where the search looked is part of
+            the picture. Defaults to False.
         use_curves (bool): Draw each line as a smooth curve through its coordinates, flat
             where it crosses each axis, rather than straight segments. Values at the axes
             are unchanged either way. Defaults to True.
@@ -294,17 +319,26 @@ def hpo_parallel_coordinates(
         return None
     axes_def = [_build_axis(k, space_rows.get(k), knob_frame[k]) for k in knobs]
 
-    # Symmetric around the baseline, so equal improvement and regression read equally far.
-    # Spanned on the completed trials: a trial pruned early scores far off the scale, and
-    # letting it set the range flattens every real difference to white. Those saturate.
+    # Color is a *margin over baseline*, not a raw score. The finalists are shown at their
+    # re-rank score, since that is what the publish decision turned on -- but the re-rank
+    # scores on its own fold partition, so its numbers and the search's are not comparable
+    # directly. Each side against its own baseline is.
     values = runs["value"].astype(float)
-    completed = values[runs["completed"].astype(bool)] if "completed" in runs else values
-    basis = completed if len(completed) else values
-    center = float(baseline_value) if baseline_value is not None else float(basis.median())
-    # Padded, so the best and worst trials sit inside the scale rather than flush against
-    # its ends -- the published marker on the colorbar needs room to read as a line.
-    span = max(float(basis.max()) - center, center - float(basis.min()), 1e-9) * 1.08
-    norm = TwoSlopeNorm(vmin=center - span, vcenter=center, vmax=center + span)
+    center = float(baseline_value) if baseline_value is not None else float(values.median())
+    deltas = _rerank_margins(values - center, runs["hyperparameters"], results, metric)
+
+    # Symmetric, so equal improvement and regression read equally far, and scaled by the best
+    # margin won: every trial runs to term, so a hopeless config lands arbitrarily far above
+    # the baseline and would otherwise flatten every real difference to white. Past either
+    # end the color saturates, which is the right reading for those. The 10% keeps the
+    # published marker off the colorbar's edge.
+    reach = -float(deltas.min())
+    if reach <= 0:
+        # Nothing beat the baseline, so span the worse side instead -- otherwise the scale
+        # collapses to a point and every trial reads as baseline.
+        reach = max(float(deltas.max()), 1e-9)
+    span = reach * 1.1
+    norm = TwoSlopeNorm(vmin=-span, vcenter=0.0, vmax=span)
     mappable = ScalarMappable(norm=norm, cmap=cmap_name)
 
     fig, ax = plt.subplots(figsize=figsize, constrained_layout=True)
@@ -317,21 +351,22 @@ def hpo_parallel_coordinates(
     def _path(y):
         return _curved_path(y) if use_curves else (x, y)
 
-    # Every trial drawn the same, pruned included: the point is where blue and red sit along
-    # each axis, and splitting the population by outcome would break that read.
+    # Every trial drawn the same: the point is where blue and red sit along each axis, and
+    # splitting the population by outcome would break that read.
     # Worst first, so the better trials still land on top of the crowd.
     artists, paths, records = [], [], []
     line_alpha = _line_alpha(len(values))
-    for idx in values.sort_values(ascending=False).index:
+    for idx in deltas.sort_values(ascending=False).index:
         y = [_position(axis, knob_frame.at[idx, axis["knob"]]) for axis in axes_def]
         px, py = _path(y)
-        (artist,) = ax.plot(px, py, color=mappable.to_rgba(values[idx]), lw=2.2, alpha=line_alpha, zorder=2)
+        (artist,) = ax.plot(px, py, color=mappable.to_rgba(deltas[idx]), lw=2.2, alpha=line_alpha, zorder=2)
         artists.append(artist)
         paths.append(np.column_stack([px, py]))
         records.append(
             {
                 "number": runs.at[idx, "number"] if "number" in runs else idx,
                 "value": float(values[idx]),
+                "margin": float(deltas[idx]),
                 "config": {axis["knob"]: knob_frame.at[idx, axis["knob"]] for axis in axes_def},
             }
         )
@@ -393,7 +428,7 @@ def hpo_parallel_coordinates(
         ax.text(xi, 1.03, top, ha="center", va="bottom", fontsize=11, color="#333333")
 
     bar = fig.colorbar(mappable, ax=ax, fraction=0.04, pad=0.02)
-    bar.set_label(f"{metric}: baseline/published marked", fontsize=12)
+    bar.set_label(f"{metric} vs baseline (negative is better)", fontsize=12)
     bar.ax.axhline(center, color="black", linestyle="--", lw=1.5)
     # The published config's score on the *trials'* basis -- best_value is the re-rank's,
     # which this scale isn't in. Its own trial row carries the comparable number.

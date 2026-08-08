@@ -332,6 +332,8 @@ def run_hpo(
         print(f"[hpo] re-rank FAILED ({exc!r}); publishing the search winner unrefined")
         best_config, rerank = result.best_config, {}
 
+    _report_partition_noise(rerank, search_baseline_value)
+
     if output_dir:
         record = best_config_record(
             result,
@@ -351,6 +353,34 @@ def run_hpo(
     return adapter.merge_config(base_hyperparameters, best_config)
 
 
+def partition_noise(rerank: dict, search_baseline_value) -> "float | None":
+    """How far the *same* config moves when only the fold partition changes.
+
+    The baseline is scored on both the search's partition and the re-rank's, so the gap
+    between those two numbers is a free read on how much of any margin could be partition
+    luck rather than a better configuration. None when there is no second partition to
+    compare against.
+    """
+    rerank_baseline = rerank.get("baseline_value")
+    if rerank_baseline is None or search_baseline_value is None or not rerank.get("fresh_split"):
+        return None
+    return abs(float(rerank_baseline) - float(search_baseline_value))
+
+
+def _report_partition_noise(rerank: dict, search_baseline_value) -> None:
+    """Say whether the published margin outruns the partition it was measured on."""
+    noise = partition_noise(rerank, search_baseline_value)
+    best, base = rerank.get("best_value"), rerank.get("baseline_value")
+    if noise is None or best is None or base is None:
+        return
+    margin = float(base) - float(best)
+    if noise <= 0:
+        print(f"[hpo] margin {margin:+.4f}; the two partitions scored the baseline identically")
+        return
+    verdict = "clears it" if margin > noise else "DOES NOT clear it — treat as partition luck"
+    print(f"[hpo] margin {margin:+.4f} vs partition noise {noise:.4f} ({margin / noise:.1f}x) — {verdict}")
+
+
 def best_config_record(result, *, metric, counts, best_config, rerank, search_baseline_value) -> dict:
     """The ``best_config.json`` payload — the search's decision and what it turned on.
 
@@ -363,6 +393,10 @@ def best_config_record(result, *, metric, counts, best_config, rerank, search_ba
       basis as every row in ``hpo_trials.csv``. When ``rerank_fresh_split`` is true the
       re-rank scored on a different fold partition, so these are not comparable to the
       pair above — partitions differ in difficulty.
+
+    ``partition_noise`` measures exactly that difference, from the one config scored on both
+    partitions (the baseline). A margin smaller than it is indistinguishable from having
+    drawn a friendlier partition.
 
     Args:
         result: the :class:`~workbench.training.hpo_harness.HpoResult` from the search.
@@ -387,6 +421,8 @@ def best_config_record(result, *, metric, counts, best_config, rerank, search_ba
         "search_baseline_value": search_baseline_value,
         "search_best_config": result.best_config,
         "rerank_fresh_split": rerank.get("fresh_split", False),
+        # The baseline on both partitions: what a margin has to beat to mean anything.
+        "partition_noise": partition_noise(rerank, search_baseline_value),
         "rerank": rerank.get("candidates", []),
     }
 

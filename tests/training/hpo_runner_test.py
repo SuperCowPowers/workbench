@@ -5,10 +5,13 @@ contract — no framework, no real training (a stub adapter stands in for one). 
 per-framework objectives are covered by ``chemprop_hpo_test.py`` and ``xgb_hpo_test.py``.
 """
 
+import pytest
+
 # Workbench Imports
 from workbench.training.hpo_runner import (
     HpoAdapter,
     best_config_record,
+    partition_noise,
     resolve_max_parallel,
     shortlist_configs,
     trial_completed,
@@ -46,6 +49,19 @@ def test_an_explicit_max_parallel_still_wins():
     """The derived value is a default, not a policy — a caller can override it."""
     assert resolve_max_parallel({"max_parallel": 3}, {"gpu": 0.5}, 4) == 3
     assert resolve_max_parallel({"max_parallel": 0}, {"gpu": 0.5}, 4) == 1  # never below 1
+
+
+def test_partition_noise_is_the_baseline_scored_on_both_partitions():
+    """The one config measured twice, so its spread is pure partition luck."""
+    rr = {"baseline_value": 4.7292, "best_value": 4.5820, "fresh_split": True}
+    assert partition_noise(rr, 4.5962) == pytest.approx(0.1330, abs=1e-4)
+
+
+def test_partition_noise_needs_a_second_partition():
+    """Without a fresh split there is no second measurement, so there is no noise read."""
+    assert partition_noise({"baseline_value": 4.7, "fresh_split": False}, 4.6) is None
+    assert partition_noise({}, 4.6) is None  # re-rank skipped or failed
+    assert partition_noise({"baseline_value": 4.7, "fresh_split": True}, None) is None
 
 
 def test_trial_completed_reads_both_backend_shapes():
