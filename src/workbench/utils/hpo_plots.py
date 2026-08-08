@@ -292,16 +292,22 @@ def hpo_parallel_coordinates(
     center = float(baseline_value) if pd.notna(baseline_value) else float(values.median())
     deltas = values - center
 
+    # A stopped trial's objective covers fewer folds than the baseline's, so its margin is
+    # not a margin -- a two-fold value can read as beating defaults purely by covering less.
+    # Those are drawn in grey and kept out of the scale entirely.
+    full = runs["completed"].astype(bool) if "completed" in runs else pd.Series(True, index=runs.index)
+
     # Symmetric, so equal improvement and regression read equally far, and scaled by the best
-    # margin won: every trial runs to term, so a hopeless config lands arbitrarily far above
-    # the baseline and would otherwise flatten every real difference to white. Past either
-    # end the color saturates, which is the right reading for those. The 10% keeps the
-    # published marker off the colorbar's edge.
-    reach = -float(deltas.min())
+    # margin won: a hopeless config lands arbitrarily far above the baseline and would
+    # otherwise flatten every real difference to white. Past either end the color saturates,
+    # which is the right reading for those. The 10% keeps the published marker off the
+    # colorbar's edge.
+    scale_deltas = deltas[full] if full.any() else deltas
+    reach = -float(scale_deltas.min())
     if reach <= 0:
         # Nothing beat the baseline, so span the worse side instead -- otherwise the scale
         # collapses to a point and every trial reads as baseline.
-        reach = max(float(deltas.max()), 1e-9)
+        reach = max(float(scale_deltas.max()), 1e-9)
     span = reach * 1.1
     norm = TwoSlopeNorm(vmin=-span, vcenter=0.0, vmax=span)
     mappable = ScalarMappable(norm=norm, cmap=cmap_name)
@@ -316,22 +322,24 @@ def hpo_parallel_coordinates(
     def _path(y):
         return _curved_path(y) if use_curves else (x, y)
 
-    # Every trial drawn the same: the point is where blue and red sit along each axis, and
-    # splitting the population by outcome would break that read.
+    # Where the search looked is part of the picture, so stopped trials are drawn too --
+    # just in grey, since "did this beat defaults" has no answer for a partial ensemble.
     # Worst first, so the better trials still land on top of the crowd.
     artists, paths, records = [], [], []
     line_alpha = _line_alpha(len(values))
     for idx in deltas.sort_values(ascending=False).index:
         y = [_position(axis, knob_frame.at[idx, axis["knob"]]) for axis in axes_def]
         px, py = _path(y)
-        (artist,) = ax.plot(px, py, color=mappable.to_rgba(deltas[idx]), lw=2.2, alpha=line_alpha, zorder=2)
+        color = mappable.to_rgba(deltas[idx]) if full[idx] else "#c4c4c4"
+        (artist,) = ax.plot(px, py, color=color, lw=2.2, alpha=line_alpha, zorder=2 if full[idx] else 1)
         artists.append(artist)
         paths.append(np.column_stack([px, py]))
         records.append(
             {
                 "number": runs.at[idx, "number"] if "number" in runs else idx,
                 "value": float(values[idx]),
-                "margin": float(deltas[idx]),
+                "margin": float(deltas[idx]) if full[idx] else None,
+                "completed": bool(full[idx]),
                 "config": {axis["knob"]: knob_frame.at[idx, axis["knob"]] for axis in axes_def},
             }
         )

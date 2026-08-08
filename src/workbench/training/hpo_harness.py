@@ -347,6 +347,11 @@ def _ray_session(func):
     return wrapper
 
 
+def _finite(value) -> bool:
+    """True for a real number — not None, not NaN, not an infinity."""
+    return value is not None and value == value and value not in (float("inf"), float("-inf"))
+
+
 def _resolve_backend(backend: str) -> str:
     """Resolve ``"auto"`` to ``"ray"`` when ray is importable, else ``"optuna"``."""
     if backend != "auto":
@@ -394,8 +399,10 @@ def _run_optuna(
 
         def report(step, value):
             # A rung can land on the last step (max_steps of 1, 2 or 4), and stopping there
-            # would discard a trial that already has the full objective.
-            if not laddered or step >= max_steps:
+            # would discard a trial that already has the full objective. A non-finite value
+            # is an absence of measurement (sparse multi-target data can leave an early fold
+            # with no labelled rows), so there is nothing to judge yet either.
+            if not laddered or step >= max_steps or not _finite(value):
                 return
             trial.report(value, step)
             if trial.should_prune():
@@ -638,13 +645,16 @@ def _run_ray(
         _fence_gpu_memory(resources_per_trial)
         config = _resolve_choices(config, choice_options)
         # A seeded point reports nothing until the end, so the scheduler never sees it at a
-        # rung and cannot stop it. Config equality is how it is recognized: the value came
-        # back through the sampler unchanged, and a miss only makes the baseline prunable
-        # rather than producing a wrong result.
+        # rung and cannot stop it. Config equality is how it is recognized, which is loose in
+        # both directions and cheap in both: a miss leaves the baseline prunable, and a
+        # sampler that revisits the same point on a discrete space pays for a full ensemble
+        # it might have been stopped out of. Neither costs correctness, only a few folds.
         laddered = bool(max_steps) and config not in seeded
 
         def report(step, value):
-            if laddered:
+            # A non-finite running value means no labelled rows yet, not a bad candidate —
+            # reporting it would let the scheduler judge a rung that measured nothing.
+            if laddered and _finite(value):
                 tune.report({metric: value, _STEP: step})
 
         try:

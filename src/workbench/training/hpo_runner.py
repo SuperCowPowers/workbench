@@ -29,6 +29,34 @@ import os
 # out-of-fold predictions.
 METRIC = "cv_mae"
 
+# Everything the ``hpo`` block accepts. Anything else is a typo (``n_trails``) or a key that
+# no longer does what its name promises, and silently ignoring either changes the search
+# without saying so.
+HPO_KEYS = {"n_trials", "backend", "search_space", "max_parallel", "gpus_per_trial"}
+
+# Keys that used to mean something. Each names what to do instead, because ignoring them
+# would quietly change the objective or the compute bill.
+RETIRED_HPO_KEYS = {
+    "metric": "the objective is always pooled out-of-fold MAE; validation_ids rows stay out "
+    "of it so they remain an honest benchmark",
+    "rerank_top_k": "the search publishes its own winner; the caller's hyperparameters ride "
+    "along as a trial and can win",
+    "n_folds": "trials use the model's own n_folds so a trial matches what gets published",
+}
+
+
+def check_hpo_block(hpo_block: dict) -> None:
+    """Reject keys the block no longer honors, rather than running something else.
+
+    A search is hours of GPU time and its result is a published model, so a key that reads
+    as configuration but does nothing is worth failing on at submit time.
+    """
+    for key in hpo_block:
+        if key in RETIRED_HPO_KEYS:
+            raise ValueError(f"hpo['{key}'] is no longer supported — {RETIRED_HPO_KEYS[key]}. Remove it.")
+        if key not in HPO_KEYS:
+            raise ValueError(f"unknown hpo key {key!r}. Supported: {sorted(HPO_KEYS)}")
+
 
 class HpoAdapter:
     """Framework hooks for :func:`run_hpo`.
@@ -148,6 +176,8 @@ def run_hpo(
     """
     from workbench.training.hpo_harness import run_search
     from workbench.training.splits import get_split_indices
+
+    check_hpo_block(hpo_block)
 
     # The objective is the PRIMARY target's MAE, but a template keeps a row when any target
     # is non-NaN — so a multi-target frame can arrive with unlabeled primary targets. Scoring

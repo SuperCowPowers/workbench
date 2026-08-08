@@ -6,8 +6,11 @@ objectives are covered by ``chemprop_hpo_test.py`` and ``xgb_hpo_test.py``.
 """
 
 # Workbench Imports
+import pytest
+
 from workbench.training.hpo_runner import (
     METRIC,
+    check_hpo_block,
     HpoAdapter,
     baseline_value,
     best_config_record,
@@ -195,3 +198,22 @@ def test_run_hpo_end_to_end_writes_the_artifact_contract(tmp_path):
     assert best["search_baseline_value"] == 5.0  # the caller's own hyperparameters
     assert best["search_best_value"] <= best["search_baseline_value"]
     assert not (tmp_path / "hpo_rerank.csv").exists()
+
+
+def test_a_retired_hpo_key_fails_loudly():
+    """Silently ignoring it would run a different objective, or a different compute bill,
+    on a job that costs hours."""
+    for key in ("metric", "rerank_top_k", "n_folds"):
+        with pytest.raises(ValueError, match="no longer supported"):
+            check_hpo_block({key: "whatever"})
+
+
+def test_a_misspelled_hpo_key_fails_loudly():
+    """`n_trails` would otherwise sail through and run the default budget."""
+    with pytest.raises(ValueError, match="unknown hpo key"):
+        check_hpo_block({"n_trails": 100})
+
+
+def test_the_supported_hpo_keys_pass():
+    check_hpo_block({"n_trials": 60, "backend": "ray", "search_space": {}, "max_parallel": 4, "gpus_per_trial": 0.5})
+    check_hpo_block({})  # an empty block is a real request: search on every default

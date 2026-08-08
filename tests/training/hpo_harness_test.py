@@ -246,6 +246,30 @@ def test_back_to_back_ray_searches_share_a_process(ray_cluster):
     assert first.best_value is not None and second.best_value is not None
 
 
+def test_ray_ladder_stops_trials_and_spares_the_seeded_point(ray_cluster):
+    """The Ray path is what production runs, so ASHA and the seeded exemption need proving
+    on this backend and not just on the Optuna mirror."""
+    from hpo_ray_trials import laddered_quadratic
+
+    # Seeded far from the optimum: anything prunable at that config dies at the first rung.
+    seed_point = {"x": 9.0, "depth": 6}
+    result = run_search(
+        laddered_quadratic, SPACE, n_trials=12, backend="ray", max_steps=4, points_to_evaluate=[seed_point]
+    )
+
+    stopped = [t for t in result.trials if t["value"] is not None and not t["completed"]]
+    assert stopped, "ASHA stopped nothing -- the scheduler is not wired up"
+    assert all(t["step"] < 4 for t in stopped)
+
+    # Only a full-fidelity trial can win.
+    completed = [t for t in result.trials if t["completed"]]
+    assert result.best_value == pytest.approx(min(t["value"] for t in completed))
+
+    # The seeded point reached the last step despite being a poor config.
+    seeded = next(t for t in result.trials if t["config"] == seed_point)
+    assert seeded["completed"] and seeded["step"] == 4
+
+
 def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
     """No usable trial must name the problem, not die resolving a None config.
 

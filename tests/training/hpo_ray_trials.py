@@ -29,3 +29,11 @@ def always_oom(config, report):
     import torch
 
     raise torch.cuda.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+
+def laddered_quadratic(config, report):
+    """The same bowl, reported one step at a time so the scheduler has rungs to act on."""
+    value = (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
+    for step in range(1, 5):
+        report(step, value)
+    return value
