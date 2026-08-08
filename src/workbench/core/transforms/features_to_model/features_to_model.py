@@ -34,13 +34,15 @@ TRANSIENT_DESCRIBE_ERRORS = {"HttpTimeoutException", "ThrottlingException", "Thr
 # Every training instance this class can pick, keyed by workload. A ladder's rungs are tried
 # in order: each gets CAPACITY_WAIT_SECONDS to land an instance before dropping to the next,
 # and the final rung queues for as long as it takes. Only the scarce multi-GPU workload needs
-# more than one rung; Ray sizes trial concurrency to the GPUs it actually finds, so the
-# single-GPU rung runs the same search with fewer trials in flight.
+# more than one rung; Ray sizes trial concurrency to the GPUs it actually finds, so a smaller
+# rung runs the same search with fewer trials in flight.
 INSTANCE_LADDERS = {
+    # Multi-GPU only. A single-card rung "succeeds" into a run that takes days and can
+    # exhaust host RAM on a real dataset, hours after the point where it could have failed
+    # cleanly — so a search with no multi-GPU capacity should not start.
     "gpu_parallel_hpo": [
         "ml.g6.12xlarge",  # 4x NVIDIA L4
         "ml.g5.12xlarge",  # 4x NVIDIA A10G
-        "ml.g6.2xlarge",  # 1x NVIDIA L4
     ],
     "gpu": ["ml.g6.2xlarge"],  # NVIDIA L4 + 8 vCPUs for data loading
     # A search is hundreds of fits. XGBoost spreads one fit across every core, so cores cut
