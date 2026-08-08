@@ -29,6 +29,18 @@
           "endpoint:logd-reg-v1"
         ]
       }
+    ],
+    "logd_hpo": [
+      {
+        "script": "logd_chemprop_hpo.py",
+        "inputs": [
+          "fs:open_admet_logd"
+        ],
+        "outputs": [
+          "model:logd-reg-chemprop-hpo",
+          "endpoint:logd-reg-chemprop-hpo"
+        ]
+      }
     ]
   }
 }

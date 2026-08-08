@@ -39,14 +39,11 @@ deployed and used exactly like any other.
 
 | key | default | what it does |
 |---|---|---|
-| `n_trials` | per framework | search budget — 40 (ChemProp), 100 (PyTorch), 250 (XGBoost), sized to what one trial costs |
+| `n_trials` | per framework | search budget — 60 (ChemProp), 100 (PyTorch), 250 (XGBoost), sized to what one trial costs |
 | `search_space` | all groups | which knob groups to search — see below |
-| `metric` | `cv_mae` | objective: `cv_mae` (out-of-fold) or `holdout_mae` |
-| `rerank_top_k` | `5` | finalists re-scored in the second stage (`0` disables it) |
 | `backend` | `auto` | `optuna` (serial) or `ray` (parallel, needs a GPU box) |
 | `gpus_per_trial` | `0.5`, or `1.0` multi-task | GPU share one trial claims (Ray only) |
 | `max_parallel` | GPUs ÷ `gpus_per_trial` | concurrent trials (Ray only) — derived from the box, set it only to override |
-| `n_folds` | model's `n_folds` | ensemble size per trial — for cheap validation runs only |
 
 The searched knobs differ per framework, and a model knows its own — `hpo_search_space()`
 dispatches on the model's framework and returns one row per knob, carrying its range **and**
@@ -131,22 +128,49 @@ layer count would be recorded in the trials and the published config without eve
 built. Chemprop's own two-knob spelling stays available for a custom space: give
 `ffn_hidden_dim` int widths only, and `ffn_num_layers` is live in every trial.
 
-## Selection is two-stage
+## Every trial trains the real ensemble
 
-A search reports the *minimum* over many noisy estimates, so its winning value is
-optimistically biased — the winner may simply have drawn the luckiest evaluation. Workbench
-therefore treats the search as a **shortlist**, not a decision:
+A trial trains the same `n_folds` ensemble the winner is published as, scored as pooled
+out-of-fold MAE on the training rows. Scoring a configuration in the regime it ships in is
+the point — one picked as a single model does not carry over to an ensemble.
 
-1. **Search** — sample the space; every candidate trains its full ensemble, so the values are all on one basis.
-2. **Re-rank** — re-score the top finalists *and your own untuned hyperparameters* on fresh
-   trainings, then publish whichever wins.
+**Your own hyperparameters run as one of the trials.** They go first, so the sampler starts
+from an anchored observation instead of a cold space, and they can win — in which case your
+settings are what gets published. That row is marked `kind="baseline"` in the trials frame,
+and it is the reference line every plot of the search centers on.
 
-Carrying your own hyperparameters through the second stage is what bounds the downside: a
-search that finds nothing real loses to them, and **your original settings get published
-unchanged**. Ties go to your settings.
+### Trials stop early
 
-That makes a baseline win a legitimate outcome rather than a failed run — it means the
-search spent the compute and confirmed your existing configuration.
+Ensemble members train one at a time, and the running out-of-fold pool is reported after
+each one — so a configuration already off the pace is stopped rather than paying for the
+rest of its ensemble. Rungs sit at members 1, 2 and 4, and each keeps the better half of the
+trials that reached it.
+
+Two properties make that safe. The last rung is the *whole* objective rather than a proxy
+for it, so stopping early can cost you a good configuration but can never publish a bad one.
+And fold order is fixed, so every trial at a given rung was scored on the same molecules —
+the comparison is paired.
+
+The saving is what pays for the budget: a 60-trial ChemProp search costs roughly 130
+member-trainings instead of 300. Stopped trials show up as `pruned` in `trial_counts` and
+`completed=False` in the trials frame, keeping the partial value they reached — which is how
+you tell "stopped early" from "died". Only trials that ran every member are ranked, since a
+partial pool is measured over fewer molecules and is not the same number.
+
+## What the numbers mean
+
+A search's own values are **diagnostics, not performance estimates**, for two reasons that no
+amount of internal re-measurement can fix:
+
+- The winner is the *minimum* over many noisy evaluations, so it is the luckiest draw of many
+  and overstates what the configuration is worth. That bias grows with the trial count — a
+  bigger search reports a better-looking margin for the same model.
+- Every candidate was scored on the folds that selected it.
+
+So read the margin as "the search ranked this configuration best by X%", never "the model is
+X% better". The real number comes from a measurement the search did not select on: the
+published model's own cross-fold metrics, a held-out set the search never saw, or a
+champion/challenger comparison.
 
 ## Reading the results
 
@@ -159,14 +183,14 @@ results = model.hpo_results()
 
 ```python
 {'metric': 'cv_mae',
- 'trial_counts': {'attempted': 100, 'completed': 100, 'failed': 0},
+ 'trial_counts': {'attempted': 100, 'completed': 24, 'pruned': 76, 'failed': 0},
  'best_config': {'layers': '128-64',
                  'dropout': 0.25,
                  'learning_rate': 0.0002846282635669909,
                  'weight_decay': 0.0014020994043985207,
                  'batch_size': 128},
- 'best_value': 0.5106314063072205,
- 'baseline_value': 0.5450914978981019,
+ 'search_best_value': 0.5106314063072205,
+ 'search_baseline_value': 0.5450914978981019,
  ...}
 ```
 
@@ -177,19 +201,23 @@ the dict straight to another `to_model()` call to train a sibling on different d
 fs.to_model(name="pxr-reg-pytorch-v2", ..., hyperparameters={"uq_version": "v1", **results["best_config"]})
 ```
 
-**`best_value` vs `baseline_value` is the headline.** Both are `metric` (here `cv_mae`,
-lower is better) on the same basis, so their difference is the margin the publish decision
-turned on — quote this pair:
+**`search_best_value` vs `search_baseline_value`** are both `metric` (here `cv_mae`, lower
+is better) on the same folds — the winner against your own untuned settings:
 
 ```python
-gain = 100 * (results["baseline_value"] - results["best_value"]) / results["baseline_value"]
-print(f"{results['metric']}: {results['best_value']:.4f} vs {results['baseline_value']:.4f} baseline ({gain:+.1f}%)")
+gain = 100 * (results["search_baseline_value"] - results["search_best_value"]) / results["search_baseline_value"]
+print(f"{results['metric']}: {results['search_best_value']:.4f} vs {results['search_baseline_value']:.4f} baseline ({gain:+.1f}%)")
 # cv_mae: 0.5106 vs 0.5451 baseline (+6.3%)
 ```
 
-**`trial_counts` tells you whether the budget was spent well.** Every trial trains its full
-ensemble, so `completed` should equal `attempted` — any `failed` at all is worth a look at
-the training log (CUDA OOM is the usual cause when trials share a GPU).
+The `search_` prefixes are a warning label, not decoration — see
+[What the numbers mean](#what-the-numbers-mean). This margin is how the search *ranked*
+things, not how much better the model is.
+
+**`trial_counts` tells you whether the budget was spent well.** `pruned` is expected and
+healthy — that is the ladder working. `failed` is not: any at all is worth a look at the
+training log (CUDA OOM is the usual cause when trials share a GPU), because a failed trial
+produced no objective and so never backed the result.
 
 ### The trials frame
 
@@ -197,10 +225,11 @@ the training log (CUDA OOM is the usual cause when trials share a GPU).
 trials = results["trials"]      # one row per trial, plus a `baseline` row
 ```
 
-| number | value | completed | kind | hyperparameters |
-|---|---|---|---|---|
-| 0 | 0.516991 | True | trial | `{"layers": "256-128", ...}` |
-| 1 | 0.530321 | False | trial | `{"layers": "512-256-64", ...}` |
+| number | value | step | completed | kind | hyperparameters |
+|---|---|---|---|---|---|
+| 0 | 0.545091 | 5 | True | baseline | `{"layers": "128-64", ...}` |
+| 1 | 0.516991 | 5 | True | trial | `{"layers": "256-128", ...}` |
+| 2 | 0.611210 | 2 | False | trial | `{"layers": "512-256-64", ...}` |
 
 `hyperparameters` is a JSON object of every searched knob and the value it actually trained
 at, so each row is complete and NaN-free — expand it with `json.loads` to get one column per
@@ -212,15 +241,20 @@ import pandas as pd
 
 df = pd.DataFrame([json.loads(h) for h in trials["hyperparameters"]])
 df["value"] = trials["value"].values
-df.nsmallest(5, "value")                        # the finalists the re-rank scored
+df.nsmallest(5, "value")                        # the best configurations the search found
 df.groupby("layers")["value"].agg(["count", "mean", "min"])
 ```
 
-`completed=False` marks a trial that died before producing an objective and has no `value`.
-The single `kind="baseline"` row is your own
-untuned config scored on the same basis as the trials — it is the reference line any plot of
-the search needs, and `results["rerank"]` holds the finalists' re-scores if you want the
-second stage's own numbers.
+`step` is the ensemble member a trial last reported at, so it says where a stopped trial
+stopped. `completed=True` means it ran every member and was eligible to win; `completed=False`
+with a `value` is a trial the ladder stopped, and `completed=False` with no `value` is one
+that died. **Only compare `value` across completed trials** — a stopped trial's pool covers
+fewer molecules.
+
+The single `kind="baseline"` row is your own untuned config, scored as an ordinary trial on
+the same folds. It is never stopped early — no rung ever sees it — so whenever it scores at
+all, it scores at full fidelity. It can still fail outright like any trial, in which case
+there is no reference line and plots fall back to the trials' median.
 
 ### Which knobs mattered
 
@@ -299,11 +333,10 @@ there. Measured on our own data, HPO improved in-distribution cross-validation b
 stock defaults** on a held-out analog series — gains on cross-validation do not imply gains
 on a new chemical series.
 
-By default the objective is `cv_mae`, scored out-of-fold on the training rows. Rows
-designated through `validation_ids` are held out of training **and** out of the search, so
-they remain an honest benchmark. Opt into tuning toward them with
-`hpo={"metric": "holdout_mae"}` only when that set exists to be tuned against — doing so
-makes its own final score optimistic.
+The objective is `cv_mae`, scored out-of-fold on the training rows. Rows designated through
+`validation_ids` are held out of training **and** out of the search, so they stay an honest
+benchmark — and they are the right place to check whether a search actually bought you
+anything.
 
 ---
 

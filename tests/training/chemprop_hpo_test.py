@@ -142,8 +142,12 @@ def test_spec_defaults_match_the_template():
 
     The template's DEFAULT_HYPERPARAMETERS is what trains; a spec default is what the search
     records report for a knob nobody overrode. If the two disagree, the baseline row
-    describes a model that was never built. The FFN head compares as the widths it builds,
-    since the template spells it as a width plus a layer count and the space as a shape.
+    describes a model that was never built.
+
+    They must match as *values*, not merely as architectures. The baseline is seeded into the
+    search as an ordinary trial, and a Choice knob is sampled as an index — so a head the
+    template spells `300` + `ffn_num_layers=2` builds the same model as `"300-300"` but
+    cannot be expressed in the space at all, and the search dies before its first trial.
     """
     import ast
     from pathlib import Path
@@ -161,13 +165,13 @@ def test_spec_defaults_match_the_template():
     mismatched = {
         knob: (spec.default, defaults.get(knob))
         for knob, spec in space.items()
-        if knob in defaults and knob != "ffn_hidden_dim" and spec.default != defaults[knob]
+        if knob in defaults and spec.default != defaults[knob]
     }
     assert not mismatched, f"spec default != template default for {mismatched}"
 
-    searched_head = [int(width) for width in space["ffn_hidden_dim"].default.split("-")]
-    template_head = [defaults["ffn_hidden_dim"]] * defaults["ffn_num_layers"]
-    assert searched_head == template_head, f"baseline head {searched_head} != template head {template_head}"
+    # The shaped head has to agree with the layer count the template carries beside it.
+    head = [int(width) for width in str(defaults["ffn_hidden_dim"]).split("-")]
+    assert len(head) == defaults["ffn_num_layers"], f"head {head} != ffn_num_layers {defaults['ffn_num_layers']}"
 
 
 def test_every_searched_knob_declares_a_default():

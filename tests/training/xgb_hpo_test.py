@@ -7,7 +7,7 @@ The framework-agnostic orchestration is covered by ``hpo_runner_test.py``.
 # Workbench Imports
 from workbench.training.hpo_harness import FloatRange, IntRange
 from workbench.training.xgb_core import align_frame, xgb_params
-from workbench.training.xgb_hpo import XGBAdapter, _xgb_threads, resolve_search_space, xgb_search_space
+from workbench.training.xgb_hpo import _xgb_threads, resolve_search_space, xgb_search_space
 
 
 def test_default_space_is_basic_plus_reg():
@@ -152,12 +152,3 @@ def test_align_frame_handles_the_empty_holdout():
     empty = pd.DataFrame({"x1": pd.Series(dtype=float), "fingerprint": pd.Series(dtype=object)})
     out = align_frame(empty, {"color": ["red"]}, ["x1", "fingerprint"], ["fingerprint"])
     assert len(out) == 0 and "fingerprint" in out.columns
-
-
-def test_adapter_prepare_frame_without_alignment_state_passes_through():
-    """The minimal adapter (unit-test scale) must not require the template's fitted state."""
-    import pandas as pd
-
-    adapter = XGBAdapter(target="y", features=["x1"])
-    df = pd.DataFrame({"x1": [1.0, 2.0], "y": [0.1, 0.2]})
-    pd.testing.assert_frame_equal(adapter.prepare_frame(df), df)

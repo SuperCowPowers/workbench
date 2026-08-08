@@ -4,9 +4,8 @@ Consumes the `fs:aqsol_features` FeatureSet produced by aqsol_feature_set.py.
 
 The `hpo` block runs the search *inside* the single training job — trials are ephemeral,
 so no throwaway Workbench models or endpoints are created — and publishes only the winning
-config. The search shortlists; a re-rank then scores those finalists and these
-hyperparameters as-is, and whichever wins there is published. A search that finds nothing
-real therefore publishes the untuned baseline.
+config. These hyperparameters run as one of the trials, so the record carries the value an
+untuned model would have scored on the same folds.
 
 Heavy: a multi-GPU box for hours. Launch it on AWS Batch rather than inline.
 
@@ -25,13 +24,15 @@ if __name__ == "__main__":
     #
     #   depth           IntRange(2, 6, step=1, default=5)
     #   hidden_dim      IntRange(100, 2400, step=100, default=700)
-    #   ffn_num_layers  IntRange(1, 3, step=1, default=2)
-    #   ffn_hidden_dim  Choice([300, 600, 1800, "300-100", "512-128", "512-128-32", "1024-256-64"])
+    #   ffn_hidden_dim  Choice(["300", "600", "1200", "1800", "300-300", "300-100", ...])
     #   max_lr          FloatRange(1e-4, 5e-3, log=True, default=1e-3)
     #   batch_size      Choice([64, 128, 256, 512], default=64)
     #
-    # It is a dict, so narrowing a range is `space["depth"] = IntRange(3, 5)` and dropping a
-    # knob is `del space["ffn_num_layers"]`. space.to_frame() reads back what will be sampled.
+    # ffn_hidden_dim is a per-layer shape: its length is the head's depth, so it covers what
+    # chemprop splits across ffn_hidden_dim + ffn_num_layers, plus the tapered heads.
+    #
+    # It is a dict, so narrowing a range is `space["depth"] = IntRange(3, 5)` and dropping a knob
+    # is `del space["depth"]`. space.to_frame() reads back what will be sampled.
     # IntRange / FloatRange / Choice come from workbench.training.hpo_harness.
     space = SearchSpace("chemprop")
 
@@ -48,10 +49,8 @@ if __name__ == "__main__":
         hyperparameters={
             # The search budget is what the job costs, so it is worth stating. Everything
             # else defaults: https://supercowpowers.github.io/workbench/models/hpo/
-            "hpo": {"n_trials": 40, "search_space": space.to_dict()},
+            "hpo": {"n_trials": 60, "search_space": space.to_dict()},
         },
-        # For an out-of-distribution objective, pass validation_ids=[...] and set
-        # hpo["metric"]="holdout_mae"; those rows are held out of training either way.
     )
     m.set_owner("test")
 

@@ -13,16 +13,16 @@ import pytest
 
 # Workbench Imports
 from workbench.training.hpo_harness import (
+    SEARCH_SPACE_MODULES,
     Choice,
     FloatRange,
     HpoResult,
     IntRange,
-    evaluate_configs,
     run_search,
 )
 
 
-def _quadratic_objective(config):
+def _quadratic_objective(config, report):
     """A smooth bowl minimized at x=3.0, depth=4."""
     return (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
 
@@ -35,7 +35,7 @@ SPACE = {
 
 def test_finds_minimum():
     """TPE converges near the known optimum (x=3, depth=4)."""
-    result = run_search(_quadratic_objective, SPACE, n_trials=60, backend="optuna", metric="holdout_mae", mode="min")
+    result = run_search(_quadratic_objective, SPACE, n_trials=60, backend="optuna", metric="objective", mode="min")
     assert isinstance(result, HpoResult)
     assert result.best_value < 1.0
     assert abs(result.best_config["x"] - 3.0) < 1.0
@@ -45,7 +45,7 @@ def test_finds_minimum():
 def test_result_shape():
     """HpoResult records every trial with its resolved config."""
     result = run_search(_quadratic_objective, SPACE, n_trials=20, backend="optuna")
-    assert result.metric == "holdout_mae"
+    assert result.metric == "objective"
     assert result.mode == "min"
     assert result.n_trials == 20
     assert len(result.trials) == 20
@@ -58,7 +58,7 @@ def test_choice_with_list_options():
     """Unhashable Choice options (a tapered ffn head) resolve to real values."""
     options = [2000, 1000, [1024, 256, 64]]
 
-    def obj(config):
+    def obj(config, report):
         ffn = config["ffn_hidden_dim"]
         # Prefer the tapered list; scalars score worse.
         return 0.0 if isinstance(ffn, list) else float(ffn)
@@ -72,7 +72,7 @@ def test_choice_with_list_options():
 def test_maximize_mode():
     """mode='max' flips the optimization direction."""
 
-    def obj(config):
+    def obj(config, report):
         return -((config["x"] - 2.0) ** 2)  # peak at x=2
 
     space = {"x": FloatRange(0.0, 4.0)}
@@ -100,44 +100,6 @@ def test_every_trial_runs_to_completion():
     assert all(t["value"] is not None for t in result.trials)
 
 
-# --- evaluate_configs (the re-rank primitive) ------------------------------
-
-
-def test_evaluate_configs_scores_every_config_in_order():
-    """Values come back positionally aligned with the configs, one call each."""
-    seen = []
-
-    def eval_fn(config, index):
-        seen.append(index)
-        return config["x"] * 2
-
-    values = evaluate_configs(eval_fn, [{"x": 1}, {"x": 2}, {"x": 3}], backend="optuna")
-    assert values == [2, 4, 6]
-    assert seen == [0, 1, 2]
-
-
-def test_evaluate_configs_handles_unhashable_config_values():
-    """Configs may hold tapered lists — nothing here hashes them."""
-    configs = [{"ffn_hidden_dim": [1024, 256, 64]}, {"ffn_hidden_dim": 600}]
-    values = evaluate_configs(lambda c, i: float(i), configs, backend="optuna")
-    assert values == [0.0, 1.0]
-
-
-def test_evaluate_configs_isolates_failures():
-    """One config blowing up yields None for that slot, not a lost run."""
-
-    def eval_fn(config, index):
-        if index == 1:
-            raise RuntimeError("boom")
-        return 1.0
-
-    assert evaluate_configs(eval_fn, [{}, {}, {}], backend="optuna") == [1.0, None, 1.0]
-
-
-def test_evaluate_configs_empty():
-    assert evaluate_configs(lambda c, i: 1.0, [], backend="optuna") == []
-
-
 def test_all_nan_objective_raises_actionable_error():
     """A NaN objective fails every Optuna trial — the error must say why, not 'no trials'.
 
@@ -146,7 +108,7 @@ def test_all_nan_objective_raises_actionable_error():
     surfaces, so the message has to name the cause.
     """
 
-    def nan_objective(config):
+    def nan_objective(config, report):
         return float("nan")
 
     with pytest.raises(RuntimeError, match="no usable trial"):
@@ -156,7 +118,7 @@ def test_all_nan_objective_raises_actionable_error():
 def test_partial_nan_objective_still_finds_the_best():
     """Some trials NaN-ing out doesn't sink the search — the scorable ones still rank."""
 
-    def sometimes_nan(config):
+    def sometimes_nan(config, report):
         return config["x"] if config["x"] < 0.5 else float("nan")
 
     result = run_search(sometimes_nan, {"x": FloatRange(0.0, 1.0)}, n_trials=25, backend="optuna")
@@ -250,46 +212,62 @@ def test_a_trial_that_died_before_reporting_does_not_sink_the_record():
 
     class _Good:
         config = {"depth": 3}
-        metrics = {"holdout_mae": 0.25}
+        metrics = {"objective": 0.25, "step": 5}
 
-    records = _resolve_trial_records([_Good(), _Dead(), _Good()], metric="holdout_mae", choice_options={})
+    class _Stopped:
+        config = {"depth": 6}
+        metrics = {"objective": 0.90, "step": 2}
 
-    assert [r["completed"] for r in records] == [True, False, True]
-    assert records[1]["value"] is None
-    assert records[1]["config"] == {}
+    records = _resolve_trial_records([_Good(), _Dead(), _Stopped()], metric="objective", choice_options={}, max_steps=5)
+
+    assert [r["completed"] for r in records] == [True, False, False]
+    assert records[1]["value"] is None and records[1]["config"] == {}
     assert records[0]["value"] == 0.25
+    # A trial stopped at a rung keeps its partial value; that is what tells it from a death.
+    assert records[2]["value"] == 0.90 and records[2]["step"] == 2
 
 
-def test_a_ray_run_leaves_no_session_behind(ray_cluster):
-    """Each Ray entry point owns its session, so nothing outlives the run that started it."""
+def test_back_to_back_ray_searches_share_a_process(ray_cluster):
+    """Each Ray entry point owns its session, so nothing outlives the run that started it.
+
+    Tune's actor manager does not survive a second ``Tuner`` in a session it did not start —
+    scheduling races the previous run's teardown and raises "Tracked actor is not managed by
+    this event manager".
+    """
     import ray
 
-    from hpo_ray_trials import quadratic, quadratic_score
+    from hpo_ray_trials import quadratic
 
-    run_search(quadratic, SPACE, n_trials=3, backend="ray")
+    first = run_search(quadratic, SPACE, n_trials=3, backend="ray")
     assert not ray.is_initialized()
 
-    evaluate_configs(quadratic_score, [{"x": 1.0, "depth": 3}], backend="ray")
+    second = run_search(quadratic, SPACE, n_trials=3, backend="ray")
     assert not ray.is_initialized()
+    assert first.best_value is not None and second.best_value is not None
 
 
-def test_a_rerank_can_follow_a_search_in_the_same_process(ray_cluster):
-    """The production sequence: search, then re-rank its finalists, one process.
+def test_ray_ladder_stops_trials_and_spares_the_seeded_point(ray_cluster):
+    """The Ray path is what production runs, so ASHA and the seeded exemption need proving
+    on this backend and not just on the Optuna mirror."""
+    from hpo_ray_trials import laddered_quadratic
 
-    Tune's actor manager does not survive a second ``Tuner`` in a session it did not start
-    — scheduling races the previous run's teardown and raises "Tracked actor is not managed
-    by this event manager", which degrades the re-rank to publishing the search's own
-    biased winner.
-    """
-    from hpo_ray_trials import quadratic, quadratic_score
+    # Seeded far from the optimum: anything prunable at that config dies at the first rung.
+    seed_point = {"x": 9.0, "depth": 6}
+    result = run_search(
+        laddered_quadratic, SPACE, n_trials=12, backend="ray", max_steps=4, points_to_evaluate=[seed_point]
+    )
 
-    result = run_search(quadratic, SPACE, n_trials=6, backend="ray")
-    finalists = [t["config"] for t in sorted(result.trials, key=lambda t: t["value"])[:3]]
+    stopped = [t for t in result.trials if t["value"] is not None and not t["completed"]]
+    assert stopped, "ASHA stopped nothing -- the scheduler is not wired up"
+    assert all(t["step"] < 4 for t in stopped)
 
-    values = evaluate_configs(quadratic_score, finalists, backend="ray", max_parallel=2)
+    # Only a full-fidelity trial can win.
+    completed = [t for t in result.trials if t["completed"]]
+    assert result.best_value == pytest.approx(min(t["value"] for t in completed))
 
-    assert len(values) == len(finalists)
-    assert all(v is not None for v in values)
+    # The seeded point reached the last step despite being a poor config.
+    seeded = next(t for t in result.trials if t["config"] == seed_point)
+    assert seeded["completed"] and seeded["step"] == 4
 
 
 def test_ray_all_trials_failing_raises_actionable_error(ray_cluster):
@@ -314,3 +292,160 @@ def test_is_oom_discriminates():
     assert _is_oom(torch.cuda.OutOfMemoryError("CUDA out of memory"))
     assert not _is_oom(RuntimeError("CUDA out of memory"))  # same words, wrong type
     assert not _is_oom(ValueError("boom"))
+
+
+# --- points_to_evaluate (the baseline trial) -------------------------------
+
+
+def test_a_seeded_point_is_tried_first_and_can_win():
+    """The baseline rides in as an ordinary trial: the sampler sees it and it can win."""
+    from workbench.training.hpo_harness import Choice, FloatRange
+
+    space = {"x": FloatRange(0.0, 10.0, default=5.0), "shape": Choice(["a", "b", "c"], default="b")}
+    seen = []
+
+    def trial_fn(config, report):
+        seen.append(config)
+        # Only the seeded point scores 0.0, so it wins unless it was never tried.
+        return 0.0 if (config["x"], config["shape"]) == (5.0, "b") else 1.0
+
+    result = run_search(
+        trial_fn, space, n_trials=5, backend="optuna", mode="min", points_to_evaluate=[{"x": 5.0, "shape": "b"}]
+    )
+    assert seen[0] == {"x": 5.0, "shape": "b"}  # tried before anything the sampler proposes
+    assert result.best_config == {"x": 5.0, "shape": "b"} and result.best_value == 0.0
+
+
+def test_a_seeded_choice_outside_the_space_is_rejected():
+    """A Choice is sampled as an index, so a value the space lacks cannot be expressed."""
+    import pytest
+
+    from workbench.training.hpo_harness import Choice
+
+    with pytest.raises(ValueError, match="not one of the searched options"):
+        run_search(
+            lambda c, report: 1.0,
+            {"shape": Choice(["a", "b"], default="a")},
+            n_trials=2,
+            backend="optuna",
+            points_to_evaluate=[{"shape": "z"}],
+        )
+
+
+# --- the fold ladder (successive halving over reported steps) --------------
+
+
+def _laddered_search(n_trials=20, seeded=None, max_steps=5):
+    """A search whose objective is `x` at every step, so rung decisions are unambiguous.
+
+    Returns ``(result, steps_run)`` — ``steps_run`` maps each trial's x to how many steps it
+    got through, which is what says whether the scheduler stopped it.
+    """
+    from workbench.training.hpo_harness import FloatRange
+
+    steps_run = {}
+
+    def trial_fn(config, report):
+        x = config["x"]
+        for step in range(1, max_steps + 1):
+            steps_run[x] = step
+            report(step, x)
+        return x
+
+    result = run_search(
+        trial_fn,
+        {"x": FloatRange(0.0, 10.0, default=5.0)},
+        n_trials=n_trials,
+        backend="optuna",
+        mode="min",
+        max_steps=max_steps,
+        points_to_evaluate=seeded,
+    )
+    return result, steps_run
+
+
+def test_the_ladder_stops_trials_before_their_last_step():
+    """Successive halving has to actually cull, or the ladder buys nothing."""
+    result, steps_run = _laddered_search()
+
+    stopped = [t for t in result.trials if t["state"] == "PRUNED"]
+    assert stopped, "no trial was stopped early — the pruner is not engaged"
+    # A stopped trial keeps the partial value it did report; that is what tells it from a death.
+    assert all(t["value"] is not None and t["step"] < 5 for t in stopped)
+    # And the total work is less than running everything to term.
+    assert sum(steps_run.values()) < 5 * len(steps_run)
+
+
+def test_the_ladder_only_ranks_trials_that_ran_every_step():
+    """A partial objective covers fewer steps, so it must not win."""
+    result, _ = _laddered_search()
+
+    completed = [t for t in result.trials if t["state"] == "COMPLETE"]
+    assert result.best_value == min(t["value"] for t in completed)
+    assert result.best_config["x"] == result.best_value
+
+
+def test_a_seeded_point_is_never_stopped_early():
+    """The baseline reports nothing until the end, so no rung ever sees it.
+
+    Seeded deliberately bad (x=9.5): anything prunable at that value dies at the first rung,
+    so reaching step 5 can only mean the scheduler never got a look at it.
+    """
+    result, steps_run = _laddered_search(seeded=[{"x": 9.5}])
+
+    assert steps_run[9.5] == 5
+    baseline = next(t for t in result.trials if t["config"].get("x") == 9.5)
+    assert baseline["state"] == "COMPLETE" and baseline["value"] == 9.5
+
+
+def test_a_nan_objective_after_reporting_is_failed_not_stopped():
+    """Optuna marks a NaN-returning trial FAILED, but it may already have reported
+    intermediates. Backfilling its value from those would file a genuine failure as a
+    scheduler stop, hiding the one count that means the budget was lost."""
+    from workbench.training.hpo_harness import FloatRange
+    from workbench.training.hpo_runner import summarize_trials
+
+    max_steps = 4
+
+    def trial_fn(config, report):
+        # A competitive intermediate, so the failing candidates are not culled at a rung
+        # before they ever reach the NaN -- the ladder would otherwise mask the case.
+        report(1, 0.0)
+        if config["x"] > 5.0:
+            return float("nan")
+        for step in range(2, max_steps + 1):
+            report(step, config["x"])
+        return config["x"]
+
+    result = run_search(
+        trial_fn,
+        {"x": FloatRange(0.0, 10.0, default=5.0)},
+        n_trials=12,
+        backend="optuna",
+        mode="min",
+        max_steps=max_steps,
+    )
+    died = [t for t in result.trials if t["state"] == "FAIL"]
+    assert died, "expected some trials to produce a NaN objective"
+    assert all(t["value"] is None for t in died), "a failed trial must not carry a partial value"
+    counts = summarize_trials(result.trials)
+    assert counts["failed"] == len(died)
+
+
+# --- the shipped defaults must be seedable into the shipped space ----------------
+
+
+@pytest.mark.parametrize("framework", sorted(SEARCH_SPACE_MODULES))
+def test_a_frameworks_own_template_defaults_can_seed_its_own_search(framework):
+    """`run_hpo` enqueues the caller's config as trial 0, and a Choice knob is sampled as an
+    index -- so a template default the space cannot express raises before trial 1 and takes
+    the whole search down. The spellings have to agree, not just the architectures.
+    """
+    from workbench.training.hpo_harness import Choice, SearchSpace, _encode_point
+    from workbench.training.hpo_runner import effective_config
+
+    space = SearchSpace(framework)
+    # Nobody overrides anything: the point is each knob's own declared default.
+    point = effective_config({}, {}, space)
+    choice_options = {name: list(spec.options) for name, spec in space.items() if isinstance(spec, Choice)}
+    _encode_point(point, choice_options)  # raises if a default is outside its own knob

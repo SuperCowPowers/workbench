@@ -48,42 +48,25 @@ def artifact_uri(tmp_path):
 
 @pytest.mark.medium
 def test_get_hpo_results_shape():
-    """A searched model returns its best_config plus the rerank/trials frames."""
+    """A searched model returns its best_config plus the trials frame."""
     results = get_hpo_results(Model(HPO_MODEL))
     assert results is not None, f"{HPO_MODEL} should carry HPO artifacts"
 
-    assert results["metric"] in ("cv_mae", "holdout_mae")
+    assert results["metric"] == "cv_mae"
     assert isinstance(results["best_config"], dict) and results["best_config"]
-    # best_value/baseline_value share the re-rank basis; search_best_value is phase 1's.
-    assert isinstance(results["best_value"], float)
     assert isinstance(results["search_best_value"], float)
-    assert isinstance(results["rerank_fresh_split"], bool)
+    assert isinstance(results["search_baseline_value"], float)
 
-    rerank = results["rerank"]
-    assert isinstance(rerank, pd.DataFrame)
-    # The baseline always rides along as a candidate — that's the downside guard.
-    assert "baseline" in rerank["candidate"].tolist()
-    assert results["metric"] in rerank.columns
-
-    assert isinstance(results["trials"], pd.DataFrame)
-    assert len(results["trials"]) > 0
+    trials = results["trials"]
+    assert isinstance(trials, pd.DataFrame) and len(trials) > 0
+    # The caller's own hyperparameters run as a trial — the reference line for the plots.
+    assert (trials["kind"] == "baseline").sum() == 1
 
 
 @pytest.mark.medium
 def test_get_hpo_results_none_for_unsearched_model():
     """No search artifacts means None, so this doubles as the is-it-HPO check."""
     assert get_hpo_results(Model(PLAIN_MODEL)) is None
-
-
-@pytest.mark.medium
-def test_published_config_matches_a_rerank_candidate():
-    """The published config is whichever candidate won the re-rank, not the search's pick."""
-    results = get_hpo_results(Model(HPO_MODEL))
-    winner = min(
-        (row for _, row in results["rerank"].iterrows() if pd.notna(row[results["metric"]])),
-        key=lambda row: row[results["metric"]],
-    )
-    assert winner[results["metric"]] == pytest.approx(results["best_value"])
 
 
 @pytest.mark.medium

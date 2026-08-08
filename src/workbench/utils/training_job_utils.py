@@ -29,17 +29,17 @@ def get_hpo_results(workbench_model: Any) -> Optional[dict]:
     ``model.tar.gz`` that ``model_data_url()`` points at. A None return means the model was
     not hyperparameter-searched, so this doubles as the "was this an HPO model?" check.
 
-    Reading the returned values: ``best_value`` and ``baseline_value`` share the re-rank's
-    basis, so their difference is the margin the publish decision turned on.
-    ``search_best_value`` comes from the search phase and is not comparable to them when
-    ``rerank_fresh_split`` is true — the re-rank scored on a different fold partition.
+    Reading the returned values: ``search_best_value`` is the minimum over every trial and
+    ``search_baseline_value`` is the caller's own hyperparameters on the same folds. Their
+    difference is a search diagnostic, not a performance estimate — the winner is the
+    luckiest of many draws, so the margin overstates what the config is worth.
 
     Args:
         workbench_model: Workbench model object
 
     Returns:
-        dict: ``best_config.json`` contents plus ``rerank``/``trials`` DataFrames, or None
-        when the model has no search artifacts.
+        dict: ``best_config.json`` contents plus a ``trials`` DataFrame, or None when the
+        model has no search artifacts.
     """
     model_artifact_uri = workbench_model.model_data_url()
     if model_artifact_uri is None:
@@ -55,9 +55,8 @@ def get_hpo_results(workbench_model: Any) -> Optional[dict]:
             return None
         with open(best_config_path, "r") as f:
             results = json.load(f)
-        for key, filename in (("rerank", "hpo_rerank.csv"), ("trials", "hpo_trials.csv")):
-            csv_path = os.path.join(artifact_dir, filename)
-            results[key] = pd.read_csv(csv_path) if os.path.exists(csv_path) else None
+        csv_path = os.path.join(artifact_dir, "hpo_trials.csv")
+        results["trials"] = pd.read_csv(csv_path) if os.path.exists(csv_path) else None
     return results
 
 
