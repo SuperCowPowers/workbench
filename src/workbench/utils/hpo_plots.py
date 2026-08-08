@@ -43,18 +43,6 @@ def _fmt(value) -> str:
     return str(int(number)) if float(number).is_integer() else f"{number:.3g}"
 
 
-def _trial_value(config: dict, runs: pd.DataFrame, knob_frame: pd.DataFrame) -> Optional[float]:
-    """The objective of the trial that ran this exact config, on the trials' own basis."""
-    if not config:
-        return None
-    match = pd.Series(True, index=knob_frame.index)
-    for knob, value in config.items():
-        if knob in knob_frame.columns:
-            match &= knob_frame[knob].astype(str) == str(value)
-    hits = runs.loc[match[match].index, "value"]
-    return float(hits.iloc[0]) if len(hits) else None
-
-
 # Samples per segment of a curved line. Also the marker stride: the coordinates land on
 # every Nth point of the curve, so one plot call can carry both the line and its markers.
 _PER_SEGMENT = 32
@@ -265,8 +253,10 @@ def hpo_parallel_coordinates(
     baseline_row = trials[trials.get("kind").eq("baseline")] if "kind" in trials else trials.iloc[0:0]
     baseline_value = float(baseline_row["value"].iloc[0]) if len(baseline_row) else results.get("baseline_value")
 
+    # Counts cover every trial the budget paid for, the baseline included; `runs` drops it
+    # only because it is drawn as a reference line rather than as one of the crowd.
+    counts = _trial_counts(trials)
     runs = trials[trials["kind"].eq("trial")] if "kind" in trials else trials
-    counts = _trial_counts(runs)
     if completed_only and "completed" in runs:
         runs = runs[runs["completed"].astype(bool)]
     runs = runs.dropna(subset=["value"])  # a failed trial never scored
@@ -297,7 +287,9 @@ def hpo_parallel_coordinates(
     # Color is a *margin over baseline*, not a raw score: the question a reader has is
     # "did this trial beat my defaults", which a raw scale cannot answer.
     values = runs["value"].astype(float)
-    center = float(baseline_value) if baseline_value is not None else float(values.median())
+    # `pd.notna`, not `is not None`: a failed baseline comes back from CSV as NaN, and a NaN
+    # center would make every delta non-finite instead of falling back to the median.
+    center = float(baseline_value) if pd.notna(baseline_value) else float(values.median())
     deltas = values - center
 
     # Symmetric, so equal improvement and regression read equally far, and scaled by the best
@@ -406,14 +398,10 @@ def hpo_parallel_coordinates(
     # baseline sits at zero and the published config at its own margin. Drawing raw objective
     # values here would put both lines off the end of the scale.
     bar.ax.axhline(0.0, color="black", linestyle="--", lw=1.5)
-    # Looked up across *all* scored rows, baseline included: a baseline win is a supported
-    # outcome, and that row is not in `runs`.
-    scored = trials.dropna(subset=["value"])
-    published_value = _trial_value(
-        results.get("best_config"),
-        scored,
-        pd.DataFrame([_as_dict(h) for h in scored["hyperparameters"]], index=scored.index),
-    )
+    # The winner's own score, straight from the record: every trial is on one basis now, so
+    # this is directly comparable. Matching by config would return the first row holding
+    # those knobs, which is the wrong one whenever a config was evaluated twice.
+    published_value = results.get("search_best_value")
     if published_value is not None:
         rule = bar.ax.axhline(published_value - center, color="#00d451", lw=3.5)
         # A white halo so it reads against the dark end of the colormap.

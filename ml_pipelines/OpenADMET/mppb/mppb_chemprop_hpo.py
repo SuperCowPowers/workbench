@@ -6,7 +6,7 @@ training job; trials are ephemeral, so only the winning config is published.
 
 mppb is the small-data half of the pair with ../logd/logd_chemprop_hpo.py:
 
-  - 1302 rows against logd's 5039, so a scaffold fold holds ~260 molecules
+  - 1302 rows against logd's 5039 — a quarter the data, and a scaffold fold holds ~260
   - std 0.46 over a 0.0 to 1.95 range — much less signal per compound than logd
   - the size where most real project datasets sit, and where the literature has chemprop
     HPO at roughly a coin flip against defaults (Tetko et al., J Cheminform 2024)

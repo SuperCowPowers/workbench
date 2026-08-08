@@ -393,7 +393,9 @@ def _run_optuna(
         laddered = bool(max_steps) and config not in seeded
 
         def report(step, value):
-            if not laddered:
+            # A rung can land on the last step (max_steps of 1, 2 or 4), and stopping there
+            # would discard a trial that already has the full objective.
+            if not laddered or step >= max_steps:
                 return
             trial.report(value, step)
             if trial.should_prune():
@@ -696,7 +698,11 @@ def _run_ray(
     # Never rank an unscored trial: one that died carries neither a value nor a config, so
     # ranking it would publish `None` as the winning config. Nor a stopped one: its objective
     # covers fewer steps than a full trial's, so the two are not the same measurement.
-    pool = [r for r in results if _scored_value(r, metric) is not None and _reached_full(r, max_steps)]
+    pool = [
+        r
+        for r in results
+        if getattr(r, "error", None) is None and _scored_value(r, metric) is not None and _reached_full(r, max_steps)
+    ]
     if not pool:
         # Mirror the Optuna path's actionable failure. Ray otherwise surfaces this as an
         # AttributeError deep in config resolution, on the box that costs the most to rent.

@@ -252,8 +252,9 @@ that died. **Only compare `value` across completed trials** — a stopped trial'
 fewer molecules.
 
 The single `kind="baseline"` row is your own untuned config, scored as an ordinary trial on
-the same folds. It is never stopped early, so it always has a full-fidelity value to serve as
-the reference line.
+the same folds. It is never stopped early — no rung ever sees it — so whenever it scores at
+all, it scores at full fidelity. It can still fail outright like any trial, in which case
+there is no reference line and plots fall back to the trials' median.
 
 ### Which knobs mattered
 

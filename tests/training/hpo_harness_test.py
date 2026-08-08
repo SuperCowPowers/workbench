@@ -13,6 +13,7 @@ import pytest
 
 # Workbench Imports
 from workbench.training.hpo_harness import (
+    SEARCH_SPACE_MODULES,
     Choice,
     FloatRange,
     HpoResult,
@@ -383,7 +384,9 @@ def test_a_nan_objective_after_reporting_is_failed_not_stopped():
     max_steps = 4
 
     def trial_fn(config, report):
-        report(1, config["x"])  # reports before failing
+        # A competitive intermediate, so the failing candidates are not culled at a rung
+        # before they ever reach the NaN -- the ladder would otherwise mask the case.
+        report(1, 0.0)
         if config["x"] > 5.0:
             return float("nan")
         for step in range(2, max_steps + 1):
@@ -403,3 +406,22 @@ def test_a_nan_objective_after_reporting_is_failed_not_stopped():
     assert all(t["value"] is None for t in died), "a failed trial must not carry a partial value"
     counts = summarize_trials(result.trials)
     assert counts["failed"] == len(died)
+
+
+# --- the shipped defaults must be seedable into the shipped space ----------------
+
+
+@pytest.mark.parametrize("framework", sorted(SEARCH_SPACE_MODULES))
+def test_a_frameworks_own_template_defaults_can_seed_its_own_search(framework):
+    """`run_hpo` enqueues the caller's config as trial 0, and a Choice knob is sampled as an
+    index -- so a template default the space cannot express raises before trial 1 and takes
+    the whole search down. The spellings have to agree, not just the architectures.
+    """
+    from workbench.training.hpo_harness import Choice, SearchSpace, _encode_point
+    from workbench.training.hpo_runner import effective_config
+
+    space = SearchSpace(framework)
+    # Nobody overrides anything: the point is each knob's own declared default.
+    point = effective_config({}, {}, space)
+    choice_options = {name: list(spec.options) for name, spec in space.items() if isinstance(spec, Choice)}
+    _encode_point(point, choice_options)  # raises if a default is outside its own knob

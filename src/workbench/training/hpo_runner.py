@@ -344,10 +344,17 @@ def pooled_mae(oof_pred, oof_true) -> float:
     nanmean, not mean: the template keeps a row when ANY target is non-NaN, so a
     multi-target frame can carry a NaN primary target. Training still uses every row
     (chemprop masks per-target); only the scoring skips the unlabeled ones.
+
+    Returns NaN when the folds so far hold no labelled primary target at all — possible on
+    sparse multi-target data. Callers must not report that as a rung: it is an absence of
+    measurement, not a bad one.
     """
     import numpy as np
 
-    return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
+    error = np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))
+    if not np.isfinite(error).any():
+        return float("nan")
+    return float(np.nanmean(error))
 
 
 def effective_config(config: dict, base_hyperparameters: dict, search_space: dict) -> dict:

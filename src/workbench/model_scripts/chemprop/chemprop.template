@@ -83,7 +83,7 @@ DEFAULT_HYPERPARAMETERS = {
     # ffn_num_layers times) or an explicit per-layer shape — a dash-string
     # ("1024-256-64", the pytorch `layers` convention) or a list of ints. For a
     # shape, ffn_num_layers is ignored and depth is taken from its length.
-    "ffn_hidden_dim": 300,
+    "ffn_hidden_dim": "300-300",
     "ffn_num_layers": 2,
     # Defaults match chemprop's own
     "warmup_epochs": 2,

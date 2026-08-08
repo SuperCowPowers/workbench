@@ -12,7 +12,7 @@ logd is the cleanest read available on whether HPO earns its keep:
     optimizes the same loss the publish does
 
 If HPO cannot win here it will not win on the harder assays. Pair it with
-../mppb/mppb_chemprop_hpo.py, which is the same question at a tenth the data.
+../mppb/mppb_chemprop_hpo.py, which is the same question at a quarter the data.
 
 Reading the result: the search's own margin is optimistic (it is a minimum over many noisy
 trials, scored on the folds that selected it). The honest number is the `rx_test_logd`
