@@ -219,6 +219,10 @@ class FoldSpec:
     # Dataloader workers; defaults to the CPU count capped at 8. Concurrent trials must
     # divide this down — every worker is a process, and oversubscription starves the GPU.
     num_workers: int = field(default_factory=lambda: min(os.cpu_count() or 4, 8))
+    # Whether other trainings share this host. Dataloader workers are processes that live as
+    # long as their loader, so persisting them across epochs is free for one training and
+    # multiplies host memory by the trial count for a concurrent search.
+    concurrent: bool = False
 
 
 def train_chemprop_fold(
@@ -299,10 +303,13 @@ def train_chemprop_fold(
 
     nw = spec.num_workers
     # persistent_workers / prefetch_factor are only valid with worker processes; PyTorch
-    # rejects them when num_workers == 0.
+    # rejects them when num_workers == 0. Persistence is a single-training optimization:
+    # it keeps every worker process (and its copy of the batch buffers) alive between
+    # epochs, so under a concurrent search the workers of all trials are resident at once
+    # and the host runs out of RAM long before any GPU does.
     loader_kwargs = {"num_workers": nw, "pin_memory": True}
     if nw > 0:
-        loader_kwargs.update(persistent_workers=True, prefetch_factor=2)
+        loader_kwargs.update(persistent_workers=not spec.concurrent, prefetch_factor=2)
     train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, **loader_kwargs)
     # safe_batch_size on val: chemprop drops the last batch when len(val) % batch_size == 1,
     # which would silently drop a row from the val_loss that drives EarlyStopping/checkpointing.

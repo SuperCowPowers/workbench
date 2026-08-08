@@ -287,6 +287,7 @@ class ChempropAdapter(HpoAdapter):
                 enable_progress_bar=False,
                 verbose=False,
                 num_workers=num_workers,
+                concurrent=concurrency > 1,
                 **self.model_shape,
             )
 
