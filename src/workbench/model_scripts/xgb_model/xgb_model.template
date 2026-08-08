@@ -315,9 +315,9 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Hyperparameter search (optional)
     # -------------------------------------------------------------------------
-    # When an `hpo` block is present, search for the best config (held-out holdout_df
-    # objective, else a scaffold split) and train the winner below. Trials run in-process
-    # and ephemerally — no Workbench models/endpoints are created for them.
+    # When an `hpo` block is present, search for the best config (pooled out-of-fold MAE
+    # over scaffold splits) and train the winner below. Trials run in-process and
+    # ephemerally — no Workbench models/endpoints are created for them.
     # An empty block is a real request: it asks for a search on every default.
     hpo_block = hyperparameters.get("hpo")
     if hpo_block is not None and model_type == "classifier":
@@ -326,18 +326,12 @@ if __name__ == "__main__":
     if hpo_block is not None:
         from workbench.training.xgb_hpo import run_xgb_hpo
 
-        # The raw holdout is aligned by the adapter through the same fitted transforms
-        # used for training.
         hyperparameters = run_xgb_hpo(
             all_df,
-            holdout_df,
             hyperparameters,
             hpo_block,
             target=target,
             features=features,
-            category_mappings=category_mappings,
-            orig_features=orig_features,
-            compressed_features=compressed_features,
             output_dir=args.output_data_dir,
         )
         print(f"Hyperparameters (tuned): {hyperparameters}")

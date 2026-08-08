@@ -5,10 +5,9 @@ training via validation_ids and captured), on the 2D descriptor columns. The sea
 inside the single training job — trials are ephemeral, so only the winning config is
 published as this model.
 
-The search objective is `cv_mae` on scaffold folds of the *training* rows — the default,
-and the one that matters here. Setting hpo["metric"]="holdout_mae" would tune the model on
-Analog Set 1 and make the pxr_phase1_test capture optimistic, and unfair against the other
-phase-1 models, which never see those labels during fitting.
+The search objective is `cv_mae` on scaffold folds of the *training* rows. The phase1_test
+rows are held out of training and never scored during the search, so the pxr_phase1_test
+capture stays an honest comparison against the other phase-1 models.
 
 Build the FeatureSet first: python ../pxr_feature_sets.py
 """

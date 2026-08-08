@@ -1,10 +1,10 @@
 """PyTorch tabular hyperparameter-search objective + default search space.
 
 The PyTorch adapter for :mod:`workbench.training.hpo_runner`: a default search space
-(this module) and, per trial, a full ``n_folds`` ensemble scored as ``holdout_mae`` /
-``cv_mae`` (the search *objective*). Scoring a trial in the regime the winner is
+(this module) and, per trial, a full ``n_folds`` ensemble scored as pooled out-of-fold
+MAE (the search *objective*). Scoring a trial in the regime the winner is
 published in is the point — a config selected as a lone model does not carry over to an
-ensemble. The runner owns everything around that: selection, the re-rank, the artifacts.
+ensemble. The runner owns everything around that: fold construction, the baseline trial, the artifacts.
 
 Trials train through :func:`workbench.training.pytorch_core.train_pytorch_fold` — the
 same recipe the template publishes with — so a searched config maps to the identical
@@ -16,7 +16,7 @@ Training-only; imported **only inside the PyTorch template's ``__main__``** (def
 from __future__ import annotations
 
 from workbench.training.hpo_harness import Choice, FloatRange, SearchSpace
-from workbench.training.hpo_runner import HpoAdapter, run_hpo
+from workbench.training.hpo_runner import HpoAdapter, pooled_mae, run_hpo
 
 # Default per-knob search space, split into the two levers that matter for a tabular MLP.
 # Both groups are searched by default. Everything else — n_folds, split_strategy, loss,
@@ -107,12 +107,6 @@ class PyTorchAdapter(HpoAdapter):
     def __init__(self, *, spec):
         self.spec = spec
 
-    def prepare_frame(self, df):
-        """Apply the template's fitted transforms (mappings, decompression, imputation)."""
-        from workbench.training.pytorch_core import align_frame
-
-        return align_frame(self.spec, df)
-
     # A tabular trial is minutes, so the budget buys breadth cheaply.
     default_n_trials = 100
 
@@ -122,34 +116,29 @@ class PyTorchAdapter(HpoAdapter):
             return None
         return {"gpu": hpo_block.get("gpus_per_trial", 0.5)}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
-        """Build the ensemble PyTorch ``trial_fn`` (closes over the folds and eval data).
+    def make_trial_fn(self, *, train_df, folds, hyperparameters, concurrency):
+        """Build the ensemble PyTorch ``trial_fn`` (closes over the folds).
 
         Each trial trains one MLP per fold through
         :func:`workbench.training.pytorch_core.train_pytorch_fold` — the same recipe the
-        template publishes with, so a trial's members are seeded, built, and
-        early-stopped identically — and scores the ensemble the way it is deployed:
-
-        * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
-          members' mean prediction, i.e. the real ensemble's held-out error.
-        * ``cv_mae`` — each member predicts its own out-of-fold rows; the objective is one
-          MAE over those pooled predictions, so every row weighs the same.
+        template publishes with, so a trial's members are seeded, built, and early-stopped
+        identically. Each member predicts its own out-of-fold rows and the objective is one
+        MAE over those pooled predictions, reported after every fold so the harness can stop
+        a trial that is already off the pace.
         """
         from dataclasses import replace
-
-        import numpy as np
 
         from workbench.endpoints.pytorch_utils import predict, prepare_data
         from workbench.training.pytorch_core import train_pytorch_fold
 
         spec = self.spec
 
-        def prep(df, with_target=True):
+        def prep(df):
             tensors = prepare_data(
                 df,
                 spec.continuous_cols,
                 spec.categorical_cols,
-                spec.target if with_target else None,
+                spec.target,
                 spec.category_mappings,
                 scaler=spec.scaler,
             )
@@ -162,39 +151,27 @@ class PyTorchAdapter(HpoAdapter):
             (prep(train_df.iloc[tr].reset_index(drop=True)), prep(train_df.iloc[va].reset_index(drop=True)))
             for tr, va in folds
         ]
-        holdout = bool(len(val_df))
-        if holdout:
-            eval_cont, eval_cat, _ = prep(val_df, with_target=False)
-            eval_y = val_df[spec.target].to_numpy(dtype=float)
 
-        def trial_fn(config):
+        def trial_fn(config, report):
             trial_spec = replace(spec, hyperparameters=self.merge_config(hyperparameters, config), verbose=False)
 
-            member_preds, oof_pred, oof_true = [], [], []
+            oof_pred, oof_true = [], []
             for fold_idx, (train_tensors, val_tensors) in enumerate(prepared):
                 model, _ = train_pytorch_fold(trial_spec, train_tensors, val_tensors, fold_idx=fold_idx)
 
-                if holdout:
-                    member_preds.append(predict(model, eval_cont, eval_cat).flatten())
-                else:
-                    va_cont, va_cat, va_y = val_tensors
-                    oof_pred.append(predict(model, va_cont, va_cat).flatten())
-                    oof_true.append(va_y.numpy().flatten())
+                va_cont, va_cat, va_y = val_tensors
+                oof_pred.append(predict(model, va_cont, va_cat).flatten())
+                oof_true.append(va_y.numpy().flatten())
+                running = pooled_mae(oof_pred, oof_true)
+                report(fold_idx + 1, running)
 
-            if holdout:
-                return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
-
-            # Pooled, not a mean of per-fold means: every row weighs the same, which is what
-            # the model's own cross-fold metrics report. Fold sizes differ under a scaffold
-            # split, so the two are not the same number.
-            return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
+            return running
 
         return trial_fn
 
 
 def run_pytorch_hpo(
     train_df,
-    val_df,
     base_hyperparameters: dict,
     hpo_block: dict,
     *,
@@ -203,15 +180,12 @@ def run_pytorch_hpo(
 ) -> dict:
     """Run the PyTorch hyperparameter search; returns the phase-2 hyperparameters.
 
-    ``spec`` is the template's :class:`~workbench.training.pytorch_core.PyTorchFoldSpec`;
-    ``val_df`` may be the raw holdout — the adapter routes both frames through the
-    fitted preprocessing the spec carries. See
-    :func:`workbench.training.hpo_runner.run_hpo` for the search/re-rank contract and
-    the ``hpo`` block's keys.
+    ``spec`` is the template's :class:`~workbench.training.pytorch_core.PyTorchFoldSpec`,
+    carrying the fitted preprocessing. See :func:`workbench.training.hpo_runner.run_hpo`
+    for the search contract and the ``hpo`` block's keys.
     """
     return run_hpo(
         train_df,
-        val_df,
         base_hyperparameters,
         hpo_block,
         adapter=PyTorchAdapter(spec=spec),

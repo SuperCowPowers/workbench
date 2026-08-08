@@ -45,11 +45,9 @@ if recreate or not Model(model_name).exists():
         hyperparameters={
             # The search budget is what the job costs, so it is worth stating. Everything
             # else defaults: https://supercowpowers.github.io/workbench/models/hpo/
-            "hpo": {"n_trials": 40, "search_space": space.to_dict()},
+            "hpo": {"n_trials": 60, "search_space": space.to_dict()},
         },
-        # The objective is `cv_mae` over scaffold folds of the training rows. For an
-        # out-of-distribution one, pass validation_ids=[...] *and* set
-        # hpo["metric"]="holdout_mae"; those rows are held out of training either way.
+        # The objective is `cv_mae` over scaffold folds of the training rows.
     )
     m.set_owner("BW")
 

@@ -10,31 +10,6 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 
-def _rerank_margins(search_margins, hyperparameters, results, metric):
-    """Search margins, with the re-rank's finalists swapped in at their own margin.
-
-    A finalist's re-rank score is what the publish decision turned on, so it is the number
-    worth showing -- but the re-rank uses a fresh fold partition, and its baseline can sit a
-    whole search-margin away from the search's own. Subtracting each side's baseline is what
-    makes the two comparable in one plot.
-    """
-    rerank = results.get("rerank")
-    rerank = pd.DataFrame([] if rerank is None else rerank)
-    if not len(rerank) or metric not in rerank or "candidate" not in rerank:
-        return search_margins
-    base = rerank[rerank["candidate"].eq("baseline")]
-    if not len(base):
-        return search_margins
-
-    center = float(base[metric].iloc[0])
-    key = lambda cell: json.dumps(_as_dict(cell), sort_keys=True, default=str)  # noqa: E731
-    by_config = {key(h): float(v) - center for h, v in zip(rerank["hyperparameters"], rerank[metric])}
-    return pd.Series(
-        [by_config.get(key(h), m) for h, m in zip(hyperparameters, search_margins)],
-        index=search_margins.index,
-    )
-
-
 def _as_dict(cell) -> dict:
     """Read a JSON cell; the HPO frames carry these as strings."""
     if isinstance(cell, dict):
@@ -217,8 +192,8 @@ def _build_axis(knob: str, space_row, observed: pd.Series) -> dict:
 def _position(axis: dict, value) -> float:
     """Place a raw knob value on its axis, normalized to [0, 1] and clipped.
 
-    Clipping keeps a value outside the declared bounds -- a re-ranked winner, a config
-    the user set by hand -- drawn in-frame rather than off the axes.
+    Clipping keeps a value outside the declared bounds -- a config the user set by hand,
+    a default outside its own searched range -- drawn in-frame rather than off the axes.
     """
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return np.nan
@@ -319,13 +294,11 @@ def hpo_parallel_coordinates(
         return None
     axes_def = [_build_axis(k, space_rows.get(k), knob_frame[k]) for k in knobs]
 
-    # Color is a *margin over baseline*, not a raw score. The finalists are shown at their
-    # re-rank score, since that is what the publish decision turned on -- but the re-rank
-    # scores on its own fold partition, so its numbers and the search's are not comparable
-    # directly. Each side against its own baseline is.
+    # Color is a *margin over baseline*, not a raw score: the question a reader has is
+    # "did this trial beat my defaults", which a raw scale cannot answer.
     values = runs["value"].astype(float)
     center = float(baseline_value) if baseline_value is not None else float(values.median())
-    deltas = _rerank_margins(values - center, runs["hyperparameters"], results, metric)
+    deltas = values - center
 
     # Symmetric, so equal improvement and regression read equally far, and scaled by the best
     # margin won: every trial runs to term, so a hopeless config lands arbitrarily far above
@@ -429,12 +402,13 @@ def hpo_parallel_coordinates(
 
     bar = fig.colorbar(mappable, ax=ax, fraction=0.04, pad=0.02)
     bar.set_label(f"{metric} vs baseline (negative is better)", fontsize=12)
-    bar.ax.axhline(center, color="black", linestyle="--", lw=1.5)
-    # The published config's score on the *trials'* basis -- best_value is the re-rank's,
-    # which this scale isn't in. Its own trial row carries the comparable number.
+    # Both rules live on the colorbar, which is scaled in *margin over baseline* -- so the
+    # baseline sits at zero and the published config at its own margin. Drawing raw objective
+    # values here would put both lines off the end of the scale.
+    bar.ax.axhline(0.0, color="black", linestyle="--", lw=1.5)
     published_value = _trial_value(results.get("best_config"), runs, knob_frame)
     if published_value is not None:
-        rule = bar.ax.axhline(published_value, color="#00d451", lw=3.5)
+        rule = bar.ax.axhline(published_value - center, color="#00d451", lw=3.5)
         # A white halo so it reads against the dark end of the colormap.
         rule.set_path_effects([path_effects.withStroke(linewidth=6.0, foreground="white")])
     # Below the axes: an in-plot legend covers the top-of-axis value labels. The counts ride

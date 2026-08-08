@@ -55,7 +55,7 @@ framework-agnostic and shared.</desc>
 <rect class="d-pbox" x="52" y="222" width="256" height="58" rx="4"/>
 <rect class="d-pbox" x="46" y="216" width="256" height="58" rx="4"/>
 <text class="d-pt" x="174" y="240" text-anchor="middle">*_hpo.py — HpoAdapter</text>
-<text class="d-ps" x="174" y="258" text-anchor="middle">space · trial_fn · prepare_frame</text>
+<text class="d-ps" x="174" y="258" text-anchor="middle">space · trial_fn · merge_config</text>
 
 <rect class="d-pbox" x="58" y="352" width="256" height="58" rx="4"/>
 <rect class="d-pbox" x="52" y="346" width="256" height="58" rx="4"/>
@@ -65,7 +65,7 @@ framework-agnostic and shared.</desc>
 
 <rect class="d-tbox" x="456" y="216" width="268" height="58" rx="4"/>
 <text class="d-tt" x="590" y="234" text-anchor="middle">hpo_runner.py</text>
-<text class="d-ts" x="590" y="250" text-anchor="middle">objective · baseline guard · re-rank</text>
+<text class="d-ts" x="590" y="250" text-anchor="middle">objective · baseline trial · artifacts</text>
 <text class="d-ts" x="590" y="266" text-anchor="middle">folds via splits.py</text>
 
 <rect class="d-tbox" x="456" y="340" width="268" height="58" rx="4"/>

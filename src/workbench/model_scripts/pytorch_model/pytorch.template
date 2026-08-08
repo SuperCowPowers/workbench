@@ -466,7 +466,6 @@ if __name__ == "__main__":
 
         hyperparameters = run_pytorch_hpo(
             all_df,
-            holdout_df,
             hyperparameters,
             hpo_block,
             spec=fold_spec,
