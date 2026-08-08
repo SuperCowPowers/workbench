@@ -449,3 +449,17 @@ def test_a_frameworks_own_template_defaults_can_seed_its_own_search(framework):
     point = effective_config({}, {}, space)
     choice_options = {name: list(spec.options) for name, spec in space.items() if isinstance(spec, Choice)}
     _encode_point(point, choice_options)  # raises if a default is outside its own knob
+
+
+def test_a_partially_seeded_point_is_still_exempt_from_the_ladder():
+    """`points_to_evaluate` accepts a point naming only some knobs, with the sampler filling
+    the rest. Exact-equality matching would miss those and let the scheduler stop them."""
+    from workbench.training.hpo_harness import _is_seeded
+
+    seeded = [{"x": 5.0}]
+    assert _is_seeded({"x": 5.0, "depth": 3}, seeded) is True  # partial point, full config
+    assert _is_seeded({"x": 5.0}, seeded) is True
+    assert _is_seeded({"x": 1.0, "depth": 3}, seeded) is False
+    # An empty point names nothing; matching it everywhere would switch the ladder off.
+    assert _is_seeded({"x": 5.0}, [{}]) is False
+    assert _is_seeded({"x": 5.0}, []) is False

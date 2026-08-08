@@ -251,7 +251,8 @@ def hpo_parallel_coordinates(
 
     # The baseline row carries the caller's own hyperparameters on the search basis.
     baseline_row = trials[trials.get("kind").eq("baseline")] if "kind" in trials else trials.iloc[0:0]
-    baseline_value = float(baseline_row["value"].iloc[0]) if len(baseline_row) else results.get("baseline_value")
+    # Falls back to the record when the trials frame is missing or carries no baseline row.
+    baseline_value = float(baseline_row["value"].iloc[0]) if len(baseline_row) else results.get("search_baseline_value")
 
     # Counts cover every trial the budget paid for, the baseline included; `runs` drops it
     # only because it is drawn as a reference line rather than as one of the crowd.

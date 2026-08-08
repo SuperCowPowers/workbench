@@ -348,6 +348,17 @@ def _ray_session(func):
     return wrapper
 
 
+def _is_seeded(config, seeded) -> bool:
+    """Whether a trial is one of the enqueued points.
+
+    Subset, not equality: a point may name only some knobs and leave the sampler to fill the
+    rest, which is what ``enqueue_trial``/``points_to_evaluate`` accept. An empty point names
+    nothing and so seeds nothing — matching it against every trial would switch the ladder
+    off entirely.
+    """
+    return any(point and all(config.get(knob) == value for knob, value in point.items()) for point in seeded)
+
+
 def _finite(value) -> bool:
     """True for a real number — not None, not NaN, not an infinity."""
     return value is not None and math.isfinite(value)
@@ -396,7 +407,7 @@ def _run_optuna(
         # Stash the resolved (real-valued) config so best_config/trials report
         # actual values, not the categorical indices used for unhashable Choices.
         trial.set_user_attr("config", config)
-        laddered = bool(max_steps) and config not in seeded
+        laddered = bool(max_steps) and not _is_seeded(config, seeded)
 
         def report(step, value):
             # A rung can land on the last step (max_steps of 1, 2 or 4), and stopping there
@@ -652,11 +663,11 @@ def _run_ray(
         _fence_gpu_memory(resources_per_trial)
         config = _resolve_choices(config, choice_options)
         # A seeded point reports nothing until the end, so the scheduler never sees it at a
-        # rung and cannot stop it. Config equality is how it is recognized, which is loose in
-        # both directions and cheap in both: a miss leaves the baseline prunable, and a
-        # sampler that revisits the same point on a discrete space pays for a full ensemble
-        # it might have been stopped out of. Neither costs correctness, only a few folds.
-        laddered = bool(max_steps) and config not in seeded
+        # rung and cannot stop it. Recognized by matching the point's knobs, which is loose
+        # in one direction and cheap: a sampler that revisits the same point on a discrete
+        # space pays for a full ensemble it might have been stopped out of. That costs a few
+        # folds, not correctness.
+        laddered = bool(max_steps) and not _is_seeded(config, seeded)
 
         def report(step, value):
             # A non-finite running value means no labelled rows yet, not a bad candidate —
