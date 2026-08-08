@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import Callable, Sequence, Union
 
@@ -349,7 +350,7 @@ def _ray_session(func):
 
 def _finite(value) -> bool:
     """True for a real number — not None, not NaN, not an infinity."""
-    return value is not None and value == value and value not in (float("inf"), float("-inf"))
+    return value is not None and math.isfinite(value)
 
 
 def _resolve_backend(backend: str) -> str:
@@ -416,21 +417,7 @@ def _run_optuna(
         log.info(f"Optuna backend is serial; ignoring max_parallel={max_parallel} (use backend='ray' for parallel).")
     study.optimize(objective, n_trials=n_trials, n_jobs=1)
 
-    # A pruned trial's `value` is None, but the partial objective it did produce is worth
-    # keeping: it is what the plots draw and how a reader tells "stopped early" from "died".
-    trials = [
-        {
-            "number": t.number,
-            # Only a PRUNED trial keeps its partial value. A FAILED one can also have
-            # reported before it raised, and backfilling from those would file a genuine
-            # failure as a scheduler stop — hiding the count that matters.
-            "value": t.value if t.value is not None else (_last_intermediate(t) if t.state.name == "PRUNED" else None),
-            "state": t.state.name,
-            "config": t.user_attrs.get("config", {}),
-            "step": max(t.intermediate_values, default=max_steps if t.value is not None else None),
-        }
-        for t in study.trials
-    ]
+    trials = [_optuna_record(t, max_steps) for t in study.trials]
     # Rank explicitly rather than via study.best_trial: its "No trials are completed yet"
     # gives no clue what went wrong, and the most likely cause has a specific fix — Optuna
     # marks a trial FAIL when the objective returns NaN, so an unlabeled target column fails
@@ -455,10 +442,30 @@ def _run_optuna(
     )
 
 
-def _last_intermediate(trial):
-    """The final value a pruned trial reported, or None if it never reported one."""
+def _optuna_record(trial, max_steps) -> dict:
+    """One trial's record, keyed off its state rather than its value.
+
+    Optuna fills in ``value`` for a PRUNED trial from its last intermediate, so the value
+    alone cannot say whether a trial finished. The three outcomes differ in both fields:
+
+    * COMPLETE — ran every step, even though the last one is never *reported* (the pruner
+      must not be consulted there, or a rung landing on the final step would discard a
+      trial that already has the full objective).
+    * PRUNED — stopped at a rung; keeps the partial objective it reached, and the step says
+      where it stopped.
+    * FAIL — no objective at all. It may still have reported before failing, but keeping
+      that value would file a genuine failure as a scheduler stop.
+    """
     reported = getattr(trial, "intermediate_values", None) or {}
-    return reported[max(reported)] if reported else None
+    state = trial.state.name
+    complete = state == "COMPLETE"
+    return {
+        "number": trial.number,
+        "value": trial.value if state != "FAIL" else None,
+        "state": state,
+        "config": trial.user_attrs.get("config", {}),
+        "step": max_steps if complete else max(reported, default=None),
+    }
 
 
 def _suggest_optuna(trial, search_space) -> dict:
@@ -717,11 +724,11 @@ def _run_ray(
         # Mirror the Optuna path's actionable failure. Ray otherwise surfaces this as an
         # AttributeError deep in config resolution, on the box that costs the most to rent.
         errored = sum(1 for r in results if r.error is not None)
+        laddered = f", none reaching step {max_steps}" if max_steps else ""
         raise RuntimeError(
-            f"HPO search produced no usable trial ({len(results)} trials, {errored} errored, "
-            f"none reaching step {max_steps}). If trials errored, check the logs above for the "
-            "first traceback — an OOM or a NaN objective (e.g. an unlabeled target column) is "
-            "the usual cause."
+            f"HPO search produced no usable trial ({len(results)} trials, {errored} errored"
+            f"{laddered}). If trials errored, check the logs above for the first traceback — "
+            "an OOM or a NaN objective (e.g. an unlabeled target column) is the usual cause."
         )
 
     def _objective(r):

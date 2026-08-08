@@ -144,10 +144,11 @@ def test_spec_defaults_match_the_template():
     records report for a knob nobody overrode. If the two disagree, the baseline row
     describes a model that was never built.
 
-    They must match as *values*, not merely as architectures. The baseline is seeded into the
-    search as an ordinary trial, and a Choice knob is sampled as an index — so a head the
-    template spells `300` + `ffn_num_layers=2` builds the same model as `"300-300"` but
-    cannot be expressed in the space at all, and the search dies before its first trial.
+    The FFN head is the exception, and deliberately so: the template spells it as an int
+    width beside `ffn_num_layers` (which is what keeps an `ffn_num_layers`-only override
+    working), the space as a shape. `ChempropAdapter.baseline_config` is what bridges them,
+    and the seeding check below is the one that matters — an unbridged head cannot be
+    expressed in the space at all, and the search would die before its first trial.
     """
     import ast
     from pathlib import Path
@@ -165,13 +166,40 @@ def test_spec_defaults_match_the_template():
     mismatched = {
         knob: (spec.default, defaults.get(knob))
         for knob, spec in space.items()
-        if knob in defaults and spec.default != defaults[knob]
+        if knob in defaults and knob != "ffn_hidden_dim" and spec.default != defaults[knob]
     }
     assert not mismatched, f"spec default != template default for {mismatched}"
 
-    # The shaped head has to agree with the layer count the template carries beside it.
-    head = [int(width) for width in str(defaults["ffn_hidden_dim"]).split("-")]
-    assert len(head) == defaults["ffn_num_layers"], f"head {head} != ffn_num_layers {defaults['ffn_num_layers']}"
+    # The head: same architecture in both spellings.
+    searched_head = [int(width) for width in space["ffn_hidden_dim"].default.split("-")]
+    assert searched_head == [defaults["ffn_hidden_dim"]] * defaults["ffn_num_layers"]
+
+
+def test_the_template_defaults_can_actually_seed_the_search():
+    """`run_hpo` enqueues the caller's config as trial 0 and a Choice is sampled as an index,
+    so a template default the space cannot express takes the whole search down before its
+    first trial. This is the check the architecture comparison above cannot make."""
+    import ast
+    from pathlib import Path
+
+    from workbench.training.hpo_harness import Choice, _encode_point
+    from workbench.training.hpo_runner import effective_config
+
+    template = Path(__file__).parents[2] / "src/workbench/model_scripts/chemprop/chemprop.template"
+    tree = ast.parse(template.read_text())
+    defaults = next(
+        ast.literal_eval(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(getattr(t, "id", None) == "DEFAULT_HYPERPARAMETERS" for t in node.targets)
+    )
+    space = chemprop_search_space()
+    point = _adapter(["y"]).baseline_config(effective_config({}, defaults, space), defaults)
+    choice_options = {name: list(spec.options) for name, spec in space.items() if isinstance(spec, Choice)}
+    _encode_point(point, choice_options)  # raises if the baseline is outside its own space
+
+    # And the bridged head is the architecture the template would have built.
+    assert point["ffn_hidden_dim"] == "-".join([str(defaults["ffn_hidden_dim"])] * defaults["ffn_num_layers"])
 
 
 def test_every_searched_knob_declares_a_default():

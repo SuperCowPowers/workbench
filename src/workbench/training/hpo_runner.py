@@ -100,6 +100,15 @@ class HpoAdapter:
         merged.update(config)
         return merged
 
+    def baseline_config(self, config, hyperparameters) -> dict:
+        """Re-spell the caller's config in the coordinates the search samples.
+
+        The baseline is seeded as an ordinary trial, so it has to be expressible in the
+        search space — and a framework may spell the same architecture differently in its
+        template than in its space. Identity unless a framework says otherwise.
+        """
+        return config
+
     def resources_per_trial(self, hpo_block, backend):
         """Ray resource request per trial, e.g. ``{"gpu": 0.5}``. None leaves it to Ray."""
         return None
@@ -223,6 +232,12 @@ def run_hpo(
         # than leaving it to be inferred from a job that ran long or hit its timeout.
         print(f"[hpo] WARNING: {n_trials} trials will run one at a time; expect a long job.")
 
+    # The caller's own settings, in the space's coordinates. Used both to seed the search
+    # and to recognize that trial in the records, so the two cannot drift apart.
+    baseline_point = adapter.baseline_config(
+        effective_config({}, base_hyperparameters, search_space), base_hyperparameters
+    )
+
     trial_fn = adapter.make_trial_fn(
         train_df=train_df,
         folds=folds,
@@ -239,11 +254,11 @@ def run_hpo(
         mode="min",
         seed=seed,
         resources_per_trial=resources,
-        points_to_evaluate=[effective_config({}, base_hyperparameters, search_space)],
+        points_to_evaluate=[baseline_point],
         max_steps=n_folds,
     )
 
-    rows = trial_records(result.trials, base_hyperparameters, search_space)
+    rows = trial_records(result.trials, base_hyperparameters, search_space, baseline=baseline_point)
     baseline = baseline_value(rows)
     counts = summarize_trials(result.trials)
     print(
@@ -298,7 +313,7 @@ def best_config_record(result, *, counts, baseline) -> dict:
     }
 
 
-def trial_records(trials, base_hyperparameters: dict, search_space: dict) -> list:
+def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseline: dict = None) -> list:
     """The ``hpo_trials.csv`` rows — one schema for every trial.
 
     Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. Columns:
@@ -314,7 +329,7 @@ def trial_records(trials, base_hyperparameters: dict, search_space: dict) -> lis
     * ``kind`` — ``baseline`` for the trial that trained at the caller's own settings,
       else ``trial``. The baseline is the reference line any plot of the search needs.
     """
-    baseline = effective_config({}, base_hyperparameters, search_space)
+    baseline = effective_config({}, base_hyperparameters, search_space) if baseline is None else baseline
     rows, seen_baseline = [], False
     for trial in trials:
         effective = effective_config(trial.get("config") or {}, base_hyperparameters, search_space)

@@ -110,7 +110,6 @@ if __name__ == "__main__":
                     "backend": "optuna",
                     "n_trials": 250,
                     # search_space defaults to "basic+reg" (capacity/boosting + sampling/penalties).
-                    "rerank_top_k": 5,
                 },
             },
         )

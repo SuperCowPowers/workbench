@@ -182,9 +182,10 @@ def resolve_search_space(spec) -> dict:
 def merge_best_config(hyperparameters: dict, best_config: dict) -> dict:
     """Merge the winning search config into the base hyperparameters (phase-2 config).
 
-    Drops the ``hpo`` block (search is done) and, when ``max_lr`` was searched, ties
-    ``init_lr``/``final_lr`` to it (one-tenth of ``max_lr``) so the Noam schedule
-    stays well-ordered.
+    Drops the ``hpo`` block (search is done) and, when ``max_lr`` was *changed*, ties
+    ``init_lr``/``final_lr`` to it (one-tenth of ``max_lr``) so the Noam schedule stays
+    well-ordered. A config carrying the caller's own ``max_lr`` — the seeded baseline does,
+    since it names every searched knob — leaves their schedule alone.
 
     Args:
         hyperparameters: the user's hyperparameters dict (may include the ``hpo`` block).
@@ -195,7 +196,7 @@ def merge_best_config(hyperparameters: dict, best_config: dict) -> dict:
     """
     merged = {k: v for k, v in hyperparameters.items() if k != "hpo"}
     merged.update(best_config)
-    if "max_lr" in best_config:
+    if "max_lr" in best_config and best_config["max_lr"] != hyperparameters.get("max_lr"):
         merged["init_lr"] = best_config["max_lr"] / 10.0
         merged["final_lr"] = best_config["max_lr"] / 10.0
     return merged
@@ -222,6 +223,20 @@ class ChempropAdapter(HpoAdapter):
 
     def split_kwargs(self) -> dict:
         return {"smiles_column": self.smiles_column}
+
+    def baseline_config(self, config, hyperparameters) -> dict:
+        """Spell the caller's FFN head as the shape the space samples.
+
+        The template takes an int width beside ``ffn_num_layers``; the space takes a
+        per-layer shape, and only shapes are samplable. Same architecture either way — but
+        an int is not one of the Choice's options, so an untranslated baseline cannot be
+        seeded at all.
+        """
+        width = config.get("ffn_hidden_dim")
+        if not isinstance(width, int):
+            return config
+        n_layers = int(hyperparameters.get("ffn_num_layers", 1))
+        return {**config, "ffn_hidden_dim": "-".join([str(width)] * n_layers)}
 
     def merge_config(self, hyperparameters, config) -> dict:
         return merge_best_config(hyperparameters, config)
