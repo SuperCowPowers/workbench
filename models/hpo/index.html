@@ -714,10 +714,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#selection-is-two-stage" class="md-nav__link">
+  <a href="#every-trial-trains-the-real-ensemble" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Selection is two-stage
+        Every trial trains the real ensemble
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Every trial trains the real ensemble">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trials-stop-early" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trials stop early
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-numbers-mean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the numbers mean
       
     </span>
   </a>
@@ -2318,34 +2346,6 @@
     
   
     Feature Endpoints
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../blogs/hpo_reranking/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Re-ranking HPO Searches
   
 
     
@@ -5259,10 +5259,38 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#selection-is-two-stage" class="md-nav__link">
+  <a href="#every-trial-trains-the-real-ensemble" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Selection is two-stage
+        Every trial trains the real ensemble
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Every trial trains the real ensemble">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trials-stop-early" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trials stop early
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-numbers-mean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the numbers mean
       
     </span>
   </a>
@@ -5400,22 +5428,12 @@ deployed and used exactly like any other.</p>
 <tr>
 <td><code>n_trials</code></td>
 <td>per framework</td>
-<td>search budget — 40 (ChemProp), 100 (PyTorch), 250 (XGBoost), sized to what one trial costs</td>
+<td>search budget — 60 (ChemProp), 100 (PyTorch), 250 (XGBoost), sized to what one trial costs</td>
 </tr>
 <tr>
 <td><code>search_space</code></td>
 <td>all groups</td>
 <td>which knob groups to search — see below</td>
-</tr>
-<tr>
-<td><code>metric</code></td>
-<td><code>cv_mae</code></td>
-<td>objective: <code>cv_mae</code> (out-of-fold) or <code>holdout_mae</code></td>
-</tr>
-<tr>
-<td><code>rerank_top_k</code></td>
-<td><code>5</code></td>
-<td>finalists re-scored in the second stage (<code>0</code> disables it)</td>
 </tr>
 <tr>
 <td><code>backend</code></td>
@@ -5431,11 +5449,6 @@ deployed and used exactly like any other.</p>
 <td><code>max_parallel</code></td>
 <td>GPUs ÷ <code>gpus_per_trial</code></td>
 <td>concurrent trials (Ray only) — derived from the box, set it only to override</td>
-</tr>
-<tr>
-<td><code>n_folds</code></td>
-<td>model's <code>n_folds</code></td>
-<td>ensemble size per trial — for cheap validation runs only</td>
 </tr>
 </tbody>
 </table>
@@ -5538,50 +5551,74 @@ layer count. Searching <code>ffn_num_layers</code> beside shape-valued widths is
 layer count would be recorded in the trials and the published config without ever being
 built. Chemprop's own two-knob spelling stays available for a custom space: give
 <code>ffn_hidden_dim</code> int widths only, and <code>ffn_num_layers</code> is live in every trial.</p>
-<h2 id="selection-is-two-stage">Selection is two-stage</h2>
-<p>A search reports the <em>minimum</em> over many noisy estimates, so its winning value is
-optimistically biased — the winner may simply have drawn the luckiest evaluation. Workbench
-therefore treats the search as a <strong>shortlist</strong>, not a decision:</p>
-<ol>
-<li><strong>Search</strong> — sample the space; every candidate trains its full ensemble, so the values are all on one basis.</li>
-<li><strong>Re-rank</strong> — re-score the top finalists <em>and your own untuned hyperparameters</em> on fresh
-   trainings, then publish whichever wins.</li>
-</ol>
-<p>Carrying your own hyperparameters through the second stage is what bounds the downside: a
-search that finds nothing real loses to them, and <strong>your original settings get published
-unchanged</strong>. Ties go to your settings.</p>
-<p>That makes a baseline win a legitimate outcome rather than a failed run — it means the
-search spent the compute and confirmed your existing configuration.</p>
+<h2 id="every-trial-trains-the-real-ensemble">Every trial trains the real ensemble</h2>
+<p>A trial trains the same <code>n_folds</code> ensemble the winner is published as, scored as pooled
+out-of-fold MAE on the training rows. Scoring a configuration in the regime it ships in is
+the point — one picked as a single model does not carry over to an ensemble.</p>
+<p><strong>Your own hyperparameters run as one of the trials.</strong> They go first, so the sampler starts
+from an anchored observation instead of a cold space, and they can win — in which case your
+settings are what gets published. That row is marked <code>kind="baseline"</code> in the trials frame,
+and it is the reference line every plot of the search centers on.</p>
+<h3 id="trials-stop-early">Trials stop early</h3>
+<p>Ensemble members train one at a time, and the running out-of-fold pool is reported after
+each one — so a configuration already off the pace is stopped rather than paying for the
+rest of its ensemble. Rungs sit at members 1, 2 and 4, and each keeps the better half of the
+trials that reached it.</p>
+<p>Two properties make that safe. The last rung is the <em>whole</em> objective rather than a proxy
+for it, so stopping early can cost you a good configuration but can never publish a bad one.
+And fold order is fixed, so every trial at a given rung was scored on the same molecules —
+the comparison is paired.</p>
+<p>The saving is what pays for the budget: a 60-trial ChemProp search costs roughly 130
+member-trainings instead of 300. Stopped trials show up as <code>pruned</code> in <code>trial_counts</code> and
+<code>completed=False</code> in the trials frame, keeping the partial value they reached — which is how
+you tell "stopped early" from "died". Only trials that ran every member are ranked, since a
+partial pool is measured over fewer molecules and is not the same number.</p>
+<h2 id="what-the-numbers-mean">What the numbers mean</h2>
+<p>A search's own values are <strong>diagnostics, not performance estimates</strong>, for two reasons that no
+amount of internal re-measurement can fix:</p>
+<ul>
+<li>The winner is the <em>minimum</em> over many noisy evaluations, so it is the luckiest draw of many
+  and overstates what the configuration is worth. That bias grows with the trial count — a
+  bigger search reports a better-looking margin for the same model.</li>
+<li>Every candidate was scored on the folds that selected it.</li>
+</ul>
+<p>So read the margin as "the search ranked this configuration best by X%", never "the model is
+X% better". The real number comes from a measurement the search did not select on: the
+published model's own cross-fold metrics, a held-out set the search never saw, or a
+champion/challenger comparison.</p>
 <h2 id="reading-the-results">Reading the results</h2>
 <p>One call resolves the training job's artifacts — no hunting for S3 paths or CloudWatch
 logs. A <code>None</code> return doubles as the "was this model searched?" check.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">results</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">hpo_results</span><span class="p">()</span>
 </span></code></pre></div>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span><span class="s1">&#39;metric&#39;</span><span class="p">:</span> <span class="s1">&#39;cv_mae&#39;</span><span class="p">,</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a> <span class="s1">&#39;trial_counts&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;attempted&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a> <span class="s1">&#39;trial_counts&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;attempted&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span> <span class="s1">&#39;pruned&#39;</span><span class="p">:</span> <span class="mi">76</span><span class="p">,</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a> <span class="s1">&#39;best_config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;layers&#39;</span><span class="p">:</span> <span class="s1">&#39;128-64&#39;</span><span class="p">,</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>                 <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>                 <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="mf">0.0002846282635669909</span><span class="p">,</span>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>                 <span class="s1">&#39;weight_decay&#39;</span><span class="p">:</span> <span class="mf">0.0014020994043985207</span><span class="p">,</span>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>                 <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="mi">128</span><span class="p">},</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a> <span class="s1">&#39;best_value&#39;</span><span class="p">:</span> <span class="mf">0.5106314063072205</span><span class="p">,</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a> <span class="s1">&#39;baseline_value&#39;</span><span class="p">:</span> <span class="mf">0.5450914978981019</span><span class="p">,</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a> <span class="s1">&#39;search_best_value&#39;</span><span class="p">:</span> <span class="mf">0.5106314063072205</span><span class="p">,</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a> <span class="s1">&#39;search_baseline_value&#39;</span><span class="p">:</span> <span class="mf">0.5450914978981019</span><span class="p">,</span>
 </span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a> <span class="o">...</span><span class="p">}</span>
 </span></code></pre></div>
 <p><strong><code>best_config</code> is what shipped.</strong> These are the model's hyperparameters now — you can hand
 the dict straight to another <code>to_model()</code> call to train a sibling on different data:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;pxr-reg-pytorch-v2&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;uq_version&quot;</span><span class="p">:</span> <span class="s2">&quot;v1&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;best_config&quot;</span><span class="p">]})</span>
 </span></code></pre></div>
-<p><strong><code>best_value</code> vs <code>baseline_value</code> is the headline.</strong> Both are <code>metric</code> (here <code>cv_mae</code>,
-lower is better) on the same basis, so their difference is the margin the publish decision
-turned on — quote this pair:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">gain</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;baseline_value&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;best_value&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;baseline_value&quot;</span><span class="p">]</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;metric&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;best_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;baseline_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> baseline (</span><span class="si">{</span><span class="n">gain</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
+<p><strong><code>search_best_value</code> vs <code>search_baseline_value</code></strong> are both <code>metric</code> (here <code>cv_mae</code>, lower
+is better) on the same folds — the winner against your own untuned settings:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">gain</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;search_baseline_value&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;search_best_value&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;search_baseline_value&quot;</span><span class="p">]</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;metric&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;search_best_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;search_baseline_value&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> baseline (</span><span class="si">{</span><span class="n">gain</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># cv_mae: 0.5106 vs 0.5451 baseline (+6.3%)</span>
 </span></code></pre></div>
-<p><strong><code>trial_counts</code> tells you whether the budget was spent well.</strong> Every trial trains its full
-ensemble, so <code>completed</code> should equal <code>attempted</code> — any <code>failed</code> at all is worth a look at
-the training log (CUDA OOM is the usual cause when trials share a GPU).</p>
+<p>The <code>search_</code> prefixes are a warning label, not decoration — see
+<a href="#what-the-numbers-mean">What the numbers mean</a>. This margin is how the search <em>ranked</em>
+things, not how much better the model is.</p>
+<p><strong><code>trial_counts</code> tells you whether the budget was spent well.</strong> <code>pruned</code> is expected and
+healthy — that is the ladder working. <code>failed</code> is not: any at all is worth a look at the
+training log (CUDA OOM is the usual cause when trials share a GPU), because a failed trial
+produced no objective and so never backed the result.</p>
 <h3 id="the-trials-frame">The trials frame</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">trials</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;trials&quot;</span><span class="p">]</span>      <span class="c1"># one row per trial, plus a `baseline` row</span>
 </span></code></pre></div>
@@ -5590,6 +5627,7 @@ the training log (CUDA OOM is the usual cause when trials share a GPU).</p>
 <tr>
 <th>number</th>
 <th>value</th>
+<th>step</th>
 <th>completed</th>
 <th>kind</th>
 <th>hyperparameters</th>
@@ -5598,14 +5636,24 @@ the training log (CUDA OOM is the usual cause when trials share a GPU).</p>
 <tbody>
 <tr>
 <td>0</td>
+<td>0.545091</td>
+<td>5</td>
+<td>True</td>
+<td>baseline</td>
+<td><code>{"layers": "128-64", ...}</code></td>
+</tr>
+<tr>
+<td>1</td>
 <td>0.516991</td>
+<td>5</td>
 <td>True</td>
 <td>trial</td>
 <td><code>{"layers": "256-128", ...}</code></td>
 </tr>
 <tr>
-<td>1</td>
-<td>0.530321</td>
+<td>2</td>
+<td>0.611210</td>
+<td>2</td>
 <td>False</td>
 <td>trial</td>
 <td><code>{"layers": "512-256-64", ...}</code></td>
@@ -5620,14 +5668,18 @@ knob:</p>
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">trials</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]])</span>
 </span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trials</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">df</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>                        <span class="c1"># the finalists the re-rank scored</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">df</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>                        <span class="c1"># the best configurations the search found</span>
 </span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;layers&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
 </span></code></pre></div>
-<p><code>completed=False</code> marks a trial that died before producing an objective and has no <code>value</code>.
-The single <code>kind="baseline"</code> row is your own
-untuned config scored on the same basis as the trials — it is the reference line any plot of
-the search needs, and <code>results["rerank"]</code> holds the finalists' re-scores if you want the
-second stage's own numbers.</p>
+<p><code>step</code> is the ensemble member a trial last reported at, so it says where a stopped trial
+stopped. <code>completed=True</code> means it ran every member and was eligible to win; <code>completed=False</code>
+with a <code>value</code> is a trial the ladder stopped, and <code>completed=False</code> with no <code>value</code> is one
+that died. <strong>Only compare <code>value</code> across completed trials</strong> — a stopped trial's pool covers
+fewer molecules.</p>
+<p>The single <code>kind="baseline"</code> row is your own untuned config, scored as an ordinary trial on
+the same folds. It is never stopped early — no rung ever sees it — so whenever it scores at
+all, it scores at full fidelity. It can still fail outright like any trial, in which case
+there is no reference line and plots fall back to the trials' median.</p>
 <h3 id="which-knobs-mattered">Which knobs mattered</h3>
 <p><code>hpo_importance()</code> answers that from the search's own trials — useful for deciding where to
 spend the next budget, or whether a knob earns its place in the space at all:</p>
@@ -5724,11 +5776,10 @@ datasets, and the literature finds ChemProp HPO is roughly a coin flip against d
 there. Measured on our own data, HPO improved in-distribution cross-validation but <strong>lost to
 stock defaults</strong> on a held-out analog series — gains on cross-validation do not imply gains
 on a new chemical series.</p>
-<p>By default the objective is <code>cv_mae</code>, scored out-of-fold on the training rows. Rows
-designated through <code>validation_ids</code> are held out of training <strong>and</strong> out of the search, so
-they remain an honest benchmark. Opt into tuning toward them with
-<code>hpo={"metric": "holdout_mae"}</code> only when that set exists to be tuned against — doing so
-makes its own final score optimistic.</p>
+<p>The objective is <code>cv_mae</code>, scored out-of-fold on the training rows. Rows designated through
+<code>validation_ids</code> are held out of training <strong>and</strong> out of the search, so they stay an honest
+benchmark — and they are the right place to check whether a search actually bought you
+anything.</p>
 <hr />
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
