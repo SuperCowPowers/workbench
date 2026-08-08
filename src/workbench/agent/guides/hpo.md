@@ -51,30 +51,26 @@ Batch (see the `batch` guide). An XGBoost trial is seconds.
 CloudWatch logs to answer "what did HPO pick" — logs diagnose a *run*, they don't hold
 results. `None` doubles as the "is this an HPO model?" check.
 
-It returns the published config, the values below, and `rerank` / `trials` DataFrames. To
-visualize the search, `hpo_plots.hpo_parallel_coordinates(model)` — see the `plotting` guide.
+It returns the published config, the values below, and a `trials` DataFrame. To visualize
+the search, `hpo_plots.hpo_parallel_coordinates(model)` — see the `plotting` guide.
 
 ## Reading the numbers (the part that misleads)
 
-**The search does not pick the winner.** It shortlists; a second pass re-scores the
-finalists *and the user's own untuned hyperparameters*, and whichever wins there is
-published.
+`search_best_value` vs `search_baseline_value` — the winning trial against the one that
+trained at the user's own hyperparameters, on the same folds. Every `trials` row shares
+that basis.
 
-Two same-basis pairs, never to be mixed:
+**Never present their difference as the model's improvement.** The winner is the minimum
+over every trial, so it is the luckiest draw of many and overstates what the config is
+worth, and it was scored on the same folds that selected it. A real number comes from a
+measurement the search did not select on — the published model's own cross-fold metrics, a
+holdout, or a champion/challenger comparison. Say "the search ranked this config best by
+X%", not "the model is X% better".
 
-- `best_value` vs `baseline_value` — the margin the publish decision turned on. **Quote
-  this one.** The `rerank` frame shares its basis.
-- `search_best_value` vs `search_baseline_value` — how the *search* went; the basis of
-  every `trials` row.
-
-When `rerank_fresh_split` is true these scored on different fold partitions, so one is not
-comparable to the other and can even look better. Never present `search_best_value` as the
-model's improvement.
-
-**A baseline win is a legitimate outcome, not a failed run.** An empty `best_config` means
-nothing beat the user's own defaults, and the untuned model was published — report that
-plainly. If `baseline_value` is null too, the baseline never scored, so nothing was
-measured against it; say that instead.
+**A baseline win is a legitimate outcome, not a failed run.** The user's own
+hyperparameters run as a trial and can win, in which case the untuned config was published
+— report that plainly. If `search_baseline_value` is null the baseline trial never scored,
+so there is no reference line; say that instead.
 
 Winners clustering at a bound is not on its own a reason to widen it.
 

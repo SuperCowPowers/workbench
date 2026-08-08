@@ -10,31 +10,6 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 
-def _rerank_margins(search_margins, hyperparameters, results, metric):
-    """Search margins, with the re-rank's finalists swapped in at their own margin.
-
-    A finalist's re-rank score is what the publish decision turned on, so it is the number
-    worth showing -- but the re-rank uses a fresh fold partition, and its baseline can sit a
-    whole search-margin away from the search's own. Subtracting each side's baseline is what
-    makes the two comparable in one plot.
-    """
-    rerank = results.get("rerank")
-    rerank = pd.DataFrame([] if rerank is None else rerank)
-    if not len(rerank) or metric not in rerank or "candidate" not in rerank:
-        return search_margins
-    base = rerank[rerank["candidate"].eq("baseline")]
-    if not len(base):
-        return search_margins
-
-    center = float(base[metric].iloc[0])
-    key = lambda cell: json.dumps(_as_dict(cell), sort_keys=True, default=str)  # noqa: E731
-    by_config = {key(h): float(v) - center for h, v in zip(rerank["hyperparameters"], rerank[metric])}
-    return pd.Series(
-        [by_config.get(key(h), m) for h, m in zip(hyperparameters, search_margins)],
-        index=search_margins.index,
-    )
-
-
 def _as_dict(cell) -> dict:
     """Read a JSON cell; the HPO frames carry these as strings."""
     if isinstance(cell, dict):
@@ -66,18 +41,6 @@ def _fmt(value) -> str:
     if pd.isna(number):
         return str(value)
     return str(int(number)) if float(number).is_integer() else f"{number:.3g}"
-
-
-def _trial_value(config: dict, runs: pd.DataFrame, knob_frame: pd.DataFrame) -> Optional[float]:
-    """The objective of the trial that ran this exact config, on the trials' own basis."""
-    if not config:
-        return None
-    match = pd.Series(True, index=knob_frame.index)
-    for knob, value in config.items():
-        if knob in knob_frame.columns:
-            match &= knob_frame[knob].astype(str) == str(value)
-    hits = runs.loc[match[match].index, "value"]
-    return float(hits.iloc[0]) if len(hits) else None
 
 
 # Samples per segment of a curved line. Also the marker stride: the coordinates land on
@@ -217,8 +180,8 @@ def _build_axis(knob: str, space_row, observed: pd.Series) -> dict:
 def _position(axis: dict, value) -> float:
     """Place a raw knob value on its axis, normalized to [0, 1] and clipped.
 
-    Clipping keeps a value outside the declared bounds -- a re-ranked winner, a config
-    the user set by hand -- drawn in-frame rather than off the axes.
+    Clipping keeps a value outside the declared bounds -- a config the user set by hand,
+    a default outside its own searched range -- drawn in-frame rather than off the axes.
     """
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return np.nan
@@ -288,10 +251,13 @@ def hpo_parallel_coordinates(
 
     # The baseline row carries the caller's own hyperparameters on the search basis.
     baseline_row = trials[trials.get("kind").eq("baseline")] if "kind" in trials else trials.iloc[0:0]
-    baseline_value = float(baseline_row["value"].iloc[0]) if len(baseline_row) else results.get("baseline_value")
+    # Falls back to the record when the trials frame is missing or carries no baseline row.
+    baseline_value = float(baseline_row["value"].iloc[0]) if len(baseline_row) else results.get("search_baseline_value")
 
+    # Counts cover every trial the budget paid for, the baseline included; `runs` drops it
+    # only because it is drawn as a reference line rather than as one of the crowd.
+    counts = _trial_counts(trials)
     runs = trials[trials["kind"].eq("trial")] if "kind" in trials else trials
-    counts = _trial_counts(runs)
     if completed_only and "completed" in runs:
         runs = runs[runs["completed"].astype(bool)]
     runs = runs.dropna(subset=["value"])  # a failed trial never scored
@@ -319,24 +285,30 @@ def hpo_parallel_coordinates(
         return None
     axes_def = [_build_axis(k, space_rows.get(k), knob_frame[k]) for k in knobs]
 
-    # Color is a *margin over baseline*, not a raw score. The finalists are shown at their
-    # re-rank score, since that is what the publish decision turned on -- but the re-rank
-    # scores on its own fold partition, so its numbers and the search's are not comparable
-    # directly. Each side against its own baseline is.
+    # Color is a *margin over baseline*, not a raw score: the question a reader has is
+    # "did this trial beat my defaults", which a raw scale cannot answer.
     values = runs["value"].astype(float)
-    center = float(baseline_value) if baseline_value is not None else float(values.median())
-    deltas = _rerank_margins(values - center, runs["hyperparameters"], results, metric)
+    # `pd.notna`, not `is not None`: a failed baseline comes back from CSV as NaN, and a NaN
+    # center would make every delta non-finite instead of falling back to the median.
+    center = float(baseline_value) if pd.notna(baseline_value) else float(values.median())
+    deltas = values - center
+
+    # A stopped trial's objective covers fewer folds than the baseline's, so its margin is
+    # not a margin -- a two-fold value can read as beating defaults purely by covering less.
+    # Those are drawn in grey and kept out of the scale entirely.
+    full = runs["completed"].astype(bool) if "completed" in runs else pd.Series(True, index=runs.index)
 
     # Symmetric, so equal improvement and regression read equally far, and scaled by the best
-    # margin won: every trial runs to term, so a hopeless config lands arbitrarily far above
-    # the baseline and would otherwise flatten every real difference to white. Past either
-    # end the color saturates, which is the right reading for those. The 10% keeps the
-    # published marker off the colorbar's edge.
-    reach = -float(deltas.min())
+    # margin won: a hopeless config lands arbitrarily far above the baseline and would
+    # otherwise flatten every real difference to white. Past either end the color saturates,
+    # which is the right reading for those. The 10% keeps the published marker off the
+    # colorbar's edge.
+    scale_deltas = deltas[full] if full.any() else deltas
+    reach = -float(scale_deltas.min())
     if reach <= 0:
         # Nothing beat the baseline, so span the worse side instead -- otherwise the scale
         # collapses to a point and every trial reads as baseline.
-        reach = max(float(deltas.max()), 1e-9)
+        reach = max(float(scale_deltas.max()), 1e-9)
     span = reach * 1.1
     norm = TwoSlopeNorm(vmin=-span, vcenter=0.0, vmax=span)
     mappable = ScalarMappable(norm=norm, cmap=cmap_name)
@@ -351,22 +323,24 @@ def hpo_parallel_coordinates(
     def _path(y):
         return _curved_path(y) if use_curves else (x, y)
 
-    # Every trial drawn the same: the point is where blue and red sit along each axis, and
-    # splitting the population by outcome would break that read.
+    # Where the search looked is part of the picture, so stopped trials are drawn too --
+    # just in grey, since "did this beat defaults" has no answer for a partial ensemble.
     # Worst first, so the better trials still land on top of the crowd.
     artists, paths, records = [], [], []
     line_alpha = _line_alpha(len(values))
     for idx in deltas.sort_values(ascending=False).index:
         y = [_position(axis, knob_frame.at[idx, axis["knob"]]) for axis in axes_def]
         px, py = _path(y)
-        (artist,) = ax.plot(px, py, color=mappable.to_rgba(deltas[idx]), lw=2.2, alpha=line_alpha, zorder=2)
+        color = mappable.to_rgba(deltas[idx]) if full[idx] else "#c4c4c4"
+        (artist,) = ax.plot(px, py, color=color, lw=2.2, alpha=line_alpha, zorder=2 if full[idx] else 1)
         artists.append(artist)
         paths.append(np.column_stack([px, py]))
         records.append(
             {
                 "number": runs.at[idx, "number"] if "number" in runs else idx,
                 "value": float(values[idx]),
-                "margin": float(deltas[idx]),
+                "margin": float(deltas[idx]) if full[idx] else None,
+                "completed": bool(full[idx]),
                 "config": {axis["knob"]: knob_frame.at[idx, axis["knob"]] for axis in axes_def},
             }
         )
@@ -429,12 +403,16 @@ def hpo_parallel_coordinates(
 
     bar = fig.colorbar(mappable, ax=ax, fraction=0.04, pad=0.02)
     bar.set_label(f"{metric} vs baseline (negative is better)", fontsize=12)
-    bar.ax.axhline(center, color="black", linestyle="--", lw=1.5)
-    # The published config's score on the *trials'* basis -- best_value is the re-rank's,
-    # which this scale isn't in. Its own trial row carries the comparable number.
-    published_value = _trial_value(results.get("best_config"), runs, knob_frame)
+    # Both rules live on the colorbar, which is scaled in *margin over baseline* -- so the
+    # baseline sits at zero and the published config at its own margin. Drawing raw objective
+    # values here would put both lines off the end of the scale.
+    bar.ax.axhline(0.0, color="black", linestyle="--", lw=1.5)
+    # The winner's own score, straight from the record: every trial is on one basis now, so
+    # this is directly comparable. Matching by config would return the first row holding
+    # those knobs, which is the wrong one whenever a config was evaluated twice.
+    published_value = results.get("search_best_value")
     if published_value is not None:
-        rule = bar.ax.axhline(published_value, color="#00d451", lw=3.5)
+        rule = bar.ax.axhline(published_value - center, color="#00d451", lw=3.5)
         # A white halo so it reads against the dark end of the colormap.
         rule.set_path_effects([path_effects.withStroke(linewidth=6.0, foreground="white")])
     # Below the axes: an in-plot legend covers the top-of-axis value labels. The counts ride

@@ -29,6 +29,18 @@
           "endpoint:mppb-reg-v1"
         ]
       }
+    ],
+    "mppb_hpo": [
+      {
+        "script": "mppb_chemprop_hpo.py",
+        "inputs": [
+          "fs:open_admet_mppb"
+        ],
+        "outputs": [
+          "model:mppb-reg-chemprop-hpo",
+          "endpoint:mppb-reg-chemprop-hpo"
+        ]
+      }
     ]
   }
 }

@@ -1,10 +1,10 @@
 """XGBoost hyperparameter-search objective + default search space.
 
 The XGBoost adapter for :mod:`workbench.training.hpo_runner`: a default search space
-(this module) and, per trial, a full ``n_folds`` ensemble scored as ``holdout_mae`` /
-``cv_mae`` (the search *objective*). Scoring a trial in the regime the winner is
+(this module) and, per trial, a full ``n_folds`` ensemble scored as pooled out-of-fold
+MAE (the search *objective*). Scoring a trial in the regime the winner is
 published in is the point — a config selected as a lone model does not carry over to an
-ensemble. The runner owns everything around that: selection, the re-rank, the artifacts.
+ensemble. The runner owns everything around that: fold construction, the baseline trial, the artifacts.
 
 Trials are cheap here — one fit is seconds, not minutes — so a wider search space and a
 larger trial budget are affordable in a way they are not for chemprop.
@@ -22,7 +22,7 @@ from __future__ import annotations
 import os
 
 from workbench.training.hpo_harness import FloatRange, IntRange, SearchSpace
-from workbench.training.hpo_runner import HpoAdapter, run_hpo
+from workbench.training.hpo_runner import HpoAdapter, pooled_mae, run_hpo
 
 # Workbench knobs the template consumes itself — never forwarded to XGBoost.
 # Default per-knob search space, split into the two levers that matter for gradient
@@ -93,31 +93,12 @@ def resolve_search_space(spec) -> dict:
 class XGBAdapter(HpoAdapter):
     """Trains and scores one XGBoost candidate for :func:`run_hpo`.
 
-    Regression only — the objective is MAE, and the runner's re-rank compares on it.
-    ``category_mappings``/``orig_features``/``compressed_features`` are the template's
-    fitted frame-alignment state; :meth:`prepare_frame` applies it to the raw holdout.
+    Regression only — the objective is MAE.
     """
 
-    def __init__(
-        self,
-        *,
-        target: str,
-        features: list,
-        category_mappings: dict | None = None,
-        orig_features: list | None = None,
-        compressed_features: list | None = None,
-    ):
+    def __init__(self, *, target: str, features: list):
         self.target = target
         self.features = list(features)
-        self.category_mappings = category_mappings
-        self.orig_features = orig_features
-        self.compressed_features = compressed_features
-
-    def prepare_frame(self, df):
-        """Apply the template's fitted categorical/decompression transforms."""
-        from workbench.training.xgb_core import align_frame
-
-        return align_frame(df, self.category_mappings, self.orig_features, self.compressed_features)
 
     # A trial is seconds, so the space can be covered densely.
     default_n_trials = 250
@@ -128,34 +109,27 @@ class XGBAdapter(HpoAdapter):
             return None
         return {"cpu": _xgb_threads(max(1, hpo_block.get("max_parallel", 1)))}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
-        """Build the ensemble XGBoost ``trial_fn`` (closes over the folds and eval data).
+    def make_trial_fn(self, *, train_df, folds, hyperparameters, concurrency):
+        """Build the ensemble XGBoost ``trial_fn`` (closes over the folds).
 
         Each trial trains one regressor per fold the way the template publishes them —
-        same estimator kwargs, same per-fold seed offset, same sample weights — and scores
-        the ensemble the way it is deployed:
-
-        * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
-          members' mean prediction, i.e. the real ensemble's held-out error.
-        * ``cv_mae`` — each member predicts its own out-of-fold rows; the objective is one
-          MAE over those pooled predictions, so every row weighs the same.
+        same estimator kwargs, same per-fold seed offset, same sample weights. Each member
+        predicts its own out-of-fold rows and the objective is one MAE over those pooled
+        predictions, reported after every fold so the harness can stop a trial that is
+        already off the pace.
         """
-        import numpy as np
-
         from workbench.training.xgb_core import train_xgb_fold
 
         n_jobs = _xgb_threads(concurrency)
         print(f"[hpo] {n_jobs} XGBoost threads per trial at {concurrency} concurrent")
 
-        holdout = bool(len(val_df))
         all_y = train_df[self.target].to_numpy(dtype=float)
-        eval_y = val_df[self.target].to_numpy(dtype=float) if holdout else None
         weights = train_df["sample_weight"] if "sample_weight" in train_df.columns else None
 
-        def trial_fn(config):
+        def trial_fn(config, report):
             merged = {**self.merge_config(hyperparameters, config), "n_jobs": n_jobs}
 
-            member_preds, oof_pred, oof_true = [], [], []
+            oof_pred, oof_true = [], []
             for fold_idx, (tr_idx, va_idx) in enumerate(folds):
                 model = train_xgb_fold(
                     merged,
@@ -165,54 +139,33 @@ class XGBAdapter(HpoAdapter):
                     fold_idx=fold_idx,
                 )
 
-                if holdout:
-                    # Each member predicts the held-out rows; the objective is the ensemble's
-                    # mean prediction, so the objective set never influences model selection.
-                    member_preds.append(model.predict(val_df[self.features]))
-                else:
-                    oof_pred.append(model.predict(train_df.iloc[va_idx][self.features]))
-                    oof_true.append(all_y[va_idx])
+                oof_pred.append(model.predict(train_df.iloc[va_idx][self.features]))
+                oof_true.append(all_y[va_idx])
+                running = pooled_mae(oof_pred, oof_true)
+                report(fold_idx + 1, running)
 
-            if holdout:
-                return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
-
-            # Pooled, not a mean of per-fold means: every row weighs the same, which is what
-            # the model's own cross-fold metrics report. Fold sizes differ under a scaffold
-            # split, so the two are not the same number.
-            return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
+            return running
 
         return trial_fn
 
 
 def run_xgb_hpo(
     train_df,
-    val_df,
     base_hyperparameters: dict,
     hpo_block: dict,
     *,
     target: str,
     features: list,
-    category_mappings: dict | None = None,
-    orig_features: list | None = None,
-    compressed_features: list | None = None,
     output_dir: str | None = None,
 ) -> dict:
     """Run the XGBoost hyperparameter search; returns the phase-2 hyperparameters.
 
-    ``val_df`` may be the raw holdout — the adapter routes both frames through the
-    template's fitted preprocessing. See :func:`workbench.training.hpo_runner.run_hpo`
-    for the search/re-rank contract and the ``hpo`` block's keys.
+    See :func:`workbench.training.hpo_runner.run_hpo` for the search contract and
+    the ``hpo`` block's keys.
     """
-    adapter = XGBAdapter(
-        target=target,
-        features=features,
-        category_mappings=category_mappings,
-        orig_features=orig_features,
-        compressed_features=compressed_features,
-    )
+    adapter = XGBAdapter(target=target, features=features)
     return run_hpo(
         train_df,
-        val_df,
         base_hyperparameters,
         hpo_block,
         adapter=adapter,
@@ -226,7 +179,6 @@ def _xgb_threads(concurrency: int) -> int:
     """Estimator threads per trial at a given concurrency.
 
     One fit spreads across every core it is given, so concurrent trials have to divide them
-    or they contend. Phase 1.5 runs fewer trials at once than the search, so it recomputes
-    this rather than inheriting the search's tighter budget.
+    or they contend.
     """
     return max(1, (os.cpu_count() or 4) // max(1, concurrency))

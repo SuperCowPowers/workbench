@@ -1,5 +1,8 @@
 """Trial functions for the Ray-backend harness tests.
 
+Each takes the harness's ``(config, report)`` contract; these are single-step objectives,
+so they never call ``report`` and the harness reports their return value for them.
+
 Ray runs each trial in its own worker process, and a worker can only import what is on
 its path — the installed ``workbench`` package, not the pytest module that defined a
 closure. These live in a plain module so ``tests/training`` on ``PYTHONPATH`` (set by
@@ -7,17 +10,12 @@ the ``ray_cluster`` fixture) is enough to reconstruct them.
 """
 
 
-def quadratic(config):
+def quadratic(config, report):
     """A smooth bowl minimized at x=3.0, depth=4."""
     return (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
 
 
-def quadratic_score(config, index):
-    """The same bowl under the ``evaluate_configs`` contract — ``(config, index)``."""
-    return (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
-
-
-def oom_above_depth_3(config):
+def oom_above_depth_3(config, report):
     """Raises a real ``torch.cuda.OutOfMemoryError`` in the upper half of the range."""
     import torch
 
@@ -26,8 +24,16 @@ def oom_above_depth_3(config):
     return float(config["depth"])
 
 
-def always_oom(config):
+def always_oom(config, report):
     """Every trial dies — the 'no usable trial' case."""
     import torch
 
     raise torch.cuda.OutOfMemoryError("CUDA out of memory (synthetic)")
+
+
+def laddered_quadratic(config, report):
+    """The same bowl, reported one step at a time so the scheduler has rungs to act on."""
+    value = (config["x"] - 3.0) ** 2 + (config["depth"] - 4) ** 2
+    for step in range(1, 5):
+        report(step, value)
+    return value

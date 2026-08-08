@@ -10,10 +10,12 @@ the best config. It is framework-agnostic —
 each model framework supplies a ``trial_fn`` that builds/trains/scores one
 candidate plus a default search space (e.g. :mod:`workbench.training.chemprop_hpo`).
 
-``trial_fn(config) -> float`` contract: build + train the framework model for
-``config`` and return its objective value, which the harness minimizes or
-maximizes per ``mode``. Every trial runs to completion — the harness ranks whole
-candidates, never partial ones.
+``trial_fn(config, report) -> float`` contract: build + train the framework model for
+``config`` and return its objective value, which the harness minimizes or maximizes per
+``mode``. A trial built from parts (an ensemble member per step) calls
+``report(step, value)`` after each one with the running objective; the backend can then
+stop a trial that is already off the pace (successive halving). Only trials that reach
+``max_steps`` are ranked — a partial objective is measured on less data than a full one.
 
 The search space is expressed with backend-agnostic specs (:class:`IntRange`,
 :class:`FloatRange`, :class:`Choice`) that each backend translates to its own
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import math
 from dataclasses import dataclass, field
 from typing import Callable, Sequence, Union
 
@@ -217,11 +220,6 @@ class SearchSpace(dict):
         return SearchSpace(knobs=module.resolve_search_space(groups))
 
 
-def space_defaults(search_space: SearchSpace) -> dict:
-    """The ``{knob: default}`` baseline a space describes — the untuned config it searches around."""
-    return {knob: spec.default for knob, spec in search_space.items()}
-
-
 @dataclass
 class HpoResult:
     """Outcome of a search: the winning config plus a record of every trial."""
@@ -241,16 +239,18 @@ def run_search(
     n_trials: int = 60,
     backend: str = "auto",
     max_parallel: int = 1,
-    metric: str = "holdout_mae",
+    metric: str = "objective",
     mode: str = "min",
     seed: int = 42,
     resources_per_trial: Union[dict, None] = None,
+    points_to_evaluate: Union[Sequence[dict], None] = None,
+    max_steps: Union[int, None] = None,
 ) -> HpoResult:
     """Search ``search_space`` for the ``trial_fn`` config that best optimizes ``metric``.
 
     Args:
-        trial_fn: ``(config) -> float`` — trains one candidate and returns its
-            objective value.
+        trial_fn: ``(config, report) -> float`` — trains one candidate and returns its
+            objective value, calling ``report(step, value)`` as partial results firm up.
         search_space: ``{name: Spec}`` mapping knob names to :class:`IntRange` /
             :class:`FloatRange` / :class:`Choice`.
         n_trials: search budget (number of candidate configs).
@@ -261,6 +261,14 @@ def run_search(
         mode: ``"min"`` or ``"max"``.
         seed: sampler seed for reproducible searches.
         resources_per_trial: Ray only — e.g. ``{"gpu": 1}`` (one trial per GPU).
+        points_to_evaluate: configs to try first, ahead of anything the sampler proposes.
+            They count against ``n_trials`` and can win, and the sampler learns from them.
+            They are never stopped early: their ``report`` is a no-op, so they are never
+            present at a rung to be culled. A seeded point is a reference measurement, and a
+            reference is only worth having at full fidelity.
+        max_steps: how many ``report`` steps a full trial makes. Setting it turns on
+            successive halving over those steps and restricts ranking to trials that reach
+            the last one. None runs every trial to term and ranks them all.
 
     Returns:
         HpoResult: best config/value plus a per-trial record.
@@ -284,6 +292,8 @@ def run_search(
             mode=mode,
             seed=seed,
             resources_per_trial=resources_per_trial,
+            points_to_evaluate=points_to_evaluate,
+            max_steps=max_steps,
         )
     return _run_optuna(
         trial_fn,
@@ -293,48 +303,19 @@ def run_search(
         metric=metric,
         mode=mode,
         seed=seed,
+        points_to_evaluate=points_to_evaluate,
+        max_steps=max_steps,
     )
 
 
-def evaluate_configs(
-    eval_fn: Callable[..., float],
-    configs: Sequence[dict],
-    *,
-    backend: str = "auto",
-    max_parallel: int = 1,
-    resources_per_trial: Union[dict, None] = None,
-) -> list:
-    """Score a fixed list of configs — no sampling, no pruning.
+# Each cull keeps the top 1/RUNG_FACTOR of the trials that reached a rung, and rungs sit at
+# RUNG_FACTOR**k steps. Two is the gentle end of the usual range: the first rung is where the
+# partial estimate is least trustworthy, and a trial killed there is killed silently — no
+# later measurement can tell us it should have survived.
+RUNG_FACTOR = 2
 
-    The counterpart to :func:`run_search`, for a confirmation/re-rank pass: it scores a
-    known list on a fresh fold partition, so the values answer "which of these is best"
-    without the selection bias in the search's own minimum.
-
-    Args:
-        eval_fn: ``(config, index) -> float`` — scores one config.
-        configs: the configs to score.
-        backend: ``"ray"`` fans them out concurrently, ``"optuna"`` scores them serially
-            in-process, ``"auto"`` picks ray when importable.
-        max_parallel: concurrent evaluations (Ray only).
-        resources_per_trial: Ray only — e.g. ``{"gpu": 1}``.
-
-    Returns:
-        list: one value per config, positionally aligned, ``None`` where scoring failed.
-    """
-    configs = list(configs)
-    if not configs:
-        return []
-    if len(configs) > 1 and _resolve_backend(backend) == "ray":
-        return _evaluate_ray(eval_fn, configs, max_parallel=max_parallel, resources_per_trial=resources_per_trial)
-
-    values = []
-    for index, config in enumerate(configs):
-        try:
-            values.append(float(eval_fn(config, index)))
-        except Exception as exc:
-            log.warning(f"Config {index} failed to evaluate: {exc}")
-            values.append(None)
-    return values
+# The step counter a laddered trial reports alongside its objective; ASHA advances on it.
+_STEP = "step"
 
 
 def _ray_session(func):
@@ -367,6 +348,22 @@ def _ray_session(func):
     return wrapper
 
 
+def _is_seeded(config, seeded) -> bool:
+    """Whether a trial is one of the enqueued points.
+
+    Subset, not equality: a point may name only some knobs and leave the sampler to fill the
+    rest, which is what ``enqueue_trial``/``points_to_evaluate`` accept. An empty point names
+    nothing and so seeds nothing — matching it against every trial would switch the ladder
+    off entirely.
+    """
+    return any(point and all(config.get(knob) == value for knob, value in point.items()) for point in seeded)
+
+
+def _finite(value) -> bool:
+    """True for a real number — not None, not NaN, not an infinity."""
+    return value is not None and math.isfinite(value)
+
+
 def _resolve_backend(backend: str) -> str:
     """Resolve ``"auto"`` to ``"ray"`` when ray is importable, else ``"optuna"``."""
     if backend != "auto":
@@ -382,19 +379,48 @@ def _resolve_backend(backend: str) -> str:
 # --- Optuna backend (local, serial) ----------------------------------------
 
 
-def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, seed):
+def _run_optuna(
+    trial_fn, search_space, *, n_trials, max_parallel, metric, mode, seed, points_to_evaluate=None, max_steps=None
+):
     import optuna
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     sampler = optuna.samplers.TPESampler(seed=seed)
-    study = optuna.create_study(direction="minimize" if mode == "min" else "maximize", sampler=sampler)
+    # Mirrors the Ray path's ASHA so the mechanics are exercised by CI, which only runs this
+    # backend. Rungs land at the same steps and each keeps the same fraction.
+    pruner = (
+        optuna.pruners.SuccessiveHalvingPruner(min_resource=1, reduction_factor=RUNG_FACTOR)
+        if max_steps
+        else optuna.pruners.NopPruner()
+    )
+    study = optuna.create_study(direction="minimize" if mode == "min" else "maximize", sampler=sampler, pruner=pruner)
+    # Both backends sample a Choice as an index (see _suggest_optuna), so a seeded point has
+    # to be expressed the same way.
+    choice_options = {name: list(spec.options) for name, spec in search_space.items() if isinstance(spec, Choice)}
+    for point in points_to_evaluate or []:
+        study.enqueue_trial(_encode_point(point, choice_options), skip_if_exists=True)
+
+    seeded = list(points_to_evaluate or [])
 
     def objective(trial):
         config = _suggest_optuna(trial, search_space)
         # Stash the resolved (real-valued) config so best_config/trials report
         # actual values, not the categorical indices used for unhashable Choices.
         trial.set_user_attr("config", config)
-        return trial_fn(config)
+        laddered = bool(max_steps) and not _is_seeded(config, seeded)
+
+        def report(step, value):
+            # A rung can land on the last step (max_steps of 1, 2 or 4), and stopping there
+            # would discard a trial that already has the full objective. A non-finite value
+            # is an absence of measurement (sparse multi-target data can leave an early fold
+            # with no labelled rows), so there is nothing to judge yet either.
+            if not laddered or step >= max_steps or not _finite(value):
+                return
+            trial.report(value, step)
+            if trial.should_prune():
+                raise optuna.TrialPruned()
+
+        return trial_fn(config, report)
 
     # Serial: n_jobs>1 runs trials on threads in one process, racing pl.seed_everything's
     # global RNG and contending on the single GPU. Real parallelism is the Ray offload's job.
@@ -402,10 +428,7 @@ def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode,
         log.info(f"Optuna backend is serial; ignoring max_parallel={max_parallel} (use backend='ray' for parallel).")
     study.optimize(objective, n_trials=n_trials, n_jobs=1)
 
-    trials = [
-        {"number": t.number, "value": t.value, "state": t.state.name, "config": t.user_attrs.get("config", {})}
-        for t in study.trials
-    ]
+    trials = [_optuna_record(t, max_steps) for t in study.trials]
     # Rank explicitly rather than via study.best_trial: its "No trials are completed yet"
     # gives no clue what went wrong, and the most likely cause has a specific fix — Optuna
     # marks a trial FAIL when the objective returns NaN, so an unlabeled target column fails
@@ -428,6 +451,32 @@ def _run_optuna(trial_fn, search_space, *, n_trials, max_parallel, metric, mode,
         n_trials=len(study.trials),
         trials=trials,
     )
+
+
+def _optuna_record(trial, max_steps) -> dict:
+    """One trial's record, keyed off its state rather than its value.
+
+    Optuna fills in ``value`` for a PRUNED trial from its last intermediate, so the value
+    alone cannot say whether a trial finished. The three outcomes differ in both fields:
+
+    * COMPLETE — ran every step, even though the last one is never *reported* (the pruner
+      must not be consulted there, or a rung landing on the final step would discard a
+      trial that already has the full objective).
+    * PRUNED — stopped at a rung; keeps the partial objective it reached, and the step says
+      where it stopped.
+    * FAIL — no objective at all. It may still have reported before failing, but keeping
+      that value would file a genuine failure as a scheduler stop.
+    """
+    reported = getattr(trial, "intermediate_values", None) or {}
+    state = trial.state.name
+    complete = state == "COMPLETE"
+    return {
+        "number": trial.number,
+        "value": trial.value if state != "FAIL" else None,
+        "state": state,
+        "config": trial.user_attrs.get("config", {}),
+        "step": max_steps if complete else max(reported, default=None),
+    }
 
 
 def _suggest_optuna(trial, search_space) -> dict:
@@ -508,6 +557,28 @@ def _fence_gpu_memory(resources_per_trial) -> None:
         torch.cuda.set_per_process_memory_fraction(min(1.0, fraction), 0)
 
 
+def _encode_point(point, choice_options) -> dict:
+    """Express a config in the coordinates the sampler searches — Choice knobs as indices.
+
+    The inverse of :func:`_resolve_choices`, for handing the sampler a specific config to
+    try. A Choice value the space does not offer cannot be expressed as an index, so it
+    raises here rather than seeding the search with a silently different config.
+    """
+    encoded = {}
+    for knob, value in point.items():
+        options = choice_options.get(knob)
+        if options is None:
+            encoded[knob] = value
+        elif value in options:
+            encoded[knob] = options.index(value)
+        else:
+            raise ValueError(
+                f"cannot seed the search with {knob}={value!r}: it is not one of the searched "
+                f"options {options}. Add it to the knob's Choice, or leave {knob} unset."
+            )
+    return encoded
+
+
 def _resolve_choices(config, choice_options) -> dict:
     """Map ``Choice`` knobs back from the indices the trainable sampled them as."""
     return {k: (choice_options[k][v] if k in choice_options else v) for k, v in (config or {}).items()}
@@ -525,22 +596,37 @@ def _scored_value(result, metric):
     return None if value is None or value != value else value  # value != value catches NaN
 
 
-def _resolve_trial_records(results, *, metric, choice_options) -> list:
+def _reached_full(result, max_steps) -> bool:
+    """Whether a trial ran every step, rather than being culled at a rung.
+
+    Only these are comparable: a stopped trial's objective is measured over the steps it
+    got through, which is less data than a full trial saw.
+    """
+    if not max_steps:
+        return True
+    return ((getattr(result, "metrics", None) or {}).get(_STEP) or 0) >= max_steps
+
+
+def _resolve_trial_records(results, *, metric, choice_options, max_steps) -> list:
     """One record per trial, defensive about trials that never reported.
 
     A trial killed before it ran — an OOM-killed worker, a missing dependency in the image,
     actor construction failing — comes back with ``config`` and ``metrics`` unset. Those
     still belong in the record as the unscored trials they are; reading them unguarded
     discards a search that has already been paid for in full.
+
+    ``completed`` means ranked-eligible: it scored *and* ran every step. A trial stopped at
+    a rung keeps its partial value but is not completed, which is what separates "stopped
+    early" from "died" downstream. A trial that *raised* keeps no value even if it reported
+    before raising — otherwise a genuine failure files itself as a scheduler stop.
     """
     return [
         {
             "number": i,
-            "value": value,
+            "value": None if getattr(r, "error", None) is not None else value,
             "config": _resolve_choices(getattr(r, "config", None), choice_options),
-            # Every trial runs its full ensemble, so this marks the one thing left that can
-            # cost a trial its place: dying without an objective (OOM, a killed worker).
-            "completed": value is not None,
+            "step": (getattr(r, "metrics", None) or {}).get(_STEP),
+            "completed": value is not None and getattr(r, "error", None) is None and _reached_full(r, max_steps),
         }
         for i, r in enumerate(results)
         for value in [_scored_value(r, metric)]
@@ -548,8 +634,21 @@ def _resolve_trial_records(results, *, metric, choice_options) -> list:
 
 
 @_ray_session
-def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, seed, resources_per_trial) -> HpoResult:
+def _run_ray(
+    trial_fn,
+    search_space,
+    *,
+    n_trials,
+    max_parallel,
+    metric,
+    mode,
+    seed,
+    resources_per_trial,
+    points_to_evaluate=None,
+    max_steps=None,
+) -> HpoResult:
     from ray import tune
+    from ray.tune.schedulers import ASHAScheduler
     from ray.tune.search.optuna import OptunaSearch
 
     # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
@@ -557,11 +656,27 @@ def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, se
     # knobs), so passing the raw list only works by warning-and-degrading.
     param_space, choice_options = _to_ray_space(search_space)
 
+    last_step = max_steps or 1
+    seeded = list(points_to_evaluate or [])
+
     def trainable(config):
         _fence_gpu_memory(resources_per_trial)
-        config = {k: (choice_options[k][v] if k in choice_options else v) for k, v in config.items()}
+        config = _resolve_choices(config, choice_options)
+        # A seeded point reports nothing until the end, so the scheduler never sees it at a
+        # rung and cannot stop it. Recognized by matching the point's knobs, which is loose
+        # in one direction and cheap: a sampler that revisits the same point on a discrete
+        # space pays for a full ensemble it might have been stopped out of. That costs a few
+        # folds, not correctness.
+        laddered = bool(max_steps) and not _is_seeded(config, seeded)
+
+        def report(step, value):
+            # A non-finite running value means no labelled rows yet, not a bad candidate —
+            # reporting it would let the scheduler judge a rung that measured nothing.
+            if laddered and _finite(value):
+                tune.report({metric: value, _STEP: step})
+
         try:
-            value = trial_fn(config)
+            value = trial_fn(config, report)
         except Exception as exc:
             if not _is_oom(exc):
                 raise
@@ -572,9 +687,12 @@ def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, se
             # not an option in its place, since Ray hands the metric straight to
             # `optuna.Trial.report`, which requires a float.
             log.warning(f"Trial out of GPU memory, ending it unscored: {exc}")
-            tune.report({metric: float("nan")})
+            tune.report({metric: float("nan"), _STEP: last_step})
             return
-        tune.report({metric: value})
+        # A laddered trial already reported its last step from inside the loop; reporting
+        # again would land a second result on the same step.
+        if not laddered:
+            tune.report({metric: value, _STEP: last_step})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
     tuner = tune.Tuner(
@@ -583,22 +701,45 @@ def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, se
         tune_config=tune.TuneConfig(
             num_samples=n_trials,
             max_concurrent_trials=max_parallel,
-            search_alg=OptunaSearch(metric=metric, mode=mode, seed=seed),
+            search_alg=OptunaSearch(
+                metric=metric,
+                mode=mode,
+                seed=seed,
+                points_to_evaluate=[_encode_point(p, choice_options) for p in seeded] or None,
+            ),
+            scheduler=(
+                ASHAScheduler(
+                    time_attr=_STEP,
+                    metric=metric,
+                    mode=mode,
+                    grace_period=1,
+                    reduction_factor=RUNG_FACTOR,
+                    max_t=max_steps,
+                )
+                if max_steps
+                else None
+            ),
         ),
     )
     results = tuner.fit()
 
     # Never rank an unscored trial: one that died carries neither a value nor a config, so
-    # ranking it would publish `None` as the winning config.
-    pool = [r for r in results if _scored_value(r, metric) is not None]
+    # ranking it would publish `None` as the winning config. Nor a stopped one: its objective
+    # covers fewer steps than a full trial's, so the two are not the same measurement.
+    pool = [
+        r
+        for r in results
+        if getattr(r, "error", None) is None and _scored_value(r, metric) is not None and _reached_full(r, max_steps)
+    ]
     if not pool:
         # Mirror the Optuna path's actionable failure. Ray otherwise surfaces this as an
         # AttributeError deep in config resolution, on the box that costs the most to rent.
         errored = sum(1 for r in results if r.error is not None)
+        laddered = f", none reaching step {max_steps}" if max_steps else ""
         raise RuntimeError(
-            f"HPO search produced no usable trial ({len(results)} trials, {errored} errored). "
-            "If trials errored, check the logs above for the first traceback — an OOM or a "
-            "NaN objective (e.g. an unlabeled target column) is the usual cause."
+            f"HPO search produced no usable trial ({len(results)} trials, {errored} errored"
+            f"{laddered}). If trials errored, check the logs above for the first traceback — "
+            "an OOM or a NaN objective (e.g. an unlabeled target column) is the usual cause."
         )
 
     def _objective(r):
@@ -610,7 +751,7 @@ def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, se
         return v if mode == "min" else -v
 
     best = min(pool, key=_objective)
-    trials = _resolve_trial_records(results, metric=metric, choice_options=choice_options)
+    trials = _resolve_trial_records(results, metric=metric, choice_options=choice_options, max_steps=max_steps)
     return HpoResult(
         best_config=_resolve_choices(best.config, choice_options),
         best_value=_scored_value(best, metric),
@@ -619,34 +760,6 @@ def _run_ray(trial_fn, search_space, *, n_trials, max_parallel, metric, mode, se
         n_trials=len(trials),
         trials=trials,
     )
-
-
-@_ray_session
-def _evaluate_ray(eval_fn, configs, *, max_parallel, resources_per_trial):
-    """Fan :func:`evaluate_configs` out across the node's GPUs via Ray."""
-    from ray import tune
-
-    # Configs are captured in the closure and addressed by index — they can hold unhashable
-    # values (a list-valued knob) that a Ray param_space would reject.
-    idx_key, value_key = "_config_index", "value"
-
-    def trainable(slot):
-        index = slot[idx_key]
-        tune.report({value_key: float(eval_fn(configs[index], index)), idx_key: index})
-
-    trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
-    tuner = tune.Tuner(
-        trainable_res,
-        # grid_search over the indices runs each config exactly once; num_samples multiplies it.
-        param_space={idx_key: tune.grid_search(list(range(len(configs))))},
-        tune_config=tune.TuneConfig(num_samples=1, max_concurrent_trials=max_parallel),
-    )
-    values = [None] * len(configs)
-    for result in tuner.fit():
-        index = (result.metrics or {}).get(idx_key)
-        if index is not None:
-            values[int(index)] = result.metrics.get(value_key)
-    return values
 
 
 def _to_ray_space(search_space):

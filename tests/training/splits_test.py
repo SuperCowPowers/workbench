@@ -71,11 +71,11 @@ def test_same_seed_reproduces_the_partition():
 
 
 def test_a_different_seed_moves_the_heavy_groups():
-    """The HPO re-rank re-splits at a fresh seed to decorrelate from the search.
+    """Changing the seed has to actually move the partition, heavy groups included.
 
-    Checking the heavy head specifically: a size-ordered assignment pins the largest
-    groups to the same fold at every seed, which leaves most of the rows in place and
-    makes the re-rank's partition far less independent than it reads.
+    Checking the heavy head specifically: a size-ordered assignment pins the largest groups
+    to the same fold at every seed, so most rows stay put and a "different" split is barely
+    different — which would quietly weaken any comparison across seeds.
     """
     groups = scaffold_like_groups()
     head = np.isin(groups, range(len(HEAD_SIZES)))

@@ -5,9 +5,8 @@ feature list as aqsol_reg_1.py so the tuned model is a direct A/B against the un
 
 The `hpo` block runs the search *inside* the single training job — trials are ephemeral,
 so no throwaway Workbench models or endpoints are created — and publishes only the winning
-config. The search shortlists; a re-rank then scores those finalists and these
-hyperparameters as-is, and whichever wins there is published. A search that finds nothing
-real therefore publishes the untuned baseline.
+config. These hyperparameters run as one of the trials, so the record carries the value an
+untuned model would have scored on the same folds.
 
 An XGBoost trial is seconds, not minutes, so this is the cheap way to exercise the search
 machinery end to end.
@@ -60,8 +59,6 @@ if __name__ == "__main__":
                 "n_trials": 250,
             },
         },
-        # For an out-of-distribution objective, pass validation_ids=[...] and set
-        # hpo["metric"]="holdout_mae"; those rows are held out of training either way.
     )
     m.set_owner("test")
 

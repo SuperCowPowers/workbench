@@ -1,15 +1,15 @@
 """Chemprop hyperparameter-search objective + default search space.
 
 The chemprop adapter for :mod:`workbench.training.hpo_runner`: a default search space
-(this module) and, per trial, a full ``n_folds`` ensemble scored as ``holdout_mae`` /
-``cv_mae`` (the search *objective*). Scoring a trial in the regime the winner is
-published in is the point — a config selected as a lone model does not carry over to an
-ensemble. The runner owns everything around that: selection, the re-rank, the artifacts.
+(this module) and, per trial, a full ``n_folds`` ensemble scored as pooled out-of-fold MAE
+(the search *objective*). Scoring a trial in the regime the winner is published in is the
+point — a config selected as a lone model does not carry over to an ensemble. The runner
+owns everything around that: fold construction, the baseline trial, the artifacts.
 
-Carrying the caller's baseline through the runner's re-rank is what bounds the feature's
-downside, which matters because the literature finds chemprop HPO is roughly a coin-flip
-against defaults on small sets (Tetko et al., J Cheminform 2024) and no help
-out-of-distribution (BOOM, arXiv:2505.01912).
+The caller's own hyperparameters run as one of the trials, so a search that finds nothing
+publishes them unchanged — which matters because the literature finds chemprop HPO is
+roughly a coin-flip against defaults on small sets (Tetko et al., J Cheminform 2024) and no
+help out-of-distribution (BOOM, arXiv:2505.01912).
 
 Parity: each trial builds its model through
 :func:`workbench.training.chemprop_core.build_mpnn_model` — the same builder the
@@ -27,7 +27,7 @@ from __future__ import annotations
 import os
 
 from workbench.training.hpo_harness import Choice, FloatRange, IntRange, SearchSpace
-from workbench.training.hpo_runner import HpoAdapter, run_hpo
+from workbench.training.hpo_runner import HpoAdapter, pooled_mae, run_hpo
 
 # Default per-knob search space, grouped like chemprop's own hpopt keywords. Both groups
 # are searched by default. Everything else — uq_version, max_epochs, patience,
@@ -182,9 +182,10 @@ def resolve_search_space(spec) -> dict:
 def merge_best_config(hyperparameters: dict, best_config: dict) -> dict:
     """Merge the winning search config into the base hyperparameters (phase-2 config).
 
-    Drops the ``hpo`` block (search is done) and, when ``max_lr`` was searched, ties
-    ``init_lr``/``final_lr`` to it (one-tenth of ``max_lr``) so the Noam schedule
-    stays well-ordered.
+    Drops the ``hpo`` block (search is done) and, when ``max_lr`` was *changed*, ties
+    ``init_lr``/``final_lr`` to it (one-tenth of ``max_lr``) so the Noam schedule stays
+    well-ordered. A config carrying the caller's own ``max_lr`` — the seeded baseline does,
+    since it names every searched knob — leaves their schedule alone.
 
     Args:
         hyperparameters: the user's hyperparameters dict (may include the ``hpo`` block).
@@ -195,7 +196,7 @@ def merge_best_config(hyperparameters: dict, best_config: dict) -> dict:
     """
     merged = {k: v for k, v in hyperparameters.items() if k != "hpo"}
     merged.update(best_config)
-    if "max_lr" in best_config:
+    if "max_lr" in best_config and best_config["max_lr"] != hyperparameters.get("max_lr"):
         merged["init_lr"] = best_config["max_lr"] / 10.0
         merged["final_lr"] = best_config["max_lr"] / 10.0
     return merged
@@ -220,22 +221,29 @@ class ChempropAdapter(HpoAdapter):
             "task_weights": task_weights,
         }
 
-    def prepare_frame(self, df):
-        """Drop rows RDKit can't parse, so predictions stay aligned with the target array."""
-        from workbench.endpoints.chemprop_utils import create_molecule_datapoints
-
-        df = df.dropna(subset=[self.smiles_column]).reset_index(drop=True)
-        _, valid = create_molecule_datapoints(df[self.smiles_column].tolist())
-        return df.iloc[valid].reset_index(drop=True)
-
     def split_kwargs(self) -> dict:
         return {"smiles_column": self.smiles_column}
+
+    def baseline_config(self, config, hyperparameters) -> dict:
+        """Spell the caller's FFN head as the shape the space samples.
+
+        The template takes an int width beside ``ffn_num_layers``; the space takes a
+        per-layer shape, and only shapes are samplable. Same architecture either way — but
+        an int is not one of the Choice's options, so an untranslated baseline cannot be
+        seeded at all.
+        """
+        width = config.get("ffn_hidden_dim")
+        if not isinstance(width, int):
+            return config
+        n_layers = int(hyperparameters.get("ffn_num_layers", 1))
+        return {**config, "ffn_hidden_dim": "-".join([str(width)] * n_layers)}
 
     def merge_config(self, hyperparameters, config) -> dict:
         return merge_best_config(hyperparameters, config)
 
-    # A trial is a full D-MPNN ensemble — hours on a multi-GPU box.
-    default_n_trials = 40
+    # A trial is a full D-MPNN ensemble, but the fold ladder stops most of them at the
+    # first or second member, so the budget buys far more configs than the fold count suggests.
+    default_n_trials = 60
 
     def resources_per_trial(self, hpo_block, backend):
         """GPU share per trial. Ray only; ``hpo['gpus_per_trial']`` overrides.
@@ -250,36 +258,33 @@ class ChempropAdapter(HpoAdapter):
         default = 1.0 if len(self.target_columns) > 1 else 0.5
         return {"gpu": hpo_block.get("gpus_per_trial", default)}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
-        """Build the ensemble chemprop ``trial_fn`` (closes over the folds and eval data).
+    def make_trial_fn(self, *, train_df, folds, hyperparameters, concurrency):
+        """Build the ensemble chemprop ``trial_fn`` (closes over the folds).
 
         Each trial trains one model per fold through
         :func:`workbench.training.chemprop_core.train_chemprop_fold` — the same function the
         template publishes with, so a trial's members are built, early-stopped, and
-        best-checkpoint-selected identically — and scores the ensemble the way it is deployed:
+        best-checkpoint-selected identically. Each member predicts its own out-of-fold rows
+        and the objective is one MAE over those pooled predictions.
 
-        * ``holdout_mae`` — every member predicts ``val_df``; the objective is the MAE of the
-          members' mean prediction, i.e. the real ensemble's held-out error.
-        * ``cv_mae`` — each member predicts its own out-of-fold rows; the objective is one
-          MAE over those pooled predictions, so every row weighs the same.
+        The pool is reported after every fold, so the harness can stop a trial that is
+        already off the pace. Fold order is fixed, so every trial at a given fold was scored
+        on the same molecules; and pooling over the folds run so far estimates the same
+        quantity the last fold reports, on a subsample of it.
 
         Epoch-level early stopping stays with chemprop's ``EarlyStopping`` callback.
         """
         import tempfile
 
-        import numpy as np
-
-        from workbench.training.chemprop_core import FoldSpec, predict_chemprop_frame, train_chemprop_fold
+        from workbench.training.chemprop_core import FoldSpec, train_chemprop_fold
 
         num_workers = _dataloader_workers(concurrency)
         print(f"[hpo] {num_workers} dataloader workers per trial at {concurrency} concurrent")
 
         target_columns = self.target_columns
-        holdout = bool(len(val_df))
         all_y = train_df[target_columns].to_numpy(dtype=float)
-        eval_y = val_df[target_columns].to_numpy(dtype=float)[:, 0] if holdout else None
 
-        def trial_fn(config):
+        def trial_fn(config, report):
             spec = FoldSpec(
                 hyperparameters=merge_best_config(hyperparameters, config),
                 smiles_column=self.smiles_column,
@@ -291,12 +296,12 @@ class ChempropAdapter(HpoAdapter):
                 **self.model_shape,
             )
 
-            member_preds, oof_pred, oof_true = [], [], []
+            oof_pred, oof_true = [], []
             for fold_idx, (tr_idx, va_idx) in enumerate(folds):
                 fold_val_df = train_df.iloc[va_idx].reset_index(drop=True)
                 # Checkpoints are scratch: the trial keeps the model object, not the file.
                 with tempfile.TemporaryDirectory() as ckpt_dir:
-                    mpnn, fold_preds = train_chemprop_fold(
+                    _, fold_preds = train_chemprop_fold(
                         spec,
                         train_df.iloc[tr_idx].reset_index(drop=True),
                         fold_val_df,
@@ -306,32 +311,18 @@ class ChempropAdapter(HpoAdapter):
                         checkpoint_dir=ckpt_dir,
                     )
 
-                # nanmean, not mean: the template keeps a row when ANY target is non-NaN, so a
-                # multi-target frame can carry a NaN primary target. Training still uses every
-                # row (chemprop masks per-target); only the scoring skips the unlabeled ones.
-                if holdout:
-                    # Each member predicts the held-out rows; the objective is the ensemble's
-                    # mean prediction. The fold's own val rows drive early stopping only, so
-                    # the objective set never influences model selection.
-                    member_preds.append(predict_chemprop_frame(mpnn, spec, val_df)[:, 0])
-                else:
-                    oof_pred.append(fold_preds[:, 0])
-                    oof_true.append(all_y[va_idx][:, 0])
+                oof_pred.append(fold_preds[:, 0])
+                oof_true.append(all_y[va_idx][:, 0])
+                running = pooled_mae(oof_pred, oof_true)
+                report(fold_idx + 1, running)
 
-            if holdout:
-                return float(np.nanmean(np.abs(np.mean(member_preds, axis=0) - eval_y)))
-
-            # Pooled, not a mean of per-fold means: every row weighs the same, which is what
-            # the model's own cross-fold metrics report. Fold sizes differ under a scaffold
-            # split, so the two are not the same number.
-            return float(np.nanmean(np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))))
+            return running
 
         return trial_fn
 
 
 def run_chemprop_hpo(
     train_df,
-    val_df,
     base_hyperparameters: dict,
     hpo_block: dict,
     *,
@@ -345,7 +336,7 @@ def run_chemprop_hpo(
 ) -> dict:
     """Run the chemprop hyperparameter search; returns the phase-2 hyperparameters.
 
-    See :func:`workbench.training.hpo_runner.run_hpo` for the search/re-rank contract and
+    See :func:`workbench.training.hpo_runner.run_hpo` for the search contract and
     the ``hpo`` block's keys.
 
     v1 scope: the objective is the primary target's MAE, computed with ``nanmean`` so
@@ -363,7 +354,6 @@ def run_chemprop_hpo(
     )
     return run_hpo(
         train_df,
-        val_df,
         base_hyperparameters,
         hpo_block,
         adapter=adapter,

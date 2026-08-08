@@ -683,8 +683,8 @@ class ModelCore(Artifact):
         the "was this an HPO model?" check.
 
         Returns:
-            dict: The published config, the search/re-rank values, and ``rerank`` /
-                ``trials`` DataFrames. None if the model has no search artifacts.
+            dict: The published config, the search's own values, and a ``trials``
+                DataFrame. None if the model has no search artifacts.
         """
         return get_hpo_results(self)
 

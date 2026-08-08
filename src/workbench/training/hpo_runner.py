@@ -1,22 +1,19 @@
 """Framework-agnostic hyperparameter-search orchestration.
 
 Sits between :mod:`workbench.training.hpo_harness` (the sampler/backend layer) and a
-framework module (:mod:`workbench.training.chemprop_hpo`,
-:mod:`workbench.training.xgb_hpo`). Everything a search does *around* training a
-candidate lives here: objective selection, fold construction, the same-basis baseline,
-the phase-1.5 re-rank, and the ``best_config.json`` / ``hpo_trials.csv`` /
-``hpo_rerank.csv`` artifacts that :func:`workbench.utils.training_job_utils.get_hpo_results`
-reads.
+framework module (:mod:`workbench.training.chemprop_hpo`, :mod:`workbench.training.xgb_hpo`).
+Everything a search does *around* training a candidate lives here: fold construction, the
+baseline trial, and the ``best_config.json`` / ``hpo_trials.csv`` artifacts that
+:func:`workbench.utils.training_job_utils.get_hpo_results` reads.
 
-A framework supplies an :class:`HpoAdapter` — how to train and score one candidate, and
-how a winning config merges back into the published hyperparameters. Nothing else about
-the framework reaches this module, so the artifact contract is identical across them.
+A framework supplies an :class:`HpoAdapter` — how to train and score one candidate, and how
+a winning config merges back into the published hyperparameters.
 
-Selection is two-stage: the search shortlists, then :func:`rerank_finalists` re-scores
-the finalists *and the caller's baseline* on fresh trainings and picks from those. The
-search's own winning value is the minimum of many noisy estimates and so is
-optimistically biased; carrying the baseline through the re-rank is what bounds the
-feature's downside.
+The values a search reports are *search diagnostics*, not performance estimates: the
+winner is the minimum over many noisy evaluations, so its value is optimistically biased,
+and every candidate was scored on the data that selected it. What the published model is
+actually worth comes from the phase-2 metrics and whatever holdout or champion/challenger
+comparison the caller runs afterwards.
 
 Training-only; imported from inside a model template's ``__main__``.
 """
@@ -26,12 +23,39 @@ from __future__ import annotations
 import json
 import os
 
-# Finalists re-scored in phase 1.5 (plus the baseline, always). See rerank_finalists.
-RERANK_TOP_K = 5
+# The objective, always: pooled out-of-fold MAE on the primary target. Designated validation
+# rows are never scored during a search — they are the only unbiased read on the published
+# model, and a few hundred of them make a noisier selection signal than thousands of
+# out-of-fold predictions.
+METRIC = "cv_mae"
 
-# Added to the seed for the re-rank pass. Trials are deterministic, so re-scoring a config at
-# the search seed would replay the search's number rather than draw an independent one.
-RERANK_SEED_OFFSET = 1000
+# Everything the ``hpo`` block accepts. Anything else is a typo (``n_trails``) or a key that
+# no longer does what its name promises, and silently ignoring either changes the search
+# without saying so.
+HPO_KEYS = {"n_trials", "backend", "search_space", "max_parallel", "gpus_per_trial"}
+
+# Keys that used to mean something. Each names what to do instead, because ignoring them
+# would quietly change the objective or the compute bill.
+RETIRED_HPO_KEYS = {
+    "metric": "the objective is always pooled out-of-fold MAE; validation_ids rows stay out "
+    "of it so they remain an honest benchmark",
+    "rerank_top_k": "the search publishes its own winner; the caller's hyperparameters ride "
+    "along as a trial and can win",
+    "n_folds": "trials use the model's own n_folds so a trial matches what gets published",
+}
+
+
+def check_hpo_block(hpo_block: dict) -> None:
+    """Reject keys the block no longer honors, rather than running something else.
+
+    A search is hours of GPU time and its result is a published model, so a key that reads
+    as configuration but does nothing is worth failing on at submit time.
+    """
+    for key in hpo_block:
+        if key in RETIRED_HPO_KEYS:
+            raise ValueError(f"hpo['{key}'] is no longer supported — {RETIRED_HPO_KEYS[key]}. Remove it.")
+        if key not in HPO_KEYS:
+            raise ValueError(f"unknown hpo key {key!r}. Supported: {sorted(HPO_KEYS)}")
 
 
 class HpoAdapter:
@@ -47,32 +71,20 @@ class HpoAdapter:
     # says nothing gets a middling budget rather than a wrong one.
     default_n_trials = 60
 
-    def prepare_frame(self, df):
-        """Align a frame to what training expects — row filtering, fitted transforms.
-
-        Runs on the training and holdout frames before anything else, so predictions stay
-        positionally aligned with the target array. The holdout arrives raw (it is split
-        off before the template's preprocessing), while the training frame has already
-        been through it — so an override must be idempotent.
-        """
-        return df
-
     def split_kwargs(self) -> dict:
         """Extra ``get_split_indices`` kwargs, e.g. the SMILES column for scaffold folds."""
         return {}
 
-    def make_trial_fn(self, *, train_df, folds, val_df, hyperparameters, concurrency):
-        """Build the ``(config) -> float`` objective for one search pass.
+    def make_trial_fn(self, *, train_df, folds, hyperparameters, concurrency):
+        """Build the ``(config, report) -> float`` objective for the search.
 
-        Each call closes over a specific fold partition, so the search and the re-rank get
-        their own. A trial trains the full ensemble the winner is published as and returns
-        its objective: the ensemble's mean prediction on ``val_df`` (``holdout_mae``) when
-        ``val_df`` is non-empty, else the pooled out-of-fold error (``cv_mae``).
+        A trial trains the full ensemble the winner is published as and returns its pooled
+        out-of-fold MAE, calling ``report(fold, running_mae)`` after each member so the
+        harness can stop a trial that is already off the pace.
 
         Args:
             train_df: the rows the folds index into.
             folds: ``[(train_idx, val_idx), ...]``.
-            val_df: the holdout frame; empty means score out-of-fold.
             hyperparameters: the caller's base hyperparameters, which a trial config overlays.
             concurrency: how many trials run at once, for sizing per-trial CPU use.
         """
@@ -87,6 +99,15 @@ class HpoAdapter:
         merged = {k: v for k, v in hyperparameters.items() if k != "hpo"}
         merged.update(config)
         return merged
+
+    def baseline_config(self, config, hyperparameters) -> dict:
+        """Re-spell the caller's config in the coordinates the search samples.
+
+        The baseline is seeded as an ordinary trial, so it has to be expressible in the
+        search space — and a framework may spell the same architecture differently in its
+        template than in its space. Identity unless a framework says otherwise.
+        """
+        return config
 
     def resources_per_trial(self, hpo_block, backend):
         """Ray resource request per trial, e.g. ``{"gpu": 0.5}``. None leaves it to Ray."""
@@ -127,35 +148,8 @@ def resolve_max_parallel(hpo_block, resources, n_gpus: int) -> int:
     return max(1, int(n_gpus / share))
 
 
-def use_holdout(requested_metric, n_val_rows: int) -> bool:
-    """Whether the designated validation rows should drive the search objective.
-
-    Defaults to out-of-fold scoring, leaving any validation rows out of the objective. They
-    stay out of training either way (the template split them off) — this only decides
-    whether they *drive the search*. Out-of-fold is the safe default because
-    ``validation_ids`` usually marks a benchmark set, and tuning on one makes its own final
-    score optimistic and unfair against models that never saw those labels. Opt in with
-    ``hpo["metric"]="holdout_mae"`` when the holdout exists to be tuned toward.
-
-    Args:
-        requested_metric: the ``hpo["metric"]`` value, or None for the default.
-        n_val_rows: how many validation rows the caller designated.
-
-    Returns:
-        bool: True to score ``holdout_mae`` on the validation rows, False for ``cv_mae``.
-    """
-    if requested_metric not in (None, "holdout_mae", "cv_mae"):
-        raise ValueError(f"hpo['metric'] must be 'holdout_mae' or 'cv_mae', got {requested_metric!r}")
-    if requested_metric == "holdout_mae":
-        if not n_val_rows:
-            raise ValueError("hpo['metric']='holdout_mae' needs validation_ids, but no validation rows were designated")
-        return True
-    return False
-
-
 def run_hpo(
     train_df,
-    val_df,
     base_hyperparameters: dict,
     hpo_block: dict,
     *,
@@ -166,29 +160,21 @@ def run_hpo(
 ) -> dict:
     """Run the search and return the hyperparameters to publish the tuned model with.
 
-    The caller passes the already-split training frame and the held-out ``validation``
-    frame (the template's ``split_validation_set`` output). Each trial trains a full
-    ``n_folds`` ensemble — the same regime the winner is published in — scored on the
-    held-out set (``holdout_mae``) or out-of-fold (``cv_mae``). Writes
-    ``best_config.json``, ``hpo_trials.csv`` and ``hpo_rerank.csv`` to ``output_dir``
-    when given.
+    Each trial trains a full ``n_folds`` ensemble — the same regime the winner is published
+    in — scored as pooled out-of-fold MAE on ``primary_target``. Every trial is on that one
+    basis, so every value in the record is directly comparable to every other. Writes
+    ``best_config.json`` and ``hpo_trials.csv`` to ``output_dir`` when given.
 
-    Every trial trains its full ensemble, so every value in the record is on one basis
-    and directly comparable to every other.
-
-    The search does not pick the winner on its own — its finalists go through
-    :func:`rerank_finalists`, which re-scores them and the *baseline* on fresh trainings
-    and selects on those. The published config is whichever wins there, so a search that
-    found nothing real publishes the caller's own hyperparameters unchanged. Disable with
-    ``hpo["rerank_top_k"] = 0``.
+    The caller's own hyperparameters run as the first trial. That gives the record a
+    reference line — the value an untuned model would have scored on these folds — and gives
+    the sampler an anchored observation to start from. It can win, in which case the search
+    publishes the caller's config unchanged.
 
     Args:
-        train_df: training rows (validation rows already removed).
-        val_df: the designated validation rows, or an empty frame.
+        train_df: training rows; designated validation rows are already removed.
         base_hyperparameters: the caller's hyperparameters, including the ``hpo`` block.
-        hpo_block: the ``hpo`` block — ``n_trials``, ``backend``, ``metric``,
-            ``rerank_top_k``, ``n_folds``, and the packing overrides ``max_parallel`` /
-            ``gpus_per_trial``, both derived from the box when unset.
+        hpo_block: the ``hpo`` block — ``n_trials``, ``backend``, and the packing overrides
+            ``max_parallel`` / ``gpus_per_trial``, both derived from the box when unset.
         adapter: the framework's :class:`HpoAdapter`.
         search_space: resolved ``{knob: Spec}`` for the framework.
         primary_target: the target column the objective scores.
@@ -197,12 +183,10 @@ def run_hpo(
     Returns:
         dict: phase-2 hyperparameters — no ``hpo`` block.
     """
-    from workbench.training.splits import get_split_indices
     from workbench.training.hpo_harness import run_search
+    from workbench.training.splits import get_split_indices
 
-    # The caller's holdout frame is split off *before* the template's own row filtering, so
-    # both frames are filtered here rather than assumed clean.
-    train_df, val_df = adapter.prepare_frame(train_df), adapter.prepare_frame(val_df)
+    check_hpo_block(hpo_block)
 
     # The objective is the PRIMARY target's MAE, but a template keeps a row when any target
     # is non-NaN — so a multi-target frame can arrive with unlabeled primary targets. Scoring
@@ -217,45 +201,24 @@ def run_hpo(
             "trained on, but excluded from scoring"
         )
 
-    n_val_rows = len(val_df)
-    if not use_holdout(hpo_block.get("metric"), n_val_rows):
-        # Emptying it here is what routes the trial/re-rank scoring to out-of-fold.
-        val_df = val_df.iloc[:0]
-
-    # Same folds the template would build for this config, so a trial's ensemble matches
-    # the published one. Scaffold is the SMILES default (literature-favored; random splits
-    # leak near-duplicate scaffolds across train/val).
-    publish_folds = int(base_hyperparameters.get("n_folds", 5))
-    n_folds = int(hpo_block.get("n_folds", publish_folds))
-    if n_folds != publish_folds:
-        print(
-            f"[hpo] WARNING: searching/re-ranking with {n_folds}-fold ensembles but publishing with "
-            f"{publish_folds} — the winner is selected in a different regime than it ships in. "
-            "hpo['n_folds'] is for cheap validation runs, not real searches."
-        )
+    # Same folds the template would build for this config, so a trial's ensemble matches the
+    # published one. Scaffold is the SMILES default (literature-favored; random splits leak
+    # near-duplicate scaffolds across train/val).
+    n_folds = int(base_hyperparameters.get("n_folds", 5))
     strategy = base_hyperparameters.get("split_strategy", "scaffold")
     seed = base_hyperparameters.get("seed", 42)
-    split_kwargs = dict(
+    folds = get_split_indices(
+        train_df,
+        random_state=seed,
         n_splits=n_folds,
         strategy=strategy,
         test_size=0.2,
         butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
         **adapter.split_kwargs(),
     )
-    folds = get_split_indices(train_df, random_state=seed, **split_kwargs)
-    if len(val_df):
-        metric, where = "holdout_mae", f"held-out validation set ({len(val_df)} rows)"
-    else:
-        # Say which it is: no rows were designated, or rows were designated and deliberately
-        # kept out of the objective. The two mean very different things when reading a log.
-        excluded = (
-            f"{n_val_rows} validation rows held out of training AND out of the search"
-            if n_val_rows
-            else "no validation_ids"
-        )
-        metric, where = "cv_mae", f"out-of-fold {strategy} splits ({excluded})"
     print(
-        f"[hpo] objective = {metric} on {where}; {n_folds}-fold ensemble per trial, " f"{len(train_df)} training rows"
+        f"[hpo] objective = {METRIC} on out-of-fold {strategy} splits; "
+        f"{n_folds}-fold ensemble per trial, {len(train_df)} training rows"
     )
 
     backend = hpo_block.get("backend", "auto")
@@ -269,208 +232,131 @@ def run_hpo(
         # than leaving it to be inferred from a job that ran long or hit its timeout.
         print(f"[hpo] WARNING: {n_trials} trials will run one at a time; expect a long job.")
 
+    # The caller's own settings, in the space's coordinates. Used both to seed the search
+    # and to recognize that trial in the records, so the two cannot drift apart.
+    baseline_point = adapter.baseline_config(
+        effective_config({}, base_hyperparameters, search_space), base_hyperparameters
+    )
+
     trial_fn = adapter.make_trial_fn(
         train_df=train_df,
         folds=folds,
-        val_df=val_df,
         hyperparameters=base_hyperparameters,
         concurrency=max_parallel,
     )
-    # A same-basis reference for every trial: the caller's own hyperparameters ({} overrides
-    # nothing) scored on the search folds and seed. Without it the search's numbers and the
-    # trials plot have nothing to anchor against, so it always runs.
-    search_baseline_value = float(trial_fn({}))
-    print(f"[hpo] baseline {metric}={search_baseline_value:.4f} (caller's hyperparameters, search basis)")
-
     result = run_search(
         trial_fn,
         search_space,
         n_trials=n_trials,
         backend=backend,
         max_parallel=max_parallel,
-        metric=metric,
+        metric=METRIC,
         mode="min",
         seed=seed,
         resources_per_trial=resources,
-    )
-    pct = 100 * (search_baseline_value - result.best_value) / search_baseline_value
-    print(
-        f"[hpo] search best {metric}={result.best_value:.4f} ({pct:+.1f}% vs baseline, search basis)  "
-        f"config={result.best_config}"
+        points_to_evaluate=[baseline_point],
+        max_steps=n_folds,
     )
 
-    # Only scored trials are shortlist-eligible, so an unnoticed pile of failures shrinks
-    # the real search budget without shrinking the reported one.
+    rows = trial_records(result.trials, base_hyperparameters, search_space, baseline=baseline_point)
+    baseline = baseline_value(rows)
     counts = summarize_trials(result.trials)
-    print(f"[hpo] trials: {counts['completed']} completed, {counts['failed']} FAILED (of {counts['attempted']})")
+    print(
+        f"[hpo] trials: {counts['completed']} ran all {n_folds} folds, {counts['pruned']} stopped early, "
+        f"{counts['failed']} FAILED (of {counts['attempted']})"
+    )
     if counts["failed"]:
         print(
             f"[hpo] WARNING: {counts['failed']} trial(s) raised and produced no score. With trials "
             "sharing a GPU, CUDA OOM is the usual cause — check the log for OutOfMemoryError and "
             "consider hpo['gpus_per_trial']=1.0."
         )
-    # Phase 1.5 refines a result the search has already produced, so its failure degrades to
-    # the unrefined winner rather than discarding a search that has already run to completion.
-    try:
-        best_config, rerank = rerank_finalists(
-            result,
-            top_k=int(hpo_block.get("rerank_top_k", RERANK_TOP_K)),
-            adapter=adapter,
-            train_df=train_df,
-            val_df=val_df,
-            folds=folds,
-            split_kwargs=split_kwargs,
-            base_hyperparameters=base_hyperparameters,
-            metric=metric,
-            search_space=search_space,
-            seed=seed,
-            backend=backend,
-            max_parallel=max_parallel,
-            resources=resources,
-        )
-    except Exception as exc:
-        print(f"[hpo] re-rank FAILED ({exc!r}); publishing the search winner unrefined")
-        best_config, rerank = result.best_config, {}
-
-    _report_partition_noise(rerank, search_baseline_value)
+    margin = f" ({100 * (baseline - result.best_value) / baseline:+.1f}% vs baseline)" if baseline else ""
+    print(f"[hpo] search best {METRIC}={result.best_value:.4f}{margin}  config={result.best_config}")
+    # The winner is the minimum over every trial, so its value is the luckiest draw of many
+    # and overstates what the config is worth. Only a measurement the search did not select
+    # on — the phase-2 metrics, a holdout, a champion/challenger run — settles that.
+    print("[hpo] NOTE: the search's own margin is optimistic; confirm against a measurement it did not select on.")
 
     if output_dir:
-        record = best_config_record(
-            result,
-            metric=metric,
-            counts=counts,
-            best_config=best_config,
-            rerank=rerank,
-            search_baseline_value=search_baseline_value,
-        )
+        record = best_config_record(result, counts=counts, baseline=baseline)
         with open(os.path.join(output_dir, "best_config.json"), "w") as fp:
             json.dump(record, fp, indent=2, default=str)
-        rows = trial_records(result.trials, base_hyperparameters, search_space, search_baseline_value)
         _write_records(rows, os.path.join(output_dir, "hpo_trials.csv"))
-        if rerank.get("candidates"):
-            _write_records(rerank["candidates"], os.path.join(output_dir, "hpo_rerank.csv"))
 
-    return adapter.merge_config(base_hyperparameters, best_config)
+    return adapter.merge_config(base_hyperparameters, result.best_config)
 
 
-def partition_noise(rerank: dict, search_baseline_value) -> "float | None":
-    """How far the *same* config moves when only the fold partition changes.
-
-    The baseline is scored on both the search's partition and the re-rank's, so the gap
-    between those two numbers is a free read on how much of any margin could be partition
-    luck rather than a better configuration. None when there is no second partition to
-    compare against.
-    """
-    rerank_baseline = rerank.get("baseline_value")
-    if rerank_baseline is None or search_baseline_value is None or not rerank.get("fresh_split"):
-        return None
-    return abs(float(rerank_baseline) - float(search_baseline_value))
-
-
-def _report_partition_noise(rerank: dict, search_baseline_value) -> None:
-    """Say whether the published margin outruns the partition it was measured on."""
-    noise = partition_noise(rerank, search_baseline_value)
-    best, base = rerank.get("best_value"), rerank.get("baseline_value")
-    if noise is None or best is None or base is None:
-        return
-    margin = float(base) - float(best)
-    if noise <= 0:
-        print(f"[hpo] margin {margin:+.4f}; the two partitions scored the baseline identically")
-        return
-    verdict = "clears it" if margin > noise else "DOES NOT clear it — treat as partition luck"
-    print(f"[hpo] margin {margin:+.4f} vs partition noise {noise:.4f} ({margin / noise:.1f}x) — {verdict}")
-
-
-def best_config_record(result, *, metric, counts, best_config, rerank, search_baseline_value) -> dict:
+def best_config_record(result, *, counts, baseline) -> dict:
     """The ``best_config.json`` payload — the search's decision and what it turned on.
 
-    Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. The two value pairs are
-    on *different bases* and must not be mixed:
-
-    * ``best_value`` / ``baseline_value`` — the re-rank's basis, so their difference is
-      the real margin the publish decision turned on. This is the pair to quote.
-    * ``search_best_value`` / ``search_baseline_value`` — phase 1's own numbers, the same
-      basis as every row in ``hpo_trials.csv``. When ``rerank_fresh_split`` is true the
-      re-rank scored on a different fold partition, so these are not comparable to the
-      pair above — partitions differ in difficulty.
-
-    ``partition_noise`` measures exactly that difference, from the one config scored on both
-    partitions (the baseline). A margin smaller than it is indistinguishable from having
-    drawn a friendlier partition.
+    Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. The ``search_``
+    prefixes are deliberate: these are the search's own numbers, on the folds it selected
+    against, and they are not an estimate of what the published model is worth.
 
     Args:
         result: the :class:`~workbench.training.hpo_harness.HpoResult` from the search.
-        metric: the objective key (``cv_mae`` or ``holdout_mae``).
-        counts: :func:`summarize_trials` output — completed/failed. Only scored trials
-            were shortlist-eligible, so this is how much of the budget actually backed
-            the result.
-        best_config: the config being published.
-        rerank: :func:`rerank_finalists`' info dict (empty when it was skipped).
-        search_baseline_value: the caller's own hyperparameters on the search basis.
+        counts: :func:`summarize_trials` output — completed/pruned/failed. Only completed
+            trials could win, so this is how much of the budget actually backed the result.
+        baseline: the caller's own hyperparameters as scored by their trial, or None when
+            that trial failed.
 
     Returns:
         dict: json-serializable record.
     """
     return {
-        "metric": metric,
+        "metric": METRIC,
         "trial_counts": counts,
-        "best_config": best_config,
-        "best_value": rerank.get("best_value"),
-        "baseline_value": rerank.get("baseline_value"),
+        "best_config": result.best_config,
         "search_best_value": result.best_value,
-        "search_baseline_value": search_baseline_value,
-        "search_best_config": result.best_config,
-        "rerank_fresh_split": rerank.get("fresh_split", False),
-        # The baseline on both partitions: what a margin has to beat to mean anything.
-        "partition_noise": partition_noise(rerank, search_baseline_value),
-        "rerank": rerank.get("candidates", []),
+        "search_baseline_value": baseline,
     }
 
 
-def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseline_value) -> list:
-    """The ``hpo_trials.csv`` rows — every trial plus the baseline, one schema.
+def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseline: dict = None) -> list:
+    """The ``hpo_trials.csv`` rows — one schema for every trial.
 
     Read by :func:`workbench.utils.training_job_utils.get_hpo_results`. Columns:
 
-    * ``number`` — the trial's index; ``-1`` for the baseline row.
-    * ``value`` — the full-ensemble objective, or empty for a trial that died before
-      scoring.
+    * ``number`` — the trial's index.
+    * ``value`` — the objective, or empty for a trial that died before scoring.
     * ``completed`` — bool, normalized across backends (Optuna reports a state name,
-      Ray a flag). False marks a trial that never produced an objective.
+      Ray a flag). True only for a trial that ran every fold; a trial stopped at a rung
+      keeps its partial ``value`` but is not completed.
+    * ``step`` — the fold it last reported at, so a stopped trial says where it stopped.
     * ``hyperparameters`` — every searched knob and the value it actually trained at,
       so the table is rectangular and NaN-free (see :func:`effective_config`).
-    * ``kind`` — ``trial`` or ``baseline``. The baseline is the caller's own
-      hyperparameters on the search basis: the reference line any plot of the search
-      needs.
-
-    Args:
-        trials: the per-trial records from :class:`~workbench.training.hpo_harness.HpoResult`.
-        base_hyperparameters: the caller's hyperparameters.
-        search_space: the resolved ``{knob: Spec}`` space.
-        baseline_value: the baseline's objective on the search basis.
-
-    Returns:
-        list: one dict per trial, with the baseline row last.
+    * ``kind`` — ``baseline`` for the trial that trained at the caller's own settings,
+      else ``trial``. The baseline is the reference line any plot of the search needs.
     """
-    rows = [
-        {
-            **{k: v for k, v in trial.items() if k not in ("config", "state", "completed")},
-            "completed": trial_completed(trial),
-            "hyperparameters": effective_config(trial.get("config") or {}, base_hyperparameters, search_space),
-            "kind": "trial",
-        }
-        for trial in trials
-    ]
-    rows.append(
-        {
-            "number": -1,
-            "value": baseline_value,
-            "completed": True,
-            "hyperparameters": effective_config({}, base_hyperparameters, search_space),
-            "kind": "baseline",
-        }
-    )
+    baseline = effective_config({}, base_hyperparameters, search_space) if baseline is None else baseline
+    rows, seen_baseline = [], False
+    for trial in trials:
+        effective = effective_config(trial.get("config") or {}, base_hyperparameters, search_space)
+        # First match only. The seeded point runs first, but a sampler can land on the same
+        # config again on a discrete space — and a second `baseline` row would drop a real
+        # trial out of the plots and make the reference line ambiguous.
+        is_baseline = not seen_baseline and effective == baseline
+        seen_baseline = seen_baseline or is_baseline
+        rows.append(
+            {
+                **{k: v for k, v in trial.items() if k not in ("config", "state", "completed")},
+                "completed": trial_completed(trial),
+                "hyperparameters": effective,
+                "kind": "baseline" if is_baseline else "trial",
+            }
+        )
     return rows
+
+
+def baseline_value(rows) -> "float | None":
+    """The baseline trial's objective, or None when it never scored.
+
+    The baseline is enqueued as a search point rather than run separately, so it is found in
+    the records rather than held aside. Nothing downstream requires it — a failed baseline
+    costs the plots their reference line, not the search its winner.
+    """
+    return next((r["value"] for r in rows if r["kind"] == "baseline" and r["value"] is not None), None)
 
 
 def _json_scalar(value):
@@ -493,6 +379,29 @@ def _write_records(rows, path) -> None:
     frame.to_csv(path, index=False)
 
 
+def pooled_mae(oof_pred, oof_true) -> float:
+    """MAE over every out-of-fold prediction made so far.
+
+    Pooled, not a mean of per-fold means: every row weighs the same, which is what the
+    model's own cross-fold metrics report. Fold sizes differ under a scaffold split, so the
+    two are not the same number.
+
+    nanmean, not mean: the template keeps a row when ANY target is non-NaN, so a
+    multi-target frame can carry a NaN primary target. Training still uses every row
+    (chemprop masks per-target); only the scoring skips the unlabeled ones.
+
+    Returns NaN when the folds so far hold no labelled primary target at all — possible on
+    sparse multi-target data. Callers must not report that as a rung: it is an absence of
+    measurement, not a bad one.
+    """
+    import numpy as np
+
+    error = np.abs(np.concatenate(oof_pred) - np.concatenate(oof_true))
+    if not np.isfinite(error).any():
+        return float("nan")
+    return float(np.nanmean(error))
+
+
 def effective_config(config: dict, base_hyperparameters: dict, search_space: dict) -> dict:
     """What a candidate actually trained with, for every searched knob.
 
@@ -505,16 +414,22 @@ def effective_config(config: dict, base_hyperparameters: dict, search_space: dic
 
 
 def summarize_trials(trials) -> dict:
-    """Count a search's trials: how many scored, and how many died trying.
+    """Count a search's trials by outcome. The three are not interchangeable.
 
-    A failed trial never produced a value at all (it raised — CUDA OOM is the usual cause
-    when trials share a GPU), which is how a run can lose a chunk of its budget and still
-    look fine from the trial count alone.
+    * ``completed`` — ran every fold, so its objective is comparable and it could win.
+    * ``pruned`` — stopped at a rung. It has a value, but over fewer folds than a full
+      trial, so it is a record of where the search looked rather than a ranking entry.
+    * ``failed`` — produced no value at all (it raised; CUDA OOM is the usual cause when
+      trials share a GPU). This is how a run loses a chunk of its budget while still
+      looking fine from the trial count alone.
     """
+    completed = [t for t in trials if trial_completed(t)]
+    scored = [t for t in trials if t.get("value") is not None]
     return {
         "attempted": len(trials),
-        "completed": len([t for t in trials if trial_completed(t)]),
-        "failed": len([t for t in trials if not trial_completed(t)]),
+        "completed": len(completed),
+        "pruned": len(scored) - len(completed),
+        "failed": len(trials) - len(scored),
     }
 
 
@@ -523,138 +438,3 @@ def trial_completed(trial: dict) -> bool:
     if "completed" in trial:  # ray
         return bool(trial["completed"])
     return trial.get("state") == "COMPLETE"  # optuna
-
-
-def shortlist_configs(trials, top_k: int) -> list:
-    """The ``top_k`` distinct configs among completed trials, best (lowest) first."""
-    ranked, seen = [], set()
-    for trial in trials:
-        value = trial.get("value")
-        if value is None or not trial_completed(trial):
-            continue
-        config = trial.get("config") or {}
-        key = json.dumps(config, sort_keys=True, default=str)
-        if key in seen:
-            continue
-        seen.add(key)
-        ranked.append((value, config))
-    ranked.sort(key=lambda pair: pair[0])
-    return [config for _, config in ranked[:top_k]]
-
-
-def rerank_finalists(
-    result,
-    *,
-    top_k,
-    adapter,
-    train_df,
-    val_df,
-    folds,
-    split_kwargs,
-    base_hyperparameters,
-    metric,
-    search_space,
-    seed,
-    backend,
-    max_parallel,
-    resources,
-):
-    """Phase 1.5 — re-score the search's finalists, plus the baseline, on fresh trainings.
-
-    The search reports the *minimum* over many noisy estimates, so its winning value is
-    optimistically biased and the winner may simply have drawn the luckiest evaluation
-    (winner's curse). Re-scoring a shortlist independently and selecting on *that* is the
-    fix. The user's own hyperparameters ride along as a candidate, which is what keeps HPO
-    from making the model worse: a search that found nothing real loses to the baseline and
-    the baseline is what gets published. Ties go to the baseline, and so does a re-rank
-    whose baseline failed to score — a finalist publishes only by beating a measured
-    baseline.
-
-    Independence comes from a fresh seed (trials are deterministic, so the search seed would
-    replay rather than redraw) and, in ``cv_mae`` mode, a fresh fold partition as well — the
-    split is part of what the search selected against there. In ``holdout_mae`` mode the
-    holdout is the user's fixed OOD set and is deliberately reused, so that pass removes the
-    training-stochasticity component of the bias but not the holdout-sampling component.
-
-    Returns:
-        tuple: ``(best_config, info)`` — the config to publish, and a dict carrying
-        ``candidates`` (the per-candidate record), the winning and baseline values on the
-        re-rank's own basis, and ``fresh_split``. ``info`` is empty when the re-rank is
-        disabled or there were no completed trials to re-rank.
-    """
-    from workbench.training.splits import get_split_indices
-    from workbench.training.hpo_harness import evaluate_configs
-
-    if top_k <= 0:
-        print("[hpo] re-rank disabled (rerank_top_k=0); publishing the search winner")
-        return result.best_config, {}
-
-    # The baseline is the empty config: merged over base_hyperparameters it changes nothing.
-    candidates = [{}] + shortlist_configs(result.trials, top_k)
-    if len(candidates) == 1:
-        print("[hpo] re-rank: no completed trials to re-rank; publishing the search winner")
-        return result.best_config, {}
-
-    rerank_seed = seed + RERANK_SEED_OFFSET
-    rerank_folds = folds
-    if metric == "cv_mae":
-        rerank_folds = get_split_indices(train_df, random_state=rerank_seed, **split_kwargs)
-    print(
-        f"[hpo] re-rank: {len(candidates)} candidates (baseline + {len(candidates) - 1} finalists) "
-        f"on fresh {metric}" + (" and a fresh fold partition" if metric == "cv_mae" else "")
-    )
-
-    # At most one slot per candidate runs at a time, so per-trial CPU divides fewer ways here
-    # than during the search — the adapter re-sizes rather than inheriting the tighter budget.
-    rerank_parallel = min(max_parallel, len(candidates))
-    rerank_fn = adapter.make_trial_fn(
-        train_df=train_df,
-        folds=rerank_folds,
-        val_df=val_df,
-        hyperparameters=base_hyperparameters,
-        concurrency=rerank_parallel,
-    )
-
-    def evaluate(config, index):
-        return rerank_fn({**config, "seed": rerank_seed})
-
-    values = evaluate_configs(
-        evaluate, candidates, backend=backend, max_parallel=rerank_parallel, resources_per_trial=resources
-    )
-    # The shortlist is best-first, so candidate i>0 holds the search's rank-i config and the
-    # label names that rank. The baseline overrides nothing, so its row is the caller's own
-    # effective config.
-    rows = [
-        {
-            "candidate": "baseline" if i == 0 else f"search_rank_{i}",
-            "hyperparameters": effective_config(c, base_hyperparameters, search_space),
-            metric: v,
-        }
-        for i, (c, v) in enumerate(zip(candidates, values))
-    ]
-    info = {"candidates": rows, "fresh_split": metric == "cv_mae", "baseline_value": values[0], "best_value": None}
-
-    if values[0] is None:
-        # Beating the baseline on this basis is the bar for publishing a searched config;
-        # with no baseline score, no finalist can clear it — so the caller's own
-        # hyperparameters ship (phase 2 trains them fresh).
-        print(
-            "[hpo] re-rank: the baseline failed to score, so no searched config can prove itself "
-            "against it — publishing the caller's own hyperparameters"
-        )
-        return {}, info
-
-    # min() over (value, index) returns the first minimum, and the baseline is index 0 — so
-    # an exact tie is resolved in the baseline's favor. The baseline scored, so `scored` is
-    # never empty.
-    scored = [(v, i) for i, v in enumerate(values) if v is not None]
-    best_value, best_index = min(scored)
-    baseline_value = values[0]
-    info["best_value"] = best_value
-    if best_index == 0:
-        print(f"[hpo] re-rank winner: BASELINE at {metric}={best_value:.4f} — no searched config beat it")
-    else:
-        margin = f", {100 * (baseline_value - best_value) / baseline_value:+.1f}% vs baseline" if baseline_value else ""
-        print(f"[hpo] re-rank winner: search_rank_{best_index} at {metric}={best_value:.4f}{margin}")
-        print(f"[hpo] published config: {candidates[best_index]}")
-    return candidates[best_index], info
