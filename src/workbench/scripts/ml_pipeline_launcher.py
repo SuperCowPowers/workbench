@@ -161,19 +161,13 @@ def build_pipeline_meta(job: Job, serverless: bool) -> str:
     if declared:
         return json.dumps(job.pipeline_meta(serverless))
 
-    if mode in ("dt", "ts"):  # no declared output -> filename fallback
-        basename_hyphen, v = _filename_parts()
-        name = f"{basename_hyphen}{v}-{mode}"
-        return json.dumps({"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": name})
-
-    # Modeless producer (e.g. FeatureSet) -> no model. A non-empty unrecognized
-    # mode is likely a typo, so warn.
-    if mode:
-        print(
-            f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote); passing through with no model metadata.",
-            file=sys.stderr,
-        )
-    return json.dumps({"mode": mode, "serverless": serverless})
+    # No declared output -> derive the names from the filename, mode-suffixed for a
+    # dt/ts run. A modeless producer (e.g. a FeatureSet script) never reads them.
+    if mode and mode not in ("dt", "ts"):
+        print(f"NOTE: unrecognized mode {mode!r} (expected dt/ts/promote).", file=sys.stderr)
+    basename_hyphen, v = _filename_parts()
+    name = f"{basename_hyphen}{v}-{mode}" if mode in ("dt", "ts") else f"{basename_hyphen}{v}"
+    return json.dumps({"serverless": serverless, "mode": mode, "model_name": name, "endpoint_name": name})
 
 
 def load_pipelines_config(directory: Path, root: Path | None = None) -> dict[str, list[Job]] | None:

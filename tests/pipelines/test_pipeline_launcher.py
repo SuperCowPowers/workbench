@@ -563,7 +563,8 @@ class TestBuildPipelineMeta:
         meta = json.loads(build_pipeline_meta(node("ppb_human_free_reg_xgb_1.py", "dt"), True))
         assert meta["model_name"] == "ppb-human-free-reg-xgb-1-dt"
 
-    def test_modeless_has_no_model(self):
-        meta = json.loads(build_pipeline_meta(node("ppb_human_feature_sets_1.py", None), True))
-        assert "model_name" not in meta
-        assert meta["serverless"] is True
+    def test_standalone_falls_back_to_filename(self):
+        # A model script run standalone (no mode, no pipelines.json entry) still needs a
+        # name -- without one it fails inside the container, not here.
+        meta = json.loads(build_pipeline_meta(node("pxr_chemprop_hpo_phase1.py", None), True))
+        assert meta["model_name"] == "pxr-chemprop-hpo-phase1"
