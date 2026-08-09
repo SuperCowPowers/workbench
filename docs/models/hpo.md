@@ -151,7 +151,7 @@ for it, so stopping early can cost you a good configuration but can never publis
 And fold order is fixed, so every trial at a given rung was scored on the same molecules —
 the comparison is paired.
 
-The saving is what pays for the budget: a 60-trial ChemProp search costs roughly 130
+The saving is what pays for the budget: a 60-trial ChemProp search costs roughly 175
 member-trainings instead of 300. Stopped trials show up as `pruned` in `trial_counts` and
 `completed=False` in the trials frame, keeping the partial value they reached — which is how
 you tell "stopped early" from "died". Only trials that ran every member are ranked, since a
@@ -225,11 +225,11 @@ produced no objective and so never backed the result.
 trials = results["trials"]      # one row per trial, plus a `baseline` row
 ```
 
-| number | value | step | completed | kind | hyperparameters |
-|---|---|---|---|---|---|
-| 0 | 0.545091 | 5 | True | baseline | `{"layers": "128-64", ...}` |
-| 1 | 0.516991 | 5 | True | trial | `{"layers": "256-128", ...}` |
-| 2 | 0.611210 | 2 | False | trial | `{"layers": "512-256-64", ...}` |
+| number | value | step | completed | kind | hyperparameters | trajectory |
+|---|---|---|---|---|---|---|
+| 0 | 0.545091 | 5 | True | baseline | `{"layers": "128-64", ...}` | `{"1": 0.52, ..., "5": 0.545091}` |
+| 1 | 0.516991 | 5 | True | trial | `{"layers": "256-128", ...}` | `{"1": 0.49, ..., "5": 0.516991}` |
+| 2 | 0.611210 | 2 | False | trial | `{"layers": "512-256-64", ...}` | `{"1": 0.60, "2": 0.611210}` |
 
 `hyperparameters` is a JSON object of every searched knob and the value it actually trained
 at, so each row is complete and NaN-free — expand it with `json.loads` to get one column per
@@ -241,6 +241,7 @@ import pandas as pd
 
 df = pd.DataFrame([json.loads(h) for h in trials["hyperparameters"]])
 df["value"] = trials["value"].values
+df = df[trials["completed"].values]             # a stopped trial's value is not comparable
 df.nsmallest(5, "value")                        # the best configurations the search found
 df.groupby("layers")["value"].agg(["count", "mean", "min"])
 ```
@@ -251,9 +252,14 @@ with a `value` is a trial the ladder stopped, and `completed=False` with no `val
 that died. **Only compare `value` across completed trials** — a stopped trial's pool covers
 fewer molecules.
 
+`trajectory` is that same objective at every member the trial reached, `{member: value}`. The
+caveat above applies within a row too: entry *k* is the pooled MAE over the first *k* members,
+and how hard those molecules are varies by dataset.
+
 The single `kind="baseline"` row is your own untuned config, scored as an ordinary trial on
-the same folds. It is never stopped early — no rung ever sees it — so whenever it scores at
-all, it scores at full fidelity. It can still fail outright like any trial, in which case
+the same folds. The ladder ignores it in both directions — it is never stopped at a rung, and
+its full-fidelity value is never counted in one either — so whenever it scores at all, it
+scores at full fidelity. It can still fail outright like any trial, in which case
 there is no reference line and plots fall back to the trials' median.
 
 ### Which knobs mattered
@@ -280,9 +286,14 @@ objective. A knob is worth tuning only when both are high; the bottom three abov
 real share of very little. `best` is where the objective bottoms out with the other knobs
 averaged out, which is meaningless when `effect` is small.
 
-**Only scored trials feed the fit.** And when the top knob's share cannot be separated from
-a random column planted in the same fit, the call logs a warning rather than returning a
-confident-looking ranking.
+**Only completed trials feed the fit.** A stopped trial scored a partial ensemble — a
+different objective, not a noisier one. That filter has a cost: the survivors all cleared the
+same rungs, so the objective range the surrogate sees is narrower than the search explored,
+and the harder the ladder pruned the more `effect` understates. A search whose knobs all look
+modest may just be one that pruned hard.
+
+When the top knob's share cannot be separated from a random column planted in the same fit,
+the call logs a warning rather than returning a confident-looking ranking.
 
 **How it's computed.** The trials are the dataset — knob values in, objective out — and a
 random forest is fit to that response surface. `importance` is the forest's split-based

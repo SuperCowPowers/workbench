@@ -386,10 +386,11 @@ def test_the_ladder_only_ranks_trials_that_ran_every_step():
 
 
 def test_a_seeded_point_is_never_stopped_early():
-    """The baseline reports nothing until the end, so no rung ever sees it.
+    """A seeded point reports at every rung like any other trial; the pruner is simply never
+    consulted about it.
 
     Seeded deliberately bad (x=9.5): anything prunable at that value dies at the first rung,
-    so reaching step 5 can only mean the scheduler never got a look at it.
+    so reaching step 5 can only mean the exemption held.
     """
     result, steps_run = _laddered_search(seeded=[{"x": 9.5}])
 

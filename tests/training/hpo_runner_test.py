@@ -200,6 +200,41 @@ def test_run_hpo_end_to_end_writes_the_artifact_contract(tmp_path):
     assert not (tmp_path / "hpo_rerank.csv").exists()
 
 
+def test_the_trajectory_records_every_rung_a_trial_reported_at(tmp_path):
+    """The history ends where the trial did and agrees with its `value` there. Every trial
+    has one, the baseline included: its exemption is that the pruner is never consulted
+    about it, not that it stays quiet."""
+    import json
+
+    import pandas as pd
+
+    from workbench.training.hpo_harness import FloatRange
+    from workbench.training.hpo_runner import run_hpo
+
+    train_df = pd.DataFrame({"feat": [float(i) for i in range(20)], "y": [float(i % 7) for i in range(20)]})
+    run_hpo(
+        train_df,
+        {"n_folds": 2, "split_strategy": "random", "seed": 42, "hpo": {"n_trials": 8}},
+        {"n_trials": 8, "backend": "optuna"},
+        adapter=_StubAdapter(),
+        search_space={"x": FloatRange(0.0, 10.0, default=5.0)},
+        primary_target="y",
+        output_dir=str(tmp_path),
+    )
+    trials = pd.read_csv(tmp_path / "hpo_trials.csv")
+    trials["trajectory"] = [{int(k): v for k, v in json.loads(cell).items()} for cell in trials["trajectory"]]
+
+    for _, row in trials.iterrows():
+        assert max(row["trajectory"]) == row["step"]  # the history ends where the trial did
+        assert row["trajectory"][int(row["step"])] == pytest.approx(row["value"])
+        # The stub converges on its final value, so an earlier fold reads higher.
+        assert all(row["trajectory"][s] > row["value"] for s in row["trajectory"] if s < row["step"])
+
+    assert (trials["step"] < 2).any(), "no trial was stopped at a rung — the ladder never engaged"
+    assert (trials[trials["completed"]]["trajectory"].map(len) == 2).all()
+    assert list(trials[trials["kind"].eq("baseline")]["trajectory"].iloc[0]) == [1, 2]
+
+
 def test_a_retired_hpo_key_fails_loudly():
     """Silently ignoring it would run a different objective, or a different compute bill,
     on a job that costs hours."""

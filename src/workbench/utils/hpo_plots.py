@@ -92,6 +92,7 @@ def _attach_hover(
     note = ax.annotate(
         "",
         xy=(0, 0),
+        xytext=(0, 0),
         textcoords="offset points",
         fontsize=10,
         zorder=20,
@@ -211,12 +212,12 @@ def hpo_parallel_coordinates(
     regions of the space the good trials cluster in and lets you trace a single config
     across every axis.
 
-    Color is centered on the baseline -- the user's own untuned hyperparameters, scored on
-    the same basis -- so hue answers "did this trial beat my defaults" rather than where it
-    ranks within the run. The scale reaches as far as the published config beat the
-    baseline, so the hues resolve the margin actually won; worse trials saturate. The
-    baseline and the published config are drawn as reference lines; a search plot without
-    the baseline can't show whether the search achieved anything.
+    Color is the objective in its own units, on a scale that diverges at the baseline -- the
+    user's own untuned hyperparameters, scored on the same basis -- so hue still answers "did
+    this trial beat my defaults" while the ticks read as the metric. The scale reaches as far
+    as the published config beat the baseline, so the hues resolve the margin won; worse
+    trials saturate. The baseline and the published config are drawn as reference lines; a
+    search plot without the baseline can't show whether the search achieved anything.
 
     Args:
         model: A searched Workbench model (`hpo_results()` returns None if it wasn't).
@@ -285,8 +286,8 @@ def hpo_parallel_coordinates(
         return None
     axes_def = [_build_axis(k, space_rows.get(k), knob_frame[k]) for k in knobs]
 
-    # Color is a *margin over baseline*, not a raw score: the question a reader has is
-    # "did this trial beat my defaults", which a raw scale cannot answer.
+    # Color is the objective itself, on a scale that diverges at the baseline: the ticks read
+    # in the metric's own units while hue still answers "did this trial beat my defaults".
     values = runs["value"].astype(float)
     # `pd.notna`, not `is not None`: a failed baseline comes back from CSV as NaN, and a NaN
     # center would make every delta non-finite instead of falling back to the median.
@@ -310,7 +311,7 @@ def hpo_parallel_coordinates(
         # collapses to a point and every trial reads as baseline.
         reach = max(float(scale_deltas.max()), 1e-9)
     span = reach * 1.1
-    norm = TwoSlopeNorm(vmin=-span, vcenter=0.0, vmax=span)
+    norm = TwoSlopeNorm(vmin=center - span, vcenter=center, vmax=center + span)
     mappable = ScalarMappable(norm=norm, cmap=cmap_name)
 
     fig, ax = plt.subplots(figsize=figsize, constrained_layout=True)
@@ -331,7 +332,7 @@ def hpo_parallel_coordinates(
     for idx in deltas.sort_values(ascending=False).index:
         y = [_position(axis, knob_frame.at[idx, axis["knob"]]) for axis in axes_def]
         px, py = _path(y)
-        color = mappable.to_rgba(deltas[idx]) if full[idx] else "#c4c4c4"
+        color = mappable.to_rgba(values[idx]) if full[idx] else "#c4c4c4"
         (artist,) = ax.plot(px, py, color=color, lw=2.2, alpha=line_alpha, zorder=2 if full[idx] else 1)
         artists.append(artist)
         paths.append(np.column_stack([px, py]))
@@ -339,7 +340,6 @@ def hpo_parallel_coordinates(
             {
                 "number": runs.at[idx, "number"] if "number" in runs else idx,
                 "value": float(values[idx]),
-                "margin": float(deltas[idx]) if full[idx] else None,
                 "completed": bool(full[idx]),
                 "config": {axis["knob"]: knob_frame.at[idx, axis["knob"]] for axis in axes_def},
             }
@@ -402,17 +402,16 @@ def hpo_parallel_coordinates(
         ax.text(xi, 1.03, top, ha="center", va="bottom", fontsize=11, color="#333333")
 
     bar = fig.colorbar(mappable, ax=ax, fraction=0.04, pad=0.02)
-    bar.set_label(f"{metric} vs baseline (negative is better)", fontsize=12)
-    # Both rules live on the colorbar, which is scaled in *margin over baseline* -- so the
-    # baseline sits at zero and the published config at its own margin. Drawing raw objective
-    # values here would put both lines off the end of the scale.
-    bar.ax.axhline(0.0, color="black", linestyle="--", lw=1.5)
+    bar.set_label(f"{metric} (lower is better)", fontsize=12)
+    # Both rules are raw objective values, which is what the colorbar is scaled in: the
+    # baseline sits at the divergence point and the published config at its own score.
+    bar.ax.axhline(center, color="black", linestyle="--", lw=1.5)
     # The winner's own score, straight from the record: every trial is on one basis now, so
     # this is directly comparable. Matching by config would return the first row holding
     # those knobs, which is the wrong one whenever a config was evaluated twice.
     published_value = results.get("search_best_value")
     if published_value is not None:
-        rule = bar.ax.axhline(published_value - center, color="#00d451", lw=3.5)
+        rule = bar.ax.axhline(published_value, color="#00d451", lw=3.5)
         # A white halo so it reads against the dark end of the colormap.
         rule.set_path_effects([path_effects.withStroke(linewidth=6.0, foreground="white")])
     # Below the axes: an in-plot legend covers the top-of-axis value labels. The counts ride
@@ -431,7 +430,7 @@ def hpo_parallel_coordinates(
         title_fontsize=11,
     )
     if title is None:
-        title = f"{getattr(model, 'name', 'model')} — HPO trials colored by {metric} vs baseline"
+        title = f"{getattr(model, 'name', 'model')} — HPO trials colored by {metric}"
     ax.set_title(title, fontsize=14, pad=18)
     _attach_hover(fig, ax, artists, paths, records, metric, line_alpha)
 

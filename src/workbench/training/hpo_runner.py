@@ -324,6 +324,10 @@ def trial_records(trials, base_hyperparameters: dict, search_space: dict, baseli
       Ray a flag). True only for a trial that ran every fold; a trial stopped at a rung
       keeps its partial ``value`` but is not completed.
     * ``step`` — the fold it last reported at, so a stopped trial says where it stopped.
+    * ``trajectory`` — JSON ``{fold: objective}`` for every rung the trial reported at. At
+      fold *k* it is the pooled out-of-fold MAE over the folds trained so far, so values are
+      not comparable across different *k*. Every trial has one, the baseline included: its
+      rung exemption stops the scheduler listening, not the trial reporting.
     * ``hyperparameters`` — every searched knob and the value it actually trained at,
       so the table is rectangular and NaN-free (see :func:`effective_config`).
     * ``kind`` — ``baseline`` for the trial that trained at the caller's own settings,
@@ -365,17 +369,18 @@ def _json_scalar(value):
 
 
 def _write_records(rows, path) -> None:
-    """Write search records to CSV with the ``hyperparameters`` cell as real JSON.
+    """Write search records to CSV with the dict-valued cells as real JSON.
 
     A dict rendered by ``str()`` is single-quoted and not parseable by anything but
-    ``ast.literal_eval``; ``json.dumps`` makes the column ``json.loads``-able, which is what
-    a reader will reach for.
+    ``ast.literal_eval``; ``json.dumps`` makes those columns ``json.loads``-able, which is
+    what a reader will reach for.
     """
     import pandas as pd
 
     frame = pd.DataFrame(rows)
-    if "hyperparameters" in frame:
-        frame["hyperparameters"] = [json.dumps(h, default=_json_scalar) for h in frame["hyperparameters"]]
+    for column in ("hyperparameters", "trajectory"):
+        if column in frame:
+            frame[column] = [json.dumps(cell, default=_json_scalar) for cell in frame[column]]
     frame.to_csv(path, index=False)
 
 
