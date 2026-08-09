@@ -479,7 +479,9 @@ def _optuna_record(trial, max_steps) -> dict:
         "value": trial.value if state != "FAIL" else None,
         "state": state,
         "config": trial.user_attrs.get("config", {}),
-        "step": max_steps if complete else max(reported, default=None),
+        # The trajectory's endpoint, so the two always agree. The fallback covers an
+        # objective that reports nothing: a completed one still ran every step.
+        "step": max(reported, default=max_steps if complete else None),
         "trajectory": trajectory,
     }
 
@@ -707,7 +709,6 @@ def _run_ray(
     param_space, choice_options = _to_ray_space(search_space)
 
     last_step = max_steps or 1
-    laddered = bool(max_steps)
     # The sampler and the scheduler both see a config in the coordinates the search samples,
     # so the seeded points are matched there rather than in resolved values.
     seeded = [_encode_point(point, choice_options) for point in points_to_evaluate or []]
@@ -715,12 +716,15 @@ def _run_ray(
     def trainable(config):
         _fence_gpu_memory(resources_per_trial)
         config = _resolve_choices(config, choice_options)
+        reported = []
 
         def report(step, value):
             # A non-finite running value means no labelled rows yet, not a bad candidate —
             # reporting it would let the scheduler judge a rung that measured nothing.
-            if laddered and _finite(value):
-                tune.report({metric: value, _STEP: step})
+            if not _finite(value):
+                return
+            reported.append(step)
+            tune.report({metric: value, _STEP: step})
 
         try:
             value = trial_fn(config, report)
@@ -736,9 +740,9 @@ def _run_ray(
             log.warning(f"Trial out of GPU memory, ending it unscored: {exc}")
             tune.report({metric: float("nan"), _STEP: last_step})
             return
-        # A laddered trial already reported its last step from inside the loop; reporting
+        # An objective that reported its own steps has already filed its last one; reporting
         # again would land a second result on the same step.
-        if not laddered:
+        if not reported:
             tune.report({metric: value, _STEP: last_step})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
