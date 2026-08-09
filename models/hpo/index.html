@@ -5568,7 +5568,7 @@ trials that reached it.</p>
 for it, so stopping early can cost you a good configuration but can never publish a bad one.
 And fold order is fixed, so every trial at a given rung was scored on the same molecules —
 the comparison is paired.</p>
-<p>The saving is what pays for the budget: a 60-trial ChemProp search costs roughly 130
+<p>The saving is what pays for the budget: a 60-trial ChemProp search costs roughly 175
 member-trainings instead of 300. Stopped trials show up as <code>pruned</code> in <code>trial_counts</code> and
 <code>completed=False</code> in the trials frame, keeping the partial value they reached — which is how
 you tell "stopped early" from "died". Only trials that ran every member are ranked, since a
@@ -5631,6 +5631,7 @@ produced no objective and so never backed the result.</p>
 <th>completed</th>
 <th>kind</th>
 <th>hyperparameters</th>
+<th>trajectory</th>
 </tr>
 </thead>
 <tbody>
@@ -5641,6 +5642,7 @@ produced no objective and so never backed the result.</p>
 <td>True</td>
 <td>baseline</td>
 <td><code>{"layers": "128-64", ...}</code></td>
+<td><code>{"1": 0.52, ..., "5": 0.545091}</code></td>
 </tr>
 <tr>
 <td>1</td>
@@ -5649,6 +5651,7 @@ produced no objective and so never backed the result.</p>
 <td>True</td>
 <td>trial</td>
 <td><code>{"layers": "256-128", ...}</code></td>
+<td><code>{"1": 0.49, ..., "5": 0.516991}</code></td>
 </tr>
 <tr>
 <td>2</td>
@@ -5657,6 +5660,7 @@ produced no objective and so never backed the result.</p>
 <td>False</td>
 <td>trial</td>
 <td><code>{"layers": "512-256-64", ...}</code></td>
+<td><code>{"1": 0.60, "2": 0.611210}</code></td>
 </tr>
 </tbody>
 </table>
@@ -5668,17 +5672,22 @@ knob:</p>
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">trials</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]])</span>
 </span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trials</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">df</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>                        <span class="c1"># the best configurations the search found</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;layers&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">trials</span><span class="p">[</span><span class="s2">&quot;completed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>             <span class="c1"># a stopped trial&#39;s value is not comparable</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="n">df</span><span class="o">.</span><span class="n">nsmallest</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>                        <span class="c1"># the best configurations the search found</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;layers&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">])</span>
 </span></code></pre></div>
 <p><code>step</code> is the ensemble member a trial last reported at, so it says where a stopped trial
 stopped. <code>completed=True</code> means it ran every member and was eligible to win; <code>completed=False</code>
 with a <code>value</code> is a trial the ladder stopped, and <code>completed=False</code> with no <code>value</code> is one
 that died. <strong>Only compare <code>value</code> across completed trials</strong> — a stopped trial's pool covers
 fewer molecules.</p>
+<p><code>trajectory</code> is that same objective at every member the trial reached, <code>{member: value}</code>. The
+caveat above applies within a row too: entry <em>k</em> is the pooled MAE over the first <em>k</em> members,
+and how hard those molecules are varies by dataset.</p>
 <p>The single <code>kind="baseline"</code> row is your own untuned config, scored as an ordinary trial on
-the same folds. It is never stopped early — no rung ever sees it — so whenever it scores at
-all, it scores at full fidelity. It can still fail outright like any trial, in which case
+the same folds. The ladder ignores it in both directions — it is never stopped at a rung, and
+its full-fidelity value is never counted in one either — so whenever it scores at all, it
+scores at full fidelity. It can still fail outright like any trial, in which case
 there is no reference line and plots fall back to the trials' median.</p>
 <h3 id="which-knobs-mattered">Which knobs mattered</h3>
 <p><code>hpo_importance()</code> answers that from the search's own trials — useful for deciding where to
@@ -5733,9 +5742,13 @@ read — how far the objective moves across that knob's range, as a percentage o
 objective. A knob is worth tuning only when both are high; the bottom three above hold a
 real share of very little. <code>best</code> is where the objective bottoms out with the other knobs
 averaged out, which is meaningless when <code>effect</code> is small.</p>
-<p><strong>Only scored trials feed the fit.</strong> And when the top knob's share cannot be separated from
-a random column planted in the same fit, the call logs a warning rather than returning a
-confident-looking ranking.</p>
+<p><strong>Only completed trials feed the fit.</strong> A stopped trial scored a partial ensemble — a
+different objective, not a noisier one. That filter has a cost: the survivors all cleared the
+same rungs, so the objective range the surrogate sees is narrower than the search explored,
+and the harder the ladder pruned the more <code>effect</code> understates. A search whose knobs all look
+modest may just be one that pruned hard.</p>
+<p>When the top knob's share cannot be separated from a random column planted in the same fit,
+the call logs a warning rather than returning a confident-looking ranking.</p>
 <p><strong>How it's computed.</strong> The trials are the dataset — knob values in, objective out — and a
 random forest is fit to that response surface. <code>importance</code> is the forest's split-based
 importance; <code>effect</code> and <code>best</code> come from a partial-dependence sweep, which pins one knob
