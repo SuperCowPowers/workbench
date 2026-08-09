@@ -33,8 +33,8 @@
     --wb-table-cell-bg: rgb(215, 218, 225);
 
     /* Body gradient colors */
-    --wb-body-gradient-start: rgb(218, 218, 222);
-    --wb-body-gradient-end: rgb(188, 188, 195);
+    --wb-body-gradient-start: rgb(240, 240, 240);
+    --wb-body-gradient-end: rgb(220, 220, 220);
 
 }
 
@@ -44,7 +44,7 @@ h1, h2, h3, h4 {
 
 body {
     color: var(--wb-text-primary);
-    background: linear-gradient(90deg, var(--wb-body-gradient-end) 0%, var(--wb-body-gradient-start) 25%, var(--wb-body-gradient-start) 75%, var(--wb-body-gradient-end) 100%);
+    background: linear-gradient(90deg, var(--wb-body-gradient-end) 0%, var(--wb-body-gradient-start) 20%, var(--wb-body-gradient-start) 80%, var(--wb-body-gradient-end) 100%);
 }
 
 /* Custom CSS to style bold text */

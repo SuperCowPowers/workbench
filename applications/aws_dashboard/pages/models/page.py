@@ -9,6 +9,7 @@ from . import callbacks
 # Workbench Imports
 from workbench.web_interface.components.plugins import model_details, ag_table, shap_summary_plot, model_plot
 from workbench.web_interface.page_views.models_page_view import ModelsPageView
+from workbench.web_interface.utils.page_callbacks import register_theme_callback
 
 # Register this page with Dash
 register_page(
@@ -59,5 +60,4 @@ plugins = [my_model_details, my_shap_plot, my_model_plot]
 # Set up callbacks for all the plugins
 callbacks.setup_plugin_callbacks(plugins, my_model_details)
 
-# Set up theme change callback for all plugins
-callbacks.setup_theme_callback(plugins)
+register_theme_callback(plugins)

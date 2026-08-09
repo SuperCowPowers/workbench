@@ -1,7 +1,7 @@
 """Workbench Dashboard: A Workbench Web Application for viewing and managing Workbench Artifacts"""
 
 import os
-from dash import Dash, html, dcc, page_container, Input, Output, State, ALL
+from dash import html, dcc, page_container, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from dash import page_registry
 
@@ -9,6 +9,7 @@ from dash import page_registry
 from workbench.utils.plugin_manager import PluginManager
 from workbench.utils.theme_manager import ThemeManager
 from workbench.web_interface.components.settings_menu import SettingsMenu
+from workbench.web_interface.themed_dash import ThemedDash
 
 # Set up the logging
 import logging
@@ -29,14 +30,14 @@ log.info(f"CSS files: {css_files}")
 app_title = tm.branding().get("app_title", "Workbench Dashboard")
 
 # Spin up the Plugin Manager and stage any plugin-provided clientside assets into our
-# assets tree BEFORE Dash() is constructed. Dash walks assets_folder on the first request
+# assets tree BEFORE the app is constructed. Dash walks assets_folder on the first request
 # and injects <script>/<link> tags for everything it finds, so plugin assets staged under
 # assets/plugins/ get served (at /assets/plugins/...) and injected exactly like app assets.
 pm = PluginManager()
 pm.stage_plugin_assets(os.path.join(os.path.dirname(__file__), "assets", "plugins"))
 
 # Create the Dash app
-app = Dash(
+app = ThemedDash(
     __name__,
     title=app_title,
     use_pages=True,
@@ -117,7 +118,6 @@ app.layout = html.Div(
         ),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
-    **{"data-bs-theme": tm.data_bs_theme()},
 )
 
 # Clientside callback for theme switching (stores in localStorage, sets cookie, triggers checkmark update)

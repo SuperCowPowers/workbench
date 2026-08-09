@@ -1,0 +1,160 @@
+/* Model Comparison page. All selectors are scoped under .mc-root so nothing leaks into
+   other dashboard pages.
+
+   The palette is derived from Bootstrap's own theme variables, which the dashboard serves
+   per request, so the page follows the active theme with no light/dark branch of its own.
+   That covers the built-in themes and any a customer adds. Don't key off the data-bs-theme
+   attribute: it's absent from :root until the user toggles, so a fresh load would render with
+   whatever tokens were hardcoded as the default. */
+
+.mc-root {
+  --mc-panel: var(--bs-tertiary-bg);
+  --mc-panel-2: var(--bs-secondary-bg);
+  --mc-border: var(--bs-border-color);
+  --mc-border-soft: var(--bs-border-color-translucent);
+  --mc-text: var(--bs-body-color);
+  --mc-text-dim: var(--bs-secondary-color);
+  --mc-text-faint: var(--bs-tertiary-color);
+
+  /* Bootstrap pairs each accent with a subtle background and an emphasis variant meant to
+     be legible as text on it, so those pairings hold in any theme. Use --mc-accent for
+     solid bars and dots, --mc-accent-text wherever the accent is type. */
+  --mc-accent: var(--bs-primary);
+  --mc-accent-text: var(--bs-primary-text-emphasis);
+  --mc-accent-glow: var(--bs-primary-bg-subtle);
+  --mc-good: var(--bs-success-text-emphasis);
+  --mc-bad: var(--bs-danger-text-emphasis);
+  --mc-contested: var(--bs-warning-text-emphasis);
+  --mc-contested-glow: var(--bs-warning-bg-subtle);
+  --mc-champ-glow: color-mix(in srgb, var(--mc-medal-gold) 14%, transparent);
+
+  /* Framework and rank hues are identity, not theme. Mid-tone values, each held above a
+     3:1 contrast ratio against both a white and a #222 background. */
+  --mc-f-chemprop: #429960;
+  --mc-f-hybrid: #769638;
+  --mc-f-mt: #b84d8f;
+  --mc-f-pytorch: #c2703c;
+  --mc-f-xgb: #a8842b;
+  --mc-f-transformer: #8a68b8;
+  --mc-f-sklearn: #7a8fa3;
+  --mc-f-meta: #35a3ad;
+  --mc-f-other: #3f82b0;
+  --mc-medal-gold: #a8801a;
+  --mc-medal-silver: #7f8b99;
+  --mc-medal-bronze: #b07a4b;
+  --mc-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  color: var(--mc-text);
+}
+
+.mc-root * { box-sizing: border-box; }
+.mc-root .mc-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; }
+
+/* Header: page title on the left, framework legend on the right.
+   padding-right keeps the legend clear of the dashboard hamburger menu. */
+.mc-root .mc-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; padding-right: 54px; }
+.mc-root .mc-legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.mc-root .mc-legend-chip {
+  font-family: var(--mc-mono); font-size: 12.5px; font-weight: 500; color: var(--mc-text-dim);
+  display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 7px;
+  background: var(--mc-panel); border: 1px solid var(--mc-border-soft);
+}
+
+/* Master-detail grid: rail + main column */
+.mc-root .mc-grid { display: grid; grid-template-columns: 260px 1fr; gap: 18px; }
+
+/* ---------- left rail (contest picker) ---------- */
+.mc-root .mc-rail { padding: 8px; align-self: start; }
+.mc-root .mc-group { margin-bottom: 18px; }
+.mc-root .mc-group-h {
+  display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+  font-family: var(--mc-mono); font-size: 15px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--mc-text); padding: 8px 8px 4px;
+}
+.mc-root .mc-group-h:hover { color: var(--mc-accent-text); }
+.mc-root .mc-caret { display: inline-flex; color: var(--mc-text-faint); transition: transform .18s ease; }
+.mc-root .mc-group.collapsed .mc-caret { transform: rotate(-90deg); }
+.mc-root .mc-group.collapsed .mc-item { display: none; }
+.mc-root .mc-item {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 7px;
+  cursor: pointer; color: var(--mc-text); transition: background .12s;
+}
+.mc-root .mc-item:hover { background: var(--mc-panel-2); }
+.mc-root .mc-item.sel { background: var(--mc-accent-glow); box-shadow: inset 2px 0 0 var(--mc-accent); }
+.mc-root .mc-item-name {
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--mc-mono); font-size: 12.5px;
+}
+.mc-root .mc-cbadge { width: 7px; height: 7px; border-radius: 50%; background: var(--mc-contested); flex: none; }
+.mc-root .mc-rbadge { width: 7px; height: 7px; border-radius: 50%; background: var(--mc-accent); flex: none; }
+
+/* ---------- main column ---------- */
+.mc-root .mc-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.mc-root .mc-head { display: flex; align-items: center; gap: 12px; }
+.mc-root .mc-h-title { font-family: var(--mc-mono); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.mc-root .mc-h-run { margin-left: auto; font-size: 12px; color: var(--mc-text-faint); font-family: var(--mc-mono); }
+.mc-root .mc-pill {
+  font-family: var(--mc-mono); font-size: 10px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase;
+  border-radius: 20px; padding: 3px 10px;
+}
+.mc-root .mc-pill-contested {
+  color: var(--mc-contested); background: var(--mc-contested-glow);
+  border: 1px solid color-mix(in srgb, var(--mc-contested) 45%, transparent);
+}
+.mc-root .mc-pill-recent {
+  color: var(--mc-accent-text); background: var(--mc-accent-glow);
+  border: 1px solid color-mix(in srgb, var(--mc-accent) 45%, transparent);
+}
+
+/* ---------- comparison table ---------- */
+.mc-root .mc-table-wrap { overflow-x: auto; }
+.mc-root .mc-table { border-collapse: collapse; width: 100%; font-family: var(--mc-mono); font-size: 12.5px; }
+.mc-root .mc-table th {
+  color: var(--mc-text-faint); font-weight: 550; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+  text-align: right; padding: 8px 11px; border-bottom: 1px solid var(--mc-border); white-space: nowrap;
+}
+.mc-root .mc-table td {
+  text-align: right; padding: 8px 11px; border-bottom: 1px solid var(--mc-border-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.mc-root .mc-table tr:last-child td { border-bottom: 0; }
+.mc-root .mc-table th.mc-l, .mc-root .mc-table td.mc-l { text-align: left; }
+.mc-root .mc-table .mc-rank { text-align: center; width: 30px; }
+.mc-root .mc-table .mc-type { color: var(--mc-text-dim); }
+.mc-root .mc-table .mc-type .mc-dot { margin-right: 7px; }
+.mc-root .mc-champ-row { background: var(--mc-champ-glow); }
+.mc-root .mc-chall-row { cursor: pointer; transition: background .12s; }
+.mc-root .mc-chall-row:hover { background: var(--mc-panel-2); }
+.mc-root .mc-chall-row.rsel { background: var(--mc-accent-glow); box-shadow: inset 3px 0 0 var(--mc-accent); }
+.mc-root .mc-pos { color: var(--mc-good); }
+.mc-root .mc-neg { color: var(--mc-bad); }
+
+.mc-root .mc-crown { color: var(--mc-medal-gold); display: inline-flex; justify-content: center; }
+.mc-root .mc-medal { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.mc-root .mc-medal-silver { background: var(--mc-medal-silver); }
+.mc-root .mc-medal-bronze { background: var(--mc-medal-bronze); }
+.mc-root .mc-medal-open { border: 1.5px solid var(--mc-text-faint); background: transparent; }
+
+/* ---------- plot region: champion row over challenger row ---------- */
+/* Breathing room between the comparison table and the plots below it */
+.mc-root .mc-plot-region { margin-top: 28px; }
+.mc-root .mc-prow { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+/* Inset the row header from the plot's left edge */
+.mc-root .mc-prow-head { display: flex; align-items: center; gap: 10px; margin-left: 22px; }
+.mc-root .mc-prow-name { font-family: var(--mc-mono); font-size: 15px; color: var(--mc-text); }
+.mc-root .mc-prow-status { font-family: var(--mc-mono); font-size: 12px; color: var(--mc-text-dim); }
+.mc-root .mc-tag {
+  font-family: var(--mc-mono); font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase;
+  border-radius: 20px; padding: 3px 12px;
+}
+.mc-root .mc-tag-champion { color: var(--mc-medal-gold); background: var(--mc-champ-glow); }
+.mc-root .mc-tag-challenger { color: var(--mc-accent-text); background: var(--mc-accent-glow); }
+/* Cap the plot width: a full-width scatter or confusion matrix stretches to an unreadable
+   aspect ratio on a wide monitor. */
+.mc-root .mc-plot { max-width: 820px; }
+
+@media (max-width: 900px) {
+  .mc-root .mc-grid { grid-template-columns: 1fr; }
+  .mc-root .mc-rail { max-height: 240px; }
+}

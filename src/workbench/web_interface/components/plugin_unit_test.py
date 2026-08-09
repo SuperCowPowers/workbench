@@ -1,4 +1,4 @@
-from dash import html, Dash, Output, Input
+from dash import html, Output, Input
 import dash_bootstrap_components as dbc
 import logging
 import socket
@@ -9,6 +9,7 @@ from workbench.api import DataSource, FeatureSet, Model, Endpoint, Meta
 from workbench.api.compound import Compound
 from workbench.api.graph_store import GraphStore
 from workbench.utils.theme_manager import ThemeManager
+from workbench.web_interface.themed_dash import ThemedDash
 
 # Setup Logging
 log = logging.getLogger("workbench")
@@ -50,7 +51,7 @@ class PluginUnitTest:
         css_files = tm.css_files()
 
         # Create the Dash app with the theme CSS files
-        self.app = Dash(
+        self.app = ThemedDash(
             __name__,
             title="Plugin Unit Test",
             external_stylesheets=css_files,
@@ -83,7 +84,6 @@ class PluginUnitTest:
                 dbc.Container(layout_children, fluid=True, className="dbc dbc-ag-grid"),
             ],
             style={"margin": "40px"},
-            **{"data-bs-theme": tm.data_bs_theme()},
         )
 
         # Make sure the plugin has a properties attribute (non-empty list of tuples)

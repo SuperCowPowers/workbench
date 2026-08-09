@@ -1,14 +1,22 @@
-"""Two-way deep links between the browser URL and an artifact table's selected row.
+"""Callbacks that wire an artifact page into standard dashboard behavior.
 
-Artifact pages carry their selection in the query string as ``?name=<artifact>``, so a page
-can be linked to directly and a link copied out of the address bar reproduces what's on
-screen. :func:`sync_selection` registers both directions.
+Two pieces, both registered from a page's setup:
 
-Both run clientside -- the row data and the URL are already in the browser -- so neither
-direction costs a server round-trip.
+* :func:`sync_selection` -- two-way deep links between the URL's ``?name=<artifact>`` and the
+  table's selected row, so a page can be linked to directly and a link copied out of the
+  address bar reproduces what's on screen. Both directions run clientside; the row data and
+  the URL are already in the browser, so neither costs a server round-trip.
+* :func:`register_theme_callback` -- re-render plugin figures on a theme change. CSS follows
+  the theme on its own, but a Plotly figure is baked at render time, so pages that skip this
+  keep their plots on the old theme until a full reload.
 """
 
-from dash import clientside_callback, Input, Output, State
+from dash import callback, clientside_callback, Input, Output, State
+
+# The dashboard's theme store (defined in app.py). A clientside callback writes the selected
+# theme name to it; the server's template is already switched by ThemeManager's
+# before_request hook, so set_theme() only has to re-render.
+THEME_STORE_ID = "workbench-theme-store"
 
 # Select the row named by ?name=, or the first row when the query string is absent. The
 # store latches once a selection lands, so periodic table refreshes fall straight through.
@@ -47,6 +55,19 @@ function (selectedRows) {
 """
 
 
+def plugin_outputs(plugins: list, allow_duplicate: bool = False) -> list:
+    """Every plugin property, flattened into callback Outputs.
+
+    Args:
+        plugins (list): The PluginInterface instances to aggregate.
+        allow_duplicate (bool): Set when another callback already writes these properties.
+
+    Returns:
+        list: An Output per (component_id, property) across all the plugins.
+    """
+    return [Output(cid, prop, allow_duplicate=allow_duplicate) for p in plugins for cid, prop in p.properties]
+
+
 def sync_selection(table_id: str, loaded_store_id: str):
     """Register the callbacks that keep ``?name=`` and the table selection in step.
 
@@ -71,3 +92,22 @@ def sync_selection(table_id: str, loaded_store_id: str):
         Input(table_id, "selectedRows"),
         prevent_initial_call=True,
     )
+
+
+def register_theme_callback(plugins: list):
+    """Re-render every plugin's figures when the theme changes.
+
+    Args:
+        plugins (list): The PluginInterface instances on the page.
+    """
+
+    @callback(
+        plugin_outputs(plugins, allow_duplicate=True),
+        Input(THEME_STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def on_theme_change(theme):
+        all_props = []
+        for plugin in plugins:
+            all_props.extend(plugin.set_theme(theme))
+        return all_props

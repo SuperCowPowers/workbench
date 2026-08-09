@@ -8,13 +8,10 @@ from dash.exceptions import PreventUpdate
 from workbench.web_interface.page_views.models_page_view import ModelsPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.cached.cached_model import CachedModel
-from workbench.web_interface.utils.url_sync import sync_selection
+from workbench.web_interface.utils.page_callbacks import sync_selection, plugin_outputs
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
-
-# Theme store ID (defined in app.py)
-THEME_STORE_ID = "workbench-theme-store"
 
 
 def on_page_load():
@@ -72,7 +69,7 @@ def setup_plugin_callbacks(plugins, model_details_plugin):
 
     # Callback to update other plugins when the dropdown changes (triggered by model_details)
     @callback(
-        [Output(cid, prop) for p in other_plugins for cid, prop in p.properties],
+        plugin_outputs(other_plugins),
         Input("model_details-dropdown", "value"),
         State("models_table", "selectedRows"),
     )
@@ -88,24 +85,4 @@ def setup_plugin_callbacks(plugins, model_details_plugin):
         for plugin in other_plugins:
             all_props.extend(plugin.update_properties(model, inference_run=inference_run))
 
-        return all_props
-
-
-def setup_theme_callback(plugins):
-    """Set up a callback to update all plugins when the theme changes.
-
-    Args:
-        plugins: List of all plugin instances on this page.
-    """
-
-    @callback(
-        [Output(cid, prop, allow_duplicate=True) for p in plugins for cid, prop in p.properties],
-        Input(THEME_STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def on_theme_change(theme):
-        """Update all plugins when the theme changes."""
-        all_props = []
-        for plugin in plugins:
-            all_props.extend(plugin.set_theme(theme))
         return all_props

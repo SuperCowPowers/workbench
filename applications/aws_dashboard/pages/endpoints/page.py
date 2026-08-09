@@ -11,6 +11,7 @@ from workbench.web_interface.components import endpoint_metric_plots
 from workbench.web_interface.components.plugins import endpoint_details, ag_table
 from workbench.web_interface.components.plugin_interface import PluginPage
 from workbench.web_interface.page_views.endpoints_page_view import EndpointsPageView
+from workbench.web_interface.utils.page_callbacks import register_theme_callback
 from workbench.utils.plugin_manager import PluginManager
 
 # Register this page with Dash
@@ -69,4 +70,4 @@ callbacks.update_endpoint_metrics(endpoints_view)
 # For all the plugins we have we'll call their update_properties method
 if plugins:
     callbacks.setup_plugin_callbacks(plugins)
-    callbacks.setup_theme_callback(plugins)
+    register_theme_callback(plugins)

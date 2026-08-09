@@ -9,13 +9,10 @@ from workbench.web_interface.page_views.endpoints_page_view import EndpointsPage
 from workbench.web_interface.components import endpoint_metric_plots
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.cached.cached_endpoint import CachedEndpoint
-from workbench.web_interface.utils.url_sync import sync_selection
+from workbench.web_interface.utils.page_callbacks import sync_selection, plugin_outputs
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
-
-# Theme store ID (defined in app.py)
-THEME_STORE_ID = "workbench-theme-store"
 
 
 def on_page_load():
@@ -73,8 +70,7 @@ def setup_plugin_callbacks(plugins):
 
     # Now we'll set up the plugin callbacks for their main inputs (endpoints in this case)
     @callback(
-        # Aggregate plugin outputs
-        [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],
+        plugin_outputs(plugins),
         Input("endpoints_table", "selectedRows"),
     )
     def update_all_plugin_properties(selected_rows):
@@ -95,24 +91,4 @@ def setup_plugin_callbacks(plugins):
             all_props.extend(p.update_properties(endpoint))
 
         # Return all the updated properties
-        return all_props
-
-
-def setup_theme_callback(plugins):
-    """Set up a callback to update all plugins when the theme changes.
-
-    Args:
-        plugins: List of all plugin instances on this page.
-    """
-
-    @callback(
-        [Output(cid, prop, allow_duplicate=True) for p in plugins for cid, prop in p.properties],
-        Input(THEME_STORE_ID, "data"),
-        prevent_initial_call=True,
-    )
-    def on_theme_change(theme):
-        """Update all plugins when the theme changes."""
-        all_props = []
-        for plugin in plugins:
-            all_props.extend(plugin.set_theme(theme))
         return all_props

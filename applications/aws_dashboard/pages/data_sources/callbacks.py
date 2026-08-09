@@ -12,7 +12,7 @@ from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.cached.cached_data_source import CachedDataSource
-from workbench.web_interface.utils.url_sync import sync_selection
+from workbench.web_interface.utils.page_callbacks import sync_selection
 
 # Set up logging
 log = logging.getLogger("workbench")
