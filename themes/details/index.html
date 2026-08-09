@@ -1840,6 +1840,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#building-figures-in-a-plugin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building Figures in a Plugin
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5281,6 +5292,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#building-figures-in-a-plugin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building Figures in a Plugin
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5371,14 +5393,25 @@
 <li>Plugins re-render figures with new colors from ThemeManager</li>
 </ol>
 <h3 id="server-side-theme-detection">Server-Side Theme Detection</h3>
-<p>On page load, the server reads the theme from cookies:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">before_request</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">check_theme_cookie</span><span class="p">():</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">theme_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wb_theme&quot;</span><span class="p">)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">if</span> <span class="n">theme_name</span> <span class="ow">and</span> <span class="n">theme_name</span> <span class="o">!=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">current_theme_name</span><span class="p">:</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">theme_name</span><span class="p">)</span>
+<p>The server resolves the theme from the <code>wb_theme</code> cookie on the request in flight, so viewers
+on a shared dashboard each get their own theme:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">ThemeManager</span><span class="p">()</span><span class="o">.</span><span class="n">current_theme</span><span class="p">()</span>     <span class="c1"># pin -&gt; request cookie -&gt; configured default</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ThemeManager</span><span class="p">()</span><span class="o">.</span><span class="n">current_template</span><span class="p">()</span>  <span class="c1"># that theme&#39;s Plotly template</span>
 </span></code></pre></div>
-<p>This ensures Plotly templates are set correctly for initial figure rendering.</p>
+<p>Nothing is stored between requests. A single-theme process (a plugin unit test, an example
+script) can call <code>set_theme("light")</code> to pin a theme that outranks any cookie; <code>set_theme("auto")</code>
+returns to per-request resolution.</p>
+<h3 id="building-figures-in-a-plugin">Building Figures in a Plugin</h3>
+<p>Build figures with <code>self.theme_manager.figure()</code> rather than <code>go.Figure()</code>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_manager</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">traces</span><span class="p">)</span>
+</span></code></pre></div>
+<p>A bare <code>go.Figure()</code> bakes in Plotly's process-global default template at construction. That
+global is shared across request threads and can't follow the viewer, so those figures render in
+the server's startup theme no matter who's looking. <code>figure()</code> takes the same arguments and
+stamps the request's own template.</p>
+<p>If a plugin caches a figure across requests, re-stamp it before returning:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">theme_manager</span><span class="o">.</span><span class="n">apply_template</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cached_figure</span><span class="p">)</span>
+</span></code></pre></div>
 <hr />
 <h2 id="two-main-theming-concepts">Two Main Theming Concepts</h2>
 <h3 id="css-for-web-interface">CSS for Web Interface</h3>
