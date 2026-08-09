@@ -140,7 +140,8 @@ packages = { find = { where = ["src"] } }
     "resources/open_source_api.key",
     "model_scripts/**",
     "themes/**",
-    "agent/guides/*.md"
+    "agent/guides/*.md",
+    "plugin_pages/**"
 ]
 
 [tool.setuptools.exclude-package-data]

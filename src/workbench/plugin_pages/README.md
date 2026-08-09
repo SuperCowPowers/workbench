@@ -1,9 +1,9 @@
 # Plugin Pages
 
-A complete, real-world Workbench plugin page you can copy into your own plugin repo.
-Where [`examples/plugins/`](../examples/plugins) shows each plugin type in isolation, this
-is one page built the way a production page is built: a page, its view, a custom component,
-and clientside JS/CSS working together.
+A complete, real-world Workbench plugin page to copy into your own plugin repo. The
+`examples/plugins/` directory in the Workbench repo shows each plugin type in isolation;
+this is one page built the way a production page is built — a page, its view, a custom
+component, and clientside JS/CSS working together.
 
 ## The page
 
@@ -30,7 +30,7 @@ The contest reports come from the promotion arbiter, so the page needs published
 browser once; `render.js` owns the rail, header, and table and redraws them on selection
 with no server round-trip. Selection travels back to Dash via `set_props` on two Stores,
 which drive the server-rendered plots. Only the plots — the genuinely expensive part — cost
-a callback.
+a callback. Selecting a contest is 2 requests: one plot per side.
 
 **Subclassing a built-in component.** `PredictionPlot` extends `ModelPlot` and swaps its two
 sub-plugins for quieter ones. It inherits the model-type switch, multi-task target handling,
@@ -40,14 +40,23 @@ and theme re-rendering rather than reimplementing them.
 its `__init__` is a full AWS metadata load. The page memoizes it keyed on the report
 timestamp — cheap clicks, and a retrain still invalidates.
 
-**Theme-aware CSS.** Every color is a custom property with light-mode overrides under
-`:root[data-bs-theme="light"]`, so the page follows the dashboard's theme toggle.
+**A palette derived from Bootstrap.** `styles.css` defines its tokens as `var(--bs-body-color)`,
+`var(--bs-tertiary-bg)` and friends, which the dashboard serves per request, so the page
+follows any theme — the three built-ins and anything a customer adds — with no light/dark
+branch of its own. Don't key off the `data-bs-theme` attribute for this; Bootstrap scopes its
+palette to that attribute, so reading the variables is both simpler and correct.
+
+**Re-rendering plots on a theme change.** CSS follows the theme by itself, but a Plotly figure
+is baked at render time. `register_theme_callback()` from
+`workbench.web_interface.utils.page_callbacks` re-renders every plugin on the page when the
+theme store changes. A page that skips this keeps its plots on the old theme until a reload.
 
 **Two-way deep links.** `?name=<endpoint>` selects a contest on load, and picking one in the
-rail rewrites the query string, so the address bar is always copy-pasteable. A server
-callback handles the load direction; `render.js` handles the write with `history.replaceState`
-— writing to `dcc.Location` would be a navigation and would remount the page on every click.
-The artifact pages get the same behavior from `workbench.web_interface.utils.url_sync`.
+rail rewrites the query string, so the address bar is always copy-pasteable. Both directions
+live in `render.js`: it reads the query string when nothing is selected yet, and writes with
+`history.replaceState`. Don't write to `dcc.Location` — with `refresh="callback-nav"` that is
+a navigation and remounts the page on every click. Artifact pages get the same behavior from
+`sync_selection()` in `page_callbacks`.
 
 ## Using it
 
@@ -59,8 +68,9 @@ The view and the component each run standalone for a quick check — the view pr
 summary, the component serves itself on http://localhost:8050:
 
 ```bash
-python plugin_pages/views/model_comparison_view.py
+python views/model_comparison_view.py
+python components/prediction_plot.py
 ```
 
-See [`examples/plugins/README.md`](../examples/plugins/README.md) for how plugins load, how
-`assets/` is staged and served, and how to deploy to S3.
+See https://supercowpowers.github.io/workbench/plugins/ for how plugins load, how `assets/`
+is staged and served, and how to deploy to S3.
