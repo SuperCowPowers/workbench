@@ -79,7 +79,7 @@ class ShapSummaryPlot(PluginInterface):
         merged_df = pd.merge(shap_df, sample_df, on=id_column, how="inner", suffixes=("_shap", ""))
 
         # Create figure
-        fig = go.Figure()
+        fig = self.theme_manager.figure()
 
         # Add a zero vertical line for reference
         fig.add_shape(

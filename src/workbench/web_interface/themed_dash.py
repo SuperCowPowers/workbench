@@ -23,8 +23,8 @@ class ThemedDash(Dash):
     def interpolate_index(self, **kwargs) -> str:
         """Insert the theme attribute into the rendered index.
 
-        Runs per request, after ThemeManager's before_request hook has applied the theme
-        cookie, so it reflects the viewer's choice rather than whatever the server booted with.
+        Runs per request, and ThemeManager resolves the theme from that request's cookie, so
+        it reflects the viewer's choice rather than whatever the server booted with.
         """
         index = super().interpolate_index(**kwargs)
         if "<html>" not in index:

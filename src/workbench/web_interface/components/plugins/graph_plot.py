@@ -1,4 +1,4 @@
-from dash import dcc, html, callback, Input, Output
+from dash import dcc, html, callback, no_update, Input, Output, Patch
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import networkx as nx
@@ -21,7 +21,10 @@ class GraphPlot(PluginInterface):
         self.component_id = None
         self.hover_columns = []
         self.graph = None
-        self.graph_figure = None
+
+        # Where the node trace sits in the figure's data, so the dropdown callbacks can
+        # patch it. Set alongside self.graph, since it's a property of that graph's figure.
+        self.node_trace_index = None
 
         # Initialize the Theme Manager
         self.theme_manager = ThemeManager()
@@ -209,11 +212,13 @@ class GraphPlot(PluginInterface):
                 ),
             ]
 
-        # Create a Plotly figure with the combined node and edge traces
-        self.graph_figure = go.Figure(data=edge_traces + [node_trace])
+        # Create a Plotly figure with the combined node and edge traces. Nodes go last so
+        # they draw on top of the edges.
+        self.node_trace_index = len(edge_traces)
+        figure = self.theme_manager.figure(data=edge_traces + [node_trace])
 
         # Fine-tune the plot's layout and aesthetics
-        self.graph_figure.update_layout(
+        figure.update_layout(
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},  # Set margins and padding
             xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Hide X-axis grid and tick marks
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Hide Y-axis grid and tick marks
@@ -249,7 +254,35 @@ class GraphPlot(PluginInterface):
         default_color = "degree" if "degree" in node_attributes else next(iter(node_attributes), "id")
 
         # Return the updated properties for the dropdowns and the figure
-        return [self.graph_figure, label_list, color_list, default_label, default_color]
+        return [figure, label_list, color_list, default_label, default_color]
+
+    def set_theme(self, theme: str) -> list:
+        """Re-render the graph when the theme changes (label colors and the edge colorscale)."""
+        if self.graph is None:
+            return [no_update] * len(self.properties)
+        return self.update_properties(self.graph)
+
+    def _node_colors(self, attribute: str) -> list:
+        """Map a node attribute onto marker color values.
+
+        Args:
+            attribute (str): The node attribute to color by.
+
+        Returns:
+            list: One numeric value per node; non-numeric attributes are enumerated.
+        """
+        nodes = self.graph.nodes
+        first_node = next(iter(nodes))
+        if attribute not in nodes[first_node]:
+            return [0] * len(nodes)
+
+        values = [nodes[node][attribute] for node in nodes]
+        if isinstance(nodes[first_node][attribute], (int, float)):
+            return values
+
+        # Enumerate strings as a fallback for categorical values
+        enumerated = {value: index for index, value in enumerate(set(values))}
+        return [enumerated[value] for value in values]
 
     def register_internal_callbacks(self):
         """Register any internal callbacks for the plugin."""
@@ -264,40 +297,25 @@ class GraphPlot(PluginInterface):
             prevent_initial_call=True,
         )
         def update_graph(label, color):
-            """Update the Graph (Nodes/Edges) based on the dropdown values."""
+            """Update the node labels/colors based on the dropdown values."""
             if not label and not color:
                 raise PreventUpdate
 
-            # Use the class variable to access the graph's nodes directly
+            # Patch the node trace in place in the viewer's own browser. The plugin instance
+            # is shared by everyone on the page, so a server-side figure edited here would
+            # push one viewer's dropdown choice out to all the others.
             nodes = self.graph.nodes
-
-            # Get the node trace from the graph figure (assuming last trace is for nodes)
-            node_trace = self.graph_figure["data"][-1]
+            node_trace = Patch()["data"][self.node_trace_index]
 
             # Update node labels dynamically if a label field is selected
             if label:
-                if label == "None":  # Handle "None" option
-                    node_trace["text"] = [""] * len(nodes)
-                else:
-                    node_trace["text"] = [nodes[node].get(label, "") for node in nodes]
+                node_trace["text"] = [""] * len(nodes) if label == "None" else [nodes[n].get(label, "") for n in nodes]
 
             # Update node colors dynamically if a color field is selected
             if color:
-                # Check if the attribute exists and if it's numeric
-                first_node = next(iter(nodes))
-                if color in nodes[first_node]:
-                    color_values = [nodes[node][color] for node in nodes]
-                    if isinstance(nodes[first_node][color], (int, float)):
-                        node_trace["marker"]["color"] = color_values
-                    else:
-                        # Enumerate strings as a fallback for categorical values
-                        unique_values = {val: idx for idx, val in enumerate(set(color_values))}
-                        node_trace["marker"]["color"] = [unique_values[val] for val in color_values]
-                else:
-                    node_trace["marker"]["color"] = [0] * len(nodes)  # Default to zero if not present
+                node_trace["marker"]["color"] = self._node_colors(color)
 
-            # Return the updated figure
-            return self.graph_figure
+            return node_trace
 
 
 if __name__ == "__main__":

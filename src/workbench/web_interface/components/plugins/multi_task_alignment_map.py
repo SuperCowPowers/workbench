@@ -220,7 +220,7 @@ class MultiTaskAlignmentMap(PluginInterface):
         # are canvas pixels with no DOM handle. Until we have a renderer-agnostic
         # way to trigger Plotly hover by trace+point index, this plugin stays SVG.
         df = self.df
-        figure = go.Figure()
+        figure = self.theme_manager.figure()
         custom_cols = [c for c in (self.smiles_column, self.id_column) if c in df.columns]
 
         primary_mask = df[self.primary].notna() if self.primary in df.columns else pd.Series(False, index=df.index)

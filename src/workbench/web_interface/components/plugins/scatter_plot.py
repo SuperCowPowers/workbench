@@ -400,7 +400,7 @@ class ScatterPlot(PluginInterface):
         # Okay we have the data, now create the figure.
         # Note: We're going to add the prediction interval bands and regression line before
         #       the scatter plot data to ensure they appear below the scatter points.
-        figure = go.Figure()
+        figure = self.theme_manager.figure()
         if pred_intervals and (y_col == "prediction" or x_col == "prediction"):
             figure = prediction_intervals(df, figure, x_col)
 

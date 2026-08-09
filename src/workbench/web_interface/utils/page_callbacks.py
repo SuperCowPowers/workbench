@@ -14,8 +14,8 @@ Two pieces, both registered from a page's setup:
 from dash import callback, clientside_callback, Input, Output, State
 
 # The dashboard's theme store (defined in app.py). A clientside callback writes the selected
-# theme name to it; the server's template is already switched by ThemeManager's
-# before_request hook, so set_theme() only has to re-render.
+# theme name to it after setting the wb_theme cookie, so the re-render request that follows
+# already resolves to the new theme and set_theme() only has to rebuild.
 THEME_STORE_ID = "workbench-theme-store"
 
 # Select the row named by ?name=, or the first row when the query string is absent. The

@@ -42,9 +42,14 @@ class ModelPlugin(PluginInterface):
 
     def update_properties(self, model: Model, **kwargs) -> list:
         """Return updated values, one per entry in self.properties"""
-        pie_figure = go.Figure(data=..., ...)
+        pie_figure = self.theme_manager.figure(data=..., ...)
         return [pie_figure]
 ```
+
+Build figures with `self.theme_manager.figure()` (same arguments as `go.Figure()`). It stamps the
+viewing user's Plotly template onto the figure; a bare `go.Figure()` picks up a process-global
+default that can't follow the viewer, so it renders in the server's startup theme for everyone.
+See [Themes](../themes/details.md).
 
 **Required attributes**
 

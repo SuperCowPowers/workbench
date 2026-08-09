@@ -218,7 +218,7 @@ class ConfusionTriangle(PluginInterface):
             if self.id_column:
                 custom_data_cols.append(self.id_column)
 
-        figure = go.Figure()
+        figure = self.theme_manager.figure()
 
         # Line colors adapt to dark/light theme
         line_color = "rgba(220, 220, 220, 1.0)" if self.theme_manager.dark_mode() else "rgba(40, 40, 40, 1.0)"

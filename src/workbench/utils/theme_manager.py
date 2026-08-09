@@ -7,8 +7,9 @@ from pathlib import Path
 import atexit
 import tempfile
 import plotly.io as pio
+import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
-from flask import send_from_directory
+from flask import send_from_directory, request, has_request_context
 from typing import Optional, List, Union
 
 # Workbench Imports
@@ -19,6 +20,17 @@ from workbench.utils.s3_utils import copy_s3_files_to_local
 
 
 class ThemeManager:
+    """Themes for the dashboard, resolved per request.
+
+    The active theme is a function of the incoming request's ``wb_theme`` cookie, not stored
+    state, so concurrent viewers on a shared dashboard each get their own theme. Every theme is
+    loaded up front and the accessors below are pure reads; nothing here mutates once loaded.
+
+    Plotly figures must be built through :meth:`figure` (or stamped with :meth:`apply_template`).
+    A bare ``go.Figure()`` bakes in the process-global ``pio.templates.default`` at construction,
+    which is shared across request threads and cannot follow the viewer.
+    """
+
     _instance = None  # Singleton instance
 
     # Class-level state
@@ -26,11 +38,17 @@ class ThemeManager:
     theme_path_list = [files("workbench") / "themes"]
     dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
     available_themes = {}
-    current_theme_name = None
-    current_template = None
     default_theme = "dark"
     ps = ParameterStore()
     loading_temp_dir = None
+
+    # The theme used when a request doesn't name one: the ParameterStore's org-wide choice,
+    # resolved once at startup so theme lookups stay free of network calls.
+    configured_theme = None
+
+    # An explicit set_theme() choice. Outranks the request cookie, so a single-theme process
+    # (plugin unit tests, examples, scripts) renders what it asked for.
+    pinned_theme = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -63,9 +81,13 @@ class ThemeManager:
                 # Add the custom path to the theme path
                 cls.theme_path_list += [custom_path]
 
-        # Load the available themes and set the automatic theme
+        # Load the available themes, then resolve the org-wide default once
         cls._load_themes()
-        cls.set_theme("auto")
+        cls.configured_theme = cls._validate(cls.ps.get("/workbench/dashboard/theme", warn=False))
+
+        # A figure built outside the factory falls back to Plotly's process-global default, so
+        # point that at the configured theme rather than leaving it on stock Plotly.
+        cls._set_plotly_default(cls.configured_theme)
 
     @classmethod
     def list_themes(cls) -> list[str]:
@@ -73,78 +95,46 @@ class ThemeManager:
         return list(cls.available_themes.keys())
 
     @classmethod
+    def _validate(cls, theme_name: Optional[str]) -> str:
+        """Resolve a theme name to one we actually have, falling back to the default."""
+        if theme_name in cls.available_themes:
+            return theme_name
+        if theme_name:
+            cls.log.error(f"Theme '{theme_name}' is not available, falling back...")
+        if cls.default_theme in cls.available_themes:
+            return cls.default_theme
+        return list(cls.available_themes.keys())[0]
+
+    @classmethod
+    def _set_plotly_default(cls, theme_name: str):
+        """Point Plotly's process-global default template at a theme."""
+        pio.templates["workbench"] = cls.available_themes[theme_name]["plotly_template"]
+        pio.templates.default = "workbench"
+
+    @classmethod
     def set_theme(cls, theme_name: str):
-        """Set the current theme."""
+        """Pin the theme for this process, overriding any per-request cookie.
 
-        # For 'auto', we check multiple sources in priority order:
-        # 1. Browser cookie (from localStorage, for per-user preference)
-        # 2. Parameter Store (for org-wide default)
-        # 3. Default theme
+        Args:
+            theme_name (str): The theme to pin, or "auto" to resolve each request from its cookie.
+        """
         if theme_name == "auto":
-            theme_name = None
+            cls.pinned_theme = None
+            cls._set_plotly_default(cls.configured_theme)
+            cls.log.info("Theme resolved per request")
+            return
 
-            # 1. Check Flask request cookie (set from localStorage)
-            try:
-                from flask import request, has_request_context
-
-                if has_request_context():
-                    theme_name = request.cookies.get("wb_theme")
-            except Exception:
-                # Outside Flask/request context — fall through to ParameterStore
-                pass
-
-            # 2. Fall back to ParameterStore
-            if not theme_name:
-                theme_name = cls.ps.get("/workbench/dashboard/theme", warn=False)
-
-            # 3. Fall back to default
-            theme_name = theme_name or cls.default_theme
-
-        # Check if the theme is in our available themes
-        if theme_name not in cls.available_themes:
-            cls.log.error(f"Theme '{theme_name}' is not available, trying another theme...")
-            theme_name = (
-                cls.default_theme if cls.default_theme in cls.available_themes else list(cls.available_themes.keys())[0]
-            )
-
-        # Grab the theme from the available themes
-        theme = cls.available_themes[theme_name]
-
-        # Update Plotly template
-        if theme["plotly_template"]:
-            with open(theme["plotly_template"], "r") as f:
-                cls.current_template = json.load(f)
-            pio.templates["custom_template"] = cls.current_template
-            pio.templates.default = "custom_template"
-        else:
-            cls.log.error(f"No Plotly template found for '{theme_name}'.")
-
-        # Update the current theme name
-        cls.current_theme_name = theme_name
-        cls.log.info(f"Theme set to '{theme_name}'")
+        cls.pinned_theme = cls._validate(theme_name)
+        cls._set_plotly_default(cls.pinned_theme)
+        cls.log.info(f"Theme pinned to '{cls.pinned_theme}'")
 
     # Bootstrap themes that are dark mode (from Bootswatch)
     _dark_bootstrap_themes = {"DARKLY", "CYBORG", "SLATE", "SOLAR", "SUPERHERO", "VAPOR"}
 
     @classmethod
     def dark_mode(cls) -> bool:
-        """Check if the current theme is a dark mode theme.
-
-        Determines dark mode by checking if the Bootstrap base theme is a known dark theme.
-        Falls back to checking if 'dark' is in the theme name.
-        """
-        theme = cls.available_themes.get(cls.current_theme_name, {})
-        base_css = theme.get("base_css", "")
-
-        # Check if the base CSS URL contains a known dark Bootstrap theme
-        if base_css:
-            base_css_upper = base_css.upper()
-            for dark_theme in cls._dark_bootstrap_themes:
-                if dark_theme in base_css_upper:
-                    return True
-
-        # Fallback: check if 'dark' is in the theme name
-        return "dark" in cls.current_theme().lower()
+        """Check if the current theme is a dark mode theme."""
+        return cls.theme()["dark"]
 
     @classmethod
     def data_bs_theme(cls) -> str:
@@ -153,8 +143,60 @@ class ThemeManager:
 
     @classmethod
     def current_theme(cls) -> str:
-        """Get the name of the current theme."""
-        return cls.current_theme_name
+        """Get the name of the theme for the request in flight.
+
+        Priority: an explicit set_theme() pin, then the request's `wb_theme` cookie, then the
+        configured default. Outside a request context the last two are all that's available.
+        """
+        if cls.pinned_theme:
+            return cls.pinned_theme
+        if has_request_context():
+            cookie_theme = request.cookies.get("wb_theme")
+            if cookie_theme in cls.available_themes:
+                return cookie_theme
+        return cls.configured_theme
+
+    @classmethod
+    def theme(cls) -> dict:
+        """Get the theme record (css, template, branding) for the request in flight."""
+        return cls.available_themes[cls.current_theme()]
+
+    @classmethod
+    def current_template(cls) -> go.layout.Template:
+        """Get the Plotly template for the request in flight.
+
+        Returns:
+            go.layout.Template: Shared across requests; Plotly copies it on assignment.
+        """
+        return cls.theme()["plotly_template"]
+
+    @classmethod
+    def figure(cls, *args, **kwargs) -> go.Figure:
+        """Create a Plotly Figure themed for the request in flight.
+
+        Use this anywhere a component would reach for `go.Figure()`. Arguments are passed
+        straight through.
+
+        Returns:
+            go.Figure: A Figure carrying this request's theme template.
+        """
+        return cls.apply_template(go.Figure(*args, **kwargs))
+
+    @classmethod
+    def apply_template(cls, figure: go.Figure) -> go.Figure:
+        """Stamp the request in flight's theme onto an existing Figure.
+
+        For figures that outlive the request that built them (anything cached on a plugin
+        instance); :meth:`figure` covers the normal case.
+
+        Args:
+            figure (go.Figure): The Figure to re-theme, modified in place.
+
+        Returns:
+            go.Figure: The same Figure, for chaining.
+        """
+        figure.update_layout(template=cls.current_template())
+        return figure
 
     @classmethod
     def get_theme_urls(cls) -> dict:
@@ -164,20 +206,7 @@ class ThemeManager:
     @classmethod
     def get_dark_themes(cls) -> list:
         """Get list of theme names that are dark mode themes."""
-        dark_themes = []
-        for name, theme in cls.available_themes.items():
-            base_css = theme.get("base_css", "")
-            if base_css:
-                base_css_upper = base_css.upper()
-                for dark_theme in cls._dark_bootstrap_themes:
-                    if dark_theme in base_css_upper:
-                        dark_themes.append(name)
-                        break
-                else:
-                    # Fallback: check if 'dark' is in the theme name
-                    if "dark" in name.lower():
-                        dark_themes.append(name)
-        return dark_themes
+        return [name for name, theme in cls.available_themes.items() if theme["dark"]]
 
     @classmethod
     def get_theme_switch_js(cls) -> str:
@@ -256,44 +285,36 @@ class ThemeManager:
         """Get the plot background for the current theme."""
 
         # We have 2 background options (paper_bgcolor and plot_bgcolor)
-        background = cls.current_template["layout"]["plot_bgcolor"]
+        background = cls.theme()["template"]["layout"]["plot_bgcolor"]
         return color_to_rgba(background)
 
     @classmethod
     def branding(cls) -> dict:
         """Get the branding for the current theme."""
-        theme = cls.available_themes[cls.current_theme_name]
-        branding = {}
-        if theme["branding"]:
-            with open(theme["branding"], "r") as f:
-                branding = json.load(f)
-        return branding
+        return cls.theme()["branding"]
 
     @classmethod
     def colorscale(cls, scale_type: str = "sequential") -> Optional[List[List[Union[float, str]]]]:
         """Get the colorscale for the current theme."""
+        theme_name = cls.current_theme()
+        template = cls.theme()["template"]
 
-        # We have 3 colorscale here (diverging, sequential, and sequentialminus)
-        color_scales = cls.current_template["layout"]["colorscale"]
-
-        # We have another colorscale in data/heatmap
-        color_scales["heatmap"] = cls.current_template["data"]["heatmap"][0]["colorscale"]
-
-        # Custom colorscales stored in layout.meta.custom_colorscales
-        custom = cls.current_template.get("layout", {}).get("meta", {}).get("custom_colorscales", {})
-        color_scales.update(custom)
+        # Three colorscales live in layout (diverging, sequential, sequentialminus), one more
+        # in data/heatmap, and any custom ones in layout.meta. Assemble into a copy; the
+        # template dict is shared across requests.
+        color_scales = dict(template["layout"]["colorscale"])
+        color_scales["heatmap"] = template["data"]["heatmap"][0]["colorscale"]
+        color_scales.update(template.get("layout", {}).get("meta", {}).get("custom_colorscales", {}))
 
         if scale_type in color_scales:
             return color_scales[scale_type]
-        else:
-            # Use the default colorscale (sequential)
-            try:
-                cls.log.warning(
-                    f"Color scale '{scale_type}' not found for template '{cls.current_theme_name}', returning default."
-                )
-                return color_scales["sequential"]
-            except KeyError:
-                cls.log.error(f"No color scales found for template '{cls.current_theme_name}'.")
+
+        # Use the default colorscale (sequential)
+        try:
+            cls.log.warning(f"Color scale '{scale_type}' not found for template '{theme_name}', returning default.")
+            return color_scales["sequential"]
+        except KeyError:
+            cls.log.error(f"No color scales found for template '{theme_name}'.")
         return None
 
     @classmethod
@@ -303,7 +324,7 @@ class ThemeManager:
         Returns:
             list (str): List of color hex strings from the theme's colorway.
         """
-        return cls.current_template.get("layout", {}).get("colorway", pio.templates["plotly"].layout.colorway)
+        return cls.theme()["template"].get("layout", {}).get("colorway", pio.templates["plotly"].layout.colorway)
 
     @classmethod
     def categorical_colors(cls) -> List[str]:
@@ -356,39 +377,22 @@ class ThemeManager:
         return css_files
 
     @classmethod
-    def _get_theme_from_cookie(cls):
-        """Get the theme dict based on the wb_theme cookie, falling back to current theme."""
-        from flask import request
-
-        theme_name = request.cookies.get("wb_theme")
-        if theme_name and theme_name in cls.available_themes:
-            return cls.available_themes[theme_name], theme_name
-        return cls.available_themes[cls.current_theme_name], cls.current_theme_name
-
-    @classmethod
     def register_css_route(cls, app):
-        """Register Flask routes for CSS and before_request hook for theme switching."""
+        """Register the Flask routes that serve the request in flight's theme CSS."""
         from flask import redirect
-
-        @app.server.before_request
-        def check_theme_cookie():
-            """Check for theme cookie on each request and update theme if needed."""
-            _, theme_name = cls._get_theme_from_cookie()
-            if theme_name != cls.current_theme_name:
-                cls.set_theme(theme_name)
 
         @app.server.route("/base.css")
         def serve_base_css():
-            """Redirect to the appropriate Bootstrap theme CSS based on cookie."""
-            theme, _ = cls._get_theme_from_cookie()
+            """Redirect to the appropriate Bootstrap theme CSS."""
+            theme = cls.theme()
             if theme["base_css"]:
                 return redirect(theme["base_css"])
             return "", 404
 
         @app.server.route("/custom.css")
         def serve_custom_css():
-            """Serve the custom.css file based on cookie."""
-            theme, _ = cls._get_theme_from_cookie()
+            """Serve the theme's custom.css file."""
+            theme = cls.theme()
             if theme["custom_css"]:
                 return send_from_directory(theme["custom_css"].parent, theme["custom_css"].name)
             return "", 404
@@ -422,6 +426,15 @@ class ThemeManager:
         return None
 
     @classmethod
+    def _is_dark_theme(cls, theme_name: str, base_css: Optional[str]) -> bool:
+        """Decide whether a theme is dark from its Bootstrap base, falling back to its name."""
+        if base_css:
+            base_css_upper = base_css.upper()
+            if any(dark_theme in base_css_upper for dark_theme in cls._dark_bootstrap_themes):
+                return True
+        return "dark" in theme_name.lower()
+
+    @classmethod
     def _load_themes(cls):
         """Load available themes."""
         if not cls.theme_path_list:
@@ -444,11 +457,22 @@ class ThemeManager:
                 custom_css = theme_dir / "custom.css"
                 branding = theme_dir / "branding.json"
 
+                if not plotly_template.exists():
+                    cls.log.error(f"No Plotly template found for '{theme_name}', skipping theme.")
+                    continue
+
+                # The template is kept both ways: as JSON for the color lookups below, and as a
+                # Plotly object for figures. Handing figure() the raw dict makes Plotly
+                # revalidate all 20KB of it per figure, which costs ~20x the object form.
+                template = json.loads(plotly_template.read_text())
+
                 cls.available_themes[theme_name] = {
                     "base_css": base_css_url,
-                    "plotly_template": plotly_template,
+                    "template": template,
+                    "plotly_template": go.layout.Template(template),
                     "custom_css": custom_css if custom_css.exists() else None,
-                    "branding": branding if branding.exists() else None,
+                    "branding": json.loads(branding.read_text()) if branding.exists() else {},
+                    "dark": cls._is_dark_theme(theme_name, base_css_url),
                 }
 
         if not cls.available_themes:

@@ -53,7 +53,7 @@ class ModelPlugin(PluginInterface):
         pie_values = [random.randint(10, 30) for _ in range(4)]
 
         # Create a pie chart with the endpoint name as the title
-        pie_figure = go.Figure(
+        pie_figure = self.theme_manager.figure(
             data=[go.Pie(labels=["A", "B", "C", "D"], values=pie_values)], layout=go.Layout(title=model_name)
         )
 

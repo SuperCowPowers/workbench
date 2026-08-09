@@ -69,7 +69,7 @@ class ExamplePlot(PluginInterface):
         numeric_columns = input_data.select_dtypes(include="number").columns.tolist()
         x_col = kwargs.get("x", numeric_columns[0])
         y_col = kwargs.get("y", numeric_columns[1])
-        figure = go.Figure(data=go.Scatter(x=input_data[x_col], y=input_data[y_col], mode="markers"))
+        figure = self.theme_manager.figure(data=go.Scatter(x=input_data[x_col], y=input_data[y_col], mode="markers"))
 
         # Must return a list matching self.properties order.
         return [figure]

@@ -36,17 +36,36 @@ Workbench supports **instant theme switching**—no page reload required.
 
 ### Server-Side Theme Detection
 
-On page load, the server reads the theme from cookies:
+The server resolves the theme from the `wb_theme` cookie on the request in flight, so viewers
+on a shared dashboard each get their own theme:
 
 ```python
-@app.server.before_request
-def check_theme_cookie():
-    theme_name = request.cookies.get("wb_theme")
-    if theme_name and theme_name != cls.current_theme_name:
-        cls.set_theme(theme_name)
+ThemeManager().current_theme()     # pin -> request cookie -> configured default
+ThemeManager().current_template()  # that theme's Plotly template
 ```
 
-This ensures Plotly templates are set correctly for initial figure rendering.
+Nothing is stored between requests. A single-theme process (a plugin unit test, an example
+script) can call `set_theme("light")` to pin a theme that outranks any cookie; `set_theme("auto")`
+returns to per-request resolution.
+
+### Building Figures in a Plugin
+
+Build figures with `self.theme_manager.figure()` rather than `go.Figure()`:
+
+```python
+fig = self.theme_manager.figure(data=traces)
+```
+
+A bare `go.Figure()` bakes in Plotly's process-global default template at construction. That
+global is shared across request threads and can't follow the viewer, so those figures render in
+the server's startup theme no matter who's looking. `figure()` takes the same arguments and
+stamps the request's own template.
+
+If a plugin caches a figure across requests, re-stamp it before returning:
+
+```python
+return self.theme_manager.apply_template(self.cached_figure)
+```
 
 ---
 

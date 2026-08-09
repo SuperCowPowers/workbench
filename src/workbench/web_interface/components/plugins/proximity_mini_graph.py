@@ -56,7 +56,7 @@ class ProximityMiniGraph(PluginInterface):
         neighbors = df[df["neighbor_id"] != query_id].sort_values("distance").head(6)
 
         # Create figure
-        fig = go.Figure()
+        fig = self.theme_manager.figure()
 
         # Center coordinates and layout parameters
         center = (0, 0)

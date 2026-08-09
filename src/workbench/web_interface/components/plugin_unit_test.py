@@ -30,7 +30,8 @@ class PluginUnitTest:
 
         Args:
             plugin_class (PluginInterface): The PluginInterface class to test
-            theme (str): The theme to use for the Dash app (default: "dark")
+            theme (str): The theme to pin for the Dash app, overriding any wb_theme browser
+                         cookie (default: "midnight_blue")
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
             auto_update (bool): Whether to automatically update the plugin properties (default: True)
             height (str): The height of the plugin container (default: "700px")

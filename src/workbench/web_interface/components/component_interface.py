@@ -19,6 +19,7 @@ from workbench.cached.cached_data_source import CachedDataSource
 from workbench.cached.cached_feature_set import CachedFeatureSet
 from workbench.cached.cached_model import CachedModel
 from workbench.cached.cached_endpoint import CachedEndpoint
+from workbench.utils.theme_manager import ThemeManager
 
 log = logging.getLogger("workbench")
 
@@ -122,7 +123,7 @@ class ComponentInterface(ABC):
         Returns:
             go.Figure: A Plotly Figure
         """
-        text_display_text = go.Figure()
+        text_display_text = ThemeManager().figure()
 
         # If the text message has any \n characters, replace them with <br> for HTML
         text_message = text_message.replace("\n", "<br>")

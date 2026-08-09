@@ -170,7 +170,7 @@ class ClassConfusionMatrix(PluginInterface):
 
         # Invisible heatmap for click detection (shapes don't generate clickData)
         z_zeros = [[0] * n_classes for _ in range(n_classes)]
-        fig = go.Figure(
+        fig = self.theme_manager.figure(
             data=go.Heatmap(
                 z=z_zeros,
                 x=x_labels,

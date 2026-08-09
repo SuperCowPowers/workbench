@@ -99,7 +99,7 @@ class ConfusionMatrix(PluginInterface):
             heatmap_kwargs = dict(z=df, colorbar=dict(thickness=10, title="Count", outlinewidth=1))
 
         # Create the heatmap figure
-        fig = go.Figure(
+        fig = self.theme_manager.figure(
             data=go.Heatmap(
                 x=x_labels,
                 y=y_labels,
