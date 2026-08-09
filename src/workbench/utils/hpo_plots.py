@@ -45,21 +45,6 @@ def _fmt(value) -> str:
     return str(int(number)) if float(number).is_integer() else f"{number:.3g}"
 
 
-def _trial_counts(runs: pd.DataFrame) -> dict:
-    """Derive the search's outcome counts when the record doesn't carry them.
-
-    An incomplete trial with a value was pruned; one that never scored failed.
-    """
-    done = runs["completed"].astype(bool) if "completed" in runs else pd.Series(True, index=runs.index)
-    scored = runs["value"].notna()
-    return {
-        "attempted": len(runs),
-        "completed": int(done.sum()),
-        "pruned": int((~done & scored).sum()),
-        "failed": int((~done & ~scored).sum()),
-    }
-
-
 def _line_alpha(n_trials: int) -> float:
     """Per-line opacity for a run of this many trials."""
     ref_trials, ref_alpha = _ALPHA_ANCHOR
@@ -215,9 +200,9 @@ def _knob_axes(model: Any, runs: pd.DataFrame) -> tuple:
     """The axes to draw, most important knob first, plus the knob values behind them.
 
     Only *adjacent* axes show their relationship, so the order decides what the chart can
-    reveal; `hpo_importance()` supplies it and the space's own order is the fallback. The
-    space describes the framework's full set and a search may have used a subset, so the
-    knobs come from what the trials actually carry.
+    reveal; `hpo_importance()` supplies it, the space's own order is the fallback. The space
+    covers the framework's full set and a search may use a subset, so the knobs come from
+    what the trials carry.
     """
     knob_frame = pd.DataFrame([_as_dict(h) for h in runs["hyperparameters"]], index=runs.index)
     space = model.hpo_search_space()
@@ -236,12 +221,10 @@ def _knob_axes(model: Any, runs: pd.DataFrame) -> tuple:
 def _objective_scale(values: pd.Series, completed: pd.Series, center: float):
     """A diverging scale in the metric's own units, centred on the baseline.
 
-    Symmetric, so equal improvement and regression read equally far, and reaching only as far
-    as the best margin won: a hopeless config lands arbitrarily far above the baseline and
-    would otherwise flatten every real difference to white. Past either end the colour
-    saturates, which is the right reading for those. Only completed trials set the reach:
-    they are the ones measured over the whole ensemble, so an estimate placed on this scale
-    later cannot stretch it. The 10% keeps the published marker off the colorbar's edge.
+    Symmetric, and reaching only as far as the best margin won: a hopeless config lands
+    arbitrarily far above the baseline and would otherwise flatten every real difference to
+    white. Past either end the colour saturates, which is the right reading for those. Only
+    completed trials set the reach, so an estimate placed here later cannot stretch it.
     """
     from matplotlib.cm import ScalarMappable
     from matplotlib.colors import TwoSlopeNorm
@@ -260,13 +243,10 @@ def _objective_scale(values: pd.Series, completed: pd.Series, center: float):
 def _fold_offsets(runs: pd.DataFrame, completed: pd.Series, full_step) -> dict:
     """How far the objective moves between fold *k* and the whole ensemble, per fold.
 
-    Measured on the completed trials, the only ones carrying both ends of a trajectory. Taking
-    it from the stopped trials instead would undercorrect: they are the ones that lost at a
-    rung, so their early folds are not a fair sample of an early fold.
-
-    The median assumes fold difficulty shifts every config by about the same amount. A wide
-    spread in ``traj[K] - traj[k]`` means it does not, and the offsets are worth less than
-    they look.
+    Measured on the completed trials, the only ones carrying both ends of a trajectory: the
+    stopped ones lost at a rung, so their early folds are not a fair sample of one. The median
+    assumes fold difficulty shifts every config alike -- a wide spread in ``traj[K] - traj[k]``
+    means it does not.
     """
     # `pd.isna`, not falsiness: NaN is truthy, and a frame can reach here with no usable step.
     if "trajectory" not in runs or pd.isna(full_step):
@@ -389,15 +369,14 @@ def hpo_parallel_coordinates(model: Any, figsize: tuple = (16, 8), title: str = 
     One vertical axis per knob, one line per trial. Shows which regions of the space the good
     trials cluster in and lets you trace a single config across every axis.
 
-    A completed trial is coloured by its objective on a scale that diverges at the baseline --
-    the user's own untuned hyperparameters, scored on the same folds -- so hue answers "did
-    this beat my defaults" while the ticks read as the metric. A trial the ladder stopped was
-    measured on fewer ensemble members, which on some datasets reads *better* than a full run,
-    so it is carried onto the same scale by what the completed trials' trajectories say the
-    missing members cost. Those hues are estimates and the legend says so; a stopped trial
-    with no trajectory to fit that on stays grey. The baseline and the published config are
-    drawn as reference lines; a search plot without the baseline can't show whether the
-    search achieved anything.
+    Hue is the objective on a scale diverging at the baseline -- the user's own untuned
+    hyperparameters, scored on the same folds -- so it answers "did this beat my defaults"
+    while the ticks read as the metric. A stopped trial was measured on fewer ensemble
+    members, which on some datasets reads *better* than a full run, so it is carried onto the
+    same scale by what the completed trajectories say the missing members cost. Those hues
+    are estimates and the legend says so; with no trajectory to fit on, a stopped trial stays
+    grey. The baseline and published config are reference lines: a search plot without the
+    baseline can't show whether the search achieved anything.
 
     Args:
         model: A searched Workbench model (`hpo_results()` returns None if it wasn't).
@@ -421,14 +400,13 @@ def hpo_parallel_coordinates(model: Any, figsize: tuple = (16, 8), title: str = 
 
     # The baseline row carries the caller's own hyperparameters on the search basis; the
     # record is the fallback when the frame carries no such row.
-    baseline_row = trials[trials["kind"].eq("baseline")] if "kind" in trials else trials.iloc[0:0]
+    baseline_row = trials[trials["kind"].eq("baseline")]
     baseline_value = float(baseline_row["value"].iloc[0]) if len(baseline_row) else results.get("search_baseline_value")
 
     # Counts cover every trial the budget paid for, the baseline included; `runs` drops it
     # only because it is drawn as a reference line rather than as one of the crowd.
-    counts = results.get("trial_counts") or _trial_counts(trials)
-    runs = trials[trials["kind"].eq("trial")] if "kind" in trials else trials
-    runs = runs.dropna(subset=["value"])  # a failed trial never scored
+    counts = results["trial_counts"]
+    runs = trials[trials["kind"].eq("trial")].dropna(subset=["value"])  # a failed trial never scored
     if runs.empty:
         log.warning("No scored trials to plot.")
         return None
@@ -442,7 +420,8 @@ def hpo_parallel_coordinates(model: Any, figsize: tuple = (16, 8), title: str = 
     # `pd.notna`, not `is not None`: a failed baseline comes back from CSV as NaN, and a NaN
     # centre would put the whole scale off rather than falling back to the median.
     center = float(baseline_value) if pd.notna(baseline_value) else float(values.median())
-    completed = runs["completed"].astype(bool) if "completed" in runs else pd.Series(True, index=runs.index)
+    completed = runs["completed"].astype(bool)
+    # `step` postdates the earliest searches; without it nothing can be estimated.
     steps = pd.to_numeric(runs["step"], errors="coerce") if "step" in runs else pd.Series(np.nan, index=runs.index)
     stopped_at = steps.where(~completed)
 
