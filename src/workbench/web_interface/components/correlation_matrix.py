@@ -17,7 +17,6 @@ class CorrelationMatrix(ComponentInterface):
 
     def __init__(self):
         """Initialize the Correlation Matrix Class"""
-        self.theme_manager = ThemeManager()
         self.colorscale = remove_middle_colors(self.theme_manager.colorscale("diverging"))
         super().__init__()
 
@@ -64,7 +63,7 @@ class CorrelationMatrix(ComponentInterface):
         z_range = max(df.abs().max().max(), 0.1) if num_numeric < 6 else 1
 
         height = max(350, len(df.index) * 50)
-        fig = go.Figure(
+        fig = self.theme_manager.figure(
             data=go.Heatmap(
                 z=df,
                 x=x_labels,

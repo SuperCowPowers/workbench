@@ -62,7 +62,7 @@ class ViolinPlots(ComponentInterface):
         # Compute the number of rows and columns
         num_plots = len(numeric_columns)
         num_rows, num_columns = self._compute_subplot_layout(num_plots)
-        fig = make_subplots(rows=num_rows, cols=num_columns, vertical_spacing=0.07)
+        fig = self.theme_manager.apply_template(make_subplots(rows=num_rows, cols=num_columns, vertical_spacing=0.07))
         for i, col in enumerate(numeric_columns):
             # Truncate labels to a maximum of 24 characters
             label = f"{col[:20]}..." if len(col) > 24 else col
@@ -143,9 +143,6 @@ if __name__ == "__main__":
             "spanmode": "hard",
         },
     )
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
 
     # Show the figure
     fig.show()

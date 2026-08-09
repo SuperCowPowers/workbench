@@ -41,6 +41,10 @@ class ComponentInterface(ABC):
 
     log = logging.getLogger("workbench")
 
+    # Shared ThemeManager instance for all components. Build figures with
+    # theme_manager.figure() so they carry the viewing user's theme.
+    theme_manager = ThemeManager()
+
     # Define the Workbench Objects Type (revisit allowing the non-cached objects)
     WorkbenchObject = Union[
         DataSource,
@@ -113,8 +117,8 @@ class ComponentInterface(ABC):
         component_id = re.sub("([a-z0-9])([A-Z])", r"\1_\2", plugin_class_name).lower()
         return component_id
 
-    @staticmethod
-    def display_text(text_message: str, figure_height: int = None, font_size=24) -> go.Figure:
+    @classmethod
+    def display_text(cls, text_message: str, figure_height: int = None, font_size=24) -> go.Figure:
         """This helper method displays a text message figure for the component
         Args:
             text_message (str): The text message to display
@@ -123,7 +127,7 @@ class ComponentInterface(ABC):
         Returns:
             go.Figure: A Plotly Figure
         """
-        text_display_text = ThemeManager().figure()
+        text_display_text = cls.theme_manager.figure()
 
         # If the text message has any \n characters, replace them with <br> for HTML
         text_message = text_message.replace("\n", "<br>")

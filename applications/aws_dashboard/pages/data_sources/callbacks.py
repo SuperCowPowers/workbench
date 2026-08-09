@@ -12,14 +12,10 @@ from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.cached.cached_data_source import CachedDataSource
-from workbench.web_interface.utils.page_callbacks import sync_selection
+from workbench.web_interface.utils.page_callbacks import sync_selection, THEME_STORE_ID
 
 # Set up logging
 log = logging.getLogger("workbench")
-
-
-# Cheese Sauce
-smart_sample_rows = []
 
 
 def on_page_load():
@@ -50,9 +46,10 @@ def update_data_source_details(data_details: DataDetails):
             Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
         ],
         Input("data_sources_table", "selectedRows"),
+        Input(THEME_STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def generate_data_source_markdown(selected_rows):
+    def generate_data_source_markdown(selected_rows, _theme):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
@@ -79,13 +76,14 @@ def update_data_source_sample_rows(samples_table: AGTable):
             Output("sample_rows_header", "children"),
             Output("data_source_sample_rows", "columnDefs"),
             Output("data_source_sample_rows", "rowData"),
+            Output("data_source_sample_rows_original", "data"),
             Output("data_source_violin_plot", "figure", allow_duplicate=True),
         ],
         Input("data_sources_table", "selectedRows"),
+        Input(THEME_STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def smart_sample_rows_update(selected_rows):
-        global smart_sample_rows
+    def smart_sample_rows_update(selected_rows, _theme):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
@@ -117,7 +115,8 @@ def update_data_source_sample_rows(samples_table: AGTable):
         )
 
         # Return the header, columns, style_cell, and the data
-        return [header, column_defs, smart_sample_rows.to_dict("records"), violin_figure]
+        rows = smart_sample_rows.to_dict("records")
+        return [header, column_defs, rows, rows, violin_figure]
 
 
 #
@@ -246,19 +245,21 @@ def reorder_sample_rows():
     @callback(
         Output("data_source_sample_rows", "rowData", allow_duplicate=True),
         Input("data_source_violin_plot", "selectedData"),
+        State("data_source_sample_rows_original", "data"),
         prevent_initial_call=True,
     )
-    def reorder_table(selected_data):
+    def reorder_table(selected_data, original_rows):
         # Convert the current table data back to a DataFrame
 
         # Get the selected indices from your plot selection
-        if selected_data is None or smart_sample_rows is None:
+        if selected_data is None or not original_rows:
             return dash.no_update
         selected_indices = [point["pointIndex"] for point in selected_data["points"]]
 
-        # Separate the selected rows and the rest of the rows
-        selected_rows = smart_sample_rows.iloc[selected_indices]
-        rest_of_rows = smart_sample_rows.drop(selected_indices)
+        # The violin plot's point indices refer to the original row order, so reorder from that
+        sample_rows = pd.DataFrame(original_rows)
+        selected_rows = sample_rows.iloc[selected_indices]
+        rest_of_rows = sample_rows.drop(selected_indices)
 
         # Concatenate them to put the selected rows at the top
         new_df = pd.concat([selected_rows, rest_of_rows], ignore_index=True)

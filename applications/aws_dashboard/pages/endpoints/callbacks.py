@@ -9,7 +9,7 @@ from workbench.web_interface.page_views.endpoints_page_view import EndpointsPage
 from workbench.web_interface.components import endpoint_metric_plots
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.cached.cached_endpoint import CachedEndpoint
-from workbench.web_interface.utils.page_callbacks import sync_selection, plugin_outputs
+from workbench.web_interface.utils.page_callbacks import sync_selection, plugin_outputs, THEME_STORE_ID
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
@@ -39,9 +39,10 @@ def update_endpoint_metrics(page_view: EndpointsPageView):
     @callback(
         Output("endpoint_metrics", "figure"),
         Input("endpoints_table", "selectedRows"),
+        Input(THEME_STORE_ID, "data"),
         prevent_initial_call=True,
     )
-    def generate_endpoint_details_figures(selected_rows):
+    def generate_endpoint_details_figures(selected_rows, _theme):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update

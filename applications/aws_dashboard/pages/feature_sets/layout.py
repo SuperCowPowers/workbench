@@ -27,6 +27,9 @@ def feature_sets_layout(
         children=[
             dcc.Interval(id="feature_sets_refresh", interval=update_rate),
             dcc.Store(id="feature_sets_page_loaded", data=False),
+            # The sample rows in their original order, so a violin selection can reorder the
+            # table from a stable index. Per-browser, unlike a module-level cache.
+            dcc.Store(id="feature_set_sample_rows_original"),
             dbc.Row(
                 [
                     html.H2(f"{project_name}: FeatureSets"),

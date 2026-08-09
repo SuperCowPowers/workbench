@@ -14,8 +14,12 @@ Two pieces, both registered from a page's setup:
 from dash import callback, clientside_callback, Input, Output, State
 
 # The dashboard's theme store (defined in app.py). A clientside callback writes the selected
-# theme name to it after setting the wb_theme cookie, so the re-render request that follows
-# already resolves to the new theme and set_theme() only has to rebuild.
+# theme name to it after setting the wb_theme cookie, so any request that follows already
+# resolves to the new theme and the re-render only has to rebuild.
+#
+# Plugins re-render through register_theme_callback() below. Plain ComponentInterface
+# components hold no data between callbacks, so a page re-renders those by taking this store
+# as an extra Input on the callback that already builds the figure.
 THEME_STORE_ID = "workbench-theme-store"
 
 # Select the row named by ?name=, or the first row when the query string is absent. The

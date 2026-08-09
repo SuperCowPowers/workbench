@@ -59,7 +59,9 @@ class EndpointMetricPlots(ComponentInterface):
 
         # Create the figure with subplots for each metric. `vertical_spacing`
         # leaves room for the next row's title between plots.
-        fig = make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.18)
+        fig = self.theme_manager.apply_template(
+            make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.18)
+        )
         for metric in metrics_df.columns:
             row, col = subplot_pos_lookup[metric]
             fig.add_trace(go.Scatter(x=metrics_df.index, y=metrics_df[metric], fill="toself"), row=row, col=col)
@@ -90,9 +92,6 @@ if __name__ == "__main__":
 
     # Generate the figure
     fig = endpoint_metric_plots.update_properties(end_details)
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
 
     # Show the figure
     fig.show()

@@ -7,7 +7,6 @@ from dash.development.base_component import Component
 
 # Local Imports
 from workbench.web_interface.components.component_interface import ComponentInterface
-from workbench.utils.theme_manager import ThemeManager
 
 log = logging.getLogger("workbench")
 
@@ -46,9 +45,6 @@ class PluginInterface(ComponentInterface):
         - The 'update_properties' method must be implemented by the child class
         - The 'register_internal_callbacks' method is optional
     """
-
-    # Shared ThemeManager instance for all plugins
-    theme_manager = ThemeManager()
 
     @abstractmethod
     def create_component(self, component_id: str) -> Component:

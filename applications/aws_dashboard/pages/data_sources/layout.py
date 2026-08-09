@@ -27,6 +27,9 @@ def data_sources_layout(
         children=[
             dcc.Interval(id="data_sources_refresh", interval=update_rate),
             dcc.Store(id="data_sources_page_loaded", data=False),
+            # The sample rows in their original order, so a violin selection can reorder the
+            # table from a stable index. Per-browser, unlike a module-level cache.
+            dcc.Store(id="data_source_sample_rows_original"),
             dbc.Row(
                 [
                     html.H2(f"{project_name}: DataSources"),
