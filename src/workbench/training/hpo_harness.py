@@ -263,9 +263,9 @@ def run_search(
         resources_per_trial: Ray only — e.g. ``{"gpu": 1}`` (one trial per GPU).
         points_to_evaluate: configs to try first, ahead of anything the sampler proposes.
             They count against ``n_trials`` and can win, and the sampler learns from them.
-            They are never stopped early: their ``report`` is a no-op, so they are never
-            present at a rung to be culled. A seeded point is a reference measurement, and a
-            reference is only worth having at full fidelity.
+            They are left out of the ladder in both directions -- never culled at a rung,
+            and never counted in one either, since a full-fidelity value has no business
+            setting the bar for trials measured on fewer folds.
         max_steps: how many ``report`` steps a full trial makes. Setting it turns on
             successive halving over those steps and restricts ranking to trials that reach
             the last one. None runs every trial to term and ranks them all.
@@ -410,14 +410,16 @@ def _run_optuna(
         laddered = bool(max_steps) and not _is_seeded(config, seeded)
 
         def report(step, value):
-            # A rung can land on the last step (max_steps of 1, 2 or 4), and stopping there
-            # would discard a trial that already has the full objective. A non-finite value
-            # is an absence of measurement (sparse multi-target data can leave an early fold
-            # with no labelled rows), so there is nothing to judge yet either.
-            if not laddered or step >= max_steps or not _finite(value):
+            # A non-finite value is an absence of measurement (sparse multi-target data can
+            # leave an early fold with no labelled rows), so there is nothing to record.
+            if not _finite(value):
                 return
             trial.report(value, step)
-            if trial.should_prune():
+            # Optuna files a trial into the rung's competing pool inside `prune()`, so a
+            # seeded point that is never asked is neither culled nor counted. The step guard
+            # is for a rung landing on the last step (max_steps of 1, 2 or 4), where stopping
+            # would discard a trial that already has the full objective.
+            if laddered and step < max_steps and trial.should_prune():
                 raise optuna.TrialPruned()
 
         return trial_fn(config, report)
@@ -459,23 +461,28 @@ def _optuna_record(trial, max_steps) -> dict:
     Optuna fills in ``value`` for a PRUNED trial from its last intermediate, so the value
     alone cannot say whether a trial finished. The three outcomes differ in both fields:
 
-    * COMPLETE — ran every step, even though the last one is never *reported* (the pruner
-      must not be consulted there, or a rung landing on the final step would discard a
-      trial that already has the full objective).
+    * COMPLETE — ran every step.
     * PRUNED — stopped at a rung; keeps the partial objective it reached, and the step says
       where it stopped.
     * FAIL — no objective at all. It may still have reported before failing, but keeping
       that value would file a genuine failure as a scheduler stop.
+
+    ``trajectory`` is the whole rung history: every trial reports at every step, including
+    a seeded point, whose exemption is that the pruner is never consulted about it.
     """
     reported = getattr(trial, "intermediate_values", None) or {}
     state = trial.state.name
     complete = state == "COMPLETE"
+    trajectory = {int(step): float(value) for step, value in reported.items() if _finite(value)}
     return {
         "number": trial.number,
         "value": trial.value if state != "FAIL" else None,
         "state": state,
         "config": trial.user_attrs.get("config", {}),
-        "step": max_steps if complete else max(reported, default=None),
+        # The trajectory's endpoint, so the two always agree. The fallback covers an
+        # objective that reports nothing: a completed one still ran every step.
+        "step": max(reported, default=max_steps if complete else None),
+        "trajectory": trajectory,
     }
 
 
@@ -607,6 +614,51 @@ def _reached_full(result, max_steps) -> bool:
     return ((getattr(result, "metrics", None) or {}).get(_STEP) or 0) >= max_steps
 
 
+def _laddered_scheduler(*, max_steps, metric, mode, is_exempt):
+    """ASHA that neither judges a seeded point at a rung nor lets one set the bar at a rung.
+
+    A seeded point runs at full fidelity, so its value covers every fold while the trials it
+    would be measured against have covered fewer. ``on_trial_complete`` is the second half:
+    the base class files a finished trial's value at the highest rung it is not already
+    recorded in, which for an exempt trial posts a full-fidelity number as a partial cutoff.
+
+    The exemption is here rather than in the trial's ``report``, so a seeded trial still
+    leaves the same per-fold record as any other. Both overrides return before the base
+    class runs, which leaves the exempt trial's bracket entry behind: one dict entry per
+    seeded point, and the price of touching no private state.
+    """
+    from ray.tune.schedulers import ASHAScheduler, TrialScheduler
+
+    class _ExemptSeeded(ASHAScheduler):
+        def on_trial_result(self, tune_controller, trial, result):
+            if is_exempt(trial.config):
+                return TrialScheduler.CONTINUE
+            return super().on_trial_result(tune_controller, trial, result)
+
+        def on_trial_complete(self, tune_controller, trial, result):
+            if is_exempt(trial.config):
+                return
+            super().on_trial_complete(tune_controller, trial, result)
+
+    return _ExemptSeeded(
+        time_attr=_STEP,
+        metric=metric,
+        mode=mode,
+        grace_period=1,
+        reduction_factor=RUNG_FACTOR,
+        max_t=max_steps,
+    )
+
+
+def _ray_trajectory(result, metric) -> dict:
+    """A trial's rung history, ``{step: objective}``, from the results Ray kept per report."""
+    frame = getattr(result, "metrics_dataframe", None)
+    if frame is None or _STEP not in frame or metric not in frame:
+        return {}
+    pairs = frame[[_STEP, metric]].dropna()
+    return {int(step): float(value) for step, value in pairs.itertuples(index=False)}
+
+
 def _resolve_trial_records(results, *, metric, choice_options, max_steps) -> list:
     """One record per trial, defensive about trials that never reported.
 
@@ -627,6 +679,7 @@ def _resolve_trial_records(results, *, metric, choice_options, max_steps) -> lis
             "config": _resolve_choices(getattr(r, "config", None), choice_options),
             "step": (getattr(r, "metrics", None) or {}).get(_STEP),
             "completed": value is not None and getattr(r, "error", None) is None and _reached_full(r, max_steps),
+            "trajectory": _ray_trajectory(r, metric),
         }
         for i, r in enumerate(results)
         for value in [_scored_value(r, metric)]
@@ -648,7 +701,6 @@ def _run_ray(
     max_steps=None,
 ) -> HpoResult:
     from ray import tune
-    from ray.tune.schedulers import ASHAScheduler
     from ray.tune.search.optuna import OptunaSearch
 
     # Choice knobs are sampled as an index and mapped back to the value here (mirroring the
@@ -657,23 +709,22 @@ def _run_ray(
     param_space, choice_options = _to_ray_space(search_space)
 
     last_step = max_steps or 1
-    seeded = list(points_to_evaluate or [])
+    # The sampler and the scheduler both see a config in the coordinates the search samples,
+    # so the seeded points are matched there rather than in resolved values.
+    seeded = [_encode_point(point, choice_options) for point in points_to_evaluate or []]
 
     def trainable(config):
         _fence_gpu_memory(resources_per_trial)
         config = _resolve_choices(config, choice_options)
-        # A seeded point reports nothing until the end, so the scheduler never sees it at a
-        # rung and cannot stop it. Recognized by matching the point's knobs, which is loose
-        # in one direction and cheap: a sampler that revisits the same point on a discrete
-        # space pays for a full ensemble it might have been stopped out of. That costs a few
-        # folds, not correctness.
-        laddered = bool(max_steps) and not _is_seeded(config, seeded)
+        reported = []
 
         def report(step, value):
             # A non-finite running value means no labelled rows yet, not a bad candidate —
             # reporting it would let the scheduler judge a rung that measured nothing.
-            if laddered and _finite(value):
-                tune.report({metric: value, _STEP: step})
+            if not _finite(value):
+                return
+            reported.append(step)
+            tune.report({metric: value, _STEP: step})
 
         try:
             value = trial_fn(config, report)
@@ -689,9 +740,9 @@ def _run_ray(
             log.warning(f"Trial out of GPU memory, ending it unscored: {exc}")
             tune.report({metric: float("nan"), _STEP: last_step})
             return
-        # A laddered trial already reported its last step from inside the loop; reporting
+        # An objective that reported its own steps has already filed its last one; reporting
         # again would land a second result on the same step.
-        if not laddered:
+        if not reported:
             tune.report({metric: value, _STEP: last_step})
 
     trainable_res = tune.with_resources(trainable, resources_per_trial) if resources_per_trial else trainable
@@ -701,20 +752,13 @@ def _run_ray(
         tune_config=tune.TuneConfig(
             num_samples=n_trials,
             max_concurrent_trials=max_parallel,
-            search_alg=OptunaSearch(
-                metric=metric,
-                mode=mode,
-                seed=seed,
-                points_to_evaluate=[_encode_point(p, choice_options) for p in seeded] or None,
-            ),
+            search_alg=OptunaSearch(metric=metric, mode=mode, seed=seed, points_to_evaluate=seeded or None),
             scheduler=(
-                ASHAScheduler(
-                    time_attr=_STEP,
+                _laddered_scheduler(
+                    max_steps=max_steps,
                     metric=metric,
                     mode=mode,
-                    grace_period=1,
-                    reduction_factor=RUNG_FACTOR,
-                    max_t=max_steps,
+                    is_exempt=lambda config: _is_seeded(config, seeded),
                 )
                 if max_steps
                 else None

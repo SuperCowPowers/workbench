@@ -57,8 +57,12 @@ the search, `hpo_plots.hpo_parallel_coordinates(model)` — see the `plotting` g
 ## Reading the numbers (the part that misleads)
 
 `search_best_value` vs `search_baseline_value` — the winning trial against the one that
-trained at the user's own hyperparameters, on the same folds. Every `trials` row shares
-that basis.
+trained at the user's own hyperparameters, on the same folds.
+
+**Only compare `value` across rows with `completed=True`.** The ladder stops trials at
+rungs, and a stopped trial's `value` covers only the members it trained — on some datasets
+that reads *better* than a full run, so ranking the raw column surfaces trials the search
+discarded. `trajectory` holds the objective at every member a trial reached.
 
 **Never present their difference as the model's improvement.** The winner is the minimum
 over every trial, so it is the luckiest draw of many and overstates what the config is
