@@ -1,15 +1,15 @@
 """Callbacks for the Endpoints Subpage Web User Interface"""
 
 import logging
-from dash import callback, no_update, Input, Output, State
+from dash import callback, no_update, Input, Output
 from dash.exceptions import PreventUpdate
-from urllib.parse import urlparse, parse_qs
 
 # Workbench Imports
 from workbench.web_interface.page_views.endpoints_page_view import EndpointsPageView
 from workbench.web_interface.components import endpoint_metric_plots
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.cached.cached_endpoint import CachedEndpoint
+from workbench.web_interface.utils.url_sync import sync_selection
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
@@ -19,34 +19,8 @@ THEME_STORE_ID = "workbench-theme-store"
 
 
 def on_page_load():
-    @callback(
-        Output("endpoints_table", "selectedRows"),
-        Output("endpoints_page_loaded", "data"),
-        Input("url", "href"),
-        Input("endpoints_table", "rowData"),
-        State("endpoints_page_loaded", "data"),
-        prevent_initial_call=True,
-    )
-    def _on_page_load(href, row_data, page_already_loaded):
-        if page_already_loaded:
-            raise PreventUpdate
-
-        if not href or not row_data:
-            raise PreventUpdate
-
-        parsed = urlparse(href)
-        if parsed.path != "/endpoints":
-            raise PreventUpdate
-
-        selected_name = parse_qs(parsed.query).get("name", [None])[0]
-        if not selected_name:
-            return [row_data[0]], True
-
-        for row in row_data:
-            if row.get("name") == selected_name:
-                return [row], True
-
-        raise PreventUpdate
+    """Two-way deep link: ?name= selects an endpoint, selecting an endpoint updates the URL"""
+    sync_selection("endpoints_table", "endpoints_page_loaded")
 
 
 def endpoint_table_refresh(page_view: EndpointsPageView, table: AGTable):

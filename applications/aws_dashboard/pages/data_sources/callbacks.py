@@ -2,11 +2,9 @@
 
 import dash
 from dash import callback, Input, Output, State
-from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import pandas as pd
 import logging
-from urllib.parse import urlparse, parse_qs
 
 # Workbench Imports
 from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
@@ -14,6 +12,7 @@ from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.cached.cached_data_source import CachedDataSource
+from workbench.web_interface.utils.url_sync import sync_selection
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -24,34 +23,8 @@ smart_sample_rows = []
 
 
 def on_page_load():
-    @callback(
-        Output("data_sources_table", "selectedRows"),
-        Output("data_sources_page_loaded", "data"),
-        Input("url", "href"),
-        Input("data_sources_table", "rowData"),
-        State("data_sources_page_loaded", "data"),
-        prevent_initial_call=True,
-    )
-    def _on_page_load(href, row_data, page_already_loaded):
-        if page_already_loaded:
-            raise PreventUpdate
-
-        if not href or not row_data:
-            raise PreventUpdate
-
-        parsed = urlparse(href)
-        if parsed.path != "/data_sources":
-            raise PreventUpdate
-
-        selected_name = parse_qs(parsed.query).get("name", [None])[0]
-        if not selected_name:
-            return [row_data[0]], True
-
-        for row in row_data:
-            if row.get("name") == selected_name:
-                return [row], True
-
-        raise PreventUpdate
+    """Two-way deep link: ?name= selects a data source, selecting one updates the URL"""
+    sync_selection("data_sources_table", "data_sources_page_loaded")
 
 
 def data_sources_refresh(page_view: DataSourcesPageView, ds_table: AGTable):

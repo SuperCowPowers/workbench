@@ -3,12 +3,12 @@
 import logging
 from dash import callback, Input, Output, State
 from dash.exceptions import PreventUpdate
-from urllib.parse import urlparse, parse_qs
 
 # Workbench Imports
 from workbench.web_interface.page_views.models_page_view import ModelsPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.cached.cached_model import CachedModel
+from workbench.web_interface.utils.url_sync import sync_selection
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
@@ -18,34 +18,8 @@ THEME_STORE_ID = "workbench-theme-store"
 
 
 def on_page_load():
-    @callback(
-        Output("models_table", "selectedRows"),
-        Output("models_page_loaded", "data"),
-        Input("url", "href"),
-        Input("models_table", "rowData"),
-        State("models_page_loaded", "data"),
-        prevent_initial_call=True,
-    )
-    def _on_page_load(href, row_data, page_already_loaded):
-        if page_already_loaded:
-            raise PreventUpdate
-
-        if not href or not row_data:
-            raise PreventUpdate
-
-        parsed = urlparse(href)
-        if parsed.path != "/models":
-            raise PreventUpdate
-
-        selected_name = parse_qs(parsed.query).get("name", [None])[0]
-        if not selected_name:
-            return [row_data[0]], True
-
-        for row in row_data:
-            if row.get("name") == selected_name:
-                return [row], True
-
-        raise PreventUpdate
+    """Two-way deep link: ?name= selects a model, selecting a model updates the URL"""
+    sync_selection("models_table", "models_page_loaded")
 
 
 def model_table_refresh(page_view: ModelsPageView, table: AGTable):
