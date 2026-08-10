@@ -46,7 +46,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Layer 2: Workbench (changes often, small layer)
-ARG WORKBENCH_VERSION=0.8.453
+ARG WORKBENCH_VERSION=0.8.454
 RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Layer 3: App code (tiny, changes rarely)
