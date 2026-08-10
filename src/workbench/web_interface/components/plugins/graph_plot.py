@@ -142,8 +142,11 @@ class GraphPlot(PluginInterface):
         # Add degree attribute if not already present in nodes
         nx.set_node_attributes(self.graph, dict(self.graph.degree()), "degree")
 
-        # Extract positions, labels, degrees, and hover text in a single pass through the nodes
-        x_nodes, y_nodes, labels, node_degrees, hover_text = [], [], [], [], []
+        # Node color field (degree unless the caller picks a node attribute)
+        color_field = kwargs.get("color", "degree")
+
+        # Extract positions, labels, and hover text in a single pass through the nodes
+        x_nodes, y_nodes, labels, hover_text = [], [], [], []
 
         # Define hover columns if not specified
         hover_columns = kwargs.get("hover_columns", ["id", "degree"])  # Default hover columns
@@ -155,7 +158,6 @@ class GraphPlot(PluginInterface):
             x_nodes.append(data["x"])
             y_nodes.append(data["y"])
             labels.append(data.get(label_field, ""))
-            node_degrees.append(data.get("degree", self.graph.degree[node]))
             hover_text.append("<br>".join([f"{key}: {data.get(key, '')}" for key in hover_columns]))
 
         # Node label colors
@@ -176,8 +178,8 @@ class GraphPlot(PluginInterface):
             hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
             marker=dict(
                 size=20,  # Marker size for nodes
-                color=node_degrees,  # Use node degrees for marker colors
-                colorbar=dict(title="Degree"),  # Include a color bar for degrees
+                color=self._node_colors(color_field),  # Node colors from the selected attribute
+                colorbar=dict(title=color_field),  # Include a color bar for the color field
                 line=dict(color="rgba(0, 0, 0, 0.5)", width=2),  # Set border color and width for nodes
             ),
         )
@@ -251,7 +253,7 @@ class GraphPlot(PluginInterface):
 
         # Set default dropdown values for label and color
         default_label = label_field  # Use the specified label field as default
-        default_color = "degree" if "degree" in node_attributes else next(iter(node_attributes), "id")
+        default_color = color_field if color_field in node_attributes else next(iter(node_attributes), "id")
 
         # Return the updated properties for the dropdowns and the figure
         return [figure, label_list, color_list, default_label, default_color]

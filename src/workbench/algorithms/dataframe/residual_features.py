@@ -103,8 +103,7 @@ class ResidualFeatures:
         """
         ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
 
-        # k+1 so self-exclusion leaves k true neighbors; include_self=False drops self-match
-        nbrs = self.prox.neighbors(ids, n_neighbors=k + 1, include_self=False)
+        nbrs = self.prox.neighbors(ids, n_neighbors=k, include_self=False)
 
         return self._aggregate(
             nbrs,

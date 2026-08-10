@@ -299,7 +299,10 @@ class TargetLandscape:
             cmpd_id = row[self.prox.id_column]
             cmpd_target = row[self.prox.target]
 
-            nbrs = self.prox.neighbors(cmpd_id, n_neighbors=k_neighbors + 1, include_self=False)
+            nbrs = self.prox.neighbors(cmpd_id, n_neighbors=k_neighbors, include_self=False)
+
+            # Skip the nearest neighbor: it's what scored the cliff in Phase 1, so the
+            # median over the rest is an independent check
             neighbor_median = (
                 nbrs.iloc[1:][self.prox.target].median() if len(nbrs) > 1 else nbrs[self.prox.target].median()
             )

@@ -194,6 +194,22 @@ class Proximity(ABC):
             id_col_name="query_id",
         )
 
+    def graph(self, n_neighbors: int = 5, min_edges: int = 2, min_weight: float = 0.8) -> "nx.Graph":  # noqa: F821
+        """Build a NetworkX graph from this proximity model.
+
+        Args:
+            n_neighbors: Number of neighbors to retrieve per node.
+            min_edges: Minimum edges per node.
+            min_weight: Weight threshold for additional edges beyond min_edges.
+
+        Returns:
+            nx.Graph: Nodes carry all DataFrame columns, edges carry a `weight`.
+        """
+        # NetworkX isn't needed for inference, so keep it out of module import
+        from workbench.algorithms.graph.light.proximity_graph import proximity_graph
+
+        return proximity_graph(self, n_neighbors=n_neighbors, min_edges=min_edges, min_weight=min_weight)
+
     # ------------------------------------------------------------------
     # Internal: shared neighbor-result construction
     # ------------------------------------------------------------------
@@ -220,7 +236,10 @@ class Proximity(ABC):
             repeat_counts = [len(d) for d in distances]
             query_ids_repeated = np.repeat(query_ids, repeat_counts)
         else:
-            distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
+            # include_self=False means the query is in the reference set and the backend
+            # counts it among the k — ask for one extra to replace the self-hit dropped below
+            k = n_neighbors if include_self else min(n_neighbors + 1, len(self.df))
+            distances, indices = self.nn.kneighbors(X_query, n_neighbors=k)
             flat_distances = distances.ravel()
             flat_indices = indices.ravel()
             # k is clamped to the reference size, so repeat by what came back

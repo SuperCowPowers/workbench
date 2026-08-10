@@ -5,8 +5,6 @@ import pandas as pd
 import networkx as nx
 import logging
 
-from workbench.algorithms.graph.light.proximity_graph import ProximityGraph
-
 # Set up logging
 log = logging.getLogger("workbench")
 
@@ -23,30 +21,28 @@ class LaplacianSmoothness:
     The global score is the normalized Laplacian quadratic form: x^T L x / num_edges
 
     Args:
-        proximity_graph (ProximityGraph): A pre-built ProximityGraph instance.
+        nx_graph (nx.Graph): A graph whose nodes carry the signal attribute.
         signal (str): Node attribute name to use as the signal (e.g., target column).
 
     Example:
         ```python
-        from workbench.algorithms.graph.light.signal_smoothness import LaplacianSmoothness
-        from workbench.algorithms.graph.light.proximity_graph import ProximityGraph
+        from workbench.algorithms.graph.light.laplacian_smoothness import LaplacianSmoothness
         from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
 
         # Build proximity graph
         prox = FeatureSpaceProximity(df, id_column="id", features=features, target="target")
-        pg = ProximityGraph()
-        pg.build_graph(prox, n_neighbors=5)
+        graph = prox.graph(n_neighbors=5)
 
         # Compute signal smoothness
-        ss = LaplacianSmoothness(pg, signal="target")
+        ss = LaplacianSmoothness(graph, signal="target")
         print(ss.scores())
         print(f"Global smoothness: {ss.global_score():.4f}")
         non_smooth = ss.get_non_smooth(top_percent=5.0)
         ```
     """
 
-    def __init__(self, proximity_graph: ProximityGraph, signal: str):
-        self.nx_graph = proximity_graph.nx_graph
+    def __init__(self, nx_graph: nx.Graph, signal: str):
+        self.nx_graph = nx_graph
         self.signal = signal
 
         # Validate that the signal attribute exists on nodes
@@ -114,16 +110,6 @@ class LaplacianSmoothness:
 if __name__ == "__main__":
     # Self-contained test using raw NetworkX graph (no AWS dependencies)
 
-    class _MockProximityGraph:
-        """Minimal stand-in for ProximityGraph to avoid AWS imports."""
-
-        def __init__(self, G):
-            self._nx_graph = G
-
-        @property
-        def nx_graph(self):
-            return self._nx_graph
-
     def _make_test_graph(targets):
         """Build a simple proximity graph with given target values."""
         G = nx.Graph()
@@ -136,20 +122,20 @@ if __name__ == "__main__":
         G.add_edge("c", "d", weight=1.0)
         G.add_edge("a", "c", weight=0.8)
 
-        return _MockProximityGraph(G)
+        return G
 
     # Smooth signal: neighbors have similar values
-    smooth_pg = _make_test_graph([0.9, 1.0, 0.8, 0.9])
+    smooth_graph = _make_test_graph([0.9, 1.0, 0.8, 0.9])
 
     # Non-smooth signal: neighbors have very different values
-    noisy_pg = _make_test_graph([0.9, -0.8, 0.7, -0.5])
+    noisy_graph = _make_test_graph([0.9, -0.8, 0.7, -0.5])
 
-    for label, pg in [("SMOOTH", smooth_pg), ("NON-SMOOTH", noisy_pg)]:
+    for label, graph in [("SMOOTH", smooth_graph), ("NON-SMOOTH", noisy_graph)]:
         print(f"\n{'='*60}")
         print(f"  {label} SIGNAL")
         print(f"{'='*60}")
 
-        ss = LaplacianSmoothness(pg, signal="target")
+        ss = LaplacianSmoothness(graph, signal="target")
         print(f"\nGlobal smoothness score: {ss.global_score():.4f}")
         print("\nPer-node scores:")
         print(ss.scores())
@@ -168,7 +154,5 @@ if __name__ == "__main__":
         }
     )
     prox = FeatureSpaceProximity(df, id_column="id", features=["f1", "f2"], target="target")
-    pg = ProximityGraph()
-    pg.build_graph(prox, n_neighbors=3)
-    ss = LaplacianSmoothness(pg, signal="target")
+    ss = LaplacianSmoothness(prox.graph(n_neighbors=3), signal="target")
     print(ss.scores())

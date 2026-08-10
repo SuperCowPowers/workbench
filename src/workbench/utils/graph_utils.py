@@ -157,12 +157,11 @@ def graph_layout(graph, iterations=1000):
     Returns:
         nx.Graph: The original graph with x/y coordinates updated
     """
-    # Check if we should use existing coordinates
+    # Warm start from existing coordinates, rescaled to the [-1, 1] range spring layout works in
     initial_pos = None
-    first_node = next(iter(graph.nodes))
-    if "x" in graph.nodes[first_node] and "y" in graph.nodes[first_node]:
+    if graph.number_of_nodes() and all("x" in data and "y" in data for _, data in graph.nodes(data=True)):
         log.info("Using existing node positions as initial positions...")
-        initial_pos = {node: (data["x"], data["y"]) for node, data in graph.nodes(data=True)}
+        initial_pos = nx.rescale_layout_dict({node: (data["x"], data["y"]) for node, data in graph.nodes(data=True)})
 
     # Apply spring layout
     pos = nx.spring_layout(graph, pos=initial_pos, iterations=iterations)
