@@ -3,8 +3,6 @@
 import logging
 from random import random, choices
 
-import pytest
-
 # Workbench Imports
 from workbench.api import ParameterStore
 
@@ -63,14 +61,20 @@ def test_dicts():
     assert return_value == value
 
 
-def test_relative_path_rejected():
-    """Path-based operations require an absolute path; AWS rejects anything else."""
+def test_leading_slash_optional():
+    """Names are absolute paths, so the leading slash is optional across every method."""
     param_store = ParameterStore()
-    for bad in ("workbench/models", "workbench/test/"):
-        with pytest.raises(ValueError):
-            param_store.list(bad)
-        with pytest.raises(ValueError):
-            param_store.delete_recursive(bad)
+
+    # Write without the slash, read it back with
+    param_store.upsert("workbench/test/no_slash", "value")
+    assert param_store.get("/workbench/test/no_slash") == "value"
+    assert param_store.last_modified("workbench/test/no_slash") is not None
+
+    # A relative prefix lists the same subtree as an absolute one
+    assert param_store.list("workbench/test") == param_store.list("/workbench/test/")
+
+    param_store.delete("workbench/test/no_slash")
+    assert param_store.get("/workbench/test/no_slash", warn=False) is None
 
 
 def test_deletion():
@@ -135,7 +139,7 @@ if __name__ == "__main__":
     test_simple_values()
     test_lists()
     test_dicts()
-    test_relative_path_rejected()
+    test_leading_slash_optional()
     test_deletion()
     test_4k_limit()
     test_compressed_failure()

@@ -11,6 +11,7 @@ which short-circuits to the container's ambient IAM role in service envs.
 from typing import Optional, Union
 import logging
 import json
+import re
 import zlib
 import time
 import base64
@@ -48,26 +49,31 @@ class ParameterStoreCore:
         # Create a Systems Manager (SSM) client for Parameter Store operations
         self.ssm_client = self.boto3_session.client("ssm")
 
+    @staticmethod
+    def _normalize(name: str) -> str:
+        """Put a parameter name into canonical form: absolute, single-slashed, no trailing slash.
+
+        Names in this store are always absolute paths, so a leading slash carries no
+        information and callers may omit it. GetParametersByPath requires it, though,
+        so supply it here rather than at each call site.
+        """
+        return re.sub(r"/+", "/", f"/{name}").rstrip("/")
+
     def list(self, prefix: str = None, details: bool = False) -> list:
         """List all parameters in the AWS Parameter Store, optionally filtering by a prefix.
 
         Args:
             prefix (str, optional): A hierarchy path to list under, e.g. "/workbench/models".
-                Matches whole path segments, not arbitrary string prefixes. Defaults to None.
+                Matches whole path segments, not arbitrary string prefixes. The leading
+                slash is optional. Defaults to None.
             details (bool, optional): Return ``{"name", "modified"}`` dicts instead of bare
                 names. The timestamp rides along on the same call, so this costs nothing
                 extra. Defaults to False.
 
         Returns:
             list: Parameter names, or dicts of name + last-modified when details is True.
-
-        Raises:
-            ValueError: If prefix is not an absolute path.
         """
-        # A relative prefix is a caller bug: AWS rejects it, and the error would otherwise
-        # be logged and flattened into an empty list, which reads as "no parameters".
-        if prefix and not prefix.startswith("/"):
-            raise ValueError(f"Parameter paths must be absolute (start with '/'), got: {prefix!r}")
+        prefix = self._normalize(prefix) if prefix else None
 
         def _entry(param: dict):
             return {"name": param["Name"], "modified": param.get("LastModifiedDate")} if details else param["Name"]
@@ -78,7 +84,7 @@ class ParameterStoreCore:
             if prefix:
                 # Path-indexed, so the cost tracks the number of matches. A BeginsWith filter
                 # on describe_parameters would instead page the whole store to find them.
-                call, params = self.ssm_client.get_parameters_by_path, {"Path": prefix.rstrip("/"), "Recursive": True}
+                call, params = self.ssm_client.get_parameters_by_path, {"Path": prefix, "Recursive": True}
             else:
                 # No prefix: describe returns metadata only, rather than every parameter's value.
                 call, params = self.ssm_client.describe_parameters, {"MaxResults": 50}
@@ -103,13 +109,14 @@ class ParameterStoreCore:
         """Retrieve a parameter value from the AWS Parameter Store.
 
         Args:
-            name (str): The name of the parameter to retrieve.
+            name (str): The name of the parameter to retrieve (leading slash optional).
             warn (bool): Whether to log a warning if the parameter is not found.
             decrypt (bool): Whether to decrypt secure string parameters.
 
         Returns:
             Union[str, list, dict, None]: The value of the parameter or None if not found.
         """
+        name = self._normalize(name)
         try:
             # Retrieve the parameter from Parameter Store
             response = self.ssm_client.get_parameter(Name=name, WithDecryption=decrypt)
@@ -142,10 +149,11 @@ class ParameterStoreCore:
         """Insert or update a parameter in the AWS Parameter Store.
 
         Args:
-            name (str): The name of the parameter.
+            name (str): The name of the parameter (leading slash optional).
             value (str | list | dict): The value of the parameter.
             precision (int): The precision for float values in the JSON encoding.
         """
+        name = self._normalize(name)
         try:
             # Convert to JSON and check if compression is needed
             json_value = json.dumps(value, cls=CustomEncoder, precision=precision)
@@ -236,15 +244,17 @@ class ParameterStoreCore:
         endpoint it describes).
 
         Args:
-            name: Parameter name (e.g. ``/workbench/feature_lists/smiles-to-2d-v1``).
+            name: Parameter name (e.g. ``/workbench/feature_lists/smiles-to-2d-v1``),
+                leading slash optional.
 
         Returns:
             datetime (UTC, tz-aware) when the parameter was last written, or None
             if the parameter doesn't exist or the metadata call fails.
         """
+        name = self._normalize(name)
         try:
             resp = self.ssm_client.describe_parameters(
-                Filters=[{"Key": "Name", "Values": [name]}],
+                ParameterFilters=[{"Key": "Name", "Option": "Equals", "Values": [name]}],
                 MaxResults=1,
             )
             params = resp.get("Parameters", [])
@@ -259,8 +269,9 @@ class ParameterStoreCore:
         """Delete a parameter from the AWS Parameter Store.
 
         Args:
-            name (str): The name of the parameter to delete.
+            name (str): The name of the parameter to delete (leading slash optional).
         """
+        name = self._normalize(name)
         try:
             # Delete the parameter from Parameter Store
             self.ssm_client.delete_parameter(Name=name)
@@ -276,13 +287,10 @@ class ParameterStoreCore:
         :meth:`delete`.
 
         Args:
-            prefix (str): Absolute path to delete under, e.g. "/workbench/models/my-model".
-
-        Raises:
-            ValueError: If prefix is not an absolute path.
+            prefix (str): Path to delete under, e.g. "/workbench/models/my-model"
+                (leading slash optional).
         """
-        # List all parameters under the given path (raises on a relative prefix)
-        parameters = self.list(prefix=prefix.rstrip("/"))
+        parameters = self.list(prefix=prefix)
         for param in parameters:
             self.delete(param)
 
