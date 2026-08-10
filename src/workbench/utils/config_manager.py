@@ -72,11 +72,12 @@ class ConfigManager:
         Returns:
             Any: The value of the configuration key.
         """
-        # Special logic for WORKBENCH_PLUGINS
+        # Special logic for WORKBENCH_PLUGINS: "package" means the plugin pages that ship
+        # with Workbench, so a dashboard has something to show without any configuration.
         if key == "WORKBENCH_PLUGINS":
             plugin_dir = self.config.get(key, default_value)
             if plugin_dir in ["package", "", None]:
-                return os.path.join(os.path.dirname(__file__), "../plugins")
+                return os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "plugin_pages"))
             else:
                 return plugin_dir
 
