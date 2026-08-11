@@ -8,8 +8,8 @@ user's live session. Anything typed that isn't valid Python is routed here:
 """
 
 import re
+import ast
 import codeop
-import keyword
 import builtins
 import logging
 from contextlib import contextmanager
@@ -338,12 +338,29 @@ def _defined(name: str) -> bool:
     return name in _namespace() or hasattr(builtins, name)
 
 
-def _is_python(text: str) -> bool:
-    """True if text is complete, valid Python."""
+# A call, an index, or an attribute lookup means the user was writing code, so a
+# typo like `df2.head()` gets an immediate NameError instead of an agent turn.
+# Replies to Bosco are bare names and operators.
+_CODE_SHAPED = (ast.Call, ast.Subscript, ast.Attribute)
+
+
+def _all_names_undefined(src: str) -> bool:
+    """True if src is an expression that could only ever raise NameError.
+
+    Which makes it an answer to Bosco -- "both", "sure", "not sure", "aqsol or pxr" --
+    rather than code. Anything naming something real in the session runs as Python.
+    """
     try:
-        return _compile(text, "<bosco>", "exec") is not None
+        tree = ast.parse(src)
     except (SyntaxError, ValueError, OverflowError):
         return False
+    if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Expr):
+        return False  # assignments, imports, and statements are code
+    nodes = list(ast.walk(tree))
+    if any(isinstance(node, _CODE_SHAPED) for node in nodes):
+        return False
+    names = [node.id for node in nodes if isinstance(node, ast.Name)]
+    return bool(names) and not any(_defined(name) for name in names)
 
 
 def _bosco_transform(lines):
@@ -363,20 +380,18 @@ def _bosco_transform(lines):
             return lines
         return [f"bosco({rest!r})\n" if rest else "bosco()\n"]
 
-    # Leave IPython special syntax (magics, shell) alone.
-    if src[0] in "%!/,;@":
+    # Leave IPython special syntax (magics, shell, prefix help) alone.
+    if src[0] in "%!/,;@?":
         return lines
 
-    # A trailing `?` is IPython's help operator only when what precedes it is a
-    # real object (`Model?`, `fs.query?`). People end questions with `?` too, so
-    # anything that isn't a valid expression keeps its question mark and goes to
-    # Bosco -- otherwise IPython answers with "Object `me` not found."
+    # `?` is never valid Python, and in a REPL you can talk to it means a question.
+    # IPython's help operator lives on the prefix form here: `?Model`, `??Model`.
     if src.endswith("?"):
-        return lines if _is_python(src.rstrip("?")) else [f"bosco({src!r})\n"]
+        return [f"bosco({src!r})\n"]
 
-    # A lone undefined name could only ever raise NameError, so it is a reply to
-    # Bosco ("both", "yes", "metrics"), not code. Defined names still run.
-    if src.isidentifier() and not keyword.iskeyword(src) and not _defined(src):
+    # Nothing it names exists, so it is a reply to Bosco ("both", "sure", "not sure"),
+    # not code. Anything naming something real in the session still runs.
+    if _all_names_undefined(src):
         return [f"bosco({src!r})\n"]
 
     try:

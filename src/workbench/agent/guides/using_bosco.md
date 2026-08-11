@@ -1,6 +1,6 @@
 # Using Bosco
 
-> how to interact with Bosco: routing, multi-line, Shift+Enter, interrupting
+> how to interact with Bosco: routing, multi-line, Shift+Enter, settings, interrupting
 
 Read this when the user asks how to interact with you.
 
@@ -12,9 +12,13 @@ bosco what models do we have    # explicit prefix, for text that IS valid Python
 ```
 
 The REPL routes automatically: valid Python runs as Python, everything else
-comes to you. Magics (`%time`), shell (`!ls`), and object help (`Model?`) still
-work normally. A lone undefined word (`both`, `yes`, `metrics`) is treated as a
-reply to you, not code.
+comes to you. Magics (`%time`) and shell (`!ls`) still work normally. A lone
+undefined word (`both`, `yes`, `sure`, `metrics`) is treated as a reply to you,
+not code.
+
+A line ending in `?` always comes to you, so object help is the prefix form:
+`?Model` for the docstring, `??Model` for the source. Say so if someone types
+`Model?` and gets you instead.
 
 ## Multi-line input
 
@@ -22,11 +26,8 @@ reply to you, not code.
 - **Enter** — send
 - **Paste** — multi-line paste lands as-is, no key needed
 
-### Shift+Enter
-
-It doesn't work out of the box — terminals send the same byte for Shift+Enter as
-for Enter, so nothing can tell them apart. Map it to Ctrl-J in the terminal and it
-works:
+Shift+Enter can't work out of the box: terminals send the same byte for it as for
+Enter, so nothing can tell them apart. Mapping it to Ctrl-J in the terminal works.
 
 | Terminal | Setting |
 |---|---|
@@ -35,49 +36,19 @@ works:
 | WezTerm | `{key="Enter", mods="SHIFT", action=wezterm.action.SendString("\n")}` |
 | Ghostty | `keybind = shift+enter=text:\x0a` |
 
-## Showing the code
+## Settings
 
-Code echo is off by default. Just say **"show code"** / **"hide code"** and Bosco
-flips it, or set it yourself:
+Attributes on `bosco` — read its docstring for the current values and levels.
+Code echo and voice also have spoken toggles, which is the easier path to offer:
 
-```python
-bosco.show_code = True    # echo the code Bosco runs
-bosco.show_code = False   # answers only
-```
-
-## Personality
-
-Bosco has a selectable voice. Just say **"be a pirate"**, **"professional mode"**,
-or **"chipper mode"** — or set it yourself:
-
-```python
-bosco.personality = "chipper"        # default: light touch, a bit of wit
-bosco.personality = "professional"   # direct, no frills
-bosco.personality = "pirate"         # arr
-```
-
-The voice only changes how Bosco talks; the ML work and the numbers never change.
-
-## Effort
-
-How hard Bosco works on a turn — thinking depth, not reply length. Lower is
-faster; the difference only shows up on questions hard enough to think about.
-
-```python
-bosco.effort = "low"      # quickest; fine for lookups
-bosco.effort = "high"     # default
-bosco.effort = "max"      # hardest analysis, slowest
-```
-
-Levels are `low`, `medium`, `high`, `xhigh`, `max`. Unlike code echo and voice,
-this one has no spoken toggle — set the attribute.
+- **"show code"** / **"hide code"** — echo the code you run (`bosco.show_code`)
+- **"be a pirate"** / **"professional mode"** / **"chipper mode"** — voice
+  (`bosco.personality`), which changes how you talk and never the numbers
+- **`bosco.effort`** — thinking depth per turn, not reply length. No spoken
+  toggle; lower is faster, and it only shows on questions hard enough to think
+  about.
 
 ## Interrupting
 
 **Ctrl-C** stops you at any point — mid-thought, mid-query, mid-tool. The
 conversation stays usable afterwards, so the next question works normally.
-
-## What persists
-
-Variables you create stay in the user's session after the turn ends, and the
-conversation carries across turns — so follow-up questions have context.
