@@ -142,6 +142,8 @@
 .ct-root .ct-lrow { padding: 4px 6px; border-radius: 6px; }
 .ct-root .ct-lrow.champ { background: var(--ct-panel-2); border: 1px solid var(--ct-border-soft); border-left: 3px solid var(--ct-accent); }
 .ct-root .ct-lname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ct-text); }
+/* A no_promote model competes but can never take the endpoint: dimmed name, no column */
+.ct-root .ct-lname.ct-no-promote, .ct-root .ct-table .ct-model.ct-no-promote { color: var(--ct-text-dim); }
 .ct-root .ct-lval { text-align: right; font-variant-numeric: tabular-nums; color: var(--ct-text); }
 
 /* Metric values color by their Δ-vs-champion sign (cards and expanded table) */
@@ -185,7 +187,7 @@
 .ct-root .ct-table td.ct-ta-l, .ct-root .ct-table th.ct-ta-l { text-align: left !important; }
 .ct-root .ct-table .ct-rank { text-align: center; width: 30px; }
 .ct-root .ct-table .ct-model { color: var(--ct-text); }
-.ct-root .ct-table .ct-type { color: var(--ct-text-faint); white-space: nowrap; }
+.ct-root .ct-table .ct-type { color: var(--ct-text); white-space: nowrap; }
 .ct-root .ct-table .ct-created { color: var(--ct-text-faint); white-space: nowrap; }
 .ct-root .ct-table .ct-champ-row { background: var(--ct-panel-2); }
 

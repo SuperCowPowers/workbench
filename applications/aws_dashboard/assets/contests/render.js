@@ -17,8 +17,12 @@
 
   // Columns that are contest metadata rather than metrics
   const META_COLS = new Set([
-    "model", "role", "framework", "endpoint", "created", "inference_run", "timestamp", "contested",
+    "model", "role", "no_promote", "framework", "endpoint", "created", "inference_run", "timestamp", "contested",
   ]);
+
+  // A no_promote model competes but can never take the endpoint; its name is dimmed
+  // rather than given a column, since nearly every contest is all-promotable.
+  const nameClass = (row) => (row.no_promote ? " ct-no-promote" : "");
 
   // Model framework: the report's `framework` column is authoritative (written by
   // contest_report(), multi-task already resolved). Unrecognized values map to "other".
@@ -115,7 +119,7 @@
       .join("");
     return `<div class="ct-lrow ${cls}">
       ${marker}
-      <span class="ct-lname" title="${row.model}">${row.model}</span>
+      <span class="ct-lname${nameClass(row)}" title="${row.model}">${row.model}</span>
       <span class="ct-dot" style="background:var(--ct-f-${fw})" title="${FRAMEWORK_LABEL[fw]}"></span>
       ${values}
     </div>`;
@@ -152,7 +156,7 @@
         const fw = frameworkOf(r);
         return `<tr class="${r.role === "champion" ? "ct-champ-row" : ""}">
           <td class="ct-rank">${marker}</td>
-          <td class="ct-ta-l ct-model">${r.model}</td>
+          <td class="ct-ta-l ct-model${nameClass(r)}">${r.model}</td>
           <td class="ct-ta-l ct-type"><span class="ct-dot" style="background:var(--ct-f-${fw})"></span>${FRAMEWORK_LABEL[fw]}</td>${cells}
           <td class="ct-created">${r.created}</td></tr>`;
       })
