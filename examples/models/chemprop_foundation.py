@@ -138,7 +138,7 @@ if recreate or not Endpoint("chemeleon-mt").exists():
 
 
 # =============================================================================
-# Hybrid Foundation Model (CheMeleon + Molecular Descriptors)
+# Foundation Model + Descriptors (CheMeleon + Molecular Descriptors)
 # =============================================================================
 # Combine CheMeleon's pretrained MPNN with additional molecular descriptors.
 # The extra features are concatenated with the MPNN output before the FFN,
@@ -157,20 +157,20 @@ TOP_LOGD_SHAP_FEATURES = [
     "slogp_vsa1",
 ]
 
-if recreate or not Model("chemeleon-logd-hybrid").exists():
+if recreate or not Model("chemeleon-logd-desc").exists():
     feature_set = FeatureSet("open_admet_logd")
 
-    # Hybrid mode: SMILES (for CheMeleon MPNN) + molecular descriptors
-    hybrid_features = ["smiles"] + TOP_LOGD_SHAP_FEATURES
+    # Extra descriptors: SMILES (for CheMeleon MPNN) + molecular descriptors
+    descriptor_features = ["smiles"] + TOP_LOGD_SHAP_FEATURES
 
     m = feature_set.to_model(
-        name="chemeleon-logd-hybrid",
+        name="chemeleon-logd-desc",
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column="logd",
-        feature_list=hybrid_features,
-        description="CheMeleon hybrid model with MPNN + top SHAP molecular descriptors",
-        tags=["chemprop", "chemeleon", "foundation", "hybrid", "open_admet"],
+        feature_list=descriptor_features,
+        description="CheMeleon model with MPNN + top SHAP molecular descriptors",
+        tags=["chemprop", "chemeleon", "foundation", "descriptors", "open_admet"],
         hyperparameters={
             "from_foundation": "CheMeleon",
             "freeze_mpnn_epochs": 10,
@@ -181,9 +181,9 @@ if recreate or not Model("chemeleon-logd-hybrid").exists():
     m.set_owner("BW")
 
 # Create an Endpoint
-if recreate or not Endpoint("chemeleon-logd-hybrid").exists():
-    m = Model("chemeleon-logd-hybrid")
-    end = m.to_endpoint(tags=["chemprop", "chemeleon", "foundation", "hybrid", "open_admet"])
+if recreate or not Endpoint("chemeleon-logd-desc").exists():
+    m = Model("chemeleon-logd-desc")
+    end = m.to_endpoint(tags=["chemprop", "chemeleon", "foundation", "descriptors", "open_admet"])
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()

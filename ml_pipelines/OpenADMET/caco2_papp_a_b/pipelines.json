@@ -13,8 +13,8 @@
           "endpoint:caco2-papp-a-b-reg-pytorch",
           "model:caco2-papp-a-b-reg-chemprop",
           "endpoint:caco2-papp-a-b-reg-chemprop",
-          "model:caco2-papp-a-b-reg-chemprop-hybrid",
-          "endpoint:caco2-papp-a-b-reg-chemprop-hybrid"
+          "model:caco2-papp-a-b-reg-chemprop-desc",
+          "endpoint:caco2-papp-a-b-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:caco2-papp-a-b-reg-xgb",
           "model:caco2-papp-a-b-reg-pytorch",
           "model:caco2-papp-a-b-reg-chemprop",
-          "model:caco2-papp-a-b-reg-chemprop-hybrid"
+          "model:caco2-papp-a-b-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:caco2-papp-a-b-reg-v1"

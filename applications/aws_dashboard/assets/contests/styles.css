@@ -18,7 +18,7 @@
   --ct-contested-glow: rgba(224, 166, 63, 0.14);
   --ct-good-glow: rgba(87, 201, 107, 0.09);
   --ct-f-chemprop: #6bd08a;
-  --ct-f-hybrid: #a8d06b;
+  --ct-f-desc: #a8d06b;
   --ct-f-mt: #d06ba8;
   --ct-f-pytorch: #d98a5c;
   --ct-f-xgb: #d4b158;
@@ -52,7 +52,7 @@
   --ct-contested-glow: rgba(181, 127, 30, 0.12);
   --ct-good-glow: rgba(47, 157, 71, 0.10);
   --ct-f-chemprop: #3a9d5c;
-  --ct-f-hybrid: #6b9d3a;
+  --ct-f-desc: #6b9d3a;
   --ct-f-mt: #b04585;
   --ct-f-pytorch: #c26a3a;
   --ct-f-xgb: #b8942f;

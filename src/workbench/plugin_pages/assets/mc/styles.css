@@ -31,7 +31,7 @@
   /* Framework and rank hues are identity, not theme. Mid-tone values, each held above a
      3:1 contrast ratio against both a white and a #222 background. */
   --mc-f-chemprop: #429960;
-  --mc-f-hybrid: #769638;
+  --mc-f-desc: #769638;
   --mc-f-mt: #b84d8f;
   --mc-f-pytorch: #c2703c;
   --mc-f-xgb: #a8842b;

@@ -79,7 +79,7 @@ full Noam learning-rate schedule (`warmup_epochs`, `init_lr`, `max_lr`, `final_l
 ensembling (`n_folds`), splitting strategy (`random`, `scaffold`, `butina`), foundation-model
 fine-tuning (`from_foundation`, `freeze_mpnn_epochs`), and uncertainty version selection.
 
-Workbench also ships four ChemProp model shapes — Single-Task, Multi-Task, Hybrid
+Workbench also ships four ChemProp model shapes — Single-Task, Multi-Task, + Descriptors
 (SMILES + descriptors), and Foundation (CheMeleon) — that compose freely. On Databricks,
 ChemProp is available through community guides and the Genesis Workbench accelerator, but
 you assemble and maintain the training and serving code yourself.

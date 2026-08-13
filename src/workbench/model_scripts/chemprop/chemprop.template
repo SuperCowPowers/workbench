@@ -5,7 +5,7 @@
 # This template handles molecular property prediction using ChemProp 2.x MPNN with:
 # - K-fold cross-validation ensemble training (or single train/val split)
 # - Multi-task regression support
-# - Hybrid mode (SMILES + extra molecular descriptors)
+# - Extra descriptors (SMILES + molecular descriptors)
 # - Classification (single-target only)
 #
 # NOTE: Imports are structured to minimize serverless endpoint startup time.
@@ -208,7 +208,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     feature_path = os.path.join(model_dir, "feature_metadata.joblib")
     if os.path.exists(feature_path):
         feature_metadata = joblib.load(feature_path)
-        print(f"Hybrid mode: {len(feature_metadata['extra_feature_cols'])} extra features")
+        print(f"Extra descriptors: {len(feature_metadata['extra_feature_cols'])} features")
 
     # Find SMILES column and validate
     smiles_column = find_smiles_column(df.columns.tolist())

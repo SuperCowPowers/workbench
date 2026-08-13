@@ -28,7 +28,7 @@
   // Framework -> the CSS color token suffix (--mc-f-*). Anything unlisted gets "other",
   // and is still labeled with its own name.
   const FW_COLOR = {
-    chemprop: "chemprop", hybrid: "hybrid", "multi-task": "mt", xgboost: "xgb",
+    chemprop: "chemprop", "chemprop-desc": "desc", "multi-task": "mt", xgboost: "xgb",
     pytorch: "pytorch", transformer: "transformer", sklearn: "sklearn", meta: "meta",
   };
   const colorOf = (framework) => FW_COLOR[framework] || "other";

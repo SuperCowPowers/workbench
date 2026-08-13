@@ -1,9 +1,9 @@
-"""Create regression models (XGBoost, PyTorch, ChemProp, ChemProp-Hybrid) for the
+"""Create regression models (XGBoost, PyTorch, ChemProp, ChemProp + Descriptors) for the
 Open ADMET mbpb assay.
 
 Consumes the shared FeatureSet built by ../load_data/load_data.py and produces a model +
 endpoint per framework. SHAP importances from the XGBoost model drive the PyTorch and
-ChemProp-Hybrid feature lists.
+ChemProp + Descriptors feature lists.
 
 Each model is scored three ways:
 
@@ -60,7 +60,7 @@ def main():
     end.cross_fold_inference()
     capture_test_inference(end, target, rdkit_features)
 
-    # SHAP importances from the XGBoost model drive the pytorch/hybrid feature lists
+    # SHAP importances from the XGBoost model drive the pytorch/descriptor feature lists
     importances = Model(xgb_name).shap_importance()
     non_zero_shap = [feat for feat, imp in importances if imp != 0.0]
     top_50_shap = non_zero_shap[:50]
@@ -103,20 +103,20 @@ def main():
     end.cross_fold_inference()
     capture_test_inference(end, target, [])
 
-    # 4. ChemProp Hybrid (SMILES + top-50 SHAP features)
-    hybrid_name = f"{short_name}-reg-chemprop-hybrid"
-    print(f"Creating ChemProp Hybrid model: {hybrid_name}")
+    # 4. ChemProp + Descriptors (SMILES + top-50 SHAP features)
+    desc_name = f"{short_name}-reg-chemprop-desc"
+    print(f"Creating ChemProp + Descriptors model: {desc_name}")
     model = fs.to_model(
-        name=hybrid_name,
+        name=desc_name,
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column=target,
         feature_list=["smiles"] + top_50_shap,
-        description=f"ChemProp D-MPNN Hybrid for {target} prediction",
-        tags=["open_admet", target, "regression", "chemprop", "hybrid"],
+        description=f"ChemProp D-MPNN + Descriptors for {target} prediction",
+        tags=["open_admet", target, "regression", "chemprop", "descriptors"],
     )
     model.set_owner("BW")
-    end = model.to_endpoint(tags=["open_admet", target, "chemprop", "hybrid"], max_concurrency=1)
+    end = model.to_endpoint(tags=["open_admet", target, "chemprop", "descriptors"], max_concurrency=1)
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()

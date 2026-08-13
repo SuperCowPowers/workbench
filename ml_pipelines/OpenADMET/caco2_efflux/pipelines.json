@@ -13,8 +13,8 @@
           "endpoint:caco2-efflux-reg-pytorch",
           "model:caco2-efflux-reg-chemprop",
           "endpoint:caco2-efflux-reg-chemprop",
-          "model:caco2-efflux-reg-chemprop-hybrid",
-          "endpoint:caco2-efflux-reg-chemprop-hybrid"
+          "model:caco2-efflux-reg-chemprop-desc",
+          "endpoint:caco2-efflux-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:caco2-efflux-reg-xgb",
           "model:caco2-efflux-reg-pytorch",
           "model:caco2-efflux-reg-chemprop",
-          "model:caco2-efflux-reg-chemprop-hybrid"
+          "model:caco2-efflux-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:caco2-efflux-reg-v1"

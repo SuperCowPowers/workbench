@@ -21,7 +21,7 @@ and caco2_papp_a_b, log10(x + 1) for the other seven assays, and identity for lo
 workbench.utils.chem_utils.misc.micromolar_to_log.)
 
 The featurized columns cover every framework in the family: chemprop champions consume
-smiles alone, while chemprop-hybrid, pytorch and xgb champions also need their RDKit/
+smiles alone, while chemprop-desc, pytorch and xgb champions also need their RDKit/
 Mordred descriptor columns. Each champion's own feature_list decides what gets sent.
 """
 

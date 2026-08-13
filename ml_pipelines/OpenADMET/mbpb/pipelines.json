@@ -13,8 +13,8 @@
           "endpoint:mbpb-reg-pytorch",
           "model:mbpb-reg-chemprop",
           "endpoint:mbpb-reg-chemprop",
-          "model:mbpb-reg-chemprop-hybrid",
-          "endpoint:mbpb-reg-chemprop-hybrid"
+          "model:mbpb-reg-chemprop-desc",
+          "endpoint:mbpb-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:mbpb-reg-xgb",
           "model:mbpb-reg-pytorch",
           "model:mbpb-reg-chemprop",
-          "model:mbpb-reg-chemprop-hybrid"
+          "model:mbpb-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:mbpb-reg-v1"

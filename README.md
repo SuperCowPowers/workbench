@@ -8,7 +8,7 @@ You can explore a live demo of the Workbench Dashboard at: [Workbench Dashboard 
 ADMET Workbench now supports:
 - Single Task Chemprop Models
 - Multi Task Chemprop Models
-- Chemprop Hybrid Models (MPNN + Descriptors)
+- Chemprop + Descriptors Models (MPNN + Molecular Descriptors)
 - Foundation Chemprop Models (CheMeleon Pretrained)
 
 Examples: 

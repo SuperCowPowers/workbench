@@ -125,7 +125,7 @@ def test_contest_report(regression_contest):
     assert set(report["role"].iloc[1:]) <= {"challenger"}
     assert report["model"].iloc[0] == champion.name
     assert report["endpoint"].eq(REGRESSION_ENDPOINT).all()
-    assert report["framework"].isin(["xgboost", "pytorch", "chemprop", "hybrid", "multi-task", "sklearn"]).all()
+    assert report["framework"].isin(["xgboost", "pytorch", "chemprop", "chemprop-desc", "multi-task", "sklearn"]).all()
     assert report["inference_run"].eq("full_cross_fold").all()
     assert report.loc[0, "Δrmse"] == 0.0  # champion delta vs itself
     assert report["created"].notna().all()

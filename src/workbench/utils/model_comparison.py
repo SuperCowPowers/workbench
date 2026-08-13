@@ -244,13 +244,13 @@ def _contested(champ_row: pd.DataFrame, chall_rows: pd.DataFrame) -> bool:
 def _framework(model) -> str:
     """The model's framework for report rows. A list target means multi-task (checked first,
     so a multi-task model reports as such even when it also carries descriptors). A chemprop
-    model with more than the SMILES column means hybrid: a graph model fed extra descriptors."""
+    model with more than the SMILES column is a graph model fed extra descriptors."""
     try:
         if isinstance(model.target(), list):
             return "multi-task"
         framework = model.model_framework.value
         if framework == "chemprop" and len(model.features() or []) > 1:
-            return "hybrid"
+            return "chemprop-desc"
         return framework
     except Exception as e:
         log.warning(f"Could not determine framework for {model.name}: {e}")

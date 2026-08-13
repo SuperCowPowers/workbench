@@ -24,7 +24,7 @@
   // contest_report(), multi-task already resolved). Unrecognized values map to "other".
   const FW_KEY = {
     "multi-task": "mt",
-    hybrid: "hybrid",
+    "chemprop-desc": "desc",
     chemprop: "chemprop",
     xgboost: "xgb",
     pytorch: "pytorch",
@@ -33,7 +33,7 @@
     meta: "meta",
   };
   const FRAMEWORK_LABEL = {
-    mt: "multi-task", hybrid: "hybrid", chemprop: "chemprop", xgb: "xgboost", pytorch: "pytorch",
+    mt: "multi-task", desc: "chemprop-desc", chemprop: "chemprop", xgb: "xgboost", pytorch: "pytorch",
     transformer: "transformer", sklearn: "sklearn", meta: "meta", other: "other",
   };
   const frameworkOf = (row) => FW_KEY[row.framework] || "other";
@@ -226,7 +226,7 @@
   function legendEl(contests) {
     const present = new Set();
     contests.forEach((c) => c.rows.forEach((r) => present.add(frameworkOf(r))));
-    const order = ["chemprop", "hybrid", "mt", "xgb", "pytorch", "transformer", "sklearn", "meta", "other"].filter((fw) =>
+    const order = ["chemprop", "desc", "mt", "xgb", "pytorch", "transformer", "sklearn", "meta", "other"].filter((fw) =>
       present.has(fw)
     );
     const legend = document.createElement("div");

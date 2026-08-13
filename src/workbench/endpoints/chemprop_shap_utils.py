@@ -271,7 +271,7 @@ def compute_chemprop_shap(
     for independent binary features and produces nearly identical rankings to
     PermutationExplainer at ~20-30x the speed.
 
-    For hybrid models (SMILES + extra descriptors), each descriptor column is
+    For models with extra descriptors (SMILES + descriptors), each descriptor column is
     also ablated by replacing it with the sample mean across explained molecules.
     Because the model's X_d_transform standardizes raw descriptors via
     (x - mean) / scale, substituting the column mean maps to 0 after the
@@ -397,8 +397,8 @@ def compute_chemprop_shap(
     # Filter fractions to active-only columns to match ablation values
     active_fractions = all_fractions[:, active_indices]
 
-    # --- Extra descriptor ablation (hybrid models) ---
-    # Natural extension of the per-bit ablation approach to hybrid descriptors:
+    # --- Extra descriptor ablation ---
+    # Natural extension of the per-bit ablation approach to extra descriptors:
     # for atom/bond bits, "ablate" means set the raw bit to 0 — the value the model
     # sees when the feature is absent. For standardized descriptors, the equivalent
     # "absent" value in the raw input space is the *training mean*, because the
@@ -423,7 +423,7 @@ def compute_chemprop_shap(
             extra_means = xd_transform.mean.detach().cpu().numpy().astype(np.float32).ravel()
         else:
             # Fallback for models without a stored transform (shouldn't happen
-            # for a properly wired hybrid model but keeps the code defensive).
+            # for a properly wired descriptor model but keeps the code defensive).
             extra_means = np.nanmean(sampled_x_d, axis=0)
 
         if extra_means.shape[0] != n_extra:
@@ -457,7 +457,7 @@ def compute_chemprop_shap(
         active_fractions = np.concatenate([active_fractions, extra_fractions], axis=1)
         feature_names = feature_names + list(extra_feature_names)
 
-        print(f"  Hybrid ablation complete ({n_active} graph + {n_extra} descriptor features)", flush=True)
+        print(f"  Descriptor ablation complete ({n_active} graph + {n_extra} descriptor features)", flush=True)
 
     return ablation_values, feature_names, indices, active_fractions
 

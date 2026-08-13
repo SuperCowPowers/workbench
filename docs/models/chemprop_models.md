@@ -9,7 +9,7 @@ Workbench supports four types of ChemProp models, each suited for different use 
 |---|---|---|
 | **Single-Task (ST)** | One target, SMILES only | Standard single-endpoint prediction |
 | **Multi-Task (MT)** | Multiple targets, shared MPNN | Related endpoints with shared chemistry |
-| **Hybrid** | SMILES + molecular descriptors | Combining graph learning with domain features |
+| **+ Descriptors** | SMILES + molecular descriptors | Combining graph learning with domain features |
 | **Foundation** | Pretrained MPNN weights | Small datasets, transfer learning |
 
 ## New in ChemProp 2.2.4
@@ -134,12 +134,12 @@ model = feature_set.to_model(
 
 **When to use multi-task:** When you have related endpoints measured on overlapping compound sets. The shared MPNN learns common molecular features across tasks, which often improves performance compared to separate single-task models.
 
-## Hybrid ChemProp
+## ChemProp + Descriptors
 
-Hybrid models combine ChemProp's learned graph representations with pre-computed molecular descriptors (e.g., RDKit features). The extra descriptors are concatenated with the MPNN output before the FFN, providing complementary information.
+These models combine ChemProp's learned graph representations with pre-computed molecular descriptors (e.g., RDKit features). The extra descriptors are concatenated with the MPNN output before the FFN, providing complementary information.
 
 <figure style="text-align: center;">
-  <img src="../images/hybrid_architecture.svg" alt="Hybrid ChemProp Architecture" style="height: 250px;">
+  <img src="../images/chemprop_desc_architecture.svg" alt="ChemProp + Descriptors Architecture" style="height: 250px;">
 </figure>
 
 ```python
@@ -149,23 +149,23 @@ TOP_FEATURES = [
     "peoe_vsa9", "peoe_vsa1", "mi", "bcut2d_mrlow", "slogp_vsa1",
 ]
 
-# Hybrid mode: just add descriptor columns to feature_list
-hybrid_features = ["smiles"] + TOP_FEATURES
+# Just add descriptor columns to feature_list
+descriptor_features = ["smiles"] + TOP_FEATURES
 
 model = feature_set.to_model(
-    name="logd-chemprop-hybrid",
+    name="logd-chemprop-desc",
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     target_column="logd",
-    feature_list=hybrid_features,  # SMILES + descriptors
-    description="Hybrid ChemProp with top SHAP molecular descriptors",
-    tags=["chemprop", "hybrid"],
+    feature_list=descriptor_features,  # SMILES + descriptors
+    description="ChemProp with top SHAP molecular descriptors",
+    tags=["chemprop", "descriptors"],
 )
 ```
 
 **How it works:** Any features beyond `"smiles"` in `feature_list` are automatically treated as extra descriptors. They are scaled (zero mean, unit variance) during training and concatenated with the MPNN output vector before feeding into the FFN.
 
-**When to use hybrid:** When you have domain-specific descriptors that capture information the MPNN might miss. A common pattern is to train an XGBoost model first, extract the top SHAP features, and use those as extra descriptors for the hybrid model.
+**When to use descriptors:** When you have domain-specific descriptors that capture information the MPNN might miss. A common pattern is to train an XGBoost model first, extract the top SHAP features, and use those as extra descriptors.
 
 ## Foundation ChemProp
 
@@ -236,18 +236,18 @@ model = feature_set.to_model(
 )
 ```
 
-### Foundation + Hybrid
+### Foundation + Descriptors
 
-And with hybrid descriptors:
+And with extra descriptors:
 
 ```python
 model = feature_set.to_model(
-    name="chemeleon-logd-hybrid",
+    name="chemeleon-logd-desc",
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     target_column="logd",
-    feature_list=["smiles"] + TOP_FEATURES,  # Hybrid
-    description="CheMeleon hybrid with molecular descriptors",
+    feature_list=["smiles"] + TOP_FEATURES,  # Extra descriptors
+    description="CheMeleon with molecular descriptors",
     hyperparameters={
         "from_foundation": "CheMeleon",
         "freeze_mpnn_epochs": 10,
@@ -431,9 +431,9 @@ All ChemProp models include built-in uncertainty quantification:
 
 - Start with **Single-Task** for a single endpoint — it's the simplest and a good starting point for comparison
 - Try **Multi-Task** when you have related endpoints measured on overlapping compounds
-- Add **Hybrid** add custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features
+- Add **Descriptors** — custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features
 - Use **Foundation** (CheMeleon) this is often the mose useful when your dataset is small (<1000 compounds) or when you want to leverage transfer learning from a large chemical space. The pretrained MPNN provides a strong starting point, and the two-phase training strategy can help stabilize fine-tuning.
-- All options compose — you can use Foundation + Multi-Task + Hybrid together
+- All options compose — you can use Foundation + Multi-Task + Descriptors together
 
 !!! note "Examples"
     Full code listings are in the repository under [`examples/models/chemprop.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop.py) and [`examples/models/chemprop_foundation.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py).

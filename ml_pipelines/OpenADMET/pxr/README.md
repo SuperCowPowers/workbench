@@ -8,7 +8,7 @@ Modeling work for the [OpenADMET PXR Induction Blind Challenge](https://openadme
 One **shared** FeatureSet (`openadmet_pxr_f1`) holds train + the revealed phase-1
 set, with a `split` column marking each row. Both phase models (simple Chemprop,
 SMILES-only) consume it; the phase-1 model holds the `phase1_test` rows out of
-training via `validation_ids` so the held-out set never trains it. The xgb / pytorch / hybrid
+training via `validation_ids` so the held-out set never trains it. The xgb / pytorch / chemprop-desc
 explorations are parked in a top-level `storage/` (kept out of the phase dirs so
 launching from inside a phase never picks them up).
 
@@ -20,7 +20,7 @@ phase1/
 phase2/
   pxr_chemprop_phase2.py   # consumes the FS; trains on all rows; predict 513 blinded → submission CSV
   activity_leaderboard_phase2.csv
-storage/               # parked (*.py.archived): feature_sets, 2d/3d/2d_3d (xgb+pytorch), hybrid
+storage/               # parked (*.py.archived): feature_sets, 2d/3d/2d_3d (xgb+pytorch), chemprop-desc
 ```
 
 - **phase1** — `pxr-reg-chemprop-phase1`. Runs `test` + `cross_fold` inference and a

@@ -13,8 +13,8 @@
           "endpoint:mlm-clint-reg-pytorch",
           "model:mlm-clint-reg-chemprop",
           "endpoint:mlm-clint-reg-chemprop",
-          "model:mlm-clint-reg-chemprop-hybrid",
-          "endpoint:mlm-clint-reg-chemprop-hybrid"
+          "model:mlm-clint-reg-chemprop-desc",
+          "endpoint:mlm-clint-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:mlm-clint-reg-xgb",
           "model:mlm-clint-reg-pytorch",
           "model:mlm-clint-reg-chemprop",
-          "model:mlm-clint-reg-chemprop-hybrid"
+          "model:mlm-clint-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:mlm-clint-reg-v1"

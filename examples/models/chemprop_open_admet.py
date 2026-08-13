@@ -28,7 +28,7 @@ if recreate or not Endpoint("open-admet-chemprop-logd").exists():
     end.cross_fold_inference()
 
 # =============================================================================
-# Hybrid ChemProp Model (SMILES + Molecular Descriptors)
+# ChemProp + Descriptors Model (SMILES + Molecular Descriptors)
 # =============================================================================
 # This example shows how to combine ChemProp's learned molecular representations
 # with pre-computed molecular descriptors (RDKit/Mordred features).
@@ -48,28 +48,28 @@ TOP_LOGD_SHAP_FEATURES = [
     "slogp_vsa1",
 ]
 
-if recreate or not Model("open-admet-chemprop-logd-hybrid").exists():
+if recreate or not Model("open-admet-chemprop-logd-desc").exists():
     feature_set = FeatureSet("open_admet_logd")
 
-    # Hybrid mode: SMILES + top molecular descriptors
+    # Extra descriptors: SMILES + top molecular descriptors
     # The template auto-detects extra features beyond the SMILES column
-    hybrid_features = ["smiles"] + TOP_LOGD_SHAP_FEATURES
+    descriptor_features = ["smiles"] + TOP_LOGD_SHAP_FEATURES
 
     m = feature_set.to_model(
-        name="open-admet-chemprop-logd-hybrid",
+        name="open-admet-chemprop-logd-desc",
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column="logd",
-        feature_list=hybrid_features,
-        description="Hybrid ChemProp model combining D-MPNN with top SHAP molecular descriptors",
-        tags=["chemprop", "open_admet", "hybrid"],
+        feature_list=descriptor_features,
+        description="ChemProp + Descriptors model combining D-MPNN with top SHAP molecular descriptors",
+        tags=["chemprop", "open_admet", "descriptors"],
     )
     m.set_owner("BW")
 
-# Create an Endpoint for the Hybrid Model
-if recreate or not Endpoint("open-admet-chemprop-logd-hybrid").exists():
-    m = Model("open-admet-chemprop-logd-hybrid")
-    end = m.to_endpoint(tags=["chemprop", "open_admet", "hybrid"])
+# Create an Endpoint for the Descriptor Model
+if recreate or not Endpoint("open-admet-chemprop-logd-desc").exists():
+    m = Model("open-admet-chemprop-logd-desc")
+    end = m.to_endpoint(tags=["chemprop", "open_admet", "descriptors"])
     end.set_owner("BW")
     end.test_inference()
     end.cross_fold_inference()

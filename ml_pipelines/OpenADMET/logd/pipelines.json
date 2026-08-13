@@ -13,8 +13,8 @@
           "endpoint:logd-reg-pytorch",
           "model:logd-reg-chemprop",
           "endpoint:logd-reg-chemprop",
-          "model:logd-reg-chemprop-hybrid",
-          "endpoint:logd-reg-chemprop-hybrid"
+          "model:logd-reg-chemprop-desc",
+          "endpoint:logd-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:logd-reg-xgb",
           "model:logd-reg-pytorch",
           "model:logd-reg-chemprop",
-          "model:logd-reg-chemprop-hybrid"
+          "model:logd-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:logd-reg-v1"

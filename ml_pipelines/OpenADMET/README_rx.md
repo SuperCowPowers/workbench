@@ -29,7 +29,7 @@ We trained 6 different model types for each ADMET endpoint. The [AWS Workbench](
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
 3. **ChemProp** - Message Passing Neural Network (MPNN) on molecular graphs
-4. **ChemProp Hybrid** - MPNN + Top RDKit descriptors combined
+4. **ChemProp + Descriptors** - MPNN + Top RDKit descriptors combined
 5. **ChemProp Multi-Task** - Single MPNN predicting all 9 endpoints simultaneously
 6. **Fingerprint** - A broad set of fingerprint options
 

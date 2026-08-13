@@ -1,6 +1,6 @@
 # Multi-Task ChemProp: Two Mechanisms, One Model
 !!! tip inline end "ChemProp in Workbench"
-    Workbench supports four ChemProp variants — single-task, multi-task, hybrid, and foundation. See the [ChemProp Models](../models/chemprop_models.md) page for the full API.
+    Workbench supports four ChemProp variants — single-task, multi-task, extra-descriptors, and foundation. See the [ChemProp Models](../models/chemprop_models.md) page for the full API.
 
 A multi-task ChemProp model trains **one** message-passing encoder to predict **several** target properties at once. Each target gets its own feedforward head, but they all share the molecular representation that the MPNN learns. That shared encoder is where the wins come from — and where the failures come from when the setup is wrong.
 

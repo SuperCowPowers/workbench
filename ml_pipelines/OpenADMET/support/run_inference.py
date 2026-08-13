@@ -109,7 +109,7 @@ df_features = df_store.get("/workbench/datasets/open_admet_test_featurized")
 def get_model_prefix(model_name: str) -> str:
     """Extract the target prefix from model name (e.g., 'caco2-efflux-reg-xgb' -> 'caco2-efflux')"""
     # Remove the model type suffix
-    for suffix in ["-reg-chemprop-hybrid", "-reg-chemprop", "-reg-pytorch", "-reg-xgb"]:
+    for suffix in ["-reg-chemprop-desc", "-reg-chemprop", "-reg-pytorch", "-reg-xgb"]:
         if model_name.endswith(suffix):
             return model_name[: -len(suffix)]
     return model_name
@@ -187,7 +187,8 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
     """Run inference using all 5 model types with inverse-variance weighted averaging.
 
     For each endpoint, we:
-    1. Get predictions and prediction_std from XGBoost, PyTorch, ChemProp, ChemProp Hybrid, and Multi-Target models
+    1. Get predictions and prediction_std from XGBoost, PyTorch, ChemProp, ChemProp+Descriptors,
+       and Multi-Target models
     2. Weight each model's prediction by 1/variance (inverse-variance weighting)
     3. Compute weighted average in log-space (before inverse transform)
     4. Apply inverse transform to the weighted prediction

@@ -3,7 +3,7 @@
 The hyperparameter-searched counterpart is ``chemprop_hpo.py`` — this is the same
 model and feature set with the ``hpo`` block dropped, so the two are directly
 comparable (the search should match or beat this baseline). Open-ADMET multi-task /
-hybrid / classifier examples live in ``chemprop_open_admet.py``.
+descriptor / classifier examples live in ``chemprop_open_admet.py``.
 """
 
 from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType

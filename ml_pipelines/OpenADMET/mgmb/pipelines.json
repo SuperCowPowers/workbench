@@ -13,8 +13,8 @@
           "endpoint:mgmb-reg-pytorch",
           "model:mgmb-reg-chemprop",
           "endpoint:mgmb-reg-chemprop",
-          "model:mgmb-reg-chemprop-hybrid",
-          "endpoint:mgmb-reg-chemprop-hybrid"
+          "model:mgmb-reg-chemprop-desc",
+          "endpoint:mgmb-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:mgmb-reg-xgb",
           "model:mgmb-reg-pytorch",
           "model:mgmb-reg-chemprop",
-          "model:mgmb-reg-chemprop-hybrid"
+          "model:mgmb-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:mgmb-reg-v1"

@@ -13,8 +13,8 @@
           "endpoint:ksol-reg-pytorch",
           "model:ksol-reg-chemprop",
           "endpoint:ksol-reg-chemprop",
-          "model:ksol-reg-chemprop-hybrid",
-          "endpoint:ksol-reg-chemprop-hybrid"
+          "model:ksol-reg-chemprop-desc",
+          "endpoint:ksol-reg-chemprop-desc"
         ]
       },
       {
@@ -23,7 +23,7 @@
           "model:ksol-reg-xgb",
           "model:ksol-reg-pytorch",
           "model:ksol-reg-chemprop",
-          "model:ksol-reg-chemprop-hybrid"
+          "model:ksol-reg-chemprop-desc"
         ],
         "outputs": [
           "endpoint:ksol-reg-v1"
