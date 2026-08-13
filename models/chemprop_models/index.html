@@ -752,10 +752,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hybrid-chemprop" class="md-nav__link">
+  <a href="#chemprop-descriptors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hybrid ChemProp
+        ChemProp + Descriptors
       
     </span>
   </a>
@@ -808,10 +808,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#foundation-hybrid" class="md-nav__link">
+  <a href="#foundation-descriptors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Foundation + Hybrid
+        Foundation + Descriptors
       
     </span>
   </a>
@@ -5475,10 +5475,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hybrid-chemprop" class="md-nav__link">
+  <a href="#chemprop-descriptors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hybrid ChemProp
+        ChemProp + Descriptors
       
     </span>
   </a>
@@ -5531,10 +5531,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#foundation-hybrid" class="md-nav__link">
+  <a href="#foundation-descriptors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Foundation + Hybrid
+        Foundation + Descriptors
       
     </span>
   </a>
@@ -5683,7 +5683,7 @@
 <td>Related endpoints with shared chemistry</td>
 </tr>
 <tr>
-<td><strong>Hybrid</strong></td>
+<td><strong>+ Descriptors</strong></td>
 <td>SMILES + molecular descriptors</td>
 <td>Combining graph learning with domain features</td>
 </tr>
@@ -5790,10 +5790,10 @@
 <li>Regression only (not classification)</li>
 </ul>
 <p><strong>When to use multi-task:</strong> When you have related endpoints measured on overlapping compound sets. The shared MPNN learns common molecular features across tasks, which often improves performance compared to separate single-task models.</p>
-<h2 id="hybrid-chemprop">Hybrid ChemProp</h2>
-<p>Hybrid models combine ChemProp's learned graph representations with pre-computed molecular descriptors (e.g., RDKit features). The extra descriptors are concatenated with the MPNN output before the FFN, providing complementary information.</p>
+<h2 id="chemprop-descriptors">ChemProp + Descriptors</h2>
+<p>These models combine ChemProp's learned graph representations with pre-computed molecular descriptors (e.g., RDKit features). The extra descriptors are concatenated with the MPNN output before the FFN, providing complementary information.</p>
 <figure style="text-align: center;">
-  <img src="../images/hybrid_architecture.svg" alt="Hybrid ChemProp Architecture" style="height: 250px;">
+  <img src="../images/chemprop_desc_architecture.svg" alt="ChemProp + Descriptors Architecture" style="height: 250px;">
 </figure>
 
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Top SHAP features from an XGBoost model (complementary to MPNN)</span>
@@ -5802,21 +5802,21 @@
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">&quot;peoe_vsa9&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa1&quot;</span><span class="p">,</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span> <span class="s2">&quot;bcut2d_mrlow&quot;</span><span class="p">,</span> <span class="s2">&quot;slogp_vsa1&quot;</span><span class="p">,</span>
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">]</span>
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Hybrid mode: just add descriptor columns to feature_list</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">hybrid_features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Just add descriptor columns to feature_list</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">descriptor_features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span>
 </span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
 </span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-hybrid&quot;</span><span class="p">,</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-desc&quot;</span><span class="p">,</span>
 </span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
 </span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
 </span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">hybrid_features</span><span class="p">,</span>  <span class="c1"># SMILES + descriptors</span>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hybrid ChemProp with top SHAP molecular descriptors&quot;</span><span class="p">,</span>
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">],</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">descriptor_features</span><span class="p">,</span>  <span class="c1"># SMILES + descriptors</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp with top SHAP molecular descriptors&quot;</span><span class="p">,</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;descriptors&quot;</span><span class="p">],</span>
 </span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>How it works:</strong> Any features beyond <code>"smiles"</code> in <code>feature_list</code> are automatically treated as extra descriptors. They are scaled (zero mean, unit variance) during training and concatenated with the MPNN output vector before feeding into the FFN.</p>
-<p><strong>When to use hybrid:</strong> When you have domain-specific descriptors that capture information the MPNN might miss. A common pattern is to train an XGBoost model first, extract the top SHAP features, and use those as extra descriptors for the hybrid model.</p>
+<p><strong>When to use descriptors:</strong> When you have domain-specific descriptors that capture information the MPNN might miss. A common pattern is to train an XGBoost model first, extract the top SHAP features, and use those as extra descriptors.</p>
 <h2 id="foundation-chemprop">Foundation ChemProp</h2>
 <p>Foundation models start from pretrained MPNN weights instead of random initialization. This gives the model a strong prior for molecular representation learning, which is especially beneficial for small datasets.</p>
 <h3 id="chemeleon">CheMeleon</h3>
@@ -5870,15 +5870,15 @@
 </span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="p">},</span>
 </span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="p">)</span>
 </span></code></pre></div>
-<h3 id="foundation-hybrid">Foundation + Hybrid</h3>
-<p>And with hybrid descriptors:</p>
+<h3 id="foundation-descriptors">Foundation + Descriptors</h3>
+<p>And with extra descriptors:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-hybrid&quot;</span><span class="p">,</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-desc&quot;</span><span class="p">,</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span><span class="p">,</span>  <span class="c1"># Hybrid</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon hybrid with molecular descriptors&quot;</span><span class="p">,</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span><span class="p">,</span>  <span class="c1"># Extra descriptors</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon with molecular descriptors&quot;</span><span class="p">,</span>
 </span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
 </span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
 </span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
@@ -6043,9 +6043,9 @@
 <ul>
 <li>Start with <strong>Single-Task</strong> for a single endpoint — it's the simplest and a good starting point for comparison</li>
 <li>Try <strong>Multi-Task</strong> when you have related endpoints measured on overlapping compounds</li>
-<li>Add <strong>Hybrid</strong> add custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features</li>
+<li>Add <strong>Descriptors</strong> — custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features</li>
 <li>Use <strong>Foundation</strong> (CheMeleon) this is often the mose useful when your dataset is small (&lt;1000 compounds) or when you want to leverage transfer learning from a large chemical space. The pretrained MPNN provides a strong starting point, and the two-phase training strategy can help stabilize fine-tuning.</li>
-<li>All options compose — you can use Foundation + Multi-Task + Hybrid together</li>
+<li>All options compose — you can use Foundation + Multi-Task + Descriptors together</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Examples</p>

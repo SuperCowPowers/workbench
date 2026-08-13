@@ -47,7 +47,7 @@
   <text x="365" y="52" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="600" letter-spacing="1">ENHANCEMENTS</text>
 
   <rect x="295" y="66" width="140" height="36" rx="8" fill="url(#purpleGrad)"/>
-  <text x="365" y="90" text-anchor="middle" fill="white" font-weight="700" font-size="14">Hybrid</text>
+  <text x="365" y="90" text-anchor="middle" fill="white" font-weight="700" font-size="14">Descriptors</text>
 
   <rect x="295" y="116" width="140" height="36" rx="8" fill="url(#orangeGrad)"/>
   <text x="365" y="140" text-anchor="middle" fill="white" font-weight="700" font-size="14">Foundation</text>
@@ -67,12 +67,12 @@
   <rect x="640" y="52" width="55" height="24" rx="6" fill="url(#blueGrad)"/>
   <text x="667" y="69" text-anchor="middle" fill="white" font-weight="600" font-size="11">MT</text>
 
-  <!-- Row 2: ST + Hybrid, MT + Hybrid -->
+  <!-- Row 2: ST + Descriptors, MT + Descriptors -->
   <rect x="570" y="84" width="55" height="24" rx="6" fill="url(#greenGrad)"/>
   <text x="597" y="101" text-anchor="middle" fill="white" font-weight="600" font-size="11">ST</text>
   <text x="632" y="101" text-anchor="middle" fill="#64748b" font-size="11">+</text>
-  <rect x="640" y="84" width="75" height="24" rx="6" fill="url(#purpleGrad)"/>
-  <text x="677" y="101" text-anchor="middle" fill="white" font-weight="600" font-size="11">Hybrid</text>
+  <rect x="640" y="84" width="95" height="24" rx="6" fill="url(#purpleGrad)"/>
+  <text x="688" y="101" text-anchor="middle" fill="white" font-weight="600" font-size="11">Descriptors</text>
 
   <!-- Row 3: ST + Foundation, MT + Foundation -->
   <rect x="570" y="116" width="55" height="24" rx="6" fill="url(#greenGrad)"/>
@@ -81,23 +81,23 @@
   <rect x="640" y="116" width="105" height="24" rx="6" fill="url(#orangeGrad)"/>
   <text x="692" y="133" text-anchor="middle" fill="white" font-weight="600" font-size="11">Foundation</text>
 
-  <!-- Row 4: MT + Hybrid + Foundation -->
+  <!-- Row 4: MT + Descriptors + Foundation -->
   <rect x="570" y="148" width="55" height="24" rx="6" fill="url(#blueGrad)"/>
   <text x="597" y="165" text-anchor="middle" fill="white" font-weight="600" font-size="11">MT</text>
   <text x="632" y="165" text-anchor="middle" fill="#64748b" font-size="11">+</text>
-  <rect x="640" y="148" width="75" height="24" rx="6" fill="url(#purpleGrad)"/>
-  <text x="677" y="165" text-anchor="middle" fill="white" font-weight="600" font-size="11">Hybrid</text>
-  <text x="722" y="165" text-anchor="middle" fill="#64748b" font-size="11">+</text>
-  <rect x="730" y="148" width="105" height="24" rx="6" fill="url(#orangeGrad)"/>
-  <text x="782" y="165" text-anchor="middle" fill="white" font-weight="600" font-size="11">Foundation</text>
+  <rect x="640" y="148" width="95" height="24" rx="6" fill="url(#purpleGrad)"/>
+  <text x="688" y="165" text-anchor="middle" fill="white" font-weight="600" font-size="11">Descriptors</text>
+  <text x="742" y="165" text-anchor="middle" fill="#64748b" font-size="11">+</text>
+  <rect x="750" y="148" width="105" height="24" rx="6" fill="url(#orangeGrad)"/>
+  <text x="802" y="165" text-anchor="middle" fill="white" font-weight="600" font-size="11">Foundation</text>
 
-  <!-- Row 5: ST + Hybrid + Foundation -->
+  <!-- Row 5: ST + Descriptors + Foundation -->
   <rect x="570" y="180" width="55" height="24" rx="6" fill="url(#greenGrad)"/>
   <text x="597" y="197" text-anchor="middle" fill="white" font-weight="600" font-size="11">ST</text>
   <text x="632" y="197" text-anchor="middle" fill="#64748b" font-size="11">+</text>
-  <rect x="640" y="180" width="75" height="24" rx="6" fill="url(#purpleGrad)"/>
-  <text x="677" y="197" text-anchor="middle" fill="white" font-weight="600" font-size="11">Hybrid</text>
-  <text x="722" y="197" text-anchor="middle" fill="#64748b" font-size="11">+</text>
-  <rect x="730" y="180" width="105" height="24" rx="6" fill="url(#orangeGrad)"/>
-  <text x="782" y="197" text-anchor="middle" fill="white" font-weight="600" font-size="11">Foundation</text>
+  <rect x="640" y="180" width="95" height="24" rx="6" fill="url(#purpleGrad)"/>
+  <text x="688" y="197" text-anchor="middle" fill="white" font-weight="600" font-size="11">Descriptors</text>
+  <text x="742" y="197" text-anchor="middle" fill="#64748b" font-size="11">+</text>
+  <rect x="750" y="180" width="105" height="24" rx="6" fill="url(#orangeGrad)"/>
+  <text x="802" y="197" text-anchor="middle" fill="white" font-weight="600" font-size="11">Foundation</text>
 </svg>
