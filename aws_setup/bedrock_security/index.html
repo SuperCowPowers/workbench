@@ -314,9 +314,20 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../repl/" class="md-nav__link">
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
@@ -330,7 +341,79 @@
   
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workbench REPL
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repl/bosco.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bosco (ML Agent)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -5423,8 +5506,8 @@ and retained up to 30 days, with possible human review).</p>
 <p class="admonition-title">Model selection is a retention decision</p>
 <p>A few of the newest models are only available under
 <code>provider_data_share</code> and cannot be used any other way. The agent's model
-list deliberately excludes them. <strong>Claude Opus 4.8</strong>, the default, permits
-<code>default</code> — your data is never shared with the model provider.</p>
+list deliberately excludes them. <strong>Claude Opus 5</strong>, the default, permits
+<code>none</code> — so zero data retention is available without giving up the model.</p>
 </div>
 <p>Invocation logging — which writes full prompt and completion text to S3 or
 CloudWatch — is <strong>off unless you turn it on</strong>. If you enable it for auditing,
@@ -5432,7 +5515,7 @@ that log becomes the most sensitive artifact in your account and should be
 treated accordingly.</p>
 <h2 id="region">Region</h2>
 <p>The agent defaults to a US geographic inference profile
-(<code>us.anthropic.claude-opus-4-8</code>). Inference is served from a US region, which
+(<code>us.anthropic.claude-opus-5</code>). Inference is served from a US region, which
 may not be the region you called from; AWS routes cross-region traffic over its
 own network, never the public internet.</p>
 <p>Where a model does retain data, it is retained in the region that processed
@@ -5455,9 +5538,10 @@ compliance posture requires more.</p>
 <p><strong>Zero data retention.</strong> Setting the account retention mode to <code>none</code>
 guarantees nothing is stored, and the <code>bedrock:DataRetentionMode</code> condition
 key lets a Service Control Policy prevent anyone from loosening it. There is
-no console for this — it is an API call. Some models require per-account ZDR
-approval from AWS before <code>none</code> is permitted, and any model that does not
-allow the mode simply becomes unavailable.</p>
+no console for this — it is an API call
+(<a href="../repl/bosco.md#zero-data-retention">the commands</a>). Some models require
+per-account ZDR approval from AWS before <code>none</code> is permitted, and any model
+that does not allow the mode simply becomes unavailable.</p>
 <p><strong>Private network path.</strong> See <a href="#privatelink">PrivateLink</a> below.</p>
 <p><strong>Restricted model set.</strong> The execution role can be scoped to specific
 foundation model ARNs, so only approved models are reachable.</p>

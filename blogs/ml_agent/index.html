@@ -314,9 +314,20 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../repl/" class="md-nav__link">
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
@@ -330,7 +341,79 @@
   
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workbench REPL
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../repl/bosco.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bosco (ML Agent)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -5155,21 +5238,22 @@
 <h1 id="the-workbench-ml-agent">The Workbench ML Agent</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Already Using Workbench?</p>
-<p>The ML agent ships with the <a href="../../repl/">Workbench REPL</a>. Model access
-is a one-time setup — see <a href="../../aws_setup/bedrock_setup/">AWS Bedrock Setup</a>
-and <a href="../../aws_setup/bedrock_security/">AWS Bedrock Security</a>.</p>
+<p>Bosco ships with the <a href="../../repl/">Workbench REPL</a> — see
+<a href="../repl/bosco.md">Bosco</a> for how to drive him. Model access is a one-time
+setup: <a href="../../aws_setup/bedrock_setup/">AWS Bedrock Setup</a> and
+<a href="../../aws_setup/bedrock_security/">AWS Bedrock Security</a>.</p>
 </div>
-<p>Workbench embeds an ML agent directly in the Python REPL. Chemists and data
-scientists describe what they want in plain language — <em>"which compounds does
-this model get worst?"</em>, <em>"build me a solubility model from this FeatureSet"</em> —
-and the agent writes the code, runs it in the live session, reads the output,
-and adjusts.</p>
-<p>That turns exploratory ML work into a conversation. And the agent carries
-Workbench conventions, so the code it produces looks like the code your team
-already writes.</p>
+<p>Workbench embeds an ML agent — <strong>Bosco</strong> — directly in the Python REPL. Chemists
+and data scientists describe what they want in plain language — <em>"which compounds
+does this model get worst?"</em>, <em>"build me a solubility model from this FeatureSet"</em>
+— and Bosco writes the code, runs it in the live session, reads the output, and
+adjusts.</p>
+<p>That turns exploratory ML work into a conversation. And Bosco carries Workbench
+conventions, so the code he produces looks like the code your team already
+writes.</p>
 <h2 id="one-session-two-drivers">One session, two drivers</h2>
-<p>The REPL and the agent share a single session. You type Python when you want
-to; you talk to the agent when that's faster — ask it to review the code you
+<p>The REPL and Bosco share a single session. You type Python when you want
+to; you talk to Bosco when that's faster — ask him to review the code you
 just wrote, show you an example, or take a task and run with it. Either way the
 work lands in the same namespace, so control passes back and forth without
 anything being copied or handed off.</p>
@@ -5180,7 +5264,7 @@ suggestion is grounded in what your data really looks like rather than a
 description of it. And because it all happens in your session, it stops wherever
 you want — take the dataframe it just built and keep going by hand.</p>
 <h2 id="where-the-work-happens">Where the work happens</h2>
-<p>The agent runs Claude through Amazon Bedrock, so the whole loop stays inside
+<p>Bosco runs Claude through Amazon Bedrock, so the whole loop stays inside
 your own AWS account — authenticated by the Workbench IAM role you already use,
 and billed on the same invoice as SageMaker. Every request is TLS-encrypted and
 signed with your role's credentials, and the model itself runs on AWS
