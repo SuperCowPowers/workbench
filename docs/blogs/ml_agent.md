@@ -1,23 +1,24 @@
 # The Workbench ML Agent
 !!! tip inline end "Already Using Workbench?"
-    The ML agent ships with the [Workbench REPL](../repl/index.md). Model access
-    is a one-time setup — see [AWS Bedrock Setup](../aws_setup/bedrock_setup.md)
-    and [AWS Bedrock Security](../aws_setup/bedrock_security.md).
+    Bosco ships with the [Workbench REPL](../repl/index.md) — see
+    [Bosco](../repl/bosco.md) for how to drive him. Model access is a one-time
+    setup: [AWS Bedrock Setup](../aws_setup/bedrock_setup.md) and
+    [AWS Bedrock Security](../aws_setup/bedrock_security.md).
 
-Workbench embeds an ML agent directly in the Python REPL. Chemists and data
-scientists describe what they want in plain language — *"which compounds does
-this model get worst?"*, *"build me a solubility model from this FeatureSet"* —
-and the agent writes the code, runs it in the live session, reads the output,
-and adjusts.
+Workbench embeds an ML agent — **Bosco** — directly in the Python REPL. Chemists
+and data scientists describe what they want in plain language — *"which compounds
+does this model get worst?"*, *"build me a solubility model from this FeatureSet"*
+— and Bosco writes the code, runs it in the live session, reads the output, and
+adjusts.
 
-That turns exploratory ML work into a conversation. And the agent carries
-Workbench conventions, so the code it produces looks like the code your team
-already writes.
+That turns exploratory ML work into a conversation. And Bosco carries Workbench
+conventions, so the code he produces looks like the code your team already
+writes.
 
 ## One session, two drivers
 
-The REPL and the agent share a single session. You type Python when you want
-to; you talk to the agent when that's faster — ask it to review the code you
+The REPL and Bosco share a single session. You type Python when you want
+to; you talk to Bosco when that's faster — ask him to review the code you
 just wrote, show you an example, or take a task and run with it. Either way the
 work lands in the same namespace, so control passes back and forth without
 anything being copied or handed off.
@@ -32,7 +33,7 @@ you want — take the dataframe it just built and keep going by hand.
 
 ## Where the work happens
 
-The agent runs Claude through Amazon Bedrock, so the whole loop stays inside
+Bosco runs Claude through Amazon Bedrock, so the whole loop stays inside
 your own AWS account — authenticated by the Workbench IAM role you already use,
 and billed on the same invoice as SageMaker. Every request is TLS-encrypted and
 signed with your role's credentials, and the model itself runs on AWS

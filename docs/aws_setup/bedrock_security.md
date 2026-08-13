@@ -98,8 +98,8 @@ and retained up to 30 days, with possible human review).
 !!! warning "Model selection is a retention decision"
     A few of the newest models are only available under
     `provider_data_share` and cannot be used any other way. The agent's model
-    list deliberately excludes them. **Claude Opus 4.8**, the default, permits
-    `default` — your data is never shared with the model provider.
+    list deliberately excludes them. **Claude Opus 5**, the default, permits
+    `none` — so zero data retention is available without giving up the model.
 
 Invocation logging — which writes full prompt and completion text to S3 or
 CloudWatch — is **off unless you turn it on**. If you enable it for auditing,
@@ -109,7 +109,7 @@ treated accordingly.
 ## Region
 
 The agent defaults to a US geographic inference profile
-(`us.anthropic.claude-opus-4-8`). Inference is served from a US region, which
+(`us.anthropic.claude-opus-5`). Inference is served from a US region, which
 may not be the region you called from; AWS routes cross-region traffic over its
 own network, never the public internet.
 
@@ -142,9 +142,10 @@ compliance posture requires more.
 **Zero data retention.** Setting the account retention mode to `none`
 guarantees nothing is stored, and the `bedrock:DataRetentionMode` condition
 key lets a Service Control Policy prevent anyone from loosening it. There is
-no console for this — it is an API call. Some models require per-account ZDR
-approval from AWS before `none` is permitted, and any model that does not
-allow the mode simply becomes unavailable.
+no console for this — it is an API call
+([the commands](../repl/bosco.md#zero-data-retention)). Some models require
+per-account ZDR approval from AWS before `none` is permitted, and any model
+that does not allow the mode simply becomes unavailable.
 
 **Private network path.** See [PrivateLink](#privatelink) below.
 

@@ -3,7 +3,9 @@ nav:
   - Welcome: index.md
   - Presentations: presentations/index.md
   - Getting Started: getting_started/index.md
-  - Workbench REPL: repl/index.md
+  - Workbench REPL:
+    - Overview: repl/index.md
+    - Bosco (ML Agent): repl/bosco.md
   - Models:
     - Overview: models/index.md
     - XGBoost: models/xgboost_models.md

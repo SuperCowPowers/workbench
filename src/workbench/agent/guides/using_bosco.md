@@ -39,11 +39,9 @@ Enter, so nothing can tell them apart. Mapping it to Ctrl-J in the terminal work
 ## Settings
 
 Attributes on `bosco` — read its docstring for the current values and levels.
-Code echo and voice also have spoken toggles, which is the easier path to offer:
 
-- **"show code"** / **"hide code"** — echo the code you run (`bosco.show_code`)
-- **"be a pirate"** / **"professional mode"** / **"chipper mode"** — voice
-  (`bosco.personality`), which changes how you talk and never the numbers
+- **"show code"** / **"hide code"** — echo the code you run (`bosco.show_code`).
+  The spoken toggle is the easier path to offer.
 - **`bosco.effort`** — thinking depth per turn, not reply length. No spoken
   toggle; lower is faster, and it only shows on questions hard enough to think
   about.
