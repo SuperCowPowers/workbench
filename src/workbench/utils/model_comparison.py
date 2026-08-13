@@ -158,7 +158,11 @@ def contest_ranking(champion: Model, challengers: list, inference_run: str = "de
 
 
 def contest_report(
-    champion: Model, challengers: list, endpoint_name: str, inference_run: str = "full_cross_fold"
+    champion: Model,
+    challengers: list,
+    endpoint_name: str,
+    inference_run: str = "full_cross_fold",
+    no_promote: list | None = None,
 ) -> Optional[pd.DataFrame]:
     """The publishable contest report: champion + ranked challengers in one table.
 
@@ -167,11 +171,14 @@ def contest_report(
         challengers (list[Model]): The challenger models
         endpoint_name (str): The contested endpoint (recorded in the report)
         inference_run (str, optional): The inference run to compare. Defaults to "full_cross_fold".
+        no_promote (list[str], optional): Challenger names that compete but can never take
+            the endpoint (the pipelines.json ``:no_promote`` flag). They are ranked and
+            counted toward ``contested`` like any other. Defaults to none.
 
     Returns:
         pd.DataFrame: One row per model (champion first, then challengers best-first) with
-            columns [model, role, framework, endpoint, created, <metrics interleaved with Δ
-            vs champion>, inference_run, timestamp, contested]. Champion Δ columns are 0
+            columns [model, role, no_promote, framework, endpoint, created, <metrics interleaved
+            with Δ vs champion>, inference_run, timestamp, contested]. Champion Δ columns are 0
             (delta vs itself); framework is the model's framework, with multi-task models
             (list target) reported as "multi-task"; created is the model's creation time;
             contested is the contest-level flag (see CONTESTED_PCT), repeated on every row.
@@ -182,21 +189,23 @@ def contest_report(
     if champ_row.empty and chall_rows.empty:
         log.warning(f"No metrics for any model in the '{endpoint_name}' contest: no report")
         return None
+    no_promote = set(no_promote or [])
 
     # Champion first, challengers best-first, columns in the interleaved metric/Δ order
     cols = list(chall_rows.columns) if not chall_rows.empty else list(champ_row.columns)
     report = pd.concat([champ_row, chall_rows])[cols]
     report.insert(0, "model", report.index)
     report.insert(1, "role", ["champion"] * len(champ_row) + ["challenger"] * len(chall_rows))
+    report.insert(2, "no_promote", report["model"].isin(no_promote))
 
     # Only the models that made the report: challengers without metrics were dropped above,
     # and framework/created both cost metadata reads we'd otherwise throw away.
     in_report = set(report["model"])
     models = {m.name: m for m in [champion, *challengers] if m.name in in_report}
-    report.insert(2, "framework", report["model"].map({name: _framework(m) for name, m in models.items()}))
-    report.insert(3, "endpoint", endpoint_name)
+    report.insert(3, "framework", report["model"].map({name: _framework(m) for name, m in models.items()}))
+    report.insert(4, "endpoint", endpoint_name)
     created = report["model"].map({name: m.created() for name, m in models.items()})
-    report.insert(4, "created", pd.to_datetime(created, utc=True))
+    report.insert(5, "created", pd.to_datetime(created, utc=True))
     delta_cols = [col for col in report.columns if col.startswith("Δ")]
     report.loc[report["role"] == "champion", delta_cols] = 0.0
     report["inference_run"] = inference_run

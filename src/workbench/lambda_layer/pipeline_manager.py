@@ -33,6 +33,10 @@ in topological order, a single pass pushes a whole ``ds -> fs -> model`` chain
 even though the intermediate artifacts have not been rebuilt yet -- no
 backtracking, nothing special-cases artifact type.
 
+Two opt-outs sit on top: a job entry can declare ``"no_auto": true`` to stay out of
+freshness scheduling (:attr:`Job.no_auto`), and an input ref can carry a trailing flag
+(``REF_FLAGS``) qualifying its role in the consuming job.
+
 Resolving a ref to a modified time needs AWS. By default the manager does this
 itself (raw boto3, cached per instance) -- the normal path for both the launcher
 and the Lambda. A clock can be injected (``mtime_fn(ref) -> datetime | None``)
@@ -79,6 +83,22 @@ def ref_name(ref: str) -> str:
     return ref.partition(":")[2]
 
 
+# Flags an input ref may carry as a trailing ":<flag>" ("model:logd-reg-1-dt:no_promote").
+# They qualify that ref's role in the consuming job, so they're stripped before the graph
+# sees the ref and kept on the job in ``Job.input_flags``.
+REF_FLAGS = {"no_promote"}
+
+
+def split_ref_flags(ref: str) -> tuple[str, list[str]]:
+    """Split a ref into its base ref and flags: 'model:x:no_promote' -> ('model:x', ['no_promote'])."""
+    kind, sep, rest = ref.partition(":")
+    name, *flags = rest.split(":")
+    unknown = [f for f in flags if f not in REF_FLAGS]
+    if unknown:
+        raise ValueError(f"unknown ref flag(s) {unknown} in {ref!r} (known flags: {sorted(REF_FLAGS)})")
+    return f"{kind}{sep}{name}", flags
+
+
 # A script ref may carry a source scheme that overrides the default (S3, relative to
 # the pipelines.json dir): "workbench:<path>" -> a script bundled in the workbench
 # package; "plugin:<path>" -> a shared script under a "plugins/" dir at the discovery
@@ -116,6 +136,10 @@ class Job:
         group (str | None): The SQS FIFO MessageGroupId for Batch submission -- the
             job's dependency group. Set by PipelineManager; see
             :meth:`PipelineManager._assign_dependency_groups`.
+        no_auto (bool): Never scheduled by freshness -- out of the nightly run, but
+            still launchable by name (:meth:`PipelineManager.plan` honors force).
+        input_flags (dict[str, list[str]]): Per-input-ref flags parsed off the
+            declared refs (see REF_FLAGS).
     """
 
     script: Any
@@ -125,6 +149,8 @@ class Job:
     pipeline: str | None = None
     relative_dir: str | None = None
     group: str | None = None
+    no_auto: bool = False
+    input_flags: dict[str, list[str]] = field(default_factory=dict)
 
     @property
     def key(self) -> tuple:
@@ -164,19 +190,23 @@ class Job:
          model_name    -> from a model: output
          endpoint_name -> from an endpoint: output, else the model's own endpoint
          challengers   -> from model: inputs (a promote node's contestants)
+         no_promote    -> the challengers flagged :no_promote (ineligible to win)
         """
         meta: dict = {"serverless": serverless}
         if self.mode is not None:
             meta["mode"] = self.mode
         model_out = next((ref_name(o) for o in self.outputs if ref_type(o) == "model"), None)
         endpoint_out = next((ref_name(o) for o in self.outputs if ref_type(o) == "endpoint"), None)
-        challengers = [ref_name(i) for i in self.inputs if ref_type(i) == "model"]
+        model_ins = [i for i in self.inputs if ref_type(i) == "model"]
         if model_out:
             meta["model_name"] = model_out
         if endpoint_out or model_out:
             meta["endpoint_name"] = endpoint_out or model_out
-        if challengers:
-            meta["challengers"] = challengers
+        if model_ins:
+            meta["challengers"] = [ref_name(i) for i in model_ins]
+            no_promote = [ref_name(i) for i in model_ins if "no_promote" in self.input_flags.get(i, ())]
+            if no_promote:
+                meta["no_promote"] = no_promote
         return meta
 
 
@@ -202,14 +232,17 @@ def parse_spec(
             script = raw["script"]
             if script_resolver is not None:
                 script = script_resolver(script)
+            split_inputs = [split_ref_flags(r) for r in raw.get("inputs", [])]
             jobs.append(
                 Job(
                     script=script,
                     mode=raw.get("mode"),
                     outputs=list(raw.get("outputs", [])),
-                    inputs=list(raw.get("inputs", [])),
+                    inputs=[ref for ref, _ in split_inputs],
                     pipeline=pipeline_name,
                     relative_dir=relative_dir,
+                    no_auto=bool(raw.get("no_auto", False)),
+                    input_flags={ref: flags for ref, flags in split_inputs if flags},
                 )
             )
     return jobs
@@ -224,7 +257,7 @@ class PlanItem(NamedTuple):
         job (Job): The job this decision is about.
         run (bool): Whether it should run.
         reason (str): Why -- missing / stale / upstream / unmanaged / no_inputs /
-            up_to_date / selected.
+            up_to_date / selected / no_auto.
     """
 
     job: Job
@@ -750,6 +783,9 @@ class PipelineManager:
         pattern-matched script the user just edited runs even when its inputs are
         up to date. A forced job joins the running set, so the forward flood still
         propagates to its downstream consumers. The DT Lambda passes no force.
+
+        A ``no_auto`` job runs only when forced (reason ``no_auto`` otherwise). It stays
+        out of the running set, so it floods nothing downstream.
         """
         force = force or set()
         if mtime_fn is None:
@@ -759,6 +795,8 @@ class PipelineManager:
         for job in self._job_order():
             if job.key in force:
                 run, reason = True, "selected"
+            elif job.no_auto:
+                run, reason = False, "no_auto"
             else:
                 run, reason = self._needs_run(job, mtime_fn, running)
             if run:

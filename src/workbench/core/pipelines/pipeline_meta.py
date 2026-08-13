@@ -78,6 +78,11 @@ class PipelineMeta:
         return self._meta["challengers"]
 
     @property
+    def no_promote(self) -> list:
+        """The challengers that are scored and reported but never promoted."""
+        return self._meta.get("no_promote", [])
+
+    @property
     def mode(self) -> str | None:
         """The pipeline execution mode (e.g., 'dt', 'ts'), or None for a modeless run."""
         return self._meta.get("mode")

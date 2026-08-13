@@ -61,6 +61,7 @@ REASON_COLORS = {
     "unmanaged": "yellow",
     "up_to_date": "lightgreen",
     "blocked": "red",
+    "no_auto": "lightpurple",
 }
 
 

@@ -33,6 +33,7 @@ file maps pipeline names to a **flat list of nodes**:
 | `mode`    | no       | Run mode, `dt` or `ts`. Omit for a modeless node (see [Modes](#modes)). |
 | `outputs` | no       | Artifact refs this node produces, e.g. `["fs:aqsol_features"]`.     |
 | `inputs`  | no       | Artifact refs this node depends on.                                |
+| `no_auto` | no       | `true` keeps the node out of freshness scheduling (see [Freshness](#freshness)). |
 
 ### Artifact refs
 
@@ -44,6 +45,14 @@ artifact ref is a `type:name` string:
 | `fs:`    | FeatureSet |
 | `ds:`    | DataSource |
 | `model:` | Model      |
+
+An `inputs` ref may carry a trailing flag — `"model:logd-reg-xgb-1-dt:no_promote"` —
+qualifying that artifact's role in the consuming node. The flag is stripped before the
+graph is built, so it never affects edges or freshness. Currently there is one:
+
+| Flag          | Meaning                                                                       |
+|---------------|-------------------------------------------------------------------------------|
+| `no_promote`  | A contest challenger that is scored and reported, but never wins a promotion. |
 
 The execution graph is **derived**: for each `inputs` ref, the launcher draws an
 edge from whichever node lists it in `outputs`. You never hand-write the ordering —
@@ -112,11 +121,15 @@ rebuilds in turn — in one pass, in dependency order. A job is stale when an ou
 is missing, an input is newer than its outputs, or an upstream job is itself
 rerunning.
 
-Two intents are layered on top:
+Three intents are layered on top:
 
 - **Named patterns force a run.** `ml_pipeline_launcher ppb_human` runs the matched
   scripts *regardless* of freshness (you just edited them); their up-to-date
   dependencies stay put. `--all` is freshness-only (rebuild whatever drifted).
+- **`"no_auto": true` opts a node out.** It never runs on freshness alone, so `--all`
+  and the nightly Lambda skip it, and it floods nothing downstream. Naming it as a
+  pattern still runs it — the escape hatch for a model you want to keep frozen (and
+  in its contests) but retrain by hand.
 - **Dependency freshness is shown.** Each dependency artifact in the printed DAG is
   tagged `(current)` / `(modified)` / `(missing)` so you can see *why* something will
   or won't rerun.

@@ -17,6 +17,7 @@ from workbench.lambda_layer.pipeline_manager import (
     ref_name,
     ref_type,
     simulated_mtime,
+    split_ref_flags,
 )
 
 
@@ -60,6 +61,14 @@ class TestRefHelpers:
         assert ref_type("fs:caco2_1") == "fs"
         assert ref_name("fs:caco2_1") == "caco2_1"
 
+    def test_split_ref_flags(self):
+        assert split_ref_flags("model:m-dt") == ("model:m-dt", [])
+        assert split_ref_flags("model:m-dt:no_promote") == ("model:m-dt", ["no_promote"])
+
+    def test_unknown_flag_raises(self):
+        with pytest.raises(ValueError, match="unknown ref flag"):
+            split_ref_flags("model:m-dt:no_promot")
+
 
 class TestParseSpec:
     def test_groups_and_fields(self):
@@ -80,6 +89,16 @@ class TestParseSpec:
         spec = {"pipelines": {"p": [{"script": "sub/fs.py"}]}}
         jobs = parse_spec(spec, script_resolver=lambda s: f"s3://bucket/{s}")
         assert jobs[0].script == "s3://bucket/sub/fs.py"
+
+    def test_no_auto_flag(self):
+        spec = {"pipelines": {"p": [{"script": "a.py", "no_auto": True}, {"script": "b.py"}]}}
+        assert [j.no_auto for j in parse_spec(spec)] == [True, False]
+
+    def test_input_flags_stripped_from_refs(self):
+        spec = {"pipelines": {"p": [{"script": "p.py", "inputs": ["model:a-dt:no_promote", "model:b-dt"]}]}}
+        j = parse_spec(spec)[0]
+        assert j.inputs == ["model:a-dt", "model:b-dt"]
+        assert j.input_flags == {"model:a-dt": ["no_promote"]}
 
 
 class TestConstruction:
@@ -382,6 +401,26 @@ class TestPipelineMeta:
         meta = job("fs.py", outputs=["fs:x"]).pipeline_meta()
         assert meta == {"serverless": True}
 
+    def test_promote_node_carries_challengers_and_no_promote(self):
+        spec = {
+            "pipelines": {
+                "p": [
+                    {
+                        "script": "promote.py",
+                        "inputs": ["model:a-dt", "model:b-dt:no_promote"],
+                        "outputs": ["endpoint:e"],
+                    }
+                ]
+            }
+        }
+        meta = parse_spec(spec)[0].pipeline_meta()
+        assert meta["challengers"] == ["a-dt", "b-dt"]
+        assert meta["no_promote"] == ["b-dt"]
+
+    def test_no_promote_absent_when_unflagged(self):
+        meta = job("promote.py", inputs=["model:a-dt"], outputs=["endpoint:e"]).pipeline_meta()
+        assert "no_promote" not in meta
+
 
 class TestSimulatedMtime:
     def _dag(self):
@@ -426,6 +465,45 @@ class TestForce:
         assert ran(self._dag().plan(up_to_date, force={key("fs.py", outputs=["fs:x"])})) == {
             "fs": "selected",
             "m": "upstream",
+        }
+
+
+class TestNoAuto:
+    """A no_auto job stays out of freshness scheduling, but force still runs it."""
+
+    def _dag(self):
+        return pm(
+            [
+                Job("frozen.py", "dt", ["model:frozen-dt"], ["fs:x"], no_auto=True),
+                job("live.py", mode="dt", outputs=["model:live-dt"], inputs=["fs:x"]),
+                job("promote.py", outputs=["endpoint:e"], inputs=["model:frozen-dt", "model:live-dt"]),
+            ]
+        )
+
+    def test_skipped_when_stale(self):
+        stale = clock({"fs:x": 9, "model:frozen-dt": 1, "model:live-dt": 1, "endpoint:e": 1})
+        decisions = {j.node_id: (should, reason) for j, should, reason in self._dag().plan(stale)}
+        assert decisions["frozen [dt]"] == (False, "no_auto")
+        assert decisions["live [dt]"] == (True, "stale")
+
+    def test_skipped_when_outputs_missing(self):
+        nothing_built = clock({"fs:x": 1})
+        assert ran(self._dag().plan(nothing_built)) == {
+            "live [dt]": "missing",
+            "promote -> e": "missing",
+        }
+
+    def test_floods_nothing_downstream(self):
+        # The promote node is stale only via the live challenger, never the frozen one.
+        fresh = clock({"fs:x": 9, "model:frozen-dt": 1, "model:live-dt": 20, "endpoint:e": 30})
+        assert ran(self._dag().plan(fresh)) == {}
+
+    def test_force_overrides(self):
+        stale = clock({"fs:x": 9, "model:frozen-dt": 1, "model:live-dt": 20, "endpoint:e": 30})
+        forced = {key("frozen.py", "dt", ["model:frozen-dt"])}
+        assert ran(self._dag().plan(stale, force=forced)) == {
+            "frozen [dt]": "selected",
+            "promote -> e": "upstream",
         }
 
 
