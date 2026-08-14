@@ -6,6 +6,8 @@ import logging
 import pandas as pd
 from typing import Optional, TYPE_CHECKING
 
+from workbench.utils.pandas_utils import binary_accuracy
+
 if TYPE_CHECKING:
     from workbench.api import Model
 
@@ -96,29 +98,36 @@ def prediction_comparison(model_a: Model, model_b: Model, inference_run: str = "
     return pd.concat(dfs, ignore_index=True)
 
 
-def rank_models(models: list, inference_run: str = "default") -> pd.DataFrame:
+def rank_models(models: list, inference_run: str = "default", positive_classes: list | None = None) -> pd.DataFrame:
     """Rank models by their primary metric: rmse (low to high) for regressors,
     'all' row f1 (high to low) for classifiers.
 
     Args:
         models (list[Model]): The models to rank
         inference_run (str, optional): The inference run to rank on. Defaults to "default".
+        positive_classes (list[str], optional): The desired classes. Given, classifiers
+            get a ``binary_acc`` metric after ``roc_auc``. Defaults to None (no such column).
 
     Returns:
         pd.DataFrame: One metrics row per model (indexed by model name), best first.
             Models without metrics for the run are logged and skipped.
     """
-    rows = []
+    rows, accs = [], {}
     for model in models:
         df = model.get_inference_metrics(inference_run)
         if df is None or df.empty:
             log.warning(f"No inference metrics for {model.name} run '{inference_run}', skipping")
             continue
         rows.append(_metrics_row(df, model.name))
+        if positive_classes:
+            accs[model.name] = _binary_acc(model, inference_run, positive_classes)
     if not rows:
         return pd.DataFrame()
 
     table = pd.DataFrame(rows)
+    if any(v is not None for v in accs.values()):
+        after = table.columns.get_loc("roc_auc") + 1 if "roc_auc" in table.columns else len(table.columns)
+        table.insert(after, "binary_acc", table.index.map(accs))
     if "rmse" in table.columns:
         return table.sort_values("rmse")
     if "f1" in table.columns:
@@ -126,13 +135,17 @@ def rank_models(models: list, inference_run: str = "default") -> pd.DataFrame:
     return table
 
 
-def contest_ranking(champion: Model, challengers: list, inference_run: str = "default") -> Optional[pd.DataFrame]:
+def contest_ranking(
+    champion: Model, challengers: list, inference_run: str = "default", positive_classes: list | None = None
+) -> Optional[pd.DataFrame]:
     """Rank the challengers of a contest, with metrics-aware deltas against the champion.
 
     Args:
         champion (Model): The champion model (the delta reference)
         challengers (list[Model]): The challenger models to rank
         inference_run (str, optional): The inference run to compare. Defaults to "default".
+        positive_classes (list[str], optional): The desired classes, for the ``binary_acc``
+            metric (see :func:`rank_models`). Defaults to None.
 
     Returns:
         pd.DataFrame: rank_models() of the challengers with a Δ column after each metric
@@ -140,13 +153,16 @@ def contest_ranking(champion: Model, challengers: list, inference_run: str = "de
             no Δ). If the champion has no metrics for the inference run, the ranking is
             returned without Δ columns.
     """
-    ranked = rank_models(challengers, inference_run)
+    ranked = rank_models(challengers, inference_run, positive_classes)
 
     champ_df = champion.get_inference_metrics(inference_run)
     if champ_df is None or champ_df.empty:
         log.warning(f"No inference metrics for champion {champion.name} run '{inference_run}': no Δ columns")
         return ranked
     champ_row = _metrics_row(champ_df, champion.name)
+    if positive_classes:
+        # Only ever looked up by name below, so the champion's row needs no ordering
+        champ_row["binary_acc"] = _binary_acc(champion, inference_run, positive_classes)
     ordered = []
     for col in ranked.columns:
         ordered.append(col)
@@ -163,6 +179,7 @@ def contest_report(
     endpoint_name: str,
     inference_run: str = "full_cross_fold",
     no_promote: list | None = None,
+    positive_classes: list | None = None,
 ) -> Optional[pd.DataFrame]:
     """The publishable contest report: champion + ranked challengers in one table.
 
@@ -174,6 +191,9 @@ def contest_report(
         no_promote (list[str], optional): Challenger names that compete but can never take
             the endpoint (the pipelines.json ``:no_promote`` flag). They are ranked and
             counted toward ``contested`` like any other. Defaults to none.
+        positive_classes (list[str], optional): The assay's desired classes. Given,
+            classifier rows carry a ``binary_acc`` metric after ``roc_auc``. Which classes
+            are desired is the caller's policy; the computation is ours. Defaults to None.
 
     Returns:
         pd.DataFrame: One row per model (champion first, then challengers best-first) with
@@ -184,8 +204,8 @@ def contest_report(
             contested is the contest-level flag (see CONTESTED_PCT), repeated on every row.
             Models without metrics are skipped; None if no model has metrics.
     """
-    champ_row = rank_models([champion], inference_run)
-    chall_rows = contest_ranking(champion, challengers, inference_run)
+    champ_row = rank_models([champion], inference_run, positive_classes)
+    chall_rows = contest_ranking(champion, challengers, inference_run, positive_classes)
     if champ_row.empty and chall_rows.empty:
         log.warning(f"No metrics for any model in the '{endpoint_name}' contest: no report")
         return None
@@ -255,6 +275,28 @@ def _framework(model) -> str:
     except Exception as e:
         log.warning(f"Could not determine framework for {model.name}: {e}")
         return "unknown"
+
+
+def _binary_acc(model: Model, inference_run: str, positive_classes: list) -> Optional[float]:
+    """Binary accuracy: the desired classes collapsed to positive, the rest negative.
+
+    This is how these classifiers are actually judged. None when there's nothing to
+    compute -- a regressor (no confusion matrix), or a matrix with no positive or no
+    negative class left.
+    """
+    cm = model.confusion_matrix(inference_run)
+    if cm is None or cm.empty:
+        return None
+
+    # Intersect: a desired class with no samples is simply absent from the matrix
+    classes = list(cm["labels"])
+    positives = [c for c in positive_classes if c in classes]
+    if not positives:
+        log.warning(f"None of {positive_classes} are classes of {model.name}; no binary_acc")
+        return None
+    if len(positives) == len(classes):
+        return None  # every class desired -- accuracy is trivially 1.0
+    return binary_accuracy(cm, positives)
 
 
 def _metrics_row(df: pd.DataFrame, model_name: str) -> pd.Series:

@@ -17,6 +17,7 @@ import pandas as pd
 # Workbench Imports
 from workbench.utils.model_comparison import (
     _contested,
+    _binary_acc,
     contest_ranking,
     contest_report,
     model_comparison,
@@ -150,6 +151,68 @@ def test_contested_skips_the_champions_twin():
     # Every challenger is a twin -> nothing real to contest against
     champ, chall = _contest(0.50, [("twin-a", 0.50), ("twin-b", 0.50)])
     assert _contested(champ, chall) is False
+
+
+class _StubModel:
+    """Just enough model to rank: a name, a metrics row, and a confusion matrix
+    (None for a regressor, which has no matrix to collapse)."""
+
+    METRICS = {"precision": 0.8, "recall": 0.79, "f1": 0.795, "roc_auc": 0.9, "support": 116}
+
+    def __init__(self, conf_matrix, name="stub-model", metrics=None):
+        self._conf_matrix = conf_matrix
+        self.name = name
+        self._metrics = metrics or self.METRICS
+
+    def get_inference_metrics(self, inference_run):
+        return pd.DataFrame([self._metrics])
+
+    def confusion_matrix(self, inference_run):
+        return self._conf_matrix
+
+
+def _conf_matrix():
+    # The standard form: a "labels" column (actual class) plus a column per predicted class
+    return pd.DataFrame(
+        {
+            "labels": ["low", "med", "high"],
+            "low": [40, 5, 1],
+            "med": [6, 30, 4],
+            "high": [2, 3, 25],
+        }
+    )
+
+
+def test_binary_acc_collapses_to_desired_vs_undesired():
+    """desired = low + med, so 'high' is the whole negative class"""
+    acc = _binary_acc(_StubModel(_conf_matrix()), "full_cross_fold", ["low", "med"])
+    tp, tn, fp, fn = 40 + 6 + 5 + 30, 25, 1 + 4, 2 + 3
+    assert acc == pytest.approx((tp + tn) / (tp + tn + fp + fn))
+
+
+@pytest.mark.parametrize(
+    "conf_matrix, positive_classes",
+    [
+        (None, ["low"]),  # regressor (or no matrix for the run)
+        (_conf_matrix(), ["low", "med", "high"]),  # every class desired -> accuracy is trivially 1
+        (_conf_matrix(), ["not-a-class"]),  # none of the desired classes are present
+    ],
+)
+def test_binary_acc_none_when_not_computable(conf_matrix, positive_classes):
+    """A degenerate case yields None, so no column is added at all -- never a NaN column"""
+    assert _binary_acc(_StubModel(conf_matrix), "full_cross_fold", positive_classes) is None
+
+
+def test_rank_models_places_binary_acc_after_roc_auc():
+    """Given desired classes, rank_models() slots binary_acc in right after roc_auc"""
+    models = [_StubModel(_conf_matrix(), name="a"), _StubModel(_conf_matrix(), name="b")]
+    ranked = rank_models(models, "full_cross_fold", positive_classes=["low", "med"])
+    assert list(ranked.columns) == ["precision", "recall", "f1", "roc_auc", "binary_acc", "support"]
+
+    # No desired classes, or none computable -> the table is exactly as it was
+    assert "binary_acc" not in rank_models(models, "full_cross_fold").columns
+    regressors = [_StubModel(None, name="a"), _StubModel(None, name="b")]
+    assert "binary_acc" not in rank_models(regressors, "full_cross_fold", positive_classes=["low"]).columns
 
 
 def test_contested_percent_threshold():
