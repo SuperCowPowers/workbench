@@ -26,7 +26,7 @@ Do these in order (the optional stacks can be skipped or added later):
 2. [Core Stack](core_stack.md) — deploy the foundational `Workbench-ExecutionRole` (**required**)
 3. Grant role access — [SSO Users](sso_assume_role.md) or [IAM Users](iam_assume_role.md)
 4. *(optional)* [Compute Stack](compute_stack.md) — AWS Batch for pipeline fan-out
-5. *(optional)* [AWS Bedrock](bedrock_setup.md) — enable Claude for the ML agent (see [AWS Bedrock Security](bedrock_security.md))
+5. *(optional)* [Bosco Security & Admin](../bosco/security.md) — enable Claude via Bedrock for the ML agent
 6. *(optional)* [Dashboard Stack](dashboard_stack.md) — the team web UI (+ optional [domain/SSL](domain_cert_setup.md))
 
 Then, as a final smoke test, run the

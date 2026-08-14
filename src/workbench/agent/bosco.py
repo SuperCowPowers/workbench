@@ -306,7 +306,7 @@ def bosco(prompt: str = None):
         _ask(prompt)
         return
     cprint("lightpurple", "🐶  Just ask -- type a question at the prompt.")
-    cprint("grey", '(⌥ Option+Enter = newline. Say "show code"/"hide code", or set bosco.show_code.)')
+    cprint("grey", '(Shift+Enter = newline. Say "show code"/"hide code", or set bosco.show_code.)')
 
 
 # Echo the code Bosco runs. Off by default; set True to follow along.
@@ -403,7 +403,7 @@ def _bosco_transform(lines):
 
 
 def _install_newline_keys(shell) -> None:
-    """Make Ctrl-J / Option+Enter insert a newline at the main REPL prompt.
+    """Make Shift+Enter / Option+Enter insert a newline at the main REPL prompt.
 
     Terminals can't send a distinct Shift+Enter, so users map it to Ctrl-J
     (hex 0x0a). Ctrl-J otherwise behaves as Enter, which is what we are

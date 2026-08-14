@@ -358,7 +358,7 @@ class WorkbenchShell:
               what pxr models do we have?
         - bosco <text>: Force a question when the text IS valid Python
         - ?Model / ??Model: Object help (a trailing ? is a question for Bosco)
-        - Multi-line: ⌥ Option+Enter or Ctrl-J for a new line; Enter sends
+        - Multi-line: Shift+Enter for a new line (see docs to map it); Enter sends
         - "show code" / "hide code": Toggle echoing the code Bosco runs
         - Ctrl-C: Interrupt Bosco (the conversation stays usable)
         - "how do I use you": Bosco explains the rest"""

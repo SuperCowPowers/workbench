@@ -1653,7 +1653,7 @@ class WorkbenchCoreStack(Stack):
         FeatureSet recreation is a destroy-and-recreate today (overwrite-mode
         writes), so this also blocks overwriting an existing one, not just
         deleting it — that requires the full Execution Role. Model/Endpoint
-        deletes are not denied. See docs/aws_setup/bedrock_security.md.
+        deletes are not denied. See docs/bosco/security.md.
         """
         return [
             # DataSource + FeatureSet S3 data (parquet, offline store objects).

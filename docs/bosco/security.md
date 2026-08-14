@@ -1,13 +1,78 @@
-# AWS Bedrock Security
+# Bosco: Security & Admin
 
-The [Workbench ML agent](../blogs/ml_agent.md) can see real data — it profiles
-your actual FeatureSets, reads your actual model predictions, and reasons over
-your actual compounds. That is what makes it
-useful, and for any organization whose chemistry is proprietary it raises a
-fair question. Not *whether* that data reaches a language model, but
-**which boundary it crosses to get there**.
+The [Workbench ML agent](index.md) can see real data — it profiles your actual
+FeatureSets, reads your actual model predictions, and reasons over your actual
+compounds. That is what makes it useful, and for any organization whose
+chemistry is proprietary it raises a fair question. Not *whether* that data
+reaches a language model, but **which boundary it crosses to get there**.
 
-Running Claude through Amazon Bedrock keeps that boundary inside AWS.
+Bosco runs Claude through **Amazon Bedrock**, which keeps that boundary inside
+AWS: prompts are authenticated by your existing Workbench IAM roles, billed
+through your AWS account, and never leave AWS.
+
+## Turning Bosco on
+
+Set `ENABLE_BOSCO` in the personal Workbench **config** for each account. It's
+also handy to set the dashboard URL so Bosco can open Dashboard pages for you.
+
+```json
+{
+    ...
+   "DASHBOARD_URL": "<your dashboard URL>",
+   "ENABLE_BOSCO": true,
+   "WORKBENCH_ROLE": "Workbench-BuilderRole",
+    ...
+}
+```
+
+The config file lives at:
+
+| OS | Path |
+| --- | --- |
+| macOS / Linux | `~/.workbench/workbench_config.json` |
+| Windows | `%LOCALAPPDATA%\Workbench\workbench_config.json` |
+
+!!! note "Which model?"
+    The agent defaults to **Claude Opus 5**
+    (`us.anthropic.claude-opus-5`). Any Claude model works. Non-Anthropic
+    models (Llama, Mistral, Titan) are not supported.
+
+### Verify
+
+```bash
+bedrock_verify
+```
+
+Uses the same credentials and region as the Workbench REPL, and does a small
+round-trip against Claude:
+
+```
+Region: us-west-2
+Model:  us.anthropic.claude-opus-5
+Success: ready
+```
+
+To check a different model:
+
+```bash
+bedrock_verify us.anthropic.claude-opus-4-8
+```
+
+!!! info "Model availability can lag"
+    A model listed in the Bedrock catalog is not always callable right away.
+    AWS enables models per account, and a newly released one can return an
+    access or Marketplace error for a while before it starts working — often
+    without any action on your part. Some models also need to be enabled at the
+    AWS Organization level, which is outside your account's control.
+
+    If `bedrock_verify` fails on a model you expect to have, wait a few minutes
+    and run it again. If it keeps failing, contact Workbench support and we'll
+    help sort out where the model is gated.
+
+### Cost
+
+Per-token against your AWS account, on the same bill as SageMaker. See
+[AWS Service Limits](../admin/aws_service_limits.md) for quota monitoring.
 
 ## The path a prompt takes
 
@@ -64,12 +129,12 @@ already use, not a separate privilege.
 Two controls bound that reach:
 
 - **IAM is the hard boundary.** By default the REPL runs under the
-  **Builder role** ([Grant Access](sso_assume_role.md)) — full create, train,
-  and read, but AWS refuses to delete or overwrite a DataSource or FeatureSet,
-  regardless of what any prompt says. Removing those upstream artifacts requires
-  deliberately launching under the Execution role. This is the control to lean
-  on: no prompt, mistaken or otherwise, can destroy an upstream artifact from a
-  Builder session.
+  **Builder role** ([Grant Access](../aws_setup/sso_assume_role.md)) — full
+  create, train, and read, but AWS refuses to delete or overwrite a DataSource
+  or FeatureSet, regardless of what any prompt says. Removing those upstream
+  artifacts requires deliberately launching under the Execution role. This is
+  the control to lean on: no prompt, mistaken or otherwise, can destroy an
+  upstream artifact from a Builder session.
 - **Irreversible actions are confirmed.** Before deleting or overwriting an
   artifact, dropping a table, or standing up a realtime endpoint, the agent
   states exactly what it will affect and waits for your explicit go-ahead. It
@@ -106,6 +171,28 @@ CloudWatch — is **off unless you turn it on**. If you enable it for auditing,
 that log becomes the most sensitive artifact in your account and should be
 treated accordingly.
 
+## Zero data retention
+
+Setting the account retention mode to `none` guarantees nothing is stored at
+all. There is no console for this — it is an API call, and it needs admin
+credentials:
+
+```bash
+AWS_PROFILE=<profile> aws bedrock put-account-data-retention --region <region> --mode none
+```
+
+Verify it took:
+
+```bash
+AWS_PROFILE=<profile> aws bedrock get-account-data-retention --region <region>
+```
+
+The setting is account-wide, not per-user. Two things to know before you flip
+it: some models require per-account ZDR approval from AWS before `none` is
+permitted, and any model that does not allow the mode simply becomes
+unavailable to the account. The `bedrock:DataRetentionMode` condition key lets a
+Service Control Policy keep anyone from loosening it afterwards.
+
 ## Region
 
 The agent defaults to a US geographic inference profile
@@ -139,13 +226,9 @@ aws cloudtrail lookup-events \
 Defaults are appropriate for most deployments. Three levers exist if your
 compliance posture requires more.
 
-**Zero data retention.** Setting the account retention mode to `none`
-guarantees nothing is stored, and the `bedrock:DataRetentionMode` condition
-key lets a Service Control Policy prevent anyone from loosening it. There is
-no console for this — it is an API call
-([the commands](../repl/bosco.md#zero-data-retention)). Some models require
-per-account ZDR approval from AWS before `none` is permitted, and any model
-that does not allow the mode simply becomes unavailable.
+**Zero data retention.** [The commands](#zero-data-retention) are above, and the
+`bedrock:DataRetentionMode` condition key lets a Service Control Policy prevent
+anyone from loosening the setting.
 
 **Private network path.** See [PrivateLink](#privatelink) below.
 
@@ -199,7 +282,3 @@ AWS references:
     SuperCowPowers team is happy to help — reach us at
     [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on
     [Discord](https://discord.gg/WHAJuz8sw8).
-
-## See also
-
-- [AWS Bedrock Setup](bedrock_setup.md) — enabling model access and verifying

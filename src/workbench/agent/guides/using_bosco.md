@@ -22,19 +22,21 @@ A line ending in `?` always comes to you, so object help is the prefix form:
 
 ## Multi-line input
 
-- **⌥ Option+Enter** (labeled Alt on non-Mac keyboards) or **Ctrl-J** — new line
+- **Shift+Enter** — new line, once the terminal is set up (below)
 - **Enter** — send
 - **Paste** — multi-line paste lands as-is, no key needed
 
-Shift+Enter can't work out of the box: terminals send the same byte for it as for
-Enter, so nothing can tell them apart. Mapping it to Ctrl-J in the terminal works.
+A terminal sends the same byte for Shift+Enter as for Enter, so nothing can
+tell them apart until it's mapped to newline (hex `0x0a`). It's a one-time
+setting, and it then works in every terminal program, not just here.
 
 | Terminal | Setting |
 |---|---|
-| iTerm2 | Settings → Keys → Key Bindings → `⇧↩` → Send Hex Code → `0x0a` |
+| iTerm2 | Settings → Keys → Key Bindings → **+** → press `⇧↩` → Send Hex Code → `0x0a` |
 | kitty | `map shift+enter send_text all \x0a` |
-| WezTerm | `{key="Enter", mods="SHIFT", action=wezterm.action.SendString("\n")}` |
 | Ghostty | `keybind = shift+enter=text:\x0a` |
+| WezTerm | `{key="Enter", mods="SHIFT", action=wezterm.action.SendString("\n")}` |
+| VS Code | `{"key": "shift+enter", "command": "workbench.action.terminal.sendSequence", "args": {"text": "\n"}, "when": "terminalFocus"}` |
 
 ## Settings
 

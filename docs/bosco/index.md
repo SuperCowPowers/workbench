@@ -2,15 +2,16 @@
 
 !!! tip inline end "Background"
     Why an agent in the REPL at all: [The Workbench ML Agent](../blogs/ml_agent.md).
-    Where your data goes: [AWS Bedrock Security](../aws_setup/bedrock_security.md).
+    Where your data goes: [Security & Admin](security.md).
 
-Bosco is an ML engineering agent living inside the [Workbench REPL](index.md).
-He writes and runs Python in **your** session — the variables he creates stay in
-your namespace, and he reads your real FeatureSets, models, and predictions.
+Bosco is an ML engineering agent living inside the
+[Workbench REPL](../repl/index.md). He writes and runs Python in **your**
+session — the variables he creates stay in your namespace, and he reads your
+real FeatureSets, models, and predictions.
 
 Bosco is opt-in per account. Set `ENABLE_BOSCO` in your Workbench config and
-make sure Bedrock is reachable ([AWS Bedrock Setup](../aws_setup/bedrock_setup.md));
-when both are true, `Bosco` appears in the REPL prompt.
+make sure Bedrock is reachable ([Security & Admin](security.md)); when both are
+true, `Bosco` appears in the REPL prompt.
 
 ## Talking to it
 
@@ -20,10 +21,8 @@ Python and it runs as Python.
 ```
 Workbench:scp_sandbox:Bosco> what pxr models do we have?
 Workbench:scp_sandbox:Bosco> models_df = models(details=True)
-Workbench:scp_sandbox:Bosco> bosco compare those two on their holdout
+Workbench:scp_sandbox:Bosco> compare those two on their holdout
 ```
-
-The `bosco <text>` prefix forces a question when the text *is* valid Python.
 
 **How the REPL decides:**
 
@@ -39,22 +38,6 @@ The `bosco <text>` prefix forces a question when the text *is* valid Python.
 Object help is the **prefix** form here. A trailing `?` is never valid Python
 and is nearly always a question, so `Model?` reaches Bosco and `?Model` gets
 you the docstring.
-
-## Multi-line input
-
-- **⌥ Option+Enter** (Alt on non-Mac keyboards) or **Ctrl-J** — new line
-- **Enter** — send
-- **Paste** — multi-line paste lands as-is
-
-Shift+Enter can't work out of the box: terminals send the same byte for it as
-for Enter. Map it to Ctrl-J and it works.
-
-| Terminal | Setting |
-|---|---|
-| iTerm2 | Settings → Keys → Key Bindings → `⇧↩` → Send Hex Code → `0x0a` |
-| kitty | `map shift+enter send_text all \x0a` |
-| WezTerm | `{key="Enter", mods="SHIFT", action=wezterm.action.SendString("\n")}` |
-| Ghostty | `keybind = shift+enter=text:\x0a` |
 
 ## Settings
 
@@ -95,34 +78,44 @@ is pull-based instead — `batch_jobs()` shows what is running, and anything tha
 completed since your last turn is handed to Bosco at the start of the next one,
 so he can speak to the outcome.
 
-## Zero data retention
+## Where your data goes
 
-Bedrock's default retention keeps inputs and outputs for AWS safety and abuse
-prevention; the model provider never receives them. Setting the account
-retention mode to `none` guarantees nothing is stored at all.
+Bosco's prompts carry real data by design, and they travel over Bedrock inside
+your own AWS account — same IAM, same CloudTrail, same bill. Bedrock's default
+retention keeps inputs and outputs for AWS safety and abuse prevention; the
+model provider never receives them, and an account-wide setting turns retention
+off entirely.
 
-There is no console for this — it is an API call, and it needs admin
-credentials:
+The full picture — enabling Bosco, retention modes, zero data retention,
+invocation logging, auditing, and PrivateLink — is on
+[Security & Admin](security.md).
 
-```bash
-AWS_PROFILE=<profile> aws bedrock put-account-data-retention --region <region> --mode none
-```
+## Multi-line input
 
-Verify it took:
+- **Shift+Enter** — new line (one-time terminal setup, below)
+- **Enter** — send
+- **Paste** — multi-line paste lands as-is
 
-```bash
-AWS_PROFILE=<profile> aws bedrock get-account-data-retention --region <region>
-```
+### Terminal setup for Shift+Enter
 
-The setting is account-wide, not per-user. Two things to know before you flip
-it: some models require per-account ZDR approval from AWS before `none` is
-permitted, and any model that does not allow the mode simply becomes
-unavailable to the account. The `bedrock:DataRetentionMode` condition key lets a
-Service Control Policy keep anyone from loosening it afterwards.
+A terminal sends the same byte for Shift+Enter as it does for Enter, so no
+program can tell them apart. Map Shift+Enter to newline (hex `0x0a`) once in
+your terminal and it works everywhere, including here.
 
-Full context — retention modes, PrivateLink, invocation logging, and what the
-model provider can and cannot see — is on the
-[AWS Bedrock Security](../aws_setup/bedrock_security.md) page.
+**iTerm2**
+
+1. Settings → Keys → Key Bindings → **+**
+2. Click the shortcut field and press **⇧↩**
+3. Action: **Send Hex Code**, value `0x0a`
+
+**Other terminals** — add to the config file:
+
+| Terminal | Setting |
+|---|---|
+| kitty | `map shift+enter send_text all \x0a` |
+| Ghostty | `keybind = shift+enter=text:\x0a` |
+| WezTerm | `{key="Enter", mods="SHIFT", action=wezterm.action.SendString("\n")}` |
+| VS Code | `{"key": "shift+enter", "command": "workbench.action.terminal.sendSequence", "args": {"text": "\n"}, "when": "terminalFocus"}` |
 
 ## Questions?
 <img align="right" src="../images/scp.png" width="180">

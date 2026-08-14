@@ -1,9 +1,8 @@
 # The Workbench ML Agent
 !!! tip inline end "Already Using Workbench?"
     Bosco ships with the [Workbench REPL](../repl/index.md) — see
-    [Bosco](../repl/bosco.md) for how to drive him. Model access is a one-time
-    setup: [AWS Bedrock Setup](../aws_setup/bedrock_setup.md) and
-    [AWS Bedrock Security](../aws_setup/bedrock_security.md).
+    [Using Bosco](../bosco/index.md) for how to drive him. Model access is a
+    one-time setup: [Security & Admin](../bosco/security.md).
 
 Workbench embeds an ML agent — **Bosco** — directly in the Python REPL. Chemists
 and data scientists describe what they want in plain language — *"which compounds
@@ -52,7 +51,7 @@ Bedrock skips all of it:
 | Your data | Exposed to a third party        | Stays in your AWS account |
 
 Teams that want the details — IAM roles, retention settings, PrivateLink — will
-find them on the [AWS Bedrock Security](../aws_setup/bedrock_security.md) page.
+find them on the [Security & Admin](../bosco/security.md) page.
 
 ## Questions?
 <img align="right" src="../../images/scp.png" width="180">

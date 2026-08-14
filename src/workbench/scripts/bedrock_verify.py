@@ -11,7 +11,7 @@ Example:
     bedrock_verify us.anthropic.claude-opus-4-8
 
 Runs a tiny round-trip against Bedrock using the Workbench assumed role and
-region. See docs/aws_setup/bedrock_setup.md for setup.
+region. See docs/bosco/security.md for setup.
 """
 
 import sys
@@ -21,7 +21,7 @@ from workbench.utils.repl_utils import cprint
 from workbench.utils.bedrock_utils import DEFAULT_MODEL, bedrock_client, ping_model
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-DOC_HINT = "See docs/aws_setup/bedrock_setup.md for setup and model availability."
+DOC_HINT = "See docs/bosco/security.md for setup and model availability."
 
 
 def list_models():
