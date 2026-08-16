@@ -22,9 +22,16 @@ isoforms) plus primary screening on the Enamine DDS10 diversity set and an
 FDA-approved set. Assays are biochemical with recombinant enzymes —
 fluorescence for 3A4/2C9/1A2, acoustic-ejection mass spec for 2D6.
 
-**Dates:** launches 2026-08-17, intermediate submission 2026-09-24, final
-submission 2026-11-03. Half the test set is on a live leaderboard (split by
-chemical series); half stays blind until the end.
+A third **structure (pose) track** — 184 structures, one leaderboard — opens
+partway through and is scored separately from the two activity tracks.
+
+**Dates:** launches 2026-08-17, intermediate submission 2026-09-24, intermediate
+leaderboard 2026-09-25, final submission 2026-11-03. Deadlines are 23:59 UTC.
+
+**One continuous stage — no ground truth is ever unblinded mid-challenge.** The
+2026-09-25 intermediate leaderboard reveals *scores*, not labels. This differs
+from the PXR challenge, which unblinded half its test set partway through; do
+not carry that structure over.
 
 ## Scoring drives the modeling
 
@@ -50,6 +57,21 @@ What follows from that:
 MCC on the TDI track is chosen for imbalanced labels — accuracy will look good
 and mean nothing. Quote MCC, and check the positive-class rate before claiming
 a classifier works.
+
+**The TDI label is a shift between two arms, not a measured value**, so it is
+defined piecewise around pIC50 4 (the assay's reliable floor); the shift
+threshold is 2-fold, log10(2) = 0.301:
+
+| Direct pIC50 | TDI-arm | Label |
+|---|---|---|
+| > 4 | shift > 0.301 | positive |
+| > 4 | shift ≤ 0.301 | negative |
+| < 4 | > 4.301 | positive (inferred) |
+| < 4 | < 4 | negative (assigned) |
+
+Predictions are required for all 750 compounds, but only confidently-labelable
+ones score. Both inferred positives and assigned negatives are real scored
+labels — do not filter them out of training as unmeasurable.
 
 ## The test set is analog-heavy — this is the key fact
 
@@ -127,10 +149,15 @@ there yet.
 
 ## Submission discipline
 
-- **One submission per team**, and no mid-challenge test-set release. There is
-  no iterate-against-the-leaderboard loop, so the champion has to be chosen on
-  internal evidence — build the candidates, run them through a contest on a
-  shared `inference_run`, and promote on the deltas (`contests`, `promotion`).
+- **One account per team or lab** — not one submission. Submissions are
+  rate-limited to one per 12 hours and the latest valid one counts, so there is
+  a live leaderboard to iterate against. Whether the live board scores the full
+  750 or a subset is unconfirmed; ask on Discord rather than assuming.
+- A leaderboard loop at 12-hour granularity is far too slow and too coarse to
+  select a champion. Choose on internal evidence — build the candidates, run
+  them through a contest on a shared `inference_run`, and promote on the deltas
+  (`contests`, `promotion`) — and use the board to check for calibration
+  surprises, not to rank.
 - Proprietary CYP data may be used but **must be disclosed**. If the user pulls
   in private data, note that the disclosure is required.
 - No restriction on methods or external property databases.
