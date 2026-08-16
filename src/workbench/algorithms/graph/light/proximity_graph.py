@@ -102,12 +102,12 @@ if __name__ == "__main__":
     # Real dataset with graph visualization
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
-    from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
+    from workbench.utils.chem_utils.fingerprints import feature_fingerprints
     from workbench.utils.graph_utils import graph_layout
 
     print("\n--- Tox21 FingerprintProximity Graph ---")
     tox_df = DFStore().get("/datasets/chem_info/tox21")[:500]
-    tox_df = compute_morgan_fingerprints(tox_df)
+    tox_df = feature_fingerprints(tox_df)
     prox = FingerprintProximity(tox_df, fingerprint_column="fingerprint", id_column="id")
     graph = prox.graph(n_neighbors=5)
     print(f"Nodes: {graph.number_of_nodes()}, Edges: {graph.number_of_edges()}")

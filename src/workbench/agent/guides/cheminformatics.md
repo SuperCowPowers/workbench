@@ -28,7 +28,7 @@ and `dir(module)` in the REPL are the documentation. Reach for them freely.
 
 ## How Workbench computes fingerprints
 
-`chem_utils/fingerprints.py` → `compute_morgan_fingerprints(df, radius=2, n_bits=4096)`.
+`chem_utils/fingerprints.py` → `feature_fingerprints(df, radius=2, n_bits=4096)`.
 The choices that aren't obvious:
 
 - **Count, not binary.** Each bit holds how many times the substructure appears

@@ -39,13 +39,18 @@ not carry that structure over.
 pIC50 label carries a Bayesian credible interval from the curve fit, and a
 prediction landing inside it is scored as perfect. Intervals widen at low
 activity, and compounds below pIC50 4 (under the lowest tested concentration)
-are downweighted further.
+carry the widest ones.
+
+**How much forgiveness that actually buys is small.** On the Octant CYP3A4
+curves the median interval is 0.094 pIC50 units wide (mean 0.250, pulled up by
+the low-activity tail). So for well-measured compounds ST-RAE is close to plain
+RAE, and the free pass only really applies out in the weak tail.
 
 What follows from that:
 
 - **Accuracy on potent, tightly-measured compounds is where the score lives.**
   The weak/inactive tail is cheap to miss. Don't spend the modeling budget
-  flattening errors on compounds that are downweighted anyway.
+  flattening errors on compounds whose intervals are wide anyway.
 - It is *relative* absolute error, so this is not a license to regress
   everything toward the mean — that surrenders the potent end.
 - Report the training labels' own intervals when discussing accuracy. A model
@@ -53,6 +58,23 @@ What follows from that:
   chasing it further is wasted effort.
 - Our `confidence` and `q_05`/`q_95` outputs are **not** submitted and do not
   score. They are for deciding where to hedge, not part of the entry (`uq`).
+
+**Workbench computes ST-RAE.** `compute_regression_metrics` adds an `st_rae`
+column whenever the target carries `<target>_ci_lower`/`_ci_upper`, so it lands
+in model metrics and the dashboard with no extra work:
+
+```python
+from workbench.utils.metrics_utils import macro_soft_threshold_rae, soft_threshold_rae
+```
+
+**Our `st_rae` is not comparable to a leaderboard number.** RAE needs a
+denominator, and OpenADMET has never published a scoring script (the finished
+PXR challenge's Space displays RAE but ships no metric code). We score the
+mean-predictor baseline with the same soft threshold, so 1.0 keeps its "no
+better than the mean" meaning; the plain `sum|y - ȳ|` denominator runs about 17%
+lower on real data. The choice cannot change model *rankings* within an
+endpoint — the denominator does not depend on the predictions — so it is safe
+for selection, and only the absolute value is uncomparable.
 
 MCC on the TDI track is chosen for imbalanced labels — accuracy will look good
 and mean nothing. Quote MCC, and check the positive-class rate before claiming
@@ -85,9 +107,23 @@ regime where our measured HPO gains disappeared.
   untuned defaults on PXR's analog set (`hpo`). If an HPO run is done anyway,
   quote `model.hpo_results()` numbers and treat a baseline win as the expected
   outcome.
-- **Cross-validation will overstate performance.** Use scaffold or Butina
-  splits (`hyperparameters={"split_strategy": "butina"}`) and say plainly that
-  CV numbers are optimistic for this test set.
+- **Evaluate on an analog holdout, not cross-validation.**
+  `analog_holdout_split` reproduces how this test set was built — top hits per
+  target plus each hit's nearest neighbors, held out together:
+
+  ```python
+  from workbench.training.splits import analog_holdout_split
+  ```
+
+  Measured on the public Veith CYP3A4 data: a random split of the *same size*
+  makes a baseline look 2.1x more accurate (MAE 0.304) than the analog holdout
+  does (MAE 0.637). Quote the analog number; a CV number is the optimistic one.
+  Butina (`hyperparameters={"split_strategy": "butina"}`) is still the right
+  *training* fold strategy — it answers "new chemotypes?", which is a different
+  question from "new analogs of known hits?".
+- The holdout runs small (178 of 9,377 rows at 25 hits x 10 analogs, since
+  neighbors overlap between hits). Raise `n_hits` before trusting it to pick a
+  champion.
 - Analog clusters mean small structural changes must move the prediction.
   Check activity cliffs and near-duplicate collisions in the training data
   before trusting a model to resolve them (`proximity`, `data_cleanup`).
@@ -128,24 +164,79 @@ endpoint and score it, or the model comes back with no metrics.
 The TDI track is a **separate classifier**, not a fifth regression target —
 different label semantics, only two isoforms. Name it `-class`.
 
+## 3D / xTB features are worth testing here, unlike PXR
+
+CYP inhibition is catalysis at a heme iron: potency depends on orientation and
+access to the heme, and the classic inhibitor pharmacophore is type-II
+coordination — an azole or pyridine lone pair binding the iron directly. TDI is
+the stronger case still, since mechanism-based inhibition requires the compound
+to be oxidized into a reactive species. That is oxidation potential, HOMO, and
+site-of-metabolism reactivity — exactly what the curated xTB electronic block in
+`smiles-to-2d-3d-v2` targets.
+
+This does **not** contradict the PXR result. PXR is a large promiscuous pocket
+where induction tracks lipophilicity and size, which 2D descriptors already
+encode; the mechanism here is different.
+
+- **Build it as a standalone model that ensembles in, not as descriptors
+  appended to a Chemprop backbone.** Appending is precisely what failed on PXR,
+  where held-out RAE degraded monotonically as more 3D columns went in. The
+  argument here is orthogonal information, which is an ensemble-diversity
+  argument.
+- On PXR, 3D ranked high in SHAP and *still* failed to transfer to the analog
+  set. The verdict comes from the analog holdout, never from CV or feature
+  importance.
+
 ## Data already on hand
 
-Related CYP3A4 dose-response from the same OpenADMET/Octant source is in public
-data, with credible-interval columns in the same shape the challenge scores on:
+Two public sources, and they play different roles.
+
+**Octant (same lab, same platform as the challenge)** — CYP3A4 only, but it
+carries credible-interval columns in the exact shape the challenge scores on:
 
 ```python
 inhibition_df = pub_data.get("comp_chem/openadmet/octant_cyp/inhibition")   # 1340 rows, CYP3A4 pIC50 + CI
 reactivity_df = pub_data.get("comp_chem/openadmet/octant_cyp/reactivity")   # 2446 rows, multi-enzyme turnover
 ```
 
-The inhibition table carries QC columns (`drc_qc_status`, `activity_status`,
-`rollover_status`, `saturation_status`) — filter to clean curves before
-training. `pub_data.describe(...)` gives the per-column meanings.
+QC columns (`drc_qc_status`, `activity_status`, `rollover_status`,
+`saturation_status`) — filter to clean curves before training.
 
-**The challenge's own train/test files are not in public data.** They do not
-exist until the 2026-08-17 launch. Never invent a
-`comp_chem/openadmet/cyp/...` path; check `pub_data.list()` and say it isn't
-there yet.
+**Veith qHTS panel (PubChem AID 1851)** — all four challenge isoforms plus
+CYP2C19, one row per compound-isoform pair:
+
+```python
+all_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/all_isoforms")  # 85,535 rows, 17,107 compounds
+cyp3a4_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/cyp3a4")     # per-isoform files also available
+```
+
+About 33,500 fitted curves across the four targets — roughly 5x the challenge's
+own ~1,500-per-isoform training set. Three things to know before using it:
+
+- **It is noisier than the challenge data.** Compounds assayed under multiple
+  SIDs disagree by a median of 0.40 pIC50 units, against Octant's 0.094 median
+  interval width. Treat it as pretraining signal with a down-weight, not as
+  equal-weight training data.
+- **The 42,355 "Inactive" rows are censored, not missing.** Those compounds were
+  tested and showed no inhibition up to 57 uM — a real measurement saying
+  pIC50 < ~4.2, with `pic50` NaN and `curve_class` 4. Dropping them discards two
+  thirds of the screen, and it is exactly the low-activity regime ST-RAE and the
+  TDI labeling rules are built around.
+- **CYP2C19 is a free auxiliary task** — 9,544 curves of a correlated fifth
+  isoform, not scored by the challenge.
+
+Filter on `curve_class` (-1.1/-1.2 are complete curves) and `fit_r2` rather than
+treating a single-point extrapolation like a full 15-point fit. Use `smiles`
+(standardized); `smiles_orig` is the deposited string.
+
+`pub_data.describe(...)` gives per-column meanings for any of these.
+
+**The challenge's own train/test files are published by OpenADMET at launch and
+have to be pulled in before they are available here.** Check `pub_data.list()`
+for the path rather than assuming one — never invent a
+`comp_chem/openadmet/cyp/...` path, and say plainly when it isn't there.
+`data/public_data/pull_openadmet_data.py` is where a `cyp` entry goes, pointing
+at the `openadmet/cyp-challenge-train-test` HuggingFace repo.
 
 ## Submission discipline
 
@@ -163,9 +254,15 @@ there yet.
 - No restriction on methods or external property databases.
 - A separate award recognizes the most innovative ML approach, decoupled from
   leaderboard rank. A novel entry that scores worse is not penalized — worth
-  raising if the user is weighing something exploratory (3D conformer/xTB
-  features have a plausible mechanism here, since CYP inhibition is
-  pocket-binding driven).
+  raising if the user is weighing something exploratory. It requires
+  open-sourcing the code; leaderboard ranking does not.
+- **Submission format is strict and a mismatch fails the upload.** Two
+  independent files, `.parquet` or `.csv`, exactly 750 rows each, case-sensitive
+  columns. Regression: `SMILES`, `Molecule_Name`, and
+  `CYP{1A2,2C9,2D6,3A4}_pIC50_direct_inhibition` as finite floats — no NaN or
+  inf. Classification: `SMILES`, `Molecule_Name`, `CYP2D6_is_TDI`,
+  `CYP3A4_is_TDI` as booleans. These are the challenge's names and differ from
+  whatever the FeatureSet columns are called; map explicitly at submission time.
 
 ## More
 

@@ -12,7 +12,7 @@ import pandas as pd
 import json
 
 # Local imports
-from molecular_utils.fingerprints import compute_morgan_fingerprints
+from molecular_utils.fingerprints import feature_fingerprints
 
 # Hyperparameters are injected here at model-creation time (fill_template), so the
 # radius / n_bits passed to to_model(hyperparameters=...) actually drive the compute.
@@ -84,8 +84,8 @@ def output_fn(output_df, accept_type):
 def predict_fn(df, model):
 
     # Compute Morgan count fingerprints per the injected hyperparameters (falling back
-    # to the compute_morgan_fingerprints defaults: radius 2, 4096 bits). Desalting
+    # to the feature_fingerprints defaults: radius 2, 4096 bits). Desalting
     # (largest-fragment) is internal, so no separate standardize step is needed.
     hp = TEMPLATE_PARAMS["hyperparameters"] or {}
-    df = compute_morgan_fingerprints(df, radius=hp.get("radius", 2), n_bits=hp.get("n_bits", 4096))
+    df = feature_fingerprints(df, radius=hp.get("radius", 2), n_bits=hp.get("n_bits", 4096))
     return df

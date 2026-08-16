@@ -1,6 +1,6 @@
 # Workbench Imports
 from workbench.api.df_store import DFStore
-from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
+from workbench.utils.chem_utils.fingerprints import feature_fingerprints
 from rdkit.Chem import DataStructs
 from rdkit.DataStructs.cDataStructs import CreateFromBitString
 import pandas as pd
@@ -9,7 +9,7 @@ import pandas as pd
 tox_df = DFStore().get("/datasets/chem_info/tox21_10")
 
 # Compute Morgan fingerprints as bitstrings
-tox_df = compute_morgan_fingerprints(tox_df)
+tox_df = feature_fingerprints(tox_df)
 
 # Extract fingerprints and IDs
 fingerprint_column = "fingerprint"

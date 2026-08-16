@@ -24,7 +24,58 @@ RDLogger.DisableLog("rdApp.warning")
 log = logging.getLogger("workbench")
 
 
-def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096) -> pd.DataFrame:
+def similarity_fingerprints(
+    smiles_list: list[str],
+    radius: int = 2,
+    counts: bool = True,
+    fp_size: int | None = None,
+) -> tuple[list, list[int]]:
+    """Morgan fingerprints as RDKit objects, for Tanimoto similarity work.
+
+    The counterpart to `feature_fingerprints`: that one folds to a fixed-width
+    numeric column because models and projections need one, while similarity has no
+    such constraint and is computed straight off the fingerprint objects. Both default
+    to counts, whose Tanimoto is the multiset (MinMax) form.
+
+    Args:
+        smiles_list: SMILES strings
+        radius: Morgan radius (default 2 = ECFP4 equivalent)
+        counts: Count fingerprints (default) or binary
+        fp_size: Fold into this many bits. None (default) keeps the fingerprint sparse,
+            so unrelated substructures never collide -- folding only exists to satisfy
+            fixed-width consumers.
+
+    Returns:
+        Tuple of (fingerprints, positions) where positions gives each fingerprint's index
+        in smiles_list. Unparseable entries are omitted from both, so the two are shorter
+        than the input whenever any SMILES fails.
+
+    Example:
+        >>> from rdkit import DataStructs
+        >>> fps, positions = similarity_fingerprints(df["smiles"].tolist())
+        >>> sims = DataStructs.BulkTanimotoSimilarity(fps[0], fps)
+    """
+    from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
+
+    fp_gen = GetMorganGenerator(radius=radius, fpSize=fp_size or 2048)
+    if counts:
+        build = fp_gen.GetCountFingerprint if fp_size else fp_gen.GetSparseCountFingerprint
+    else:
+        build = fp_gen.GetFingerprint if fp_size else fp_gen.GetSparseFingerprint
+
+    fps, positions = [], []
+    for i, smiles in enumerate(smiles_list):
+        # Guard non-strings (e.g. NaN) before RDKit — it raises TypeError on floats
+        if not isinstance(smiles, str) or not smiles:
+            continue
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is not None:
+            fps.append(build(mol))
+            positions.append(i)
+    return fps, positions
+
+
+def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096) -> pd.DataFrame:
     """Compute Morgan count fingerprints for ADMET modeling.
 
     Generates true count fingerprints where each bit position contains the
@@ -141,7 +192,7 @@ if __name__ == "__main__":
     print("\n1. Testing Morgan fingerprint generation (radius=2, n_bits=4096)...")
 
     test_df = pd.DataFrame({"SMILES": list(test_molecules.values()), "name": list(test_molecules.keys())})
-    fp_df = compute_morgan_fingerprints(test_df.copy())
+    fp_df = feature_fingerprints(test_df.copy())
 
     print("   Fingerprint generation results:")
     for _, row in fp_df.iterrows():
@@ -157,7 +208,7 @@ if __name__ == "__main__":
     # Test 2: Different parameters
     print("\n2. Testing with different parameters (radius=3, n_bits=1024)...")
 
-    fp_df_custom = compute_morgan_fingerprints(test_df.copy(), radius=3, n_bits=1024)
+    fp_df_custom = feature_fingerprints(test_df.copy(), radius=3, n_bits=1024)
 
     for _, row in fp_df_custom.iterrows():
         fp = row.get("fingerprint", "N/A")
@@ -173,13 +224,13 @@ if __name__ == "__main__":
 
     # Invalid SMILES
     invalid_df = pd.DataFrame({"SMILES": ["INVALID", ""]})
-    fp_invalid = compute_morgan_fingerprints(invalid_df.copy())
+    fp_invalid = feature_fingerprints(invalid_df.copy())
     print(f"   ✓ Invalid SMILES handled: {len(fp_invalid)} rows returned")
 
     # Test with pre-existing molecule column
     mol_df = test_df.copy()
     mol_df["molecule"] = mol_df["SMILES"].apply(Chem.MolFromSmiles)
-    fp_with_mol = compute_morgan_fingerprints(mol_df)
+    fp_with_mol = feature_fingerprints(mol_df)
     print(f"   ✓ Pre-existing molecule column handled: {len(fp_with_mol)} fingerprints generated")
 
     # Test 4: Verify count values are reasonable

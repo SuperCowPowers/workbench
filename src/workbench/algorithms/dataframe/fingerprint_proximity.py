@@ -7,7 +7,7 @@ from typing import List, Optional, Union
 import logging
 
 from workbench.algorithms.dataframe.proximity import Proximity
-from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
+from workbench.utils.chem_utils.fingerprints import feature_fingerprints
 
 # Note: Projection2D is imported lazily inside project_2d() — it's only needed for
 # visualization, and it pulls umap, which endpoint containers shouldn't pay for.
@@ -27,6 +27,11 @@ class _SparseRuzickaNN:
     Identity used for Ruzicka distance:
         ruzicka_dist = 2*L1 / (S_q + S_r + L1)
     where L1 is Manhattan distance and S_q / S_r are row sums of query / reference.
+
+    This is the same quantity as 1 - RDKit's multiset Tanimoto on count fingerprints
+    (`chem_utils.fingerprints.similarity_fingerprints`), which is the right tool when
+    the input is SMILES and the reference set is modest. This path takes a stored
+    fingerprint matrix instead, and holds to the memory bound above at 50k+ references.
     """
 
     DEFAULT_CHUNK_SIZE = 1024
@@ -252,7 +257,7 @@ class FingerprintProximity(Proximity):
         """Compute fingerprints from SMILES if needed."""
         if self.fingerprint_column not in self.df.columns:
             log.info(f"Computing Morgan fingerprints (radius={self._fp_radius}, n_bits={self._fp_n_bits})...")
-            self.df = compute_morgan_fingerprints(self.df, radius=self._fp_radius, n_bits=self._fp_n_bits)
+            self.df = feature_fingerprints(self.df, radius=self._fp_radius, n_bits=self._fp_n_bits)
 
     def _build_model(self) -> None:
         """Build the fingerprint proximity model for Tanimoto similarity.
@@ -319,7 +324,7 @@ class FingerprintProximity(Proximity):
                 raise ValueError(
                     f"Query DataFrame must contain either '{self.fingerprint_column}' " "or a 'smiles' column"
                 )
-            df = compute_morgan_fingerprints(df, radius=self._fp_radius, n_bits=self._fp_n_bits)
+            df = feature_fingerprints(df, radius=self._fp_radius, n_bits=self._fp_n_bits)
 
         matrix, _ = self._fingerprints_to_matrix(df)
         if self._is_count_fp:
@@ -395,7 +400,7 @@ class FingerprintProximity(Proximity):
             consumers (residual_features._aggregate) reindex against the full
             input id list so missing queries surface as NaN rows there.
         """
-        # Pre-validate SMILES. `compute_morgan_fingerprints` (called downstream
+        # Pre-validate SMILES. `feature_fingerprints` (called downstream
         # by _transform_features for novel queries) silently drops rows with
         # invalid SMILES, which then causes an array-length mismatch in
         # _neighbors_impl's result assembly. Drop bad rows here so the feature

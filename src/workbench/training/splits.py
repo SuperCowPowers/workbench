@@ -79,26 +79,12 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
     Returns:
         Array of cluster indices
     """
-    from rdkit import Chem, DataStructs
-    from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
+    from rdkit import DataStructs
     from rdkit.ML.Cluster import Butina
 
-    # Create Morgan fingerprint generator
-    fp_gen = GetMorganGenerator(radius=2, fpSize=2048)
+    from workbench.utils.chem_utils.fingerprints import similarity_fingerprints
 
-    # Generate Morgan fingerprints
-    fps = []
-    valid_indices = []
-    for i, smi in enumerate(smiles_list):
-        # Guard non-strings (e.g. NaN) before RDKit — it raises TypeError on floats
-        if not isinstance(smi, str) or not smi:
-            continue
-        mol = Chem.MolFromSmiles(smi)
-        if mol is not None:
-            fp = fp_gen.GetFingerprint(mol)
-            fps.append(fp)
-            valid_indices.append(i)
-
+    fps, valid_indices = similarity_fingerprints(smiles_list)
     if len(fps) == 0:
         raise ValueError("No valid molecules found for clustering")
 
@@ -130,6 +116,92 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
     n_clusters = len(set(cluster_labels))
     print(f"Butina clustering: {n_clusters} clusters from {len(smiles_list)} molecules (cutoff={cutoff})")
     return cluster_labels
+
+
+def analog_holdout_split(
+    df: pd.DataFrame,
+    target_columns: str | list[str],
+    smiles_column: str | None = None,
+    n_hits: int = 25,
+    analogs_per_hit: int = 10,
+    min_similarity: float = 0.4,
+) -> np.ndarray:
+    """Hold out the most potent compounds together with their close analogs.
+
+    Mimics a test set built by hit expansion: take the top hits per target, pull each
+    hit's nearest neighbors by Tanimoto similarity, and hold the whole cluster out.
+    The result is dense clusters of near-neighbors around potent compounds rather than
+    a diverse draw, so a model is scored on resolving small structural changes within a
+    series it has never seen -- the regime a random or scaffold split flatters.
+
+    Unlike the grouping strategies behind `get_split_indices`, this is target-aware and
+    yields one deliberate holdout, not a set of interchangeable folds.
+
+    Args:
+        df: DataFrame containing the data
+        target_columns: Target column(s). Hits are taken per target and the holdouts unioned,
+            so every target contributes its own potent series.
+        smiles_column: Column containing SMILES. If None, auto-detects 'smiles' (case-insensitive)
+        n_hits: Number of top-potency hits to expand per target
+        analogs_per_hit: Neighbors to pull per hit
+        min_similarity: Minimum Tanimoto similarity for a neighbor to count as an analog.
+            Hits with fewer qualifying neighbors contribute a smaller cluster.
+
+    Returns:
+        Boolean mask over the rows of df, True for held-out rows.
+
+    Raises:
+        ValueError: If no SMILES column is found or no molecule can be parsed.
+
+    Example:
+        >>> holdout = analog_holdout_split(df, target_columns=["cyp3a4_pic50", "cyp2d6_pic50"])
+        >>> train_df, eval_df = df[~holdout], df[holdout]
+    """
+    from rdkit import DataStructs
+
+    from workbench.utils.chem_utils.fingerprints import similarity_fingerprints
+
+    if isinstance(target_columns, str):
+        target_columns = [target_columns]
+
+    if smiles_column is None:
+        smiles_column = _find_smiles_column(df.columns.tolist())
+    if smiles_column is None or smiles_column not in df.columns:
+        raise ValueError("analog_holdout_split needs a SMILES column; none found")
+
+    missing = [c for c in target_columns if c not in df.columns]
+    if missing:
+        raise ValueError(f"Target column(s) not found: {missing}")
+
+    fps, valid_indices = similarity_fingerprints(df[smiles_column].tolist())
+    if not fps:
+        raise ValueError("No valid molecules found for the analog holdout")
+    fp_position = {row: i for i, row in enumerate(valid_indices)}
+
+    holdout = np.zeros(len(df), dtype=bool)
+    for target in target_columns:
+        values = pd.to_numeric(df[target], errors="coerce").to_numpy(dtype=float)
+        ranked = [p for p in np.argsort(-values, kind="stable") if not np.isnan(values[p]) and p in fp_position]
+        hits = ranked[:n_hits]
+
+        for hit in hits:
+            holdout[hit] = True
+            sims = np.asarray(DataStructs.BulkTanimotoSimilarity(fps[fp_position[hit]], fps))
+            picked = 0
+            for pos in np.argsort(-sims, kind="stable"):
+                if sims[pos] < min_similarity or picked >= analogs_per_hit:
+                    break
+                row = valid_indices[pos]
+                if row == hit:
+                    continue
+                holdout[row] = True
+                picked += 1
+
+    print(
+        f"Analog holdout: {holdout.sum():,} of {len(df):,} rows "
+        f"({holdout.sum() / len(df):.1%}) from {len(target_columns)} target(s)"
+    )
+    return holdout
 
 
 def _find_smiles_column(columns: list[str]) -> str | None:

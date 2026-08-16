@@ -7,8 +7,7 @@ from workbench.api.df_store import DFStore
 
 # Import the new mol_tagging module
 from workbench.utils.chem_utils.mol_tagging import tag_molecules, filter_by_tags, get_tag_summary
-from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
-from workbench.utils.chem_utils.projections import project_fingerprints
+from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
 
 def prep_sdf_file(filepath: str) -> pd.DataFrame:
@@ -87,9 +86,8 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     tag_summary = get_tag_summary(df)
     print(tag_summary.head(15))
 
-    # Compute Fingerprints (assuming these functions exist somewhere)
-    df = compute_morgan_fingerprints(df, radius=2)
-    df = project_fingerprints(df, projection="UMAP")
+    # Compute fingerprints and add 'x'/'y' UMAP coordinates over Tanimoto distance
+    df = FingerprintProximity(df, id_column="id", radius=2).project_2d()
 
     # Drop the molecule column to save space
     if "molecule" in df.columns:
