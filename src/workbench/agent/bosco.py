@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
 from workbench.utils.bedrock_utils import message_stream, DEFAULT_MODEL
-from workbench.utils.bosco_utils import job_updates
+from workbench.utils.job_tracker import job_updates
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
     dispatch,

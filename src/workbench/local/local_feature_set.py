@@ -151,6 +151,25 @@ class LocalFeatureSet(LocalArtifact):
             "num_columns": self.num_columns(),
         }
 
+    def to_model(self, name: str, model_type, model_framework, **kwargs) -> "LocalModel":  # noqa: F821
+        """Train a LocalModel from this FeatureSet.
+
+        Args:
+            name (str): The name of the Model to create
+            model_type (ModelType): The type of model to create
+            model_framework (ModelFramework): The framework to use
+            **kwargs: Passed to LocalModel.from_feature_set (target_column, feature_list,
+                hyperparameters, sample_weights, validation_ids, exclude_ids, wait)
+
+        Returns:
+            LocalModel: The Model created from this FeatureSet
+        """
+        from workbench.local.local_model import LocalModel
+
+        return LocalModel.from_feature_set(
+            self, name=name, model_type=model_type, model_framework=model_framework, **kwargs
+        )
+
     def training_view(
         self,
         sample_weights: Union[dict, pd.DataFrame] = None,

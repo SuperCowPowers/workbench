@@ -20,7 +20,7 @@ BASE_PARAMS = {
     "target_column": "solubility",
     "feature_list": ["alpha", "beta"],
     "id_column": "id",
-    "model_metrics_s3_path": "s3://bucket/metrics",
+    "model_metrics_path": "s3://bucket/metrics",
 }
 
 

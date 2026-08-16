@@ -7,7 +7,7 @@ import time
 import pytest
 
 from workbench.utils import job_tracker
-from workbench.utils.bosco_utils import job_updates
+from workbench.utils.job_tracker import job_updates
 
 
 @pytest.fixture(autouse=True)

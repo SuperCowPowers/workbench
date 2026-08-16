@@ -52,7 +52,7 @@ def read_content_from_s3(path):
 
 
 def read_s3_json(s3_uri: str, session: boto3.session.Session) -> Optional[dict]:
-    """Read a JSON object from S3 into a dict (counterpart to inference.save_to_s3).
+    """Read a JSON object from S3 into a dict (counterpart to inference.save_output).
 
     Args:
         s3_uri (str): The S3 URI of the object (e.g., 's3://bucket/key').

@@ -43,7 +43,7 @@ from chemprop import models
 from workbench.endpoints.inference import (
     compress_std_outliers,
     expand_proba_column,
-    save_to_s3,
+    save_output,
 )
 from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
 from workbench.endpoints.uq_harness import (
@@ -138,7 +138,7 @@ TEMPLATE_PARAMS = {
     "targets": "{{target_column}}",
     "feature_list": "{{feature_list}}",
     "id_column": "{{id_column}}",
-    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "model_metrics_path": "{{model_metrics_path}}",
     "hyperparameters": json.loads("{{hyperparameters}}"),
 }
 
@@ -334,7 +334,6 @@ if __name__ == "__main__":
     import argparse
     import glob
 
-    import awswrangler as wr
     from sklearn.preprocessing import LabelEncoder
 
     # Enable Tensor Core optimization for GPUs that support it
@@ -376,7 +375,7 @@ if __name__ == "__main__":
     model_type = TEMPLATE_PARAMS["model_type"]
     feature_list = TEMPLATE_PARAMS["feature_list"]
     id_column = TEMPLATE_PARAMS["id_column"]
-    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    model_metrics_path = TEMPLATE_PARAMS["model_metrics_path"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
 
     # A shaped ffn_hidden_dim (dash-string or list) sets the FFN layer count directly
@@ -836,7 +835,7 @@ if __name__ == "__main__":
             shap_df = pd.DataFrame(class_shap, columns=top_n_features)
             if sample_ids is not None:
                 shap_df.insert(0, id_column, sample_ids)
-            wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values_{class_label}.csv", index=False)
+            save_output(shap_df, f"{model_metrics_path}/shap_values_{class_label}.csv")
         print(f"Saved SHAP values for {len(class_labels)} classes")
 
         # Save feature values for SHAP plots
@@ -845,7 +844,7 @@ if __name__ == "__main__":
         feature_vals_df = pd.DataFrame(active_fractions, columns=top_n_features)
         if sample_ids is not None:
             feature_vals_df.insert(0, id_column, sample_ids)
-        wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+        save_output(feature_vals_df, f"{model_metrics_path}/shap_feature_values.csv")
     else:
         shap_importance, shap_values_df, feature_vals_df = format_shap_results(
             shap_values_array,
@@ -856,10 +855,10 @@ if __name__ == "__main__":
             top_n=shap_top_n,
         )
         print(f"Top 5 SHAP features: {shap_importance[:5]}")
-        wr.s3.to_csv(shap_values_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
-        wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+        save_output(shap_values_df, f"{model_metrics_path}/shap_values.csv")
+        save_output(feature_vals_df, f"{model_metrics_path}/shap_feature_values.csv")
 
-    save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
+    save_output(shap_importance, f"{model_metrics_path}/shap_importance.json")
     print(f"Saved SHAP artifacts ({len(shap_indices)} samples, {len(shap_importance)} features)")
     print(f"[timing] SHAP: {time.time() - _shap_t0:.1f}s", flush=True)
 
@@ -959,8 +958,8 @@ if __name__ == "__main__":
 
     # Both files carry the same columns; reindex covers anything the held-out path
     # didn't produce (e.g. UQ columns when the active version needs fingerprints).
-    wr.s3.to_csv(df_oof[output_columns], f"{model_metrics_s3_path}/oof_predictions.csv", index=False)
-    wr.s3.to_csv(df_val.reindex(columns=output_columns), f"{model_metrics_s3_path}/val_predictions.csv", index=False)
+    save_output(df_oof[output_columns], f"{model_metrics_path}/oof_predictions.csv")
+    save_output(df_val.reindex(columns=output_columns), f"{model_metrics_path}/val_predictions.csv")
 
     # -------------------------------------------------------------------------
     # Save model artifacts
@@ -998,7 +997,7 @@ if __name__ == "__main__":
 
     # Also write to the metrics path so the Model loads hyperparameters from meta
     # (a cheap tag read) instead of downloading + extracting the full model artifact.
-    save_to_s3(hyperparameters, f"{model_metrics_s3_path}/hyperparameters.json")
+    save_output(hyperparameters, f"{model_metrics_path}/hyperparameters.json")
 
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))

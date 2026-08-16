@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 import urllib.parse
 from typing import Union, Optional, List, Dict, Tuple
-from enum import Enum
 import botocore
 from botocore.exceptions import ClientError
 
@@ -19,6 +18,7 @@ from sagemaker.core.resources import (
 
 # Workbench Imports
 from workbench.core.artifacts.aws_artifact import AWSArtifact
+from workbench.core.model_types import ModelType, ModelFramework  # noqa: F401 (re-exported)
 from workbench.utils.aws_utils import newest_path, pull_s3_data, dict_to_aws_tags
 from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
@@ -35,32 +35,6 @@ from workbench.utils.training_job_utils import (
     get_hpo_search_space,
     get_training_utilization,
 )
-
-
-class ModelType(Enum):
-    """Enumerated Types for Workbench Model Types"""
-
-    CLASSIFIER = "classifier"
-    REGRESSOR = "regressor"
-    CLUSTERER = "clusterer"
-    PROXIMITY = "proximity"
-    PROJECTION = "projection"
-    UQ_REGRESSOR = "uq_regressor"
-    ENSEMBLE_REGRESSOR = "ensemble_regressor"
-    TRANSFORMER = "transformer"
-    UNKNOWN = "unknown"
-
-
-class ModelFramework(Enum):
-    """Enumerated Types for Workbench Model Frameworks"""
-
-    SKLEARN = "sklearn"
-    XGBOOST = "xgboost"
-    PYTORCH = "pytorch"
-    CHEMPROP = "chemprop"
-    TRANSFORMER = "transformer"
-    META = "meta"
-    UNKNOWN = "unknown"
 
 
 class ModelImages:

@@ -22,7 +22,6 @@ it as pretraining signal rather than equal-weight training data.
 Run once before the model scripts:  python cyp_feature_sets.py
 """
 
-import pandas as pd
 from workbench.api import DataSource, PublicData
 from workbench.utils.multi_task import combine_multi_task_data, validate_multi_task_data
 

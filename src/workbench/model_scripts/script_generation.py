@@ -84,14 +84,14 @@ def generate_model_script(template_params: dict) -> str:
             - model_class (str): The model class to use (e.g., "RandomForestRegressor")
             - target_column (str): Column name of the target variable
             - feature_list (list[str]): A list of columns for the features
-            - model_metrics_s3_path (str): The S3 path to store the model metrics
+            - model_metrics_path (str): Destination for model metrics (S3 path or local directory)
             - hyperparameters (dict, optional): Hyperparameters for the model (default: None)
             - endpoints (list[str], optional): For META models, list of endpoint names
 
     Returns:
         str: The path to the generated model script
     """
-    from workbench.api import ModelType, ModelFramework  # Avoid circular import
+    from workbench.core.model_types import ModelType, ModelFramework
 
     # Determine which template to use based on model type
     if template_params.get("model_class"):
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             "od280_od315_of_diluted_wines",
             "proline",
         ],
-        "model_metrics_s3_path": "s3://workbench-public-test-bucket/models/training/wine-classifier",
+        "model_metrics_path": "s3://workbench-public-test-bucket/models/training/wine-classifier",
         "compressed_features": [],
         "hyperparameters": {},
     }
@@ -210,7 +210,7 @@ if __name__ == "__main__":
             "od280_od315_of_diluted_wines",
             "proline",
         ],
-        "model_metrics_s3_path": "s3://workbench-public-test-bucket/models/training/wine-clusters",
+        "model_metrics_path": "s3://workbench-public-test-bucket/models/training/wine-clusters",
     }
     my_model_script = generate_model_script(my_params)
     print(f"Generated script: {my_model_script}")

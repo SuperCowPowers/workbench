@@ -7,10 +7,10 @@ TEMPLATE_PARAMS = {
     "target_column": "{{target_column}}",
     "feature_list": "{{feature_list}}",
     "model_class": "{{model_class}}",
-    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "model_metrics_path": "{{model_metrics_path}}",
 }
 
-import awswrangler as wr
+from workbench.endpoints.inference import save_output
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     target = TEMPLATE_PARAMS["target_column"]  # Can be None for unsupervised models
     feature_list = TEMPLATE_PARAMS["feature_list"]
     model_class = TEMPLATE_PARAMS["model_class"]
-    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    model_metrics_path = TEMPLATE_PARAMS["model_metrics_path"]
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -153,8 +153,8 @@ if __name__ == "__main__":
         # Save the held-out validation predictions to S3. These models train on a single
         # split rather than folds, so oof_predictions.csv is written empty.
         output_columns = [target, "prediction"] + [col for col in df_val.columns if col.endswith("_proba")]
-        wr.s3.to_csv(df_val[output_columns], path=f"{model_metrics_s3_path}/val_predictions.csv", index=False)
-        wr.s3.to_csv(df_val[output_columns].iloc[:0], path=f"{model_metrics_s3_path}/oof_predictions.csv", index=False)
+        save_output(df_val[output_columns], f"{model_metrics_path}/val_predictions.csv")
+        save_output(df_val[output_columns].iloc[:0], f"{model_metrics_path}/oof_predictions.csv")
 
     elif model_type == "clusterer":
         # Unsupervised Clustering Models: Assign cluster labels

@@ -276,7 +276,7 @@ class FeaturesToModel(Transform):
             "target_column": target_for_template,
             "feature_list": self.model_feature_list,
             "compressed_features": feature_set.get_compressed_features(),
-            "model_metrics_s3_path": self.model_training_root,
+            "model_metrics_path": self.model_training_root,
             "id_column": feature_set.id_column,
             "hyperparameters": kwargs.get("hyperparameters", {}),
         }

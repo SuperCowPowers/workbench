@@ -75,6 +75,32 @@ def drain_completed() -> list:
     return rows
 
 
+def job_updates(prompt: str) -> str:
+    """Prefix an agent turn with any jobs that finished since the last one.
+
+    Covers every tracked job kind (AWS Batch, local training). The watcher already
+    printed a banner, but that scrolls past. This is what puts the outcome in front
+    of the agent so it can speak to it and go look at what the job produced.
+
+    Args:
+        prompt (str): The user's prompt for this turn.
+
+    Returns:
+        str: The prompt, preceded by one bracketed line per finished job.
+    """
+    rows = drain_completed()
+    if not rows:
+        return prompt
+    updates = "\n".join(
+        f"[{r.get('kind', 'Job')} update: {r['name']} {r['status']}"
+        + (f" after {r['runtime']}" if r.get("runtime") else "")
+        + (f" -- {r['reason']}" if r.get("reason") else "")
+        + "]"
+        for r in rows
+    )
+    return f"{updates}\n\n{prompt}"
+
+
 def job_lights():
     """`Jobs [***]` -- a dot per job launched this session, for the right prompt.
 
@@ -104,6 +130,7 @@ def watch_subprocess(
     proc,
     kind: str = "Local job",
     log_path: str = None,
+    on_finish=None,
     interval: int = SUBPROCESS_INTERVAL,
 ) -> threading.Thread:
     """Watch a subprocess until it exits, then report it.
@@ -113,6 +140,8 @@ def watch_subprocess(
         proc (subprocess.Popen): The already-started child process
         kind (str): Label for the report banner (default: "Local job")
         log_path (str, optional): Child output log; its tail becomes the failure reason
+        on_finish (callable, optional): Called with the exit code before reporting, so the
+            job's owner can record its own outcome (durable status, artifacts)
         interval (int, optional): Seconds between checks. Defaults to SUBPROCESS_INTERVAL.
 
     Returns:
@@ -121,7 +150,7 @@ def watch_subprocess(
     register(name)
     thread = threading.Thread(
         target=_watch_subprocess,
-        args=(name, proc, kind, log_path, interval),
+        args=(name, proc, kind, log_path, on_finish, interval),
         daemon=True,
         name=f"job-watch-{name}",
     )
@@ -129,7 +158,7 @@ def watch_subprocess(
     return thread
 
 
-def _watch_subprocess(name: str, proc, kind: str, log_path: str, interval: int) -> None:
+def _watch_subprocess(name: str, proc, kind: str, log_path: str, on_finish, interval: int) -> None:
     """Poll a child process until it exits, then report the outcome."""
     started = time.time()
 
@@ -140,6 +169,13 @@ def _watch_subprocess(name: str, proc, kind: str, log_path: str, interval: int) 
 
     runtime = f"{time.time() - started:.0f}s"
     success = proc.returncode == 0
+
+    if on_finish:
+        try:
+            on_finish(proc.returncode)
+        except Exception as e:
+            log.error(f"Job '{name}' finish handler failed: {e}")
+
     report(
         {
             "kind": kind,
