@@ -1,0 +1,18 @@
+{
+  "pipelines": {
+    "openadmet_cyp": [
+      {"script": "cyp_feature_sets.py",
+       "inputs": ["public:comp_chem/pubchem/cyp_inhibition/cyp3a4",
+                  "public:comp_chem/pubchem/cyp_inhibition/cyp2c9",
+                  "public:comp_chem/pubchem/cyp_inhibition/cyp2d6",
+                  "public:comp_chem/pubchem/cyp_inhibition/cyp1a2",
+                  "public:comp_chem/pubchem/cyp_inhibition/cyp2c19",
+                  "public:comp_chem/openadmet/octant_cyp/inhibition"],
+       "outputs": ["fs:openadmet_cyp_veith", "fs:openadmet_cyp_octant"]},
+      {"script": "cyp_chemprop_mt.py", "inputs": ["fs:openadmet_cyp_veith"],
+       "outputs": ["model:cyp-reg-chemprop-mt", "endpoint:cyp-reg-chemprop-mt"]},
+      {"script": "cyp_chemprop_octant.py", "inputs": ["fs:openadmet_cyp_octant"],
+       "outputs": ["model:cyp3a4-reg-chemprop-octant", "endpoint:cyp3a4-reg-chemprop-octant"]}
+    ]
+  }
+}
