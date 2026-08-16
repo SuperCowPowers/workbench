@@ -170,6 +170,47 @@ class LocalFeatureSet(LocalArtifact):
             self, name=name, model_type=model_type, model_framework=model_framework, **kwargs
         )
 
+    def parent(self):
+        """The LocalDataSource this FeatureSet came from, if it still exists locally"""
+        from workbench.local.local_data_source import LocalDataSource
+
+        source = LocalDataSource(self.get_input())
+        return source if source.exists() else None
+
+    def aws_exists(self) -> bool:
+        """Does an AWS FeatureSet by this name already exist?
+
+        Returns:
+            bool: True if AWS already has this FeatureSet
+        """
+        from workbench.api import FeatureSet
+
+        return FeatureSet(self.name).exists()
+
+    def _aws_artifact(self):
+        """Internal: The AWS FeatureSet for this local one"""
+        from workbench.api import FeatureSet
+
+        return FeatureSet(self.name)
+
+    def _publish_self(self, **kwargs):
+        """Internal: Push this FeatureSet's engineered features to AWS.
+
+        The local frame is published as-is rather than recomputing features from the
+        AWS DataSource, so the published feature values are exactly the ones trained on.
+
+        Returns:
+            FeatureSet: The created AWS FeatureSet
+        """
+        from workbench.api import FeatureSet
+        from workbench.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
+
+        to_features = PandasToFeatures(self.name)
+        to_features.set_input(self.pull_dataframe(), id_column=self.id_column)
+        to_features.set_output_tags([self.name])
+        to_features.transform()
+        return FeatureSet(self.name)
+
     def training_view(
         self,
         sample_weights: Union[dict, pd.DataFrame] = None,

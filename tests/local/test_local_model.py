@@ -4,6 +4,8 @@ These run the real generated model script as a subprocess, so they're slower tha
 the rest of the local suite.
 """
 
+import os
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -120,6 +122,58 @@ class TestFailure:
                 model_type=ModelType.REGRESSOR,
                 model_framework=ModelFramework.XGBOOST,
             )
+
+
+class TestRerun:
+    def test_failed_retrain_does_not_serve_stale_predictions(self, feature_set):
+        """A previous run's outputs must not survive into a failed one"""
+        model = feature_set.to_model(
+            "rerun-model",
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            target_column="y",
+            feature_list=["a", "b"],
+        )
+        assert len(model.oof_predictions()) == 100
+
+        with pytest.raises(RuntimeError):
+            feature_set.to_model(
+                "rerun-model",
+                model_type=ModelType.REGRESSOR,
+                model_framework=ModelFramework.XGBOOST,
+                target_column="not_a_column",
+                feature_list=["a", "b"],
+            )
+
+        assert LocalModel("rerun-model").oof_predictions().empty
+
+
+class TestInterruptedRun:
+    def test_dead_pid_reports_interrupted(self, feature_set):
+        """A watcher that never recorded an outcome must not leave the model 'training'"""
+        model = feature_set.to_model(
+            "interrupted-model",
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            target_column="y",
+            feature_list=["a", "b"],
+        )
+
+        # Simulate a session that exited mid-training: state left at training, pid gone
+        model._write_status(state="training", pid=999999)
+        assert LocalModel("interrupted-model").training_state()["state"] == "interrupted"
+
+    def test_live_pid_still_reports_training(self, feature_set):
+        model = feature_set.to_model(
+            "live-model",
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            target_column="y",
+            feature_list=["a", "b"],
+        )
+
+        model._write_status(state="training", pid=os.getpid())
+        assert LocalModel("live-model").training_state()["state"] == "training"
 
 
 class TestDetached:

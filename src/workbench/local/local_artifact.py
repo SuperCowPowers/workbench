@@ -141,6 +141,102 @@ class LocalArtifact(Artifact):
         shutil.rmtree(self.path)
         self._meta_cache = None
 
+    # --- Publishing to AWS ---------------------------------------------------
+
+    def parent(self) -> "LocalArtifact":
+        """The local artifact this one was derived from.
+
+        Returns:
+            LocalArtifact: The parent, or None if this is the root of the chain
+        """
+        return None
+
+    def aws_exists(self) -> bool:
+        """Does the corresponding AWS artifact already exist?
+
+        Returns:
+            bool: True if AWS already has an artifact by this name
+        """
+        raise NotImplementedError
+
+    def _publish_self(self, **kwargs):
+        """Internal: Create the AWS artifact for this local one.
+
+        Returns:
+            The created AWS artifact
+        """
+        raise NotImplementedError
+
+    def publish_plan(self) -> list[dict]:
+        """What publishing this artifact would do, oldest ancestor first.
+
+        Returns:
+            list[dict]: One row per artifact: {type, name, action}, where action is
+                "create" or "exists"
+        """
+        chain, node = [], self
+        while node is not None:
+            chain.append(node)
+            node = node.parent()
+        chain.reverse()
+        return [
+            {"type": n.artifact_type, "name": n.name, "action": "exists" if n.aws_exists() else "create"} for n in chain
+        ]
+
+    def publish(self, confirm: bool = False, **kwargs):
+        """Publish this artifact and its lineage to AWS.
+
+        Publishing cascades: a Model publishes its FeatureSet and DataSource first, so
+        the AWS Model has a real parent chain. Artifacts that already exist in AWS are
+        left alone.
+
+        Args:
+            confirm (bool): Required to actually publish. Without it this returns the
+                plan and creates nothing.
+            **kwargs: Passed to the artifact's own publish step
+
+        Returns:
+            The published AWS artifact when confirm=True, otherwise the plan (list[dict])
+        """
+        plan = self.publish_plan()
+        creates = [step for step in plan if step["action"] == "create"]
+
+        if not confirm:
+            self.log.important(f"publish() plan for {self.name} (nothing created, pass confirm=True to run):")
+            for step in plan:
+                self.log.important(f"  {step['action']:>6}  {step['type']:<12} {step['name']}")
+            if any(step["type"] == "model" for step in creates):
+                self.log.important("  Publishing a model runs a SageMaker training job.")
+            return plan
+
+        # Walk the chain oldest-first so each artifact's parent exists before it
+        chain, node = [], self
+        while node is not None:
+            chain.append(node)
+            node = node.parent()
+        chain.reverse()
+
+        published = None
+        for artifact in chain:
+            if artifact.aws_exists():
+                self.log.important(f"AWS {artifact.artifact_type} '{artifact.name}' already exists, skipping...")
+                continue
+            self.log.important(f"Publishing {artifact.artifact_type} '{artifact.name}' to AWS...")
+            result = artifact._publish_self(**(kwargs if artifact is self else {}))
+            if artifact is self:
+                published = result
+
+        # Always hand back this artifact, never an ancestor we happened to create
+        return published if published is not None else self._aws_artifact()
+
+    def _aws_artifact(self):
+        """Internal: The existing AWS artifact for this local one.
+
+        Returns:
+            The AWS artifact
+        """
+        raise NotImplementedError
+
     def _init_storage(self, input_name: str = "local"):
         """Internal: Create the artifact directory and stamp the initial metadata.
 

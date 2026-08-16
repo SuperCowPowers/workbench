@@ -140,6 +140,9 @@ class LocalModel(LocalArtifact):
                 "model_framework": model_framework.value,
                 "id_column": feature_set.id_column,
                 "hyperparameters": hyperparameters or {},
+                # Kept so publish() can train in AWS with the same row roles
+                "validation_ids": list(validation_ids) if validation_ids else None,
+                "exclude_ids": list(exclude_ids) if exclude_ids else None,
             }
         )
 
@@ -190,8 +193,15 @@ class LocalModel(LocalArtifact):
             input_name (str): Name of this model's input FeatureSet
         """
         storage.local_root(create=True)
-        for directory in (self.path, self.model_dir, self.output_dir, self.train_dir):
+        os.makedirs(self.path, exist_ok=True)
+
+        # Start each run from empty dirs. Leftovers from a previous run would otherwise
+        # survive a failure and be served as this run's artifacts and predictions.
+        for directory in (self.model_dir, self.output_dir, self.train_dir):
+            shutil.rmtree(directory, ignore_errors=True)
             os.makedirs(directory, exist_ok=True)
+        shutil.rmtree(self.script_dir, ignore_errors=True)
+
         self._init_storage(input_name=input_name)
 
     def _launch_training(self, wait: bool):
@@ -226,6 +236,8 @@ class LocalModel(LocalArtifact):
         self._write_status(state="training", pid=proc.pid)
 
         if not wait:
+            # The child holds its own descriptor; ours would leak for the run's lifetime
+            log_file.close()
             job_tracker.watch_subprocess(
                 self.name,
                 proc,
@@ -321,14 +333,40 @@ class LocalModel(LocalArtifact):
     def training_state(self) -> dict:
         """The training status for this model, as recorded on disk.
 
+        A run whose watcher never got to record an outcome -- the session exited, or the
+        process died -- is reported as "interrupted" rather than left claiming to be
+        training forever. Whether the child finished its work is unknown at that point.
+
         Returns:
             dict: {state, pid, started, updated, returncode, finished}, empty before any run
         """
         try:
             with open(self.status_path, "r") as fp:
-                return json.load(fp)
+                status = json.load(fp)
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
+
+        if status.get("state") == "training" and not self._pid_alive(status.get("pid")):
+            status["state"] = "interrupted"
+        return status
+
+    @staticmethod
+    def _pid_alive(pid: int) -> bool:
+        """Internal: Is a process still running?
+
+        Args:
+            pid (int): The process id to check
+
+        Returns:
+            bool: True if the process exists
+        """
+        if not pid:
+            return False
+        try:
+            os.kill(pid, 0)
+        except (OSError, ProcessLookupError):
+            return False
+        return True
 
     def training_log(self, lines: int = None) -> str:
         """The training log for this model.
@@ -386,6 +424,69 @@ class LocalModel(LocalArtifact):
         from workbench.local.local_endpoint import LocalEndpoint
 
         return LocalEndpoint.from_model(self, name=name)
+
+    def parent(self):
+        """The LocalFeatureSet this model trained on, if it still exists locally"""
+        from workbench.local.local_feature_set import LocalFeatureSet
+
+        feature_set = LocalFeatureSet(self.get_input())
+        return feature_set if feature_set.exists() else None
+
+    def aws_exists(self) -> bool:
+        """Does an AWS Model by this name already exist?
+
+        Returns:
+            bool: True if AWS already has this Model
+        """
+        from workbench.api import Model
+
+        return Model(self.name).exists()
+
+    def _aws_artifact(self):
+        """Internal: The AWS Model for this local one"""
+        from workbench.api import Model
+
+        return Model(self.name)
+
+    def version_drift(self) -> str:
+        """Package versions that differ between this machine and the training image.
+
+        Returns:
+            str: A drift report, or "" when everything that matters matches
+        """
+        from workbench.utils.version_drift import drift_summary
+
+        return drift_summary(self.workbench_meta().get("model_framework", "xgboost"))
+
+    def _publish_self(self, **kwargs):
+        """Internal: Train this model in AWS from the published FeatureSet.
+
+        Publishing retrains rather than uploading local artifacts, so the model lands in
+        the registry the same way any AWS model does. The row roles recorded at local
+        training time are replayed, so AWS trains on the same rows.
+
+        Returns:
+            Model: The created AWS Model
+        """
+        from workbench.api import FeatureSet, ModelType, ModelFramework
+
+        meta = self.workbench_meta()
+        drift = self.version_drift()
+        if drift:
+            self.log.warning(f"{drift}\nThe published model may differ from the local one.")
+
+        feature_set = FeatureSet(self.get_input())
+        return feature_set.to_model(
+            name=self.name,
+            model_type=ModelType(meta["model_type"]),
+            model_framework=ModelFramework(meta["model_framework"]),
+            target_column=meta.get("workbench_model_target"),
+            feature_list=meta.get("workbench_model_features"),
+            hyperparameters=meta.get("hyperparameters") or {},
+            validation_ids=meta.get("validation_ids"),
+            exclude_ids=meta.get("exclude_ids"),
+            **kwargs,
+        )
 
     def details(self, **kwargs) -> dict:
         """LocalModel Details

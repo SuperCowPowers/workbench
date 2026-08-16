@@ -149,6 +149,32 @@ class LocalDataSource(LocalArtifact):
             input_name=self.name,
         )
 
+    def aws_exists(self) -> bool:
+        """Does an AWS DataSource by this name already exist?
+
+        Returns:
+            bool: True if AWS already has this DataSource
+        """
+        from workbench.api import DataSource
+
+        return DataSource(self.name).exists()
+
+    def _aws_artifact(self):
+        """Internal: The AWS DataSource for this local one"""
+        from workbench.api import DataSource
+
+        return DataSource(self.name)
+
+    def _publish_self(self, **kwargs):
+        """Internal: Create the AWS DataSource from this local one
+
+        Returns:
+            DataSource: The created AWS DataSource
+        """
+        from workbench.api import DataSource
+
+        return DataSource(self.pull_dataframe(), name=self.name)
+
     def _load_source(self, source: Union[str, pd.DataFrame]):
         """Internal: Write the source data to local storage
 

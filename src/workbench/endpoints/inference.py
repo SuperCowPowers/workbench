@@ -118,16 +118,24 @@ def save_output(data, path: str, content_type: str = "application/json"):
         path: Full destination path (e.g. "s3://bucket/key" or "/local/dir/file.csv")
         content_type: MIME type for S3 objects (default: application/json)
     """
-    if isinstance(data, pd.DataFrame):
-        body = data.to_csv(index=False)
-        content_type = "text/csv"
-    else:
-        body = json.dumps(data)
-
+    # Local: write the file directly
     if not path.startswith("s3://"):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # dirname is empty for a bare filename, which makedirs rejects
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        body = data.to_csv(index=False) if isinstance(data, pd.DataFrame) else json.dumps(data)
         with open(path, "w") as fp:
             fp.write(body)
+        return
+
+    # S3 DataFrames go through awswrangler, which chunks rather than holding the whole
+    # CSV in memory -- a wide SHAP matrix would otherwise be a second full copy, and
+    # put_object caps at 5GB. Imported lazily so inference cold starts don't pay for it.
+    if isinstance(data, pd.DataFrame):
+        import awswrangler as wr
+
+        wr.s3.to_csv(data, path, index=False)
         return
 
     import boto3
@@ -135,7 +143,7 @@ def save_output(data, path: str, content_type: str = "application/json"):
 
     parsed = urlparse(path)
     boto3.client("s3").put_object(
-        Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=body, ContentType=content_type
+        Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=json.dumps(data), ContentType=content_type
     )
 
 

@@ -171,6 +171,37 @@ class LocalEndpoint(LocalArtifact):
             self._model_bundle = self._load_inference_module().model_fn(self.model_dir)
         return self._model_bundle
 
+    def parent(self):
+        """The LocalModel this endpoint serves, if it still exists locally"""
+        model = LocalModel(self.get_input())
+        return model if model.exists() else None
+
+    def aws_exists(self) -> bool:
+        """Does an AWS Endpoint by this name already exist?
+
+        Returns:
+            bool: True if AWS already has this Endpoint
+        """
+        from workbench.api import Endpoint
+
+        return Endpoint(self.name).exists()
+
+    def _aws_artifact(self):
+        """Internal: The AWS Endpoint for this local one"""
+        from workbench.api import Endpoint
+
+        return Endpoint(self.name)
+
+    def _publish_self(self, **kwargs):
+        """Internal: Deploy the published Model as an AWS Endpoint
+
+        Returns:
+            Endpoint: The created AWS Endpoint
+        """
+        from workbench.api import Model
+
+        return Model(self.model_name).to_endpoint(name=self.name, **kwargs)
+
     def details(self, **kwargs) -> dict:
         """LocalEndpoint Details
 
