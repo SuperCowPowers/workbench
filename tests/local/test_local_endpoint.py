@@ -1,10 +1,23 @@
-"""Tests for LocalEndpoint inference (no AWS required)"""
+"""Tests for LocalEndpoint inference (no AWS required)
+
+These load an XGBoost model in-process. If the worker already imported torch, the
+two OpenMP runtimes segfault the interpreter, so the module skips rather than taking
+the worker down -- under `-n auto --dist=loadfile` a worker may have run a torch test
+file first. Remove this when in-process loading is isolated.
+"""
 
 import os
+import sys
 
 import numpy as np
 import pandas as pd
 import pytest
+
+@pytest.fixture(autouse=True)
+def skip_when_torch_loaded():
+    """Checked per test, not at import: the worker may load torch after collection"""
+    if "torch" in sys.modules:
+        pytest.skip("torch is already imported in this worker; loading an XGBoost model here would segfault")
 
 from workbench.local import LocalDataSource, LocalEndpoint, LocalModel, ModelType, ModelFramework
 from workbench.utils.config_manager import ConfigManager

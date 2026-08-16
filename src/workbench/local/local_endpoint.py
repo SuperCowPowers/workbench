@@ -1,8 +1,10 @@
 """LocalEndpoint: In-process inference against a locally trained model."""
 
+import glob
 import importlib.util
 import json
 import os
+import sys
 from typing import Union
 
 import pandas as pd
@@ -167,9 +169,32 @@ class LocalEndpoint(LocalArtifact):
             dict: Whatever model_fn returns for this framework
         """
         if self._model_bundle is None:
+            self._check_openmp_conflict()
             self.log.info(f"Loading model bundle from {self.model_dir}...")
             self._model_bundle = self._load_inference_module().model_fn(self.model_dir)
         return self._model_bundle
+
+    def _check_openmp_conflict(self):
+        """Internal: Refuse to load an XGBoost model into a process that has torch.
+
+        Torch and XGBoost each bring their own OpenMP runtime. Two in one process is
+        undefined behavior, and unpickling an XGBoost Booster there segfaults the
+        interpreter outright -- no exception, no traceback. Serving happens in separate
+        containers in AWS, so the two never meet; in-process local inference is the
+        first place they can.
+
+        Raises:
+            RuntimeError: If the conflict is present
+        """
+        if "torch" not in sys.modules:
+            return
+        if not glob.glob(os.path.join(self.model_dir, "xgb*.joblib")):
+            return
+        raise RuntimeError(
+            f"Cannot serve XGBoost model '{self.model_name}' in this process: torch is already "
+            "imported, and loading an XGBoost model alongside it segfaults the interpreter "
+            "(duplicate OpenMP runtimes). Run this inference in a fresh process."
+        )
 
     def parent(self):
         """The LocalModel this endpoint serves, if it still exists locally"""
