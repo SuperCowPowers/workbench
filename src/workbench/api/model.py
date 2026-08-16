@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from workbench.algorithms.models.cleanlab_model import CleanlabModels
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
 
 # Re-exported for the public API (from workbench.api.model import Model, ModelType, ModelFramework)

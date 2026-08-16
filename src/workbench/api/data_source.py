@@ -9,7 +9,7 @@ import pandas as pd
 from typing import Union
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 from workbench.core.artifacts.athena_source import AthenaSource
 from workbench.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from workbench.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight

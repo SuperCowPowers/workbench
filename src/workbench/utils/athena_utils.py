@@ -223,14 +223,14 @@ def compute_athena_table_hash(database: str, table: str, session: boto3.session,
 if __name__ == "__main__":
     # Test the athena utils functions
     from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-    from workbench.core.artifacts.artifact import Artifact
+    from workbench.core.artifacts.aws_artifact import AWSArtifact
 
     # Get our boto3 session
     session = AWSAccountClamp().boto3_session
 
-    # Transient Athena output under the shared scratch root (Artifact.temp_s3_path).
+    # Transient Athena output under the shared scratch root (AWSArtifact.temp_s3_path).
     # compute_athena_table_hash cleans up this prefix itself when it's done.
-    s3_scratch = f"{Artifact.temp_s3_path}/athena_output"
+    s3_scratch = f"{AWSArtifact.temp_s3_path}/athena_output"
 
     # Compute the hash for a table
     database_name = "workbench"

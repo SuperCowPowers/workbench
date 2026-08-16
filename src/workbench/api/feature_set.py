@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from workbench.api.model import Model, ModelType, ModelFramework

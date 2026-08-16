@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework, ModelImages
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.workbench_logging import _suppress_sagemaker_logging
 from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE

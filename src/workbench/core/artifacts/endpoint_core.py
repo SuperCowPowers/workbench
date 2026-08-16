@@ -27,7 +27,7 @@ from sagemaker.core.shapes.shapes import DataCaptureConfigSummary
 from sagemaker.core.utils.utils import Unassigned as _Unassigned
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType, ModelFramework
 from workbench.utils.endpoint_metrics import EndpointMetrics
 from workbench.utils.s3_utils import compute_s3_object_hash
@@ -59,7 +59,7 @@ class WorkbenchDeserializer(PandasDeserializer):
         return super().deserialize(stream, base_content_type)
 
 
-class EndpointCore(Artifact):
+class EndpointCore(AWSArtifact):
     """EndpointCore: Workbench EndpointCore Class
 
     Common Usage:

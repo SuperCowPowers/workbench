@@ -12,7 +12,7 @@ import awswrangler as wr
 from sagemaker.mlops.feature_store import FeatureGroup, create_athena_query
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
 from workbench.core.artifacts.athena_source import AthenaSource
 
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from workbench.core.views import View
 
 
-class FeatureSetCore(Artifact):
+class FeatureSetCore(AWSArtifact):
     """FeatureSetCore: Workbench FeatureSetCore Class
 
     Common Usage:
@@ -352,7 +352,7 @@ class FeatureSetCore(Artifact):
         """
 
         # Throwaway dump for the training job — written under the scratch root and
-        # deleted after training. See Artifact.temp_s3_path.
+        # deleted after training. See AWSArtifact.temp_s3_path.
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
         s3_output_path = self.temp_s3_path + f"/training_data/{self.name}/all_{date_time}"
 
@@ -632,7 +632,7 @@ class FeatureSetCore(Artifact):
         Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
            check both to see if the FeatureSet is ready."""
 
-        # Check if our parent class (Artifact) is ready
+        # Check if our parent class (AWSArtifact) is ready
         if not super().ready():
             return False
 

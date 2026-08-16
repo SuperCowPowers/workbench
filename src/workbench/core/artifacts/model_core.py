@@ -18,7 +18,7 @@ from sagemaker.core.resources import (
 )
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data, dict_to_aws_tags
 from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
@@ -104,7 +104,7 @@ class ModelImages:
 _UNSET = object()
 
 
-class ModelCore(Artifact):
+class ModelCore(AWSArtifact):
     """ModelCore: Workbench ModelCore Class
 
     Common Usage:

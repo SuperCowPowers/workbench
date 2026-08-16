@@ -81,6 +81,13 @@ class ConfigManager:
             else:
                 return plugin_dir
 
+        # Special logic for WORKBENCH_LOCAL_PATH: storage root for workbench.local artifacts
+        if key == "WORKBENCH_LOCAL_PATH":
+            local_path = self.config.get(key)
+            if local_path in ["", None]:
+                return os.path.join(os.path.expanduser("~"), ".workbench", "local")
+            return os.path.expanduser(local_path)
+
         # Special logic for ML_PIPELINES_ROOT (S3 prefix or local directory)
         if key == "ML_PIPELINES_ROOT":
             pipelines_root = self.config.get(key)
@@ -127,6 +134,7 @@ class ConfigManager:
             "WORKBENCH_PLUGINS",
             "WORKBENCH_THEMES",
             "ML_PIPELINES_ROOT",
+            "WORKBENCH_LOCAL_PATH",
             "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD",
