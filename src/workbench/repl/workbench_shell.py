@@ -210,9 +210,9 @@ class WorkbenchShell:
         config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
         config.TerminalInteractiveShell.banner1 = ""
 
-        # Wire up the shell once it exists: Batch job lights on the right prompt, and
+        # Wire up the shell once it exists: job lights on the right prompt, and
         # the `bosco <text>` line router when Bosco is enabled.
-        exec_lines = ["from workbench.utils.batch_utils import install_batch_lights; install_batch_lights()"]
+        exec_lines = ["from workbench.utils.job_tracker import install_job_lights; install_job_lights()"]
         if self.bosco_enabled:
             exec_lines.append("from workbench.agent.bosco import register; register()")
         config.InteractiveShellApp.exec_lines = exec_lines

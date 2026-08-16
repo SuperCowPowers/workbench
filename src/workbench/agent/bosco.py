@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
 from workbench.utils.bedrock_utils import message_stream, DEFAULT_MODEL
-from workbench.utils.bosco_utils import batch_updates
+from workbench.utils.bosco_utils import job_updates
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
     dispatch,
@@ -277,7 +277,7 @@ def _close_pending_tools(note: str) -> None:
 
 def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
-    _history.append({"role": "user", "content": batch_updates(prompt)})
+    _history.append({"role": "user", "content": job_updates(prompt)})
     _trim_history()
     try:
         # Quiet routine INFO chatter from the code Bosco runs; restored afterwards

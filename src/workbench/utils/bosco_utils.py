@@ -155,12 +155,12 @@ def recent_sessions(all_users: bool = False) -> pd.DataFrame:
     )
 
 
-def batch_updates(prompt: str) -> str:
-    """Prefix a turn with any Batch jobs that finished since the last one.
+def job_updates(prompt: str) -> str:
+    """Prefix a turn with any jobs that finished since the last one.
 
-    The watcher already printed a banner, but that scrolls past. This is what puts
-    the outcome in front of the agent so it can speak to it and go look at what the
-    job produced.
+    Covers every tracked job kind (AWS Batch, local training). The watcher already
+    printed a banner, but that scrolls past. This is what puts the outcome in front
+    of the agent so it can speak to it and go look at what the job produced.
 
     Args:
         prompt (str): The user's prompt for this turn.
@@ -168,13 +168,13 @@ def batch_updates(prompt: str) -> str:
     Returns:
         str: The prompt, preceded by one bracketed line per finished job.
     """
-    from workbench.utils.batch_utils import drain_completed
+    from workbench.utils.job_tracker import drain_completed
 
     rows = drain_completed()
     if not rows:
         return prompt
     updates = "\n".join(
-        f"[Batch update: {r['name']} {r['status']}"
+        f"[{r.get('kind', 'Job')} update: {r['name']} {r['status']}"
         + (f" after {r['runtime']}" if r.get("runtime") else "")
         + (f" -- {r['reason']}" if r.get("reason") else "")
         + "]"
