@@ -39,15 +39,19 @@ def standardize_df(
     source: str,
     value_name: str,
 ) -> pd.DataFrame:
-    """Standardize a dataframe to (smiles, canon_smiles, <value_name>, source)."""
+    """Standardize a dataframe to (smiles, smiles_orig, <value_name>, source).
+
+    `smiles` holds the standardized structure used for modeling and joining; the
+    source's own string is kept as `smiles_orig`.
+    """
     out = df[[smiles_col, value_col]].copy()
-    out.columns = ["smiles", value_name]
+    out.columns = ["smiles_orig", value_name]
     out[value_name] = pd.to_numeric(out[value_name], errors="coerce")
     out.dropna(subset=[value_name], inplace=True)
-    out["canon_smiles"] = out["smiles"].apply(standardize_smiles)
-    out.dropna(subset=["canon_smiles"], inplace=True)
+    out["smiles"] = out["smiles_orig"].apply(standardize_smiles)
+    out.dropna(subset=["smiles"], inplace=True)
     out["source"] = source
-    return out[["smiles", "canon_smiles", value_name, "source"]].reset_index(drop=True)
+    return out[["smiles", "smiles_orig", value_name, "source"]].reset_index(drop=True)
 
 
 def merge_and_deduplicate(
@@ -101,10 +105,9 @@ def merge_and_deduplicate(
             }
         )
 
-    dedup = combined.groupby("canon_smiles").apply(reduce, include_groups=False).reset_index()
+    dedup = combined.groupby("smiles").apply(reduce, include_groups=False).reset_index()
     dedup[std_col] = dedup[std_col].fillna(0.0)
     dedup[count_col] = dedup[count_col].astype(int)
-    dedup = dedup.rename(columns={"canon_smiles": "smiles"})
     dedup.insert(0, "id", range(len(dedup)))
 
     # Only expose primary_source when a priority was actually applied — keeps

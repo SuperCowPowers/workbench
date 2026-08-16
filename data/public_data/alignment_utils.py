@@ -159,8 +159,7 @@ def run_alignment_checks(
     # --- 5. Data quality ---
     print("\n5. Data Quality")
     print(f"   Total unique compounds: {len(df):,}")
-    smiles_col = "smiles" if "smiles" in df.columns else "canon_smiles"
-    n_nan_smiles = df[smiles_col].isna().sum() if smiles_col in df.columns else 0
+    n_nan_smiles = df["smiles"].isna().sum() if "smiles" in df.columns else 0
     n_nan_val = df[value_col].isna().sum()
     print(f"   Missing SMILES: {n_nan_smiles}")
     print(f"   Missing {assay_name}: {n_nan_val}")

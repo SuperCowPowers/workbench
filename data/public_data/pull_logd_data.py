@@ -75,18 +75,15 @@ def main():
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Any source failing is fatal: a merged file built from the survivors looks
+    # healthy while silently missing compounds
     frames = []
     for name in args.sources:
-        try:
-            df = SOURCES[name]()
-            log.info(f"  {name}: {len(df)} rows")
-            frames.append(df)
-        except Exception:
-            log.exception(f"Failed to pull {name}")
-
-    if not frames or all(len(f) == 0 for f in frames):
-        log.error("No data pulled from any source!")
-        return
+        df = SOURCES[name]()
+        log.info(f"  {name}: {len(df)} rows")
+        if df.empty:
+            raise RuntimeError(f"Source '{name}' returned no rows — refusing to build a partial dataset")
+        frames.append(df)
 
     merged = merge_and_deduplicate(frames, output_dir=args.output_dir, value_name=VALUE_NAME, file_prefix=FILE_PREFIX)
     out_path = args.output_dir / f"{FILE_PREFIX}_all.csv"

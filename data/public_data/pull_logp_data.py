@@ -46,7 +46,7 @@ def pull_opera_physprop() -> pd.DataFrame:
         if not logp_files:
             all_files = [f for f in zf.namelist() if not f.endswith("/")]
             log.warning(f"OPERA zip contents (no logP found): {all_files[:20]}")
-            return pd.DataFrame(columns=["smiles", "canon_smiles", VALUE_NAME, "source"])
+            return pd.DataFrame(columns=["smiles", "smiles_orig", VALUE_NAME, "source"])
 
         log.info(f"OPERA LogP files found: {logp_files}")
         for logp_file in sorted(logp_files):
@@ -76,7 +76,7 @@ def pull_opera_physprop() -> pd.DataFrame:
                 log.warning(f"Failed to read {logp_file}: {e}")
 
     log.warning("OPERA / PHYSPROP: could not extract logP data from zip")
-    return pd.DataFrame(columns=["smiles", "canon_smiles", VALUE_NAME, "source"])
+    return pd.DataFrame(columns=["smiles", "smiles_orig", VALUE_NAME, "source"])
 
 
 def pull_graphormer_logp() -> pd.DataFrame:
@@ -129,7 +129,7 @@ def pull_graphormer_logp() -> pd.DataFrame:
         log.warning(f"GraphormerLogP zip fallback failed: {e}")
 
     log.warning("GraphormerLogP: could not retrieve data")
-    return pd.DataFrame(columns=["smiles", "canon_smiles", VALUE_NAME, "source"])
+    return pd.DataFrame(columns=["smiles", "smiles_orig", VALUE_NAME, "source"])
 
 
 def pull_sangster_logp() -> pd.DataFrame:
@@ -182,18 +182,15 @@ def main():
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Any source failing is fatal: a merged file built from the survivors looks
+    # healthy while silently missing compounds
     frames = []
     for name in args.sources:
-        try:
-            df = SOURCES[name]()
-            log.info(f"  {name}: {len(df)} rows")
-            frames.append(df)
-        except Exception:
-            log.exception(f"Failed to pull {name}")
-
-    if not frames:
-        log.error("No data pulled from any source!")
-        return
+        df = SOURCES[name]()
+        log.info(f"  {name}: {len(df)} rows")
+        if df.empty:
+            raise RuntimeError(f"Source '{name}' returned no rows — refusing to build a partial dataset")
+        frames.append(df)
 
     merged = merge_and_deduplicate(
         frames,

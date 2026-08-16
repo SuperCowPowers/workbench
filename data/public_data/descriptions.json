@@ -268,8 +268,8 @@
   "comp_chem/logd/logd_astrazeneca_chembl.csv": {
     "description": "AstraZeneca experimental logD measurements at pH 7.4 (~4,200 compounds), originally published in ChEMBL. Fetched directly from the MoleculeNet S3 mirror; same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`).",
     "columns": {
-      "smiles": "Original SMILES from source",
-      "canon_smiles": "Standardized canonical SMILES",
+      "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as provided by the source, before standardization",
       "logd": "Experimental logD at pH 7.4 (octanol-water distribution coefficient)",
       "source": "Source identifier (astrazeneca_chembl)"
     },
@@ -303,8 +303,8 @@
   "comp_chem/logp/logp_graphormer_logp.csv": {
     "description": "GraphormerLogP (GLP) experimental LogP dataset (~42,000 compounds). Multi-source curation by the Chemoinformatics and Molecular Modeling Laboratory (CIMM) at Kazan Federal University. Aggregated from OpenChem, Huuskonen, SAMPL6/7, and other published datasets.",
     "columns": {
-      "smiles": "Original SMILES from source",
-      "canon_smiles": "Standardized canonical SMILES",
+      "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as provided by the source, before standardization",
       "logp": "Experimental logP (octanol-water partition coefficient)",
       "source": "Source identifier (graphormer_logp)"
     },
@@ -317,8 +317,8 @@
   "comp_chem/logp/logp_opera_physprop.csv": {
     "description": "PHYSPROP/OPERA experimental LogP training data (~4,200 compounds). Curated by the EPA from the PHYSPROP database, originally used to train the KOWWIN and OPERA LogP models. Extracted from OPERA_Data.zip in the NIEHS/OPERA GitHub repository.",
     "columns": {
-      "smiles": "Original SMILES from source",
-      "canon_smiles": "Standardized canonical SMILES",
+      "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as provided by the source, before standardization",
       "logp": "Experimental logP (octanol-water partition coefficient)",
       "source": "Source identifier (opera_physprop)"
     },
@@ -332,8 +332,8 @@
   "comp_chem/logp/logp_sangster.csv": {
     "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + \u0394DP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via \u0394DP) from the main sheet of the source XLSX.",
     "columns": {
-      "smiles": "Original SMILES from source",
-      "canon_smiles": "Standardized canonical SMILES",
+      "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as provided by the source, before standardization",
       "logp": "Experimental or adjusted logP (octanol-water partition coefficient)",
       "source": "Source identifier (sangster)"
     },
@@ -1031,6 +1031,139 @@
     "references": [
       "https://huggingface.co/datasets/openadmet/pxr-challenge-train-test (OpenADMET PXR Challenge data, Apache-2.0)",
       "https://openadmet.org/blindchallenges/ (OpenADMET PXR Induction Blind Challenge, 2026)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/all_isoforms.csv": {
+    "description": "Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Long format: one row per compound-isoform pair, with the isoform in its own column.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "isoform": "CYP isoform assayed: cyp1a2, cyp2c9, cyp2c19, cyp2d6, or cyp3a4",
+      "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/cyp1a2.csv": {
+    "description": "Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP1A2.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/cyp2c19.csv": {
+    "description": "Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP2C19 -- not a challenge target, but a fifth correlated task for multi-task pretraining.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/cyp2c9.csv": {
+    "description": "Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP2C9.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/cyp2d6.csv": {
+    "description": "Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP2D6, the sparsest isoform in the panel.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/cyp3a4.csv": {
+    "description": "Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP3A4.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
     ]
   },
   "comp_chem/reference_compounds/3d_perf.csv": {

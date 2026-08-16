@@ -202,13 +202,18 @@ def compute_regression_metrics(
 ) -> pd.DataFrame:
     """Compute regression metrics from a predictions DataFrame.
 
+    When the target's credible-interval columns (`<target_col>_ci_lower` and
+    `<target_col>_ci_upper`) are present, an `st_rae` column is added — see
+    `soft_threshold_rae`. Targets without intervals get the standard metrics only.
+
     Args:
         predictions_df: DataFrame with target and prediction columns
         target_col: Name of the target column
         prediction_col: Name of the prediction column (default: "prediction")
 
     Returns:
-        DataFrame with regression metrics (rmse, mae, medae, r2, spearmanr, support)
+        DataFrame with regression metrics (rmse, mae, medae, r2, spearmanr, support,
+        and st_rae when credible intervals are available).
         Returns empty DataFrame if validation fails or no valid data.
     """
     # Validate inputs
@@ -239,18 +244,146 @@ def compute_regression_metrics(
     y_true = df[target_col].values
     y_pred = df[prediction_col].values
 
-    return pd.DataFrame(
-        [
-            {
-                "rmse": root_mean_squared_error(y_true, y_pred),
-                "mae": mean_absolute_error(y_true, y_pred),
-                "medae": median_absolute_error(y_true, y_pred),
-                "r2": r2_score(y_true, y_pred),
-                "spearmanr": spearmanr(y_true, y_pred).correlation,
-                "support": len(y_true),
-            }
+    metrics = {
+        "rmse": root_mean_squared_error(y_true, y_pred),
+        "mae": mean_absolute_error(y_true, y_pred),
+        "medae": median_absolute_error(y_true, y_pred),
+        "r2": r2_score(y_true, y_pred),
+        "spearmanr": spearmanr(y_true, y_pred).correlation,
+        "support": len(y_true),
+    }
+
+    # Credible intervals are optional, so st_rae only joins the row when the target carries them
+    ci_cols = [f"{target_col}_ci_lower", f"{target_col}_ci_upper"]
+    if all(c in predictions_df.columns for c in ci_cols):
+        ci = predictions_df.loc[df.index, ci_cols].dropna()
+        if ci.empty:
+            log.warning(f"Credible-interval columns for '{target_col}' are all NaN. Skipping st_rae.")
+        else:
+            metrics["st_rae"] = soft_threshold_rae(
+                df.loc[ci.index, target_col], df.loc[ci.index, prediction_col], ci[ci_cols[0]], ci[ci_cols[1]]
+            )
+
+    return pd.DataFrame([metrics])
+
+
+def soft_threshold_error(
+    y_pred: np.ndarray,
+    ci_lower: np.ndarray,
+    ci_upper: np.ndarray,
+) -> np.ndarray:
+    """Per-sample distance from a prediction to a credible interval.
+
+    Predictions inside the interval score zero; outside, the error is the distance
+    to the nearest bound. For targets fit as Bayesian dose-response curves, this
+    scores against the measurement's own uncertainty instead of a point estimate.
+
+    Args:
+        y_pred: Predicted values
+        ci_lower: Lower bound of each label's credible interval
+        ci_upper: Upper bound of each label's credible interval
+
+    Returns:
+        Array of per-sample errors, zero wherever the prediction lands inside the interval.
+    """
+    y_pred, ci_lower, ci_upper = np.asarray(y_pred), np.asarray(ci_lower), np.asarray(ci_upper)
+    return np.maximum(0.0, np.maximum(ci_lower - y_pred, y_pred - ci_upper))
+
+
+def soft_threshold_rae(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    ci_lower: np.ndarray,
+    ci_upper: np.ndarray,
+    soft_baseline: bool = True,
+) -> float:
+    """Soft-Threshold Relative Absolute Error (ST-RAE). Lower is better.
+
+    Relative absolute error where per-sample error is `soft_threshold_error`: the
+    distance outside the label's credible interval, zero inside. The denominator is
+    the same error for the mean-predictor baseline, so 1.0 means "no better than
+    predicting the mean" as in ordinary RAE.
+
+    Args:
+        y_true: Ground-truth values (the curve-fit point estimates)
+        y_pred: Predicted values
+        ci_lower: Lower bound of each label's credible interval
+        ci_upper: Upper bound of each label's credible interval
+        soft_baseline: Score the baseline with the same soft threshold. When False the
+            denominator is the plain `sum|y_true - mean(y_true)|`, which drops the
+            "1.0 = mean predictor" reading and deflates the score.
+
+    Returns:
+        ST-RAE, or NaN when the baseline error is zero (no signal to normalize against).
+    """
+    y_true = np.asarray(y_true)
+    numerator = soft_threshold_error(y_pred, ci_lower, ci_upper).sum()
+
+    baseline = np.full_like(y_true, y_true.mean(), dtype=float)
+    if soft_baseline:
+        denominator = soft_threshold_error(baseline, ci_lower, ci_upper).sum()
+    else:
+        denominator = np.abs(y_true - baseline).sum()
+
+    if denominator == 0:
+        log.warning("Baseline error is zero, ST-RAE is undefined. Returning NaN.")
+        return float("nan")
+    return float(numerator / denominator)
+
+
+def macro_soft_threshold_rae(
+    predictions_df: pd.DataFrame,
+    endpoints: List[str],
+    prediction_suffix: str = "_prediction",
+    ci_lower_suffix: str = "_ci_lower",
+    ci_upper_suffix: str = "_ci_upper",
+    soft_baseline: bool = True,
+) -> pd.DataFrame:
+    """Macro-averaged ST-RAE over several endpoints, plus each endpoint's own score.
+
+    Each endpoint is scored on its own non-NaN rows, so sparse multi-task targets
+    need no alignment. The macro average weights endpoints equally regardless of support.
+
+    Args:
+        predictions_df: DataFrame holding, per endpoint, the truth/prediction/CI columns
+        endpoints: Target column names, e.g. ["cyp3a4_pic50", "cyp2d6_pic50"]
+        prediction_suffix: Appended to an endpoint name to find its prediction column
+        ci_lower_suffix: Appended to an endpoint name to find its lower-bound column
+        ci_upper_suffix: Appended to an endpoint name to find its upper-bound column
+        soft_baseline: Passed through to `soft_threshold_rae`
+
+    Returns:
+        DataFrame with one row per endpoint (endpoint, st_rae, support) plus a final
+        "MA" row holding the macro average. Endpoints with no valid rows are skipped.
+    """
+    rows = []
+    for endpoint in endpoints:
+        cols = [
+            endpoint,
+            f"{endpoint}{prediction_suffix}",
+            f"{endpoint}{ci_lower_suffix}",
+            f"{endpoint}{ci_upper_suffix}",
         ]
-    )
+        missing = [c for c in cols if c not in predictions_df.columns]
+        if missing:
+            log.warning(f"Endpoint '{endpoint}' missing columns {missing}. Skipping.")
+            continue
+
+        df = predictions_df[cols].dropna()
+        if df.empty:
+            log.warning(f"Endpoint '{endpoint}' has no valid rows. Skipping.")
+            continue
+
+        score = soft_threshold_rae(df[cols[0]], df[cols[1]], df[cols[2]], df[cols[3]], soft_baseline=soft_baseline)
+        rows.append({"endpoint": endpoint, "st_rae": score, "support": len(df)})
+
+    if not rows:
+        log.warning("No endpoints could be scored. Returning empty metrics.")
+        return pd.DataFrame()
+
+    scores = pd.DataFrame(rows)
+    macro = {"endpoint": "MA", "st_rae": scores["st_rae"].mean(), "support": int(scores["support"].sum())}
+    return pd.concat([scores, pd.DataFrame([macro])], ignore_index=True)
 
 
 def compute_metrics_from_predictions(
