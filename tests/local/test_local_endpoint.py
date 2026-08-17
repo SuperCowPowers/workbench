@@ -13,14 +13,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from workbench.local import LocalDataSource, LocalEndpoint, LocalModel, ModelType, ModelFramework
+from workbench.utils.config_manager import ConfigManager
+
+
 @pytest.fixture(autouse=True)
 def skip_when_torch_loaded():
     """Checked per test, not at import: the worker may load torch after collection"""
     if "torch" in sys.modules:
         pytest.skip("torch is already imported in this worker; loading an XGBoost model here would segfault")
-
-from workbench.local import LocalDataSource, LocalEndpoint, LocalModel, ModelType, ModelFramework
-from workbench.utils.config_manager import ConfigManager
 
 
 @pytest.fixture(autouse=True)

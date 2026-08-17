@@ -64,7 +64,7 @@ class LocalEndpoint(LocalArtifact):
         storage.local_root(create=True)
         os.makedirs(endpoint.inference_dir, exist_ok=True)
         endpoint._init_storage(input_name=model.name)
-        endpoint.upsert_workbench_meta({"model_name": model.name, "model_dir": model.model_dir})
+        endpoint.upsert_workbench_meta({"model_name": model.name})
         endpoint.log.important(f"Local endpoint {endpoint.name} serving {model.name}")
         return endpoint
 
@@ -75,8 +75,12 @@ class LocalEndpoint(LocalArtifact):
 
     @property
     def model_dir(self) -> str:
-        """The model artifacts directory this endpoint loads from"""
-        return self.workbench_meta().get("model_dir")
+        """The model artifacts directory this endpoint loads from.
+
+        Resolved from the model name on every access rather than stored, so the
+        endpoint keeps working when the storage root moves or the config changes.
+        """
+        return LocalModel(self.model_name).model_dir
 
     def inference(self, eval_df: pd.DataFrame, capture_name: str = None) -> pd.DataFrame:
         """Run inference on a DataFrame.

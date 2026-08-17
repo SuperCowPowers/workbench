@@ -5,6 +5,8 @@ the rest of the local suite.
 """
 
 import os
+import subprocess
+import sys
 
 import numpy as np
 import pandas as pd
@@ -159,8 +161,13 @@ class TestInterruptedRun:
             feature_list=["a", "b"],
         )
 
-        # Simulate a session that exited mid-training: state left at training, pid gone
-        model._write_status(state="training", pid=999999)
+        # Simulate a session that exited mid-training: state left at training, pid gone.
+        # Spawn and reap a child so the pid is known-dead rather than merely improbable
+        # (a hardcoded high pid is unassignable on macOS but valid on Linux).
+        dead = subprocess.Popen([sys.executable, "-c", ""])
+        dead.wait()
+
+        model._write_status(state="training", pid=dead.pid)
         assert LocalModel("interrupted-model").training_state()["state"] == "interrupted"
 
     def test_live_pid_still_reports_training(self, feature_set):

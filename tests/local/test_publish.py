@@ -4,6 +4,9 @@ AWS existence checks and the publish steps are stubbed, so these cover the casca
 ordering, the confirm gate, and the drift comparison without touching AWS.
 """
 
+import sys
+import types
+
 import pandas as pd
 import pytest
 
@@ -112,6 +115,73 @@ class TestConfirmGate:
         # The DataSource gets created, but the caller asked for the FeatureSet
         assert [a.name for a in stub_aws] == ["pub_data"]
         assert result == "aws:pub_features"
+
+
+class TestRowRolesSurvivePublish:
+    """publish() retrains in AWS, so every role the local run used has to be replayed.
+    A dropped role is a model that silently differs from the one that was validated."""
+
+    def test_weights_as_pairs_round_trip(self):
+        from workbench.local.local_model import LocalModel
+
+        pairs = LocalModel._weights_as_pairs({1: 2.5, 2: 0.5})
+        assert dict(pairs) == {1: 2.5, 2: 0.5}
+
+        # Integer ids must stay integers: JSON object keys would stringify them and
+        # then fail to join against the FeatureSet id column
+        assert all(isinstance(key, int) for key, _ in pairs)
+
+    def test_weights_from_dataframe(self):
+        from workbench.local.local_model import LocalModel
+
+        weights_df = pd.DataFrame({"id": [1, 2], "sample_weight": [3.0, 0.25]})
+        assert dict(LocalModel._weights_as_pairs(weights_df)) == {1: 3.0, 2: 0.25}
+
+    def test_no_weights_is_none(self):
+        from workbench.local.local_model import LocalModel
+
+        assert LocalModel._weights_as_pairs(None) is None
+        assert LocalModel._weights_as_pairs({}) is None
+        assert LocalModel._weights_as_pairs(pd.DataFrame()) is None
+
+    def test_publish_replays_all_three_roles(self, monkeypatch):
+        """The AWS retrain must receive the weights, not just the id lists"""
+        from workbench.local.local_model import LocalModel
+
+        model = LocalModel("role-model")
+        model.upsert_workbench_meta(
+            {
+                "model_type": "regressor",
+                "model_framework": "xgboost",
+                "workbench_model_target": "y",
+                "workbench_model_features": ["a"],
+                "workbench_input": "some_features",
+                "sample_weights": [[1, 2.5]],
+                "validation_ids": [3],
+                "exclude_ids": [4],
+            }
+        )
+
+        captured = {}
+
+        class FakeFeatureSet:
+            def __init__(self, name):
+                pass
+
+            def to_model(self, **kwargs):
+                captured.update(kwargs)
+                return "aws-model"
+
+        # Stand in for workbench.api entirely: importing it builds an AWS session
+        fake_api = types.ModuleType("workbench.api")
+        fake_api.FeatureSet = FakeFeatureSet
+        monkeypatch.setitem(sys.modules, "workbench.api", fake_api)
+        monkeypatch.setattr(LocalModel, "version_drift", lambda self: "")
+
+        assert model._publish_self() == "aws-model"
+        assert captured["sample_weights"] == {1: 2.5}
+        assert captured["validation_ids"] == [3]
+        assert captured["exclude_ids"] == [4]
 
 
 class TestVersionDrift:

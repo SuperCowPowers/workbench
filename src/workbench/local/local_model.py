@@ -140,7 +140,10 @@ class LocalModel(LocalArtifact):
                 "model_framework": model_framework.value,
                 "id_column": feature_set.id_column,
                 "hyperparameters": hyperparameters or {},
-                # Kept so publish() can train in AWS with the same row roles
+                # All three row roles are kept, so publish() trains in AWS on the same
+                # rows with the same weights. Dropping any of them here would make the
+                # published model quietly differ from the local one.
+                "sample_weights": cls._weights_as_pairs(sample_weights),
                 "validation_ids": list(validation_ids) if validation_ids else None,
                 "exclude_ids": list(exclude_ids) if exclude_ids else None,
             }
@@ -148,6 +151,30 @@ class LocalModel(LocalArtifact):
 
         model._launch_training(wait=wait)
         return model
+
+    @staticmethod
+    def _weights_as_pairs(sample_weights: Union[dict, pd.DataFrame, None]) -> Union[list, None]:
+        """Internal: Normalize sample weights to JSON-storable [id, weight] pairs.
+
+        Stored as pairs rather than a mapping because JSON object keys are always
+        strings: integer ids would come back as strings and fail to join against the
+        FeatureSet's id column, silently dropping the weights.
+
+        Args:
+            sample_weights (Union[dict, pd.DataFrame, None]): Weights as given by the caller
+
+        Returns:
+            Union[list, None]: [[id, weight], ...], or None when there are no weights
+        """
+        if sample_weights is None:
+            return None
+        if isinstance(sample_weights, pd.DataFrame):
+            if sample_weights.empty:
+                return None
+            id_column = sample_weights.columns[0]
+            sample_weights = dict(zip(sample_weights[id_column], sample_weights["sample_weight"]))
+        pairs = [[key, float(value)] for key, value in sample_weights.items()]
+        return pairs or None
 
     def _build_script(self, template_params: dict, custom_script: str = None) -> str:
         """Internal: Produce the model script, from a built-in template or a custom one.
@@ -468,7 +495,7 @@ class LocalModel(LocalArtifact):
         Returns:
             Model: The created AWS Model
         """
-        from workbench.api import FeatureSet, ModelType, ModelFramework
+        from workbench.api import FeatureSet
 
         meta = self.workbench_meta()
         drift = self.version_drift()
@@ -483,6 +510,7 @@ class LocalModel(LocalArtifact):
             target_column=meta.get("workbench_model_target"),
             feature_list=meta.get("workbench_model_features"),
             hyperparameters=meta.get("hyperparameters") or {},
+            sample_weights=dict(meta["sample_weights"]) if meta.get("sample_weights") else None,
             validation_ids=meta.get("validation_ids"),
             exclude_ids=meta.get("exclude_ids"),
             **kwargs,
