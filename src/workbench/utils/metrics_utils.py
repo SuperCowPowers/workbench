@@ -1,7 +1,7 @@
 """Metrics utilities for computing model performance from predictions."""
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -384,6 +384,42 @@ def macro_soft_threshold_rae(
     scores = pd.DataFrame(rows)
     macro = {"endpoint": "MA", "st_rae": scores["st_rae"].mean(), "support": int(scores["support"].sum())}
     return pd.concat([scores, pd.DataFrame([macro])], ignore_index=True)
+
+
+def resolve_primary_target(targets: Union[str, List[str], None]) -> Optional[str]:
+    """The target a model is scored on.
+
+    Multi-task models carry a list of targets and are scored on the first.
+
+    Args:
+        targets: A single target column, a list of them, or None
+
+    Returns:
+        The target column to score on, or None
+    """
+    if isinstance(targets, list):
+        return targets[0] if targets else None
+    return targets
+
+
+def default_inference_run(inference_runs: List[str]) -> Optional[str]:
+    """Pick the inference run to report when the caller didn't name one.
+
+    Priority: full_cross_fold -> test_inference -> first available. The
+    model_training capture is excluded, since it reports the training job's own
+    metrics rather than an inference pass.
+
+    Args:
+        inference_runs: The available run names
+
+    Returns:
+        The run name, or None if there are none to pick from
+    """
+    runs = [run for run in inference_runs if run != "model_training"]
+    for preferred in ("full_cross_fold", "test_inference"):
+        if preferred in runs:
+            return preferred
+    return runs[0] if runs else None
 
 
 def compute_metrics_from_predictions(

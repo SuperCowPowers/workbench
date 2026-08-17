@@ -269,18 +269,6 @@ class Artifact(ABC):
         """Get the input data for this artifact"""
         return self.workbench_meta().get("workbench_input", "unknown")
 
-    def set_input(self, input_data: str):
-        """Set the input data for this artifact
-
-        Args:
-            input_data (str): Name of input data for this artifact
-        Note:
-            This breaks the official provenance of the artifact, so use with caution.
-        """
-        self.log.important(f"{self.name}: Setting input to {input_data}...")
-        self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
-        self.upsert_workbench_meta({"workbench_input": input_data})
-
     def get_status(self) -> str:
         """Get the status for this artifact"""
         return self.workbench_meta().get("workbench_status", "unknown")

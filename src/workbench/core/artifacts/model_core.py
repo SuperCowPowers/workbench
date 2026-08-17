@@ -20,7 +20,7 @@ from sagemaker.core.resources import (
 from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.core.model_types import ModelType, ModelFramework  # noqa: F401 (re-exported)
 from workbench.utils.aws_utils import newest_path, pull_s3_data, dict_to_aws_tags
-from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
+from workbench.utils.metrics_utils import default_inference_run, reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
@@ -246,14 +246,7 @@ class ModelCore(AWSArtifact):
         Returns:
             str | None: The capture name, or None if no inference runs exist.
         """
-        inference_runs = [run for run in self.list_inference_runs() if run != "model_training"]
-        if not inference_runs:
-            return None
-        if "full_cross_fold" in inference_runs:
-            return "full_cross_fold"
-        if "test_inference" in inference_runs:
-            return "test_inference"
-        return inference_runs[0]
+        return default_inference_run(self.list_inference_runs())
 
     def delete_inference_run(self, inference_run_name: str):
         """Delete the inference run for this model
@@ -350,24 +343,6 @@ class ModelCore(AWSArtifact):
             else:
                 self.log.warning(f"Confusion Matrix {capture_name} not found for {self.name}!")
                 return None
-
-    def set_input(self, input: str, force: bool = False):
-        """Override: Set the input data for this artifact
-
-        Args:
-            input (str): Name of input for this artifact
-            force (bool, optional): Force the input to be set (default: False)
-        Note:
-            We're going to not allow this to be used for Models
-        """
-        if not force:
-            self.log.warning(f"Model {self.name}: Does not allow manual override of the input!")
-            return
-
-        # Okay we're going to allow this to be set
-        self.log.important(f"{self.name}: Setting input to {input}...")
-        self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
-        self.upsert_workbench_meta({"workbench_input": input})
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -844,12 +819,6 @@ class ModelCore(AWSArtifact):
         # Determine the Model Type
         while self.is_model_unknown():
             self._determine_model_type()
-
-        # Is our input data set?
-        if self.get_input() in ["", "unknown"] or ask_everything:
-            input_data = input("Input Data?: ")
-            if input_data not in ["None", "none", "", "unknown"]:
-                self.set_input(input_data)
 
         # Determine the Target Column (can be None)
         target_column = self.target()

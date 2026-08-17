@@ -12,7 +12,11 @@ import hashlib
 
 # Model Performance Scores
 from sklearn.metrics import confusion_matrix
-from workbench.utils.metrics_utils import compute_regression_metrics, compute_classification_metrics
+from workbench.utils.metrics_utils import (
+    compute_regression_metrics,
+    compute_classification_metrics,
+    resolve_primary_target,
+)
 
 # SageMaker Imports
 from sagemaker.core.resources import (
@@ -489,11 +493,7 @@ class EndpointCore(AWSArtifact):
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return prediction_df
 
-        # Normalize targets to handle both string and list formats
-        if isinstance(targets, list):
-            primary_target = targets[0] if targets else None
-        else:
-            primary_target = targets
+        primary_target = resolve_primary_target(targets)
 
         # Sanity Check that the target column is present
         if primary_target not in prediction_df.columns:
@@ -526,7 +526,7 @@ class EndpointCore(AWSArtifact):
 
             # Normalize targets to a list for iteration
             target_list = targets if isinstance(targets, list) else [targets]
-            primary_target = target_list[0]
+            primary_target = resolve_primary_target(targets)
 
             # For single-target models, just save with capture_name
             # For multi-target models, save each as {prefix}_{target} plus primary as capture_name
@@ -640,7 +640,7 @@ class EndpointCore(AWSArtifact):
 
         # Normalize targets to a list for iteration
         target_list = targets if isinstance(targets, list) else [targets]
-        primary_target = target_list[0]
+        primary_target = resolve_primary_target(targets)
 
         # Templates don't save smiles or user-specified meta columns to
         # oof_predictions.csv — merge them in from the FeatureSet so
@@ -1252,24 +1252,6 @@ class EndpointCore(AWSArtifact):
         # Grab the Endpoint Config Name from the AWS
         endpoint = SagemakerEndpoint.get(self.name, session=self.boto3_session)
         return endpoint.endpoint_config_name
-
-    def set_input(self, input: str, force=False):
-        """Override: Set the input data for this artifact
-
-        Args:
-            input (str): Name of input for this artifact
-            force (bool, optional): Force the input to be set. Defaults to False.
-        Note:
-            We're going to not allow this to be used for Models
-        """
-        if not force:
-            self.log.warning(f"Endpoint {self.name}: Does not allow manual override of the input!")
-            return
-
-        # Okay we're going to allow this to be set
-        self.log.important(f"{self.name}: Setting input to {input}...")
-        self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
-        self.upsert_workbench_meta({"workbench_input": input})
 
     def delete(self):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""

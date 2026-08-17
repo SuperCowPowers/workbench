@@ -201,10 +201,6 @@ if __name__ == "__main__":
     print(f"Status: {fs.get_status()}")
     print(f"Input: {fs.get_input()}")
 
-    # Test new input method
-    fs.set_input("test_data")
-    print(f"Input: {fs.get_input()}")
-
     # Test add metadata
     fs.upsert_workbench_meta({"test_key": "test_value"})
 

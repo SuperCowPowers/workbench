@@ -462,11 +462,9 @@ class LocalModel(LocalArtifact):
         Returns:
             Union[str, None]: full_cross_fold -> test_inference -> first run, None if there are none
         """
-        runs = self.list_inference_runs()
-        for preferred in (CROSS_FOLD_RUN, "test_inference"):
-            if preferred in runs:
-                return preferred
-        return runs[0] if runs else None
+        from workbench.utils.metrics_utils import default_inference_run
+
+        return default_inference_run(self.list_inference_runs())
 
     def get_inference_predictions(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the captured predictions for this model.
@@ -507,16 +505,13 @@ class LocalModel(LocalArtifact):
         Returns:
             Union[pd.DataFrame, None]: The metrics, or None if they can't be computed
         """
-        from workbench.utils.metrics_utils import compute_metrics_from_predictions
+        from workbench.utils.metrics_utils import compute_metrics_from_predictions, resolve_primary_target
 
         predictions = self.get_inference_predictions(capture_name)
         if predictions is None:
             return None
 
-        # Multi-task models are scored on their primary target, the first one
-        target = self.workbench_meta().get("workbench_model_target")
-        if isinstance(target, list):
-            target = target[0] if target else None
+        target = resolve_primary_target(self.workbench_meta().get("workbench_model_target"))
         if target is None or target not in predictions.columns:
             self.log.warning(f"No target column in the '{capture_name}' predictions for {self.name}")
             return None
