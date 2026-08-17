@@ -18,7 +18,7 @@
     <filter id="mf-shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.18"/></filter>
   </defs>
 
-  <text x="380" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#E0E0E0">Feature MetaEndpoint &#8212; smiles-to-2d-3d-v1</text>
+  <text x="380" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#E0E0E0">Feature MetaEndpoint &#8212; smiles-to-2d-3d-v2</text>
   <text x="380" y="54" text-anchor="middle" font-size="13" fill="#999">Fan out to the 2D + 3D feature endpoints, concatenate the columns &#8594; one async endpoint</text>
 
   <!-- dashed MetaEndpoint frame -->
@@ -35,7 +35,7 @@
   <text x="306" y="164" text-anchor="middle" font-size="12" fill="#BBDEFB">2D &#183; sync</text>
 
   <rect x="188" y="184" width="236" height="48" rx="8" fill="url(#mf-3d)" filter="url(#mf-shadow)"/>
-  <text x="306" y="206" text-anchor="middle" font-size="13.5" font-weight="600" fill="white">smiles-to-3d-v1</text>
+  <text x="306" y="206" text-anchor="middle" font-size="13.5" font-weight="600" fill="white">smiles-to-3d-v2</text>
   <text x="306" y="222" text-anchor="middle" font-size="12" fill="#B2DFDB">3D &#183; async</text>
 
   <!-- concat -->
@@ -44,7 +44,7 @@
 
   <!-- output -->
   <rect x="620" y="150" width="104" height="52" rx="9" fill="url(#mf-out)" filter="url(#mf-shadow)"/>
-  <text x="672" y="173" text-anchor="middle" font-size="14" font-weight="700" fill="white">df + 387</text>
+  <text x="672" y="173" text-anchor="middle" font-size="14" font-weight="700" fill="white">df + 339</text>
   <text x="672" y="189" text-anchor="middle" font-size="12" fill="#C8E6C9">features</text>
 
   <!-- edges -->

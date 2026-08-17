@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#3d-molecular-descriptors-v1-and-v2" class="md-skip">
+        <a href="#3d-molecular-descriptors" class="md-skip">
           Skip to content
         </a>
       
@@ -5189,56 +5189,14 @@
 
 
 
-<h1 id="3d-molecular-descriptors-v1-and-v2">3D Molecular Descriptors: v1 and v2</h1>
+<h1 id="3d-molecular-descriptors">3D Molecular Descriptors</h1>
 <div class="admonition warning inline end">
-<p class="admonition-title">Both endpoints are in beta</p>
-<p><code>smiles-to-3d-v1</code> and <code>smiles-to-3d-v2</code> are in <strong>beta</strong>. The conformer engine, deployment, and DataFrame-in/DataFrame-out contract are stable, but the descriptor layers are still being validated against real ADMET endpoints — expect the feature sets (especially v2's) to keep moving. Pin a version and run an ablation before you rely on either.</p>
+<p class="admonition-title">Beta</p>
+<p><code>smiles-to-3d-v2</code> is in <strong>beta</strong>. The conformer engine, deployment, and DataFrame-in/DataFrame-out contract are stable, but the descriptor layer is still being validated against real ADMET endpoints — expect the feature set to keep moving. Pin a version and run an ablation before you rely on it.</p>
 </div>
 <p>2D molecular descriptors capture a lot about a molecule from its connectivity graph alone — molecular weight, hydrogen-bond donors, topological polar surface area, and hundreds of other properties. But some ADMET properties have geometric components that 2D captures only indirectly: how a molecule fits a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how charge distributes across its surface. Workbench's 3D endpoints expose these directly as engineered features. Like every Workbench endpoint the contract is simple — <strong>send a DataFrame, get a DataFrame back</strong> — with the descriptor columns appended.</p>
-<p>There are <strong>two</strong> 3D endpoints, both async (scale-to-zero) and both built on the same conformer engine:</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th><strong><code>smiles-to-3d-v1</code></strong></th>
-<th><strong><code>smiles-to-3d-v2</code></strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Features</strong></td>
-<td>74 (broad, first-generation)</td>
-<td>26 (curated, physics-grounded)</td>
-</tr>
-<tr>
-<td><strong>Descriptor style</strong></td>
-<td>RDKit shape + Mordred CPSA + pharmacophore + ensemble stats</td>
-<td>Electronic (xTB) + surface + shape + pharmacophore + flexibility</td>
-</tr>
-<tr>
-<td><strong>Headline</strong></td>
-<td>Boltzmann-weighted conformer ensemble</td>
-<td><strong>quantum electronic descriptors, orthogonal to 2D</strong></td>
-</tr>
-<tr>
-<td><strong>Charges</strong></td>
-<td>Gasteiger (in the 43 CPSA columns)</td>
-<td>GFN2-xTB partial charges</td>
-</tr>
-<tr>
-<td><strong>Status</strong></td>
-<td>Beta — kept for continuity/ablation</td>
-<td>Beta — <strong>the recommended set</strong></td>
-</tr>
-<tr>
-<td><strong>Diagnostics</strong></td>
-<td>11 <code>desc3d_*</code> columns</td>
-<td>9 <code>desc3d_*</code> columns</td>
-</tr>
-</tbody>
-</table>
-<p>Both share the engine: <strong>ETKDGv3 → MMFF94s geometry → GFN2-xTB energy ranking → Boltzmann-weighted ensemble averaging</strong>. They differ only in the <em>descriptor layer</em> computed on top of that ensemble.</p>
-<p><strong>Which should you use?</strong> Start with <strong>v2</strong>. It was built specifically because v1's 74 features never clearly beat a strong 2D baseline on any ADMET assay we tried — the descriptor choice, not the conformer engine, was the weak link. v2 replaces 43 collinear Gasteiger-charge surface descriptors with a handful of robust ones and adds a block of genuinely quantum electronic features that 2D cannot express. v1 remains deployed for continuity and as an ablation baseline.</p>
+<p><strong>Use <code>smiles-to-3d-v2</code>.</strong> It computes <strong>26 curated, physics-grounded features</strong> — every one chosen to add signal <em>orthogonal</em> to the 2D set — on a conformer ensemble ranked by GFN2-xTB quantum energies, and it runs async with scale-to-zero.</p>
+<p>An earlier 74-feature endpoint, <code>smiles-to-3d-v1</code>, is <strong>deprecated</strong>: still deployed so existing models keep working and so the two sets can be ablated against each other, but not the one to build against. It is documented under <a href="#deprecated-v1-74-feature-boltzmann-ensemble">Deprecated: v1</a> at the bottom of this page.</p>
 <div class="admonition tip">
 <p class="admonition-title">When to reach for 3D at all</p>
 <p>For most ADMET endpoints, 2D fingerprints + learned graph representations are competitive on their own. Reach for 3D on geometry-sensitive endpoints (passive permeability, P-gp/BCRP, conformer-dependent solubility) — as a <em>complement</em> to the 2D set, not a replacement. Whether 3D helps a given model is an empirical question; run the ablation.</p>
@@ -5252,81 +5210,25 @@
 </ul>
 <p>So treat 3D features honestly: a <em>complementary</em> set that may give modest, endpoint-dependent gains (most plausibly on passive permeability, P-gp / BCRP recognition, conformer-dependent solubility) on top of a strong 2D baseline. This honest accounting is exactly what motivated v2 — see <a href="#why-v2-exists">v2's design rationale</a>.</p>
 <hr />
-<h1 id="v1-the-full-74-feature-boltzmann-ensemble">v1 — The Full 74-Feature Boltzmann Ensemble</h1>
-<p><code>smiles-to-3d-v1</code> computes <strong>74 conformer-based features</strong> covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility, using an adaptive Boltzmann-weighted conformer ensemble.</p>
-<table style="width: 100%;">
-  <thead>
-    <tr>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;"></th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">smiles-to-3d-v1</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">50–200 (adaptive by rotatable bonds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble (GFN2-xTB energies)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td></tr>
-  </tbody>
-</table>
-
-<h3 id="the-conformer-engine-shared-by-both-versions">The Conformer Engine (shared by both versions)</h3>
+<h1 id="the-conformer-engine">The Conformer Engine</h1>
+<p>Both 3D endpoints run the same engine — <strong>ETKDGv3 → MMFF94s geometry → GFN2-xTB energy ranking → Boltzmann-weighted ensemble averaging</strong> — and differ only in the descriptor layer computed on top of it.</p>
 <p>Descriptors are computed on every conformer within a 5 kcal/mol energy window of the lowest-energy conformer, then combined with normalized Boltzmann weights:</p>
 <div class="arithmatex">\[\Large w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i\]</div>
 <p>where <span class="arithmatex">\(\Delta E_i = E_i - E_{\min}\)</span> is the energy above the minimum conformer, <span class="arithmatex">\(k_BT\)</span> is the thermal energy at 298 K (0.592 kcal/mol), and <span class="arithmatex">\(d_i\)</span> is the descriptor value for conformer <span class="arithmatex">\(i\)</span>. This is far more reproducible than single-conformer descriptors, which vary significantly with random seed on flexible molecules.</p>
 <p>Crucially, the energies <span class="arithmatex">\(E_i\)</span> that drive the weights come from <strong>GFN2-xTB</strong> (a fast semi-empirical quantum method), <em>not</em> the MMFF94s force field used to build the geometries. MMFF94s energy rankings are unreliable for flexible and polar molecules — we measured near-zero rank correlation against GFN2-xTB on common drug-like compounds — so decoupling the two (MMFF94s for <em>geometry</em>, GFN2-xTB for the <em>energy ranking</em>) is the single highest-leverage accuracy lever for the ensemble.</p>
-<figure style="margin: 10px auto; text-align: center;">
-<img src="../../images/3d_descriptor_pipeline.svg" alt="3D descriptor pipeline: SMILES to Standardize to Conformers to 74 Descriptors" style="width: 100%; min-height: 300px;">
-<figcaption><em>The v1 pipeline: standardization, tiered conformer generation with MMFF94s geometry optimization, GFN2-xTB energy ranking, and Boltzmann-weighted ensemble descriptors across four categories.</em></figcaption>
-</figure>
-
-<p>The <strong>Conformers</strong> box expands into two decoupled stages, and the order matters: <strong>geometry</strong> is built first (ETKDGv3 → MMFF94s), then <strong>energy</strong> ranking runs GFN2-xTB on <em>all</em> conformers before the 5 kcal/mol window narrows the ensemble to the few that get Boltzmann-averaged.</p>
+<p>Conformer generation itself is two decoupled stages, and the order matters: <strong>geometry</strong> is built first (ETKDGv3 → MMFF94s), then <strong>energy</strong> ranking runs GFN2-xTB on <em>all</em> conformers before the 5 kcal/mol window narrows the ensemble to the few that get Boltzmann-averaged.</p>
 <figure style="margin: 10px auto; text-align: center;">
 <img src="../../images/3d_descriptor_pipeline_detail.svg" alt="Inside the Conformers stage: embed and MMFF94s-optimize N conformers, score all N with GFN2-xTB, keep k within a 5 kcal/mol window, compute Boltzmann weights" style="width: 100%; height: auto;">
 <figcaption><em>Expansion of the Conformers stage: GFN2-xTB scores all N conformers, then the 5 kcal/mol window keeps the k that get Boltzmann-weighted. xTB only scores, so the descriptors are computed on the MMFF94s geometry.</em></figcaption>
 </figure>
 
 <p><strong>Adaptive conformer counts.</strong> The count scales to flexibility — <strong>50</strong> conformers for molecules with &lt; 8 rotatable bonds, <strong>200</strong> for ≥ 8 — capped at 200 because GFN2-xTB scores every conformer and, for heavy/flexible molecules, only a handful fall inside the 5 kcal/mol window regardless of how many are generated. Geometries are optimized with <strong>MMFF94s</strong> (falling back to <strong>UFF</strong> for unsupported atom types), and RMSD pruning (<code>pruneRmsThresh=0.5</code>) removes redundant conformers. Standardization (salt extraction, charge neutralization, stereo-faithful tautomer canonicalization) runs first, identical to the 2D endpoints; see the <a href="../molecular_standardization/">standardization pipeline</a>.</p>
-<h3 id="the-74-features-by-category">The 74 Features, by Category</h3>
-<table>
-<thead>
-<tr>
-<th>Category</th>
-<th>Count</th>
-<th>What it captures</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>RDKit 3D shape</strong></td>
-<td>10</td>
-<td>Inertial shape via PMI1–3, NPR1/NPR2, asphericity, eccentricity, radius of gyration, spherocity — rod/disc/sphere classification</td>
-</tr>
-<tr>
-<td><strong>Mordred 3D</strong></td>
-<td>52</td>
-<td><strong>CPSA (43)</strong> — charged partial surface area, the 3D extension of TPSA, mapping Gasteiger partial charges onto the solvent-accessible surface; plus geometrical (4), gravitational (4), and plane-of-best-fit (1)</td>
-</tr>
-<tr>
-<td><strong>Pharmacophore 3D</strong></td>
-<td>8</td>
-<td>Molecular axis length, volume, amphiphilic moment, charge/HBA centroid offsets, nitrogen span, intramolecular H-bond (IMHB) potential, elongation</td>
-</tr>
-<tr>
-<td><strong>Conformer ensemble</strong></td>
-<td>4</td>
-<td>Energy minimum, energy range/std, conformational flexibility index</td>
-</tr>
-</tbody>
-</table>
-<p>The <strong>IMHB potential</strong> deserves special mention: molecules that form intramolecular H-bonds can "mask" polar groups in nonpolar membrane environments, dramatically increasing permeability despite high polar surface area — chameleonic behavior invisible to 2D descriptors. The CPSA block, on the other hand, is where v1 shows its age: <strong>43 of the 74 features</strong> are collinear Gasteiger-charge surface descriptors, and Gasteiger is the least accurate common partial-charge method. That is the specific weakness v2 sets out to fix.</p>
-<h3 id="v1-diagnostics">v1 Diagnostics</h3>
-<p>Alongside the 74 features, v1 emits 11 <code>desc3d_*</code> diagnostic columns tracking pipeline status, conformer counts, embedding tier, force field, energy model, stereo preservation, and per-molecule compute time (plus the upstream <code>undefined_chiral_centers</code> count). A representative subset: <code>desc3d_status</code> (<code>ok</code>, <code>skip:cost</code>, <code>skip:embed</code>, …), <code>desc3d_conf_count</code>, <code>desc3d_confs_in_window</code>, <code>desc3d_energy_method</code> (<code>GFN2-xTB</code> / <code>MMFF94s</code> / <code>UFF</code> — a fallback is never silent), and <code>desc3d_stereo_preserved</code>.</p>
 <hr />
 <h1 id="v2-the-curated-26-feature-xtb-set">v2 — The Curated 26-Feature xTB Set</h1>
-<p><code>smiles-to-3d-v2</code> runs the <strong>same conformer engine</strong> as v1 but replaces the descriptor layer with a deliberately small, physics-grounded set of <strong>26 features</strong>, every one chosen to add signal <em>orthogonal</em> to the 2D descriptors. This is the recommended 3D endpoint.</p>
+<p><code>smiles-to-3d-v2</code> takes the conformer engine above and computes a deliberately small, physics-grounded set of <strong>26 features</strong> on it, every one chosen to add signal <em>orthogonal</em> to the 2D descriptors.</p>
 <figure style="margin: 10px auto; text-align: center;">
 <img src="../../images/3d_descriptor_v2_pipeline.svg" alt="3D descriptors v2 pipeline: SMILES to Standardize to shared conformer engine to a single GFN2-xTB single point that yields both energy ranking and electronic properties, feeding five curated descriptor blocks — Electronic (10), Surface (5), Shape (6), Pharmacophore (3), Flexibility (2) — for 26 features total." style="width: 100%; min-height: 300px;">
-<figcaption><em>The v2 pipeline reuses v1's conformer engine verbatim. The single GFN2-xTB pass that ranks conformers for Boltzmann weighting also yields the electronic descriptors — one quantum calculation, two products.</em></figcaption>
+<figcaption><em>The v2 pipeline. The single GFN2-xTB pass that ranks conformers for Boltzmann weighting also yields the electronic descriptors — one quantum calculation, two products.</em></figcaption>
 </figure>
 
 <h2 id="why-v2-exists">Why v2 Exists</h2>
@@ -5510,21 +5412,21 @@
 </table>
 <p>Molecules exceeding any threshold receive NaN features and a specific <code>desc3d_status</code> (e.g. <code>skip:heavy_atoms</code>, <code>skip:cost</code>) so downstream pipelines can route them appropriately. The <strong>xTB cost</strong> backstop only bites the large-and-very-flexible corner (≥ 8 rotatable bonds and &gt; ~70 heavy atoms), leaving normal drug-likes untouched. Upstream, <code>standardize()</code> independently rejects molecules over 500 atoms — its limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D guards are always the binding constraint. Guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
 <h2 id="deploying-and-using-the-endpoints">Deploying and Using the Endpoints</h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_v1.py<span class="w">   </span><span class="c1"># 74-feature full set</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_v2.py<span class="w">   </span><span class="c1"># 26-feature curated set (recommended)</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_v2.py<span class="w">   </span><span class="c1"># 26-feature curated set</span>
 </span></code></pre></div>
-<p>Both deploy as <a href="../../api_classes/async_endpoint/">async endpoints</a> with scale-to-zero — ideal for overnight batch runs where you don't pay for idle compute during the day.</p>
+<p>It deploys as an <a href="../../api_classes/async_endpoint/">async endpoint</a> with scale-to-zero — ideal for overnight batch runs where you don't pay for idle compute during the day.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api.inference_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceCache</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Async deployment, standard Endpoint API (auto-routes through async core)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">end</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">"smiles-to-3d-v2"</span><span class="p">)</span>     <span class="c1"># or "smiles-to-3d-v1"</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">end</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">"smiles-to-3d-v2"</span><span class="p">)</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">df_3d</span> <span class="o">=</span> <span class="n">end</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>             <span class="c1"># input df comes back with descriptor columns appended</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Persistent S3-backed caching — only computes uncached rows</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">cached</span> <span class="o">=</span> <span class="n">InferenceCache</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">cache_key_column</span><span class="o">=</span><span class="s2">"smiles"</span><span class="p">)</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">cached</span> <span class="o">=</span> <span class="n">InferenceCache</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">df_cached</span> <span class="o">=</span> <span class="n">cached</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">big_df</span><span class="p">)</span>
 </span></code></pre></div>
+<p>At roughly 1-2 molecules/second, a few thousand compounds is a multi-hour pass — run it as an AWS Batch job rather than inline, and let the cache above be what the job leaves behind.</p>
 <h2 id="limitations-future-work">Limitations &amp; Future Work</h2>
 <p><strong>3D vs 2D in ADMET reality.</strong> Top reproducible TDC ADMET models lean on 2D fingerprints + learned graph representations. The published evidence (PharmaBench <em>Sci. Data</em> 2024; Bahia <em>Mol. Inform.</em> 2023) and our own PXR result all say the same thing: 3D descriptors give marginal-but-real gains on geometry-sensitive endpoints and roughly neutral effects on most others. Both feature streams <em>complement</em> rather than replace a strong 2D + learned-representation baseline.</p>
 <p><strong>Cross-seed variance on highly flexible molecules.</strong> For heavy/flexible molecules only a handful of conformers land inside the 5 kcal/mol window regardless of how many are generated, so raw conformer count is a weak lever (hence the 200 cap). Different random seeds still produce slightly different Boltzmann averages; for most ADMET endpoints this residual is below downstream model noise. The more effective levers — seed-diversity ensembles or a wider energy window — are candidate future upgrades.</p>
@@ -5534,6 +5436,58 @@
 <li><strong>AM1-BCC or ML charge models</strong> (DASH; Mahmoud et al. 2023) for the surface block — an upgrade path v2 already partially took by moving to xTB charges.</li>
 </ol>
 <p>Deliberately <em>not</em> on this list: ML conformer generators (research-stage, no proven ADMET benefit), MACE-OFF / ANI-2x routine optimization (too heavy for production throughput), and tautomer/protomer ensemble enumeration (niche in production).</p>
+<hr />
+<h1 id="deprecated-v1-74-feature-boltzmann-ensemble">Deprecated: v1 (74-Feature Boltzmann Ensemble)</h1>
+<div class="admonition warning">
+<p class="admonition-title">Deprecated — don't build against this</p>
+<p><code>smiles-to-3d-v1</code> stays deployed so existing models keep working and so the two feature sets can be ablated against each other. New work should use <code>smiles-to-3d-v2</code>.</p>
+</div>
+<p><code>smiles-to-3d-v1</code> computes <strong>74 conformer-based features</strong> covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility, on the same conformer engine described above.</p>
+<figure style="margin: 10px auto; text-align: center;">
+<img src="../../images/3d_descriptor_pipeline.svg" alt="3D descriptor pipeline: SMILES to Standardize to Conformers to 74 Descriptors" style="width: 100%; min-height: 300px;">
+<figcaption><em>The v1 pipeline: standardization, tiered conformer generation with MMFF94s geometry optimization, GFN2-xTB energy ranking, and Boltzmann-weighted ensemble descriptors across four categories.</em></figcaption>
+</figure>
+
+<h3 id="the-74-features-by-category">The 74 Features, by Category</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Count</th>
+<th>What it captures</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RDKit 3D shape</strong></td>
+<td>10</td>
+<td>Inertial shape via PMI1–3, NPR1/NPR2, asphericity, eccentricity, radius of gyration, spherocity — rod/disc/sphere classification</td>
+</tr>
+<tr>
+<td><strong>Mordred 3D</strong></td>
+<td>52</td>
+<td><strong>CPSA (43)</strong> — charged partial surface area, the 3D extension of TPSA, mapping Gasteiger partial charges onto the solvent-accessible surface; plus geometrical (4), gravitational (4), and plane-of-best-fit (1)</td>
+</tr>
+<tr>
+<td><strong>Pharmacophore 3D</strong></td>
+<td>8</td>
+<td>Molecular axis length, volume, amphiphilic moment, charge/HBA centroid offsets, nitrogen span, intramolecular H-bond (IMHB) potential, elongation</td>
+</tr>
+<tr>
+<td><strong>Conformer ensemble</strong></td>
+<td>4</td>
+<td>Energy minimum, energy range/std, conformational flexibility index</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>IMHB potential</strong> deserves special mention: molecules that form intramolecular H-bonds can "mask" polar groups in nonpolar membrane environments, dramatically increasing permeability despite high polar surface area — chameleonic behavior invisible to 2D descriptors. The CPSA block is where the set shows its age: <strong>43 of the 74 features</strong> are collinear Gasteiger-charge surface descriptors, and Gasteiger is the least accurate common partial-charge method — the specific weakness v2 fixes.</p>
+<h3 id="v1-diagnostics">v1 Diagnostics</h3>
+<p>Alongside the 74 features, v1 emits 11 <code>desc3d_*</code> diagnostic columns tracking pipeline status, conformer counts, embedding tier, force field, energy model, stereo preservation, and per-molecule compute time (plus the upstream <code>undefined_chiral_centers</code> count). A representative subset: <code>desc3d_status</code> (<code>ok</code>, <code>skip:cost</code>, <code>skip:embed</code>, …), <code>desc3d_conf_count</code>, <code>desc3d_confs_in_window</code>, <code>desc3d_energy_method</code> (<code>GFN2-xTB</code> / <code>MMFF94s</code> / <code>UFF</code> — a fallback is never silent), and <code>desc3d_stereo_preserved</code>.</p>
+<h3 id="deploying-v1">Deploying v1</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_v1.py
+</span></code></pre></div>
+<p>The <code>smiles-to-2d-3d-v1</code> MetaEndpoint pairs it with the 2D set (~387 features) and is deprecated alongside it.</p>
+<hr />
 <h2 id="references">References</h2>
 <p><strong>Conformer Ensemble Methods</strong></p>
 <ul>
