@@ -38,6 +38,7 @@ except ImportError:
 
 
 # Workbench Imports
+from workbench.local.local_meta import LocalMeta
 from workbench.utils.repl_utils import cprint, Spinner
 from workbench.utils.repl_themes import prompt_styles, current_theme
 from workbench.utils.cow_puns import random_cow_pun
@@ -143,6 +144,7 @@ class WorkbenchShell:
         self.commands["help"] = self.help
         self.commands["docs"] = self.doc_browser
         self.commands["summary"] = self.summary
+        self.commands["local_summary"] = self.local_summary
         self.commands["contests"] = self.contests
         self.commands["incoming_data"] = self.incoming_data
         self.commands["glue_jobs"] = self.glue_jobs
@@ -198,6 +200,7 @@ class WorkbenchShell:
             self.show_config()
         else:
             self.cow_pun()
+            self.local_summary()
             self.summary()
             self.contests()
             if self.bosco_enabled:
@@ -376,6 +379,19 @@ class WorkbenchShell:
         url = "https://supercowpowers.github.io/workbench/"
         webbrowser.open(url)
 
+    def local_summary(self):
+        """Show a summary of the Local Artifacts, if there are any"""
+        local_meta = LocalMeta()
+        summary_data = {
+            "DATA_SOURCES": local_meta.data_sources(),
+            "FEATURE_SETS": local_meta.feature_sets(),
+            "MODELS": local_meta.models(),
+            "ENDPOINTS": local_meta.endpoints(),
+        }
+        if all(df.empty for df in summary_data.values()):
+            return
+        self._print_summary("Local Artifacts Summary:", summary_data)
+
     def summary(self):
         """Show a summary of all the AWS Artifacts"""
 
@@ -384,7 +400,6 @@ class WorkbenchShell:
         try:
             # We're filling in Summary Data for all the AWS Services
             summary_data = {
-                "INCOMING_DATA": self.meta.incoming_data(),
                 "ETL_JOBS": self.meta.etl_jobs(),
                 "DATA_SOURCES": self.meta.data_sources(),
                 "FEATURE_SETS": self.meta.feature_sets(),
@@ -394,8 +409,17 @@ class WorkbenchShell:
         finally:
             spinner.stop()
 
-        # Print out the AWS Artifacts Summary
-        cprint("yellow", "\nAWS Artifacts Summary:")
+        self._print_summary("AWS Artifacts Summary:", summary_data)
+
+    @staticmethod
+    def _print_summary(title: str, summary_data: dict):
+        """Print an artifact summary: one row per type with a count and examples
+
+        Args:
+            title (str): The heading for this summary
+            summary_data (dict): Artifact type -> DataFrame, name in the first column
+        """
+        cprint("yellow", f"\n{title}")
         for name, df in summary_data.items():
             # Pad the name to 15 characters
             name = (name + " " * 15)[:15]

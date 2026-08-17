@@ -501,10 +501,6 @@ class LocalModel(LocalArtifact):
         from workbench.api import FeatureSet
 
         meta = self.workbench_meta()
-        drift = self.version_drift()
-        if drift:
-            self.log.warning(f"{drift}\nThe published model may differ from the local one.")
-
         feature_set = FeatureSet(self.get_input())
         return feature_set.to_model(
             name=self.name,
