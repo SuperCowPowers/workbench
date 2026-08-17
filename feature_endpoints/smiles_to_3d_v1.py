@@ -1,5 +1,8 @@
 """Create the SMILES → 3D Molecular Descriptors (Boltzmann) Async Endpoint.
 
+DEPRECATED: use ``smiles_to_3d_v2.py``. This endpoint stays deployed so existing
+models keep working and so the two 3D feature sets can be ablated against each other.
+
 Salts are removed. Computes 74 Boltzmann-weighted 3D descriptors per SMILES:
   - RDKit 3D shape      (PMI, NPR, asphericity, …)
   - Mordred 3D          (CPSA, GeometricalIndex, GravitationalIndex, PBF)

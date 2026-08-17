@@ -7,9 +7,29 @@ SMILES-based molecular descriptor endpoints deployed on AWS SageMaker via Workbe
 | Script | Endpoint Name | Description |
 |--------|--------------|-------------|
 | `smiles_to_2d_v1.py` | `smiles-to-2d-v1` | RDKit + Mordred 2D descriptors (salts removed) |
-| `smiles_to_2d_keep_salts_v1.py` | `smiles-to-2d-keep-salts-v1` | RDKit + Mordred 2D descriptors (salts kept) |
+| `smiles_to_2d_salt_v1.py` | `smiles-to-2d-salt-v1` | RDKit + Mordred 2D descriptors (salts kept) |
 | `smiles_to_fingerprints_v1.py` | `smiles-to-fingerprints-v1` | Morgan count fingerprints (4096-dim, radius 2 / ECFP4) |
-| `smiles_to_3d_v1.py` | `smiles-to-3d-v1` | 3D conformer-based descriptors, async — 50-500 adaptive conformers, Boltzmann-weighted (74 features) |
+| `smiles_to_3d_v2.py` | `smiles-to-3d-v2` | Curated GFN2-xTB 3D descriptors, async (26 features) |
+
+MetaEndpoints fan out to both children and concatenate in one call:
+
+| Script | Endpoint Name | Children |
+|--------|--------------|----------|
+| `smiles_to_2d_3d_v2.py` | `smiles-to-2d-3d-v2` | `smiles-to-2d-v1` + `smiles-to-3d-v2` |
+| `smiles_to_2d_3d_salt_v2.py` | `smiles-to-2d-3d-salt-v2` | `smiles-to-2d-salt-v1` + `smiles-to-3d-v2` |
+
+Salt-keeping is for **solubility only**, where the counterion is part of what was
+measured. Every other assay uses the salt-removing endpoints.
+
+### Deprecated
+
+| Script | Endpoint Name | Description |
+|--------|--------------|-------------|
+| `smiles_to_3d_v1.py` | `smiles-to-3d-v1` | First-gen 3D set, async — 50-200 adaptive conformers, Boltzmann-weighted (74 features) |
+| `smiles_to_2d_3d_v1.py` | `smiles-to-2d-3d-v1` | `smiles-to-2d-v1` + `smiles-to-3d-v1` |
+
+Still deployed so existing models keep working and so the two 3D sets can be ablated
+against each other. Not for new work — see `docs/blogs/3d_descriptors.md`.
 
 ## Deployment
 
@@ -19,14 +39,20 @@ Run from the `feature_endpoints/` directory:
 # 2D Descriptors (salts removed) --> endpoint: smiles-to-2d-v1
 python smiles_to_2d_v1.py
 
-# 2D Descriptors (salts kept) --> endpoint: smiles-to-2d-keep-salts-v1
-python smiles_to_2d_keep_salts_v1.py
+# 2D Descriptors (salts kept) --> endpoint: smiles-to-2d-salt-v1
+python smiles_to_2d_salt_v1.py
 
 # Morgan count fingerprints --> endpoint: smiles-to-fingerprints-v1
 python smiles_to_fingerprints_v1.py
 
 # 3D Full (async) --> endpoint: smiles-to-3d-v1
 python smiles_to_3d_v1.py
+
+# 3D Curated xTB (async) --> endpoint: smiles-to-3d-v2
+python smiles_to_3d_v2.py
+
+# MetaEndpoint, 2D + curated 3D --> endpoint: smiles-to-2d-3d-v2
+python smiles_to_2d_3d_v2.py
 
 # 2D endpoints support serverless or dedicated instance:
 SERVERLESS=false python smiles_to_2d_v1.py

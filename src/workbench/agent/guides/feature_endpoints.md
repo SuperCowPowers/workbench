@@ -27,22 +27,44 @@ predictions = Endpoint("my-admet-model").inference(df_features)
 
 | Endpoint | Features | Use case |
 |---|---|---|
-| `smiles-to-2d-v1` | ~315 2D descriptors | Standard ADMET modeling |
-| `smiles-to-2d-keep-salts-v1` | ~315 2D descriptors | Salt-sensitive work (solubility, formulation) |
+| `smiles-to-2d-v1` | ~315 2D descriptors | **The default** for every assay |
 | `smiles-to-fingerprints-v1` | 4096-dim Morgan counts | Similarity, substructure, fingerprint models |
-| `smiles-to-3d-v1` | 74 3D descriptors | Full first-gen 3D set — async |
-| `smiles-to-3d-v2` | 26 3D descriptors | Curated GFN2-xTB set, orthogonal to 2D — recommended, async |
+| `smiles-to-3d-v2` | 26 3D descriptors | Curated GFN2-xTB set, orthogonal to 2D — async |
+| `smiles-to-2d-salt-v1` | ~315 2D descriptors | Solubility only — see below |
 
 Combined **MetaEndpoints** fan out to both children and concatenate in one call:
 
 - `smiles-to-2d-3d-v2` — 2D + curated 3D v2, ~339 features (prefer this)
-- `smiles-to-2d-3d-v1` — 2D + full 3D v1, ~387 features
+- `smiles-to-2d-3d-salt-v2` — the salt-keeping 2D paired with curated 3D v2
 
 Use a MetaEndpoint rather than calling two endpoints and merging by hand.
 
-The 3D endpoints are async and compute-intensive (conformer generation, xTB
-energy ranking) — roughly 1-2 molecules/second. Expect real wall-clock time on
-a large batch; that is the work, not a hang.
+**Deprecated:** `smiles-to-3d-v1` (74 features) and `smiles-to-2d-3d-v1`. Still deployed
+so existing models keep working, and useful as an ablation baseline — never the choice
+for new work.
+
+**Keeping salts is the exception, not a judgment call.** Solubility is the assay
+where the counterion is part of what was measured, so it gets `-salt-`. Every other
+assay — permeability, clearance, CYP inhibition, binding — uses the salt-removing
+default. Don't reach for the salt endpoint because the input happens to contain
+salts; that is exactly what the default is built to strip.
+
+## How to run one
+
+`inference()` blocks for the whole pass, so the runner follows the wall clock. For
+~5,000 molecules:
+
+| Endpoint | Runtime | Run it as |
+|---|---|---|
+| 2D, fingerprints | ~10 minutes | a subprocess job — `run_feature_endpoint(df, name, wait=False)` |
+| 3D, 2D+3D | 3-4 hours | a Batch script (`batch`), which warms the cache |
+
+The 3D endpoints are compute-intensive (conformer generation, xTB energy ranking)
+— roughly 1-2 molecules/second. That is the work, not a hang. Async is how
+SageMaker runs the invocation; the caller still waits.
+
+Both runners cache through `InferenceCache`, so a repeat pass over molecules already
+seen returns in seconds. Details in `local_models`.
 
 ## What's in the pipeline
 

@@ -61,7 +61,17 @@ local_model.get_inference_predictions("full_cross_fold")
 
 ## Don't block the turn
 
-Training runs as a subprocess and **defaults to `wait=True`**, which blocks until it
+Pick the runner by how long the work runs, not by how big it looks:
+
+| Runner | Runtime | Outlives |
+|---|---|---|
+| in process | seconds | nothing — it *is* the turn |
+| subprocess, `wait=False` | minutes | the turn, not the REPL |
+| Batch (`batch`) | hours | the session |
+
+Local DataSources, FeatureSets, and `LocalEndpoint.inference()` are all in process.
+
+Training is a subprocess and **defaults to `wait=True`**, which blocks until it
 finishes. Pass `wait=False` for **any** model creation, not just the ones that look
 slow — polling a train that finished in seconds costs one call, while blocking on one
 that runs for twenty minutes leaves the user staring at a frozen session with no way
@@ -75,18 +85,43 @@ local_model.training_state()   # includes "interrupted" for a run whose process 
 `training_state()` reports `interrupted` rather than leaving a dead run claiming to be
 training, so a train that never finished never reads as done.
 
-Featurization is the other long step. Calling an endpoint blocks the same way whether
-or not it is async — async is how SageMaker runs the invocation, not something the
-caller gets back from. Use `run_feature_endpoint(..., wait=False)` below.
-
 ## Molecular features
 
 Chemprop takes `feature_list=["smiles"]` and needs no featurization pass. Descriptor
-models (XGBoost, PyTorch) do, and **which path depends on whether the features need
+models (XGBoost, PyTorch) do, and **the rung depends on whether the features need
 xTB**, not on how many molecules there are.
 
-**2D and fingerprints: compute them in process.** The endpoint's `predict_fn` is
-exactly these two calls, so there is nothing to gain from a network round trip:
+**2D and fingerprints: the endpoint, as a subprocess job.** Around 5,000 molecules
+takes ~10 minutes — too long to block a turn, too short to be worth Batch:
+
+```python
+from workbench.utils.feature_endpoint_job import run_feature_endpoint
+
+job = run_feature_endpoint(df, "smiles-to-2d-v1", name="cyp_2d", wait=False)
+job.state()      # running -> completed, same vocabulary as training
+job.results()    # the featurized rows once it's completed
+```
+
+Calling the endpoint directly blocks for those same ten minutes whether or not it is
+async — async is how SageMaker runs the invocation, not something the caller gets back
+from.
+
+**3D: Batch.** Conformer generation plus xTB runs at 1-2 molecules/second, so those
+same 5,000 molecules take 3-4 hours, well past the life of a session. Put the pass in
+a Batch script (`batch`). Its product is a warmed cache, so the features then read
+back locally in seconds:
+
+```python
+cached = InferenceCache(Endpoint("smiles-to-3d-v2")).inference(df)
+```
+
+`InferenceCache` defaults are already right for every feature endpoint — take them.
+Standardization canonicalizes tautomers, so `smiles` comes back rewritten and the cache
+keys on `orig_smiles` instead. Say how many molecules are going through before starting
+a pass.
+
+**With no AWS at all**, compute 2D in process — the endpoint's `predict_fn` is exactly
+these two calls:
 
 ```python
 from workbench.utils.chem_utils.mol_descriptors import compute_descriptors
@@ -97,32 +132,9 @@ local_ds = LocalDataSource(compute_descriptors(standardize(df, extract_salts=Tru
 ```
 
 Standardization is not optional — skipping it yields different features with no error
-and no warning. Match the endpoint you would have called: `smiles-to-2d-v1` uses
-`extract_salts=True`, `smiles-to-2d-salt-v1` uses `False`. The complexity guards that
-skip pathological molecules live in the descriptor code, so they apply either way.
-
-**3D: use the endpoint, as a job.** xTB is expensive and `tblite` is installed only in
-the images, so this leg cannot run locally. A pass over thousands of molecules takes
-long enough that running it inline freezes the session:
-
-```python
-from workbench.utils.feature_endpoint_job import run_feature_endpoint
-
-job = run_feature_endpoint(df, "smiles-to-3d-v2", name="cyp_3d", wait=False)
-job.state()      # running -> completed, same vocabulary as training
-job.results()    # the featurized rows once it's completed
-```
-
-It caches through `InferenceCache`, whose defaults are already right for every feature
-endpoint — take them:
-
-```python
-cached = InferenceCache(Endpoint("smiles-to-3d-v2"))
-```
-
-Standardization canonicalizes tautomers, so `smiles` comes back rewritten and the cache
-keys on `orig_smiles` instead. Say how many molecules are going through before starting
-a pass.
+and no warning. `extract_salts=True` matches `smiles-to-2d-v1`, the default for every
+assay; only solubility work keeps salts (`False`, matching `smiles-to-2d-salt-v1`).
+There is no local 3D path; `tblite` is installed only in the images.
 
 ## Publishing
 

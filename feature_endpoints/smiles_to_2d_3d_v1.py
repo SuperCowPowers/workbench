@@ -1,5 +1,8 @@
 """Create the SMILES → 2D + 3D Molecular Descriptors MetaEndpoint.
 
+DEPRECATED: use ``smiles_to_2d_3d_v2.py``. This endpoint stays deployed so existing
+models keep working and so the two 3D feature sets can be ablated against each other.
+
 Combines two existing feature endpoints into a single inference target:
 
     [smiles-to-2d-v1]   (sync, RDKit + Mordred 2D, ~313 features)  ──┐
