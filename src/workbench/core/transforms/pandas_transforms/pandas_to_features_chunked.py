@@ -7,7 +7,7 @@ from pandas.api.types import CategoricalDtype
 from workbench.core.transforms.transform import Transform
 from workbench.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 
 
 class PandasToFeaturesChunked(Transform):

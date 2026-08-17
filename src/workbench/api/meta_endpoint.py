@@ -40,7 +40,7 @@ import pandas as pd
 from workbench.api.endpoint import Endpoint
 from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelFramework, ModelType
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager

@@ -37,7 +37,7 @@ SPECIAL_SNAKE_TO_PASCAL_MAPPINGS["memory_size_in_mb"] = "MemorySizeInMB"
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput  # noqa: E402
 from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
 from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
-from workbench.core.artifacts.artifact import Artifact  # noqa: E402
+from workbench.core.artifact import Artifact  # noqa: E402
 from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     _DEFAULT_MAX_CAPACITY,
     _DEFAULT_SCALE_IN_IDLE_MINUTES,

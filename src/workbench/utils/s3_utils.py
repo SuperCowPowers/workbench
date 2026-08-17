@@ -52,7 +52,7 @@ def read_content_from_s3(path):
 
 
 def read_s3_json(s3_uri: str, session: boto3.session.Session) -> Optional[dict]:
-    """Read a JSON object from S3 into a dict (counterpart to inference.save_to_s3).
+    """Read a JSON object from S3 into a dict (counterpart to inference.save_output).
 
     Args:
         s3_uri (str): The S3 URI of the object (e.g., 's3://bucket/key').
@@ -277,12 +277,12 @@ if __name__ == "__main__":
 
     # Get our Account Clamp and S3 Bucket
     from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-    from workbench.core.artifacts.artifact import Artifact
+    from workbench.core.artifacts.aws_artifact import AWSArtifact
 
     session = AWSAccountClamp().boto3_session
 
-    # Temporary S3 prefix under the shared scratch root (Artifact.temp_s3_path)
-    s3_scratch = f"{Artifact.temp_s3_path}/s3_utils_test/"
+    # Temporary S3 prefix under the shared scratch root (AWSArtifact.temp_s3_path)
+    s3_scratch = f"{AWSArtifact.temp_s3_path}/s3_utils_test/"
 
     # Check if a bucket and prefix exist
     print(f"Ensuring bucket and prefix exist: {s3_scratch}")

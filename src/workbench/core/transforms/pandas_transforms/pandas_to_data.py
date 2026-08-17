@@ -9,7 +9,7 @@ import time
 from workbench.utils.datetime_utils import datetime_to_iso8601
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifact import Artifact
 from workbench.core.artifacts.athena_source import AthenaSource
 
 

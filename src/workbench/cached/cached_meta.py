@@ -12,7 +12,7 @@ from workbench.core.cloud_platform.cloud_meta import CloudMeta
 from workbench.utils.workbench_cache import WorkbenchCache
 
 if TYPE_CHECKING:
-    from workbench.core.artifacts.artifact import Artifact
+    from workbench.core.artifact import Artifact
 
 
 def cache_result(method):

@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.utils import feature_prep
 
-convert = PandasToFeatures.convert_column_types
+convert = feature_prep.convert_column_types
 
 
 class TestBoolConversion:

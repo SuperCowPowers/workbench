@@ -3,15 +3,13 @@
 import os
 import re
 import time
-import atexit
 import logging
 import tempfile
 import threading
-from collections import deque
 from datetime import datetime, timedelta, timezone
 
 # Workbench Imports
-from workbench.utils.repl_utils import cprint_above_prompt, set_rprompt
+from workbench.utils.job_tracker import register, report, shutdown
 
 log = logging.getLogger("workbench")
 
@@ -29,19 +27,6 @@ _TERMINAL_STATUS = {"SUCCEEDED", "FAILED"}
 
 # Batch names a job `workbench_<script stem>_<%Y%m%d_%H%M%S>` (see ml_pipeline_batch).
 _JOB_PREFIX = "workbench_"
-
-# Watchers are daemon threads, so the interpreter exits without them; the event wakes
-# them out of a poll interval first rather than tearing down mid-sleep.
-_shutdown = threading.Event()
-atexit.register(_shutdown.set)
-
-# Finished jobs waiting to be reported into an agent turn. Bounded: nothing guarantees
-# anyone ever drains it.
-_completed = deque(maxlen=20)
-
-# Jobs launched this session, in launch order, for the REPL's right-prompt lights.
-_watched = {}
-_LIGHT_TOKENS = {"running": "Darkyellow", "completed": "Lightgreen", "failed": "Red"}
 
 # A Batch job that trains logs one line per poll from features_to_model, which is the only
 # durable link back to SageMaker: nothing on the Batch job records what it submitted.
@@ -136,7 +121,7 @@ def watch_batch_job(name: str, interval: int = WATCH_INTERVAL) -> threading.Thre
     Returns:
         threading.Thread: The started daemon thread.
     """
-    _watched[name] = "running"
+    register(name)
     thread = threading.Thread(target=_watch, args=(name, interval), daemon=True, name=f"batch-watch-{name}")
     thread.start()
     return thread
@@ -153,7 +138,7 @@ def _watch(name: str, interval: int) -> None:
     job_name = None
     waited = 0
 
-    while not _shutdown.wait(interval):
+    while not shutdown.wait(interval):
         try:
             df = batch_jobs(job_name or name)
         except Exception as e:
@@ -166,8 +151,8 @@ def _watch(name: str, interval: int) -> None:
             if df.empty:
                 waited += interval
                 if waited >= APPEAR_TIMEOUT:
-                    _watched[name] = "failed"
-                    _report({"name": name, "status": "NOT_FOUND", "reason": "never reached the Batch queue"})
+                    row = {"kind": "Batch job", "name": name, "status": "NOT_FOUND"}
+                    report({**row, "reason": "never reached the Batch queue"}, success=False)
                     return
                 continue
             job_name = df.iloc[-1]["name"]
@@ -178,54 +163,8 @@ def _watch(name: str, interval: int) -> None:
 
         row = row.iloc[0].to_dict()
         if row["status"] in _TERMINAL_STATUS:
-            _watched[name] = "completed" if row["status"] == "SUCCEEDED" else "failed"
-            _report(row)
+            report({**row, "kind": "Batch job"}, success=row["status"] == "SUCCEEDED")
             return
-
-
-def _report(row: dict) -> None:
-    """Announce a finished job and queue it for the next agent turn."""
-    _completed.append(row)
-    runtime = f" after {row['runtime']}" if row.get("runtime") else ""
-    reason = f" -- {row['reason']}" if row.get("reason") else ""
-    color = "lightgreen" if row["status"] == "SUCCEEDED" else "red"
-    cprint_above_prompt(color, f"\nBatch job {row['name']} {row['status']}{runtime}{reason}")
-
-
-def batch_lights():
-    """`Batch [***]` -- a dot per job launched this session, for the right prompt.
-
-    Yellow while a job runs, green when it succeeds, red when it fails or never
-    reaches the queue. Reads the watchers' state, so it costs nothing per render.
-
-    Returns:
-        list[(Token, str)]: Pygments tokens, empty when nothing has been launched.
-    """
-    from pygments.token import Token
-
-    if not _watched:
-        return []
-    dots = [(getattr(Token, _LIGHT_TOKENS[state]), "●") for state in _watched.values()]
-    return [(Token.Blue, "Batch [")] + dots + [(Token.Blue, "]")]
-
-
-def install_batch_lights() -> None:
-    """Put this session's Batch job lights on the right side of the REPL prompt."""
-    from IPython import get_ipython
-
-    set_rprompt(get_ipython(), batch_lights)
-
-
-def drain_completed() -> list:
-    """Pop every job that has finished since the last call.
-
-    Returns:
-        list[dict]: Job rows (name, status, runtime, reason), oldest first.
-    """
-    rows = []
-    while _completed:
-        rows.append(_completed.popleft())
-    return rows
 
 
 def batch_jobs(name: str = None):

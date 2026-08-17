@@ -5,7 +5,7 @@ import pandas as pd
 import time
 
 # Workbench Imports
-from workbench.core.artifacts.artifact import Artifact
+from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.utils.deprecated_utils import deprecated
 
 from typing import TYPE_CHECKING
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from workbench.core.views import View
 
 
-class DataSourceAbstract(Artifact):
+class DataSourceAbstract(AWSArtifact):
     def __init__(self, data_name: str, database: str = "workbench", **kwargs):
         """DataSourceAbstract: Abstract Base Class for all data sources
         Args:
@@ -259,7 +259,7 @@ class DataSourceAbstract(Artifact):
     def ready(self) -> bool:
         """Is the DataSource ready?"""
 
-        # Check if our parent class (Artifact) is ready
+        # Check if our parent class (AWSArtifact) is ready
         if not super().ready():
             return False
 

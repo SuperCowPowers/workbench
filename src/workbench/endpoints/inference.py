@@ -6,6 +6,7 @@ to reduce code duplication and ensure consistent behavior.
 
 from io import StringIO
 import json
+import os
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
@@ -106,25 +107,43 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list[str])
     return df.rename(columns=rename_dict)
 
 
-def save_to_s3(data, s3_path: str, content_type: str = "application/json"):
-    """Save data to S3. Handles both raw Python objects (as JSON) and DataFrames (as CSV).
+def save_output(data, path: str, content_type: str = "application/json"):
+    """Save model output to wherever the path points: S3 or a local directory.
+
+    Handles both raw Python objects (as JSON) and DataFrames (as CSV). Training
+    jobs write to S3; local training writes to the model's output directory.
 
     Args:
         data: Python object (serialized as JSON) or DataFrame (saved as CSV)
-        s3_path: Full S3 path (e.g., s3://bucket/key)
-        content_type: MIME type (default: application/json)
+        path: Full destination path (e.g. "s3://bucket/key" or "/local/dir/file.csv")
+        content_type: MIME type for S3 objects (default: application/json)
     """
+    # Local: write the file directly
+    if not path.startswith("s3://"):
+        # dirname is empty for a bare filename, which makedirs rejects
+        directory = os.path.dirname(path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        body = data.to_csv(index=False) if isinstance(data, pd.DataFrame) else json.dumps(data)
+        with open(path, "w") as fp:
+            fp.write(body)
+        return
+
+    # S3 DataFrames go through awswrangler, which chunks rather than holding the whole
+    # CSV in memory -- a wide SHAP matrix would otherwise be a second full copy, and
+    # put_object caps at 5GB. Imported lazily so inference cold starts don't pay for it.
+    if isinstance(data, pd.DataFrame):
+        import awswrangler as wr
+
+        wr.s3.to_csv(data, path, index=False)
+        return
+
     import boto3
     from urllib.parse import urlparse
 
-    parsed = urlparse(s3_path)
-    if isinstance(data, pd.DataFrame):
-        body = data.to_csv(index=False)
-        content_type = "text/csv"
-    else:
-        body = json.dumps(data)
+    parsed = urlparse(path)
     boto3.client("s3").put_object(
-        Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=body, ContentType=content_type
+        Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=json.dumps(data), ContentType=content_type
     )
 
 

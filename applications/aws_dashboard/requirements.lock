@@ -195,6 +195,10 @@ docstring-parser==0.18.0
     # via
     #   -c ci/.uv-constraints.txt
     #   anthropic
+duckdb==1.5.5
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   workbench (pyproject.toml)
 executing==2.2.1
     # via
     #   -c ci/.uv-constraints.txt
