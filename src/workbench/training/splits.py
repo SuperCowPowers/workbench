@@ -126,13 +126,19 @@ def analog_holdout_split(
     analogs_per_hit: int = 10,
     min_similarity: float = 0.4,
 ) -> np.ndarray:
-    """Hold out the most potent compounds together with their close analogs.
+    """Hold out close analogs of the most potent compounds, keeping the hits in training.
 
-    Mimics a test set built by hit expansion: take the top hits per target, pull each
-    hit's nearest neighbors by Tanimoto similarity, and hold the whole cluster out.
-    The result is dense clusters of near-neighbors around potent compounds rather than
-    a diverse draw, so a model is scored on resolving small structural changes within a
-    series it has never seen -- the regime a random or scaffold split flatters.
+    Mimics a test set built by hit expansion: take the top hits per target, then hold out
+    each hit's nearest neighbors by Tanimoto similarity. The result is dense clusters of
+    near-neighbors around potent compounds rather than a diverse draw, so a model is
+    scored on resolving small structural changes within a series -- the regime a random
+    or scaffold split flatters.
+
+    **The hits themselves stay in training**, which is how hit-expansion test sets are
+    actually built: the hits are the already-measured compounds that got expanded, and
+    the purchased analogs are what gets assayed blind. Holding the hits out instead puts
+    the N most potent compounds in the eval set, which inflates its mean against training
+    and shows up as a systematic under-prediction that is an artifact of the split.
 
     Unlike the grouping strategies behind `get_split_indices`, this is target-aware and
     yields one deliberate holdout, not a set of interchangeable folds.
@@ -140,7 +146,8 @@ def analog_holdout_split(
     Args:
         df: DataFrame containing the data
         target_columns: Target column(s). Hits are taken per target and the holdouts unioned,
-            so every target contributes its own potent series.
+            so every target contributes its own potent series. A hit for any target is kept
+            out of the holdout for all of them.
         smiles_column: Column containing SMILES. If None, auto-detects 'smiles' (case-insensitive)
         n_hits: Number of top-potency hits to expand per target
         analogs_per_hit: Neighbors to pull per hit
@@ -178,28 +185,33 @@ def analog_holdout_split(
         raise ValueError("No valid molecules found for the analog holdout")
     fp_position = {row: i for i, row in enumerate(valid_indices)}
 
-    holdout = np.zeros(len(df), dtype=bool)
+    # Collect every target's hits before expanding, so a hit for one target is never
+    # picked up as another target's analog -- measured hits belong in training.
+    hits_by_target = {}
     for target in target_columns:
         values = pd.to_numeric(df[target], errors="coerce").to_numpy(dtype=float)
         ranked = [p for p in np.argsort(-values, kind="stable") if not np.isnan(values[p]) and p in fp_position]
-        hits = ranked[:n_hits]
+        hits_by_target[target] = ranked[:n_hits]
+    all_hits = {hit for hits in hits_by_target.values() for hit in hits}
 
+    holdout = np.zeros(len(df), dtype=bool)
+    for hits in hits_by_target.values():
         for hit in hits:
-            holdout[hit] = True
             sims = np.asarray(DataStructs.BulkTanimotoSimilarity(fps[fp_position[hit]], fps))
             picked = 0
             for pos in np.argsort(-sims, kind="stable"):
                 if sims[pos] < min_similarity or picked >= analogs_per_hit:
                     break
                 row = valid_indices[pos]
-                if row == hit:
+                if row in all_hits:
                     continue
                 holdout[row] = True
                 picked += 1
 
     print(
         f"Analog holdout: {holdout.sum():,} of {len(df):,} rows "
-        f"({holdout.sum() / len(df):.1%}) from {len(target_columns)} target(s)"
+        f"({holdout.sum() / len(df):.1%}) — analogs of {len(all_hits):,} hits "
+        f"across {len(target_columns)} target(s), hits kept in training"
     )
     return holdout
 

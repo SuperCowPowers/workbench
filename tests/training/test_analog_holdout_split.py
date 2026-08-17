@@ -70,10 +70,23 @@ class TestAnalogHoldoutSplit:
         assert len(holdout) == len(df)
 
     def test_hit_count_bounds_the_holdout(self):
-        """Each hit contributes itself plus at most analogs_per_hit neighbors."""
+        """Each hit contributes at most analogs_per_hit neighbors, and never itself."""
         df = _frame()
         holdout = analog_holdout_split(df, "pic50", n_hits=2, analogs_per_hit=2, min_similarity=0.0)
-        assert holdout.sum() <= 2 * (1 + 2)
+        assert holdout.sum() <= 2 * 2
+
+    def test_hits_stay_in_training(self):
+        """The most potent compounds are the expanded hits — they belong in training."""
+        df = _frame()
+        holdout = analog_holdout_split(df, "pic50", n_hits=3, analogs_per_hit=3, min_similarity=0.0)
+        top_three = df["pic50"].nlargest(3).index
+        assert not holdout[top_three].any()
+
+    def test_holdout_is_not_potency_enriched_by_construction(self):
+        """Excluding hits is what keeps the eval set from being biased upward."""
+        df = _frame()
+        holdout = analog_holdout_split(df, "pic50", n_hits=2, analogs_per_hit=3, min_similarity=0.0)
+        assert df[holdout]["pic50"].max() < df[~holdout]["pic50"].max()
 
     def test_more_analogs_per_hit_grows_the_holdout(self):
         df = _frame()
@@ -81,11 +94,11 @@ class TestAnalogHoldoutSplit:
         large = analog_holdout_split(df, "pic50", n_hits=1, analogs_per_hit=3, min_similarity=0.0)
         assert large.sum() > small.sum()
 
-    def test_high_similarity_cutoff_keeps_only_hits(self):
-        """Nothing clears a cutoff of 1.0, so each hit is held out alone."""
+    def test_high_similarity_cutoff_empties_the_holdout(self):
+        """Nothing clears a cutoff of 1.0, and hits are never held out themselves."""
         df = _frame()
         holdout = analog_holdout_split(df, "pic50", n_hits=2, analogs_per_hit=5, min_similarity=1.0)
-        assert holdout.sum() == 2
+        assert holdout.sum() == 0
 
     def test_multiple_targets_union_their_holdouts(self):
         df = _frame()

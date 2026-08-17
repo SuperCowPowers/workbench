@@ -107,6 +107,33 @@ Predictions are required for all 750 compounds, but only confidently-labelable
 ones score. Both inferred positives and assigned negatives are real scored
 labels — do not filter them out of training as unmeasurable.
 
+## Leaderboard baselines — what the numbers actually look like
+
+OpenADMET posted reference entries on the real blind set. These are the calibration
+points; quote them before calling any internal score good or bad.
+
+| Entry | MA-ST-RAE | MA-MAE | MA-R² | Spearman ρ |
+|---|---|---|---|---|
+| TabICL-baseline | **0.676** | 0.857 | 0.293 | 0.681 |
+| CheMeleon-baseline | 0.834 | 0.971 | 0.094 | 0.647 |
+| LGBM-baseline | 0.893 | 1.000 | 0.066 | 0.598 |
+| XGB-baseline | 0.898 | 1.005 | 0.063 | 0.597 |
+
+What to read from them:
+
+- **0.676 is the bar.** A tabular in-context model (TabPFN family) beats a learned
+  molecular embedding and both gradient-boosted trees, by a wide margin.
+- **Descriptor GBMs cluster at 0.89-0.90.** That is the descriptor floor on the real
+  test set, so an XGBoost reference landing near 0.9 is performing normally, not
+  broken.
+- **R² is near zero for everything except the leader** (0.05-0.09) **while Spearman
+  runs 0.58-0.68.** Models rank compounds well and get absolute values wrong — the
+  signature of predictions compressed toward the mean. That is where the headroom is,
+  and it argues for calibration work over architecture work. Do not read a low R² on
+  this challenge as a broken model.
+- ST-RAE and MAE rank these entries identically, so the soft threshold is not
+  reshuffling anything at this level of performance.
+
 ## The test set is analog-heavy — this is the key fact
 
 The blind set is the top 25 hits per CYP for three isoforms (75 compounds) plus

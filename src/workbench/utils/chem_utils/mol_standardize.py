@@ -528,10 +528,6 @@ def standardize(
         undefined_centers = Chem.FindMolChiralCenters(mol, includeUnassigned=True, useLegacyImplementation=False)
         ring_info = mol.GetRingInfo()
         n_undefined = sum(1 for idx, code in undefined_centers if code == "?" and ring_info.NumAtomRings(idx) < 2)
-        if n_undefined > 0:
-            log.warning(
-                f"{n_undefined} undefined chiral center(s) in {smiles} " "— features reflect an arbitrary enantiomer"
-            )
 
         # Full standardization with optional salt removal
         std_mol, salt_smiles = standardizer.standardize(mol)
@@ -572,6 +568,17 @@ def standardize(
     # Update the dataframe with processed results
     for col in ["smiles", "salt", "undefined_chiral_centers"]:
         result[col] = processed[col]
+
+    # Summarize undefined stereo once. Roughly 40% of a drug-like library trips this,
+    # so per-molecule logging buries every other message; the per-row counts stay in
+    # the undefined_chiral_centers column for anyone who needs them.
+    n_undefined = int((result["undefined_chiral_centers"] > 0).sum())
+    if n_undefined:
+        log.warning(
+            f"{n_undefined} of {len(result)} molecules have undefined chiral centers "
+            "— their features reflect an arbitrary enantiomer "
+            "(see the undefined_chiral_centers column)"
+        )
 
     return result
 
