@@ -251,20 +251,13 @@ class LocalModel(LocalArtifact):
         self.log.important(f"Training {self.name} locally: {' '.join(command)}")
         self.upsert_workbench_meta({"workbench_status": "training"})
 
-        log_file = open(self.log_path, "w")
-        proc = subprocess.Popen(
-            command,
-            cwd=self.script_dir,
-            stdout=subprocess.PIPE if wait else log_file,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        self._write_status(state="training", pid=proc.pid)
-
         if not wait:
-            # The child holds its own descriptor; ours would leak for the run's lifetime
-            log_file.close()
+            # The child dups the descriptor, so ours is closed as soon as it's launched
+            with open(self.log_path, "w") as log_file:
+                proc = subprocess.Popen(
+                    command, cwd=self.script_dir, stdout=log_file, stderr=subprocess.STDOUT, text=True
+                )
+            self._write_status(state="training", pid=proc.pid)
             job_tracker.watch_subprocess(
                 self.name,
                 proc,
@@ -274,12 +267,22 @@ class LocalModel(LocalArtifact):
             )
             return
 
+        proc = subprocess.Popen(
+            command,
+            cwd=self.script_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        self._write_status(state="training", pid=proc.pid)
+
         # Stream the child's output so a long training run isn't a silent block
-        for line in proc.stdout:
-            print(line, end="")
-            log_file.write(line)
+        with open(self.log_path, "w") as log_file:
+            for line in proc.stdout:
+                print(line, end="")
+                log_file.write(line)
         proc.wait()
-        log_file.close()
 
         self._finish_training(proc.returncode)
 

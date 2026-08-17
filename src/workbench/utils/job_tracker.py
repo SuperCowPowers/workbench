@@ -203,7 +203,9 @@ def _failure_reason(returncode: int, log_path: str) -> str:
         return reason
     try:
         with open(log_path, "r") as fp:
-            tail = [line.strip() for line in fp.readlines()[-3:] if line.strip()]
+            # A long training run's log can be very large; keep a rolling tail rather
+            # than reading the whole thing into memory to report three lines
+            tail = deque((line.strip() for line in fp if line.strip()), maxlen=3)
     except OSError:
         return reason
     return f"{reason}: {' | '.join(tail)}" if tail else reason

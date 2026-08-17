@@ -200,7 +200,7 @@ def ensure_id_column(df: pd.DataFrame, id_column: str) -> tuple[pd.DataFrame, st
         ValueError: If the named id column isn't in the DataFrame
     """
     if id_column in [None, "auto"]:
-        log.warning("Generating an 'auto_id' column, we highly recommended setting the 'id_column'")
+        log.warning("Generating an 'auto_id' column, we highly recommend setting the 'id_column'")
         df["auto_id"] = df.index
         return df, "auto_id"
 
