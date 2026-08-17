@@ -9,8 +9,10 @@
                   "public:comp_chem/pubchem/cyp_inhibition/cyp2d6",
                   "public:comp_chem/pubchem/cyp_inhibition/cyp1a2",
                   "public:comp_chem/pubchem/cyp_inhibition/cyp2c19",
-                  "endpoint:smiles-to-2d-3d-v1"],
+                  "endpoint:smiles-to-2d-3d-v1",
+                  "endpoint:smiles-to-2d-3d-v2"],
        "outputs": ["fs:openadmet_cyp_f1", "fs:openadmet_cyp_tdi_f1",
+                   "fs:openadmet_cyp_f2", "fs:openadmet_cyp_tdi_f2",
                    "fs:openadmet_cyp_veith"]},
       {"script": "cyp_chemprop_mt.py", "inputs": ["fs:openadmet_cyp_f1"],
        "outputs": ["model:cyp-reg-chemprop-mt", "endpoint:cyp-reg-chemprop-mt"]}
