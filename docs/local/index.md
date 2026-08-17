@@ -10,11 +10,9 @@ script written locally publishes to AWS and produces the same model.
 
 Storage lives under `WORKBENCH_LOCAL_PATH` (default `~/.workbench/local`).
 
-## When to use it
-
 Local is where you iterate: try a feature list, a framework, a set of
 hyperparameters. There's no build cost and deleting is instant. AWS is where a
-model lands once it's worth keeping — that's where the metrics, monitoring,
+model lands once it's worth keeping — that's where monitoring, deployed
 endpoints, and everything else the team consumes live.
 
 ## Try it
@@ -32,13 +30,17 @@ model = fs.to_model(
     "aqsol-local-reg",
     model_type=ModelType.REGRESSOR,
     model_framework=ModelFramework.XGBOOST,
-    target_column="Solubility",
-    feature_list=["MolWt", "MolLogP", "TPSA", "NumRotatableBonds"],
+    target_column="solubility",
+    feature_list=["molwt", "mollogp", "tpsa", "numrotatablebonds"],
 )
 
 print(model.get_inference_metrics())
-predictions = model.to_endpoint().inference(df.head(10))
+predictions = model.to_endpoint().inference(fs.pull_dataframe().head(10))
 ```
+
+`to_features()` lowercases column names, same as the AWS path, so `target_column`
+and `feature_list` refer to the FeatureSet's names rather than the source frame's.
+Use `fs.columns` to see them.
 
 A LocalEndpoint isn't deployed anywhere. `inference()` loads the model in-process
 through the same `model_fn`/`predict_fn` a real endpoint container uses, so the
@@ -47,11 +49,12 @@ predictions match what a deployed endpoint returns.
 `validation_ids`, `sample_weights`, and `exclude_ids` work as they do in AWS, and
 they're recorded so publishing can replay them.
 
+The Workbench REPL exposes all of these, so none of the imports are needed there.
+
 ## Scoring
 
 Inference runs work the same as they do on an AWS Model, so a script that walks
-them runs against either. `list_inference_runs()` returns the training cross-fold
-plus any endpoint captures; metrics are computed from the run's predictions.
+them runs against either. Metrics are computed from the run's predictions.
 
 ```python
 model.list_inference_runs()                     # ["full_cross_fold", ...]
@@ -60,13 +63,9 @@ model.get_inference_predictions("full_cross_fold")
 
 model.oof_predictions()          # the cross-fold predictions directly
 model.validation_predictions()   # held-out rows, when validation_ids were used
-```
 
-Endpoint captures join the list once you name one:
-
-```python
-end = model.to_endpoint()
-end.inference(eval_df, capture_name="holdout")
+# Naming a capture adds it to the run list
+model.to_endpoint().inference(eval_df, capture_name="holdout")
 model.get_inference_metrics("holdout")
 ```
 
