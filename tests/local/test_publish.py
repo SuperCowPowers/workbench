@@ -1,7 +1,7 @@
 """Tests for the publish cascade and version drift (no AWS required)
 
 AWS existence checks and the publish steps are stubbed, so these cover the cascade
-ordering, the confirm gate, and the drift comparison without touching AWS.
+ordering, the endpoint step, and the drift comparison without touching AWS.
 """
 
 import sys
@@ -82,17 +82,17 @@ class TestPublishPlan:
         assert [step["name"] for step in fs.publish_plan()] == ["pub_features"]
 
 
-class TestConfirmGate:
-    def test_without_confirm_nothing_is_published(self, chain, stub_aws):
+class TestPublishCascade:
+    def test_plan_creates_nothing(self, chain, stub_aws):
         _, fs = chain
-        result = fs.publish()
+        result = fs.publish_plan()
 
         assert stub_aws == []
         assert [step["name"] for step in result] == ["pub_data", "pub_features"]
 
-    def test_with_confirm_publishes_whole_chain_in_order(self, chain, stub_aws):
+    def test_publishes_whole_chain_in_order(self, chain, stub_aws):
         _, fs = chain
-        result = fs.publish(confirm=True)
+        result = fs.publish()
 
         assert [a.name for a in stub_aws] == ["pub_data", "pub_features"]
         assert result == "aws:pub_features"
@@ -101,7 +101,7 @@ class TestConfirmGate:
         ds, fs = chain
         monkeypatch.setattr(type(ds), "aws_exists", lambda self: self.artifact_type == "data_source")
 
-        fs.publish(confirm=True)
+        fs.publish()
         assert [a.name for a in stub_aws] == ["pub_features"]
 
     def test_returns_self_not_an_ancestor(self, chain, stub_aws, monkeypatch):
@@ -110,7 +110,7 @@ class TestConfirmGate:
         monkeypatch.setattr(type(fs), "aws_exists", lambda self: self.artifact_type == "feature_set")
         monkeypatch.setattr(type(fs), "_aws_artifact", lambda self: f"aws:{self.name}")
 
-        result = fs.publish(confirm=True)
+        result = fs.publish()
 
         # The DataSource gets created, but the caller asked for the FeatureSet
         assert [a.name for a in stub_aws] == ["pub_data"]
@@ -182,6 +182,67 @@ class TestRowRolesSurvivePublish:
         assert captured["sample_weights"] == {1: 2.5}
         assert captured["validation_ids"] == [3]
         assert captured["exclude_ids"] == [4]
+
+
+class TestEndpointStep:
+    """publish() deploys an endpoint by default: a published model nobody can call
+    is only half the artifact."""
+
+    @pytest.fixture
+    def model(self, monkeypatch):
+        from workbench.local.local_model import LocalModel
+
+        model = LocalModel("end-model")
+        monkeypatch.setattr(LocalModel, "parent", lambda self: None)
+        monkeypatch.setattr(LocalModel, "aws_exists", lambda self: False)
+        monkeypatch.setattr(LocalModel, "_publish_self", lambda self, **kwargs: FakeAWSModel())
+        return model
+
+    def test_default_endpoint_name(self, model):
+        assert model._endpoint_name() == "end-model-end"
+
+    def test_custom_local_endpoint_name_is_reused(self, model):
+        """A local endpoint's name carries over, so local and AWS stay addressable alike"""
+        from workbench.local.local_endpoint import LocalEndpoint
+
+        endpoint = LocalEndpoint("my-custom-end")
+        endpoint._init_storage(input_name=model.name)
+        endpoint.upsert_workbench_meta({"model_name": model.name})
+
+        assert model._endpoint_name() == "my-custom-end"
+
+    def test_publish_deploys_the_endpoint(self, model, monkeypatch):
+        monkeypatch.setitem(sys.modules, "workbench.api", fake_endpoint_module(exists=False))
+
+        aws_model = model.publish()
+        assert aws_model.deployed == "end-model-end"
+
+    def test_existing_endpoint_is_not_redeployed(self, model, monkeypatch):
+        monkeypatch.setitem(sys.modules, "workbench.api", fake_endpoint_module(exists=True))
+
+        assert model.publish().deployed is None
+
+    def test_endpoint_false_skips_deployment(self, model, monkeypatch):
+        monkeypatch.setitem(sys.modules, "workbench.api", fake_endpoint_module(exists=False))
+
+        assert model.publish(endpoint=False).deployed is None
+
+
+class FakeAWSModel:
+    """Stands in for the published AWS Model, recording the endpoint it deployed"""
+
+    def __init__(self):
+        self.deployed = None
+
+    def to_endpoint(self, name):
+        self.deployed = name
+
+
+def fake_endpoint_module(exists: bool):
+    """A stub workbench.api whose Endpoint reports a fixed existence"""
+    module = types.ModuleType("workbench.api")
+    module.Endpoint = lambda name: types.SimpleNamespace(exists=lambda: exists)
+    return module
 
 
 class TestVersionDrift:

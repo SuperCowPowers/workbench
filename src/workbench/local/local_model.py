@@ -519,6 +519,47 @@ class LocalModel(LocalArtifact):
             **kwargs,
         )
 
+    def publish(self, endpoint: bool = True, **kwargs):
+        """Publish this model and its lineage to AWS, then deploy an endpoint.
+
+        Args:
+            endpoint (bool): Also deploy a serverless endpoint (default True)
+            **kwargs: Passed to the AWS training job
+
+        Returns:
+            Model: The published AWS Model
+        """
+        from workbench.api import Endpoint
+
+        aws_model = super().publish(**kwargs)
+        if not endpoint:
+            return aws_model
+
+        endpoint_name = self._endpoint_name()
+        if Endpoint(endpoint_name).exists():
+            self.log.important(f"AWS endpoint '{endpoint_name}' already exists, skipping...")
+        else:
+            self.log.important(f"Deploying endpoint '{endpoint_name}' to AWS...")
+            aws_model.to_endpoint(name=endpoint_name)
+        return aws_model
+
+    def _endpoint_name(self) -> str:
+        """Internal: The name to deploy this model's AWS endpoint under.
+
+        A local endpoint may carry a custom name, so publishing reuses it. Otherwise
+        this is the same default AWS uses.
+
+        Returns:
+            str: The endpoint name
+        """
+        from workbench.local import storage
+        from workbench.local.local_endpoint import LocalEndpoint
+
+        for name in storage.list_artifacts("endpoint"):
+            if LocalEndpoint(name).workbench_meta().get("model_name") == self.name:
+                return name
+        return f"{self.name}-end"
+
     def details(self, **kwargs) -> dict:
         """LocalModel Details
 

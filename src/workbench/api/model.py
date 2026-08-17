@@ -51,6 +51,15 @@ class Model(ModelCore):
         """
         return super().details(**kwargs)
 
+    def endpoint(self) -> Union[Endpoint, None]:
+        """The first endpoint registered to this Model.
+
+        Returns:
+            Endpoint: The endpoint, or None if this model has none
+        """
+        names = self.endpoints()
+        return Endpoint(names[0]) if names else None
+
     def to_endpoint(
         self,
         name: str = None,

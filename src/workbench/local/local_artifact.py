@@ -167,6 +167,15 @@ class LocalArtifact(Artifact):
         """
         raise NotImplementedError
 
+    def _lineage(self) -> list:
+        """Internal: This artifact and its ancestors, oldest first"""
+        chain, node = [], self
+        while node is not None:
+            chain.append(node)
+            node = node.parent()
+        chain.reverse()
+        return chain
+
     def publish_plan(self) -> list[dict]:
         """What publishing this artifact would do, oldest ancestor first.
 
@@ -174,50 +183,26 @@ class LocalArtifact(Artifact):
             list[dict]: One row per artifact: {type, name, action}, where action is
                 "create" or "exists"
         """
-        chain, node = [], self
-        while node is not None:
-            chain.append(node)
-            node = node.parent()
-        chain.reverse()
         return [
-            {"type": n.artifact_type, "name": n.name, "action": "exists" if n.aws_exists() else "create"} for n in chain
+            {"type": n.artifact_type, "name": n.name, "action": "exists" if n.aws_exists() else "create"}
+            for n in self._lineage()
         ]
 
-    def publish(self, confirm: bool = False, **kwargs):
+    def publish(self, **kwargs):
         """Publish this artifact and its lineage to AWS.
 
         Publishing cascades: a Model publishes its FeatureSet and DataSource first, so
         the AWS Model has a real parent chain. Artifacts that already exist in AWS are
-        left alone.
+        left alone. Use publish_plan() to see what this would do before running it.
 
         Args:
-            confirm (bool): Required to actually publish. Without it this returns the
-                plan and creates nothing.
             **kwargs: Passed to the artifact's own publish step
 
         Returns:
-            The published AWS artifact when confirm=True, otherwise the plan (list[dict])
+            The published AWS artifact
         """
-        plan = self.publish_plan()
-        creates = [step for step in plan if step["action"] == "create"]
-
-        if not confirm:
-            self.log.important(f"publish() plan for {self.name} (nothing created, pass confirm=True to run):")
-            for step in plan:
-                self.log.important(f"  {step['action']:>6}  {step['type']:<12} {step['name']}")
-            if any(step["type"] == "model" for step in creates):
-                self.log.important("  Publishing a model runs a SageMaker training job.")
-            return plan
-
-        # Walk the chain oldest-first so each artifact's parent exists before it
-        chain, node = [], self
-        while node is not None:
-            chain.append(node)
-            node = node.parent()
-        chain.reverse()
-
         published = None
-        for artifact in chain:
+        for artifact in self._lineage():
             if artifact.aws_exists():
                 self.log.important(f"AWS {artifact.artifact_type} '{artifact.name}' already exists, skipping...")
                 continue

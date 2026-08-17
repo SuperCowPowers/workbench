@@ -22,7 +22,6 @@ import logging
 
 import numpy as np
 
-from workbench.api import Endpoint
 from workbench.local import LocalModel
 
 # Setup the logger
@@ -45,17 +44,15 @@ if __name__ == "__main__":
 
     # Show the plan, then publish the whole lineage
     log.important("Publish plan:")
-    for step in model.publish():
+    for step in model.publish_plan():
         log.important(f"  {step['action']:>6}  {step['type']:<12} {step['name']}")
 
-    aws_model = model.publish(confirm=True)
+    # Publish cascades up the lineage and deploys the endpoint
+    aws_model = model.publish()
     log.important(f"Published model: {aws_model.name} (exists: {aws_model.exists()})")
 
-    # Deploy the endpoint (serverless, so it scales to zero)
-    if Endpoint("local-test-regression-end").exists():
-        aws_endpoint = Endpoint("local-test-regression-end")
-    else:
-        aws_endpoint = aws_model.to_endpoint(name="local-test-regression-end")
+    aws_endpoint = aws_model.endpoint()
+    log.important(f"Endpoint: {aws_endpoint.name}")
 
     # Pull the AWS model's out-of-fold predictions. This reads the oof_predictions.csv
     # the training job wrote, so it also confirms save_output's S3 DataFrame path.
