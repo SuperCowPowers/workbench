@@ -39,6 +39,7 @@ from workbench.api import (
     Reports,
 )
 from workbench.cached.cached_meta import CachedMeta
+from workbench.local import LocalDataSource, LocalEndpoint, LocalFeatureSet, LocalModel
 
 # Class name as written in the guides -> the actual class.
 CLASS_REFS = {
@@ -58,6 +59,10 @@ CLASS_REFS = {
     "PublicData": PublicData,
     "Monitor": Monitor,
     "CachedMeta": CachedMeta,
+    "LocalDataSource": LocalDataSource,
+    "LocalFeatureSet": LocalFeatureSet,
+    "LocalModel": LocalModel,
+    "LocalEndpoint": LocalEndpoint,
 }
 
 # Instance-variable names the guides use consistently -> their class. These are the
@@ -71,6 +76,10 @@ CONVENTIONAL_VARS = {
     "endpoint": Endpoint,
     "prox": FingerprintProximity,
     "land": TargetLandscape,
+    "local_ds": LocalDataSource,
+    "local_fs": LocalFeatureSet,
+    "local_model": LocalModel,
+    "local_end": LocalEndpoint,
 }
 
 RECEIVERS = {**CLASS_REFS, **CONVENTIONAL_VARS}

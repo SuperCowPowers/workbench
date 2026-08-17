@@ -30,6 +30,10 @@ prepared data. The longer chains are fine — just more decisions to get right
 (`id_column`, one-hot columns, naming). If the user hasn't said what to start
 from, ask rather than assuming, and offer the existing FeatureSets first.
 
+The table above assumes AWS, which is right when the input is already an AWS
+artifact. When the input is a local file, a DataFrame, or `PublicData()`, build
+locally instead — read the `local_models` guide.
+
 ## Flow
 
 ```python
