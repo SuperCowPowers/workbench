@@ -6148,7 +6148,7 @@ class caches <em>inference results</em>.</p>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="bp">self</span><span class="p">,</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="n">endpoint</span><span class="p">:</span> <span class="n">Endpoint</span><span class="p">,</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="n">cache_key_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"smiles"</span><span class="p">,</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">output_key_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">output_key_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"orig_smiles"</span><span class="p">,</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="n">auto_invalidate_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="n">snapshot</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="p">):</span>
@@ -6159,14 +6159,14 @@ class caches <em>inference results</em>.</p>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">            cache_key_column (str): Name of the column whose values are used</span>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">                as the cache key (default: "smiles").</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">            output_key_column (Optional[str]): Name of the column in the</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">                endpoint's *output* that contains the original input key</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">                values. Some endpoints normalize/canonicalize the key column</span>
-</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">                (e.g. canonical SMILES) and place the original value in a</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">                separate column (e.g. "orig_smiles"). When set, the cache</span>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">                uses this column's values as the key so future lookups with</span>
-</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">                the original input values still hit. When None (default),</span>
-</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">                the cache key column in the output is assumed to match the</span>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">                input unchanged.</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">                endpoint's *output* that holds the original input key values,</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">                used as the cache key so future lookups with the caller's own</span>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">                values still hit (default: "orig_smiles"). Endpoints that</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">                standardize rewrite the key column and preserve the input</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">                here, so keying on the input column would miss nearly every</span>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">                row on the next run. An endpoint that doesn't produce this</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">                column is keyed on the input column unchanged, which is</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">                correct for one that doesn't rewrite it.</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="sd">            auto_invalidate_cache (bool): When True, automatically clear the</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="sd">                cache if the endpoint has been modified since the cache was</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">                last written. When False (default), the existing cache is</span>
@@ -6701,7 +6701,7 @@ class caches <em>inference results</em>.</p>
 
 
 <h3 id="workbench.api.inference_cache.InferenceCache.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">cache_key_column</span><span class="o">=</span><span class="s1">'smiles'</span><span class="p">,</span> <span class="n">output_key_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">auto_invalidate_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">snapshot</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">cache_key_column</span><span class="o">=</span><span class="s1">'smiles'</span><span class="p">,</span> <span class="n">output_key_column</span><span class="o">=</span><span class="s1">'orig_smiles'</span><span class="p">,</span> <span class="n">auto_invalidate_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">snapshot</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span></code>
 
 </h3>
 
@@ -6765,18 +6765,18 @@ as the cache key (default: "smiles").</p>
             <td>
               <div class="doc-md-description">
                 <p>Name of the column in the
-endpoint's <em>output</em> that contains the original input key
-values. Some endpoints normalize/canonicalize the key column
-(e.g. canonical SMILES) and place the original value in a
-separate column (e.g. "orig_smiles"). When set, the cache
-uses this column's values as the key so future lookups with
-the original input values still hit. When None (default),
-the cache key column in the output is assumed to match the
-input unchanged.</p>
+endpoint's <em>output</em> that holds the original input key values,
+used as the cache key so future lookups with the caller's own
+values still hit (default: "orig_smiles"). Endpoints that
+standardize rewrite the key column and preserve the input
+here, so keying on the input column would miss nearly every
+row on the next run. An endpoint that doesn't produce this
+column is keyed on the input column unchanged, which is
+correct for one that doesn't rewrite it.</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                  <code>&#39;orig_smiles&#39;</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -6882,7 +6882,7 @@ of work.</p>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="bp">self</span><span class="p">,</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="n">endpoint</span><span class="p">:</span> <span class="n">Endpoint</span><span class="p">,</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">cache_key_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"smiles"</span><span class="p">,</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">output_key_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">output_key_column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"orig_smiles"</span><span class="p">,</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">auto_invalidate_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">snapshot</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="p">):</span>
@@ -6893,14 +6893,14 @@ of work.</p>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">        cache_key_column (str): Name of the column whose values are used</span>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">            as the cache key (default: "smiles").</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        output_key_column (Optional[str]): Name of the column in the</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">            endpoint's *output* that contains the original input key</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">            values. Some endpoints normalize/canonicalize the key column</span>
-</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">            (e.g. canonical SMILES) and place the original value in a</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">            separate column (e.g. "orig_smiles"). When set, the cache</span>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">            uses this column's values as the key so future lookups with</span>
-</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">            the original input values still hit. When None (default),</span>
-</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">            the cache key column in the output is assumed to match the</span>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">            input unchanged.</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">            endpoint's *output* that holds the original input key values,</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">            used as the cache key so future lookups with the caller's own</span>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">            values still hit (default: "orig_smiles"). Endpoints that</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">            standardize rewrite the key column and preserve the input</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">            here, so keying on the input column would miss nearly every</span>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">            row on the next run. An endpoint that doesn't produce this</span>
+</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">            column is keyed on the input column unchanged, which is</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">            correct for one that doesn't rewrite it.</span>
 </span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="sd">        auto_invalidate_cache (bool): When True, automatically clear the</span>
 </span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="sd">            cache if the endpoint has been modified since the cache was</span>
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">            last written. When False (default), the existing cache is</span>
