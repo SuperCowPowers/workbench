@@ -199,23 +199,23 @@ class TestEndpointStep:
         return model
 
     def test_default_endpoint_name(self, model):
-        assert model._endpoint_name() == "end-model-end"
+        assert model._endpoint_name() == "end-model"
 
     def test_custom_local_endpoint_name_is_reused(self, model):
         """A local endpoint's name carries over, so local and AWS stay addressable alike"""
         from workbench.local.local_endpoint import LocalEndpoint
 
-        endpoint = LocalEndpoint("my-custom-end")
+        endpoint = LocalEndpoint("my-custom-serving")
         endpoint._init_storage(input_name=model.name)
         endpoint.upsert_workbench_meta({"model_name": model.name})
 
-        assert model._endpoint_name() == "my-custom-end"
+        assert model._endpoint_name() == "my-custom-serving"
 
     def test_publish_deploys_the_endpoint(self, model, monkeypatch):
         monkeypatch.setitem(sys.modules, "workbench.api", fake_endpoint_module(exists=False))
 
         aws_model = model.publish()
-        assert aws_model.deployed == "end-model-end"
+        assert aws_model.deployed == "end-model"
 
     def test_existing_endpoint_is_not_redeployed(self, model, monkeypatch):
         monkeypatch.setitem(sys.modules, "workbench.api", fake_endpoint_module(exists=True))

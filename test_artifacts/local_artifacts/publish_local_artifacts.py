@@ -10,7 +10,7 @@ FeatureSets:
 Models:
     - local-test-regression      (retrained in AWS from the published FeatureSet)
 Endpoints:
-    - local-test-regression-end  (serverless)
+    - local-test-regression  (serverless)
 
 The point of this script is the check at the end: the AWS model is trained by the
 same generated script, on the same rows, with the same row roles, so its

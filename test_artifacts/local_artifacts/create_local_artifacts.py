@@ -11,7 +11,7 @@ LocalFeatureSets:
 LocalModels:
     - local-test-regression      (20 held-out validation ids, weights on 5 rows)
 LocalEndpoints:
-    - local-test-regression-end
+    - local-test-regression
 """
 
 import logging
@@ -68,12 +68,12 @@ if __name__ == "__main__":
         )
 
     # Create the Local Endpoint
-    if recreate or not LocalEndpoint("local-test-regression-end").exists():
+    if recreate or not LocalEndpoint("local-test-regression").exists():
         model = LocalModel("local-test-regression")
         model.to_endpoint()
 
     # Run inference so the endpoint has a capture to compare against later
-    endpoint = LocalEndpoint("local-test-regression-end")
+    endpoint = LocalEndpoint("local-test-regression")
     if recreate or not endpoint.list_captures():
         eval_df = LocalFeatureSet("local_test_features").pull_dataframe()
         endpoint.inference(eval_df, capture_name="local_holdout")

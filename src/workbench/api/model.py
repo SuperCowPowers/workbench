@@ -117,8 +117,7 @@ class Model(ModelCore):
 
         # If the endpoint_name wasn't given generate it
         else:
-            name = self.name.replace("_features", "") + ""
-            name = Artifact.generate_valid_name(name, delimiter="-")
+            name = Artifact.generate_valid_name(self.name.replace("_features", ""), delimiter="-")
 
         # Create the Endpoint Tags
         tags = [name] if tags is None else tags

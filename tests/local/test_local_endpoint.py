@@ -78,10 +78,11 @@ class TestEndpoint:
         assert {"q_025", "q_50", "q_975"}.issubset(set(predictions.columns))
 
     def test_default_endpoint_name(self, trained_model):
-        assert trained_model.to_endpoint().name == "e-model-end"
+        """An endpoint takes its model's name, same as the AWS side"""
+        assert trained_model.to_endpoint().name == "e-model"
 
     def test_explicit_endpoint_name(self, trained_model):
-        assert trained_model.to_endpoint("custom-end").name == "custom-end"
+        assert trained_model.to_endpoint("custom-serving").name == "custom-serving"
 
     def test_model_bundle_loaded_once(self, trained_model):
         endpoint = trained_model.to_endpoint()

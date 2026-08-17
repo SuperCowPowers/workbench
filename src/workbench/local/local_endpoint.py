@@ -24,7 +24,7 @@ class LocalEndpoint(LocalArtifact):
 
     Common Usage:
         ```python
-        my_endpoint = LocalEndpoint("my-model-end")
+        my_endpoint = LocalEndpoint("my-model")
         results = my_endpoint.inference(eval_df)
         ```
     """
@@ -49,7 +49,7 @@ class LocalEndpoint(LocalArtifact):
 
         Args:
             model (LocalModel): The trained model to serve
-            name (str, optional): Endpoint name (defaults to "<model>-end")
+            name (str, optional): Endpoint name (defaults to the model name)
 
         Returns:
             LocalEndpoint: The created endpoint
@@ -60,7 +60,7 @@ class LocalEndpoint(LocalArtifact):
         if model.training_state().get("state") != "completed":
             raise ValueError(f"Model {model.name} has not trained successfully, cannot serve it")
 
-        endpoint = cls(name or f"{model.name}-end")
+        endpoint = cls(name or model.name)
         storage.local_root(create=True)
         os.makedirs(endpoint.inference_dir, exist_ok=True)
         endpoint._init_storage(input_name=model.name)

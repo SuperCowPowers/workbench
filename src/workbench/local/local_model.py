@@ -446,7 +446,7 @@ class LocalModel(LocalArtifact):
         """Create a LocalEndpoint that serves this model.
 
         Args:
-            name (str, optional): Endpoint name (defaults to "<model>-end")
+            name (str, optional): Endpoint name (defaults to the model name)
 
         Returns:
             LocalEndpoint: The endpoint serving this model
@@ -547,7 +547,7 @@ class LocalModel(LocalArtifact):
         """Internal: The name to deploy this model's AWS endpoint under.
 
         A local endpoint may carry a custom name, so publishing reuses it. Otherwise
-        this is the same default AWS uses.
+        this is the same default AWS uses: the model name.
 
         Returns:
             str: The endpoint name
@@ -558,7 +558,7 @@ class LocalModel(LocalArtifact):
         for name in storage.list_artifacts("endpoint"):
             if LocalEndpoint(name).workbench_meta().get("model_name") == self.name:
                 return name
-        return f"{self.name}-end"
+        return self.name
 
     def details(self, **kwargs) -> dict:
         """LocalModel Details
