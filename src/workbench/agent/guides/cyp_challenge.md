@@ -142,6 +142,31 @@ regime where our measured HPO gains disappeared.
   Count-Morgan fingerprints on the largest fragment collapse enantiomers, so
   stereo-only pairs are invisible to them (`cheminformatics`).
 
+## Always pass an explicit feature_list — the CI columns will leak
+
+The training tables carry, per isoform, the pIC50 *plus* its `_ci_lower`, `_ci_upper`
+and `_std`. Those are all numeric and none of them is the target column, so the
+auto-generated feature list **includes them** — it drops ids, target columns, and
+non-numeric types, and keeps the rest. A model handed the bounds that bracket its own
+label scores near-perfectly in cross-validation and is worth nothing. The only warning
+is a "Guessing at the feature list" log line.
+
+The same trap catches the other isoforms: in a single-task CYP3A4 model,
+`cyp2c9_pic50_direct_inhibition` is not a target, so it becomes a feature.
+
+**The test set is `Molecule_Name` and `SMILES` only.** A feature has to be derivable
+from structure — descriptors, fingerprints, or chemprop's own graph encoding.
+Everything else in those tables is label metadata: useful for weighting, scoring, and
+ST-RAE, never as model input.
+
+```python
+feature_list=["smiles"]          # chemprop
+feature_list=descriptor_columns  # xgboost/pytorch — from the 2D endpoint, never the raw table
+```
+
+If a CYP model reports R² above ~0.95 on held-out data, assume leakage and check the
+feature list before believing it.
+
 ## Model shape: multi-task across the four CYPs
 
 Four correlated targets with sparse, unequal coverage is the textbook
