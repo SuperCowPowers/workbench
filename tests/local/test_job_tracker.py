@@ -75,6 +75,64 @@ class TestSubprocessWatcher:
         assert rows[0]["reason"] == "exit 1"
 
 
+class TestIsWatched:
+    """Watchers poll on an interval, so a finished child is briefly gone with its
+    outcome unrecorded. Owners ask this to tell a pending outcome from a lost one."""
+
+    def test_unknown_job_is_not_watched(self):
+        assert job_tracker.is_watched("never-launched") is False
+
+    def test_registered_job_is_watched(self):
+        job_tracker.register("pending")
+        assert job_tracker.is_watched("pending") is True
+
+    def test_reported_job_is_no_longer_watched(self):
+        job_tracker.register("pending")
+        job_tracker.report({"name": "pending", "status": "done"}, success=True)
+        assert job_tracker.is_watched("pending") is False
+
+
+class TestStatusDuringTheWatcherGap:
+    """A dead pid alone doesn't mean a run was interrupted -- the watcher may simply
+    not have recorded the outcome yet."""
+
+    @pytest.fixture(autouse=True)
+    def local_storage(self, tmp_path):
+        from workbench.utils.config_manager import ConfigManager
+
+        cm = ConfigManager()
+        original = cm.config.get("WORKBENCH_LOCAL_PATH")
+        cm.set_config("WORKBENCH_LOCAL_PATH", str(tmp_path))
+        yield
+        cm.set_config("WORKBENCH_LOCAL_PATH", original)
+
+    @staticmethod
+    def dead_pid() -> int:
+        """A pid that has certainly exited"""
+        proc = subprocess.Popen([sys.executable, "-c", ""])
+        proc.wait()
+        return proc.pid
+
+    def test_training_pending_while_watched(self):
+        from workbench.local.local_model import LocalModel
+
+        model = LocalModel("gap-model")
+        model._init_storage(input_name="some_features")
+        model._write_status(state="training", pid=self.dead_pid())
+
+        job_tracker.register("gap-model")
+        assert model.training_state()["state"] == "training"
+
+    def test_training_interrupted_when_nobody_is_watching(self):
+        from workbench.local.local_model import LocalModel
+
+        model = LocalModel("orphan-model")
+        model._init_storage(input_name="some_features")
+        model._write_status(state="training", pid=self.dead_pid())
+
+        assert model.training_state()["state"] == "interrupted"
+
+
 class TestLights:
     def test_no_jobs_no_lights(self):
         assert job_tracker.job_lights() == []

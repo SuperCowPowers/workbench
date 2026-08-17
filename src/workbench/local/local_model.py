@@ -369,6 +369,7 @@ class LocalModel(LocalArtifact):
         A run whose watcher never got to record an outcome -- the session exited, or the
         process died -- is reported as "interrupted" rather than left claiming to be
         training forever. Whether the child finished its work is unknown at that point.
+        A watcher still polling is not that case: its outcome is pending, not lost.
 
         Returns:
             dict: {state, pid, started, updated, returncode, finished}, empty before any run
@@ -379,7 +380,8 @@ class LocalModel(LocalArtifact):
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
 
-        if status.get("state") == "training" and not self._pid_alive(status.get("pid")):
+        dead = not self._pid_alive(status.get("pid"))
+        if status.get("state") == "training" and dead and not job_tracker.is_watched(self.name):
             status["state"] = "interrupted"
         return status
 

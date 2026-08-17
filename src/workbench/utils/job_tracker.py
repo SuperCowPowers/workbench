@@ -43,6 +43,22 @@ def register(name: str) -> None:
     _watched[name] = "running"
 
 
+def is_watched(name: str) -> bool:
+    """Is a watcher in this process still waiting on this job's outcome?
+
+    Watchers poll on an interval, so a child can be gone for a few seconds before its
+    outcome is recorded. Asking this separates that gap from a run nobody is watching,
+    which is what keeps a just-finished job from reading as interrupted.
+
+    Args:
+        name (str): The job name
+
+    Returns:
+        bool: True if a watcher is still pending on this job
+    """
+    return _watched.get(name) == "running"
+
+
 def report(row: dict, success: bool) -> None:
     """Announce a finished job and queue it for the next agent turn.
 
