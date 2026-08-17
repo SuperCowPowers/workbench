@@ -75,52 +75,48 @@ local_model.training_state()   # includes "interrupted" for a run whose process 
 `training_state()` reports `interrupted` rather than leaving a dead run claiming to be
 training, so a train that never finished never reads as done.
 
-Feature endpoints are the other long step, and the 3D/xTB ones are async. Check
-`Endpoint(name).is_async()` rather than inferring from the name — an async endpoint
-queues work instead of answering inline, so a pass over thousands of molecules runs
-long enough that it belongs as its own deliberate step the user starts, not something
-buried mid-chain. Say how many molecules are going through before starting one.
+Featurization is the other long step. Calling an endpoint blocks the same way whether
+or not it is async — async is how SageMaker runs the invocation, not something the
+caller gets back from. Use `run_feature_endpoint(..., wait=False)` below.
 
 ## Molecular features
 
 Chemprop takes `feature_list=["smiles"]` and needs no featurization pass. Descriptor
-models (XGBoost, PyTorch) do, and **the feature endpoint is the better source when one
-is deployed** — it is exactly what a published model will train on, which is the whole
-point of building locally first:
+models (XGBoost, PyTorch) do, and **which path depends on whether the features need
+xTB**, not on how many molecules there are.
 
-```python
-from workbench.api import Endpoint
-from workbench.api.inference_cache import InferenceCache
-
-cached = InferenceCache(Endpoint("smiles-to-2d-v1"), cache_key_column="smiles")
-local_ds = LocalDataSource(cached.inference(df), name="cyp_2d_local")
-```
-
-Featurizing locally works too, but the endpoints' `predict_fn` is **not** just the
-descriptor call — it standardizes first, and skipping that yields different features
-with no error and no warning:
+**2D and fingerprints: compute them in process.** The endpoint's `predict_fn` is
+exactly these two calls, so there is nothing to gain from a network round trip:
 
 ```python
 from workbench.utils.chem_utils.mol_descriptors import compute_descriptors
 from workbench.utils.chem_utils.mol_standardize import standardize
 
-df = compute_descriptors(standardize(df, extract_salts=True))  # mirror predict_fn
+local_ds = LocalDataSource(compute_descriptors(standardize(df, extract_salts=True)),
+                           name="cyp_2d_local")
 ```
 
-The complexity guards that skip pathological molecules live in the descriptor code, so
-they apply either way — that is not a reason to prefer one path.
+Standardization is not optional — skipping it yields different features with no error
+and no warning. Match the endpoint you would have called: `smiles-to-2d-v1` uses
+`extract_salts=True`, `smiles-to-2d-salt-v1` uses `False`. The complexity guards that
+skip pathological molecules live in the descriptor code, so they apply either way.
 
-3D is where the wrapping matters. The xTB leg is expensive, and `InferenceCache` is an
-opt-in client-side wrapper rather than something the endpoint carries, so **wrap a 3D
-endpoint with it** or every run recomputes conformers it has already seen:
+**3D: use the endpoint, as a job.** xTB is expensive and `tblite` is installed only in
+the images, so this leg cannot run locally. A pass over thousands of molecules takes
+long enough that running it inline freezes the session:
 
 ```python
-cached = InferenceCache(Endpoint("smiles-to-3d-v2"), cache_key_column="smiles", output_key_column="orig_smiles")
+from workbench.utils.feature_endpoint_job import run_feature_endpoint
+
+job = run_feature_endpoint(df, "smiles-to-3d-v2", name="cyp_3d", wait=False)
+job.state()      # running -> completed, same vocabulary as training
+job.results()    # the featurized rows once it's completed
 ```
 
-Key the cache on a column the endpoint does not rewrite. Standardization canonicalizes
-tautomers, so `smiles` comes back changed and the original is preserved as
-`orig_smiles` — keying on the output column is what keeps hits across runs.
+It caches through `InferenceCache` and keys on `orig_smiles`, because standardization
+canonicalizes tautomers — `smiles` comes back rewritten, and a cache keyed on the input
+column would miss nearly every row on the next run. Say how many molecules are going
+through before starting one.
 
 ## Publishing
 

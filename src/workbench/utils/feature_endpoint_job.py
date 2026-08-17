@@ -21,6 +21,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from typing import Union
@@ -117,6 +118,16 @@ class FeatureEndpointJob:
             content = fp.readlines()
         return "".join(content[-lines:] if lines else content)
 
+    def _init_dirs(self):
+        """Internal: Start this job from an empty directory.
+
+        Reusing a name reuses the directory, so the previous run's results and status
+        would otherwise survive a failure and be read as this run's.
+        """
+        job_root(create=True)
+        shutil.rmtree(self.path, ignore_errors=True)
+        os.makedirs(self.path, exist_ok=True)
+
     def _write_status(self, **fields):
         """Internal: Merge fields into the status file"""
         status = {}
@@ -177,7 +188,7 @@ def run_feature_endpoint(
         FeatureEndpointJob: The job, finished when wait=True
     """
     job = FeatureEndpointJob(name)
-    os.makedirs(job.path, exist_ok=True)
+    job._init_dirs()
     eval_df.to_parquet(job.input_path, index=False)
 
     command = [
