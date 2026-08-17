@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import Union
+from typing import Any, Union
 
 import pandas as pd
 
@@ -515,7 +515,7 @@ class LocalModel(LocalArtifact):
             **kwargs,
         )
 
-    def publish(self, endpoint: bool = True, **kwargs):
+    def publish(self, endpoint: bool = True, **kwargs: Any) -> "Model":  # noqa: F821
         """Publish this model and its lineage to AWS, then deploy an endpoint.
 
         Args:

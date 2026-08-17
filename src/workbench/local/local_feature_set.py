@@ -1,7 +1,7 @@
 """LocalFeatureSet: Engineered features on local disk, queryable with DuckDB."""
 
 import os
-from typing import Union
+from typing import Any, Union
 
 import duckdb
 import pandas as pd
@@ -151,7 +151,7 @@ class LocalFeatureSet(LocalArtifact):
             "num_columns": self.num_columns(),
         }
 
-    def to_model(self, name: str, model_type, model_framework, **kwargs) -> "LocalModel":  # noqa: F821
+    def to_model(self, name: str, model_type, model_framework, **kwargs: Any) -> "LocalModel":  # noqa: F821
         """Train a LocalModel from this FeatureSet.
 
         Args:
