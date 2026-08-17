@@ -43,6 +43,10 @@ prediction landing inside it is scored as perfect. Intervals widen at low
 activity, and compounds below pIC50 4 (under the lowest tested concentration)
 carry the widest ones.
 
+OpenADMET describes this as downweighting low-activity compounds. The interval
+*is* the downweighting — there is no separate weight term to reproduce. Weak
+compounds get wide intervals and therefore more slack.
+
 **The intervals are wide, so the forgiveness is substantial.** Median widths on
 the challenge's own training curves:
 
@@ -79,14 +83,30 @@ in model metrics and the dashboard with no extra work:
 from workbench.utils.metrics_utils import macro_soft_threshold_rae, soft_threshold_rae
 ```
 
-**Our `st_rae` is not comparable to a leaderboard number.** RAE needs a
-denominator, and OpenADMET has never published a scoring script (the finished
-PXR challenge's Space displays RAE but ships no metric code). We score the
-mean-predictor baseline with the same soft threshold, so 1.0 keeps its "no
-better than the mean" meaning; the plain `sum|y - ȳ|` denominator runs about 17%
-lower on real data. The choice cannot change model *rankings* within an
-endpoint — the denominator does not depend on the predictions — so it is safe
-for selection, and only the absolute value is uncomparable.
+**Our `st_rae` is close to but not identical to a leaderboard number.** RAE needs
+a denominator. OpenADMET's tutorial repo ships an `evaluation/` module, but it
+does *not* implement ST-RAE — it is a generic harness (its endpoint list is
+`["pEC50"]`) carrying MAE, RAE, R2, Spearman and Kendall. The README describes
+MA-ST-RAE in prose; no published code computes it. What the harness does pin
+down is their RAE convention:
+
+```python
+np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true - np.mean(y_true)))
+```
+
+The denominator is the plain `sum|y - ȳ|`, not a soft-thresholded baseline. Our
+`soft_threshold_rae` defaults to `soft_baseline=True`, which scores the
+mean-predictor baseline through the same soft threshold so 1.0 keeps its "no
+better than the mean" reading; that runs about 17% higher than the plain form.
+**Pass `soft_baseline=False` when the goal is a number comparable to the
+leaderboard**, and keep the default for internal model selection. The choice
+cannot change model *rankings* within an endpoint — the denominator does not
+depend on the predictions — so only the absolute value is affected.
+
+**Leaderboard scores are bootstrapped**: 1,000 resamples at a fixed seed, with
+the spread reported alongside each score. Combined with the live board scoring
+only half the test set, a small gap between two entries is inside the noise —
+read the spread before treating a rank as a result.
 
 MCC on the TDI track is chosen for imbalanced labels — accuracy will look good
 and mean nothing. Quote MCC, and check the positive-class rate before claiming
@@ -347,15 +367,21 @@ cross-fold number is the optimistic one.
 
 ## Submission discipline
 
-- **One account per team or lab** — not one submission. Submissions are
-  rate-limited to one per 12 hours and the latest valid one counts, so there is
-  a live leaderboard to iterate against. Whether the live board scores the full
-  750 or a subset is unconfirmed; ask on Discord rather than assuming.
-- A leaderboard loop at 12-hour granularity is far too slow and too coarse to
-  select a champion. Choose on internal evidence — build the candidates, run
-  them through a contest on a shared `inference_run`, and promote on the deltas
-  (`contests`, `promotion`) — and use the board to check for calibration
-  surprises, not to rank.
+- **One account per team or lab — not one submission.** The launch post's "one
+  submission per team/lab" means one submitting *account*; its "we rely on your
+  honesty" is aimed at labs entering under several accounts. The Space FAQ and
+  `HOURS_BETWEEN_SUBMISSIONS = 12` in its config both confirm resubmission is
+  allowed — rate-limited to once per 12 hours, and only the latest valid
+  submission counts. Submitting is not a one-shot commitment.
+- **The board is still not a selection loop.** It scores only *half* the test
+  set (the final scores all 750), and scores are bootstrapped, so an interim
+  rank rests on ~375 compounds with a standard deviation attached — a small
+  delta between two entries there is not a ranking. A 12-hour loop is also far
+  too slow and too coarse to choose a champion with.
+- Choose on internal evidence: build the candidates, run them through a contest
+  on a shared `inference_run`, and promote on the deltas (`contests`,
+  `promotion`). The analog holdout is the eval that has to carry the decision.
+  Use the board to catch calibration surprises, not to rank.
 - Proprietary CYP data may be used but **must be disclosed**. If the user pulls
   in private data, note that the disclosure is required.
 - No restriction on methods or external property databases.
@@ -370,7 +396,18 @@ cross-fold number is the optimistic one.
   inf. Classification: `SMILES`, `Molecule_Name`, `CYP2D6_is_TDI`,
   `CYP3A4_is_TDI` as booleans. These are the challenge's names and differ from
   whatever the FeatureSet columns are called; map explicitly at submission time.
+- **Validate the file with their own checker before submitting** — a rejected
+  upload burns a 12-hour window.
+  `validation/activity_validation.py` in the tutorial repo
+  enforces the column set, rejects duplicate or null `Molecule_Name`, rejects
+  non-numeric and non-finite values, and requires the molecule-ID set to match
+  the test set exactly — no missing and no extra rows.
 
 ## More
 
 - https://openadmet.ghost.io/announcing-openadmets-cyp-inhibition-blind-challenge/
+- https://openadmet.ghost.io/openadmets-cyp-challenge-is-underway/ — launch post
+- https://github.com/OpenADMET/CYP-Challenge-Tutorial — tutorial notebooks,
+  `evaluation/` scoring harness, `validation/` submission checkers
+- `openadmet/cyp-challenge-train-test` (HF) — official train/test split
+- `openadmet/cyp-challenge` (HF Space) — submission platform
