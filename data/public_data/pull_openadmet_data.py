@@ -9,6 +9,8 @@ entries from `descriptions.json`.
 Challenges (all OpenADMET Consortium, openly licensed):
     pxr          PXR induction (Apache-2.0)
                  https://huggingface.co/datasets/openadmet/pxr-challenge-train-test
+    cyp          CYP inhibition + TDI, four isoforms (Apache-2.0)
+                 https://huggingface.co/datasets/openadmet/cyp-challenge-train-test
     expansionrx  9 ADMET endpoints (CC-BY-4.0)
                  https://huggingface.co/datasets/openadmet/openadmet-expansionrx-challenge-data
     asap         ASAP/Polaris antiviral (MIT)
@@ -134,6 +136,35 @@ def pull_asap() -> dict[str, pd.DataFrame]:
     return out
 
 
+def pull_cyp() -> dict[str, pd.DataFrame]:
+    """CYP inhibition blind challenge: four training tables plus the blinded test set.
+
+    Curve fits carry Bayesian credible intervals, published as `_conf_low`/`_conf_high`.
+    Those are renamed to the `_ci_lower`/`_ci_upper` suffixes the rest of the platform
+    uses (matching the Octant release and what `compute_regression_metrics` looks for to
+    emit ST-RAE), so the challenge's own metric works off these tables directly.
+    """
+    repo = "openadmet/cyp-challenge-train-test"
+    files = {
+        "cyp/training/inhibition": "cyp-challenge-TRAIN_inhibition.csv",
+        "cyp/training/tdi": "cyp-challenge-TRAIN_TDI.csv",
+        "cyp/training/emax": "cyp-challenge-TRAIN_Emax.csv",
+        "cyp/training/single_concentration": "cyp-challenge-single-concentration-TRAIN.csv",
+        "cyp/testing/blinded": "cyp-challenge-TEST-BLINDED.csv",
+    }
+    out = {}
+    for name, filename in files.items():
+        df = fetch(repo, filename)
+        # Split the camelCase readout name before snake_casing mangles it into one word
+        df.columns = df.columns.str.replace("EmaxVsPosCtrl", "Emax_vs_pos_ctrl", regex=False)
+        df = normalize_columns(df)
+        df.columns = df.columns.str.replace("_conf_low", "_ci_lower", regex=False).str.replace(
+            "_conf_high", "_ci_upper", regex=False
+        )
+        out[name] = df
+    return out
+
+
 def pull_octant_cyp() -> dict[str, pd.DataFrame]:
     """Octant CYP inhibition / reactivity. A single release, no train-test split.
 
@@ -160,6 +191,7 @@ def pull_octant_cyp() -> dict[str, pd.DataFrame]:
 
 CHALLENGES = {
     "pxr": pull_pxr,
+    "cyp": pull_cyp,
     "expansionrx": pull_expansionrx,
     "asap": pull_asap,
     "octant_cyp": pull_octant_cyp,

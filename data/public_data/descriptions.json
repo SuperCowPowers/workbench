@@ -454,6 +454,159 @@
       "https://openadmet.org/ (OpenADMET Consortium)"
     ]
   },
+  "comp_chem/openadmet/cyp/testing/blinded.csv": {
+    "description": "Blinded test set for the CYP challenge: 750 compounds, structures only. Built by hit expansion -- the top 25 hits from CYP1A2/2C9/3A4 plus the top 10 ECFP4 chemisimilars of each from the Enamine US catalog -- then assayed against all four isoforms. Ground truth is withheld until the challenge closes 2026-11-03.",
+    "columns": {
+      "molecule_name": "Challenge compound identifier (the submission's Molecule_Name)",
+      "smiles": "Compound structure (SMILES), as published by the challenge"
+    },
+    "num_compounds": 750,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/cyp-challenge-train-test (source data, Apache-2.0)",
+      "https://huggingface.co/spaces/openadmet/cyp-challenge (challenge leaderboard)",
+      "https://openadmet.ghost.io/announcing-openadmets-cyp-inhibition-blind-challenge/"
+    ]
+  },
+  "comp_chem/openadmet/cyp/training/emax.csv": {
+    "description": "Maximal-effect-vs-positive-control training set under both direct-inhibition and TDI conditions, with credible intervals. Carries is_TDI for all four isoforms -- CYP1A2 and CYP2C9 TDI labels are not scored by the challenge but are usable as auxiliary tasks.",
+    "columns": {
+      "molecule_name": "Challenge compound identifier (the submission's Molecule_Name)",
+      "smiles": "Compound structure (SMILES), as published by the challenge",
+      "cyp1a2_emax_vs_pos_ctrl_tdi_condition": "Maximal effect vs positive control for CYP1A2 under TDI (preincubation) conditions",
+      "cyp2c9_emax_vs_pos_ctrl_tdi_condition": "Maximal effect vs positive control for CYP2C9 under TDI (preincubation) conditions",
+      "cyp2d6_emax_vs_pos_ctrl_tdi_condition": "Maximal effect vs positive control for CYP2D6 under TDI (preincubation) conditions",
+      "cyp3a4_emax_vs_pos_ctrl_tdi_condition": "Maximal effect vs positive control for CYP3A4 under TDI (preincubation) conditions",
+      "cyp1a2_emax_vs_pos_ctrl_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP1A2 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp2c9_emax_vs_pos_ctrl_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2C9 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp2d6_emax_vs_pos_ctrl_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2D6 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp3a4_emax_vs_pos_ctrl_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP3A4 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp1a2_emax_vs_pos_ctrl_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP1A2 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp2c9_emax_vs_pos_ctrl_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2C9 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp2d6_emax_vs_pos_ctrl_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2D6 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp3a4_emax_vs_pos_ctrl_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP3A4 maximal effect vs positive control under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp1a2_emax_vs_pos_ctrl_direct_inhibition": "Maximal effect vs positive control for CYP1A2 under direct inhibition",
+      "cyp2c9_emax_vs_pos_ctrl_direct_inhibition": "Maximal effect vs positive control for CYP2C9 under direct inhibition",
+      "cyp2d6_emax_vs_pos_ctrl_direct_inhibition": "Maximal effect vs positive control for CYP2D6 under direct inhibition",
+      "cyp3a4_emax_vs_pos_ctrl_direct_inhibition": "Maximal effect vs positive control for CYP3A4 under direct inhibition",
+      "cyp1a2_emax_vs_pos_ctrl_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP1A2 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_high",
+      "cyp2c9_emax_vs_pos_ctrl_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2C9 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_high",
+      "cyp2d6_emax_vs_pos_ctrl_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2D6 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_high",
+      "cyp3a4_emax_vs_pos_ctrl_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP3A4 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_high",
+      "cyp1a2_emax_vs_pos_ctrl_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP1A2 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_low",
+      "cyp2c9_emax_vs_pos_ctrl_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2C9 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_low",
+      "cyp2d6_emax_vs_pos_ctrl_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2D6 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_low",
+      "cyp3a4_emax_vs_pos_ctrl_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP3A4 maximal effect vs positive control under direct inhibition. Renamed from the source's _conf_low",
+      "cyp1a2_is_tdi": "Whether CYP1A2 shows time-dependent inhibition -- IC50 shift after preincubation exceeding 2-fold. Only CYP2D6 and CYP3A4 are scored by the challenge",
+      "cyp2c9_is_tdi": "Whether CYP2C9 shows time-dependent inhibition -- IC50 shift after preincubation exceeding 2-fold. Only CYP2D6 and CYP3A4 are scored by the challenge",
+      "cyp2d6_is_tdi": "Whether CYP2D6 shows time-dependent inhibition -- IC50 shift after preincubation exceeding 2-fold. Only CYP2D6 and CYP3A4 are scored by the challenge",
+      "cyp3a4_is_tdi": "Whether CYP3A4 shows time-dependent inhibition -- IC50 shift after preincubation exceeding 2-fold. Only CYP2D6 and CYP3A4 are scored by the challenge"
+    },
+    "num_compounds": 6146,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/cyp-challenge-train-test (source data, Apache-2.0)",
+      "https://huggingface.co/spaces/openadmet/cyp-challenge (challenge leaderboard)",
+      "https://openadmet.ghost.io/announcing-openadmets-cyp-inhibition-blind-challenge/"
+    ]
+  },
+  "comp_chem/openadmet/cyp/training/inhibition.csv": {
+    "description": "Direct-inhibition dose-response training set for the OpenADMET CYP blind challenge: pIC50 for CYP1A2/2C9/2D6/3A4 with Bayesian credible intervals. Sparse -- 4,905 compounds carry 6,525 measurements between them, so most have one or two isoforms rather than all four. The credible intervals are what the challenge's ST-RAE metric scores against (median width 0.27-0.53 pIC50 units by isoform), and `_ci_lower`/`_ci_upper` are the suffixes compute_regression_metrics reads to emit st_rae.",
+    "columns": {
+      "molecule_name": "Challenge compound identifier (the submission's Molecule_Name)",
+      "smiles": "Compound structure (SMILES), as published by the challenge",
+      "cyp1a2_pic50_direct_inhibition": "-log10(IC50 in M) for CYP1A2 under direct inhibition (prediction target)",
+      "cyp2c9_pic50_direct_inhibition": "-log10(IC50 in M) for CYP2C9 under direct inhibition (prediction target)",
+      "cyp2d6_pic50_direct_inhibition": "-log10(IC50 in M) for CYP2D6 under direct inhibition (prediction target)",
+      "cyp3a4_pic50_direct_inhibition": "-log10(IC50 in M) for CYP3A4 under direct inhibition (prediction target)",
+      "cyp1a2_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP1A2 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp2c9_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2C9 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp2d6_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2D6 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp3a4_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP3A4 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp1a2_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP1A2 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp2c9_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2C9 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp2d6_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2D6 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp3a4_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP3A4 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp1a2_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP1A2 pIC50 under direct inhibition",
+      "cyp2c9_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP2C9 pIC50 under direct inhibition",
+      "cyp2d6_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP2D6 pIC50 under direct inhibition",
+      "cyp3a4_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP3A4 pIC50 under direct inhibition"
+    },
+    "num_compounds": 4905,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/cyp-challenge-train-test (source data, Apache-2.0)",
+      "https://huggingface.co/spaces/openadmet/cyp-challenge (challenge leaderboard)",
+      "https://openadmet.ghost.io/announcing-openadmets-cyp-inhibition-blind-challenge/"
+    ]
+  },
+  "comp_chem/openadmet/cyp/training/single_concentration.csv": {
+    "description": "Primary screen for the CYP challenge: 4,376 compounds against all four isoforms at a single concentration (~49.5 uM), long format with one row per compound-enzyme pair. Far larger than the dose-response tables, so this is the pretraining corpus; plate_id and log2fc_std_error make batch effects and measurement noise inspectable.",
+    "columns": {
+      "molecule_name": "Challenge compound identifier (the submission's Molecule_Name)",
+      "smiles": "Compound structure (SMILES), as published by the challenge",
+      "ocnt_batch": "Octant batch identifier for the assayed material",
+      "enzyme": "CYP isoform assayed: CYP1A2, CYP2C9, CYP2D6, or CYP3A4",
+      "plate_id": "Assay plate, for checking batch effects",
+      "concentration_m": "Screening concentration in molar (single-concentration screen, ~49.5 uM)",
+      "log2fc_estimate": "log2 fold change vs control at the screening concentration (prediction target)",
+      "log2fc_std_error": "Standard error of log2fc_estimate",
+      "p_value": "p-value for the fold change against control",
+      "log2fc_fdr": "Benjamini-Hochberg FDR for the fold change",
+      "log2fc_median": "Median log2 fold change across replicates",
+      "cohens_d": "Cohen's d effect size for the fold change"
+    },
+    "num_compounds": 4376,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/cyp-challenge-train-test (source data, Apache-2.0)",
+      "https://huggingface.co/spaces/openadmet/cyp-challenge (challenge leaderboard)",
+      "https://openadmet.ghost.io/announcing-openadmets-cyp-inhibition-blind-challenge/"
+    ]
+  },
+  "comp_chem/openadmet/cyp/training/tdi.csv": {
+    "description": "Time-dependent-inhibition training set: boolean is_TDI labels for CYP2D6 and CYP3A4 (the two scored isoforms, both roughly 21% positive) plus the paired TDI-condition and direct-inhibition pIC50s with credible intervals. The label is a shift between the two arms, not a measured value.",
+    "columns": {
+      "molecule_name": "Challenge compound identifier (the submission's Molecule_Name)",
+      "smiles": "Compound structure (SMILES), as published by the challenge",
+      "cyp2d6_is_tdi": "Whether CYP2D6 shows time-dependent inhibition -- IC50 shift after preincubation exceeding 2-fold. Only CYP2D6 and CYP3A4 are scored by the challenge",
+      "cyp3a4_is_tdi": "Whether CYP3A4 shows time-dependent inhibition -- IC50 shift after preincubation exceeding 2-fold. Only CYP2D6 and CYP3A4 are scored by the challenge",
+      "cyp1a2_pic50_tdi_condition": "-log10(IC50 in M) for CYP1A2 under TDI (preincubation) conditions (prediction target)",
+      "cyp2c9_pic50_tdi_condition": "-log10(IC50 in M) for CYP2C9 under TDI (preincubation) conditions (prediction target)",
+      "cyp2d6_pic50_tdi_condition": "-log10(IC50 in M) for CYP2D6 under TDI (preincubation) conditions (prediction target)",
+      "cyp3a4_pic50_tdi_condition": "-log10(IC50 in M) for CYP3A4 under TDI (preincubation) conditions (prediction target)",
+      "cyp1a2_pic50_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP1A2 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp2c9_pic50_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2C9 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp2d6_pic50_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2D6 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp3a4_pic50_tdi_condition_ci_upper": "Upper bound of the Bayesian credible interval for CYP3A4 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_high",
+      "cyp1a2_pic50_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP1A2 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp2c9_pic50_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2C9 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp2d6_pic50_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2D6 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp3a4_pic50_tdi_condition_ci_lower": "Lower bound of the Bayesian credible interval for CYP3A4 pIC50 under TDI (preincubation) conditions. Renamed from the source's _conf_low",
+      "cyp1a2_pic50_tdi_condition_std": "Standard deviation of the curve fit for CYP1A2 pIC50 under TDI (preincubation) conditions",
+      "cyp2c9_pic50_tdi_condition_std": "Standard deviation of the curve fit for CYP2C9 pIC50 under TDI (preincubation) conditions",
+      "cyp2d6_pic50_tdi_condition_std": "Standard deviation of the curve fit for CYP2D6 pIC50 under TDI (preincubation) conditions",
+      "cyp3a4_pic50_tdi_condition_std": "Standard deviation of the curve fit for CYP3A4 pIC50 under TDI (preincubation) conditions",
+      "cyp1a2_pic50_direct_inhibition": "-log10(IC50 in M) for CYP1A2 under direct inhibition (prediction target)",
+      "cyp2c9_pic50_direct_inhibition": "-log10(IC50 in M) for CYP2C9 under direct inhibition (prediction target)",
+      "cyp2d6_pic50_direct_inhibition": "-log10(IC50 in M) for CYP2D6 under direct inhibition (prediction target)",
+      "cyp3a4_pic50_direct_inhibition": "-log10(IC50 in M) for CYP3A4 under direct inhibition (prediction target)",
+      "cyp1a2_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP1A2 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp2c9_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2C9 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp2d6_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP2D6 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp3a4_pic50_direct_inhibition_ci_upper": "Upper bound of the Bayesian credible interval for CYP3A4 pIC50 under direct inhibition. Renamed from the source's _conf_high",
+      "cyp1a2_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP1A2 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp2c9_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2C9 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp2d6_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP2D6 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp3a4_pic50_direct_inhibition_ci_lower": "Lower bound of the Bayesian credible interval for CYP3A4 pIC50 under direct inhibition. Renamed from the source's _conf_low",
+      "cyp1a2_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP1A2 pIC50 under direct inhibition",
+      "cyp2c9_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP2C9 pIC50 under direct inhibition",
+      "cyp2d6_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP2D6 pIC50 under direct inhibition",
+      "cyp3a4_pic50_direct_inhibition_std": "Standard deviation of the curve fit for CYP3A4 pIC50 under direct inhibition"
+    },
+    "num_compounds": 6145,
+    "references": [
+      "https://huggingface.co/datasets/openadmet/cyp-challenge-train-test (source data, Apache-2.0)",
+      "https://huggingface.co/spaces/openadmet/cyp-challenge (challenge leaderboard)",
+      "https://openadmet.ghost.io/announcing-openadmets-cyp-inhibition-blind-challenge/"
+    ]
+  },
   "comp_chem/openadmet/expansionrx/testing/all_endpoints.csv": {
     "description": "Test set for the OpenADMET / ExpansionRx ADMET Challenge -- all nine endpoints in one wide table, one row per compound. Endpoint coverage is very uneven (MGMB has a few hundred compounds, KSOL a few thousand), so most cells are empty; the per-endpoint files in this same directory are the same data filtered to measured rows and are what single-task training wants. Use this table for multi-task models.",
     "columns": {
