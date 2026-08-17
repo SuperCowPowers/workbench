@@ -17,10 +17,12 @@ on a blind set of 750 compounds. Two independent tracks:
 | **Direct inhibition** | regression | pIC50 for all 4 CYPs (3,000 predictions) | macro-averaged ST-RAE |
 | **Time-dependent inhibition (TDI)** | binary classification | >2-fold IC50 shift after NADPH preincubation, CYP3A4 + CYP2D6 only | MCC |
 
-Training data at launch: ~1,500 dose-response curves per CYP (sparse across
-isoforms) plus primary screening on the Enamine DDS10 diversity set and an
-FDA-approved set. Assays are biochemical with recombinant enzymes —
-fluorescence for 3A4/2C9/1A2, acoustic-ejection mass spec for 2D6.
+Training data is **sparse**: 4,905 compounds carry 6,525 dose-response
+measurements between them (1,285-2,335 per isoform), so most compounds have one
+or two isoforms rather than all four. A separate single-concentration primary
+screen covers 4,376 compounds against all four. Assays are biochemical with
+recombinant enzymes — fluorescence for 3A4/2C9/1A2, acoustic-ejection mass spec
+for 2D6.
 
 A third **structure (pose) track** — 184 structures, one leaderboard — opens
 partway through and is scored separately from the two activity tracks.
@@ -41,10 +43,20 @@ prediction landing inside it is scored as perfect. Intervals widen at low
 activity, and compounds below pIC50 4 (under the lowest tested concentration)
 carry the widest ones.
 
-**How much forgiveness that actually buys is small.** On the Octant CYP3A4
-curves the median interval is 0.094 pIC50 units wide (mean 0.250, pulled up by
-the low-activity tail). So for well-measured compounds ST-RAE is close to plain
-RAE, and the free pass only really applies out in the weak tail.
+**The intervals are wide, so the forgiveness is substantial.** Median widths on
+the challenge's own training curves:
+
+| isoform | measured | median CI width |
+|---|---|---|
+| CYP2C9 | 1,285 | 0.526 |
+| CYP3A4 | 2,335 | 0.379 |
+| CYP1A2 | 1,412 | 0.328 |
+| CYP2D6 | 1,493 | 0.272 |
+
+A prediction within roughly 0.3 pIC50 of a typical label scores *zero* error. For
+calibration: a uniform +0.25 pIC50 bias across all four isoforms scores
+MA-ST-RAE 0.172. Chasing residuals below the interval width is wasted effort, and
+CYP2D6 punishes error hardest while CYP2C9 is the most forgiving.
 
 What follows from that:
 
@@ -189,7 +201,30 @@ encode; the mechanism here is different.
 
 ## Data already on hand
 
-Two public sources, and they play different roles.
+**The challenge's own data** (released 2026-08-17, Apache-2.0):
+
+```python
+inh = pub_data.get("comp_chem/openadmet/cyp/training/inhibition")           # 4,905 cpds, 4 pIC50s + CIs
+tdi = pub_data.get("comp_chem/openadmet/cyp/training/tdi")                  # 6,145 cpds, is_TDI + both arms
+emax = pub_data.get("comp_chem/openadmet/cyp/training/emax")                # 6,146 cpds, Emax both arms
+screen = pub_data.get("comp_chem/openadmet/cyp/training/single_concentration")  # 17,504 rows (4,376 x 4 enzymes)
+blind = pub_data.get("comp_chem/openadmet/cyp/testing/blinded")             # 750 cpds, structures only
+```
+
+Column names are snake_cased from the challenge's (`CYP3A4_pIC50_direct_inhibition`
+becomes `cyp3a4_pic50_direct_inhibition`), and the credible-interval suffixes are
+renamed from the source's `_conf_low`/`_conf_high` to `_ci_lower`/`_ci_upper` — the
+platform convention, and what `compute_regression_metrics` reads to emit `st_rae`.
+Map back to the challenge's exact column names at submission time.
+
+Two things in here that the challenge write-up does not advertise:
+
+- **`emax` carries `is_TDI` for all four isoforms**, not just the two that are
+  scored. CYP1A2 and CYP2C9 TDI labels are free auxiliary tasks.
+- **`single_concentration` has `plate_id` and `log2fc_std_error`**, so batch
+  effects and per-measurement noise are inspectable rather than assumed.
+
+**Public sources beyond the challenge**, which play different roles.
 
 **Octant (same lab, same platform as the challenge)** — CYP3A4 only, but it
 carries credible-interval columns in the exact shape the challenge scores on:
@@ -210,13 +245,16 @@ all_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/all_isoforms")  # 85,535
 cyp3a4_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/cyp3a4")     # per-isoform files also available
 ```
 
-About 33,500 fitted curves across the four targets — roughly 5x the challenge's
-own ~1,500-per-isoform training set. Three things to know before using it:
+About 33,500 fitted curves across the four targets — roughly 5x the 6,525
+measurements in the challenge's own training set. Three things to know before
+using it:
 
-- **It is noisier than the challenge data.** Compounds assayed under multiple
-  SIDs disagree by a median of 0.40 pIC50 units, against Octant's 0.094 median
-  interval width. Treat it as pretraining signal with a down-weight, not as
-  equal-weight training data.
+- **Its noise is comparable to the challenge data, not obviously worse.**
+  Compounds assayed under multiple SIDs disagree by a median of 0.40 pIC50 units,
+  against challenge credible-interval widths of 0.27-0.53. Those are not the same
+  quantity — replicate disagreement versus the width of one curve fit — but they
+  are the same magnitude, so a heavy down-weight is not justified by noise alone.
+  Its real difference is provenance: a different lab, platform, and assay readout.
 - **The 42,355 "Inactive" rows are censored, not missing.** Those compounds were
   tested and showed no inhibition up to 57 uM — a real measurement saying
   pIC50 < ~4.2, with `pic50` NaN and `curve_class` 4. Dropping them discards two
@@ -231,12 +269,16 @@ treating a single-point extrapolation like a full 15-point fit. Use `smiles`
 
 `pub_data.describe(...)` gives per-column meanings for any of these.
 
-**The challenge's own train/test files are published by OpenADMET at launch and
-have to be pulled in before they are available here.** Check `pub_data.list()`
-for the path rather than assuming one — never invent a
-`comp_chem/openadmet/cyp/...` path, and say plainly when it isn't there.
-`data/public_data/pull_openadmet_data.py` is where a `cyp` entry goes, pointing
-at the `openadmet/cyp-challenge-train-test` HuggingFace repo.
+Re-pull with `python data/public_data/pull_openadmet_data.py --challenge cyp`
+followed by `upload_data.py --apply` if OpenADMET revises the files mid-challenge.
+
+**Iterate locally, publish the champion** (`local_models`). Every variant worth
+trying — multi-task vs single-task, task weights, censored inactives, an xTB
+ensemble member, HPO — needs its own analog-holdout score, and that loop is free
+and fast on this machine while being slow and billable on Batch. `PublicData`
+works without credentials, so a local chain starts directly off these datasets.
+Local models carry **no metrics**, so score them by hand off `oof_predictions()`
+with `macro_soft_threshold_rae` rather than expecting `st_rae` to appear.
 
 ## Submission discipline
 

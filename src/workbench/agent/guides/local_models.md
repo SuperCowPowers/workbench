@@ -45,9 +45,19 @@ preds = local_model.to_endpoint().inference(eval_df)
 ```
 
 Same argument names as AWS, including `validation_ids` / `sample_weights` /
-`exclude_ids` — those are recorded and replayed on publish. Score with
-`oof_predictions()`. A LocalEndpoint isn't deployed anywhere; `inference()` loads
-the model in-process through the container's own `model_fn`/`predict_fn`.
+`exclude_ids` — those are recorded and replayed on publish. A LocalEndpoint isn't
+deployed anywhere; `inference()` loads the model in-process through the
+container's own `model_fn`/`predict_fn`.
+
+Score it the same way you would an AWS model. `list_inference_runs()` returns the
+training cross-fold plus any endpoint captures, and metrics are computed from the
+run's predictions:
+
+```python
+local_model.list_inference_runs()                    # ["full_cross_fold", ...]
+local_model.get_inference_metrics()                  # defaults to full_cross_fold
+local_model.get_inference_predictions("full_cross_fold")
+```
 
 For a long train, `wait=False` returns immediately and `training_state()` polls it.
 
@@ -67,5 +77,5 @@ model disagrees with the local one, check `version_drift()`.
 
 - Delete through the API. `LocalModel.delete()` takes its endpoints with it;
   removing directories by hand leaves them pointing at a model that's gone.
-- No metrics, plots, inference store, monitoring, contests, or promotion. When the
-  user wants those, they want a published model.
+- No plots, inference store, monitoring, contests, or promotion. When the user
+  wants those, they want a published model.

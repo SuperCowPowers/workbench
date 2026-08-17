@@ -18,6 +18,9 @@ from workbench.local import storage
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils import job_tracker
 
+# The training run's out-of-fold predictions, named to match the AWS capture
+CROSS_FOLD_RUN = "full_cross_fold"
+
 
 class LocalModel(LocalArtifact):
     """LocalModel: Workbench Local Model Class
@@ -441,6 +444,90 @@ class LocalModel(LocalArtifact):
         """
         path = os.path.join(self.output_dir, file_name)
         return pd.read_csv(path) if os.path.isfile(path) else pd.DataFrame()
+
+    def list_inference_runs(self) -> list[str]:
+        """List the inference runs for this model.
+
+        Returns:
+            list[str]: The cross-fold run from training, then any endpoint captures
+        """
+        runs = [CROSS_FOLD_RUN] if not self.oof_predictions().empty else []
+        for endpoint in self._endpoints():
+            runs.extend(name for name in endpoint.list_captures() if name not in runs)
+        return runs
+
+    def default_inference_run(self) -> Union[str, None]:
+        """Resolve the default inference run for this model.
+
+        Returns:
+            Union[str, None]: full_cross_fold -> test_inference -> first run, None if there are none
+        """
+        runs = self.list_inference_runs()
+        for preferred in (CROSS_FOLD_RUN, "test_inference"):
+            if preferred in runs:
+                return preferred
+        return runs[0] if runs else None
+
+    def get_inference_predictions(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
+        """Retrieve the captured predictions for this model.
+
+        Args:
+            capture_name (str, optional): A run from list_inference_runs(), or "default"
+                to resolve via default_inference_run()
+
+        Returns:
+            Union[pd.DataFrame, None]: The predictions, or None if that run doesn't exist
+        """
+        if capture_name == "default":
+            capture_name = self.default_inference_run()
+            if capture_name is None:
+                self.log.warning(f"No inference runs for {self.name}...")
+                return None
+
+        if capture_name == CROSS_FOLD_RUN:
+            predictions = self.oof_predictions()
+            return predictions if not predictions.empty else None
+
+        for endpoint in self._endpoints():
+            if capture_name in endpoint.list_captures():
+                return endpoint.get_inference_predictions(capture_name)
+        self.log.warning(f"No inference run '{capture_name}' for {self.name}...")
+        return None
+
+    def get_inference_metrics(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
+        """Retrieve the inference performance metrics for this model.
+
+        Computed from the run's predictions rather than stored, so there is nothing
+        to keep in sync with them.
+
+        Args:
+            capture_name (str, optional): A run from list_inference_runs(), or "default"
+                to resolve via default_inference_run()
+
+        Returns:
+            Union[pd.DataFrame, None]: The metrics, or None if they can't be computed
+        """
+        from workbench.utils.metrics_utils import compute_metrics_from_predictions
+
+        predictions = self.get_inference_predictions(capture_name)
+        if predictions is None:
+            return None
+
+        # Multi-task models are scored on their primary target, the first one
+        target = self.workbench_meta().get("workbench_model_target")
+        if isinstance(target, list):
+            target = target[0] if target else None
+        if target is None or target not in predictions.columns:
+            self.log.warning(f"No target column in the '{capture_name}' predictions for {self.name}")
+            return None
+
+        # Multi-task targets are sparse, so rows the primary target doesn't cover are dropped
+        predictions = predictions.dropna(subset=[target])
+
+        class_labels = None
+        if self.workbench_meta().get("model_type") == ModelType.CLASSIFIER.value:
+            class_labels = sorted(predictions[target].unique().tolist())
+        return compute_metrics_from_predictions(predictions, target, class_labels)
 
     def to_endpoint(self, name: str = None) -> "LocalEndpoint":  # noqa: F821
         """Create a LocalEndpoint that serves this model.

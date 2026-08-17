@@ -155,6 +155,62 @@ class TestCaptures:
         endpoint = trained_model.to_endpoint()
         assert endpoint.get_inference_predictions("nope") is None
 
+
+class TestInferenceRuns:
+    """The model reaches its runs the way an AWS Model does, so a script that walks
+    inference runs works against either."""
+
+    def test_training_run_is_listed(self, trained_model):
+        assert trained_model.list_inference_runs() == ["full_cross_fold"]
+
+    def test_endpoint_captures_join_the_list(self, trained_model):
+        endpoint = trained_model.to_endpoint()
+        endpoint.inference(LocalDataSource("e_data").pull_dataframe().head(5), capture_name="holdout")
+
+        assert trained_model.list_inference_runs() == ["full_cross_fold", "holdout"]
+
+    def test_default_prefers_cross_fold(self, trained_model):
+        trained_model.to_endpoint().inference(
+            LocalDataSource("e_data").pull_dataframe().head(5), capture_name="holdout"
+        )
+        assert trained_model.default_inference_run() == "full_cross_fold"
+
+    def test_predictions_from_the_training_run(self, trained_model):
+        predictions = trained_model.get_inference_predictions("full_cross_fold")
+        assert predictions.equals(trained_model.oof_predictions())
+
+    def test_predictions_from_an_endpoint_capture(self, trained_model):
+        trained_model.to_endpoint().inference(
+            LocalDataSource("e_data").pull_dataframe().head(5), capture_name="holdout"
+        )
+        assert len(trained_model.get_inference_predictions("holdout")) == 5
+
+    def test_metrics_are_computed_from_predictions(self, trained_model):
+        metrics = trained_model.get_inference_metrics("full_cross_fold")
+        assert len(metrics) == 1
+        assert {"rmse", "mae", "r2"}.issubset(set(metrics.columns))
+
+    def test_unknown_run_returns_none(self, trained_model):
+        assert trained_model.get_inference_predictions("nope") is None
+        assert trained_model.get_inference_metrics("nope") is None
+
+    def test_multi_task_scores_the_primary_target(self, trained_model, monkeypatch):
+        """A multi-task model is scored on its first target, over the rows it covers"""
+        predictions = trained_model.oof_predictions()
+        predictions["other"] = np.nan
+        predictions.loc[: len(predictions) // 2, "sol"] = np.nan
+        monkeypatch.setattr(type(trained_model), "oof_predictions", lambda self: predictions)
+        trained_model.upsert_workbench_meta({"workbench_model_target": ["sol", "other"]})
+
+        metrics = trained_model.get_inference_metrics("full_cross_fold")
+        assert metrics["support"].iloc[0] == predictions["sol"].notna().sum()
+
+    def test_untrained_model_has_no_runs(self):
+        model = LocalModel("never-trained")
+        assert model.list_inference_runs() == []
+        assert model.default_inference_run() is None
+        assert model.get_inference_predictions() is None
+
     def test_inference_without_capture_stores_nothing(self, trained_model):
         endpoint = trained_model.to_endpoint()
         endpoint.inference(LocalDataSource("e_data").pull_dataframe().head(3))

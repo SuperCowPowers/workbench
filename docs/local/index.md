@@ -36,7 +36,7 @@ model = fs.to_model(
     feature_list=["MolWt", "MolLogP", "TPSA", "NumRotatableBonds"],
 )
 
-print(model.oof_predictions())
+print(model.get_inference_metrics())
 predictions = model.to_endpoint().inference(df.head(10))
 ```
 
@@ -46,6 +46,32 @@ predictions match what a deployed endpoint returns.
 
 `validation_ids`, `sample_weights`, and `exclude_ids` work as they do in AWS, and
 they're recorded so publishing can replay them.
+
+## Scoring
+
+Inference runs work the same as they do on an AWS Model, so a script that walks
+them runs against either. `list_inference_runs()` returns the training cross-fold
+plus any endpoint captures; metrics are computed from the run's predictions.
+
+```python
+model.list_inference_runs()                     # ["full_cross_fold", ...]
+model.get_inference_metrics()                   # defaults to full_cross_fold
+model.get_inference_predictions("full_cross_fold")
+
+model.oof_predictions()          # the cross-fold predictions directly
+model.validation_predictions()   # held-out rows, when validation_ids were used
+```
+
+Endpoint captures join the list once you name one:
+
+```python
+end = model.to_endpoint()
+end.inference(eval_df, capture_name="holdout")
+model.get_inference_metrics("holdout")
+```
+
+The `model_training` run an AWS Model carries has no local equivalent — those
+metrics come from SageMaker scraping the training job's output.
 
 ## Publishing
 
@@ -83,9 +109,9 @@ alone.
 
 ## What's not here
 
-Local covers training and scoring. Model metrics and plots, the inference store,
-monitoring, contests, and promotion are all properties of published artifacts —
-when you want those, publish.
+Local covers training and scoring. Plots, the inference store, monitoring,
+contests, and promotion are all properties of published artifacts — when you want
+those, publish.
 
 ::: workbench.local.local_data_source
 
