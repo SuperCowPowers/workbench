@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.datasets import make_classification, make_regression
 
-from workbench.api import PublicData
+from workbench.public_data import PublicData
 
 
 class SyntheticDataGenerator:

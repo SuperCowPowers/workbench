@@ -10,9 +10,13 @@ under ``WORKBENCH_LOCAL_PATH`` (default ``~/.workbench/local``).
 - LocalModel: A model trained on this machine by the generated model script
 - LocalEndpoint: In-process inference against a locally trained model
 - LocalMeta: Listings for the artifacts in local storage
+
+PublicData is re-exported here: it reads public S3 anonymously, so it needs no
+AWS account and is the usual starting point for a local model.
 """
 
 from workbench.core.model_types import ModelType, ModelFramework
+from workbench.public_data import PublicData
 
 from .local_artifact import LocalArtifact
 from .local_data_source import LocalDataSource
@@ -30,4 +34,5 @@ __all__ = [
     "LocalMeta",
     "ModelType",
     "ModelFramework",
+    "PublicData",
 ]

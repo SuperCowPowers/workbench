@@ -35,7 +35,7 @@ from .parameter_store import ParameterStore
 from .df_store import DFStore
 from .reports import Reports
 from .inference_store import InferenceStore
-from .public_data import PublicData
+from workbench.public_data import PublicData
 from .monitor import Monitor
 
 __all__ = [

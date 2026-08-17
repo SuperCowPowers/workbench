@@ -8,4 +8,4 @@ The `PublicData` class lets you discover and pull down curated public datasets (
 !!!tip "Workbench REPL"
     Experiment with the `PublicData()` class in the [Workbench REPL](../repl/index.md).
 
-::: workbench.api.public_data
+::: workbench.public_data

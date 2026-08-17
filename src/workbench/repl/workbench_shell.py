@@ -174,7 +174,7 @@ class WorkbenchShell:
         self.commands["direct_meta"] = self.switch_to_direct_meta
         self.commands["theme"] = importlib.import_module("workbench.utils.repl_themes").set_theme
         self.commands["reconnect"] = self.check_aws_account
-        self.commands["pub_data"] = importlib.import_module("workbench.api.public_data").PublicData()
+        self.commands["pub_data"] = importlib.import_module("workbench.public_data").PublicData()
         # Bosco is opt-in (ENABLE_BOSCO); when off, the agent, prompt tag, and router stay dark
         if self.bosco_enabled:
             self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
@@ -390,12 +390,14 @@ class WorkbenchShell:
         }
         if all(df.empty for df in summary_data.values()):
             return
+        print()
         self._print_summary("Local Artifacts Summary:", summary_data)
 
     def summary(self):
         """Show a summary of all the AWS Artifacts"""
 
         # Grab information about all the AWS Artifacts
+        print()
         spinner = self.spinner_start("Chatting with AWS:")
         try:
             # We're filling in Summary Data for all the AWS Services
@@ -419,7 +421,7 @@ class WorkbenchShell:
             title (str): The heading for this summary
             summary_data (dict): Artifact type -> DataFrame, name in the first column
         """
-        cprint("yellow", f"\n{title}")
+        cprint("yellow", title)
         for name, df in summary_data.items():
             # Pad the name to 15 characters
             name = (name + " " * 15)[:15]
@@ -442,7 +444,6 @@ class WorkbenchShell:
         question, punchline = random_cow_pun()
         cprint("lightpurple", f"\n🐄  {question}")
         cprint("darkblue", f"       {punchline}")
-        print()
 
     def contests(self):
         """Show the champion/challenger contests, most recent first."""
