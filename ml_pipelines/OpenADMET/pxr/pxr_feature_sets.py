@@ -33,9 +33,7 @@ FEATURE_SETS = {
 def build_feature_set(fs_name: str, feature_endpoint: str, df: pd.DataFrame) -> None:
     """Featurize df through the (Meta)Endpoint and roll the result into a FeatureSet."""
     # SMILES-keyed cache (S3-persisted) so the expensive 3D (xTB) leg never recomputes.
-    # Standardization tautomerizes `smiles`, so the original is preserved in `orig_smiles`
-    # — key the cache on that to stay stable across runs.
-    cached = InferenceCache(Endpoint(feature_endpoint), cache_key_column="smiles", output_key_column="orig_smiles")
+    cached = InferenceCache(Endpoint(feature_endpoint))
     feat_df = cached.inference(df)  # append 2D + 3D feature columns
     DataSource(feat_df, name=f"{fs_name}_ds").to_features(
         fs_name, id_column="molecule_name", tags=["openadmet_pxr", "activity"]

@@ -5,10 +5,6 @@ inline freezes the caller's session with no progress and no way to redirect. Thi
 runs it as a subprocess with the same ``wait=False`` semantics and job tracking as
 local model training, so the caller gets a handle back immediately.
 
-The cache key is chosen here rather than by the caller. Standardizing endpoints
-rewrite the ``smiles`` column and preserve the input as ``orig_smiles``, so a cache
-keyed on the input column misses nearly everything on the next run.
-
 Usage:
     ```python
     job = run_feature_endpoint(df, "smiles-to-3d-v2", name="cyp_3d", wait=False)
@@ -32,9 +28,6 @@ from workbench.local import storage
 from workbench.utils import job_tracker
 
 log = logging.getLogger("workbench")
-
-# The column standardizing endpoints preserve the caller's input key in
-DEFAULT_OUTPUT_KEY = "orig_smiles"
 
 
 def job_root(create: bool = False) -> str:
@@ -168,7 +161,6 @@ def run_feature_endpoint(
     endpoint: str,
     name: str,
     cache_key_column: str = "smiles",
-    output_key_column: Union[str, None] = DEFAULT_OUTPUT_KEY,
     wait: bool = True,
 ) -> FeatureEndpointJob:
     """Run a feature endpoint over a DataFrame as a subprocess.
@@ -178,10 +170,6 @@ def run_feature_endpoint(
         endpoint (str): Name of the feature endpoint
         name (str): Name for this job, used for its directory and job tracking
         cache_key_column (str): Column whose values key the cache (default: "smiles")
-        output_key_column (str, optional): Column in the endpoint's output holding the
-            caller's original key. Standardizing endpoints rewrite the key column and
-            preserve the input here, so keying on it is what keeps cache hits across
-            runs. Pass None for an endpoint that leaves the key column alone.
         wait (bool): Block until the pass finishes, streaming output (default: True)
 
     Returns:
@@ -204,8 +192,6 @@ def run_feature_endpoint(
         "--cache-key-column",
         cache_key_column,
     ]
-    if output_key_column:
-        command += ["--output-key-column", output_key_column]
 
     log.important(f"Featurizing {len(eval_df)} rows through {endpoint} as job '{name}'...")
     job._write_status(state="running", endpoint=endpoint, rows=len(eval_df))
@@ -246,31 +232,16 @@ def main():
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--cache-key-column", default="smiles")
-    parser.add_argument("--output-key-column", default=None)
     args = parser.parse_args()
 
     from workbench.api import Endpoint
     from workbench.api.inference_cache import InferenceCache
 
     eval_df = pd.read_parquet(args.input)
-    cache = InferenceCache(
-        Endpoint(args.endpoint),
-        cache_key_column=args.cache_key_column,
-        output_key_column=args.output_key_column,
-    )
+    cache = InferenceCache(Endpoint(args.endpoint), cache_key_column=args.cache_key_column)
     log.important(f"Cache holds {cache.cache_size()} rows before this pass...")
 
     results = cache.inference(eval_df)
-
-    # A missing output key column means every row was cached under the wrong value,
-    # so the next run would recompute all of it. Fail rather than bank the work.
-    if args.output_key_column and args.output_key_column not in results.columns:
-        raise ValueError(
-            f"Endpoint {args.endpoint} returned no '{args.output_key_column}' column, "
-            "so the cache is keyed on values the next run won't look up. Pass "
-            "output_key_column=None if this endpoint doesn't rewrite the key column."
-        )
-
     results.to_parquet(args.output, index=False)
     log.important(f"Featurized {len(results)} rows, cache now holds {cache.cache_size()}...")
 

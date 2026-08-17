@@ -50,7 +50,7 @@ class InferenceCache:
         self,
         endpoint: Endpoint,
         cache_key_column: str = "smiles",
-        output_key_column: Optional[str] = None,
+        output_key_column: Optional[str] = "orig_smiles",
         auto_invalidate_cache: bool = False,
         snapshot: int = 500,
     ):
@@ -61,14 +61,14 @@ class InferenceCache:
             cache_key_column (str): Name of the column whose values are used
                 as the cache key (default: "smiles").
             output_key_column (Optional[str]): Name of the column in the
-                endpoint's *output* that contains the original input key
-                values. Some endpoints normalize/canonicalize the key column
-                (e.g. canonical SMILES) and place the original value in a
-                separate column (e.g. "orig_smiles"). When set, the cache
-                uses this column's values as the key so future lookups with
-                the original input values still hit. When None (default),
-                the cache key column in the output is assumed to match the
-                input unchanged.
+                endpoint's *output* that holds the original input key values,
+                used as the cache key so future lookups with the caller's own
+                values still hit (default: "orig_smiles"). Endpoints that
+                standardize rewrite the key column and preserve the input
+                here, so keying on the input column would miss nearly every
+                row on the next run. An endpoint that doesn't produce this
+                column is keyed on the input column unchanged, which is
+                correct for one that doesn't rewrite it.
             auto_invalidate_cache (bool): When True, automatically clear the
                 cache if the endpoint has been modified since the cache was
                 last written. When False (default), the existing cache is

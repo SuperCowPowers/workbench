@@ -113,10 +113,16 @@ job.state()      # running -> completed, same vocabulary as training
 job.results()    # the featurized rows once it's completed
 ```
 
-It caches through `InferenceCache` and keys on `orig_smiles`, because standardization
-canonicalizes tautomers — `smiles` comes back rewritten, and a cache keyed on the input
-column would miss nearly every row on the next run. Say how many molecules are going
-through before starting one.
+It caches through `InferenceCache`, whose defaults are already right for every feature
+endpoint — take them:
+
+```python
+cached = InferenceCache(Endpoint("smiles-to-3d-v2"))
+```
+
+Standardization canonicalizes tautomers, so `smiles` comes back rewritten and the cache
+keys on `orig_smiles` instead. Say how many molecules are going through before starting
+a pass.
 
 ## Publishing
 
