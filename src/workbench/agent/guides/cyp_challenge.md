@@ -277,8 +277,21 @@ trying — multi-task vs single-task, task weights, censored inactives, an xTB
 ensemble member, HPO — needs its own analog-holdout score, and that loop is free
 and fast on this machine while being slow and billable on Batch. `PublicData`
 works without credentials, so a local chain starts directly off these datasets.
-Local models carry **no metrics**, so score them by hand off `oof_predictions()`
-with `macro_soft_threshold_rae` rather than expecting `st_rae` to appear.
+
+Local models compute metrics the same way AWS ones do, so `st_rae` comes along for
+free as long as the credible-interval columns reach the predictions:
+
+```python
+local_model.list_inference_runs()      # "full_cross_fold" plus any endpoint captures
+local_model.get_inference_metrics()    # st_rae here means the CI columns survived
+local_model.get_inference_predictions("full_cross_fold")
+```
+
+If `st_rae` is missing from that frame, the CI columns were dropped somewhere in
+FeatureSet -> training -> capture; score directly with `macro_soft_threshold_rae`
+over the predictions and fix the column plumbing rather than assuming the metric
+does not apply. Whichever way, use the analog holdout as the eval set — a
+cross-fold number is the optimistic one.
 
 ## Submission discipline
 
