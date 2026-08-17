@@ -17,6 +17,7 @@ from workbench.local.local_artifact import LocalArtifact
 from workbench.local import storage
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils import job_tracker
+from workbench.utils.json_utils import write_json_atomic
 
 # The training run's out-of-fold predictions, named to match the AWS capture
 CROSS_FOLD_RUN = "full_cross_fold"
@@ -360,8 +361,7 @@ class LocalModel(LocalArtifact):
         if returncode is not None:
             status["returncode"] = returncode
             status["finished"] = status["updated"]
-        with open(self.status_path, "w") as fp:
-            json.dump(status, fp, indent=4)
+        write_json_atomic(self.status_path, status)
 
     def training_state(self) -> dict:
         """The training status for this model, as recorded on disk.

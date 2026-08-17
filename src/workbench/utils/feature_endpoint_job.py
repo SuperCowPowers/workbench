@@ -26,6 +26,7 @@ import pandas as pd
 
 from workbench.local import storage
 from workbench.utils import job_tracker
+from workbench.utils.json_utils import write_json_atomic
 
 log = logging.getLogger("workbench")
 
@@ -128,8 +129,7 @@ class FeatureEndpointJob:
             with open(self.status_path, "r") as fp:
                 status = json.load(fp)
         status.update(fields)
-        with open(self.status_path, "w") as fp:
-            json.dump(status, fp, indent=4, default=str)
+        write_json_atomic(self.status_path, status)
 
     def _record_outcome(self, returncode: int) -> bool:
         """Internal: Write the durable outcome, for both the blocking and tracked paths

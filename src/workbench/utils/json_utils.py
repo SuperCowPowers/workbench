@@ -1,6 +1,7 @@
 """JSON Utilities"""
 
 import json
+import os
 from io import StringIO
 import numpy as np
 import pandas as pd
@@ -11,6 +12,22 @@ from datetime import datetime, date
 from workbench.utils.datetime_utils import datetime_to_iso8601, iso8601_to_datetime
 
 log = logging.getLogger("workbench")
+
+
+def write_json_atomic(path: str, data: dict):
+    """Write JSON so a concurrent reader never sees a partial file.
+
+    Status files are written by a watcher thread and read by whoever holds the job, so
+    a plain open(path, "w") exposes the truncated file between the open and the write.
+
+    Args:
+        path (str): Destination file
+        data (dict): The data to write
+    """
+    temp_path = f"{path}.tmp"
+    with open(temp_path, "w") as fp:
+        json.dump(data, fp, indent=4, default=str)
+    os.replace(temp_path, path)
 
 
 # Custom JSON Encoder with optional precision reduction (see matched decoder below)
