@@ -31,6 +31,10 @@ class PublicData:
     # Public bucket
     BUCKET = "workbench-public-data"
 
+    # Dataset file extensions and the S3 keys that hold metadata rather than datasets
+    EXTENSIONS = (".parquet", ".csv", ".json")
+    METADATA_KEYS = ("descriptions.json",)
+
     def __init__(self):
         """PublicData Init Method"""
         self.log = logging.getLogger("workbench")
@@ -46,22 +50,7 @@ class PublicData:
         Returns:
             list: Dataset names (relative paths without extensions) available in the public store.
         """
-        datasets = []
-        paginator = self.s3_client.get_paginator("list_objects_v2")
-        for page in paginator.paginate(Bucket=self.BUCKET):
-            for obj in page.get("Contents", []):
-                key = obj["Key"]
-                if obj["Size"] == 0:
-                    continue
-                # Strip file extensions (.csv, .parquet, etc.)
-                name = key
-                for ext in (".parquet", ".csv", ".json"):
-                    if name.endswith(ext):
-                        name = name[: -len(ext)]
-                        break
-                datasets.append(name)
-
-        return sorted(datasets)
+        return sorted(self._strip_extension(obj["Key"]) for obj in self._dataset_objects())
 
     @not_found_returns_none
     def get(self, name: str) -> Union[pd.DataFrame, None]:
@@ -74,6 +63,7 @@ class PublicData:
             pd.DataFrame: The retrieved DataFrame or None if not found.
         """
         readers = {".parquet": pd.read_parquet, ".csv": pd.read_csv}
+        name = self._strip_extension(name)
         for ext, reader in readers.items():
             key = f"{name}{ext}"
             try:
@@ -92,21 +82,14 @@ class PublicData:
         Returns:
             pd.DataFrame: DataFrame with name, size (MB), and modified date for each dataset.
         """
-        rows = []
-        paginator = self.s3_client.get_paginator("list_objects_v2")
-        for page in paginator.paginate(Bucket=self.BUCKET):
-            for obj in page.get("Contents", []):
-                key = obj["Key"]
-                if obj["Size"] == 0:
-                    continue
-                rows.append(
-                    {
-                        "name": key,
-                        "size (MB)": round(obj["Size"] / (1024 * 1024), 2),
-                        "modified": obj["LastModified"].strftime("%Y-%m-%d %H:%M:%S"),
-                    }
-                )
-
+        rows = [
+            {
+                "name": self._strip_extension(obj["Key"]),
+                "size (MB)": round(obj["Size"] / (1024 * 1024), 2),
+                "modified": obj["LastModified"].strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for obj in self._dataset_objects()
+        ]
         return pd.DataFrame(rows) if rows else pd.DataFrame(columns=["name", "size (MB)", "modified"])
 
     def describe(self, name: str) -> Optional[dict]:
@@ -129,6 +112,25 @@ class PublicData:
 
         self.log.info(f"No description found for '{name}'")
         return None
+
+    def _dataset_objects(self) -> list:
+        """Yield the S3 objects that hold datasets (skipping empty keys and metadata)."""
+        objects = []
+        paginator = self.s3_client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=self.BUCKET):
+            for obj in page.get("Contents", []):
+                if obj["Size"] == 0 or obj["Key"] in self.METADATA_KEYS:
+                    continue
+                objects.append(obj)
+        return objects
+
+    @classmethod
+    def _strip_extension(cls, name: str) -> str:
+        """Return the dataset name without its file extension."""
+        for ext in cls.EXTENSIONS:
+            if name.endswith(ext):
+                return name[: -len(ext)]
+        return name
 
     def _load_descriptions(self) -> dict:
         """Load descriptions.json from S3."""
