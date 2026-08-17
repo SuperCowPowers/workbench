@@ -269,7 +269,7 @@
     "description": "AstraZeneca experimental logD measurements at pH 7.4 (~4,200 compounds), originally published in ChEMBL. Fetched directly from the MoleculeNet S3 mirror; same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`).",
     "columns": {
       "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as provided by the source, before standardization",
+      "orig_smiles": "Structure exactly as provided by the source, before standardization",
       "logd": "Experimental logD at pH 7.4 (octanol-water distribution coefficient)",
       "source": "Source identifier (astrazeneca_chembl)"
     },
@@ -304,7 +304,7 @@
     "description": "GraphormerLogP (GLP) experimental LogP dataset (~42,000 compounds). Multi-source curation by the Chemoinformatics and Molecular Modeling Laboratory (CIMM) at Kazan Federal University. Aggregated from OpenChem, Huuskonen, SAMPL6/7, and other published datasets.",
     "columns": {
       "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as provided by the source, before standardization",
+      "orig_smiles": "Structure exactly as provided by the source, before standardization",
       "logp": "Experimental logP (octanol-water partition coefficient)",
       "source": "Source identifier (graphormer_logp)"
     },
@@ -318,7 +318,7 @@
     "description": "PHYSPROP/OPERA experimental LogP training data (~4,200 compounds). Curated by the EPA from the PHYSPROP database, originally used to train the KOWWIN and OPERA LogP models. Extracted from OPERA_Data.zip in the NIEHS/OPERA GitHub repository.",
     "columns": {
       "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as provided by the source, before standardization",
+      "orig_smiles": "Structure exactly as provided by the source, before standardization",
       "logp": "Experimental logP (octanol-water partition coefficient)",
       "source": "Source identifier (opera_physprop)"
     },
@@ -333,7 +333,7 @@
     "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + \u0394DP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via \u0394DP) from the main sheet of the source XLSX.",
     "columns": {
       "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as provided by the source, before standardization",
+      "orig_smiles": "Structure exactly as provided by the source, before standardization",
       "logp": "Experimental or adjusted logP (octanol-water partition coefficient)",
       "source": "Source identifier (sangster)"
     },
@@ -1192,7 +1192,7 @@
       "sid": "PubChem substance ID for the assayed sample",
       "cid": "PubChem compound ID (the standardized structure)",
       "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
       "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
       "isoform": "CYP isoform assayed: cyp1a2, cyp2c9, cyp2c19, cyp2d6, or cyp3a4",
       "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
@@ -1215,7 +1215,7 @@
       "sid": "PubChem substance ID for the assayed sample",
       "cid": "PubChem compound ID (the standardized structure)",
       "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
       "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
       "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
       "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
@@ -1237,7 +1237,7 @@
       "sid": "PubChem substance ID for the assayed sample",
       "cid": "PubChem compound ID (the standardized structure)",
       "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
       "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
       "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
       "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
@@ -1259,7 +1259,7 @@
       "sid": "PubChem substance ID for the assayed sample",
       "cid": "PubChem compound ID (the standardized structure)",
       "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
       "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
       "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
       "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
@@ -1281,7 +1281,7 @@
       "sid": "PubChem substance ID for the assayed sample",
       "cid": "PubChem compound ID (the standardized structure)",
       "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
       "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
       "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
       "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
@@ -1303,7 +1303,7 @@
       "sid": "PubChem substance ID for the assayed sample",
       "cid": "PubChem compound ID (the standardized structure)",
       "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
-      "smiles_orig": "Structure exactly as deposited with the assay, before standardization",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
       "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
       "pic50": "-log10(AC50 in M), the negated fit_log_ac50 (prediction target). NaN for inactives, which are left-censored below roughly 4.2 rather than unmeasured",
       "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",

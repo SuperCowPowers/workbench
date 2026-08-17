@@ -39,19 +39,19 @@ def standardize_df(
     source: str,
     value_name: str,
 ) -> pd.DataFrame:
-    """Standardize a dataframe to (smiles, smiles_orig, <value_name>, source).
+    """Standardize a dataframe to (smiles, orig_smiles, <value_name>, source).
 
     `smiles` holds the standardized structure used for modeling and joining; the
-    source's own string is kept as `smiles_orig`.
+    source's own string is kept as `orig_smiles`.
     """
     out = df[[smiles_col, value_col]].copy()
-    out.columns = ["smiles_orig", value_name]
+    out.columns = ["orig_smiles", value_name]
     out[value_name] = pd.to_numeric(out[value_name], errors="coerce")
     out.dropna(subset=[value_name], inplace=True)
-    out["smiles"] = out["smiles_orig"].apply(standardize_smiles)
+    out["smiles"] = out["orig_smiles"].apply(standardize_smiles)
     out.dropna(subset=["smiles"], inplace=True)
     out["source"] = source
-    return out[["smiles", "smiles_orig", value_name, "source"]].reset_index(drop=True)
+    return out[["smiles", "orig_smiles", value_name, "source"]].reset_index(drop=True)
 
 
 def merge_and_deduplicate(

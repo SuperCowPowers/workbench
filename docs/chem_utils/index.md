@@ -53,7 +53,7 @@ print(result_df)
 ```py title="examples/chem_utils/tautomerize_smiles.py"
 """Example for Tautomerizing SMILES strings"""
 import pandas as pd
-from workbench.utils.chem_utils import tautomerize_smiles
+from workbench.utils.chem_utils.mol_standardize import standardize
 
 test_data = [
     # Salicylaldehyde undergoes keto-enol tautomerization.
@@ -81,24 +81,24 @@ test_data = [
 df = pd.DataFrame(test_data)
 
 # Perform tautomerization
-result_df = tautomerize_smiles(df)
+result_df = standardize(df)
 print(result_df)
 ```
 
 **Output**
 
 ```
-                             id       smiles_orig        expected smiles_canonical          smiles
-0        Salicylaldehyde (Keto)    O=Cc1cccc(O)c1  O=Cc1cccc(O)c1   O=Cc1cccc(O)c1  O=Cc1cccc(O)c1
-1  2-Hydroxybenzaldehyde (Enol)    Oc1ccc(C=O)cc1  O=Cc1ccc(O)cc1   O=Cc1ccc(O)cc1  O=Cc1ccc(O)cc1
-2                 Acetylacetone     CC(=O)CC(=O)C   CC(=O)CC(C)=O    CC(=O)CC(C)=O   CC(=O)CC(C)=O
-3                     Imidazole        c1cnc[nH]1      c1c[nH]cn1       c1c[nH]cn1      c1c[nH]cn1
-4                      Pyridone  C1=CC=NC(=O)C=C1     O=c1cccccn1      O=c1cccccn1     O=c1cccccn1
-5                     Guanidine      C(=N)N=C(N)N      N=C(N)N=CN       N=CN=C(N)N      N=C(N)N=CN
-6                      Catechol    c1cc(c(cc1)O)O      Oc1ccccc1O       Oc1ccccc1O      Oc1ccccc1O
-7                     Formamide            C(=O)N            NC=O             NC=O            NC=O
-8                          Urea         C(=O)(N)N         NC(N)=O          NC(N)=O         NC(N)=O
-9                        Phenol       c1ccc(cc1)O       Oc1ccccc1        Oc1ccccc1       Oc1ccccc1
+                             id       orig_smiles          smiles        expected  matches_expected
+0        Salicylaldehyde (Keto)    O=Cc1cccc(O)c1  O=Cc1cccc(O)c1  O=Cc1cccc(O)c1              True
+1  2-Hydroxybenzaldehyde (Enol)    Oc1ccc(C=O)cc1  O=Cc1ccc(O)cc1  O=Cc1ccc(O)cc1              True
+2                 Acetylacetone     CC(=O)CC(=O)C   CC(=O)CC(C)=O   CC(=O)CC(C)=O              True
+3                     Imidazole        c1cnc[nH]1      c1c[nH]cn1      c1c[nH]cn1              True
+4                      Pyridone  C1=CC=NC(=O)C=C1     O=c1cccccn1     O=c1cccccn1              True
+5                     Guanidine      C(=N)N=C(N)N      N=C(N)N=CN      N=C(N)N=CN              True
+6                      Catechol    c1cc(c(cc1)O)O      Oc1ccccc1O      Oc1ccccc1O              True
+7                     Formamide            C(=O)N            NC=O            NC=O              True
+8                          Urea         C(=O)(N)N         NC(N)=O         NC(N)=O              True
+9                        Phenol       c1ccc(cc1)O       Oc1ccccc1       Oc1ccccc1              True
 ```
 
 

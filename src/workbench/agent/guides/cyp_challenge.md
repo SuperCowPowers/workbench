@@ -317,7 +317,7 @@ using it:
 
 Filter on `curve_class` (-1.1/-1.2 are complete curves) and `fit_r2` rather than
 treating a single-point extrapolation like a full 15-point fit. Use `smiles`
-(standardized); `smiles_orig` is the deposited string.
+(standardized); `orig_smiles` is the deposited string.
 
 `pub_data.describe(...)` gives per-column meanings for any of these.
 

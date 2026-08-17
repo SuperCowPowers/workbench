@@ -52,7 +52,7 @@ ISOFORMS = {
 COLUMNS = {
     "PUBCHEM_SID": "sid",
     "PUBCHEM_CID": "cid",
-    "PUBCHEM_EXT_DATASOURCE_SMILES": "smiles",  # renamed to smiles_orig once standardized
+    "PUBCHEM_EXT_DATASOURCE_SMILES": "smiles",  # renamed to orig_smiles once standardized
     "PUBCHEM_ACTIVITY_OUTCOME": "activity_outcome",
     "Panel Name": "isoform",
     "Potency": "ac50_um",
@@ -105,11 +105,11 @@ def pull_cyp_panel() -> dict[str, pd.DataFrame]:
     df.insert(5, "pic50", -df["fit_log_ac50"])
 
     # Deposited structures include salts and mixtures. `smiles` holds the standardized
-    # form used for modeling; the deposited string is kept as `smiles_orig`.
-    df = df.rename(columns={"smiles": "smiles_orig"})
-    structures = df[["smiles_orig"]].drop_duplicates()
-    structures["smiles"] = structures["smiles_orig"].apply(standardize_smiles)
-    df = df.merge(structures, on="smiles_orig", how="left")
+    # form used for modeling; the deposited string is kept as `orig_smiles`.
+    df = df.rename(columns={"smiles": "orig_smiles"})
+    structures = df[["orig_smiles"]].drop_duplicates()
+    structures["smiles"] = structures["orig_smiles"].apply(standardize_smiles)
+    df = df.merge(structures, on="orig_smiles", how="left")
     dropped = df["smiles"].isna().sum()
     if dropped:
         log.warning(f"Dropping {dropped:,} rows whose SMILES could not be standardized")
