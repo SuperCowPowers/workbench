@@ -5403,7 +5403,7 @@ laptop still needs an API token. Put it in <code>~/.pypirc</code>:</p>
 <h3 id="lint-matches-the-actions-gate">Lint (matches the Action's gate)</h3>
 <p>The Action publishes only if lint passes, so run the same checks locally first:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>black<span class="w"> </span>--check<span class="w"> </span>--line-length<span class="o">=</span><span class="m">120</span><span class="w"> </span>src/workbench<span class="w"> </span>applications<span class="w"> </span>tests
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>flake8<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">&#39;*generated*&#39;</span><span class="w"> </span>src/workbench<span class="w"> </span>applications<span class="w"> </span>tests
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>flake8<span class="w"> </span>--exclude<span class="w"> </span><span class="s1">'*generated*'</span><span class="w"> </span>src/workbench<span class="w"> </span>applications<span class="w"> </span>tests
 </span></code></pre></div>
 <p>Optionally run the full test suite via tox, which installs the built package into a clean
 virtualenv and runs the tests against it:</p>

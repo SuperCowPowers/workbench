@@ -5270,15 +5270,15 @@
 </li>
 <li>
 <p><code>capture_uuid</code> to <code>capture_name</code></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>end.inference(df, capture_uuid=&quot;my_inference_run&quot;)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>end.inference(df, capture_uuid="my_inference_run")
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&lt;is now&gt;
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>end.inference(df, capture_name=&quot;my_inference_run&quot;)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>end.inference(df, capture_name="my_inference_run")
 </span></code></pre></div>
 </li>
 <li>
 <p>The training holdout method have removed the id_column arg (this information is already known by the FeatureSet)</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fs.set_training_holdouts(id_column=&quot;my_id&quot;, holdout_ids):
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fs.get_training_holdouts(id_column=&quot;my_id&quot;) 
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>fs.set_training_holdouts(id_column="my_id", holdout_ids):
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>fs.get_training_holdouts(id_column="my_id") 
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>&lt;is now&gt;
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>fs.set_training_holdouts(holdout_ids):
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>fs.get_training_holdouts()

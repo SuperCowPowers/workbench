@@ -5450,7 +5450,7 @@
 <p>The server resolves the theme from the <code>wb_theme</code> cookie on the request in flight, so viewers
 on a shared dashboard each get their own theme:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">ThemeManager</span><span class="p">()</span><span class="o">.</span><span class="n">current_theme</span><span class="p">()</span>     <span class="c1"># pin -&gt; request cookie -&gt; configured default</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ThemeManager</span><span class="p">()</span><span class="o">.</span><span class="n">current_template</span><span class="p">()</span>  <span class="c1"># that theme&#39;s Plotly template</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">ThemeManager</span><span class="p">()</span><span class="o">.</span><span class="n">current_template</span><span class="p">()</span>  <span class="c1"># that theme's Plotly template</span>
 </span></code></pre></div>
 <p>Nothing is stored between requests. A single-theme process (a plugin unit test, an example
 script) can call <code>set_theme("light")</code> to pin a theme that outranks any cookie; <code>set_theme("auto")</code>

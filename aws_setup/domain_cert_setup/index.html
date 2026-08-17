@@ -5747,8 +5747,8 @@
 </li>
 </ol>
 <p>You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, LoadBalancer, CloudFront, etc. Specifically for the Workbench-Dashboard Stack you will need to put this into your Workbench Config file when you deploy/update the stack.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&quot;WORKBENCH_ROLE&quot;: &quot;Workbench-ExecutionRole&quot;,
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&quot;WORKBENCH_CERTIFICATE_ARN&quot;: &quot;arn:aws:acm:&lt;region&gt;:&lt;account&gt;:certificate/123-987-456-123-456789012&quot;,
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>"WORKBENCH_ROLE": "Workbench-ExecutionRole",
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>"WORKBENCH_CERTIFICATE_ARN": "arn:aws:acm:&lt;region&gt;:&lt;account&gt;:certificate/123-987-456-123-456789012",
 </span></code></pre></div>
 <h3 id="update-route-53-to-point-to-new-load-balancer">Update Route 53 to Point to New Load Balancer</h3>
 <p>If you deploy a new stack (new load balancer), you'll have to set up DNS 'A' records to point to that new load balancer.</p>

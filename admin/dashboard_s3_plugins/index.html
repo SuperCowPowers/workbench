@@ -5297,7 +5297,7 @@ Okay now check your <strong>Plugin Path:</strong> config and make sure it points
 </div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cd my_plugins
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>aws s3 cp . s3://my_bucket/prefix --recursive \
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  --exclude &quot;*.pyc&quot; --exclude &quot;__pycache__/*&quot; --exclude &quot;.*&quot;
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  --exclude "*.pyc" --exclude "__pycache__/*" --exclude ".*"
 </span></code></pre></div>
 <h2 id="restart-the-ecs-service">Restart the ECS Service</h2>
 <p>Okay, so this is a bit heavy handed, but automatically removing/adding/modifying the plugin pages, views, and components was 'amazingly complicated' and will be a feature request for a later date. :)</p>

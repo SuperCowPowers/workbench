@@ -5390,7 +5390,7 @@ you the docstring.</p>
 <p>Say <strong>"show code"</strong> or <strong>"hide code"</strong> and Bosco flips it himself, or set the
 attributes directly:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">bosco</span><span class="o">.</span><span class="n">show_code</span> <span class="o">=</span> <span class="kc">True</span>         <span class="c1"># echo the code Bosco runs (default False)</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">bosco</span><span class="o">.</span><span class="n">effort</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span>        <span class="c1"># low, medium, high (default), xhigh, max</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">bosco</span><span class="o">.</span><span class="n">effort</span> <span class="o">=</span> <span class="s2">"medium"</span>        <span class="c1"># low, medium, high (default), xhigh, max</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">bosco</span><span class="o">.</span><span class="n">usage</span>                    <span class="c1"># session token counts and estimated cost_usd</span>
 </span></code></pre></div>
 <p><code>effort</code> is thinking depth per turn, not reply length — lower is faster, and the
@@ -5401,8 +5401,8 @@ stays usable, so the next question works normally.</p>
 <p>Bosco can write a session report — the goal, the artifacts involved, what was
 concluded, what is still open — to the Parameter Store, so anyone on the account
 can pick the thread back up.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">recent_sessions</span><span class="p">()</span>          <span class="c1"># what&#39;s saved, most recent first</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">&quot;logd-cleanup&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">recent_sessions</span><span class="p">()</span>          <span class="c1"># what's saved, most recent first</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"logd-cleanup"</span><span class="p">)</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">show_session</span><span class="p">()</span>             <span class="c1"># the most recently saved, any user</span>
 </span></code></pre></div>
 <p>Ask Bosco to "save a session" and it writes one. Reports are prose, not

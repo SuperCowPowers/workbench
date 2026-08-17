@@ -5343,7 +5343,7 @@ comma-separated role ARNs appended to the Workbench roles' trust policies.
 When unset, the stack is unchanged, so this is safe to leave out of every
 other account's config.</p>
 <p>Add to the account's admin config file:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&quot;WORKBENCH_TRUSTED_ARNS&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;arn:aws:iam::&lt;AWS_ACCOUNT_ID&gt;:role/github-actions-workbench&quot;</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">"WORKBENCH_TRUSTED_ARNS"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:iam::&lt;AWS_ACCOUNT_ID&gt;:role/github-actions-workbench"</span>
 </span></code></pre></div>
 <p>Then diff and deploy:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>aws_setup/workbench_core
@@ -5374,18 +5374,18 @@ workflows from the named repo's <code>main</code> branch can assume this role. F
 other branches, and other repos are rejected by AWS before any permissions
 are evaluated.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aws<span class="w"> </span>iam<span class="w"> </span>create-role<span class="w"> </span>--role-name<span class="w"> </span>github-actions-workbench<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--assume-role-policy-document<span class="w"> </span><span class="s1">&#39;{</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="s1">    &quot;Version&quot;: &quot;2012-10-17&quot;,</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s1">    &quot;Statement&quot;: [{</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s1">      &quot;Effect&quot;: &quot;Allow&quot;,</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="s1">      &quot;Principal&quot;: {&quot;Federated&quot;: &quot;arn:aws:iam::&lt;AWS_ACCOUNT_ID&gt;:oidc-provider/token.actions.githubusercontent.com&quot;},</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="s1">      &quot;Action&quot;: &quot;sts:AssumeRoleWithWebIdentity&quot;,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="s1">      &quot;Condition&quot;: {</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="s1">        &quot;StringEquals&quot;: {&quot;token.actions.githubusercontent.com:aud&quot;: &quot;sts.amazonaws.com&quot;},</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s1">        &quot;StringLike&quot;: {&quot;token.actions.githubusercontent.com:sub&quot;: &quot;repo:&lt;org&gt;/&lt;repo&gt;:ref:refs/heads/main&quot;}</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--assume-role-policy-document<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="s1">    "Version": "2012-10-17",</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="s1">    "Statement": [{</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="s1">      "Effect": "Allow",</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="s1">      "Principal": {"Federated": "arn:aws:iam::&lt;AWS_ACCOUNT_ID&gt;:oidc-provider/token.actions.githubusercontent.com"},</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="s1">      "Action": "sts:AssumeRoleWithWebIdentity",</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="s1">      "Condition": {</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="s1">        "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="s1">        "StringLike": {"token.actions.githubusercontent.com:sub": "repo:&lt;org&gt;/&lt;repo&gt;:ref:refs/heads/main"}</span>
 </span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="s1">      }</span>
 </span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="s1">    }]</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="s1">  }&#39;</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="s1">  }'</span>
 </span></code></pre></div>
 <p>Useful <code>sub</code> variations:</p>
 <table>
@@ -5415,11 +5415,11 @@ are evaluated.</p>
 the builder role:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>aws<span class="w"> </span>iam<span class="w"> </span>put-role-policy<span class="w"> </span>--role-name<span class="w"> </span>github-actions-workbench<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>--policy-name<span class="w"> </span>assume-workbench-builder-role<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>--policy-document<span class="w"> </span><span class="s1">&#39;{</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="s1">    &quot;Version&quot;: &quot;2012-10-17&quot;,</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="s1">    &quot;Statement&quot;: [{&quot;Effect&quot;: &quot;Allow&quot;, &quot;Action&quot;: &quot;sts:AssumeRole&quot;,</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="s1">      &quot;Resource&quot;: &quot;arn:aws:iam::&lt;AWS_ACCOUNT_ID&gt;:role/Workbench-BuilderRole&quot;}]</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s1">  }&#39;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>--policy-document<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="s1">    "Version": "2012-10-17",</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="s1">    "Statement": [{"Effect": "Allow", "Action": "sts:AssumeRole",</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="s1">      "Resource": "arn:aws:iam::&lt;AWS_ACCOUNT_ID&gt;:role/Workbench-BuilderRole"}]</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="s1">  }'</span>
 </span></code></pre></div>
 <h2 id="5-github-repository-secrets">5. GitHub repository secrets</h2>
 <p>The workflow (<a href="https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/aws-tests.yml"><code>aws-tests.yml</code></a>)

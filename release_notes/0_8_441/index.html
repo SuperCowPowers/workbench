@@ -5327,7 +5327,7 @@
 <p><code>requires-python</code> moves from <code>&gt;=3.10</code> to <code>&gt;=3.11</code>. ChemProp has required 3.11+ since 2.2.4, so the modeling stack was never actually installable on 3.10 — the floor now says what was already true.</p>
 <h2 id="packaging-one-modeling-extra">Packaging: one <code>modeling</code> extra</h2>
 <p>The <code>training</code>, <code>dev-heavy</code>, and <code>test</code> extras collapse into a single <strong><code>modeling</code></strong> group holding the HPO search backends and the model frameworks:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;workbench[modeling]&#39;</span><span class="w">   </span><span class="c1"># ray[tune], optuna, torch, chemprop</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'workbench[modeling]'</span><span class="w">   </span><span class="c1"># ray[tune], optuna, torch, chemprop</span>
 </span></code></pre></div>
 <h2 id="upgrade-notes">Upgrade notes</h2>
 <ul>
