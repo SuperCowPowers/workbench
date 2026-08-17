@@ -145,6 +145,14 @@ class WorkbenchShell:
         self.commands["docs"] = self.doc_browser
         self.commands["summary"] = self.summary
         self.commands["local_summary"] = self.local_summary
+
+        # Local artifacts and the model enums need no AWS, so they're registered
+        # whether or not the account check passed -- a broken config is when the
+        # local classes are most useful
+        local = importlib.import_module("workbench.local")
+        local_names = ["LocalDataSource", "LocalFeatureSet", "LocalModel", "LocalEndpoint", "LocalMeta"]
+        for class_name in local_names + ["ModelType", "ModelFramework"]:
+            self.commands[class_name] = getattr(local, class_name)
         self.commands["contests"] = self.contests
         self.commands["incoming_data"] = self.incoming_data
         self.commands["glue_jobs"] = self.glue_jobs
@@ -295,7 +303,6 @@ class WorkbenchShell:
             self.commands["FeatureSet"] = importlib.import_module("workbench.api.feature_set").FeatureSet
             self.commands["Model"] = importlib.import_module("workbench.api.model").Model
             self.commands["CachedModel"] = importlib.import_module("workbench.cached.cached_model").CachedModel
-            self.commands["ModelType"] = importlib.import_module("workbench.api.model").ModelType
             self.commands["Endpoint"] = importlib.import_module("workbench.api.endpoint").Endpoint
             self.commands["MetaEndpoint"] = importlib.import_module("workbench.api.meta_endpoint").MetaEndpoint
             self.commands["Monitor"] = importlib.import_module("workbench.api.monitor").Monitor
@@ -347,6 +354,7 @@ class WorkbenchShell:
         - feature_sets: List all the FeatureSets in AWS
         - models: List all the Models in AWS
         - endpoints: List all the Endpoints in AWS
+        - local_summary: List the Local artifacts on this machine
         - config: Show the current Workbench Config
         - status: Show the current Workbench Status
         - log_(debug/info/important/warning): Set the Workbench log level
