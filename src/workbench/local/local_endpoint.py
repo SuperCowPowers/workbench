@@ -157,7 +157,13 @@ class LocalEndpoint(LocalArtifact):
         if self._inference_module is not None:
             return self._inference_module
 
-        with open(os.path.join(self.model_dir, "inference-metadata.json")) as fp:
+        metadata_path = os.path.join(self.model_dir, "inference-metadata.json")
+        if not os.path.isfile(metadata_path):
+            raise FileNotFoundError(
+                f"No model artifacts for '{self.model_name}' at {self.model_dir}. "
+                "The model was deleted or never finished training."
+            )
+        with open(metadata_path) as fp:
             script = json.load(fp)["inference_script"]
 
         spec = importlib.util.spec_from_file_location("workbench_local_inference", os.path.join(self.model_dir, script))

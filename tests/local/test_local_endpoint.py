@@ -14,6 +14,7 @@ import pandas as pd
 import pytest
 
 from workbench.local import LocalDataSource, LocalEndpoint, LocalModel, ModelType, ModelFramework
+from workbench.local.local_artifact import LocalArtifact
 from workbench.utils.config_manager import ConfigManager
 
 
@@ -97,6 +98,43 @@ class TestEndpoint:
         """A model that never trained has nothing to load"""
         with pytest.raises(ValueError, match="has not trained successfully"):
             LocalEndpoint.from_model(LocalModel("never-trained"))
+
+
+class TestModelDelete:
+    def test_delete_takes_the_endpoint_with_it(self, trained_model):
+        """An endpoint has no meaning without its model, so it comes down too"""
+        endpoint = trained_model.to_endpoint()
+        trained_model.delete()
+
+        assert not trained_model.exists()
+        assert not LocalEndpoint(endpoint.name).exists()
+
+    def test_custom_named_endpoint_is_found(self, trained_model):
+        """The cascade matches on model_name, not on the naming convention"""
+        endpoint = trained_model.to_endpoint("custom-serving")
+        trained_model.delete()
+
+        assert not LocalEndpoint(endpoint.name).exists()
+
+    def test_other_models_endpoints_are_untouched(self, trained_model):
+        """Only the endpoints serving this model come down"""
+        endpoint = trained_model.to_endpoint()
+        bystander = LocalEndpoint("someone-elses")
+        bystander._init_storage(input_name="other-model")
+        bystander.upsert_workbench_meta({"model_name": "other-model"})
+
+        trained_model.delete()
+
+        assert not LocalEndpoint(endpoint.name).exists()
+        assert LocalEndpoint("someone-elses").exists()
+
+    def test_orphaned_endpoint_reports_the_missing_model(self, trained_model):
+        """An endpoint orphaned some other way fails readably rather than on an open()"""
+        endpoint = trained_model.to_endpoint()
+        LocalArtifact.delete(trained_model)  # Skip the cascade to orphan the endpoint
+
+        with pytest.raises(FileNotFoundError, match="No model artifacts"):
+            endpoint.inference(pd.DataFrame({"mw": [300.0], "logp": [2.0]}))
 
 
 class TestCaptures:

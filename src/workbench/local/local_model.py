@@ -543,6 +543,14 @@ class LocalModel(LocalArtifact):
             aws_model.to_endpoint(name=endpoint_name)
         return aws_model
 
+    def _endpoints(self) -> list:
+        """Internal: The local endpoints serving this model"""
+        from workbench.local import storage
+        from workbench.local.local_endpoint import LocalEndpoint
+
+        serving = [LocalEndpoint(name) for name in storage.list_artifacts("endpoint")]
+        return [endpoint for endpoint in serving if endpoint.model_name == self.name]
+
     def _endpoint_name(self) -> str:
         """Internal: The name to deploy this model's AWS endpoint under.
 
@@ -552,13 +560,19 @@ class LocalModel(LocalArtifact):
         Returns:
             str: The endpoint name
         """
-        from workbench.local import storage
-        from workbench.local.local_endpoint import LocalEndpoint
+        serving = self._endpoints()
+        return serving[0].name if serving else self.name
 
-        for name in storage.list_artifacts("endpoint"):
-            if LocalEndpoint(name).workbench_meta().get("model_name") == self.name:
-                return name
-        return self.name
+    def delete(self):
+        """Delete this model and the endpoints serving it.
+
+        An endpoint is not an independent artifact -- it loads from the model's
+        directory and is meaningless once that is gone, so it comes down too. This is
+        the only cascade: deleting a FeatureSet leaves its models alone.
+        """
+        for endpoint in self._endpoints():
+            endpoint.delete()
+        super().delete()
 
     def details(self, **kwargs) -> dict:
         """LocalModel Details
