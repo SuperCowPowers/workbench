@@ -417,17 +417,17 @@ ml-dtypes==0.5.4
     # via
     #   -c ci/.uv-constraints.txt
     #   onnx
-mlflow==3.13.0
+mlflow==3.15.1
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
     #   sagemaker-train
-mlflow-skinny==3.13.0
+mlflow-skinny==3.15.1
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
     #   sagemaker-mlflow
-mlflow-tracing==3.13.0
+mlflow-tracing==3.15.1
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
@@ -853,7 +853,7 @@ sqlalchemy==2.0.50
     #   -c ci/.uv-constraints.txt
     #   alembic
     #   mlflow
-sqlparse==0.5.5
+sqlparse==0.6.0
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
