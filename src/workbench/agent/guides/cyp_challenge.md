@@ -206,10 +206,25 @@ from structure — descriptors, fingerprints, or chemprop's own graph encoding.
 Everything else in those tables is label metadata: useful for weighting, scoring, and
 ST-RAE, never as model input.
 
+**Ask the feature endpoint what it produced** — don't hand-roll a denylist over
+`fs.columns`. The endpoint that built the FeatureSet registers exactly the columns
+it emits, which is the feature list:
+
 ```python
-feature_list=["smiles"]          # chemprop
-feature_list=descriptor_columns  # xgboost/pytorch — from the 2D endpoint, never the raw table
+feature_list = ["smiles"]                                      # chemprop
+
+end = Endpoint("smiles-to-2d-3d-v1")                           # xgboost/pytorch
+feature_list = end.output_columns()                            # 387 columns for f1
 ```
+
+That returns only the descriptors, so labels, CI/std columns, ids, the
+`desc3d_*` bookkeeping columns, and the AWS FeatureStore internals
+(`write_time`, `event_time`, `api_invocation_time`, `is_deleted`) are all
+excluded by construction. Subtracting label columns from `fs.columns` by hand
+gets this wrong in both directions.
+
+Use the endpoint that matches the FeatureSet: `smiles-to-2d-3d-v1` for the `_f1`
+sets, `smiles-to-2d-3d-v2` for `_f2`.
 
 If a CYP model reports R² above ~0.95 on held-out data, assume leakage and check the
 feature list before believing it.
@@ -220,14 +235,19 @@ Four correlated targets with sparse, unequal coverage is the textbook
 multi-task case. `target_column` takes a list:
 
 ```python
+targets = [f"{iso}_pic50_direct_inhibition" for iso in ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]]
 model = fs.to_model(
     name="cyp-inhibition-chemprop-mt-reg",
     model_type=ModelType.UQ_REGRESSOR,
-    target_column=["cyp3a4_pic50", "cyp2c9_pic50", "cyp2d6_pic50", "cyp1a2_pic50"],
+    target_column=targets,
     feature_list=features,
     hyperparameters={"uq_version": "v1"},
 )
 ```
+
+Keep the full `_direct_inhibition` target names. `compute_regression_metrics`
+finds a credible interval by appending `_ci_lower` to the target name, so
+shortening the targets silently drops `st_rae` — the challenge's own metric.
 
 Missing targets are `NaN` per row — that is how sparsity is expressed; do not
 drop rows to make the matrix dense. All four isoforms are end products here
@@ -270,6 +290,42 @@ encode; the mechanism here is different.
 - On PXR, 3D ranked high in SHAP and *still* failed to transfer to the analog
   set. The verdict comes from the analog holdout, never from CV or feature
   importance.
+
+## Start from the built FeatureSets
+
+Five FeatureSets are already built from the challenge data and onboarded. Use
+them rather than rebuilding from `PublicData` — they carry the decisions below
+(credible intervals present, TDI labels de-leaked, challenge target naming) and
+rebuilding re-derives all of it, usually getting one wrong.
+
+| FeatureSet | rows | cols | what it is |
+|---|---|---|---|
+| `openadmet_cyp_f1` | 4,905 | 423 | Regression track, 2D + **v1** 3D |
+| `openadmet_cyp_f2` | 4,905 | 373 | Regression track, 2D + **v2** 3D (curated, xTB) |
+| `openadmet_cyp_tdi_f1` | 6,145 | 409 | TDI track, 2D + v1 3D |
+| `openadmet_cyp_tdi_f2` | 6,145 | 359 | TDI track, 2D + v2 3D |
+| `openadmet_cyp_veith` | 14,432 | 11 | Veith pretraining, SMILES + 5 targets, no descriptors |
+
+- **`f1` vs `f2` differ only in the 3D layer** — same rows, same 2D block, same
+  labels. That makes them a controlled A/B for whether the xTB electronic block
+  earns its place. Hold everything else constant when comparing them.
+- **The regression FeatureSets carry `_ci_lower`, `_ci_upper` and `_std` per
+  isoform.** That is what makes `st_rae` computable, and it is also the leakage
+  trap below — they are label metadata, never features.
+- **The TDI FeatureSets carry labels only**, no arm pIC50s: `is_tdi` is derived
+  from the shift between the direct and TDI arms, so carrying either arm beside
+  the label hands the model the answer. To re-derive or audit labels, go back to
+  `PublicData`.
+- **`openadmet_cyp_veith` has no descriptors and no credible intervals** — SMILES
+  plus five targets, so it is chemprop-only and cannot produce an `st_rae`. Its
+  censored inactives were dropped at build time, so CYP3A4 bottoms out at pIC50
+  4.20 and CYP1A2 at 4.10 while CYP2D6 reaches 2.05. It teaches the potent end and
+  says almost nothing about the low-activity regime ST-RAE is built around.
+- The challenge training table is already one row per compound with `NaN` where an
+  isoform was not measured, so it needs no `combine_multi_task_data`. That helper
+  is for assembling Veith-style per-isoform sources.
+
+Rebuild with `ml_pipelines/OpenADMET/cyp/cyp_feature_sets.py`.
 
 ## Data already on hand
 

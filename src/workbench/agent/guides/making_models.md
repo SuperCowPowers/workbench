@@ -74,6 +74,13 @@ model with no endpoint and no metrics.
   features; only a model with neither falls back to `"v0"`.
 - Check `fs.columns` (a property), or pull a DataFrame and read `df.dtypes`,
   before choosing a `feature_list`. Don't guess column names.
+- **For a FeatureSet built by a feature endpoint, ask the endpoint instead:**
+  `Endpoint("smiles-to-2d-v1").output_columns()` returns exactly the columns it
+  emits, which is the feature list. `fs.columns` also carries the labels, ids and
+  the AWS FeatureStore internals (`write_time`, `event_time`,
+  `api_invocation_time`, `is_deleted`), so subtracting the ones you recognize by
+  hand tends to keep something it shouldn't. `input_columns()` is the matching
+  question in the other direction.
 
 ## Weights, validation, and exclusions
 

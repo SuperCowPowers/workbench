@@ -91,6 +91,10 @@ Chemprop takes `feature_list=["smiles"]` and needs no featurization pass. Descri
 models (XGBoost, PyTorch) do, and **the rung depends on whether the features need
 xTB**, not on how many molecules there are.
 
+Whichever endpoint produced the features, `end.output_columns()` is the feature
+list — it returns exactly the columns that endpoint emits, so labels, ids and
+bookkeeping columns are excluded by construction.
+
 **2D and fingerprints: the endpoint, as a subprocess job.** Around 5,000 molecules
 takes ~10 minutes — too long to block a turn, too short to be worth Batch:
 
