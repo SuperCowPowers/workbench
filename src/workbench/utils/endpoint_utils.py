@@ -27,6 +27,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 import logging
+from datetime import datetime
 from typing import List, Union, Optional
 import pandas as pd
 
@@ -195,14 +196,28 @@ def input_columns_key(endpoint_name: str) -> str:
     return f"{ENDPOINT_PARAM_PREFIX}/{endpoint_name}/input_columns"
 
 
+def _model_modified(endpoint) -> Optional[datetime]:
+    """Modified time of the model behind ``endpoint``, or None if unavailable."""
+    try:
+        modified = Model(endpoint.get_input()).modified()
+        return modified if isinstance(modified, datetime) else None
+    except Exception:
+        return None
+
+
 def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[str]:
     """Cache-with-freshness lookup for an endpoint's registered column list.
 
     Used by both :meth:`Endpoint.output_columns` and :meth:`Endpoint.input_columns`.
 
     Reads ``key`` from ParameterStore. If it's missing, or the parameter's
-    ``LastModifiedDate`` is older than the endpoint's ``modified()`` time,
+    ``LastModifiedDate`` is older than the *model's* ``modified()`` time,
     invokes ``register_fn(endpoint)`` to re-derive and rewrite the cache.
+
+    Freshness anchors on the model, not the endpoint: SageMaker bumps an
+    endpoint's ``LastModifiedTime`` on every autoscaling event, so an endpoint
+    that scales to zero would look stale on every call — and re-deriving is a
+    live smoke inference.
 
     Args:
         endpoint: The Workbench Endpoint instance.
@@ -224,15 +239,12 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
         return register_fn(endpoint)
 
     param_modified = ps.last_modified(key)
-    try:
-        endpoint_modified = endpoint.modified()
-    except Exception:
-        endpoint_modified = None
+    model_modified = _model_modified(endpoint)
 
-    if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
+    if param_modified is not None and model_modified is not None and model_modified > param_modified:
         endpoint.log.info(
             f"Endpoint[{endpoint.name}]: cached {kind} are stale "
-            f"(endpoint modified {endpoint_modified} > param modified {param_modified}) — re-deriving."
+            f"(model modified {model_modified} > param modified {param_modified}) — re-deriving."
         )
         return register_fn(endpoint)
 

@@ -159,8 +159,8 @@ class Endpoint(EndpointCore):
 
         Cached at ``/workbench/endpoints/<name>/output_columns``; lazily
         populated by :func:`workbench.utils.endpoint_utils.register_output_columns`
-        on first call (smoke inference) and refreshed when the endpoint is
-        redeployed.
+        on first call (smoke inference) and refreshed when the backing model
+        changes.
         """
         from workbench.utils.endpoint_utils import (
             lookup_cached_columns,
@@ -180,7 +180,7 @@ class Endpoint(EndpointCore):
         Cached at ``/workbench/endpoints/<name>/input_columns``; lazily
         populated by :func:`workbench.utils.endpoint_utils.register_input_columns`
         on first call (reads ``model.features()``) and refreshed when the
-        endpoint is redeployed.
+        backing model changes.
         """
         from workbench.utils.endpoint_utils import (
             input_columns_key,
