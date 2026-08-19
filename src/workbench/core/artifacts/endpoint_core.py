@@ -561,7 +561,7 @@ class EndpointCore(AWSArtifact):
                     description = target_capture_name.replace("_", " ").title()
                     self._capture_inference_results(
                         target_capture_name,
-                        target_df,
+                        self._remap_multi_target_columns(target_df, target),
                         target,
                         model.model_type,
                         target_metrics,
@@ -703,13 +703,7 @@ class EndpointCore(AWSArtifact):
                 # Multi-target: remap per-target columns to standard names
                 capture_name = f"cv_{target}"
                 description = capture_name.replace("_", " ").title()
-                mt_df = target_df.copy()
-                if f"{target}_pred" in mt_df.columns:
-                    mt_df["prediction"] = mt_df[f"{target}_pred"]
-                if f"{target}_pred_std" in mt_df.columns:
-                    mt_df["prediction_std"] = mt_df[f"{target}_pred_std"]
-                if f"{target}_confidence" in mt_df.columns:
-                    mt_df["confidence"] = mt_df[f"{target}_confidence"]
+                mt_df = self._remap_multi_target_columns(target_df, target)
                 self._capture_inference_results(
                     capture_name,
                     mt_df,
@@ -1033,6 +1027,31 @@ class EndpointCore(AWSArtifact):
         row_hashes = pd.util.hash_pandas_object(df, index=False)
         combined = row_hashes.values.tobytes()
         return hashlib.md5(combined).hexdigest()[:hash_length]
+
+    @staticmethod
+    def _remap_multi_target_columns(df: pd.DataFrame, target: str) -> pd.DataFrame:
+        """Point the standard prediction columns at one target's outputs.
+
+        A multi-target model emits `{target}_pred` per target, while `prediction` carries
+        only the primary target. A per-target capture has to carry that target's own
+        values, or its stored predictions disagree with the metrics saved beside them.
+
+        Args:
+            df (pd.DataFrame): Prediction results carrying per-target columns
+            target (str): The target whose columns become the standard ones
+
+        Returns:
+            pd.DataFrame: Copy with prediction/prediction_std/confidence set from target
+        """
+        remapped = df.copy()
+        for standard, per_target in [
+            ("prediction", f"{target}_pred"),
+            ("prediction_std", f"{target}_pred_std"),
+            ("confidence", f"{target}_confidence"),
+        ]:
+            if per_target in remapped.columns:
+                remapped[standard] = remapped[per_target]
+        return remapped
 
     def _capture_inference_results(
         self,
