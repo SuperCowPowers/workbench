@@ -5987,8 +5987,8 @@ async core so callers get correct behavior from a single object.</p>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a>
 </span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">        Cached at ``/workbench/endpoints/&lt;name&gt;/output_columns``; lazily</span>
 </span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a><span class="sd">        populated by :func:`workbench.utils.endpoint_utils.register_output_columns`</span>
-</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">        on first call (smoke inference) and refreshed when the endpoint is</span>
-</span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">        redeployed.</span>
+</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">        on first call (smoke inference) and refreshed when the backing model</span>
+</span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">        changes.</span>
 </span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="sd">        """</span>
 </span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.endpoint_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 </span><span id="__span-0-166"><a id="__codelineno-0-166" name="__codelineno-0-166"></a>            <span class="n">lookup_cached_columns</span><span class="p">,</span>
@@ -6008,7 +6008,7 @@ async core so callers get correct behavior from a single object.</p>
 </span><span id="__span-0-180"><a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">        Cached at ``/workbench/endpoints/&lt;name&gt;/input_columns``; lazily</span>
 </span><span id="__span-0-181"><a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="sd">        populated by :func:`workbench.utils.endpoint_utils.register_input_columns`</span>
 </span><span id="__span-0-182"><a id="__codelineno-0-182" name="__codelineno-0-182"></a><span class="sd">        on first call (reads ``model.features()``) and refreshed when the</span>
-</span><span id="__span-0-183"><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">        endpoint is redeployed.</span>
+</span><span id="__span-0-183"><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">        backing model changes.</span>
 </span><span id="__span-0-184"><a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="sd">        """</span>
 </span><span id="__span-0-185"><a id="__codelineno-0-185" name="__codelineno-0-185"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.endpoint_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 </span><span id="__span-0-186"><a id="__codelineno-0-186" name="__codelineno-0-186"></a>            <span class="n">input_columns_key</span><span class="p">,</span>
@@ -6663,7 +6663,7 @@ predictor endpoint).</p>
 <p>Cached at <code>/workbench/endpoints/&lt;name&gt;/input_columns</code>; lazily
 populated by :func:<code>workbench.utils.endpoint_utils.register_input_columns</code>
 on first call (reads <code>model.features()</code>) and refreshed when the
-endpoint is redeployed.</p>
+backing model changes.</p>
 
 
             <details class="mkdocstrings-source">
@@ -6696,7 +6696,7 @@ endpoint is redeployed.</p>
 </span><span id="__span-0-180"><a id="__codelineno-0-180" name="__codelineno-0-180"></a><span class="sd">    Cached at ``/workbench/endpoints/&lt;name&gt;/input_columns``; lazily</span>
 </span><span id="__span-0-181"><a id="__codelineno-0-181" name="__codelineno-0-181"></a><span class="sd">    populated by :func:`workbench.utils.endpoint_utils.register_input_columns`</span>
 </span><span id="__span-0-182"><a id="__codelineno-0-182" name="__codelineno-0-182"></a><span class="sd">    on first call (reads ``model.features()``) and refreshed when the</span>
-</span><span id="__span-0-183"><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">    endpoint is redeployed.</span>
+</span><span id="__span-0-183"><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">    backing model changes.</span>
 </span><span id="__span-0-184"><a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="sd">    """</span>
 </span><span id="__span-0-185"><a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.endpoint_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 </span><span id="__span-0-186"><a id="__codelineno-0-186" name="__codelineno-0-186"></a>        <span class="n">input_columns_key</span><span class="p">,</span>
@@ -6827,8 +6827,8 @@ feature endpoints emit computed feature columns; predictor endpoints
 emit prediction / confidence / quantile columns.</p>
 <p>Cached at <code>/workbench/endpoints/&lt;name&gt;/output_columns</code>; lazily
 populated by :func:<code>workbench.utils.endpoint_utils.register_output_columns</code>
-on first call (smoke inference) and refreshed when the endpoint is
-redeployed.</p>
+on first call (smoke inference) and refreshed when the backing model
+changes.</p>
 
 
             <details class="mkdocstrings-source">
@@ -6860,8 +6860,8 @@ redeployed.</p>
 </span><span id="__span-0-159"><a id="__codelineno-0-159" name="__codelineno-0-159"></a>
 </span><span id="__span-0-160"><a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">    Cached at ``/workbench/endpoints/&lt;name&gt;/output_columns``; lazily</span>
 </span><span id="__span-0-161"><a id="__codelineno-0-161" name="__codelineno-0-161"></a><span class="sd">    populated by :func:`workbench.utils.endpoint_utils.register_output_columns`</span>
-</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    on first call (smoke inference) and refreshed when the endpoint is</span>
-</span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    redeployed.</span>
+</span><span id="__span-0-162"><a id="__codelineno-0-162" name="__codelineno-0-162"></a><span class="sd">    on first call (smoke inference) and refreshed when the backing model</span>
+</span><span id="__span-0-163"><a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    changes.</span>
 </span><span id="__span-0-164"><a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="sd">    """</span>
 </span><span id="__span-0-165"><a id="__codelineno-0-165" name="__codelineno-0-165"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.endpoint_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 </span><span id="__span-0-166"><a id="__codelineno-0-166" name="__codelineno-0-166"></a>        <span class="n">lookup_cached_columns</span><span class="p">,</span>
