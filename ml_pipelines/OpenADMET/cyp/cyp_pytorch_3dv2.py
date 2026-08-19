@@ -35,13 +35,19 @@ feats = [c for c in Endpoint(FEATURE_ENDPOINT).output_columns() if c in df.colum
 # challenge's hit-expansion test set. Shared by all four models.
 holdout_mask = analog_holdout_split(df, target_columns=TARGETS, n_hits=50, analogs_per_hit=10)
 holdout = df[holdout_mask]
-validation_ids = list(holdout["molecule_name"])
 print(f"{len(feats)} features, analog holdout: {len(holdout)} of {len(df)} rows held out of training")
 
 for iso in ISOFORMS:
     target = f"{iso}_pic50_direct_inhibition"
     name = f"cyp-{VARIANT}-reg-pytorch-{iso.removeprefix('cyp')}"
     tags = BASE_TAGS + [VARIANT, iso]
+
+    # Single-target frameworks cannot mask a NaN label, so rows without this isoform's
+    # measurement leave the training view entirely. Coverage is sparse: most molecules
+    # carry only one of the four isoforms.
+    exclude_ids = list(df.loc[df[target].isna(), "molecule_name"])
+    validation_ids = list(holdout.loc[holdout[target].notna(), "molecule_name"])
+    print(f"{iso}: {len(df) - len(exclude_ids)} labeled rows, {len(validation_ids)} held out")
 
     model = fs.to_model(
         name=name,
@@ -52,6 +58,7 @@ for iso in ISOFORMS:
         description=f"CYP {iso.upper()} PyTorch Tabular UQ on {VARIANT} features, analog holdout",
         tags=tags,
         validation_ids=validation_ids,
+        exclude_ids=exclude_ids,
     )
     model.set_owner("openadmet_cyp")
 
