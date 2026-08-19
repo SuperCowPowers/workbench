@@ -20,7 +20,19 @@
        "outputs": ["model:cyp-reg-chemprop-mt-3a4", "endpoint:cyp-reg-chemprop-mt-3a4",
                    "model:cyp-reg-chemprop-mt-2c9", "endpoint:cyp-reg-chemprop-mt-2c9",
                    "model:cyp-reg-chemprop-mt-2d6", "endpoint:cyp-reg-chemprop-mt-2d6",
-                   "model:cyp-reg-chemprop-mt-1a2", "endpoint:cyp-reg-chemprop-mt-1a2"]}
+                   "model:cyp-reg-chemprop-mt-1a2", "endpoint:cyp-reg-chemprop-mt-1a2"]},
+      {"script": "cyp_xgb_3dv2.py",
+       "inputs": ["fs:openadmet_cyp_f2", "endpoint:smiles-to-2d-3d-v2"],
+       "outputs": ["model:cyp-2d-3dv2-reg-xgb-3a4", "endpoint:cyp-2d-3dv2-reg-xgb-3a4",
+                   "model:cyp-2d-3dv2-reg-xgb-2c9", "endpoint:cyp-2d-3dv2-reg-xgb-2c9",
+                   "model:cyp-2d-3dv2-reg-xgb-2d6", "endpoint:cyp-2d-3dv2-reg-xgb-2d6",
+                   "model:cyp-2d-3dv2-reg-xgb-1a2", "endpoint:cyp-2d-3dv2-reg-xgb-1a2"]},
+      {"script": "cyp_pytorch_3dv2.py",
+       "inputs": ["fs:openadmet_cyp_f2", "endpoint:smiles-to-2d-3d-v2"],
+       "outputs": ["model:cyp-2d-3dv2-reg-pytorch-3a4", "endpoint:cyp-2d-3dv2-reg-pytorch-3a4",
+                   "model:cyp-2d-3dv2-reg-pytorch-2c9", "endpoint:cyp-2d-3dv2-reg-pytorch-2c9",
+                   "model:cyp-2d-3dv2-reg-pytorch-2d6", "endpoint:cyp-2d-3dv2-reg-pytorch-2d6",
+                   "model:cyp-2d-3dv2-reg-pytorch-1a2", "endpoint:cyp-2d-3dv2-reg-pytorch-1a2"]}
     ]
   }
 }
