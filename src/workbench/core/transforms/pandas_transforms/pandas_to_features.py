@@ -26,7 +26,7 @@ class PandasToFeatures(Transform):
         ```python
         to_features = PandasToFeatures(output_name)
         to_features.set_output_tags(["my", "awesome", "data"])
-        to_features.set_input(df, id_column="my_id")
+        to_features.set_input(df, id_column="my_id", input_name="my_data_source")
         to_features.transform()
         ```
     """
@@ -59,7 +59,14 @@ class PandasToFeatures(Transform):
         self.output_feature_set = None
         self.expected_rows = 0
 
-    def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None, one_hot_columns=None):
+    def set_input(
+        self,
+        input_df: pd.DataFrame,
+        id_column=None,
+        event_time_column=None,
+        one_hot_columns=None,
+        input_name: str = "DataFrame",
+    ):
         """Set the Input DataFrame for this Transform
 
         Args:
@@ -67,11 +74,15 @@ class PandasToFeatures(Transform):
             id_column (str, optional): The ID column (use "auto"/None for auto-generated IDs).
             event_time_column (str, optional): The name of the event time column (default: None).
             one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
+            input_name (str, optional): The artifact this DataFrame came from, recorded as the
+                                        FeatureSet's provenance (default: "DataFrame").
         """
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.output_df = input_df.copy()
         self.one_hot_columns = one_hot_columns or []
+        self.input_name = input_name
+        self.output_meta["workbench_input"] = input_name
 
         # Warn about known AWS Iceberg bug with event_time_column
         if event_time_column is not None:

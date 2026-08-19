@@ -15,25 +15,33 @@ class PandasToFeaturesChunked(Transform):
 
     Common Usage:
         ```python
-        to_features = PandasToFeaturesChunked(output_name, id_column="id"/None, event_time_column="date"/None)
+        to_features = PandasToFeaturesChunked(output_name, id_column="id", input_name="my_data_source")
         to_features.set_output_tags(["abalone", "public", "whatever"])
         cat_column_info = {"sex": ["M", "F", "I"]}
         to_features.set_categorical_info(cat_column_info)
         to_features.add_chunk(df)
         to_features.add_chunk(df)
         ...
-        to_features.finalize()
+        to_features.transform()
         ```
     """
 
-    def __init__(self, output_name: str, id_column=None, event_time_column=None):
-        """PandasToFeaturesChunked Initialization"""
+    def __init__(self, output_name: str, id_column=None, event_time_column=None, input_name: str = "DataFrame"):
+        """PandasToFeaturesChunked Initialization
+
+        Args:
+            output_name (str): The Name of the FeatureSet to create
+            id_column (str, optional): The name of the id column (default: None)
+            event_time_column (str, optional): The name of the event time column (default: None)
+            input_name (str): The Name of the artifact the chunks came from, recorded as the
+                              FeatureSet's provenance (default: "DataFrame")
+        """
 
         # Make sure the output_name is a valid name
         Artifact.is_name_valid(output_name)
 
         # Call superclass init
-        super().__init__("DataFrame", output_name)
+        super().__init__(input_name, output_name)
 
         # Set up all my instance attributes
         self.id_column = id_column
@@ -62,12 +70,16 @@ class PandasToFeaturesChunked(Transform):
         if self.first_chunk is None:
             self.log.info(f"Adding first chunk {chunk_df.shape}...")
             self.first_chunk = chunk_df
-            self.pandas_to_features.set_input(chunk_df, self.id_column, self.event_time_column)
+            self.pandas_to_features.set_input(
+                chunk_df, self.id_column, self.event_time_column, input_name=self.input_name
+            )
             self.pandas_to_features.pre_transform()
             self.pandas_to_features.transform_impl()
         else:
             self.log.info(f"Adding chunk {chunk_df.shape}...")
-            self.pandas_to_features.set_input(chunk_df, self.id_column, self.event_time_column)
+            self.pandas_to_features.set_input(
+                chunk_df, self.id_column, self.event_time_column, input_name=self.input_name
+            )
             self.pandas_to_features.transform_impl()
 
     def pre_transform(self, **kwargs):
@@ -108,4 +120,4 @@ if __name__ == "__main__":
     # Now loop through the chunks and add them to the FeatureSet
     for chunk in chunks:
         to_features.add_chunk(chunk)
-    to_features.finalize()
+    to_features.transform()

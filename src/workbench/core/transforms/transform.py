@@ -141,11 +141,3 @@ class Transform(ABC):
     def output_type(self) -> TransformOutput:
         """What Output Type does this Transform Produce"""
         return self.output_type
-
-    def set_input_name(self, input_name: str):
-        """Set the Input Name (Name) for this Transform"""
-        self.input_name = input_name
-
-    def set_output_name(self, output_name: str):
-        """Set the Output Name (Name) for this Transform"""
-        self.output_name = output_name
