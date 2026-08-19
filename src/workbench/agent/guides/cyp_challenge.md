@@ -257,7 +257,7 @@ weights:
 ```python
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
-task_weights = compute_inverse_count_task_weights(df[targets].to_numpy())
+task_weights = compute_inverse_count_task_weights(df, targets)
 hyperparameters = {"task_weights": task_weights, "uq_version": "v1"}
 ```
 

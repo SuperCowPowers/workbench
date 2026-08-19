@@ -53,16 +53,14 @@ def _install_fake_feature_set(monkeypatch, frames: dict):
 # ----------------------------------------------------------------------------
 def test_inverse_count_weights_basic():
     """Weights are inversely proportional to non-NaN counts and mean-normalize to 1."""
-    targets = np.array(
-        [
-            [1.0, np.nan, np.nan],
-            [2.0, 5.0, np.nan],
-            [np.nan, 6.0, np.nan],
-            [3.0, 7.0, 9.0],
-            [np.nan, np.nan, 10.0],
-        ]
+    df = pd.DataFrame(
+        {
+            "a": [1.0, 2.0, np.nan, 3.0, np.nan],
+            "b": [np.nan, 5.0, 6.0, 7.0, np.nan],
+            "c": [np.nan, np.nan, np.nan, 9.0, 10.0],
+        }
     )  # per-task non-NaN counts: [3, 3, 2]
-    w = compute_inverse_count_task_weights(targets)
+    w = compute_inverse_count_task_weights(df, ["a", "b", "c"])
 
     assert all(isinstance(x, float) for x in w)
     assert len(w) == 3
@@ -72,16 +70,25 @@ def test_inverse_count_weights_basic():
     assert w[2] > w[0]
 
 
+def test_inverse_count_weights_follows_column_order():
+    """Weights line up with target_columns, not with the DataFrame's column order."""
+    df = pd.DataFrame({"a": [1.0, 2.0, 3.0], "c": [np.nan, np.nan, 9.0]})
+    a_first = compute_inverse_count_task_weights(df, ["a", "c"])
+    c_first = compute_inverse_count_task_weights(df, ["c", "a"])
+    assert a_first == list(reversed(c_first))
+
+
 def test_inverse_count_weights_zero_count_raises():
     """A task with zero non-NaN rows is an error (cannot normalize)."""
-    targets = np.array([[1.0, np.nan], [2.0, np.nan]])  # second task all-NaN
+    df = pd.DataFrame({"a": [1.0, 2.0], "b": [np.nan, np.nan]})
     with pytest.raises(ValueError, match="at least one non-NaN"):
-        compute_inverse_count_task_weights(targets)
+        compute_inverse_count_task_weights(df, ["a", "b"])
 
 
-def test_inverse_count_weights_requires_2d():
-    with pytest.raises(ValueError, match="must be 2D"):
-        compute_inverse_count_task_weights(np.array([1.0, 2.0, 3.0]))
+def test_inverse_count_weights_missing_column_raises():
+    df = pd.DataFrame({"a": [1.0, 2.0]})
+    with pytest.raises(ValueError, match="not found in DataFrame"):
+        compute_inverse_count_task_weights(df, ["a", "nope"])
 
 
 # ----------------------------------------------------------------------------

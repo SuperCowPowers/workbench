@@ -9,7 +9,7 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 
-def compute_inverse_count_task_weights(targets: np.ndarray) -> list[float]:
+def compute_inverse_count_task_weights(df: pd.DataFrame, target_columns: list[str]) -> list[float]:
     """Per-task loss weights inversely proportional to non-NaN row counts, mean-normalized to 1.
 
     Use to equalize each task's gradient contribution when target columns have
@@ -22,19 +22,23 @@ def compute_inverse_count_task_weights(targets: np.ndarray) -> list[float]:
     [1.0, 0.3] with the primary first.
 
     Args:
-        targets: (n_rows, n_tasks) float array of target values; NaN means missing.
+        df: DataFrame holding the target columns; NaN means missing.
+        target_columns: Target column names, in the same order as the model's
+            ``target_column`` list so the weights line up positionally.
 
     Returns:
-        n_tasks weights, mean-normalized to 1. Plain floats, so the list drops
-        straight into a model's JSON-serialized ``task_weights`` hyperparameter.
+        One weight per target column, mean-normalized to 1. Plain floats, so the
+        list drops straight into a model's JSON-serialized ``task_weights``
+        hyperparameter.
 
     Raises:
-        ValueError: If any task has zero non-NaN rows.
+        ValueError: If a target column is missing or has zero non-NaN rows.
     """
-    if targets.ndim != 2:
-        raise ValueError(f"targets must be 2D (n_rows, n_tasks), got shape {targets.shape}")
+    missing = [c for c in target_columns if c not in df.columns]
+    if missing:
+        raise ValueError(f"Target column(s) not found in DataFrame: {missing}")
 
-    counts = np.array([np.sum(~np.isnan(targets[:, t])) for t in range(targets.shape[1])], dtype=np.float32)
+    counts = df[target_columns].notna().sum().to_numpy(dtype=np.float32)
     if not (counts > 0).all():
         raise ValueError(f"All tasks must have at least one non-NaN row; got counts {counts.tolist()}")
 
@@ -495,16 +499,14 @@ if __name__ == "__main__":
     # 1. compute_inverse_count_task_weights
     # =====================================================================
     print("\n=== compute_inverse_count_task_weights ===")
-    targets_arr = np.array(
-        [
-            [1.0, np.nan, np.nan],
-            [2.0, 5.0, np.nan],
-            [np.nan, 6.0, np.nan],
-            [3.0, 7.0, 9.0],
-            [np.nan, np.nan, 10.0],
-        ]
+    targets_df = pd.DataFrame(
+        {
+            "task_a": [1.0, 2.0, np.nan, 3.0, np.nan],
+            "task_b": [np.nan, 5.0, 6.0, 7.0, np.nan],
+            "task_c": [np.nan, np.nan, np.nan, 9.0, 10.0],
+        }
     )
-    weights = compute_inverse_count_task_weights(targets_arr)
+    weights = compute_inverse_count_task_weights(targets_df, ["task_a", "task_b", "task_c"])
     print("  per-task non-NaN counts: [3, 3, 2]")
     print(f"  inverse-count weights (mean-normalized to 1): {weights}")
 

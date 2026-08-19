@@ -48,7 +48,7 @@ holdout_mask = analog_holdout_split(df, target_columns=TARGETS, n_hits=50, analo
 holdout = df[holdout_mask]
 validation_ids = list(holdout["molecule_name"])
 
-task_weights = compute_inverse_count_task_weights(df[TARGETS].to_numpy())
+task_weights = compute_inverse_count_task_weights(df, TARGETS)
 print(f"Task weights: {dict(zip(ISOFORMS, [round(float(w), 3) for w in task_weights]))}")
 print(f"Analog holdout: {len(holdout)} of {len(df)} rows held out of training")
 
