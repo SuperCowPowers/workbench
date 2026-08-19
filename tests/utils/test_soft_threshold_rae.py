@@ -42,12 +42,30 @@ class TestSoftThresholdRAE:
         score = soft_threshold_rae(y_true, y_true + 0.05, y_true - 0.1, y_true + 0.1)
         assert score == pytest.approx(0.0)
 
-    def test_mean_predictor_scores_one(self):
-        """The point of the soft baseline: RAE of 1.0 means 'no better than the mean'."""
+    def test_soft_baseline_makes_the_mean_predictor_score_one(self):
+        """What soft_baseline=True buys: 1.0 means 'no better than the mean'."""
         y_true = np.array([4.0, 5.0, 6.0, 7.0])
         mean_pred = np.full_like(y_true, y_true.mean())
-        score = soft_threshold_rae(y_true, mean_pred, y_true - 0.1, y_true + 0.1)
+        score = soft_threshold_rae(y_true, mean_pred, y_true - 0.1, y_true + 0.1, soft_baseline=True)
         assert score == pytest.approx(1.0)
+
+    def test_default_matches_the_published_denominator(self):
+        """The default reproduces OpenADMET's rae(): a plain sum|y - mean(y)| denominator."""
+        y_true = np.array([4.0, 5.0, 6.0, 7.0])
+        y_pred = y_true + 0.5
+        ci_lower, ci_upper = y_true - 0.1, y_true + 0.1
+
+        score = soft_threshold_rae(y_true, y_pred, ci_lower, ci_upper)
+        expected = soft_threshold_error(y_pred, ci_lower, ci_upper).sum() / np.abs(y_true - y_true.mean()).sum()
+        assert score == pytest.approx(expected)
+
+    def test_soft_baseline_inflates_the_score(self):
+        """The two conventions are not interconvertible; True always reads higher."""
+        y_true = np.array([4.0, 5.0, 6.0, 7.0])
+        y_pred = y_true + 0.5
+        published = soft_threshold_rae(y_true, y_pred, y_true - 0.1, y_true + 0.1)
+        soft = soft_threshold_rae(y_true, y_pred, y_true - 0.1, y_true + 0.1, soft_baseline=True)
+        assert soft > published
 
     def test_beating_the_mean_scores_below_one(self):
         y_true = np.array([4.0, 5.0, 6.0, 7.0])
@@ -95,7 +113,7 @@ class TestMacroSoftThresholdRAE:
         )
 
     def test_per_endpoint_and_macro_rows(self):
-        scores = macro_soft_threshold_rae(self._frame(), ["cyp3a4_pic50", "cyp2d6_pic50"])
+        scores = macro_soft_threshold_rae(self._frame(), ["cyp3a4_pic50", "cyp2d6_pic50"], soft_baseline=True)
         by_endpoint = scores.set_index("endpoint")["st_rae"]
 
         assert by_endpoint["cyp3a4_pic50"] == pytest.approx(0.0)  # perfect

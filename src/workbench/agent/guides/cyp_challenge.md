@@ -94,14 +94,19 @@ down is their RAE convention:
 np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true - np.mean(y_true)))
 ```
 
-The denominator is the plain `sum|y - ȳ|`, not a soft-thresholded baseline. Our
-`soft_threshold_rae` defaults to `soft_baseline=True`, which scores the
-mean-predictor baseline through the same soft threshold so 1.0 keeps its "no
-better than the mean" reading; that runs about 17% higher than the plain form.
-**Pass `soft_baseline=False` when the goal is a number comparable to the
-leaderboard**, and keep the default for internal model selection. The choice
-cannot change model *rankings* within an endpoint — the denominator does not
-depend on the predictions — so only the absolute value is affected.
+The denominator is the plain `sum|y - ȳ|`, not a soft-thresholded baseline, and
+`soft_threshold_rae` defaults to matching it (`soft_baseline=False`). Use the
+default; there is no reason to score against a convention the challenge does not
+use.
+
+`soft_baseline=True` scores the mean-predictor baseline through the same soft
+threshold, which keeps the ordinary-RAE reading of "1.0 means no better than the
+mean". It inflates the score substantially — measured on our own CYP predictions
+the published form is 0.49-0.68 of it, varying by isoform — **so the two are not
+interconvertible and must never be quoted side by side.** Within one isoform the
+choice cannot reorder models, since the denominator ignores the predictions, but
+the macro average can reorder because it averages ratios whose denominators shift
+by different amounts.
 
 **Leaderboard scores are bootstrapped**: 1,000 resamples at a fixed seed, with
 the spread reported alongside each score. Combined with the live board scoring

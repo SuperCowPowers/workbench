@@ -103,6 +103,39 @@ model = fs.to_model(
   truth on *deployed* performance, run `endpoint.inference()` on those same ids —
   it exercises the real serving path end to end.
 
+**Which rows to hold out matters more than how.** A random split scores the model
+on the same kind of data it trained on, which is rarely the question. Match the
+split to how the eval set actually arises: new chemotypes -> a scaffold or Butina
+split (`split_strategy`); close analogs of known actives -> `analog_holdout_split`,
+which takes the top hits per target and holds out their nearest neighbors while
+keeping the hits in training.
+
+```python
+from workbench.training.splits import analog_holdout_split
+```
+
+The gap is not subtle. On a hit-expansion test set a random split of the same size
+made a baseline look 2x more accurate than the analog holdout did. Pass the mask's
+ids as `validation_ids` so the held-out rows never train, and quote that number
+rather than a cross-fold one.
+
+## Multi-task models: two traps
+
+**`prediction` is the first target, not "the prediction".** A multi-task endpoint
+returns a `{target}_pred` column per target and also aliases `prediction` to
+`target[0]`. Scoring a non-primary target through `prediction` silently measures
+the first target's output against another target's labels, which reads as a model
+far worse than a mean predictor. Use `model.get_inference_metrics(run)` — already
+computed per target — or read `{target}_pred` explicitly from a live inference.
+
+**Label metadata becomes features.** A guessed feature list drops ids, targets and
+non-numeric columns and keeps everything else. Anything numeric sitting beside a
+target — credible-interval bounds, a standard deviation, another task's label —
+therefore becomes a feature, and a model handed the bounds bracketing its own
+label scores near-perfectly on held-out data while being worth nothing. The only
+warning is a "Guessing at the feature list" log line. Pass `feature_list`
+explicitly, and treat an implausibly high R2 as a leak until proven otherwise.
+
 ## Cost
 
 Not a concern for normal work — training images are right-sized automatically and

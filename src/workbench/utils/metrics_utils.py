@@ -295,23 +295,24 @@ def soft_threshold_rae(
     y_pred: np.ndarray,
     ci_lower: np.ndarray,
     ci_upper: np.ndarray,
-    soft_baseline: bool = True,
+    soft_baseline: bool = False,
 ) -> float:
     """Soft-Threshold Relative Absolute Error (ST-RAE). Lower is better.
 
     Relative absolute error where per-sample error is `soft_threshold_error`: the
     distance outside the label's credible interval, zero inside. The denominator is
-    the same error for the mean-predictor baseline, so 1.0 means "no better than
-    predicting the mean" as in ordinary RAE.
+    the mean-predictor baseline's error, matching the `rae` published in OpenADMET's
+    challenge tutorial, which originated the metric.
 
     Args:
         y_true: Ground-truth values (the curve-fit point estimates)
         y_pred: Predicted values
         ci_lower: Lower bound of each label's credible interval
         ci_upper: Upper bound of each label's credible interval
-        soft_baseline: Score the baseline with the same soft threshold. When False the
-            denominator is the plain `sum|y_true - mean(y_true)|`, which drops the
-            "1.0 = mean predictor" reading and deflates the score.
+        soft_baseline: Score the baseline through the same soft threshold, so 1.0 keeps
+            the ordinary-RAE reading of "no better than predicting the mean". Inflates
+            the score against the published form by a factor that varies per target
+            (0.49-0.68 on CYP), so the two are not interconvertible.
 
     Returns:
         ST-RAE, or NaN when the baseline error is zero (no signal to normalize against).
@@ -337,7 +338,7 @@ def macro_soft_threshold_rae(
     prediction_suffix: str = "_prediction",
     ci_lower_suffix: str = "_ci_lower",
     ci_upper_suffix: str = "_ci_upper",
-    soft_baseline: bool = True,
+    soft_baseline: bool = False,
 ) -> pd.DataFrame:
     """Macro-averaged ST-RAE over several endpoints, plus each endpoint's own score.
 

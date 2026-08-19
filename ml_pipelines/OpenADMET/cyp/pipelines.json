@@ -16,6 +16,8 @@
                    "fs:openadmet_cyp_veith"]},
       {"script": "cyp_chemprop_mt_all.py", "inputs": ["fs:openadmet_cyp_f1"],
        "outputs": ["model:cyp-reg-chemprop-mt", "endpoint:cyp-reg-chemprop-mt"]},
+      {"script": "cyp_chemprop_mt_100.py", "inputs": ["fs:openadmet_cyp_f1"],
+       "outputs": ["model:cyp-reg-chemprop-mt-100", "endpoint:cyp-reg-chemprop-mt-100"]},
       {"script": "cyp_xgb_3dv2.py",
        "inputs": ["fs:openadmet_cyp_f2", "endpoint:smiles-to-2d-3d-v2"],
        "outputs": ["model:cyp-2d-3dv2-reg-xgb-3a4", "endpoint:cyp-2d-3dv2-reg-xgb-3a4",

@@ -70,6 +70,33 @@ isn't there, say so. For an arbitrary set of models that don't share a contest,
 `rank_models(models, inference_run)` from `workbench.utils.model_comparison` does
 the same ranking on the fly.
 
+## Is a difference real? Bootstrap it
+
+A ranked table has no error bars, so adjacent rows invite being read as a result
+when they are noise. Before calling one model better than another, resample:
+
+```python
+from workbench.utils.metrics_utils import bootstrap_compare, bootstrap_metric
+```
+
+`bootstrap_metric` gives one model's score plus its spread. `bootstrap_compare`
+takes two and returns the paired difference — both models scored on the *same*
+resampled rows, so per-row difficulty cancels out.
+
+**Use the paired form to compare.** Comparing each model's own interval is the
+intuitive move and it is much less sensitive: two models can have heavily
+overlapping marginal intervals while one wins on nearly every resample. Index both
+prediction frames by the id column so rows pair up.
+
+```python
+result = bootstrap_compare(preds_a, preds_b, lambda d: score(d))
+# {"delta": -0.074, "ci_lower": -0.133, "ci_upper": -0.013, "p_a_better": 0.99}
+```
+
+A `ci_lower`-to-`ci_upper` range spanning zero means the comparison did not
+separate the models — report that as a tie rather than quoting the rank. Set
+`lower_is_better=False` for R2, MCC and other higher-is-better scores.
+
 ## Is this model in a contest?
 
 Use the utility rather than scanning the report store by hand:
