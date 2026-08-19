@@ -256,10 +256,15 @@ weights:
 
 ```python
 from workbench.utils.multi_task import compute_inverse_count_task_weights
+
+task_weights = compute_inverse_count_task_weights(df[targets].to_numpy())
+hyperparameters = {"task_weights": task_weights, "uq_version": "v1"}
 ```
 
-Pass the result as `task_weights` in `hyperparameters`. Build the wide table
-from per-isoform sources with `combine_multi_task_data` in the same module.
+The weights come back as plain floats because `hyperparameters` is JSON-serialized
+on its way into the training script — a numpy scalar there raises `TypeError: Object
+of type float32 is not JSON serializable`. Build the wide table from per-isoform
+sources with `combine_multi_task_data` in the same module.
 
 Chemprop is a heavy train — put the whole chain in a script on Batch rather
 than blocking the REPL (`batch`, `making_models`). The script must build the

@@ -64,9 +64,9 @@ def test_inverse_count_weights_basic():
     )  # per-task non-NaN counts: [3, 3, 2]
     w = compute_inverse_count_task_weights(targets)
 
-    assert w.dtype == np.float32
-    assert w.shape == (3,)
-    assert w.mean() == pytest.approx(1.0, rel=1e-6)
+    assert all(isinstance(x, float) for x in w)
+    assert len(w) == 3
+    assert np.mean(w) == pytest.approx(1.0, rel=1e-6)
     # Equal-count tasks get equal weight; the rarer task is up-weighted.
     assert w[0] == pytest.approx(w[1])
     assert w[2] > w[0]

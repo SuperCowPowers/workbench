@@ -9,7 +9,7 @@ import pandas as pd
 log = logging.getLogger("workbench")
 
 
-def compute_inverse_count_task_weights(targets: np.ndarray) -> np.ndarray:
+def compute_inverse_count_task_weights(targets: np.ndarray) -> list[float]:
     """Per-task loss weights inversely proportional to non-NaN row counts, mean-normalized to 1.
 
     Use to equalize each task's gradient contribution when target columns have
@@ -25,7 +25,8 @@ def compute_inverse_count_task_weights(targets: np.ndarray) -> np.ndarray:
         targets: (n_rows, n_tasks) float array of target values; NaN means missing.
 
     Returns:
-        (n_tasks,) float32 array of weights, mean-normalized to 1.
+        n_tasks weights, mean-normalized to 1. Plain floats, so the list drops
+        straight into a model's JSON-serialized ``task_weights`` hyperparameter.
 
     Raises:
         ValueError: If any task has zero non-NaN rows.
@@ -38,7 +39,7 @@ def compute_inverse_count_task_weights(targets: np.ndarray) -> np.ndarray:
         raise ValueError(f"All tasks must have at least one non-NaN row; got counts {counts.tolist()}")
 
     inv = 1.0 / counts
-    return (inv / inv.mean()).astype(np.float32)
+    return (inv / inv.mean()).tolist()
 
 
 def combine_multi_task_data(
@@ -505,7 +506,7 @@ if __name__ == "__main__":
     )
     weights = compute_inverse_count_task_weights(targets_arr)
     print("  per-task non-NaN counts: [3, 3, 2]")
-    print(f"  inverse-count weights (mean-normalized to 1): {weights.tolist()}")
+    print(f"  inverse-count weights (mean-normalized to 1): {weights}")
 
     # =====================================================================
     # 2. combine_multi_task_data — id-based merge with partial overlap
