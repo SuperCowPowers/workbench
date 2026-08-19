@@ -14,6 +14,8 @@
        "outputs": ["fs:openadmet_cyp_f1", "fs:openadmet_cyp_tdi_f1",
                    "fs:openadmet_cyp_f2", "fs:openadmet_cyp_tdi_f2",
                    "fs:openadmet_cyp_veith"]},
+      {"script": "cyp_chemprop_mt_all.py", "inputs": ["fs:openadmet_cyp_f1"],
+       "outputs": ["model:cyp-reg-chemprop-mt", "endpoint:cyp-reg-chemprop-mt"]},
       {"script": "cyp_chemprop_mt.py", "inputs": ["fs:openadmet_cyp_f1"],
        "outputs": ["model:cyp-reg-chemprop-mt-3a4", "endpoint:cyp-reg-chemprop-mt-3a4",
                    "model:cyp-reg-chemprop-mt-2c9", "endpoint:cyp-reg-chemprop-mt-2c9",
