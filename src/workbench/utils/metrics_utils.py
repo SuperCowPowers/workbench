@@ -1,7 +1,7 @@
 """Metrics utilities for computing model performance from predictions."""
 
 import logging
-from typing import List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -384,6 +384,106 @@ def macro_soft_threshold_rae(
     scores = pd.DataFrame(rows)
     macro = {"endpoint": "MA", "st_rae": scores["st_rae"].mean(), "support": int(scores["support"].sum())}
     return pd.concat([scores, pd.DataFrame([macro])], ignore_index=True)
+
+
+def bootstrap_metric(
+    predictions_df: pd.DataFrame,
+    metric_fn: Callable[[pd.DataFrame], float],
+    n_resamples: int = 1000,
+    seed: int = 0,
+) -> Dict[str, float]:
+    """Point estimate and bootstrap spread for any metric over a predictions frame.
+
+    Resamples rows with replacement and recomputes the metric, which turns a single
+    score into a score plus the uncertainty attached to it. A difference between two
+    models smaller than this spread is not a result.
+
+    Prefer `bootstrap_compare` when the question is which of two models is better:
+    two overlapping intervals from this function do not mean the models are
+    indistinguishable, since it cannot cancel out per-row difficulty.
+
+    Args:
+        predictions_df: Predictions frame, one row per scored unit
+        metric_fn: Takes a frame shaped like `predictions_df`, returns a scalar score
+        n_resamples: Bootstrap resamples to draw
+        seed: Fixed so repeated calls on the same data agree
+
+    Returns:
+        Dict with "value" (the point estimate), "std", "ci_lower", "ci_upper" (2.5th
+        and 97.5th percentiles), and "n" (rows scored).
+    """
+    n = len(predictions_df)
+    rng = np.random.default_rng(seed)
+    draws = np.array(
+        [metric_fn(predictions_df.iloc[rng.choice(n, n, replace=True)]) for _ in range(n_resamples)], dtype=float
+    )
+    lower, upper = np.nanpercentile(draws, [2.5, 97.5])
+    return {
+        "value": float(metric_fn(predictions_df)),
+        "std": float(np.nanstd(draws)),
+        "ci_lower": float(lower),
+        "ci_upper": float(upper),
+        "n": n,
+    }
+
+
+def bootstrap_compare(
+    predictions_a: pd.DataFrame,
+    predictions_b: pd.DataFrame,
+    metric_fn: Callable[[pd.DataFrame], float],
+    n_resamples: int = 1000,
+    seed: int = 0,
+    lower_is_better: bool = True,
+) -> Dict[str, float]:
+    """Paired bootstrap comparing two models scored on the same rows.
+
+    Both frames are resampled on the *same* drawn rows, so per-row difficulty cancels
+    and only the difference between the models is left. That is far more sensitive
+    than comparing each model's own interval: two models can have heavily overlapping
+    marginal intervals while one beats the other on nearly every resample.
+
+    Frames are paired on their index, so index both by the same identifier (e.g. the
+    id column). Rows missing from either frame are dropped.
+
+    Args:
+        predictions_a: Predictions from the first model, indexed by row id
+        predictions_b: Predictions from the second model, indexed by row id
+        metric_fn: Takes a frame shaped like either input, returns a scalar score
+        n_resamples: Bootstrap resamples to draw
+        seed: Fixed so repeated calls on the same data agree
+        lower_is_better: True for error metrics (ST-RAE, MAE), False for R2, MCC and
+            other higher-is-better scores. Sets which sign of `delta` counts as a win.
+
+    Returns:
+        Dict with "delta" (a minus b), "ci_lower"/"ci_upper" for that difference,
+        "p_a_better" (fraction of resamples where a wins), the two point estimates
+        "value_a"/"value_b", and "n" (paired rows). A "ci_lower" to "ci_upper" range
+        spanning zero means the comparison did not separate the models.
+    """
+    shared = predictions_a.index.intersection(predictions_b.index)
+    dropped = (len(predictions_a) - len(shared)) + (len(predictions_b) - len(shared))
+    if dropped:
+        log.warning(f"bootstrap_compare pairing on {len(shared)} shared rows, dropped {dropped} unpaired")
+    a, b = predictions_a.loc[shared], predictions_b.loc[shared]
+
+    n = len(shared)
+    rng = np.random.default_rng(seed)
+    deltas = np.empty(n_resamples, dtype=float)
+    for i in range(n_resamples):
+        rows = rng.choice(n, n, replace=True)
+        deltas[i] = metric_fn(a.iloc[rows]) - metric_fn(b.iloc[rows])
+
+    lower, upper = np.nanpercentile(deltas, [2.5, 97.5])
+    wins = (deltas < 0) if lower_is_better else (deltas > 0)
+    return {
+        "delta": float(metric_fn(a) - metric_fn(b)),
+        "ci_lower": float(lower),
+        "ci_upper": float(upper),
+        "p_a_better": float(np.nanmean(wins)),
+        "value_a": float(metric_fn(a)),
+        "value_b": float(metric_fn(b)),
+        "n": n,
+    }
 
 
 def resolve_primary_target(targets: Union[str, List[str], None]) -> Optional[str]:

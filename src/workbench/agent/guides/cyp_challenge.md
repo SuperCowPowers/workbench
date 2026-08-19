@@ -108,6 +108,22 @@ the spread reported alongside each score. Combined with the live board scoring
 only half the test set, a small gap between two entries is inside the noise —
 read the spread before treating a rank as a result.
 
+**Our analog holdout has a noise floor of about 0.03 macro ST-RAE**, measured by
+bootstrapping the 529 held-out compounds. A delta smaller than that is not a
+result. Two models are compared with a *paired* bootstrap, not by eyeballing each
+one's interval — the marginal intervals overlap heavily while the paired test
+still separates them, because pairing cancels per-compound difficulty:
+
+```python
+from workbench.utils.metrics_utils import bootstrap_compare, bootstrap_metric
+```
+
+Index both prediction frames by the id column and pass a `metric_fn` that scores a
+frame. Measured example: chemprop-MT 0.702 vs XGBoost 0.776 have overlapping
+marginal intervals, but paired gives delta -0.074, 95% CI [-0.133, -0.013],
+P(chemprop better) 99%. Quote the CI and the paired delta, never a bare score
+difference.
+
 MCC on the TDI track is chosen for imbalanced labels — accuracy will look good
 and mean nothing. Quote MCC, and check the positive-class rate before claiming
 a classifier works.
