@@ -5520,6 +5520,7 @@
 <li><strong>The TDI track.</strong> No time-dependent-inhibition entry yet.</li>
 </ul>
 <h2 id="reproducing-this">Reproducing This</h2>
+<p><strong>Source code:</strong> <a href="https://github.com/SuperCowPowers/workbench/tree/main/ml_pipelines/OpenADMET/cyp"><code>ml_pipelines/OpenADMET/cyp</code></a> — every script referenced here, plus the retired variants in <code>storage/</code> with the numbers that retired them.</p>
 <p>Built with <a href="https://github.com/SuperCowPowers/workbench">ADMET Workbench</a>. The full pipeline is four scripts:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># FeatureSets from the challenge release (2D + 3D features; Chemprop uses SMILES only)</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_feature_sets.py
@@ -5537,6 +5538,7 @@
 tutorial repository, so the gate before uploading is the same code the platform runs.</p>
 <h2 id="references">References</h2>
 <ul>
+<li><a href="https://github.com/SuperCowPowers/workbench/tree/main/ml_pipelines/OpenADMET/cyp">Our CYP pipeline source</a> — FeatureSet builds, models, and submission scripts</li>
 <li><a href="https://huggingface.co/spaces/openadmet/cyp-challenge">OpenADMET CYP Inhibition Blind Challenge</a></li>
 <li><a href="https://github.com/OpenADMET/CYP-Challenge-Tutorial">CYP Challenge Tutorial</a> — baseline notebooks, scoring harness, submission validators</li>
 <li><a href="../pxr_weekend_experiments/">A Weekend on the OpenADMET PXR Challenge</a> — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from</li>
