@@ -76,6 +76,8 @@ We are reporting this rather than quietly hoping it doesn't bite. Fixing it is t
 
 ## Reproducing This
 
+**Source code:** [`ml_pipelines/OpenADMET/cyp`](https://github.com/SuperCowPowers/workbench/tree/main/ml_pipelines/OpenADMET/cyp) — every script referenced here, plus the retired variants in `storage/` with the numbers that retired them.
+
 Built with [ADMET Workbench](https://github.com/SuperCowPowers/workbench). The full pipeline is four scripts:
 
 ```bash
@@ -97,6 +99,7 @@ tutorial repository, so the gate before uploading is the same code the platform 
 
 ## References
 
+- [Our CYP pipeline source](https://github.com/SuperCowPowers/workbench/tree/main/ml_pipelines/OpenADMET/cyp) — FeatureSet builds, models, and submission scripts
 - [OpenADMET CYP Inhibition Blind Challenge](https://huggingface.co/spaces/openadmet/cyp-challenge)
 - [CYP Challenge Tutorial](https://github.com/OpenADMET/CYP-Challenge-Tutorial) — baseline notebooks, scoring harness, submission validators
 - [A Weekend on the OpenADMET PXR Challenge](pxr_weekend_experiments.md) — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from
