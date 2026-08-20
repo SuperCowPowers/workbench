@@ -72,8 +72,6 @@ def validate_activity_submission(
         if extra:
             errors.append(f"Found {len(extra)} unexpected molecule(s): {extra[:20]}")
     elif len(activity_predictions) != ACTIVITY_DATASET_SIZE:
-        errors.append(
-            f"Submission contains {len(activity_predictions)} rows, expected {ACTIVITY_DATASET_SIZE}."
-        )
+        errors.append(f"Submission contains {len(activity_predictions)} rows, expected {ACTIVITY_DATASET_SIZE}.")
 
     return len(errors) == 0, errors

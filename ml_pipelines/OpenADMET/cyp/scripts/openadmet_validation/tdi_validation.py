@@ -86,9 +86,7 @@ def validate_tdi_submission(
         invalid_mask = ~normalized.isin(_VALID_BOOL_STRINGS)
         n_invalid = int(invalid_mask.sum())
         if n_invalid:
-            errors.append(
-                f"Column '{col}' contains {n_invalid} value(s) that are not valid booleans (True/False)."
-            )
+            errors.append(f"Column '{col}' contains {n_invalid} value(s) that are not valid booleans (True/False).")
 
     submitted_ids = _as_set(tdi_predictions["Molecule_Name"])
     if expected_ids is not None:
@@ -100,8 +98,6 @@ def validate_tdi_submission(
         if extra:
             errors.append(f"Found {len(extra)} unexpected molecule(s): {extra[:20]}")
     elif len(tdi_predictions) != TDI_DATASET_SIZE:
-        errors.append(
-            f"Submission contains {len(tdi_predictions)} rows, expected {TDI_DATASET_SIZE}."
-        )
+        errors.append(f"Submission contains {len(tdi_predictions)} rows, expected {TDI_DATASET_SIZE}.")
 
     return len(errors) == 0, errors
