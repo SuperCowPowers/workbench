@@ -14,7 +14,7 @@ SMILES are written back exactly as the challenge issued them rather than as our
 standardized form, so the file round-trips their own identifiers.
 
 Usage:
-    python cyp_submit.py                          # default model, writes ./outputs/
+    python cyp_submit.py                          # default model, writes scripts/outputs/
     python cyp_submit.py --model NAME --out DIR
 """
 
@@ -68,7 +68,12 @@ def build_submission(model_name: str, out_dir: Path) -> Path:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="cyp-reg-chemprop-mt-100", help="Endpoint to predict with")
-    parser.add_argument("--out", default="outputs", type=Path, help="Directory for the submission file")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=Path(__file__).parent / "outputs",
+        help="Directory for the submission file (default: outputs/ beside this script)",
+    )
     args = parser.parse_args()
 
     written = build_submission(args.model, args.out)
