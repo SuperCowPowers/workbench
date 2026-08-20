@@ -5,10 +5,10 @@ names here are the challenge's own (`CYP3A4_pIC50_direct_inhibition`, case-sensi
 not the snake_cased names used everywhere else in this pipeline, so the mapping happens
 in one place: MODEL_TO_SUBMISSION below.
 
-The checks mirror OpenADMET's `validation/activity_validation.py` -- exact row count,
-no missing or duplicate ids, finite floats -- because a rejected upload costs a 12-hour
-submission window. Run their validator too before uploading; this is a first pass, not
-a replacement.
+The written file is checked with OpenADMET's own validator, vendored alongside this
+script in `openadmet_validation/`, so the gate here is the same code the upload runs
+rather than a reimplementation of it. A rejected upload costs a 12-hour submission
+window.
 
 SMILES are written back exactly as the challenge issued them rather than as our
 standardized form, so the file round-trips their own identifiers.
@@ -22,6 +22,7 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
+from openadmet_validation import validate_activity_submission
 from workbench.api import Endpoint, PublicData
 
 ISOFORMS = ["CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4"]
@@ -53,45 +54,15 @@ def build_submission(model_name: str, out_dir: Path) -> Path:
     sub["SMILES"] = sub["Molecule_Name"].map(dict(zip(blind["molecule_name"], blind["smiles"])))
     sub = sub[SUBMISSION_COLUMNS]
 
-    validate(sub, set(blind["molecule_name"]))
-
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{model_name}_activity_submission.csv"
     sub.to_csv(path, index=False)
+
+    ok, errors = validate_activity_submission(path, expected_ids={str(m) for m in blind["molecule_name"]})
+    if not ok:
+        raise ValueError(f"{path} failed OpenADMET's validator:\n  " + "\n  ".join(errors))
+    print(f"Passed OpenADMET's validator: {path}")
     return path
-
-
-def validate(sub: pd.DataFrame, expected_ids: set) -> None:
-    """Raise on anything OpenADMET's validator would reject.
-
-    Args:
-        sub (pd.DataFrame): The assembled submission frame
-        expected_ids (set): The blinded set's Molecule_Name values
-
-    Raises:
-        ValueError: On row count, id, or value problems
-    """
-    problems = []
-    if len(sub) != N_TEST:
-        problems.append(f"{len(sub)} rows, expected {N_TEST}")
-    if list(sub.columns) != SUBMISSION_COLUMNS:
-        problems.append(f"columns are {list(sub.columns)}, expected {SUBMISSION_COLUMNS}")
-    if sub["Molecule_Name"].duplicated().any():
-        problems.append(f"{int(sub['Molecule_Name'].duplicated().sum())} duplicate Molecule_Name")
-
-    submitted = set(sub["Molecule_Name"])
-    if submitted != expected_ids:
-        problems.append(f"id mismatch: {len(expected_ids - submitted)} missing, {len(submitted - expected_ids)} extra")
-
-    for col in MODEL_TO_SUBMISSION.values():
-        values = pd.to_numeric(sub[col], errors="coerce")
-        if not values.notna().all():
-            problems.append(f"{col}: {int(values.isna().sum())} non-numeric or missing")
-        elif not values.between(-1e6, 1e6).all():
-            problems.append(f"{col}: non-finite values")
-
-    if problems:
-        raise ValueError("Submission failed validation:\n  " + "\n  ".join(problems))
 
 
 if __name__ == "__main__":
