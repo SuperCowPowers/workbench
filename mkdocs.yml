@@ -65,6 +65,7 @@ nav:
     - Molecular Standardization: blogs/molecular_standardization.md
     - 3D Molecular Descriptors: blogs/3d_descriptors.md
     - A Weekend on the PXR Challenge: blogs/pxr_weekend_experiments.md
+    - The CYP Challenge: blogs/cyp_challenge.md
     - Feature Endpoints: blogs/feature_endpoints.md
   - Core Classes: 
     - OverView: core_classes/overview.md
