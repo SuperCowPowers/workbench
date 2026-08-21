@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aws-domain-and-certificate-instructions" class="md-skip">
+        <a href="#domain-and-ssl-certificate-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -4356,15 +4356,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#new-domain" class="md-nav__link">
+  <a href="#register-the-domain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        New Domain
+        Register the Domain
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="New Domain">
+    <nav class="md-nav" aria-label="Register the Domain">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4379,10 +4379,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#register-the-domain" class="md-nav__link">
+  <a href="#registering-in-route-53" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Register the Domain
+        Registering in Route 53
       
     </span>
   </a>
@@ -4395,10 +4395,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#request-a-ssl-certificate-from-acm" class="md-nav__link">
+  <a href="#request-a-certificate-from-acm" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request a SSL Certificate from ACM
+        Request a Certificate from ACM
       
     </span>
   </a>
@@ -4406,22 +4406,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-cname-records-to-route-53" class="md-nav__link">
+  <a href="#add-the-validation-cname-records" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adding CNAME Records to Route 53
+        Add the Validation CNAME Records
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Adding CNAME Records to Route 53">
+    <nav class="md-nav" aria-label="Add the Validation CNAME Records">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#finding-cname-record-names-and-values" class="md-nav__link">
+  <a href="#find-the-cname-names-and-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Finding CNAME Record Names and Values
+        Find the CNAME Names and Values
       
     </span>
   </a>
@@ -4429,10 +4429,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#adding-cname-records-to-domain" class="md-nav__link">
+  <a href="#add-the-records-in-route-53" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adding CName Records to Domain
+        Add the Records in Route 53
       
     </span>
   </a>
@@ -4456,69 +4456,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#retrieving-the-certificate-arn" class="md-nav__link">
+  <a href="#copy-the-certificate-arn-into-your-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Retrieving the Certificate ARN
+        Copy the Certificate ARN into Your Config
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Retrieving the Certificate ARN">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#update-route-53-to-point-to-new-load-balancer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Update Route 53 to Point to New Load Balancer
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Update Route 53 to Point to New Load Balancer">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#updating-a-record-in-route53" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Updating A Record in Route53
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#new-a-records" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        New A Record(s)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#change-a-record" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Change A Record
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4530,40 +4474,6 @@
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="AWS Resources">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#reference-materials" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reference Materials
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Reference Materials">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#finding-the-load-balancer-internal-domain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Finding the Load Balancer Internal Domain
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -5393,15 +5303,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#new-domain" class="md-nav__link">
+  <a href="#register-the-domain" class="md-nav__link">
     <span class="md-ellipsis">
       
-        New Domain
+        Register the Domain
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="New Domain">
+    <nav class="md-nav" aria-label="Register the Domain">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5416,10 +5326,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#register-the-domain" class="md-nav__link">
+  <a href="#registering-in-route-53" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Register the Domain
+        Registering in Route 53
       
     </span>
   </a>
@@ -5432,10 +5342,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#request-a-ssl-certificate-from-acm" class="md-nav__link">
+  <a href="#request-a-certificate-from-acm" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Request a SSL Certificate from ACM
+        Request a Certificate from ACM
       
     </span>
   </a>
@@ -5443,22 +5353,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#adding-cname-records-to-route-53" class="md-nav__link">
+  <a href="#add-the-validation-cname-records" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adding CNAME Records to Route 53
+        Add the Validation CNAME Records
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Adding CNAME Records to Route 53">
+    <nav class="md-nav" aria-label="Add the Validation CNAME Records">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#finding-cname-record-names-and-values" class="md-nav__link">
+  <a href="#find-the-cname-names-and-values" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Finding CNAME Record Names and Values
+        Find the CNAME Names and Values
       
     </span>
   </a>
@@ -5466,10 +5376,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#adding-cname-records-to-domain" class="md-nav__link">
+  <a href="#add-the-records-in-route-53" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Adding CName Records to Domain
+        Add the Records in Route 53
       
     </span>
   </a>
@@ -5493,69 +5403,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#retrieving-the-certificate-arn" class="md-nav__link">
+  <a href="#copy-the-certificate-arn-into-your-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Retrieving the Certificate ARN
+        Copy the Certificate ARN into Your Config
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Retrieving the Certificate ARN">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#update-route-53-to-point-to-new-load-balancer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Update Route 53 to Point to New Load Balancer
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Update Route 53 to Point to New Load Balancer">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#updating-a-record-in-route53" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Updating A Record in Route53
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#new-a-records" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        New A Record(s)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#change-a-record" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Change A Record
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -5567,40 +5421,6 @@
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="AWS Resources">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#reference-materials" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reference Materials
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Reference Materials">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#finding-the-load-balancer-internal-domain" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Finding the Load Balancer Internal Domain
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -5621,268 +5441,138 @@
 
 
 
-<h1 id="aws-domain-and-certificate-instructions">AWS Domain and Certificate Instructions</h1>
+<h1 id="domain-and-ssl-certificate-setup">Domain and SSL Certificate Setup</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need AWS Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 </div>
-<p>This page tries to give helpful guidance when setting up a new domain and SSL Certificate in your AWS Account.</p>
-<h2 id="new-domain">New Domain</h2>
-<p>You'll want the Workbench Dashboard to have a domain for your companies internal use. Customers will typically use a domain like <code>&lt;company_name&gt;-ml-dashboard.com</code> but you are free to choose any domain you'd like.</p>
+<p>The Workbench Dashboard serves over HTTPS, so it needs a domain and an SSL certificate. Both must be in place <strong>before</strong> you deploy the <a href="../dashboard_stack/">Dashboard Stack</a> — the stack reads the certificate ARN from your Workbench config.</p>
+<p>The steps are:</p>
+<ol>
+<li>Register a domain in Route 53</li>
+<li>Request a public certificate from ACM</li>
+<li>Add the ACM validation CNAME records to your hosted zone</li>
+<li>Copy the issued certificate ARN into your Workbench config</li>
+</ol>
+<h2 id="register-the-domain">Register the Domain</h2>
+<p>Customers typically use a domain like <code>&lt;company_name&gt;-ml-dashboard.com</code>, but you're free to choose any domain you'd like.</p>
 <div class="admonition warning">
 <p class="admonition-title">Domains are tied to AWS Accounts</p>
-<p>When you create a new domain in AWS Route 53, that domain is tied to that AWS Account. You can do a cross account setup for domains but it's a bit more tricky. We recommend that each account where Workbench gets deployed owns the domain for that Dashboard.</p>
+<p>A domain registered in Route 53 belongs to that AWS account. Cross-account domain setups are possible but tricky. We recommend that each account where Workbench is deployed owns the domain for its Dashboard.</p>
 </div>
 <h3 id="multiple-aws-accounts">Multiple AWS Accounts</h3>
-<p>Many customers will have a dev/stage/prod set of AWS accounts, if that the case then the best practice is to make a domain specific to each account. So for instance:</p>
+<p>If you have a dev/stage/prod set of AWS accounts, give each account its own domain:</p>
 <ul>
-<li>The AWS Dev Account gets: <code>&lt;company_name&gt;-ml-dashboard-dev.com</code> </li>
-<li>The AWS Prod Account gets:  <code>&lt;company_name&gt;-ml-dashboard-prod.com</code>.</li>
+<li>The AWS Dev Account gets: <code>&lt;company_name&gt;-ml-dashboard-dev.com</code></li>
+<li>The AWS Prod Account gets: <code>&lt;company_name&gt;-ml-dashboard-prod.com</code></li>
 </ul>
-<p>This means that when you go to that Dashboard it's super obvious which environment your on.</p>
-<h3 id="register-the-domain">Register the Domain</h3>
+<p>When you're looking at a Dashboard, it's then obvious which environment you're on.</p>
+<h3 id="registering-in-route-53">Registering in Route 53</h3>
 <ul>
-<li>
-<p><strong>Open Route 53 Console</strong> <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></p>
-</li>
-<li>
-<p><strong>Register your New Domain</strong></p>
-<ul>
-<li>Click on <strong>Registered domains</strong> in the left navigation pane.</li>
-<li>Click on <strong>Register Domain</strong>.</li>
-<li>Enter your desired domain name and check for availability.</li>
-<li>Follow the prompts to complete the domain registration process.</li>
-<li>After registration, your domain will be listed under <strong>Registered domains</strong>.</li>
+<li><strong>Open the <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></strong></li>
+<li>Click <strong>Registered domains</strong> in the left navigation pane</li>
+<li>Click <strong>Register Domain</strong></li>
+<li>Enter your desired domain name and check availability</li>
+<li>Follow the prompts to complete registration</li>
 </ul>
-</li>
-</ul>
-<h2 id="request-a-ssl-certificate-from-acm">Request a SSL Certificate from ACM</h2>
+<p>After registration, your domain will be listed under <strong>Registered domains</strong>.</p>
+<h2 id="request-a-certificate-from-acm">Request a Certificate from ACM</h2>
+<div class="admonition note">
+<p class="admonition-title">Certificates are per-account</p>
+<p>An ACM-issued public certificate can't be exported or shared across accounts. If you're standing up a Dashboard in a second account, request a new certificate there — two accounts can hold valid certificates for the same domain at the same time.</p>
+</div>
 <ol>
 <li>
-<p><strong>Open ACM Console:</strong> <a href="https://console.aws.amazon.com/acm/home">AWS Certificate Manager (ACM) Console</a></p>
+<p><strong>Open the <a href="https://console.aws.amazon.com/acm/home">ACM Console</a></strong></p>
 </li>
 <li>
 <p><strong>Request a Certificate:</strong></p>
 <ul>
-<li>Click on <strong>Request a certificate</strong>.</li>
-<li>Select <strong>Request a public certificate</strong> and click <strong>Next</strong>.</li>
+<li>Click <strong>Request a certificate</strong></li>
+<li>Select <strong>Request a public certificate</strong> and click <strong>Next</strong></li>
 </ul>
 </li>
 <li>
 <p><strong>Add Domain Names:</strong></p>
 <ul>
-<li>Enter the domain name you registered (e.g., <code>yourdomain.com</code>).</li>
-<li>Add any additional subdomains if needed (e.g., <code>www.yourdomain.com</code>).</li>
+<li>Enter the domain you registered (e.g. <code>yourdomain.com</code>)</li>
+<li>Add any additional subdomains if needed (e.g. <code>www.yourdomain.com</code>)</li>
 </ul>
 </li>
 <li>
 <p><strong>Validation Method:</strong></p>
 <ul>
-<li>Choose <strong>DNS validation</strong> (recommended).</li>
-<li>ACM will provide CNAME records that you need to add to your Route 53 hosted zone.</li>
-</ul>
-</li>
-<li>
-<p><strong>Add Tags (Optional):</strong></p>
-<ul>
-<li>Add any tags if you want to organize your resources.</li>
+<li>Choose <strong>DNS validation</strong> (recommended)</li>
+<li>ACM will provide CNAME records to add to your Route 53 hosted zone</li>
 </ul>
 </li>
 <li>
 <p><strong>Review and Request:</strong></p>
 <ul>
-<li>Review your request and click <strong>Confirm and request</strong>.</li>
+<li>Review your request and click <strong>Confirm and request</strong></li>
 </ul>
 </li>
 </ol>
-<h2 id="adding-cname-records-to-route-53">Adding CNAME Records to Route 53</h2>
-<p>To complete the domain validation process for your SSL/TLS certificate, you need to add the CNAME records provided by AWS Certificate Manager (ACM) to your Route 53 hosted zone. This step ensures that you own the domain and allows ACM to issue the certificate.</p>
-<h3 id="finding-cname-record-names-and-values">Finding CNAME Record Names and Values</h3>
-<p>You can find the CNAME record names and values in the AWS Certificate Manager (ACM) console:</p>
+<h2 id="add-the-validation-cname-records">Add the Validation CNAME Records</h2>
+<p>ACM issues the certificate once it can see a CNAME record proving you own the domain. You'll add one record per domain name on the certificate.</p>
+<h3 id="find-the-cname-names-and-values">Find the CNAME Names and Values</h3>
 <ol>
-<li>
-<p><strong>Open ACM Console:</strong> <a href="https://console.aws.amazon.com/acm/home">AWS Certificate Manager (ACM) Console</a></p>
-</li>
-<li>
-<p><strong>Select Your Certificate:</strong></p>
-<ul>
-<li>Click on the certificate that is in the <strong>Pending Validation</strong> state.</li>
-</ul>
-</li>
-<li>
-<p><strong>View Domains Section:</strong></p>
-<ul>
-<li>Under the <strong>Domains</strong> section, you will see the CNAME record names and values that you need to add to your Route 53 hosted zone.</li>
-</ul>
-</li>
+<li><strong>Open the <a href="https://console.aws.amazon.com/acm/home">ACM Console</a></strong></li>
+<li>Click the certificate that's in the <strong>Pending Validation</strong> state</li>
+<li>Under the <strong>Domains</strong> section you'll see the CNAME record names and values</li>
 </ol>
-<h3 id="adding-cname-records-to-domain">Adding CName Records to Domain</h3>
+<h3 id="add-the-records-in-route-53">Add the Records in Route 53</h3>
 <ol>
 <li>
-<p><strong>Open Route 53 Console:</strong> <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></p>
+<p><strong>Open the <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></strong></p>
 </li>
 <li>
-<p><strong>Select Your Hosted Zone:</strong></p>
-<ul>
-<li>Find and select the hosted zone for your domain (e.g., <code>yourdomain.com</code>).</li>
-<li>Click on <strong>Create record</strong>.</li>
-</ul>
+<p>Select the hosted zone for your domain (e.g. <code>yourdomain.com</code>) and click <strong>Create record</strong></p>
 </li>
 <li>
-<p><strong>Add the First CNAME Record:</strong></p>
+<p>For each CNAME record ACM listed:</p>
 <ul>
-<li>For the <strong>Record name</strong>, enter the name provided by ACM (e.g., <code>_3e8623442477e9eeec.your-domain.com</code>). <strong>Note:</strong> they might already have <code>your-domain.com</code> next to this box, if so don't repeat it :)</li>
-<li>For the <strong>Record type</strong>, select <code>CNAME</code>.</li>
-<li>For the <strong>Value</strong>, enter the value provided by ACM (e.g., <code>_0908c89646d92.sdgjtdhdhz.acm-validations.aws.</code>) (include the trailing dot).</li>
-<li>Leave the default settings for TTL.</li>
-<li>Click on <strong>Create records</strong>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Add the Second CNAME Record:</strong></p>
-<ul>
-<li>Repeat the process for the second CNAME record.</li>
-<li>For the <strong>Record name</strong>, enter the second name provided by ACM (e.g., <code>_75cd9364c643caa.www.your-domain.com</code>).</li>
-<li>For the <strong>Record type</strong>, select <code>CNAME</code>.</li>
-<li>For the <strong>Value</strong>, enter the second value provided by ACM (e.g., <code>_f72f8cff4fb20f4.sdgjhdhz.acm-validations.aws.</code>)  (include the trailing dot).</li>
-<li>Leave the default settings for TTL.</li>
-<li>Click on <strong>Create records</strong>.</li>
+<li><strong>Record name</strong>: the name from ACM (e.g. <code>_3e8623442477e9eeec.your-domain.com</code>). <strong>Note:</strong> the console may already show <code>your-domain.com</code> next to the box — if so, don't repeat it :)</li>
+<li><strong>Record type</strong>: <code>CNAME</code></li>
+<li><strong>Value</strong>: the value from ACM (e.g. <code>_0908c89646d92.sdgjtdhdhz.acm-validations.aws.</code>) — include the trailing dot</li>
+<li>Leave the default TTL</li>
+<li>Click <strong>Create records</strong></li>
 </ul>
 </li>
 </ol>
 <div class="admonition tip">
 <p class="admonition-title">DNS Propagation and Cert Validation</p>
-<p>After adding the CNAME records, these DNS records will propagate through the DNS system and ACM will automatically detect the validation records and validate the domain. This process can take a few minutes or up to an hour.</p>
+<p>Once the CNAME records propagate, ACM detects them and validates the domain automatically. This takes a few minutes, occasionally up to an hour.</p>
 </div>
 <h3 id="certificate-states">Certificate States</h3>
-<p>After requesting a certificate, it will go through the following states:</p>
+<p>A certificate moves through these states:</p>
 <ul>
-<li>
-<p><strong>Pending Validation</strong>: The initial state after you request a certificate and before you complete the validation process. ACM is waiting for you to prove domain ownership by adding the CNAME records.</p>
-</li>
-<li>
-<p><strong>Issued</strong>: This state indicates that the certificate has been successfully validated and issued. You can now use this certificate with your AWS resources.</p>
-</li>
-<li>
-<p><strong>Validation Timed Out</strong>: If you do not complete the validation process within a specified period (usually 72 hours), the certificate request times out and enters this state.</p>
-</li>
-<li>
-<p><strong>Revoked</strong>: This state indicates that the certificate has been revoked and is no longer valid.</p>
-</li>
-<li>
-<p><strong>Failed</strong>: If the validation process fails for any reason, the certificate enters this state.</p>
-</li>
-<li>
-<p><strong>Inactive</strong>: This state indicates that the certificate is not currently in use.</p>
-</li>
+<li><strong>Pending Validation</strong>: ACM is waiting for the CNAME records that prove domain ownership</li>
+<li><strong>Issued</strong>: validated and ready to use</li>
+<li><strong>Validation Timed Out</strong>: validation wasn't completed within 72 hours</li>
+<li><strong>Revoked</strong>: the certificate has been revoked and is no longer valid</li>
+<li><strong>Failed</strong>: validation failed</li>
+<li><strong>Inactive</strong>: the certificate isn't currently in use</li>
 </ul>
-<p>The certificate status should obviously be in the <strong>Issued</strong> state, if not please contact Workbench Support Team.</p>
-<h2 id="retrieving-the-certificate-arn">Retrieving the Certificate ARN</h2>
+<p>The certificate needs to be <strong>Issued</strong> before you deploy the Dashboard Stack. If it's stuck in another state, contact the Workbench Support Team.</p>
+<h2 id="copy-the-certificate-arn-into-your-config">Copy the Certificate ARN into Your Config</h2>
 <ol>
-<li>
-<p><strong>Open ACM Console:</strong></p>
-<ul>
-<li>Go back to the <a href="https://console.aws.amazon.com/acm/home">AWS Certificate Manager (ACM) Console</a>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Check the Status:</strong></p>
-<ul>
-<li>Once the CNAME records are added, ACM will automatically validate the domain.</li>
-<li>Refresh the ACM console to see the updated status.</li>
-<li>The status will change to "Issued" once validation is complete.</li>
-</ul>
-</li>
-<li>
-<p><strong>Copy the Certificate ARN:</strong></p>
-<ul>
-<li>Click on your issued certificate.</li>
-<li>Copy the <strong>Amazon Resource Name (ARN)</strong> from the certificate details.</li>
-</ul>
-</li>
+<li>In the <a href="https://console.aws.amazon.com/acm/home">ACM Console</a>, click your issued certificate</li>
+<li>Copy the <strong>Amazon Resource Name (ARN)</strong> from the certificate details</li>
+<li>Add it to your Workbench config file:</li>
 </ol>
-<p>You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, LoadBalancer, CloudFront, etc. Specifically for the Workbench-Dashboard Stack you will need to put this into your Workbench Config file when you deploy/update the stack.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>"WORKBENCH_ROLE": "Workbench-ExecutionRole",
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>"WORKBENCH_CERTIFICATE_ARN": "arn:aws:acm:&lt;region&gt;:&lt;account&gt;:certificate/123-987-456-123-456789012",
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">"WORKBENCH_ROLE"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Workbench-ExecutionRole"</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">"WORKBENCH_CERTIFICATE_ARN"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:acm:&lt;region&gt;:&lt;account&gt;:certificate/123-987-456-123-456789012"</span><span class="p">,</span>
 </span></code></pre></div>
-<h3 id="update-route-53-to-point-to-new-load-balancer">Update Route 53 to Point to New Load Balancer</h3>
-<p>If you deploy a new stack (new load balancer), you'll have to set up DNS 'A' records to point to that new load balancer.</p>
-<h4 id="updating-a-record-in-route53">Updating A Record in Route53</h4>
-<ul>
-<li>Go to <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></li>
-<li>Click <strong>Hosted zones</strong> (on left panel)</li>
-</ul>
-<h4 id="new-a-records">New A Record(s)</h4>
-<ul>
-<li>Create Record (orange button on right)</li>
-<li>Leave <code>subdomain</code> blank (for first A record)</li>
-<li>Click the <strong>'Alias'</strong> button (important)</li>
-<li>
-<p>Routes traffic to </p>
-<ul>
-<li>Alias to Application and Classic Load Balanacer</li>
-<li>AWS Region</li>
-<li>Chooser Box (find LB domain)</li>
-</ul>
-</li>
-<li>
-<p>If you have another subdomain like <code>www.blah.com</code> then just go through the above steps again.</p>
-</li>
-</ul>
-<p><strong>Note:</strong> The LB domain should looks something like <code>dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code></p>
-<h4 id="change-a-record">Change A Record</h4>
-<ul>
-<li>Click (or add) <strong>A</strong> records to point to your load balancer internal domain.</li>
-<li>Leave most of default options</li>
-<li>For <strong>Route Traffic To</strong><ul>
-<li>Alias to Application and Classic Load Balancer</li>
-<li>AWS Region</li>
-<li>Chooser Box (find LB domain)</li>
-</ul>
-</li>
-</ul>
-<p><strong>Note:</strong> The LB domain should looks something like <code>dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code></p>
+<p>You're now ready to deploy the <a href="../dashboard_stack/">Dashboard Stack</a>. After the stack comes up you'll point a Route 53 <strong>A</strong> record at the new load balancer — those steps are on the Dashboard Stack page.</p>
 <h2 id="aws-resources">AWS Resources</h2>
 <ul>
-<li><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html">AWS Adding or Changing DNS Records</a></li>
 <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html">AWS Certificate Manager (ACM) Documentation</a></li>
 <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html">Requesting a Public Certificate</a></li>
 <li><a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html">Validating Domain Ownership</a></li>
 <li><a href="https://docs.aws.amazon.com/route53/">AWS Route 53 Documentation</a></li>
-<li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">AWS API Gateway Documentation</a></li>
+<li><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html">AWS Adding or Changing DNS Records</a></li>
 </ul>
-<h3 id="reference-materials">Reference Materials</h3>
-<h4 id="finding-the-load-balancer-internal-domain">Finding the Load Balancer Internal Domain</h4>
-<p><strong>Note:</strong> This is only for <strong>NEW</strong> A records. When you update an existing A Record, it should already 'find' this for you and present it as an option.</p>
-<p>To find the internal domain of your load balancer in AWS:</p>
-<ol>
-<li>
-<p>Go to the AWS Console:</p>
-<ul>
-<li>Navigate to <a href="https://console.aws.amazon.com/route53/">EC2 Console</a> (yes, Load Balancers are under EC2).</li>
-</ul>
-</li>
-<li>
-<p>Find the Load Balancer:</p>
-<ul>
-<li>Under Load Balancing, click on Load Balancers.</li>
-<li>Look for the load balancer associated with your stack.</li>
-</ul>
-</li>
-<li>
-<p>Check the DNS Name:</p>
-<ul>
-<li>Select the load balancer.</li>
-<li>In the Description tab, look for the DNS Name field. This is the internal domain you’re looking for (something like: Workbe-Workb-xyzabc-123456.us-west-2.elb.amazonaws.com).</li>
-</ul>
-</li>
-<li>
-<p>Use It for Your A Record:</p>
-<ul>
-<li>Copy this DNS name and create the new A record in Route 53 or your DNS provider.</li>
-</ul>
-</li>
-</ol>
 
 
 
