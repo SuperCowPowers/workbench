@@ -8,6 +8,18 @@ Deploying the Dashboard Stack is reasonably straight forward, it's the same appr
 
 Please review the [Stack Details](#stack-details) section to understand all the AWS components that are included and utilized in the Workbench Dashboard Stack.
 
+## Prerequisites
+The Dashboard serves over HTTPS, so a domain and SSL certificate need to be in place first. See [Domain and SSL Certificate Setup](domain_cert_setup.md) and confirm both before you deploy:
+
+- Your domain is registered in Route 53 for **this** AWS account
+- Your ACM certificate is in the **Issued** state
+- `WORKBENCH_CERTIFICATE_ARN` is set in your Workbench config file
+
+```json
+"WORKBENCH_ROLE": "Workbench-ExecutionRole",
+"WORKBENCH_CERTIFICATE_ARN": "arn:aws:acm:<region>:<account>:certificate/123-987-456-123-456789012",
+```
+
 ## Deploying the Dashboard Stack
 
 !!! note "AWS Stuff"
@@ -20,6 +32,24 @@ Please review the [Stack Details](#stack-details) section to understand all the 
   cdk bootstrap
   cdk deploy
   ```
+
+## Point Your Domain at the Load Balancer
+The stack creates a new load balancer, so the last step is a Route 53 **A** record that routes your domain to it.
+
+- Go to the [Route 53 Console](https://console.aws.amazon.com/route53/)
+- Click **Hosted zones** (left panel) and select your domain
+- Click **Create record** (or click an existing **A** record to update it)
+- Leave **subdomain** blank for the top-level record
+- Click the **Alias** toggle (important)
+- For **Route traffic to**:
+    - *Alias to Application and Classic Load Balancer*
+    - Select the AWS Region
+    - Use the chooser box to find your load balancer
+
+Repeat for any additional subdomain on your certificate (e.g. `www.your-domain.com`).
+
+!!! tip "Finding the Load Balancer"
+    The chooser box usually finds it for you. If you need to look it up directly, load balancers live under the [EC2 Console](https://console.aws.amazon.com/ec2/) → **Load Balancing** → **Load Balancers**. The **DNS name** field is what you want, something like `dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com`.
 
 ## Stack Details
 !!! question inline end "AWS Questions?"
