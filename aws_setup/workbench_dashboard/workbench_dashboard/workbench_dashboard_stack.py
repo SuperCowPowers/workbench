@@ -8,6 +8,7 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_iam as iam,
     aws_elasticache as elasticache,
+    aws_elasticloadbalancingv2 as elbv2,
     aws_logs as logs,
 )
 from aws_cdk.aws_certificatemanager import Certificate
@@ -71,6 +72,12 @@ class WorkbenchDashboardStack(Stack):
         # Setup CloudWatch logs
         log_group = logs.LogGroup(self, "WorkbenchLogGroup")
 
+        # Were we given a subnet selection? (filter by ID so route tables resolve from the VPC lookup)
+        # This selection drives the Redis subnet group, the load balancer, and the Fargate tasks.
+        subnet_selection = None
+        if props.existing_subnet_ids:
+            subnet_selection = ec2.SubnetSelection(subnet_filters=[ec2.SubnetFilter.by_ids(props.existing_subnet_ids)])
+
         # Setup Security Group for Redis
         redis_security_group = ec2.SecurityGroup(self, "RedisSecurityGroup", vpc=cluster.vpc)
 
@@ -90,7 +97,7 @@ class WorkbenchDashboardStack(Stack):
             self,
             "RedisSubnetGroup",
             description="Subnet group for Redis",
-            subnet_ids=[subnet.subnet_id for subnet in cluster.vpc.private_subnets],
+            subnet_ids=props.existing_subnet_ids or [s.subnet_id for s in cluster.vpc.private_subnets],
         )
 
         # Create a Redis parameter group with allkeys-lru eviction policy
@@ -106,7 +113,7 @@ class WorkbenchDashboardStack(Stack):
         redis_cluster = elasticache.CfnCacheCluster(
             self,
             "RedisCluster",
-            cache_node_type="cache.t2.micro",
+            cache_node_type="cache.t3.micro",
             engine="redis",
             num_cache_nodes=1,
             cluster_name="WorkbenchRedis",
@@ -142,11 +149,6 @@ class WorkbenchDashboardStack(Stack):
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
-        # Were we given a subnet selection? (filter by ID so route tables resolve from the VPC lookup)
-        subnet_selection = None
-        if props.existing_subnet_ids:
-            subnet_selection = ec2.SubnetSelection(subnet_filters=[ec2.SubnetFilter.by_ids(props.existing_subnet_ids)])
-
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
@@ -178,6 +180,17 @@ class WorkbenchDashboardStack(Stack):
                 # Allow HTTP access if no certificate is provided
                 lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80))
 
+        # Build the load balancer explicitly: an ALB accepts only one subnet per AZ, and the
+        # ECS pattern offers no way to scope the LB's subnets to the ones we were given.
+        load_balancer = elbv2.ApplicationLoadBalancer(
+            self,
+            "WorkbenchLB",
+            vpc=cluster.vpc,
+            internet_facing=props.public,
+            security_group=lb_security_group,
+            vpc_subnets=subnet_selection,
+        )
+
         # Adding LoadBalancer with Fargate Service
         fargate_service = ApplicationLoadBalancedFargateService(
             self,
@@ -187,7 +200,7 @@ class WorkbenchDashboardStack(Stack):
             desired_count=props.desired_count,
             task_definition=task_definition,
             memory_limit_mib=4096,
-            public_load_balancer=props.public,
+            load_balancer=load_balancer,
             security_groups=[lb_security_group],
             open_listener=props.public,
             certificate=certificate,
@@ -198,12 +211,6 @@ class WorkbenchDashboardStack(Stack):
             # The app takes ~30s+ to boot (theme/plugin S3 pulls + meta refresh); give it room
             health_check_grace_period=Duration.seconds(120),
         )
-
-        # Remove all default security groups from the load balancer
-        fargate_service.load_balancer.connections.security_groups.clear()
-
-        # Add our custom security group
-        fargate_service.load_balancer.add_security_group(lb_security_group)
 
         # Health check hits the cheap /health route (not the heavy "/" page) with a generous
         # timeout and unhealthy threshold, so a briefly-blocked request worker (heavy meta/
