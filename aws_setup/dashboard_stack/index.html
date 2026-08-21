@@ -4358,6 +4358,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Point Your Domain at the Load Balancer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-company-subdomain-external-dns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 1: Company Subdomain (External DNS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-dedicated-route-53-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 2: Dedicated Route 53 Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4388,6 +4427,17 @@
     <span class="md-ellipsis">
       
         Public vs Private Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-can-reach-the-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who Can Reach the Dashboard
       
     </span>
   </a>
@@ -5283,6 +5333,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Point Your Domain at the Load Balancer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-1-company-subdomain-external-dns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 1: Company Subdomain (External DNS)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-2-dedicated-route-53-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option 2: Dedicated Route 53 Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -5313,6 +5402,17 @@
     <span class="md-ellipsis">
       
         Public vs Private Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-can-reach-the-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who Can Reach the Dashboard
       
     </span>
   </a>
@@ -5351,9 +5451,10 @@
 <h2 id="prerequisites">Prerequisites</h2>
 <p>The Dashboard serves over HTTPS, so a domain and SSL certificate need to be in place first. See <a href="../domain_cert_setup/">Domain and SSL Certificate Setup</a> and confirm both before you deploy:</p>
 <ul>
-<li>Your domain is registered in Route 53 for <strong>this</strong> AWS account</li>
-<li>Your ACM certificate is in the <strong>Issued</strong> state</li>
+<li>You've picked the domain name the Dashboard will serve on</li>
+<li>A certificate covering that name is in ACM <strong>in this account and region</strong>, in the <strong>Issued</strong> state</li>
 <li><code>WORKBENCH_CERTIFICATE_ARN</code> is set in your Workbench config file</li>
+<li>For a private dashboard, <code>WORKBENCH_PREFIX_LISTS</code> or <code>WORKBENCH_WHITELIST</code> names the networks allowed to reach it (see <a href="#who-can-reach-the-dashboard">Who Can Reach the Dashboard</a>)</li>
 </ul>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">"WORKBENCH_ROLE"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Workbench-ExecutionRole"</span><span class="p">,</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">"WORKBENCH_CERTIFICATE_ARN"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:acm:&lt;region&gt;:&lt;account&gt;:certificate/123-987-456-123-456789012"</span><span class="p">,</span>
@@ -5370,7 +5471,33 @@
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>cdk<span class="w"> </span>deploy
 </span></code></pre></div>
 <h2 id="point-your-domain-at-the-load-balancer">Point Your Domain at the Load Balancer</h2>
-<p>The stack creates a new load balancer, so the last step is a Route 53 <strong>A</strong> record that routes your domain to it.</p>
+<p>The stack creates a new load balancer, so the last step is a DNS record routing your domain to it. How you add that record depends on which option you took in <a href="../domain_cert_setup/">Domain and SSL Certificate Setup</a>.</p>
+<p>First, grab the load balancer's DNS name — you'll need it either way:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>aws<span class="w"> </span>cloudformation<span class="w"> </span>describe-stacks<span class="w"> </span>--stack-name<span class="w"> </span>WorkbenchDashboard<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--query<span class="w"> </span><span class="s1">'Stacks[0].Outputs[?OutputKey==`LoadBalancerDnsName`].OutputValue'</span><span class="w"> </span>--output<span class="w"> </span>text
+</span></code></pre></div>
+<p>It looks something like <code>internal-workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code>. You can also find it in the <a href="https://console.aws.amazon.com/ec2/">EC2 Console</a> under <strong>Load Balancing</strong> → <strong>Load Balancers</strong> → <strong>DNS name</strong>.</p>
+<p>Now follow <strong>one</strong> of the two sections below — whichever matches the option you took on the <a href="../domain_cert_setup/">Domain and SSL Certificate Setup</a> page. They're alternatives, not sequential steps.</p>
+<h3 id="option-1-company-subdomain-external-dns">Option 1: Company Subdomain (External DNS)</h3>
+<p>Alias records are a Route 53 feature, so for an external DNS provider you need a <strong>CNAME</strong>. Your company's DNS is almost certainly managed by IT — admin rights on the AWS account don't cover a domain registered elsewhere — so this step is a hand-off. Send them the record:</p>
+<blockquote>
+<p>Hi — could you please add a DNS record for our ML Dashboard?</p>
+<ul>
+<li><strong>Type:</strong> CNAME</li>
+<li><strong>Name:</strong> <code>ml-dashboard.yourcompany.com</code></li>
+<li><strong>Value:</strong> <code>internal-workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code></li>
+<li><strong>TTL:</strong> 300</li>
+</ul>
+<p>It points at an internal AWS load balancer, so it resolves to private addresses (<code>10.x.x.x</code>) reachable from our VPC and over VPN. No public exposure.</p>
+</blockquote>
+<p>The name you request must be one your certificate covers — either the exact name on the certificate, or any single label under a wildcard like <code>*.dev.yourcompany.com</code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Private dashboards resolve to private IPs</p>
+<p>An internal load balancer (<code>WORKBENCH_DASHBOARD_PUBLIC</code> unset or <code>false</code>) publishes only private VPC addresses. Users reach it from inside the VPC or over VPN. That works fine in a public DNS zone, but some organizations prefer to keep internal names in split-horizon DNS — your DNS team will know which they want.</p>
+</div>
+<hr />
+<h3 id="option-2-dedicated-route-53-domain">Option 2: Dedicated Route 53 Domain</h3>
+<p>Use an <strong>A</strong> record with an alias — it resolves straight to the load balancer with no extra DNS hop.</p>
 <ul>
 <li>Go to the <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></li>
 <li>Click <strong>Hosted zones</strong> (left panel) and select your domain</li>
@@ -5385,10 +5512,11 @@
 </li>
 </ul>
 <p>Repeat for any additional subdomain on your certificate (e.g. <code>www.your-domain.com</code>).</p>
-<div class="admonition tip">
-<p class="admonition-title">Finding the Load Balancer</p>
-<p>The chooser box usually finds it for you. If you need to look it up directly, load balancers live under the <a href="https://console.aws.amazon.com/ec2/">EC2 Console</a> → <strong>Load Balancing</strong> → <strong>Load Balancers</strong>. The <strong>DNS name</strong> field is what you want, something like <code>dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code>.</p>
-</div>
+<hr />
+<h3 id="verify">Verify</h3>
+<p>Once DNS propagates:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sSf<span class="w"> </span>https://your-dashboard-domain.com/health<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">" &lt;- dashboard is up"</span>
+</span></code></pre></div>
 <h2 id="stack-details">Stack Details</h2>
 <div class="admonition question inline end">
 <p class="admonition-title">AWS Questions?</p>
@@ -5413,9 +5541,24 @@
 <h3 id="public-vs-private-deployment">Public vs Private Deployment</h3>
 <p>The same stack deploys either an internal (private) or an internet-facing (public) dashboard, controlled by config:</p>
 <ul>
-<li><code>WORKBENCH_DASHBOARD_PUBLIC</code> (default <code>false</code>): set to <code>true</code> for an internet-facing load balancer with open 443/80 ingress. Leave unset/<code>false</code> for an internal load balancer reachable only via your whitelisted IPs and prefix lists.</li>
+<li><code>WORKBENCH_DASHBOARD_PUBLIC</code> (default <code>false</code>): set to <code>true</code> for an internet-facing load balancer with open 443/80 ingress. Leave unset/<code>false</code> for an internal load balancer reachable only from the networks you whitelist.</li>
 <li><code>WORKBENCH_DASHBOARD_TASK_COUNT</code> (default <code>1</code>): number of Fargate tasks to run behind the load balancer.</li>
 </ul>
+<h3 id="who-can-reach-the-dashboard">Who Can Reach the Dashboard</h3>
+<p>A private dashboard's load balancer starts with <strong>no</strong> inbound access. You grant it with one or both of these, whichever suits how your network is managed. Both take a comma separated list.</p>
+<p><strong><code>WORKBENCH_PREFIX_LISTS</code></strong> — <a href="https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html">AWS managed prefix lists</a>, each a named set of CIDR blocks maintained in one place:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">"WORKBENCH_PREFIX_LISTS"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pl-00b18c17bdeb8794c, pl-0421d7c17b5a9c605"</span><span class="p">,</span>
+</span></code></pre></div>
+<p>Prefer these if your network team already publishes them. The CIDRs live in the prefix list, so when a VPN range changes your team updates the list once and every stack referencing it follows — no redeploy. A prefix list shared from another account via AWS RAM works fine; just reference its ID.</p>
+<p><strong><code>WORKBENCH_WHITELIST</code></strong> — raw CIDR blocks, when you have no prefix lists to point at:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">"WORKBENCH_WHITELIST"</span><span class="p">:</span><span class="w"> </span><span class="s2">"10.49.0.0/16, 203.0.113.42/32"</span><span class="p">,</span>
+</span></code></pre></div>
+<p>CIDR notation is required — a bare IP address is rejected, so use <code>/32</code> for a single host.</p>
+<p>Both apply to port 443 on the load balancer and port 6379 on Redis. To find the range your users actually arrive from, check the address a VPN-connected machine holds (<code>ifconfig</code> on macOS/Linux, <code>ipconfig</code> on Windows) and ask your network team for the pool it belongs to.</p>
+<div class="admonition warning">
+<p class="admonition-title">Private with an empty whitelist is unreachable</p>
+<p>With no whitelist and no prefix lists, the load balancer gets no rule on port 443 and nothing can connect. Tasks pass their health checks, the stack reports success, and browsers simply time out — there's no error to find. <code>cdk deploy</code> refuses to synth this combination, but it's worth knowing the shape of the failure.</p>
+</div>
 
 
 
