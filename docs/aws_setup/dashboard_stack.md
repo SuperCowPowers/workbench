@@ -11,8 +11,8 @@ Please review the [Stack Details](#stack-details) section to understand all the 
 ## Prerequisites
 The Dashboard serves over HTTPS, so a domain and SSL certificate need to be in place first. See [Domain and SSL Certificate Setup](domain_cert_setup.md) and confirm both before you deploy:
 
-- Your domain is registered in Route 53 for **this** AWS account
-- Your ACM certificate is in the **Issued** state
+- You've picked the domain name the Dashboard will serve on
+- A certificate covering that name is in ACM **in this account and region**, in the **Issued** state
 - `WORKBENCH_CERTIFICATE_ARN` is set in your Workbench config file
 
 ```json
@@ -34,7 +34,31 @@ The Dashboard serves over HTTPS, so a domain and SSL certificate need to be in p
   ```
 
 ## Point Your Domain at the Load Balancer
-The stack creates a new load balancer, so the last step is a Route 53 **A** record that routes your domain to it.
+The stack creates a new load balancer, so the last step is a DNS record routing your domain to it. How you add that record depends on which option you took in [Domain and SSL Certificate Setup](domain_cert_setup.md).
+
+First, grab the load balancer's DNS name — you'll need it either way:
+
+```bash
+aws cloudformation describe-stacks --stack-name WorkbenchDashboard \
+  --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDnsName`].OutputValue' --output text
+```
+
+It looks something like `internal-workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com`. You can also find it in the [EC2 Console](https://console.aws.amazon.com/ec2/) under **Load Balancing** → **Load Balancers** → **DNS name**.
+
+### Company Subdomain (External DNS)
+Alias records are a Route 53 feature, so for an external DNS provider you use a **CNAME** instead. Send your DNS admin the hostname and the load balancer DNS name:
+
+```
+ml-dashboard.yourcompany.com.  CNAME  internal-workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com.
+```
+
+The hostname must be one your certificate covers — either the exact name on the certificate, or any single label under a wildcard like `*.dev.yourcompany.com`.
+
+!!! warning "Private dashboards resolve to private IPs"
+    An internal load balancer (`WORKBENCH_DASHBOARD_PUBLIC` unset or `false`) publishes only private VPC addresses, so the CNAME resolves to something like `10.64.x.x`. Users reach it only from inside the VPC or over VPN. That works fine in a public DNS zone, but some organizations prefer to keep internal names in split-horizon DNS — worth confirming with your DNS team.
+
+### Dedicated Route 53 Domain
+Use an **A** record with an alias — it resolves straight to the load balancer with no extra DNS hop.
 
 - Go to the [Route 53 Console](https://console.aws.amazon.com/route53/)
 - Click **Hosted zones** (left panel) and select your domain
@@ -48,8 +72,12 @@ The stack creates a new load balancer, so the last step is a Route 53 **A** reco
 
 Repeat for any additional subdomain on your certificate (e.g. `www.your-domain.com`).
 
-!!! tip "Finding the Load Balancer"
-    The chooser box usually finds it for you. If you need to look it up directly, load balancers live under the [EC2 Console](https://console.aws.amazon.com/ec2/) → **Load Balancing** → **Load Balancers**. The **DNS name** field is what you want, something like `dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com`.
+### Verify
+Once DNS propagates:
+
+```bash
+curl -sSf https://your-dashboard-domain.com/health && echo " <- dashboard is up"
+```
 
 ## Stack Details
 !!! question inline end "AWS Questions?"
