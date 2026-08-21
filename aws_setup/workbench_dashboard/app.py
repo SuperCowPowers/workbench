@@ -54,6 +54,18 @@ if not public and not whitelist_ips and not whitelist_prefix_lists:
         'Or set "WORKBENCH_DASHBOARD_PUBLIC": "true" for an internet-facing dashboard.'
     )
 
+# Whitelist and prefix list rules only ever open 443, and without a certificate the load
+# balancer listens on 80 instead. Same silent timeout as an empty whitelist.
+if not public and not certificate_arn:
+    raise SystemExit(
+        "A private dashboard needs WORKBENCH_CERTIFICATE_ARN. Without a certificate the load\n"
+        "balancer listens on port 80, but the whitelist and prefix list rules only open port\n"
+        "443, so nothing can reach it.\n\n"
+        "Set the ARN of an ISSUED certificate in this account and region:\n"
+        '  "WORKBENCH_CERTIFICATE_ARN": "arn:aws:acm:<region>:<account>:certificate/<id>"\n\n'
+        "See the Domain and SSL Certificate Setup docs to create or import one."
+    )
+
 app = cdk.App()
 WorkbenchDashboardStack(
     app,
