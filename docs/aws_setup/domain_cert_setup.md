@@ -5,7 +5,7 @@
 The Workbench Dashboard serves over HTTPS, so it needs a domain name and an SSL certificate. Both must be in place **before** you deploy the [Dashboard Stack](dashboard_stack.md) — the stack reads the certificate ARN from your Workbench config.
 
 ## Which Option Fits You?
-There are two ways to get there, and the right one depends on who controls your DNS.
+There are two ways to get there, and the right one depends on who controls your DNS. **Pick one** — you don't do both.
 
 | | **Option 1: Company Subdomain** | **Option 2: Dedicated Route 53 Domain** |
 |---|---|---|
@@ -17,7 +17,7 @@ There are two ways to get there, and the right one depends on who controls your 
 
 Most teams land on **Option 1** — you already own a domain, and a subdomain under it is free. Option 2 is the tidier setup if you'd rather keep the Dashboard self-contained in one AWS account with certificate renewal handled for you.
 
-Both options end the same way: a certificate ARN that goes into your Workbench config.
+Both options end the same way: a certificate ARN that goes into your Workbench config. Whichever you choose here, follow the matching section when you [point DNS at the load balancer](dashboard_stack.md#point-your-domain-at-the-load-balancer) after the stack is deployed.
 
 ---
 

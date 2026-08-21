@@ -41,7 +41,18 @@ except ImportError:
     raise SystemExit(1)
 
 
-# TODO: Add in a security group and pass as a prop to the stack
+# A private dashboard is reachable only through the whitelist, so an empty one deploys a load
+# balancer that nothing can connect to. Everything reports healthy and browsers just time out.
+if not public and not whitelist_ips and not whitelist_prefix_lists:
+    raise SystemExit(
+        "A private dashboard needs an ingress whitelist, but neither WORKBENCH_WHITELIST nor\n"
+        "WORKBENCH_PREFIX_LISTS is set. Without one the load balancer gets no rule on port 443\n"
+        "and nothing can reach it.\n\n"
+        "Set one of these in your Workbench config (both are comma separated):\n"
+        '  "WORKBENCH_PREFIX_LISTS": "pl-0123456789abcdef0"   # AWS managed prefix list(s)\n'
+        '  "WORKBENCH_WHITELIST": "10.49.0.0/16, 1.2.3.4/32"  # CIDR blocks\n\n'
+        'Or set "WORKBENCH_DASHBOARD_PUBLIC": "true" for an internet-facing dashboard.'
+    )
 
 app = cdk.App()
 WorkbenchDashboardStack(
