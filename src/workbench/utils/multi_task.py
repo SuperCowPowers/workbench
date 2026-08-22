@@ -211,12 +211,20 @@ def combine_multi_task_data(
     n_before = len(result)
     dup_counts = result[merge_key].value_counts()
     dup_ids = dup_counts[dup_counts > 1]
-    numeric_cols = result.select_dtypes(include="number").columns.tolist()
+    numeric_cols = [c for c in result.select_dtypes(include="number").columns if c != merge_key]
     non_numeric_cols = [c for c in result.columns if c not in numeric_cols and c != merge_key]
     agg_dict = {c: "mean" for c in numeric_cols}
     agg_dict.update({c: "first" for c in non_numeric_cols})
     result = result.groupby(merge_key, as_index=False).agg(agg_dict)
     log.info(f"Collapsing {n_before} rows -> {len(result)} ({len(dup_ids)} molecules appear in multiple sources)")
+
+    # --- Step 3b: Drop rows with no supervision ---
+    # A molecule whose every target is NaN carries no signal (all its tasks are
+    # masked), so it only pads the FeatureSet and the downstream split.
+    no_targets = result[all_targets].isna().all(axis=1)
+    if no_targets.any():
+        log.warning(f"Dropping {no_targets.sum()} rows with no target values (all {len(all_targets)} targets NaN)")
+        result = result[~no_targets].reset_index(drop=True)
 
     # --- Step 4: Diagnostics ---
     input_support = {}
@@ -243,7 +251,7 @@ def combine_multi_task_data(
     # Target coverage patterns
     target_pattern = result[all_targets].notna()
     pattern_labels = target_pattern.apply(
-        lambda row: " + ".join(t for t, present in zip(all_targets, row) if present) or "(none)",
+        lambda row: " + ".join(t for t, present in zip(all_targets, row) if present),
         axis=1,
     )
     log.info("Target coverage patterns:")
@@ -270,7 +278,12 @@ def pull_multi_task_data(
         {
             "target_info": {<src_col>: <output_col>, ...}  # required; column rename map
             "src_id_col":  "<non_default_id_column>"       # optional; if the FS uses a different id column
+            "df":          <DataFrame>                     # optional; use this frame instead of pulling the FS
         }
+
+    When `df` is supplied the dict key is just a label (it names the private
+    per-source date column and the log line), so any source already in hand —
+    a DataSource pull, a local file — can join the merge.
 
     Or as a shortcut, `target_info` may be a list of column names that already
     match the desired output names (no rename needed).
@@ -304,7 +317,8 @@ def pull_multi_task_data(
         Combined multi-task DataFrame from `combine_multi_task_data`, with all
         target columns aligned and shared features intersected.
     """
-    # Local import: workbench.api is heavy and not needed at module import time.
+    # Local import: workbench.api requires a valid Workbench config at import time.
+    # Keeping it local lets this module's pure-pandas helpers run without AWS.
     from workbench.api import FeatureSet
 
     smiles_based_sources = smiles_based_sources or {}
@@ -315,7 +329,12 @@ def pull_multi_task_data(
         target_info = fs_config["target_info"]
         src_id = fs_config.get("src_id_col", id_column)
 
-        df = FeatureSet(fs_name).pull_dataframe()
+        df = fs_config.get("df")
+        if df is None:
+            df = FeatureSet(fs_name).pull_dataframe()
+        else:
+            # Caller-supplied frame: copy so the id cast and renames below stay local.
+            df = df.copy()
 
         # Normalize id column
         if src_id != id_column:
@@ -458,6 +477,15 @@ def validate_multi_task_data(
             errors.append(f"Target '{t}' missing from DataFrame")
         elif df[t].notna().sum() == 0:
             errors.append(f"Target '{t}' has zero non-null values")
+
+    # 4b. Check for rows carrying no supervision at all
+    # combine_multi_task_data drops these, so they only show up in frames built
+    # some other way; every task is masked, so the row never reaches the loss.
+    present_targets = [t for t in target_columns if t in df.columns]
+    if present_targets:
+        n_targetless = df[present_targets].isna().all(axis=1).sum()
+        if n_targetless > 0:
+            warnings.append(f"{n_targetless} rows have no target values (all targets NaN)")
 
     # 5. Check feature columns for unexpected NaN patterns
     feature_cols = [c for c in df.columns if c not in [id_column, "smiles"] + list(target_columns)]
