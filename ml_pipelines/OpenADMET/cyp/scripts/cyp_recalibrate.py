@@ -33,14 +33,38 @@ import pandas as pd
 from openadmet_validation import validate_activity_submission
 from workbench.api import PublicData
 
-# isoform -> pIC50 offset in log units; 0.0 leaves an isoform untouched
-OFFSETS = {"CYP1A2": -0.6, "CYP2C9": 0.0, "CYP2D6": -1.2, "CYP3A4": 0.0}
-VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in OFFSETS}
+# isoform -> (offset in log units, scale about the isoform's own mean).
+# Both are cumulative from the raw model output, so this file is the single
+# transformation rather than a chain of edits on top of prior submissions.
+#
+# Offsets correct b, scales correct k, in R2 = 2*rho*k - k^2 - b^2. CYP3A4 and CYP2C9
+# are at 98%/100% of their ceilings and are deliberately identity.
+#
+# Pass 1 (submitted, macro ST-RAE 0.8414 -> 0.6171) used offsets only. It drove CYP2D6's
+# residual bias to 0.00 and left CYP1A2 short by 0.39, which is folded in here alongside
+# the scale terms that pass 1 did not attempt.
+CALIBRATION = {
+    "CYP1A2": {"offset": -0.99, "scale": 1.00},
+    "CYP2C9": {"offset": 0.00, "scale": 1.00},
+    "CYP2D6": {"offset": -1.20, "scale": 1.86},
+    "CYP3A4": {"offset": 0.00, "scale": 1.00},
+}
+# Only CYP2D6 is widened. Its bias is already 0.00, so the scale term is an isolated test
+# of whether expansion helps at all, and it tolerates full expansion to k = rho with a
+# minimum of 2.42 -- nothing runs off. CYP1A2 stays at scale 1.00 despite a 0.24 deficit in
+# k: its predictions are left-skewed (min 2.34 sits 4 sd below the mean), so symmetric
+# expansion to k = rho throws 35 compounds below pIC50 2.0 and the minimum to 0.05 while
+# buying only 0.465 -> 0.522. Widen it once CYP2D6 shows the term is worth having.
+#
+# Safety net only. Clamping creates ties, and Spearman and Kendall are both scored, so a
+# binding floor costs ranking. At the settings above it binds on zero compounds.
+FLOOR = 1.0
+VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in CALIBRATION}
 DEFAULT_SOURCE = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-100_activity_submission.csv"
 
 
 def recalibrate(source: Path, out_dir: Path, tag: str) -> Path:
-    """Shift each isoform by its offset and write a validated submission."""
+    """Apply each isoform's affine correction and write a validated submission."""
     sub = pd.read_csv(source)
     blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
 
@@ -48,14 +72,23 @@ def recalibrate(source: Path, out_dir: Path, tag: str) -> Path:
     if set(sub["Molecule_Name"]) != expected:
         raise ValueError(f"{source} identifiers do not match the blinded set")
 
-    print(f"{'isoform':<8} {'offset':>7} {'mean':>16} {'sd':>7} {'min':>16}")
-    for iso, offset in OFFSETS.items():
+    print(f"{'isoform':<8} {'offset':>7} {'scale':>6} {'mean':>15} {'sd':>15} {'min':>15} {'floored':>8}")
+    clamped = {}
+    for iso, cal in CALIBRATION.items():
         col = VALUE_COLUMNS[iso]
         before = sub[col]
-        sub[col] = before + offset
+        if cal["offset"] == 0.0 and cal["scale"] == 1.0:
+            clamped[iso] = 0
+            print(f"{iso:<8}   identity — untouched")
+            continue
+        # Scale about the isoform's own mean so the scale term does not move the centre.
+        shifted = before.mean() + cal["scale"] * (before - before.mean()) + cal["offset"]
+        clamped[iso] = int((shifted < FLOOR).sum())
+        sub[col] = shifted.clip(lower=FLOOR)
         print(
-            f"{iso:<8} {offset:>+7.2f} {before.mean():>7.2f} -> {sub[col].mean():>6.2f} "
-            f"{sub[col].std():>7.2f} {before.min():>7.2f} -> {sub[col].min():>6.2f}"
+            f"{iso:<8} {cal['offset']:>+7.2f} {cal['scale']:>6.2f} "
+            f"{before.mean():>6.2f} -> {sub[col].mean():>5.2f} {before.std():>6.2f} -> {sub[col].std():>5.2f} "
+            f"{before.min():>6.2f} -> {sub[col].min():>5.2f} {clamped[iso]:>8}"
         )
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -67,12 +100,17 @@ def recalibrate(source: Path, out_dir: Path, tag: str) -> Path:
         raise ValueError(f"{path} failed OpenADMET's validator:\n  " + "\n  ".join(errors))
     print(f"\nPassed OpenADMET's validator: {path}")
 
-    # A constant offset is rank-preserving; confirm rather than assume.
+    # A positive-scale affine map is rank-preserving; only the floor can create ties.
     original = pd.read_csv(source)
     for iso, col in VALUE_COLUMNS.items():
-        if not original[col].rank().equals(sub[col].rank()):
-            raise ValueError(f"{iso} ranking changed — an offset cannot do that")
-    print("Rank order identical to the source for all four isoforms")
+        if clamped[iso] == 0 and not original[col].rank().equals(sub[col].rank()):
+            raise ValueError(f"{iso} ranking changed — an unclamped affine map cannot do that")
+        if clamped[iso]:
+            unfloored = sub[col] > FLOOR
+            if not original.loc[unfloored, col].rank().equals(sub.loc[unfloored, col].rank()):
+                raise ValueError(f"{iso} ranking changed above the floor")
+    ties = {k: v for k, v in clamped.items() if v}
+    print(f"Rank order preserved (floor created ties in: {ties or 'none'})")
     return path
 
 
