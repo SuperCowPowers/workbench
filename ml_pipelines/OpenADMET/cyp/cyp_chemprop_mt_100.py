@@ -4,10 +4,10 @@ Identical to `cyp_chemprop_mt_all.py` except that nothing is held out. The analo
 holdout exists to *choose* between candidates; once chosen, the entry should train on
 every labelled row, and the 529 holdout compounds are 11% of the data.
 
-This model therefore has no honest score of its own. Read `cyp-reg-chemprop-mt` for
-that (macro ST-RAE 0.696 on the analog holdout) and treat this as the same model with
-more data. Any comparison between the two is meaningless: this one trained on the rows
-the other is scored against.
+It cannot be scored on the analog holdout — it trained on those rows — so read
+`cyp-reg-chemprop-mt` for that number and treat this as the same model with more data.
+Its `cv_*` captures are still honest: chemprop's k-fold leaves every row out of the fold
+that predicts it, so those are out-of-fold on a scaffold split.
 
 Dropping `validation_ids` is safe — training still runs k-fold and each fold holds out
 its own validation for early stopping, so no fold trains without a stopping signal.
@@ -51,6 +51,8 @@ end = model.to_endpoint(tags=TAGS)
 end.set_owner("openadmet_cyp")
 end.test_inference()
 
-# Cross-fold metrics are in-sample for this model and are here as a smoke check that
-# training produced something sane, not as a score to quote.
+# Out-of-fold over every row, on chemprop's scaffold split rather than the analog
+# holdout. An easier split than the blind set — ST-RAE reads about 1.5x optimistic on
+# CYP1A2/CYP2C9, 1.9x on CYP3A4 and 2.5x on CYP2D6 — so read it as a per-isoform ruler
+# against the model this one derives from, not as a contest estimate.
 end.cross_fold_inference()
