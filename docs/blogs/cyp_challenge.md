@@ -52,12 +52,12 @@ The cause is a dataset shift that will be familiar to anyone doing ADMET work. O
 
 So we shifted CYP2D6 down by 1.2 log units and CYP1A2 by 0.6, and left CYP2C9 and CYP3A4 completely untouched since they were already at ceiling:
 
-| isoform | ST-RAE before → after | rank before → after |
+| isoform | ST-RAE before → after | rank |
 |---|---|---|
 | CYP2D6 | 1.5176 → **0.7301** | 41 → **7** |
 | CYP1A2 | 0.7877 → **0.6782** | 22 → **10** |
-| CYP2C9 | 0.4944 (untouched) | 7 → 8 |
-| CYP3A4 | 0.5659 (untouched) | 11 → 12 |
+| CYP2C9 | 0.4944 — unchanged | 8 → 8 |
+| CYP3A4 | 0.5659 — unchanged | 12 → 12 |
 | **Macro** | **0.8414 → 0.6171** | **15 → 4** |
 
 Spearman and Kendall came back bit-identical, as they must — a constant offset cannot reorder anything. That was also our integrity check: if the rank metrics had moved, the problem would have been in our submission pipeline rather than our calibration.
