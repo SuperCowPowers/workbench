@@ -77,12 +77,3 @@ for iso in ISOFORMS:
     # Held-out capture on exactly the analog rows the model never trained on. The CI
     # columns ride along so ST-RAE is scored against the challenge's own credible intervals.
     end.inference(holdout_df, capture_name="cyp_analog_holdout")
-
-    # ST-RAE is the challenge's primary metric, so confirm it survived FeatureSet creation,
-    # training, and inference capture rather than assuming the CI columns made it through.
-    metrics = model.get_inference_metrics(capture_name="cyp_analog_holdout")
-    if metrics is not None and "st_rae" in metrics.columns:
-        print(f"{name} analog-holdout ST-RAE: {metrics[['st_rae']].to_string(index=False)}")
-    else:
-        cols = None if metrics is None else metrics.columns.tolist()
-        print(f"{name}: st_rae MISSING from inference metrics (columns: {cols}) — credible intervals did not survive")

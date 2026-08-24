@@ -19,6 +19,8 @@ Build the FeatureSet first: python cyp_feature_sets.py
 from workbench.api import Endpoint, FeatureSet, ModelFramework, ModelType
 from workbench.training.splits import analog_holdout_split
 
+from cyp_scoring import capture_st_rae
+
 FS_NAME = "openadmet_cyp_f2"
 FEATURE_ENDPOINT = "smiles-to-2d-3d-v2"
 VARIANT = "2d-3dv2"
@@ -73,9 +75,5 @@ for iso in ISOFORMS:
     capture_df = holdout[["molecule_name", "smiles", target] + ci_cols + feats].dropna(subset=[target])
     end.inference(capture_df, capture_name="cyp_analog_holdout")
 
-    metrics = model.get_inference_metrics(capture_name="cyp_analog_holdout")
-    if metrics is not None and "st_rae" in metrics.columns:
-        print(f"{name} analog-holdout ST-RAE: {metrics[['st_rae']].to_string(index=False)}")
-    else:
-        cols = None if metrics is None else metrics.columns.tolist()
-        print(f"{name}: st_rae MISSING from inference metrics (columns: {cols})")
+    scores = capture_st_rae(model, [target])
+    print(f"{name} analog-holdout ST-RAE: {scores['st_rae'].iloc[0]:.3f}" if len(scores) else f"{name}: no ST-RAE")

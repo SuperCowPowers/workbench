@@ -72,10 +72,3 @@ for iso in ISOFORMS:
     ci_cols = [f"{target}_ci_lower", f"{target}_ci_upper"]
     capture_df = holdout[["molecule_name", "smiles", target] + ci_cols + feats].dropna(subset=[target])
     end.inference(capture_df, capture_name="cyp_analog_holdout")
-
-    metrics = model.get_inference_metrics(capture_name="cyp_analog_holdout")
-    if metrics is not None and "st_rae" in metrics.columns:
-        print(f"{name} analog-holdout ST-RAE: {metrics[['st_rae']].to_string(index=False)}")
-    else:
-        cols = None if metrics is None else metrics.columns.tolist()
-        print(f"{name}: st_rae MISSING from inference metrics (columns: {cols})")
