@@ -12,7 +12,6 @@ import pandas as pd
 from sklearn.metrics import (
     confusion_matrix,
     mean_absolute_error,
-    median_absolute_error,
     precision_recall_fscore_support,
     r2_score,
     root_mean_squared_error,
@@ -336,12 +335,11 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[s
         y_pred: Predicted values
 
     Returns:
-        Dictionary with keys: rmse, mae, medae, r2, spearmanr, support
+        Dictionary with keys: rmse, mae, r2, spearmanr, support
     """
     return {
         "rmse": root_mean_squared_error(y_true, y_pred),
         "mae": mean_absolute_error(y_true, y_pred),
-        "medae": median_absolute_error(y_true, y_pred),
         "r2": r2_score(y_true, y_pred),
         "spearmanr": spearmanr(y_true, y_pred).correlation,
         "support": len(y_true),
@@ -356,7 +354,6 @@ def print_regression_metrics(metrics: dict[str, float]) -> None:
     """
     print(f"rmse: {metrics['rmse']:.3f}")
     print(f"mae: {metrics['mae']:.3f}")
-    print(f"medae: {metrics['medae']:.3f}")
     print(f"r2: {metrics['r2']:.3f}")
     print(f"spearmanr: {metrics['spearmanr']:.3f}")
     print(f"support: {metrics['support']}")

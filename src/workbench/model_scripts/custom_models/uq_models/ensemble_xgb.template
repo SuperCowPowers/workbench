@@ -4,7 +4,7 @@ from workbench.endpoints.inference import save_output
 import numpy as np
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, median_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import KFold
 from scipy.optimize import minimize
 from scipy.stats import spearmanr
@@ -204,13 +204,11 @@ if __name__ == "__main__":
     # Report Performance Metrics (out-of-fold, matching oof_predictions.csv)
     rmse = root_mean_squared_error(df_oof[target], df_oof["prediction"])
     mae = mean_absolute_error(df_oof[target], df_oof["prediction"])
-    medae = median_absolute_error(df_oof[target], df_oof["prediction"])
     r2 = r2_score(df_oof[target], df_oof["prediction"])
     spearman_corr = spearmanr(df_oof[target], df_oof["prediction"]).correlation
     support = len(df_oof)
     print(f"rmse: {rmse:.3f}")
     print(f"mae: {mae:.3f}")
-    print(f"medae: {medae:.3f}")
     print(f"r2: {r2:.3f}")
     print(f"spearmanr: {spearman_corr:.3f}")
     print(f"support: {support}")

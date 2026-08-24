@@ -315,7 +315,6 @@ class FeaturesToModel(Transform):
             metric_definitions = [
                 {"Name": "rmse", "Regex": r"rmse: ([0-9.]+)"},
                 {"Name": "mae", "Regex": r"mae: ([0-9.]+)"},
-                {"Name": "medae", "Regex": r"medae: ([0-9.]+)"},
                 {"Name": "r2", "Regex": r"r2: ([0-9.-]+)"},
                 {"Name": "spearmanr", "Regex": r"spearmanr: ([0-9.-]+)"},
                 {"Name": "support", "Regex": r"support: ([0-9]+)"},

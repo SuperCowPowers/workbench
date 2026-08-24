@@ -59,7 +59,7 @@ def _contest(champ_value, challengers, metric="rmse"):
     challenger - champion for f1. Positive Δ always means the challenger is better.
     """
     champ_row = pd.DataFrame([{metric: champ_value}], index=["champ"])
-    deltas = [(champ_value - v) if metric in ("rmse", "mae", "medae") else (v - champ_value) for _, v in challengers]
+    deltas = [(champ_value - v) if metric in ("rmse", "mae") else (v - champ_value) for _, v in challengers]
     chall_rows = pd.DataFrame(
         [{metric: v, f"Δ{metric}": d} for (_, v), d in zip(challengers, deltas)],
         index=[n for n, _ in challengers],

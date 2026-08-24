@@ -17,7 +17,7 @@ log = logging.getLogger("workbench")
 # Metrics where a lower value is better; everything else (r2, spearmanr, precision,
 # recall, f1, roc_auc, ...) is higher-is-better. Support falls through to the plain
 # b - a difference, which is what we want for a count.
-LOWER_IS_BETTER = {"rmse", "mae", "medae"}
+LOWER_IS_BETTER = {"rmse", "mae"}
 
 # A contest is "contested" when the best real challenger is better than the champion, or at
 # most this many percent worse, on the primary metric (percent of the champion's value, since

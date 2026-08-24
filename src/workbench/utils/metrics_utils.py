@@ -5,10 +5,9 @@ from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-from scipy.stats import spearmanr
+from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import (
     mean_absolute_error,
-    median_absolute_error,
     precision_recall_fscore_support,
     r2_score,
     roc_auc_score,
@@ -202,6 +201,11 @@ def compute_regression_metrics(
 ) -> pd.DataFrame:
     """Compute regression metrics from a predictions DataFrame.
 
+    `spread_ratio` is sd(pred)/sd(true); `bias` is mean(pred) - mean(true) in the target's
+    own units. The best R2 any affine rescale can reach is `pearsonr` squared, so the gap
+    from `r2` to that ceiling is placement, not ranking. Both need targets drawn from the
+    deployment population — on a random split `bias` is 0 by construction.
+
     When the target's credible-interval columns (`<target_col>_ci_lower` and
     `<target_col>_ci_upper`) are present, an `st_rae` column is added — see
     `soft_threshold_rae`. Targets without intervals get the standard metrics only.
@@ -212,8 +216,8 @@ def compute_regression_metrics(
         prediction_col: Name of the prediction column (default: "prediction")
 
     Returns:
-        DataFrame with regression metrics (rmse, mae, medae, r2, spearmanr, support,
-        and st_rae when credible intervals are available).
+        DataFrame with regression metrics (rmse, mae, r2, pearsonr, spearmanr,
+        spread_ratio, bias, support, and st_rae when credible intervals are available).
         Returns empty DataFrame if validation fails or no valid data.
     """
     # Validate inputs
@@ -244,12 +248,17 @@ def compute_regression_metrics(
     y_true = df[target_col].values
     y_pred = df[prediction_col].values
 
+    # Measured from the two distributions, not solved out of the R2 decomposition, which
+    # would inherit and square any error in the correlation term.
+    sd_true = y_true.std()
     metrics = {
         "rmse": root_mean_squared_error(y_true, y_pred),
         "mae": mean_absolute_error(y_true, y_pred),
-        "medae": median_absolute_error(y_true, y_pred),
         "r2": r2_score(y_true, y_pred),
+        "pearsonr": pearsonr(y_true, y_pred).statistic if len(y_true) > 1 else np.nan,
         "spearmanr": spearmanr(y_true, y_pred).correlation,
+        "spread_ratio": y_pred.std() / sd_true if sd_true > 0 else np.nan,
+        "bias": y_pred.mean() - y_true.mean(),
         "support": len(y_true),
     }
 
