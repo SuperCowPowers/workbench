@@ -9,7 +9,7 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.web_interface.utils.clientside_callbacks import hover_ring_overlay_callback
-from workbench.utils.chem_utils.vis import molecule_hover_tooltip
+from workbench.web_interface.components.molecule_tooltip import molecule_hover_tooltip
 
 # Marker style constants
 _MARKER_LINE = dict(color="rgba(0,0,0,0.25)", width=1)

@@ -7,7 +7,7 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.plot_utils import prediction_intervals
-from workbench.utils.chem_utils.vis import molecule_hover_tooltip
+from workbench.web_interface.components.molecule_tooltip import molecule_hover_tooltip
 from workbench.web_interface.utils.clientside_callbacks import hover_ring_overlay_callback
 
 # Name of the hidden overlay trace used for hover ring highlighting.

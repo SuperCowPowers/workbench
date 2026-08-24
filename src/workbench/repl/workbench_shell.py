@@ -47,14 +47,15 @@ from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_N
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.utils.log_utils import silence_logs
 from workbench.utils.aws_utils import sso_login_hint
+from workbench.utils.web_utils import EGRESS_MODE
+from workbench.utils.chem_utils import vis
 
-# If we have RDKIT/Mordred let's pull in our cheminformatics utils
-try:
-    from workbench.utils.chem_utils import vis  # needs rdkit
-
-    HAVE_CHEM_UTILS = True
-except ImportError:
-    HAVE_CHEM_UTILS = False
+# Egress dot: green is checked, yellow is unchecked, blue is closed.
+EGRESS_LIGHTS = {
+    "guarded": (Token.Lightgreen, "lightgreen"),
+    "full": (Token.Darkyellow, "darkyellow"),
+    "off": (Token.Blue, "lightblue"),
+}
 
 
 def onboard():
@@ -196,9 +197,7 @@ class WorkbenchShell:
                 with silence_logs():
                     self.bedrock_status = importlib.import_module("workbench.utils.bedrock_utils").bedrock_available()
 
-        # Add cheminformatics utils if available
-        if HAVE_CHEM_UTILS:
-            self.commands["show"] = vis.show
+        self.commands["show"] = vis.show
 
     def start(self):
         """Start the Workbench IPython shell"""
@@ -529,7 +528,7 @@ class WorkbenchShell:
         logging.getLogger("workbench").setLevel(logging.WARNING)
 
     def status_lights(self) -> list[(Token, str)]:
-        """Check the status of AWS, Redis, and API Key and return Token colors
+        """Check the status of AWS, Meta, and egress and return Token colors
 
         Returns:
             list[(Token, str)]: A list of Token colors and status symbols
@@ -552,18 +551,15 @@ class WorkbenchShell:
         else:  # Unknown
             _status_lights.append((Token.Grey, "●"))
 
-        # Check API Key
-        if self.open_source_api_key:
-            _status_lights.append((Token.Lightpurple, "●"))
-        else:
-            _status_lights.append((Token.Lightgreen, "●"))
+        # Egress Mode
+        _status_lights.append((EGRESS_LIGHTS[EGRESS_MODE][0], "●"))
 
         _status_lights.append((Token.Blue, "]"))
 
         return _status_lights
 
     def status_description(self):
-        """Print a description of the status of AWS, Redis, and API Key"""
+        """Print a description of the status of AWS, Meta, and egress"""
 
         # AWS Account
         if self.aws_status:
@@ -579,11 +575,8 @@ class WorkbenchShell:
         elif self.meta_status == "FAIL":
             cprint("orange", "\t● Meta: Failed to Connect")
 
-        # API Key
-        if self.open_source_api_key:
-            cprint("lightpurple", "\t● API Key: Open Source")
-        else:
-            cprint("lightgreen", "\t● API Key: Enterprise")
+        # Egress
+        cprint(EGRESS_LIGHTS[EGRESS_MODE][1], f"\t● Egress: {EGRESS_MODE}")
 
     # Helpers method to switch from direct Meta to Cached Meta
     def try_cached_meta(self):

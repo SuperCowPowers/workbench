@@ -20,7 +20,7 @@ import plotly.graph_objects as go
 from dash import Input, Output, callback, clientside_callback, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 
-from workbench.utils.chem_utils.vis import molecule_hover_tooltip
+from workbench.web_interface.components.molecule_tooltip import molecule_hover_tooltip
 from workbench.web_interface.components.plugin_interface import (
     PluginInputType,
     PluginInterface,
