@@ -75,12 +75,12 @@ What follows from that:
 - Our `confidence` and `q_05`/`q_95` outputs are **not** submitted and do not
   score. They are for deciding where to hedge, not part of the entry (`uq`).
 
-**Workbench computes ST-RAE.** `compute_regression_metrics` adds an `st_rae`
-column whenever the target carries `<target>_ci_lower`/`_ci_upper`, so it lands
-in model metrics and the dashboard with no extra work:
+**Scoring ST-RAE.** Model and endpoint metrics carry the standard regression set
+(`rmse`, `mae`, `r2`, `pearsonr`, `spearmanr`, `spread_ratio`, `bias`) — not
+`st_rae`. Score it yourself against the label intervals:
 
 ```python
-from workbench.utils.metrics_utils import macro_soft_threshold_rae, soft_threshold_rae
+from workbench.utils.metrics_utils import soft_threshold_rae
 ```
 
 **Our `st_rae` is close to but not identical to a leaderboard number.** RAE needs
@@ -276,9 +276,9 @@ model = fs.to_model(
 )
 ```
 
-Keep the full `_direct_inhibition` target names. `compute_regression_metrics`
-finds a credible interval by appending `_ci_lower` to the target name, so
-shortening the targets silently drops `st_rae` — the challenge's own metric.
+Keep the full `_direct_inhibition` target names. A target's credible interval is
+named by appending `_ci_lower`/`_ci_upper`, so shortening the targets breaks the
+pairing when scoring ST-RAE — the challenge's own metric.
 
 Missing targets are `NaN` per row — that is how sparsity is expressed; do not
 drop rows to make the matrix dense. All four isoforms are end products here
@@ -346,14 +346,14 @@ rebuilding re-derives all of it, usually getting one wrong.
   labels. That makes them a controlled A/B for whether the xTB electronic block
   earns its place. Hold everything else constant when comparing them.
 - **The regression FeatureSets carry `_ci_lower`, `_ci_upper` and `_std` per
-  isoform.** That is what makes `st_rae` computable, and it is also the leakage
+  isoform.** That is what makes ST-RAE computable, and it is also the leakage
   trap below — they are label metadata, never features.
 - **The TDI FeatureSets carry labels only**, no arm pIC50s: `is_tdi` is derived
   from the shift between the direct and TDI arms, so carrying either arm beside
   the label hands the model the answer. To re-derive or audit labels, go back to
   `PublicData`.
 - **`openadmet_cyp_veith` has no descriptors and no credible intervals** — SMILES
-  plus five targets, so it is chemprop-only and cannot produce an `st_rae`. Its
+  plus five targets, so it is chemprop-only and cannot be scored with ST-RAE. Its
   censored inactives were dropped at build time, so CYP3A4 bottoms out at pIC50
   4.20 and CYP1A2 at 4.10 while CYP2D6 reaches 2.05. It teaches the potent end and
   says almost nothing about the low-activity regime ST-RAE is built around.
@@ -378,8 +378,8 @@ blind = pub_data.get("comp_chem/openadmet/cyp/testing/blinded")             # 75
 Column names are snake_cased from the challenge's (`CYP3A4_pIC50_direct_inhibition`
 becomes `cyp3a4_pic50_direct_inhibition`), and the credible-interval suffixes are
 renamed from the source's `_conf_low`/`_conf_high` to `_ci_lower`/`_ci_upper` — the
-platform convention, and what `compute_regression_metrics` reads to emit `st_rae`.
-Map back to the challenge's exact column names at submission time.
+platform convention for label intervals. Map back to the challenge's exact column
+names at submission time.
 
 Two things in here that the challenge write-up does not advertise:
 
@@ -442,20 +442,18 @@ ensemble member, HPO — needs its own analog-holdout score, and that loop is fr
 and fast on this machine while being slow and billable on Batch. `PublicData`
 works without credentials, so a local chain starts directly off these datasets.
 
-Local models compute metrics the same way AWS ones do, so `st_rae` comes along for
-free as long as the credible-interval columns reach the predictions:
+Local models compute metrics the same way AWS ones do:
 
 ```python
 local_model.list_inference_runs()      # "full_cross_fold" plus any endpoint captures
-local_model.get_inference_metrics()    # st_rae here means the CI columns survived
+local_model.get_inference_metrics()
 local_model.get_inference_predictions("full_cross_fold")
 ```
 
-If `st_rae` is missing from that frame, the CI columns were dropped somewhere in
-FeatureSet -> training -> capture; score directly with `macro_soft_threshold_rae`
-over the predictions and fix the column plumbing rather than assuming the metric
-does not apply. Whichever way, use the analog holdout as the eval set — a
-cross-fold number is the optimistic one.
+Those are the standard regression metrics. For ST-RAE, pull the predictions, join
+the label intervals from the FeatureSet, and call `soft_threshold_rae` directly.
+Whichever way, use the analog holdout as the eval set — a cross-fold number is the
+optimistic one.
 
 ## Submission discipline
 
