@@ -26,7 +26,7 @@ WORKBENCH_ROOT="$(cd "$SCRIPT_DIR/.." &> /dev/null && pwd)"
 AWS_ACCOUNT_ID="507740646243"
 REGION_LIST=("us-east-1" "us-west-2")
 PYTHON_VERSION="3.12"
-WORKBENCH_VERSION=0.8.466   # keep in lockstep with the image's ARG WORKBENCH_VERSION
+WORKBENCH_VERSION=0.8.467   # keep in lockstep with the image's ARG WORKBENCH_VERSION
 LAMBDA_ARCH="manylinux2014_x86_64"
 
 GREEN='\033[0;32m'
