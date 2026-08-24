@@ -9,10 +9,20 @@ from typing import List
 
 from workbench.utils import bosco_utils
 from workbench.utils.bosco_utils import MAX_REPORT_CHARS
+from workbench.utils.config_manager import ConfigManager
+
+log = logging.getLogger("workbench")
 
 GUIDES_DIR = Path(__file__).parent / "guides"
 PERSONALITIES_FILE = Path(__file__).parent / "personalities.md"
+EGRESS_FILE = Path(__file__).parent / "egress.md"
 DEFAULT_PERSONALITY = "chipper"
+
+# How far Bosco may reach: "off" (AWS only), "guarded" (public web, no user data),
+# "full" (no constraints). Read once at import -- a setting the agent could flip
+# mid-session would be the accident it exists to prevent.
+EGRESS_MODES = ("off", "guarded", "full")
+DEFAULT_EGRESS = "off"
 
 # Always injected into the system prompt (not offered in the lazy-read menu).
 ALWAYS_LOADED = {"general"}
@@ -50,10 +60,10 @@ def general_guide() -> str:
     return path.read_text() if path.exists() else ""
 
 
-def _personality_sections() -> dict:
-    """Map each `## name` header in personalities.md to its body text."""
+def _sections(path: Path) -> dict:
+    """Map each `## name` header in a markdown file to its body text."""
     sections, current = {}, None
-    for line in PERSONALITIES_FILE.read_text().splitlines():
+    for line in path.read_text().splitlines():
         if line.startswith("## "):
             current = line[3:].strip()
             sections[current] = []
@@ -64,13 +74,30 @@ def _personality_sections() -> dict:
 
 def personality_names() -> List[str]:
     """The selectable personality names."""
-    return list(_personality_sections())
+    return list(_sections(PERSONALITIES_FILE))
 
 
 def personality_text(name: str) -> str:
     """Body of the selected personality, falling back to the default."""
-    sections = _personality_sections()
+    sections = _sections(PERSONALITIES_FILE)
     return sections.get(name) or sections.get(DEFAULT_PERSONALITY, "")
+
+
+def egress_mode() -> str:
+    """The configured egress mode, falling back to the default when unrecognized."""
+    mode = ConfigManager().get_config("BOSCO_EGRESS", DEFAULT_EGRESS)
+    if mode not in EGRESS_MODES:
+        log.warning(f"Unknown BOSCO_EGRESS {mode!r}; using {DEFAULT_EGRESS!r} ({', '.join(EGRESS_MODES)})")
+        return DEFAULT_EGRESS
+    return mode
+
+
+EGRESS_MODE = egress_mode()
+
+
+def egress_text() -> str:
+    """The egress rules for the configured mode, injected into the system prompt."""
+    return _sections(EGRESS_FILE).get(EGRESS_MODE, "")
 
 
 def read_guide(name: str) -> str:
