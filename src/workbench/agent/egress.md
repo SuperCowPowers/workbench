@@ -23,7 +23,8 @@ When it blocks a structure the user themselves gave you, that is theirs to expos
 tell them what would be sent and where, and once they say yes re-run passing that
 exact value — `confirm=smiles`, or a list for several. Consent is bound to the
 value, so one yes covers that structure on any later call and nothing else; a
-second structure is a second question.
+second structure is a second question. A new request is not a yes — if they
+haven't told you to send it, say so rather than assuming.
 
 A structure that came out of their FeatureSets, DataSources, or query results is a
 different matter — don't ask to send it, work offline instead.

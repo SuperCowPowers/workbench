@@ -14,7 +14,7 @@ the object yet. If you already hold an object, class, or util function, the
 Most users `pip install workbench`, so the code lives in site-packages, not a
 cloned repo. Always locate it dynamically; never hardcode a path. That applies to
 *this* package — a path the user names in their message is theirs to give, so just
-open it (`security`).
+open it.
 
 ## Locate the package
 
