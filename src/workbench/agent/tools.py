@@ -9,20 +9,12 @@ from typing import List
 
 from workbench.utils import bosco_utils
 from workbench.utils.bosco_utils import MAX_REPORT_CHARS
-from workbench.utils.config_manager import ConfigManager
-
-log = logging.getLogger("workbench")
+from workbench.utils.web_utils import EGRESS_MODE
 
 GUIDES_DIR = Path(__file__).parent / "guides"
 PERSONALITIES_FILE = Path(__file__).parent / "personalities.md"
 EGRESS_FILE = Path(__file__).parent / "egress.md"
 DEFAULT_PERSONALITY = "chipper"
-
-# How far Bosco may reach: "off" (AWS only), "guarded" (public web, no user data),
-# "full" (no constraints). Read once at import -- a setting the agent could flip
-# mid-session would be the accident it exists to prevent.
-EGRESS_MODES = ("off", "guarded", "full")
-DEFAULT_EGRESS = "off"
 
 # Always injected into the system prompt (not offered in the lazy-read menu).
 ALWAYS_LOADED = {"general"}
@@ -81,18 +73,6 @@ def personality_text(name: str) -> str:
     """Body of the selected personality, falling back to the default."""
     sections = _sections(PERSONALITIES_FILE)
     return sections.get(name) or sections.get(DEFAULT_PERSONALITY, "")
-
-
-def egress_mode() -> str:
-    """The configured egress mode, falling back to the default when unrecognized."""
-    mode = ConfigManager().get_config("BOSCO_EGRESS", DEFAULT_EGRESS)
-    if mode not in EGRESS_MODES:
-        log.warning(f"Unknown BOSCO_EGRESS {mode!r}; using {DEFAULT_EGRESS!r} ({', '.join(EGRESS_MODES)})")
-        return DEFAULT_EGRESS
-    return mode
-
-
-EGRESS_MODE = egress_mode()
 
 
 def egress_text() -> str:

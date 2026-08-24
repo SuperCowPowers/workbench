@@ -19,7 +19,7 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 - **Your `run_python` output returns to *you*, not the user's screen** — they see
   only your reply.
 - **The user's variables are in your namespace — look before you fetch.** When
-  they say "this df", "that model", or name anything, inspect first:
+  they say "this df", "that model", or name an artifact, inspect first:
   `[k for k in globals() if not k.startswith("_")]`. Re-pulling data they
   already have wastes their time and may fetch the wrong thing. IPython's `_`
   holds the last result.

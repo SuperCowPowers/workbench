@@ -183,6 +183,7 @@ class WorkbenchShell:
         self.commands["theme"] = importlib.import_module("workbench.utils.repl_themes").set_theme
         self.commands["reconnect"] = self.check_aws_account
         self.commands["pub_data"] = importlib.import_module("workbench.public_data").PublicData()
+        self.commands["web_get"] = importlib.import_module("workbench.utils.web_utils").web_get
         # Bosco is opt-in (ENABLE_BOSCO); when off, the agent, prompt tag, and router stay dark
         if self.bosco_enabled:
             self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
