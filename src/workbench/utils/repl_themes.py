@@ -95,6 +95,11 @@ def current_theme() -> str:
     return _current
 
 
+def token_color(token) -> str:
+    """The palette color name a prompt Token renders as, for cprint."""
+    return _PROMPT_ROLES.get(token, "lightgrey")
+
+
 def set_theme(name: str) -> None:
     """Switch the REPL color theme.
 

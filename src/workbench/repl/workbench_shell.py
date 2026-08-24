@@ -40,7 +40,7 @@ except ImportError:
 # Workbench Imports
 from workbench.local.local_meta import LocalMeta
 from workbench.utils.repl_utils import cprint, Spinner
-from workbench.utils.repl_themes import prompt_styles, current_theme
+from workbench.utils.repl_themes import prompt_styles, current_theme, token_color
 from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
@@ -52,9 +52,9 @@ from workbench.utils.chem_utils import vis
 
 # Egress dot: green is checked, yellow is unchecked, blue is closed.
 EGRESS_LIGHTS = {
-    "guarded": (Token.Lightgreen, "lightgreen"),
-    "full": (Token.Darkyellow, "darkyellow"),
-    "off": (Token.Blue, "lightblue"),
+    "guarded": Token.Lightgreen,
+    "full": Token.Darkyellow,
+    "off": Token.Blue,
 }
 
 
@@ -527,56 +527,35 @@ class WorkbenchShell:
     def log_warning():
         logging.getLogger("workbench").setLevel(logging.WARNING)
 
+    def status_rows(self) -> list[(Token, str)]:
+        """AWS, Redis, and egress state as (Token color, label) pairs.
+
+        The one place that decides what color each state is; the prompt dots and
+        the `status` listing both render from here.
+
+        Returns:
+            list[(Token, str)]: A Token color and label per status row
+        """
+        aws = (
+            (Token.Lightgreen, "AWS Account: OK") if self.aws_status else (Token.Red, "AWS Account: Failed to Connect")
+        )
+        cached = self.meta_status == "CACHED"
+        redis = (Token.Lightgreen, "Redis: Connected") if cached else (Token.Darkyellow, "Redis: Not Connected")
+        return [aws, redis, (EGRESS_LIGHTS[EGRESS_MODE], f"Egress: {EGRESS_MODE}")]
+
     def status_lights(self) -> list[(Token, str)]:
-        """Check the status of AWS, Meta, and egress and return Token colors
+        """The bracketed status dots shown in the prompt.
 
         Returns:
             list[(Token, str)]: A list of Token colors and status symbols
         """
-        _status_lights = [(Token.Blue, "[")]
-
-        # AWS Account Status
-        if self.aws_status:
-            _status_lights.append((Token.Lightgreen, "●"))
-        else:
-            _status_lights.append((Token.Red, "●"))
-
-        # Cached Meta Status
-        if self.meta_status == "CACHED":
-            _status_lights.append((Token.Lightgreen, "●"))
-        elif self.meta_status == "DIRECT":
-            _status_lights.append((Token.Blue, "●"))
-        elif self.meta_status == "FAIL":
-            _status_lights.append((Token.Orange, "●"))
-        else:  # Unknown
-            _status_lights.append((Token.Grey, "●"))
-
-        # Egress Mode
-        _status_lights.append((EGRESS_LIGHTS[EGRESS_MODE][0], "●"))
-
-        _status_lights.append((Token.Blue, "]"))
-
-        return _status_lights
+        dots = [(token, "●") for token, _ in self.status_rows()]
+        return [(Token.Blue, "[")] + dots + [(Token.Blue, "]")]
 
     def status_description(self):
-        """Print a description of the status of AWS, Meta, and egress"""
-
-        # AWS Account
-        if self.aws_status:
-            cprint("lightgreen", "\t● AWS Account: OK")
-        else:
-            cprint("red", "\t● AWS Account: Failed to Connect")
-
-        # Redis
-        if self.meta_status == "CACHED":
-            cprint("lightgreen", "\t● Meta: Cached")
-        elif self.meta_status == "DIRECT":
-            cprint("lightblue", "\t● Meta: Direct")
-        elif self.meta_status == "FAIL":
-            cprint("orange", "\t● Meta: Failed to Connect")
-
-        # Egress
-        cprint(EGRESS_LIGHTS[EGRESS_MODE][1], f"\t● Egress: {EGRESS_MODE}")
+        """Print a description of the status of AWS, Redis, and egress"""
+        for token, label in self.status_rows():
+            cprint(token_color(token), f"\t● {label}")
 
     # Helpers method to switch from direct Meta to Cached Meta
     def try_cached_meta(self):
