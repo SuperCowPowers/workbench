@@ -119,6 +119,13 @@ class ArtifactTimes:
         serverless scaling), not content, so it drifts forward on an untouched
         endpoint. A re-deploy always mints a new EndpointConfig, so the config's
         CreationTime is the timestamp freshness should be judged against.
+
+        Future self: for a MetaEndpoint this is the *parent's* config, so
+        redeploying a child (smiles-to-3d-v2 under smiles-to-2d-3d-v2) doesn't
+        move it. The child list is in the endpoint's chunked workbench tags, and
+        decoding those lives in workbench.utils -- outside this layer's budget.
+        Meanwhile a pipeline that cares declares the children as inputs next to
+        the parent: they resolve as roots and the forward flood does the rest.
         """
         sm = self.client("sagemaker")
         config = sm.describe_endpoint(EndpointName=name)["EndpointConfigName"]
