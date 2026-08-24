@@ -9,14 +9,14 @@ import json
 import os
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    confusion_matrix,
-    mean_absolute_error,
-    precision_recall_fscore_support,
-    r2_score,
-    root_mean_squared_error,
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+
+# Re-export: the regression metric implementation lives in workbench.utils.metrics_utils.
+# Part of the workbench.endpoints contract — see workbench.endpoints.
+from workbench.utils.metrics_utils import (  # noqa: F401 (re-exported for model scripts)
+    compute_regression_metrics,
+    print_regression_metrics,
 )
-from scipy.stats import spearmanr
 
 
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
@@ -325,38 +325,6 @@ def compress_std_outliers(std_array: np.ndarray) -> np.ndarray:
         capped[above, col] = fence + scale * np.log1p((col_data[above] - fence) / scale)
 
     return capped.squeeze() if squeeze else capped
-
-
-def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
-    """Compute standard regression metrics.
-
-    Args:
-        y_true: Ground truth target values
-        y_pred: Predicted values
-
-    Returns:
-        Dictionary with keys: rmse, mae, r2, spearmanr, support
-    """
-    return {
-        "rmse": root_mean_squared_error(y_true, y_pred),
-        "mae": mean_absolute_error(y_true, y_pred),
-        "r2": r2_score(y_true, y_pred),
-        "spearmanr": spearmanr(y_true, y_pred).correlation,
-        "support": len(y_true),
-    }
-
-
-def print_regression_metrics(metrics: dict[str, float]) -> None:
-    """Print regression metrics in the format expected by SageMaker metric definitions.
-
-    Args:
-        metrics: Dictionary of metric name -> value
-    """
-    print(f"rmse: {metrics['rmse']:.3f}")
-    print(f"mae: {metrics['mae']:.3f}")
-    print(f"r2: {metrics['r2']:.3f}")
-    print(f"spearmanr: {metrics['spearmanr']:.3f}")
-    print(f"support: {metrics['support']}")
 
 
 def compute_classification_metrics(

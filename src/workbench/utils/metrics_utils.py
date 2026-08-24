@@ -194,64 +194,46 @@ def compute_classification_metrics(
     return metrics_df
 
 
-def compute_regression_metrics(
-    predictions_df: pd.DataFrame,
-    target_col: str,
-    prediction_col: str = "prediction",
-) -> pd.DataFrame:
-    """Compute regression metrics from a predictions DataFrame.
+# The metric names that reach SageMaker training-job telemetry. `print_regression_metrics`
+# emits exactly these and `FeaturesToModel` builds its metric_definitions regexes from the
+# same list, so the two halves of that stdout contract cannot drift apart in source. They
+# still deploy on different clocks: the regexes are client-side, the prints are baked into
+# the image at WORKBENCH_VERSION. Ship the image first when adding, the regex first when removing.
+TRAINING_METRICS = ("rmse", "mae", "r2", "spearmanr", "support")
+
+
+def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    """Compute regression metrics from aligned truth/prediction arrays.
 
     `spread_ratio` is sd(pred)/sd(true); `bias` is mean(pred) - mean(true) in the target's
     own units. The best R2 any affine rescale can reach is `pearsonr` squared, so the gap
     from `r2` to that ceiling is placement, not ranking. Both need targets drawn from the
     deployment population — on a random split `bias` is 0 by construction.
 
-    When the target's credible-interval columns (`<target_col>_ci_lower` and
-    `<target_col>_ci_upper`) are present, an `st_rae` column is added — see
-    `soft_threshold_rae`. Targets without intervals get the standard metrics only.
-
     Args:
-        predictions_df: DataFrame with target and prediction columns
-        target_col: Name of the target column
-        prediction_col: Name of the prediction column (default: "prediction")
+        y_true: Ground truth target values
+        y_pred: Predicted values
 
     Returns:
-        DataFrame with regression metrics (rmse, mae, r2, pearsonr, spearmanr,
-        spread_ratio, bias, support, and st_rae when credible intervals are available).
-        Returns empty DataFrame if validation fails or no valid data.
+        Dict of metric name -> value (rmse, mae, r2, pearsonr, spearmanr, spread_ratio,
+        bias, support). Empty dict if no pair survives NaN removal.
     """
-    # Validate inputs
-    if predictions_df.empty:
-        log.warning("Empty DataFrame provided. Returning empty metrics.")
-        return pd.DataFrame()
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
 
-    if prediction_col not in predictions_df.columns:
-        log.warning(f"Prediction column '{prediction_col}' not found in DataFrame. Returning empty metrics.")
-        return pd.DataFrame()
+    keep = ~(np.isnan(y_true) | np.isnan(y_pred))
+    if not keep.all():
+        log.warning(f"NaNs found: dropping {int((~keep).sum())} of {len(keep)} rows.")
+        y_true, y_pred = y_true[keep], y_pred[keep]
 
-    if target_col not in predictions_df.columns:
-        log.warning(f"Target column '{target_col}' not found in DataFrame. Returning empty metrics.")
-        return pd.DataFrame()
-
-    # Handle NaN values
-    df = predictions_df[[target_col, prediction_col]].copy()
-    nan_target = df[target_col].isnull().sum()
-    nan_pred = df[prediction_col].isnull().sum()
-    if nan_target > 0 or nan_pred > 0:
-        log.warning(f"NaNs found: {target_col}={nan_target}, {prediction_col}={nan_pred}. Dropping NaN rows.")
-        df = df.dropna()
-
-    if df.empty:
+    if len(y_true) == 0:
         log.warning("No valid rows after dropping NaNs. Returning empty metrics.")
-        return pd.DataFrame()
-
-    y_true = df[target_col].values
-    y_pred = df[prediction_col].values
+        return {}
 
     # Measured from the two distributions, not solved out of the R2 decomposition, which
     # would inherit and square any error in the correlation term.
     sd_true = y_true.std()
-    metrics = {
+    return {
         "rmse": root_mean_squared_error(y_true, y_pred),
         "mae": mean_absolute_error(y_true, y_pred),
         "r2": r2_score(y_true, y_pred),
@@ -262,18 +244,16 @@ def compute_regression_metrics(
         "support": len(y_true),
     }
 
-    # Credible intervals are optional, so st_rae only joins the row when the target carries them
-    ci_cols = [f"{target_col}_ci_lower", f"{target_col}_ci_upper"]
-    if all(c in predictions_df.columns for c in ci_cols):
-        ci = predictions_df.loc[df.index, ci_cols].dropna()
-        if ci.empty:
-            log.warning(f"Credible-interval columns for '{target_col}' are all NaN. Skipping st_rae.")
-        else:
-            metrics["st_rae"] = soft_threshold_rae(
-                df.loc[ci.index, target_col], df.loc[ci.index, prediction_col], ci[ci_cols[0]], ci[ci_cols[1]]
-            )
 
-    return pd.DataFrame([metrics])
+def print_regression_metrics(metrics: Dict[str, float]) -> None:
+    """Print `TRAINING_METRICS` in the format SageMaker's metric definitions scrape.
+
+    Args:
+        metrics: Output of `compute_regression_metrics`
+    """
+    for name in TRAINING_METRICS:
+        value = metrics[name]
+        print(f"{name}: {value}" if isinstance(value, int) else f"{name}: {value:.3f}")
 
 
 def soft_threshold_error(
@@ -339,61 +319,6 @@ def soft_threshold_rae(
         log.warning("Baseline error is zero, ST-RAE is undefined. Returning NaN.")
         return float("nan")
     return float(numerator / denominator)
-
-
-def macro_soft_threshold_rae(
-    predictions_df: pd.DataFrame,
-    endpoints: List[str],
-    prediction_suffix: str = "_prediction",
-    ci_lower_suffix: str = "_ci_lower",
-    ci_upper_suffix: str = "_ci_upper",
-    soft_baseline: bool = False,
-) -> pd.DataFrame:
-    """Macro-averaged ST-RAE over several endpoints, plus each endpoint's own score.
-
-    Each endpoint is scored on its own non-NaN rows, so sparse multi-task targets
-    need no alignment. The macro average weights endpoints equally regardless of support.
-
-    Args:
-        predictions_df: DataFrame holding, per endpoint, the truth/prediction/CI columns
-        endpoints: Target column names, e.g. ["cyp3a4_pic50", "cyp2d6_pic50"]
-        prediction_suffix: Appended to an endpoint name to find its prediction column
-        ci_lower_suffix: Appended to an endpoint name to find its lower-bound column
-        ci_upper_suffix: Appended to an endpoint name to find its upper-bound column
-        soft_baseline: Passed through to `soft_threshold_rae`
-
-    Returns:
-        DataFrame with one row per endpoint (endpoint, st_rae, support) plus a final
-        "MA" row holding the macro average. Endpoints with no valid rows are skipped.
-    """
-    rows = []
-    for endpoint in endpoints:
-        cols = [
-            endpoint,
-            f"{endpoint}{prediction_suffix}",
-            f"{endpoint}{ci_lower_suffix}",
-            f"{endpoint}{ci_upper_suffix}",
-        ]
-        missing = [c for c in cols if c not in predictions_df.columns]
-        if missing:
-            log.warning(f"Endpoint '{endpoint}' missing columns {missing}. Skipping.")
-            continue
-
-        df = predictions_df[cols].dropna()
-        if df.empty:
-            log.warning(f"Endpoint '{endpoint}' has no valid rows. Skipping.")
-            continue
-
-        score = soft_threshold_rae(df[cols[0]], df[cols[1]], df[cols[2]], df[cols[3]], soft_baseline=soft_baseline)
-        rows.append({"endpoint": endpoint, "st_rae": score, "support": len(df)})
-
-    if not rows:
-        log.warning("No endpoints could be scored. Returning empty metrics.")
-        return pd.DataFrame()
-
-    scores = pd.DataFrame(rows)
-    macro = {"endpoint": "MA", "st_rae": scores["st_rae"].mean(), "support": int(scores["support"].sum())}
-    return pd.concat([scores, pd.DataFrame([macro])], ignore_index=True)
 
 
 def bootstrap_metric(
@@ -559,8 +484,8 @@ def compute_metrics_from_predictions(
 
     if class_labels:
         return compute_classification_metrics(predictions_df, target_col, class_labels, prediction_col)
-    else:
-        return compute_regression_metrics(predictions_df, target_col, prediction_col)
+    metrics = compute_regression_metrics(predictions_df[target_col], predictions_df[prediction_col])
+    return pd.DataFrame([metrics]) if metrics else pd.DataFrame()
 
 
 if __name__ == "__main__":

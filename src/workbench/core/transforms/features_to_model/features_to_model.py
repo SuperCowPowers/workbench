@@ -26,6 +26,7 @@ from workbench.model_scripts.script_generation import generate_model_script, fil
 from workbench.utils.workbench_logging import _suppress_sagemaker_logging
 from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE
 from workbench.utils.s3_utils import read_s3_json
+from workbench.utils.metrics_utils import TRAINING_METRICS
 
 # Transient DescribeTrainingJob control-plane errors that botocore does not classify as
 # retryable, so a single blip under concurrent Batch load would otherwise kill the pipeline.
@@ -312,13 +313,7 @@ class FeaturesToModel(Transform):
 
         # Metric Definitions for Regression (matches model script output format)
         if self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-            metric_definitions = [
-                {"Name": "rmse", "Regex": r"rmse: ([0-9.]+)"},
-                {"Name": "mae", "Regex": r"mae: ([0-9.]+)"},
-                {"Name": "r2", "Regex": r"r2: ([0-9.-]+)"},
-                {"Name": "spearmanr", "Regex": r"spearmanr: ([0-9.-]+)"},
-                {"Name": "support", "Regex": r"support: ([0-9]+)"},
-            ]
+            metric_definitions = [{"Name": m, "Regex": rf"{m}: ([-0-9.]+)"} for m in TRAINING_METRICS]
 
         # Metric Definitions for Classification
         elif self.model_type == ModelType.CLASSIFIER:

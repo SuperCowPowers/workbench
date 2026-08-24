@@ -1,13 +1,11 @@
 # Imports for XGB Model
 import xgboost as xgb
-from workbench.endpoints.inference import save_output
+from workbench.endpoints.inference import compute_regression_metrics, print_regression_metrics, save_output
 import numpy as np
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import KFold
 from scipy.optimize import minimize
-from scipy.stats import spearmanr
 
 from io import StringIO
 import json
@@ -202,16 +200,7 @@ if __name__ == "__main__":
     save_output(df_oof[oof_columns].iloc[:0], f"{model_metrics_path}/val_predictions.csv")
 
     # Report Performance Metrics (out-of-fold, matching oof_predictions.csv)
-    rmse = root_mean_squared_error(df_oof[target], df_oof["prediction"])
-    mae = mean_absolute_error(df_oof[target], df_oof["prediction"])
-    r2 = r2_score(df_oof[target], df_oof["prediction"])
-    spearman_corr = spearmanr(df_oof[target], df_oof["prediction"]).correlation
-    support = len(df_oof)
-    print(f"rmse: {rmse:.3f}")
-    print(f"mae: {mae:.3f}")
-    print(f"r2: {r2:.3f}")
-    print(f"spearmanr: {spearman_corr:.3f}")
-    print(f"support: {support}")
+    print_regression_metrics(compute_regression_metrics(df_oof[target], df_oof["prediction"]))
 
     # Now save the models
     for name, model in models.items():

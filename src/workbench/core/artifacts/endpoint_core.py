@@ -646,11 +646,7 @@ class EndpointCore(AWSArtifact):
         # oof_predictions.csv — merge them in from the FeatureSet so
         # cross_fold captures match the live-inference column set.
         meta_cols = self.workbench_meta().get("inference_meta", []) or []
-        # Label credible intervals live in the FeatureSet but not the training view — they
-        # are label metadata, not features, so they never reach the model script. Merge them
-        # back so compute_regression_metrics can emit st_rae.
-        ci_cols = [c for c in fs.columns if c.endswith(("_ci_lower", "_ci_upper"))]
-        merge_candidates = ["smiles"] + ci_cols + [c for c in meta_cols if c != "smiles"]
+        merge_candidates = ["smiles"] + [c for c in meta_cols if c != "smiles"]
         to_merge = [c for c in merge_candidates if c not in out_of_fold_df.columns and c in fs.columns]
         if to_merge:
             quoted = ", ".join(f'"{c}"' for c in to_merge)
@@ -1148,11 +1144,6 @@ class EndpointCore(AWSArtifact):
         if "confidence" in cols:
             output_columns.append("confidence")
 
-        # Credible-interval bounds on the *label* (not the prediction — that's q_*/prediction_std).
-        # compute_regression_metrics reads these suffixes to emit st_rae, so dropping them here
-        # silently costs the metric.
-        output_columns += [c for c in cols if c.endswith(("_ci_lower", "_ci_upper"))]
-
         # Add quantile columns (q_*) only if requested
         if include_quantiles:
             output_columns += [c for c in cols if c.startswith("q_")]
@@ -1188,7 +1179,12 @@ class EndpointCore(AWSArtifact):
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
-        return compute_regression_metrics(prediction_df, target_column, prediction_col)
+        for col in (target_column, prediction_col):
+            if col not in prediction_df.columns:
+                self.log.warning(f"Column '{col}' not found in DataFrame. Returning empty metrics.")
+                return pd.DataFrame()
+        metrics = compute_regression_metrics(prediction_df[target_column], prediction_df[prediction_col])
+        return pd.DataFrame([metrics]) if metrics else pd.DataFrame()
 
     def residuals(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Add the residuals to the prediction DataFrame
