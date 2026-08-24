@@ -33,6 +33,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.api import FeatureSet, Model, Endpoint, ParameterStore
+from workbench.lambda_layer.artifact_times import ArtifactTimes
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -196,10 +197,15 @@ def input_columns_key(endpoint_name: str) -> str:
     return f"{ENDPOINT_PARAM_PREFIX}/{endpoint_name}/input_columns"
 
 
-def _model_modified(endpoint) -> Optional[datetime]:
-    """Modified time of the model behind ``endpoint``, or None if unavailable."""
+def _deploy_modified(endpoint) -> Optional[datetime]:
+    """When ``endpoint``'s deployed content last changed, or None if unavailable.
+
+    Shares :class:`ArtifactTimes` with the pipeline DAG's freshness walk so both
+    judge an endpoint by the same clock. A lookup failure degrades to None here
+    (keep serving the cached columns) rather than propagating.
+    """
     try:
-        modified = Model(endpoint.get_input()).modified()
+        modified = ArtifactTimes(endpoint.boto3_session).mtime(f"endpoint:{endpoint.name}")
         return modified if isinstance(modified, datetime) else None
     except Exception:
         return None
@@ -211,13 +217,13 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
     Used by both :meth:`Endpoint.output_columns` and :meth:`Endpoint.input_columns`.
 
     Reads ``key`` from ParameterStore. If it's missing, or the parameter's
-    ``LastModifiedDate`` is older than the *model's* ``modified()`` time,
-    invokes ``register_fn(endpoint)`` to re-derive and rewrite the cache.
+    ``LastModifiedDate`` is older than the endpoint's deploy time, invokes
+    ``register_fn(endpoint)`` to re-derive and rewrite the cache.
 
-    Freshness anchors on the model, not the endpoint: SageMaker bumps an
-    endpoint's ``LastModifiedTime`` on every autoscaling event, so an endpoint
-    that scales to zero would look stale on every call — and re-deriving is a
-    live smoke inference.
+    Freshness anchors on the EndpointConfig, not the endpoint: SageMaker bumps
+    an endpoint's ``LastModifiedTime`` on every autoscaling event, so an
+    endpoint that scales to zero would look stale on every call — and
+    re-deriving is a live smoke inference.
 
     Args:
         endpoint: The Workbench Endpoint instance.
@@ -239,12 +245,12 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
         return register_fn(endpoint)
 
     param_modified = ps.last_modified(key)
-    model_modified = _model_modified(endpoint)
+    deploy_modified = _deploy_modified(endpoint)
 
-    if param_modified is not None and model_modified is not None and model_modified > param_modified:
+    if param_modified is not None and deploy_modified is not None and deploy_modified > param_modified:
         endpoint.log.info(
             f"Endpoint[{endpoint.name}]: cached {kind} are stale "
-            f"(model modified {model_modified} > param modified {param_modified}) — re-deriving."
+            f"(deployed {deploy_modified} > param modified {param_modified}) — re-deriving."
         )
         return register_fn(endpoint)
 

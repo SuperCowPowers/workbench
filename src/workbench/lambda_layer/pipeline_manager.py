@@ -53,24 +53,7 @@ from typing import Any, Callable, NamedTuple
 
 import networkx as nx
 
-# boto3 error codes that mean "this artifact does not exist (yet)" -- a legitimate
-# "must run". Distinct from auth/region/throttle failures, which mean "could not
-# determine freshness" and must NOT be silently treated as must-run.
-_ARTIFACT_NOT_FOUND_CODES = {
-    "EntityNotFoundException",  # Glue get_table
-    "ResourceNotFound",  # SageMaker describe_feature_group
-    "ResourceNotFoundException",
-    "ValidationException",  # SageMaker list_model_packages against a missing group
-}
-
-# If nearly every resolved artifact is absent, it's almost always the wrong AWS
-# account/region rather than a genuine from-scratch build.
-# Public datasets live in this anonymous, read-only S3 bucket. Mirrors
-# workbench.api.PublicData.BUCKET, duplicated here (rather than imported) to keep the
-# layer dependency-light -- importing PublicData would pull pandas. Resolved via an
-# unsigned client, so a `public:` ref's mtime needs no credentials.
-PUBLIC_DATA_BUCKET = "workbench-public-data"
-PUBLIC_DATA_EXTENSIONS = (".parquet", ".csv")
+from workbench.lambda_layer.artifact_times import ArtifactTimes
 
 
 def ref_type(ref: str) -> str:
@@ -385,7 +368,7 @@ class PipelineManager:
         self.jobs = jobs
         self.log = logging.getLogger("workbench")  # color + CloudWatch via logging_setup()
         self._mtime_cache: dict = {}  # ref -> mtime, resolved at most once per instance
-        self._aws: dict = {}  # boto3 client cache (lazy)
+        self._artifact_times = ArtifactTimes(self._session)
 
         # Each (script, mode) is a unique run.
         seen: set = set()
@@ -652,94 +635,9 @@ class PipelineManager:
             return True, "stale"
         return False, "up_to_date"
 
-    def _aws_client(self, name: str):
-        import boto3  # lazy: from the Lambda runtime / workbench's boto3
-
-        if name not in self._aws:
-            self._aws[name] = (self._session or boto3).client(name)
-        return self._aws[name]
-
-    def _public_s3(self):
-        """Anonymous (unsigned) S3 client for the public data bucket -- no creds, us-west-2."""
-        import boto3
-        from botocore import UNSIGNED
-        from botocore.config import Config
-
-        if "__public__" not in self._aws:
-            self._aws["__public__"] = boto3.client(
-                "s3", region_name="us-west-2", config=Config(signature_version=UNSIGNED)
-            )
-        return self._aws["__public__"]
-
-    def _public_mtime(self, name: str):
-        """LastModified of a PublicData object, trying each known extension.
-
-        Returns None if the dataset isn't found under any extension (-> "must run").
-        A non-404 error (throttle, etc.) propagates to the caller's ClientError
-        handler -- same "don't guess on failure" rule as the other resolvers.
-        """
-        from botocore.exceptions import ClientError
-
-        s3 = self._public_s3()
-        for ext in PUBLIC_DATA_EXTENSIONS:
-            try:
-                return s3.head_object(Bucket=PUBLIC_DATA_BUCKET, Key=name + ext)["LastModified"]
-            except ClientError as e:
-                if e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
-                    continue  # try the next extension
-                raise
-        self.log.warning(f"_artifact_mtime('public:{name}') -> absent (no .parquet/.csv in {PUBLIC_DATA_BUCKET})")
-        return None
-
     def _artifact_mtime(self, ref: str):
-        """Resolve a typed artifact ref to its last-modified time (None if absent).
-
-        Raw boto3 so it stays in the layer's dependency budget:
-            ds:<name>     -> Glue table UpdateTime
-            fs:<name>     -> FeatureGroup CreationTime
-            model:<name>  -> latest model package CreationTime
-            public:<name> -> PublicData S3 object LastModified (unsigned, no creds)
-            endpoint:<name> -> SageMaker endpoint LastModifiedTime
-
-        A genuinely-absent artifact returns None -> "must run". A lookup that we
-        *couldn't complete* (bad creds, no region, AccessDenied, throttling) is a
-        different beast: returning None there would silently resubmit every job, so
-        we let it raise instead. NoCredentials/NoRegion/connection errors aren't
-        ClientErrors, so they propagate uncaught -- same intent.
-        """
-        from botocore.exceptions import ClientError
-
-        kind, _, name = ref.partition(":")
-        if not name:
-            self.log.error(f"Unrecognized artifact ref (no type prefix): {ref!r}")
-            return None
-        try:
-            if kind == "ds":
-                return self._aws_client("glue").get_table(DatabaseName="workbench", Name=name)["Table"]["UpdateTime"]
-            if kind == "fs":
-                return self._aws_client("sagemaker").describe_feature_group(FeatureGroupName=name)["CreationTime"]
-            if kind == "model":
-                packages = self._aws_client("sagemaker").list_model_packages(
-                    ModelPackageGroupName=name, SortBy="CreationTime", SortOrder="Descending", MaxResults=1
-                )["ModelPackageSummaryList"]
-                return packages[0]["CreationTime"] if packages else None
-            if kind == "public":
-                return self._public_mtime(name)
-            if kind == "endpoint":
-                return self._aws_client("sagemaker").describe_endpoint(EndpointName=name)["LastModifiedTime"]
-        except ClientError as e:
-            code = e.response.get("Error", {}).get("Code", "")
-            if code in _ARTIFACT_NOT_FOUND_CODES:
-                # Artifact doesn't exist -> "must run". Expected on a first build; a *wall*
-                # of these is caught by the plan-level guard in plan().
-                self.log.warning(f"_artifact_mtime({ref!r}) -> absent ({code})")
-                return None
-            # Couldn't determine freshness (AccessDenied, throttling, ...). Fail loudly
-            # rather than guess "must run" and resubmit everything.
-            self.log.error(f"_artifact_mtime({ref!r}) -> lookup failed ({code}); cannot assess freshness")
-            raise
-        self.log.error(f"Unknown artifact type in ref: {ref!r}")
-        return None
+        """Last-modified time of an artifact ref (None if absent). See ArtifactTimes."""
+        return self._artifact_times.mtime(ref)
 
     def _cached_mtime(self, ref: str):
         """``_artifact_mtime`` memoized per instance (the freshness walk hits refs many times)."""

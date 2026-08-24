@@ -524,7 +524,7 @@ class TestArtifactMtime:
 
         manager = pm([job("x.py", outputs=["fs:foo"])])
         err = ClientError({"Error": {"Code": "ResourceNotFound", "Message": "nope"}}, "DescribeFeatureGroup")
-        manager._aws_client = lambda _name: self._fs_client_raising(err)
+        manager._artifact_times.client = lambda _name: self._fs_client_raising(err)
         assert manager._artifact_mtime("fs:foo") is None
 
     def test_access_denied_raises(self):
@@ -532,7 +532,7 @@ class TestArtifactMtime:
 
         manager = pm([job("x.py", outputs=["fs:foo"])])
         err = ClientError({"Error": {"Code": "AccessDeniedException", "Message": "denied"}}, "DescribeFeatureGroup")
-        manager._aws_client = lambda _name: self._fs_client_raising(err)
+        manager._artifact_times.client = lambda _name: self._fs_client_raising(err)
         with pytest.raises(ClientError):
             manager._artifact_mtime("fs:foo")
 
@@ -540,7 +540,7 @@ class TestArtifactMtime:
         from botocore.exceptions import NoCredentialsError
 
         manager = pm([job("x.py", outputs=["fs:foo"])])
-        manager._aws_client = lambda _name: self._fs_client_raising(NoCredentialsError())
+        manager._artifact_times.client = lambda _name: self._fs_client_raising(NoCredentialsError())
         with pytest.raises(NoCredentialsError):
             manager._artifact_mtime("fs:foo")
 
@@ -561,18 +561,51 @@ class TestArtifactMtime:
 
     def test_public_resolves_parquet(self):
         manager = pm([job("x.py", inputs=["public:comp_chem/logp/logp_all"])])
-        manager._public_s3 = lambda: self._public_s3({"comp_chem/logp/logp_all.parquet": 123})
+        manager._artifact_times.public_s3 = lambda: self._public_s3({"comp_chem/logp/logp_all.parquet": 123})
         assert manager._artifact_mtime("public:comp_chem/logp/logp_all") == 123
 
     def test_public_falls_back_to_csv(self):
         manager = pm([job("x.py", inputs=["public:foo/bar"])])
-        manager._public_s3 = lambda: self._public_s3({"foo/bar.csv": 99})  # no .parquet -> tries .csv
+        manager._artifact_times.public_s3 = lambda: self._public_s3({"foo/bar.csv": 99})  # no .parquet -> tries .csv
         assert manager._artifact_mtime("public:foo/bar") == 99
 
     def test_public_absent_returns_none(self):
         manager = pm([job("x.py", inputs=["public:nope/missing"])])
-        manager._public_s3 = lambda: self._public_s3({})  # neither extension exists -> must run
+        manager._artifact_times.public_s3 = lambda: self._public_s3({})  # neither extension exists -> must run
         assert manager._artifact_mtime("public:nope/missing") is None
+
+    # -- endpoint: (EndpointConfig CreationTime, not the endpoint's own clock) --
+
+    @staticmethod
+    def _sagemaker_endpoint(config_name, config_created, endpoint_modified):
+        class _Client:
+            def describe_endpoint(self, EndpointName):
+                return {"EndpointConfigName": config_name, "LastModifiedTime": endpoint_modified}
+
+            def describe_endpoint_config(self, EndpointConfigName):
+                assert EndpointConfigName == config_name
+                return {"CreationTime": config_created}
+
+        return _Client()
+
+    def test_endpoint_anchors_on_config_not_endpoint(self):
+        """An endpoint whose state churned (scaling) keeps its config's timestamp."""
+        manager = pm([job("x.py", inputs=["endpoint:smiles-to-2d"])])
+        manager._artifact_times.client = lambda _name: self._sagemaker_endpoint(
+            "cfg-1", config_created=10, endpoint_modified=99
+        )
+        assert manager._artifact_mtime("endpoint:smiles-to-2d") == 10
+
+    def test_endpoint_absent_returns_none(self):
+        from botocore.exceptions import ClientError
+
+        class _Client:
+            def describe_endpoint(self, EndpointName):
+                raise ClientError({"Error": {"Code": "ValidationException"}}, "DescribeEndpoint")
+
+        manager = pm([job("x.py", inputs=["endpoint:gone"])])
+        manager._artifact_times.client = lambda _name: _Client()
+        assert manager._artifact_mtime("endpoint:gone") is None
 
 
 class TestMissingSources:
