@@ -42,7 +42,7 @@ from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.training.splits import analog_holdout_split
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
-from cyp_scoring import capture_st_rae
+from pipeline_utils.cyp_scoring import capture_st_rae
 
 FS_NAME = "openadmet_cyp_censored_f1"
 MODEL_NAME = "cyp-reg-chemprop-mt-cen"

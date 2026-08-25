@@ -19,7 +19,7 @@ Build the FeatureSet first: python cyp_feature_sets.py
 from workbench.api import Endpoint, FeatureSet, ModelFramework, ModelType
 from workbench.training.splits import analog_holdout_split
 
-from cyp_scoring import capture_st_rae
+from pipeline_utils.cyp_scoring import capture_st_rae
 
 FS_NAME = "openadmet_cyp_f2"
 FEATURE_ENDPOINT = "smiles-to-2d-3d-v2"
