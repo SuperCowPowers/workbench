@@ -26,6 +26,8 @@
        "outputs": ["fs:openadmet_cyp_aux_f1"]},
       {"script": "cyp_chemprop_mt_aux.py", "inputs": ["fs:openadmet_cyp_aux_f1"],
        "outputs": ["model:cyp-reg-chemprop-mt-aux", "endpoint:cyp-reg-chemprop-mt-aux"]},
+      {"script": "cyp_chemprop_mt_aux_100.py", "inputs": ["fs:openadmet_cyp_aux_f1"],
+       "outputs": ["model:cyp-reg-chemprop-mt-aux-100", "endpoint:cyp-reg-chemprop-mt-aux-100"]},
       {"script": "cyp_chemprop_mt_censored.py", "inputs": ["fs:openadmet_cyp_censored_f1"],
        "outputs": ["model:cyp-reg-chemprop-mt-cen", "endpoint:cyp-reg-chemprop-mt-cen"]},
       {"script": "cyp_chemprop_mt_100.py", "inputs": ["fs:openadmet_cyp_f1"],

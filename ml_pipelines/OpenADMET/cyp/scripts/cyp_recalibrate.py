@@ -31,7 +31,8 @@ from pathlib import Path
 
 import pandas as pd
 from openadmet_validation import validate_activity_submission
-from workbench.api import PublicData
+from scipy.stats import pearsonr
+from workbench.api import Model, PublicData
 
 # isoform -> (offset in log units, scale about the isoform's own mean).
 # Both are cumulative from the raw model output, so this file is the single
@@ -74,11 +75,68 @@ CALIBRATION = {
 # Safety net only. Clamping creates ties, and Spearman and Kendall are both scored, so a
 # binding floor costs ranking. At the settings above it binds on zero compounds.
 FLOOR = 1.0
+
+# Estimated blind-set label distribution per isoform. This is what makes calibrating a new
+# model free -- match its predictions to these rather than spending a submission to
+# discover its bias.
+#
+# Means are MEASURED, not solved out of the R2 decomposition. Bias derived from
+# R2 = 2*rho*k - k^2 - b^2 inherits and squares any error in the correlation term, and
+# doing exactly that put CYP1A2's mean at 3.97 when the board says 4.36 -- a 0.39 error
+# that cost a submission. CYP1A2 and CYP2D6 come from offsets the board confirmed
+# (-0.60 and -1.20 against predicted means of 4.96 and 4.77). CYP2C9 and CYP3A4 were never
+# shifted and sit at 100% and 98% of their ceilings, so their bias is ~0 and their blind
+# mean is their predicted mean.
+#
+# The sd figures invert MAE and R2 with an assumed RMSE/MAE ratio of 1.2, so +-10%. Only
+# CYP2D6's is corroborated: expanding to k = pearson x 1.60 improved it on the board.
+BLIND_MOMENTS = {
+    "CYP1A2": {"mean": 4.36, "sd": 1.34},
+    "CYP2C9": {"mean": 4.85, "sd": 0.93},
+    "CYP2D6": {"mean": 3.57, "sd": 1.60},
+    "CYP3A4": {"mean": 4.64, "sd": 1.10},
+}
 VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in CALIBRATION}
 DEFAULT_SOURCE = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-100_activity_submission.csv"
 
 
-def recalibrate(source: Path, out_dir: Path, tag: str) -> Path:
+def moments_calibration(sub: pd.DataFrame, holdout_model: str) -> dict:
+    """Derive per-isoform offset and scale from the estimated blind-set moments.
+
+    The R2-optimal prediction spread is `pearson * sd(true)`, not sd(true) -- a point
+    predictor should be narrower than the truth by exactly its correlation. Pearson comes
+    from `holdout_model`, the analog-holdout counterpart of whatever produced `sub`, since
+    a 100% model has no honest score of its own.
+
+    Holdout Pearson has run below board Pearson before (CYP2D6: 0.419 vs an implied
+    0.531), so this under-expands rather than over-expands. That is the safe direction --
+    expanding past k = pearson costs R2 on both sides.
+    """
+    model = Model(holdout_model)
+    runs = model.list_inference_runs()
+    calibration = {}
+    for iso, moments in BLIND_MOMENTS.items():
+        target = f"{iso.lower()}_pic50_direct_inhibition"
+        run = f"cyp_analog_holdout_{target}"
+        if run not in runs:
+            raise ValueError(f"'{holdout_model}' has no capture '{run}'")
+        d = model.get_inference_predictions(run)[[target, "prediction"]].dropna()
+        rho = pearsonr(d[target], d["prediction"]).statistic
+
+        current = sub[VALUE_COLUMNS[iso]]
+        target_sd = rho * moments["sd"]
+        scale = target_sd / current.std()
+        # Scaling happens about the isoform's own mean, so the offset moves the centre.
+        offset = moments["mean"] - current.mean()
+        calibration[iso] = {"offset": offset, "scale": scale}
+        print(
+            f"{iso:<8} pearson {rho:.3f} | sd {current.std():.2f} -> {target_sd:.2f} (x{scale:.2f}) "
+            f"| mean {current.mean():.2f} -> {moments['mean']:.2f} ({offset:+.2f})"
+        )
+    return calibration
+
+
+def recalibrate(source: Path, out_dir: Path, tag: str, calibration: dict = None) -> Path:
     """Apply each isoform's affine correction and write a validated submission."""
     sub = pd.read_csv(source)
     blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
@@ -87,9 +145,10 @@ def recalibrate(source: Path, out_dir: Path, tag: str) -> Path:
     if set(sub["Molecule_Name"]) != expected:
         raise ValueError(f"{source} identifiers do not match the blinded set")
 
-    print(f"{'isoform':<8} {'offset':>7} {'scale':>6} {'mean':>15} {'sd':>15} {'min':>15} {'floored':>8}")
+    calibration = calibration or CALIBRATION
+    print(f"\n{'isoform':<8} {'offset':>7} {'scale':>6} {'mean':>15} {'sd':>15} {'min':>15} {'floored':>8}")
     clamped = {}
-    for iso, cal in CALIBRATION.items():
+    for iso, cal in calibration.items():
         col = VALUE_COLUMNS[iso]
         before = sub[col]
         if cal["offset"] == 0.0 and cal["scale"] == 1.0:
@@ -134,6 +193,15 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="Submission to shift")
     parser.add_argument("--tag", default="recal", help="Suffix for the output filename")
     parser.add_argument("--out", type=Path, default=Path(__file__).parent / "outputs", help="Output directory")
+    parser.add_argument(
+        "--moments",
+        metavar="HOLDOUT_MODEL",
+        help="Derive offsets/scales from BLIND_MOMENTS instead of the hardcoded CALIBRATION, "
+        "taking Pearson from this model's analog-holdout captures",
+    )
     args = parser.parse_args()
 
-    recalibrate(args.source, args.out, args.tag)
+    derived = None
+    if args.moments:
+        derived = moments_calibration(pd.read_csv(args.source), args.moments)
+    recalibrate(args.source, args.out, args.tag, derived)
