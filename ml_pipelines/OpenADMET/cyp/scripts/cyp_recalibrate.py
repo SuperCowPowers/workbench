@@ -73,7 +73,8 @@ CALIBRATION = {
 # buying only 0.465 -> 0.522. Widen it once CYP2D6 shows the term is worth having.
 #
 # Safety net only. Clamping creates ties, and Spearman and Kendall are both scored, so a
-# binding floor costs ranking. At the settings above it binds on zero compounds.
+# binding floor costs ranking. Each run prints how many compounds it binds -- keep it near
+# zero; a handful of ties out of ~2,000 rows is below the metric's resolution.
 FLOOR = 1.0
 
 # Estimated blind-set label distribution per isoform. This is what makes calibrating a new
@@ -88,19 +89,27 @@ FLOOR = 1.0
 # shifted and sit at 100% and 98% of their ceilings, so their bias is ~0 and their blind
 # mean is their predicted mean.
 #
-# The sd figures invert MAE and R2 with an assumed RMSE/MAE ratio of 1.2, so +-10%. Only
-# CYP2D6's is corroborated: expanding to k = pearson x 1.60 improved it on the board.
+# The sd figures come from `cyp_leaderboard.field_sd`. Every entry on a board is scored
+# against the same labels, so inverting each row's MAE and R2 gives an independent estimate
+# of the same sd -- 60 replicates per isoform, agreeing to a 1-2% IQR. What they share is
+# an assumed residual shape; heavier-than-Gaussian tails would raise all four together, so
+# the relative widths are far better determined than the common scale.
 BLIND_MOMENTS = {
-    "CYP1A2": {"mean": 4.36, "sd": 1.34},
-    "CYP2C9": {"mean": 4.85, "sd": 0.93},
-    "CYP2D6": {"mean": 3.57, "sd": 1.60},
-    "CYP3A4": {"mean": 4.64, "sd": 1.10},
+    "CYP1A2": {"mean": 4.36, "sd": 1.417},
+    "CYP2C9": {"mean": 4.85, "sd": 0.958},
+    "CYP2D6": {"mean": 3.57, "sd": 1.526},
+    "CYP3A4": {"mean": 4.64, "sd": 1.146},
 }
+# Board R2 for the entry currently standing, `cyp-reg-chemprop-mt-aux-100` calibrated with
+# --moments --no-shrink (macro ST-RAE 0.4999, rank 2 on 2026-08-24). Used by --board to
+# solve each isoform's Pearson directly instead of proxying it.
+BOARD_R2 = {"CYP1A2": 0.5189, "CYP2C9": 0.6778, "CYP2D6": 0.3450, "CYP3A4": 0.6836}
+
 VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in CALIBRATION}
 DEFAULT_SOURCE = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-100_activity_submission.csv"
 
 
-def moments_calibration(sub: pd.DataFrame, holdout_model: str) -> dict:
+def moments_calibration(sub: pd.DataFrame, holdout_model: str, no_shrink: bool = False) -> dict:
     """Derive per-isoform offset and scale from the estimated blind-set moments.
 
     The R2-optimal prediction spread is `pearson * sd(true)`, not sd(true) -- a point
@@ -111,6 +120,11 @@ def moments_calibration(sub: pd.DataFrame, holdout_model: str) -> dict:
     Holdout Pearson has run below board Pearson before (CYP2D6: 0.419 vs an implied
     0.531), so this under-expands rather than over-expands. That is the safe direction --
     expanding past k = pearson costs R2 on both sides.
+
+    That same gap is why `no_shrink` exists. A scale below 1.0 says the model is
+    over-spread relative to `pearson * sd`, but if the board's Pearson is higher than the
+    holdout's then the real optimum is wider and shrinking moves away from it. Offsets are
+    unaffected -- bias is the dominant term and is measured, not inferred.
     """
     model = Model(holdout_model)
     runs = model.list_inference_runs()
@@ -126,12 +140,42 @@ def moments_calibration(sub: pd.DataFrame, holdout_model: str) -> dict:
         current = sub[VALUE_COLUMNS[iso]]
         target_sd = rho * moments["sd"]
         scale = target_sd / current.std()
+        if no_shrink and scale < 1.0:
+            scale = 1.0
         # Scaling happens about the isoform's own mean, so the offset moves the centre.
         offset = moments["mean"] - current.mean()
         calibration[iso] = {"offset": offset, "scale": scale}
         print(
             f"{iso:<8} pearson {rho:.3f} | sd {current.std():.2f} -> {target_sd:.2f} (x{scale:.2f}) "
             f"| mean {current.mean():.2f} -> {moments['mean']:.2f} ({offset:+.2f})"
+        )
+    return calibration
+
+
+def board_calibration(sub: pd.DataFrame) -> dict:
+    """Derive scale-only corrections from the board's own R2 for the standing entry.
+
+    With `R2 = 2*rho*k - k^2 - b^2` and one equation per isoform, rho and b are not
+    separately identifiable. Solving at b = 0 gives the *lowest* rho consistent with the
+    observed R2, so `k = rho` is a conservative widening target -- and since b^2 enters
+    additively, moving k toward rho improves R2 whatever the true bias turns out to be.
+
+    Offsets are left alone. Bias has been the term that burned us twice, the current
+    centres are matched to measured blind-set means, and CYP2C9 and CYP3A4 land at 96% and
+    98% of their Spearman-implied ceilings, which bounds any remaining bias as small.
+    """
+    calibration = {}
+    for iso, r2 in BOARD_R2.items():
+        sd_true = BLIND_MOMENTS[iso]["sd"]
+        current = sub[VALUE_COLUMNS[iso]]
+        k = current.std() / sd_true
+        rho = (r2 + k**2) / (2 * k)
+        scale = (rho * sd_true) / current.std()
+        calibration[iso] = {"offset": 0.0, "scale": scale}
+        arrow = "widen" if scale > 1 else "shrink"
+        print(
+            f"{iso:<8} R2 {r2:.4f} | k {k:.3f} -> implied pearson {rho:.3f} | "
+            f"{arrow} sd {current.std():.2f} -> {rho * sd_true:.2f} (x{scale:.2f})"
         )
     return calibration
 
@@ -199,9 +243,23 @@ if __name__ == "__main__":
         help="Derive offsets/scales from BLIND_MOMENTS instead of the hardcoded CALIBRATION, "
         "taking Pearson from this model's analog-holdout captures",
     )
+    parser.add_argument(
+        "--no-shrink",
+        action="store_true",
+        help="Never reduce an isoform's spread; holdout Pearson understates board Pearson, "
+        "so a computed scale below 1.0 is more likely proxy error than genuine over-spread",
+    )
+    parser.add_argument(
+        "--board",
+        action="store_true",
+        help="Derive scale-only corrections from BOARD_R2 for the standing entry; --source "
+        "must be the file that produced those numbers",
+    )
     args = parser.parse_args()
 
     derived = None
-    if args.moments:
-        derived = moments_calibration(pd.read_csv(args.source), args.moments)
+    if args.board:
+        derived = board_calibration(pd.read_csv(args.source))
+    elif args.moments:
+        derived = moments_calibration(pd.read_csv(args.source), args.moments, args.no_shrink)
     recalibrate(args.source, args.out, args.tag, derived)
