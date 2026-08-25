@@ -20,6 +20,7 @@ also handy to set the dashboard URL so Bosco can open Dashboard pages for you.
     ...
    "DASHBOARD_URL": "<your dashboard URL>",
    "ENABLE_BOSCO": true,
+   "BOSCO_EGRESS": "guarded",
    "WORKBENCH_ROLE": "Workbench-BuilderRole",
     ...
 }
@@ -57,17 +58,6 @@ To check a different model:
 ```bash
 bedrock_verify us.anthropic.claude-opus-4-8
 ```
-
-!!! info "Model availability can lag"
-    A model listed in the Bedrock catalog is not always callable right away.
-    AWS enables models per account, and a newly released one can return an
-    access or Marketplace error for a while before it starts working — often
-    without any action on your part. Some models also need to be enabled at the
-    AWS Organization level, which is outside your account's control.
-
-    If `bedrock_verify` fails on a model you expect to have, wait a few minutes
-    and run it again. If it keeps failing, contact Workbench support and we'll
-    help sort out where the model is gated.
 
 ### Cost
 
@@ -145,6 +135,59 @@ The first is a mechanism; the second is behavior. Where the two disagree — a
 delete you did not intend — the Builder role wins, which is why it is the role
 the REPL launches with by default.
 
+## Reaching the public web
+
+Public reference data is genuinely useful — ChEMBL activities, PubChem
+identifiers, a library's own documentation. Your compounds are not public, and a
+SMILES string in a URL *is* the structure, sitting in a third party's access logs.
+`BOSCO_EGRESS` decides how those two facts get reconciled.
+
+| Mode | Behavior |
+|---|---|
+| `off` | No public web at all. The agent declines and offers the offline path. |
+| `guarded` | The public web is reachable; your structures need your say-so. |
+| `full` | Unrestricted, and nothing is checked. |
+
+`off` and `full` are the ends of the range and explain themselves. `guarded` is
+the setting worth understanding, because it is the one that lets the agent be
+useful without making the disclosure decision on your behalf.
+
+### How guarded works
+
+<img src="../../images/bosco_egress_guarded.svg" alt="An outbound request from the ML agent passes through an egress check for structures, InChIKeys, and secrets; clean requests reach the public web, matches are blocked and returned to you to approve by value" style="width: 100%; min-height: 340px;">
+
+Every outbound request goes through a single function, which scans the
+fully-resolved URL — query parameters included — before anything leaves the
+machine. Three things stop it: chemical structures, InChIKeys, and credentials.
+
+When nothing matches, the request goes out. Reading a documentation page or
+pulling a ChEMBL target by its ID never interrupts you.
+
+When something matches, nothing is sent. The agent names the exact value and
+the destination host, then waits.
+
+Two properties matter more than the mechanism:
+
+- **Approval is bound to the value, not the moment.** Saying yes to one structure
+  covers that structure for the rest of the session — vary the similarity
+  threshold, page through results, switch databases — and covers nothing else. A
+  second compound is a second question.
+- **Your project data is never offered for approval.** A structure you typed is
+  yours to expose. A structure the agent pulled out of a FeatureSet, DataSource,
+  or query result is a different matter: it works offline instead, and does not
+  ask.
+
+### What this is, and is not
+
+The check is a guardrail, not a boundary. The REPL is a Python prompt, so an
+analyst who wants to reach the internet can `import requests` and do so — Bosco
+is not, and cannot be, what stops them. What it stops is the accident: an agent
+helpfully pasting a proprietary structure into a public API on the way to
+answering a reasonable question.
+
+IAM remains the hard boundary for everything the agent touches inside AWS. This
+sits on top of it, covering the one direction IAM has no opinion about.
+
 ## Retention and training
 
 Under the AWS service terms for third-party models on Bedrock, you retain all
@@ -159,12 +202,6 @@ Retention is configurable at the account or project level. The modes are
 `none` (nothing retained), `default` (AWS-only retention, above), and
 `provider_data_share` (prompts and completions shared with the model provider
 and retained up to 30 days, with possible human review).
-
-!!! warning "Model selection is a retention decision"
-    A few of the newest models are only available under
-    `provider_data_share` and cannot be used any other way. The agent's model
-    list deliberately excludes them. **Claude Opus 5**, the default, permits
-    `none` — so zero data retention is available without giving up the model.
 
 Invocation logging — which writes full prompt and completion text to S3 or
 CloudWatch — is **off unless you turn it on**. If you enable it for auditing,
