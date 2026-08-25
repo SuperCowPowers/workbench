@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 490" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="eg-agent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4a3f8f"/>
+      <stop offset="100%" stop-color="#6152b5"/>
+    </linearGradient>
+    <linearGradient id="eg-check" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="eg-web" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="eg-block" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#b5622a"/>
+      <stop offset="100%" stop-color="#d4783a"/>
+    </linearGradient>
+    <linearGradient id="eg-you" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <filter id="eg-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Agent -->
+  <rect x="40" y="100" width="220" height="110" rx="10" fill="url(#eg-agent)" filter="url(#eg-shadow)"/>
+  <text x="150" y="145" text-anchor="middle" font-size="24" font-weight="700" fill="#FFFFFF">ML Agent</text>
+  <text x="150" y="177" text-anchor="middle" font-size="17" fill="#d5cff2">web_get(url)</text>
+
+  <line x1="262" y1="155" x2="316" y2="155" stroke="#42A5F5" stroke-width="3"/>
+  <polygon points="314,146 332,155 314,164" fill="#42A5F5"/>
+
+  <!-- Egress check -->
+  <rect x="330" y="80" width="240" height="150" rx="10" fill="url(#eg-check)" filter="url(#eg-shadow)"/>
+  <text x="450" y="122" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">Egress check</text>
+  <text x="450" y="155" text-anchor="middle" font-size="16" fill="#c9e8e4">structures</text>
+  <text x="450" y="181" text-anchor="middle" font-size="16" fill="#c9e8e4">InChIKeys</text>
+  <text x="450" y="207" text-anchor="middle" font-size="16" fill="#c9e8e4">secrets</text>
+
+  <!-- Clean path -->
+  <line x1="572" y1="155" x2="626" y2="155" stroke="#42A5F5" stroke-width="3"/>
+  <polygon points="624,146 642,155 624,164" fill="#42A5F5"/>
+  <text x="604" y="138" text-anchor="middle" font-size="16" font-weight="600" fill="#42A5F5">clean</text>
+
+  <rect x="650" y="100" width="220" height="110" rx="10" fill="url(#eg-web)" filter="url(#eg-shadow)"/>
+  <text x="760" y="145" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">Public web</text>
+  <text x="760" y="177" text-anchor="middle" font-size="16" fill="#bfe3ec">ChEMBL, PubChem, ...</text>
+
+  <!-- Blocked path -->
+  <line x1="450" y1="232" x2="450" y2="316" stroke="#d4783a" stroke-width="3"/>
+  <polygon points="441,314 450,332 459,314" fill="#d4783a"/>
+  <text x="466" y="284" font-size="16" font-weight="600" fill="#d4783a">match</text>
+
+  <rect x="330" y="332" width="240" height="118" rx="10" fill="url(#eg-block)" filter="url(#eg-shadow)"/>
+  <text x="450" y="375" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">Blocked</text>
+  <text x="450" y="404" text-anchor="middle" font-size="16" fill="#f6ddc9">names what tripped</text>
+  <text x="450" y="428" text-anchor="middle" font-size="16" fill="#f6ddc9">and the destination</text>
+
+  <line x1="328" y1="391" x2="276" y2="391" stroke="#d4783a" stroke-width="3"/>
+  <polygon points="278,382 260,391 278,400" fill="#d4783a"/>
+
+  <!-- You decide -->
+  <rect x="40" y="332" width="220" height="118" rx="10" fill="url(#eg-you)" filter="url(#eg-shadow)"/>
+  <text x="150" y="375" text-anchor="middle" font-size="22" font-weight="700" fill="#FFFFFF">You decide</text>
+  <text x="150" y="404" text-anchor="middle" font-size="16" fill="#cfe9d1">no — nothing is sent</text>
+  <text x="150" y="428" text-anchor="middle" font-size="16" fill="#cfe9d1">yes — confirm=&lt;value&gt;</text>
+
+  <line x1="150" y1="330" x2="150" y2="228" stroke="#43A047" stroke-width="3" stroke-dasharray="7,5"/>
+  <polygon points="141,230 150,212 159,230" fill="#43A047"/>
+  <text x="166" y="278" font-size="16" fill="#43A047">one structure,</text>
+  <text x="166" y="300" font-size="16" fill="#43A047">not a blanket yes</text>
+
+</svg>

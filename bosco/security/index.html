@@ -535,6 +535,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reaching-the-public-web" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reaching the public web
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reaching the public web">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-guarded-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How guarded works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-this-is-and-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this is, and is not
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#retention-and-training" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5411,6 +5450,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#reaching-the-public-web" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reaching the public web
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reaching the public web">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-guarded-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How guarded works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-this-is-and-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this is, and is not
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#retention-and-training" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5509,9 +5587,10 @@ also handy to set the dashboard URL so Bosco can open Dashboard pages for you.</
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="err">...</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">   </span><span class="nt">"DASHBOARD_URL"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;your dashboard URL&gt;"</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">   </span><span class="nt">"ENABLE_BOSCO"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">   </span><span class="nt">"WORKBENCH_ROLE"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Workbench-BuilderRole"</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="err">...</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">}</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">   </span><span class="nt">"BOSCO_EGRESS"</span><span class="p">:</span><span class="w"> </span><span class="s2">"guarded"</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">   </span><span class="nt">"WORKBENCH_ROLE"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Workbench-BuilderRole"</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>The config file lives at:</p>
 <table>
@@ -5550,17 +5629,6 @@ round-trip against Claude:</p>
 <p>To check a different model:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bedrock_verify<span class="w"> </span>us.anthropic.claude-opus-4-8
 </span></code></pre></div>
-<div class="admonition info">
-<p class="admonition-title">Model availability can lag</p>
-<p>A model listed in the Bedrock catalog is not always callable right away.
-AWS enables models per account, and a newly released one can return an
-access or Marketplace error for a while before it starts working — often
-without any action on your part. Some models also need to be enabled at the
-AWS Organization level, which is outside your account's control.</p>
-<p>If <code>bedrock_verify</code> fails on a model you expect to have, wait a few minutes
-and run it again. If it keeps failing, contact Workbench support and we'll
-help sort out where the model is gated.</p>
-</div>
 <h3 id="cost">Cost</h3>
 <p>Per-token against your AWS account, on the same bill as SageMaker. See
 <a href="../../admin/aws_service_limits/">AWS Service Limits</a> for quota monitoring.</p>
@@ -5656,6 +5724,64 @@ already use, not a separate privilege.</p>
 <p>The first is a mechanism; the second is behavior. Where the two disagree — a
 delete you did not intend — the Builder role wins, which is why it is the role
 the REPL launches with by default.</p>
+<h2 id="reaching-the-public-web">Reaching the public web</h2>
+<p>Public reference data is genuinely useful — ChEMBL activities, PubChem
+identifiers, a library's own documentation. Your compounds are not public, and a
+SMILES string in a URL <em>is</em> the structure, sitting in a third party's access logs.
+<code>BOSCO_EGRESS</code> decides how those two facts get reconciled.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>off</code></td>
+<td>No public web at all. The agent declines and offers the offline path.</td>
+</tr>
+<tr>
+<td><code>guarded</code></td>
+<td>The public web is reachable; your structures need your say-so.</td>
+</tr>
+<tr>
+<td><code>full</code></td>
+<td>Unrestricted, and nothing is checked.</td>
+</tr>
+</tbody>
+</table>
+<p><code>off</code> and <code>full</code> are the ends of the range and explain themselves. <code>guarded</code> is
+the setting worth understanding, because it is the one that lets the agent be
+useful without making the disclosure decision on your behalf.</p>
+<h3 id="how-guarded-works">How guarded works</h3>
+<p><img src="../../images/bosco_egress_guarded.svg" alt="An outbound request from the ML agent passes through an egress check for structures, InChIKeys, and secrets; clean requests reach the public web, matches are blocked and returned to you to approve by value" style="width: 100%; min-height: 340px;"></p>
+<p>Every outbound request goes through a single function, which scans the
+fully-resolved URL — query parameters included — before anything leaves the
+machine. Three things stop it: chemical structures, InChIKeys, and credentials.</p>
+<p>When nothing matches, the request goes out. Reading a documentation page or
+pulling a ChEMBL target by its ID never interrupts you.</p>
+<p>When something matches, nothing is sent. The agent names the exact value and
+the destination host, then waits.</p>
+<p>Two properties matter more than the mechanism:</p>
+<ul>
+<li><strong>Approval is bound to the value, not the moment.</strong> Saying yes to one structure
+  covers that structure for the rest of the session — vary the similarity
+  threshold, page through results, switch databases — and covers nothing else. A
+  second compound is a second question.</li>
+<li><strong>Your project data is never offered for approval.</strong> A structure you typed is
+  yours to expose. A structure the agent pulled out of a FeatureSet, DataSource,
+  or query result is a different matter: it works offline instead, and does not
+  ask.</li>
+</ul>
+<h3 id="what-this-is-and-is-not">What this is, and is not</h3>
+<p>The check is a guardrail, not a boundary. The REPL is a Python prompt, so an
+analyst who wants to reach the internet can <code>import requests</code> and do so — Bosco
+is not, and cannot be, what stops them. What it stops is the accident: an agent
+helpfully pasting a proprietary structure into a public API on the way to
+answering a reasonable question.</p>
+<p>IAM remains the hard boundary for everything the agent touches inside AWS. This
+sits on top of it, covering the one direction IAM has no opinion about.</p>
 <h2 id="retention-and-training">Retention and training</h2>
 <p>Under the AWS service terms for third-party models on Bedrock, you retain all
 rights to your inputs, you own the outputs, and the model provider may not
@@ -5667,13 +5793,6 @@ safety and abuse prevention, but the model provider never receives them.</p>
 <code>none</code> (nothing retained), <code>default</code> (AWS-only retention, above), and
 <code>provider_data_share</code> (prompts and completions shared with the model provider
 and retained up to 30 days, with possible human review).</p>
-<div class="admonition warning">
-<p class="admonition-title">Model selection is a retention decision</p>
-<p>A few of the newest models are only available under
-<code>provider_data_share</code> and cannot be used any other way. The agent's model
-list deliberately excludes them. <strong>Claude Opus 5</strong>, the default, permits
-<code>none</code> — so zero data retention is available without giving up the model.</p>
-</div>
 <p>Invocation logging — which writes full prompt and completion text to S3 or
 CloudWatch — is <strong>off unless you turn it on</strong>. If you enable it for auditing,
 that log becomes the most sensitive artifact in your account and should be
