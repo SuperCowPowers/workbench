@@ -30,8 +30,6 @@ from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.training.splits import analog_holdout_split
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
-from pipeline_utils.cyp_scoring import capture_st_rae
-
 FS_NAME = "openadmet_cyp_f1"
 MODEL_NAME = "cyp-reg-chemprop-mt"
 TAGS = ["openadmet_cyp", "chemprop", "multi_task", "activity"]
@@ -76,7 +74,3 @@ end.cross_fold_inference()
 # ride along so ST-RAE is scored against the challenge's own credible intervals.
 holdout_df = holdout[["molecule_name", "smiles"] + TARGETS + CI_COLUMNS]
 end.inference(holdout_df, capture_name="cyp_analog_holdout")
-
-# ST-RAE is the challenge's metric but not a Workbench one, so it is scored here from the
-# capture's own predictions against the credible intervals carried in the FeatureSet.
-print(f"Analog-holdout ST-RAE:\n{capture_st_rae(model, TARGETS).to_string(index=False)}")

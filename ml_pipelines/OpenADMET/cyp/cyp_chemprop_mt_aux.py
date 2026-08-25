@@ -30,8 +30,6 @@ from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.training.splits import analog_holdout_split
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
-from pipeline_utils.cyp_scoring import capture_st_rae
-
 FS_NAME = "openadmet_cyp_aux_f1"
 MODEL_NAME = "cyp-reg-chemprop-mt-aux"
 TAGS = ["openadmet_cyp", "chemprop", "multi_task", "activity", "aux_log2fc"]
@@ -81,6 +79,3 @@ end.cross_fold_inference()
 # Only the pIC50 targets are scored — the log2fc heads are not a deliverable.
 holdout_df = holdout[["molecule_name", "smiles"] + ALL_TARGETS + CI_COLUMNS]
 end.inference(holdout_df, capture_name="cyp_analog_holdout")
-
-print(f"Analog-holdout ST-RAE:\n{capture_st_rae(model, TARGETS).to_string(index=False)}")
-print("\nBaseline cyp-reg-chemprop-mt for comparison: macro 0.423 " "(3a4 0.372 / 2c9 0.297 / 2d6 0.558 / 1a2 0.466)")
