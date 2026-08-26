@@ -507,3 +507,58 @@ if __name__ == "__main__":
     )
     metrics = compute_metrics_from_predictions(reg_df, "target")
     print(metrics.to_string(index=False))
+
+
+def placement_metrics(
+    predictions_df: pd.DataFrame,
+    target_col: str,
+    prediction_col: str = "prediction",
+) -> Dict[str, float]:
+    """Where predictions sit relative to the targets, independent of how well they rank.
+
+    `r2_opt` is `pearsonr` squared: the best R2 reachable by rescaling the predictions,
+    leaving their order untouched. `gap` is `r2_opt - r2`, the part of the loss that is
+    placement rather than ranking, and it splits exactly into
+    `(pearsonr - spread_ratio)**2 + (bias/sd(true))**2` — so the other two say which half
+    to fix. `spread_ratio` is sd(pred)/sd(true), and its target is `pearsonr`, not 1:
+    squared loss shrinks predictions toward the mean on purpose, so well under `pearsonr`
+    is the signal rather than under 1. `bias` is mean(pred) - mean(true) in target units.
+
+    Only meaningful when the targets come from the deployment population; on a random
+    split `bias` is 0 by construction. Treat `gap` as a detector, not an estimator — its
+    bootstrap interval is wide at low support, so it says whether to look, not how much
+    to correct.
+
+    Args:
+        predictions_df: DataFrame from `Model.get_inference_predictions()`
+        target_col: Name of the target column
+        prediction_col: Prediction column. For a multi-target model pass
+            f"{target_col}_pred" — the bare "prediction" column holds the first target.
+
+    Returns:
+        Dict with "r2", "r2_opt", "gap", "spread_ratio", "bias". Empty dict if no pair
+        survives NaN removal.
+    """
+    for col in (target_col, prediction_col):
+        if col not in predictions_df.columns:
+            raise ValueError(f"Column '{col}' not found in predictions DataFrame")
+
+    pair = predictions_df[[target_col, prediction_col]].dropna()
+    if pair.empty:
+        log.warning("No valid rows after dropping NaNs. Returning empty metrics.")
+        return {}
+
+    y_true = pair[target_col].to_numpy(dtype=float)
+    y_pred = pair[prediction_col].to_numpy(dtype=float)
+    sd_true = y_true.std()
+    r2 = r2_score(y_true, y_pred)
+    pearson = pearsonr(y_true, y_pred).statistic if len(y_true) > 1 else np.nan
+    r2_opt = pearson**2 if np.isfinite(pearson) else np.nan
+    return {
+        "r2": r2,
+        "r2_opt": r2_opt,
+        # Theorem, so the clamp only absorbs float noise: r2 <= pearsonr**2 for any predictor.
+        "gap": max(0.0, r2_opt - r2) if np.isfinite(r2_opt) else np.nan,
+        "spread_ratio": y_pred.std() / sd_true if sd_true > 0 else np.nan,
+        "bias": y_pred.mean() - y_true.mean(),
+    }
