@@ -143,6 +143,7 @@ def main():
         log.info(f"  {name}.csv  ({len(df):,} rows, {measured:,} with a fitted pIC50)")
         skeleton[f"comp_chem/pubchem/cyp_inhibition/{name}.csv"] = {
             "num_compounds": int(df["sid"].nunique()),
+            "license": "public-domain",
             "columns": {c: "" for c in df.columns},
         }
 

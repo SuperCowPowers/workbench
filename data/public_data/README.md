@@ -32,7 +32,6 @@ comp_chem/
   aqsol/                             AqSolDB solubility
     aqsol_public_data
     alignment/                       base, low/medium/high_overlap
-  compound_sets/                     structure/property reference sets (drugbank)
   logp/                              logp_all + per-source files
   logd/                              logd_all + per-source files
   logp_logd/                         overlap_00_03, overlap_03_07, overlap_07_10
@@ -47,9 +46,31 @@ comp_chem/
 
 `descriptions.json` is the top-level index, keyed by full S3 path
 (`comp_chem/logp/logp_all.csv`). Every published dataset has an entry with a
-description, per-column meanings, row count, and source references. It is the
-authoritative list of what belongs in the bucket — `upload_data.py --prune`
-deletes anything remote it does not describe.
+description, per-column meanings, row count, license, and source references. It
+is the authoritative list of what belongs in the bucket — `upload_data.py
+--prune` deletes anything remote it does not describe.
+
+## Licensing
+
+Every entry carries a `license` (SPDX identifier, or `public-domain` /
+`unspecified`) and a `license_note` explaining where the term comes from. The
+note is where nuance lives — for instance which upstream term governs a merged
+file.
+
+| License | Datasets | Sources |
+|---------|---------:|---------|
+| `CC-BY-4.0` | 27 | OpenADMET ExpansionRx, SangsterLogP, the merged LogP/overlap files, UCI fixtures |
+| `MIT` | 22 | OPERA/PHYSPROP, GraphormerLogP, AstraZeneca LogD (MoleculeNet mirror), OpenADMET ASAP, Workbench-authored fixtures |
+| `Apache-2.0` | 16 | OpenADMET PXR, CYP, Octant CYP |
+| `public-domain` | 6 | PubChem BioAssay (US Government work) |
+| `CC0-1.0` | 5 | AqSolDB (Harvard Dataverse) |
+
+Merged and derived files take the most restrictive term among their inputs:
+`logp_all` is CC-BY-4.0 because SangsterLogP is, even though its other two
+sources are MIT, and the `logp_logd/overlap_*` files inherit from it.
+
+A dataset with no stated upstream terms is marked `unspecified` rather than
+assumed open, with the source URL in `references` so the claim is traceable.
 
 `output/` is gitignored, so a fresh clone starts empty. Uploading is
 incremental, so you only need to pull the datasets you are actually changing.
@@ -167,7 +188,7 @@ Deduplicated on canonical SMILES; multi-source compounds are aggregated.
 | **Octant `*_wells.tsv`** | Raw per-well plate readings behind the CYP inhibition/reactivity summaries; the fitted curves are what models train on |
 | **PubChem XLogP** | *Computed* values (XLogP3 algorithm), not experimental — would dilute the experimental-only set |
 | **EPA CompTox Dashboard** | Mostly OPERA *predictions*; experimental subset already covered by PHYSPROP |
-| **DrugBank** | Mixed experimental/predicted; requires academic license |
+| **DrugBank** | Main DrugBank Content is CC BY-NC 4.0 — commercial use needs a separate agreement, so it cannot be redistributed here. The CC0 Open Data (vocabulary, structures) is usable but sits behind a login, so it cannot be pulled unattended like every other source |
 | **PharmaBench** | LLM-curated from ChEMBL; not yet validated against experimental ground truth |
 | **lipophilicity-prediction (jbr-ai-labs)** | Mixes LogP and LogD; would need to be split before integration |
 | **Martel et al. UHPLC** | High-quality but small (707 compounds); useful as a held-out test set, not training |

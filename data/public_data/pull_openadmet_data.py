@@ -197,6 +197,14 @@ CHALLENGES = {
     "octant_cyp": pull_octant_cyp,
 }
 
+# Upstream license per challenge, carried into the descriptions.json skeleton
+CHALLENGE_LICENSES = {
+    "expansionrx": "CC-BY-4.0",
+    "pxr": "Apache-2.0",
+    "asap": "MIT",
+    "octant_cyp": "Apache-2.0",
+}
+
 
 def main():
     parser = argparse.ArgumentParser(description="Pull the OpenADMET challenge datasets from HuggingFace")
@@ -220,6 +228,7 @@ def main():
             log.info(f"  {name}.csv  ({len(df):,} rows, {len(df.columns)} cols)  cols={df.columns.tolist()}")
             skeleton[f"comp_chem/openadmet/{name}.csv"] = {
                 "num_compounds": int(len(df)),
+                "license": CHALLENGE_LICENSES[challenge],
                 "columns": {c: "" for c in df.columns},
             }
 
