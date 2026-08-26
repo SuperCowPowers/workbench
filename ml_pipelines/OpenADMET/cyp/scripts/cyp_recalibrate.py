@@ -243,10 +243,7 @@ def sign_probe_calibration(fraction: float, direction: float) -> dict:
     """
     solved = pair_solve()
     print()
-    return {
-        iso: {"offset": direction * fraction * s["bias_log"], "scale": 1.0}
-        for iso, s in solved.items()
-    }
+    return {iso: {"offset": direction * fraction * s["bias_log"], "scale": 1.0} for iso, s in solved.items()}
 
 
 def recalibrate(source: Path, out_dir: Path, tag: str, calibration: dict = None) -> Path:

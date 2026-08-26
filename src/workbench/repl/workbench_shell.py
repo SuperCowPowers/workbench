@@ -51,11 +51,7 @@ from workbench.utils.web_utils import EGRESS_MODE
 from workbench.utils.chem_utils import vis
 
 # Egress dots
-EGRESS_LIGHTS = {
-    "off": Token.Lightgreen,
-    "guarded": Token.Blue,
-    "full": Token.Darkyellow
-}
+EGRESS_LIGHTS = {"off": Token.Lightgreen, "guarded": Token.Blue, "full": Token.Darkyellow}
 
 
 def onboard():
