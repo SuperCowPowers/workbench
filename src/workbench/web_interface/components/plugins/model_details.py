@@ -18,12 +18,6 @@ from workbench.utils.markdown_utils import (
 )
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
-# Regression metrics shown in the details table. `spread_ratio` and `bias` are omitted:
-# neither reads correctly alone (spread_ratio's target is pearsonr, not 1, and bias needs
-# sd(true) for scale), and `gap` is their combined cost in R2 units. The full row
-# stays available through Model.get_inference_metrics().
-DISPLAY_METRICS = ["rmse", "mae", "r2", "pearsonr", "spearmanr", "gap", "support"]
-
 
 class ModelSummary(PluginInterface):
     """Model Summary: header + summary markdown for a model."""
@@ -245,10 +239,6 @@ class InferenceMetrics(PluginInterface):
                 class_labels = model.class_labels()
                 if set(metrics.index) == set(class_labels):
                     metrics = metrics.reindex(class_labels)
-            else:
-                shown = [c for c in DISPLAY_METRICS if c in metrics.columns]
-                if shown:
-                    metrics = metrics[shown]
 
             markdown += df_to_html_table(metrics)
 

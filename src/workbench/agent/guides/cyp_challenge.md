@@ -76,8 +76,8 @@ What follows from that:
   score. They are for deciding where to hedge, not part of the entry (`uq`).
 
 **Scoring ST-RAE.** Model and endpoint metrics carry the standard regression set
-(`rmse`, `mae`, `r2`, `pearsonr`, `spearmanr`, `spread_ratio`, `bias`) — not
-`st_rae`. Score it yourself against the label intervals:
+(`rmse`, `mae`, `r2`, `pearsonr`, `spearmanr`, `support`) — not `st_rae`. Score it
+yourself against the label intervals:
 
 ```python
 from workbench.utils.metrics_utils import soft_threshold_rae

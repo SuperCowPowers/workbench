@@ -205,22 +205,18 @@ TRAINING_METRICS = ("rmse", "mae", "r2", "spearmanr", "support")
 def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
     """Compute regression metrics from aligned truth/prediction arrays.
 
-    `gap` is how much R2 is lost to placement rather than ranking: the best R2 any
-    affine rescale can reach is `pearsonr` squared, and this is the distance from `r2` to
-    that ceiling. It splits exactly into `(pearsonr - spread_ratio)**2 + (bias/sd(true))**2`,
-    so read it first and reach for the two terms to say which one to fix. `spread_ratio` is
-    sd(pred)/sd(true), best at `pearsonr` rather than 1 — squared loss shrinks predictions
-    toward the mean on purpose. `bias` is mean(pred) - mean(true) in the target's own units.
-    All three need targets drawn from the deployment population — on a random split `bias`
-    is 0 by construction.
+    `pearsonr` squared is the best R2 any affine rescale of the predictions can reach, so
+    the distance from `r2` to it is placement rather than ranking. Where that distance sits
+    — a wrong centre, or a spread that does not match the correlation — is measurable off a
+    predictions frame, so it is left to the caller rather than carried on every row.
 
     Args:
         y_true: Ground truth target values
         y_pred: Predicted values
 
     Returns:
-        Dict of metric name -> value (rmse, mae, r2, pearsonr, spearmanr, spread_ratio,
-        bias, gap, support). Empty dict if no pair survives NaN removal.
+        Dict of metric name -> value (rmse, mae, r2, pearsonr, spearmanr, support).
+        Empty dict if no pair survives NaN removal.
     """
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
@@ -234,21 +230,12 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[s
         log.warning("No valid rows after dropping NaNs. Returning empty metrics.")
         return {}
 
-    # Measured from the two distributions, not solved out of the R2 decomposition, which
-    # would inherit and square any error in the correlation term.
-    sd_true = y_true.std()
-    r2 = r2_score(y_true, y_pred)
-    pearson = pearsonr(y_true, y_pred).statistic if len(y_true) > 1 else np.nan
     return {
         "rmse": root_mean_squared_error(y_true, y_pred),
         "mae": mean_absolute_error(y_true, y_pred),
-        "r2": r2,
-        "pearsonr": pearson,
+        "r2": r2_score(y_true, y_pred),
+        "pearsonr": pearsonr(y_true, y_pred).statistic if len(y_true) > 1 else np.nan,
         "spearmanr": spearmanr(y_true, y_pred).correlation,
-        "spread_ratio": y_pred.std() / sd_true if sd_true > 0 else np.nan,
-        "bias": y_pred.mean() - y_true.mean(),
-        # Theorem, so the clamp only absorbs float noise: r2 <= pearsonr**2 for any predictor.
-        "gap": max(0.0, pearson**2 - r2) if np.isfinite(pearson) else np.nan,
         "support": len(y_true),
     }
 
