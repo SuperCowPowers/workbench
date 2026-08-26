@@ -29,6 +29,7 @@ Usage:
 import argparse
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from openadmet_validation import validate_activity_submission
 from scipy.stats import pearsonr
@@ -100,10 +101,25 @@ BLIND_MOMENTS = {
     "CYP2D6": {"mean": 3.57, "sd": 1.526},
     "CYP3A4": {"mean": 4.64, "sd": 1.146},
 }
-# Board R2 for the entry currently standing, `cyp-reg-chemprop-mt-aux-100` calibrated with
-# --moments --no-shrink (macro ST-RAE 0.4999, rank 2 on 2026-08-24). Used by --board to
-# solve each isoform's Pearson directly instead of proxying it.
-BOARD_R2 = {"CYP1A2": 0.5189, "CYP2C9": 0.6778, "CYP2D6": 0.3450, "CYP3A4": 0.6836}
+# Two scored entries of `cyp-reg-chemprop-mt-aux-100`, differing only by a per-isoform
+# scale about the mean. The pair is what makes rho and b separately solvable:
+# R2 = 2*rho*k - k^2 - b^2 carries two unknowns, and two entries sharing a centre but not a
+# spread give two equations. A single entry does not, which is why solving at b = 0 read
+# every isoform as near-ceiling.
+BOARD_R2 = {  # --moments --no-shrink, submitted 2026-08-25 (macro ST-RAE 0.4999)
+    "CYP1A2": 0.518857,
+    "CYP2C9": 0.677782,
+    "CYP2D6": 0.345047,
+    "CYP3A4": 0.683557,
+}
+BOARD_R2_SCALED = {  # same predictions, --board scale-only, submitted 2026-08-26 (0.4906)
+    "CYP1A2": 0.5595,
+    "CYP2C9": 0.6875,
+    "CYP2D6": 0.3630,
+    "CYP3A4": 0.6777,
+}
+PAIR_A = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux.csv"
+PAIR_B = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux_aux2.csv"
 
 VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in CALIBRATION}
 DEFAULT_SOURCE = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-100_activity_submission.csv"
@@ -178,6 +194,59 @@ def board_calibration(sub: pd.DataFrame) -> dict:
             f"{arrow} sd {current.std():.2f} -> {rho * sd_true:.2f} (x{scale:.2f})"
         )
     return calibration
+
+
+def pair_solve() -> dict:
+    """Solve each isoform's Pearson and bias magnitude from the two scored entries.
+
+    Subtracting the pair's two copies of `R2 = 2*rho*k - k^2 - b^2` cancels b and leaves
+    rho; substituting back gives b^2. Both are in units of sd(true), which comes from
+    BLIND_MOMENTS.
+
+    Only the magnitude of b is recoverable -- it enters squared, so the sign needs a
+    submission that deliberately shifts a centre. rho divides two small differences, so
+    board noise of +-0.005 in R2 moves it by roughly +-0.07; read it as approximate. The
+    bias is far more robust: driving it to zero would need sd(true) 25-30% larger than the
+    field inversion supports.
+    """
+    a, b = pd.read_csv(PAIR_A), pd.read_csv(PAIR_B)
+    solved = {}
+    for iso, moments in BLIND_MOMENTS.items():
+        col = VALUE_COLUMNS[iso]
+        k_a, k_b = a[col].std() / moments["sd"], b[col].std() / moments["sd"]
+        r2_a, r2_b = BOARD_R2[iso], BOARD_R2_SCALED[iso]
+        rho = ((r2_a - r2_b) + (k_a**2 - k_b**2)) / (2 * (k_a - k_b))
+        bias = np.sqrt(max(2 * rho * k_a - k_a**2 - r2_a, 0.0))
+        solved[iso] = {"rho": rho, "bias_sd": bias, "bias_log": bias * moments["sd"], "k": k_b}
+        print(
+            f"{iso:<8} pearson {rho:.3f} | bias {bias:.3f} sd ({bias * moments['sd']:.2f} log) | "
+            f"k {k_b:.3f} -> optimal {rho:.3f} | R2 {r2_b:.3f} -> ceiling {rho**2:.3f}"
+        )
+    return solved
+
+
+def sign_probe_calibration(fraction: float, direction: float) -> dict:
+    """Offset-only calibration that tests which way each isoform's bias points.
+
+    `pair_solve` recovers how far off-centre each isoform is but not which way. Every
+    isoform is scored separately, so one submission shifting all four in the same
+    direction reads as four independent experiments: R2 rises where the shift was toward
+    the true centre and falls where it was away.
+
+    Shifting by a fraction of the solved bias rather than all of it keeps the wrong-guess
+    cost near the right-guess gain -- a full shift gains b^2 when right and loses 3*b^2
+    when wrong, a half shift gains 0.75*b^2 and loses 1.25*b^2. Both are far above the
+    board's resolution, so the smaller step buys the same answer.
+
+    Scales are left at 1.0 so the pair's geometry is untouched and the R2 change is
+    attributable to the centre alone.
+    """
+    solved = pair_solve()
+    print()
+    return {
+        iso: {"offset": direction * fraction * s["bias_log"], "scale": 1.0}
+        for iso, s in solved.items()
+    }
 
 
 def recalibrate(source: Path, out_dir: Path, tag: str, calibration: dict = None) -> Path:
@@ -255,10 +324,26 @@ if __name__ == "__main__":
         help="Derive scale-only corrections from BOARD_R2 for the standing entry; --source "
         "must be the file that produced those numbers",
     )
+    parser.add_argument(
+        "--sign-probe",
+        action="store_true",
+        help="Offset-only shift of every isoform by --fraction of its solved bias, to find "
+        "which way the bias points; --source must be the entry the pair was solved against",
+    )
+    parser.add_argument("--fraction", type=float, default=0.5, help="Share of the solved bias to shift by")
+    parser.add_argument(
+        "--direction",
+        type=float,
+        default=-1.0,
+        help="Sign of the probe shift; -1 tests 'predictions read too potent', the direction "
+        "hit-enriched training data implies",
+    )
     args = parser.parse_args()
 
     derived = None
-    if args.board:
+    if args.sign_probe:
+        derived = sign_probe_calibration(args.fraction, args.direction)
+    elif args.board:
         derived = board_calibration(pd.read_csv(args.source))
     elif args.moments:
         derived = moments_calibration(pd.read_csv(args.source), args.moments, args.no_shrink)

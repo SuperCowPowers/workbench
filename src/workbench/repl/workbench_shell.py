@@ -50,11 +50,11 @@ from workbench.utils.aws_utils import sso_login_hint
 from workbench.utils.web_utils import EGRESS_MODE
 from workbench.utils.chem_utils import vis
 
-# Egress dot: green is checked, yellow is unchecked, blue is closed.
+# Egress dots
 EGRESS_LIGHTS = {
-    "guarded": Token.Lightgreen,
-    "full": Token.Darkyellow,
-    "off": Token.Blue,
+    "off": Token.Lightgreen,
+    "guarded": Token.Blue,
+    "full": Token.Darkyellow
 }
 
 
