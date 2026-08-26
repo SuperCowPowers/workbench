@@ -39,5 +39,5 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         -r /tmp/requirements.lock
 
 # Layer 2: Workbench — rebuilds per version bump, ~20 MB delta.
-ARG WORKBENCH_VERSION=0.8.469
+ARG WORKBENCH_VERSION=0.8.470
 RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"
