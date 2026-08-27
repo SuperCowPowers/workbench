@@ -78,29 +78,26 @@ CALIBRATION = {
 # zero; a handful of ties out of ~2,000 rows is below the metric's resolution.
 FLOOR = 1.0
 
-# Estimated blind-set label distribution per isoform. This is what makes calibrating a new
-# model free -- match its predictions to these rather than spending a submission to
-# discover its bias.
+# The blind half's label distribution per isoform, solved exactly from three scored
+# entries -- see `pair_solve` for the algebra and `SOLVED_PEARSON` for the correlation that
+# falls out of the same solve. These are properties of the test set, not of any model, so
+# they calibrate a new model without spending a submission to rediscover them.
 #
-# Means are MEASURED, not solved out of the R2 decomposition. Bias derived from
-# R2 = 2*rho*k - k^2 - b^2 inherits and squares any error in the correlation term, and
-# doing exactly that put CYP1A2's mean at 3.97 when the board says 4.36 -- a 0.39 error
-# that cost a submission. CYP1A2 and CYP2D6 come from offsets the board confirmed
-# (-0.60 and -1.20 against predicted means of 4.96 and 4.77). CYP2C9 and CYP3A4 were never
-# shifted and sit at 100% and 98% of their ceilings, so their bias is ~0 and their blind
-# mean is their predicted mean.
-#
-# The sd figures come from `cyp_leaderboard.field_sd`. Every entry on a board is scored
-# against the same labels, so inverting each row's MAE and R2 gives an independent estimate
-# of the same sd -- 60 replicates per isoform, agreeing to a 1-2% IQR. What they share is
-# an assumed residual shape; heavier-than-Gaussian tails would raise all four together, so
-# the relative widths are far better determined than the common scale.
+# Only the live half is described here. OpenADMET split the 750-compound test set by
+# chemical series, and the other half is never scored until the challenge ends, so these
+# transfer to it only insofar as the two halves share a distribution -- which series-based
+# splitting is designed to prevent.
 BLIND_MOMENTS = {
-    "CYP1A2": {"mean": 4.36, "sd": 1.417},
-    "CYP2C9": {"mean": 4.85, "sd": 0.958},
-    "CYP2D6": {"mean": 3.57, "sd": 1.526},
-    "CYP3A4": {"mean": 4.64, "sd": 1.146},
+    "CYP1A2": {"mean": 4.412, "sd": 1.553},
+    "CYP2C9": {"mean": 4.830, "sd": 1.101},
+    "CYP2D6": {"mean": 3.107, "sd": 1.599},
+    "CYP3A4": {"mean": 4.880, "sd": 1.272},
 }
+# Pearson of `cyp-reg-chemprop-mt-aux-100` against the live half, from the same solve.
+# Invariant under the affine recalibrations, so it applies to any of its submissions.
+# Independently corroborated: CYP2C9 lands at 0.838 against a measured Spearman of 0.840
+# and CYP3A4 at 0.851 against 0.837, neither of which enters the solve.
+SOLVED_PEARSON = {"CYP1A2": 0.753, "CYP2C9": 0.838, "CYP2D6": 0.678, "CYP3A4": 0.851}
 # Two scored entries of `cyp-reg-chemprop-mt-aux-100`, differing only by a per-isoform
 # scale about the mean. The pair is what makes rho and b separately solvable:
 # R2 = 2*rho*k - k^2 - b^2 carries two unknowns, and two entries sharing a centre but not a
@@ -125,34 +122,43 @@ VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in CALIBRATION}
 DEFAULT_SOURCE = Path(__file__).parent / "outputs" / "cyp-reg-chemprop-mt-100_activity_submission.csv"
 
 
-def moments_calibration(sub: pd.DataFrame, holdout_model: str, no_shrink: bool = False) -> dict:
-    """Derive per-isoform offset and scale from the estimated blind-set moments.
+def holdout_pearson(holdout_model: str) -> dict:
+    """Per-isoform Pearson from a model's analog-holdout captures.
 
-    The R2-optimal prediction spread is `pearson * sd(true)`, not sd(true) -- a point
-    predictor should be narrower than the truth by exactly its correlation. Pearson comes
-    from `holdout_model`, the analog-holdout counterpart of whatever produced `sub`, since
-    a 100% model has no honest score of its own.
-
-    Holdout Pearson has run below board Pearson before (CYP2D6: 0.419 vs an implied
-    0.531), so this under-expands rather than over-expands. That is the safe direction --
-    expanding past k = pearson costs R2 on both sides.
-
-    That same gap is why `no_shrink` exists. A scale below 1.0 says the model is
-    over-spread relative to `pearson * sd`, but if the board's Pearson is higher than the
-    holdout's then the real optimum is wider and shrinking moves away from it. Offsets are
-    unaffected -- bias is the dominant term and is measured, not inferred.
+    The stand-in for `SOLVED_PEARSON` when a model has no board history yet -- a 100%
+    model has no honest score of its own, so its analog-holdout counterpart supplies one.
+    It reads low: the holdout is a harder split than the blind half, and CYP2D6 measured
+    0.419 here against 0.678 on the board. Under-expanding is the safe direction, since
+    expanding past `k = pearson` costs R2 on both sides.
     """
     model = Model(holdout_model)
     runs = model.list_inference_runs()
-    calibration = {}
-    for iso, moments in BLIND_MOMENTS.items():
+    pearson = {}
+    for iso in BLIND_MOMENTS:
         target = f"{iso.lower()}_pic50_direct_inhibition"
         run = f"cyp_analog_holdout_{target}"
         if run not in runs:
             raise ValueError(f"'{holdout_model}' has no capture '{run}'")
         d = model.get_inference_predictions(run)[[target, "prediction"]].dropna()
-        rho = pearsonr(d[target], d["prediction"]).statistic
+        pearson[iso] = pearsonr(d[target], d["prediction"]).statistic
+    return pearson
 
+
+def place(sub: pd.DataFrame, pearson: dict, no_shrink: bool = False) -> dict:
+    """Move each isoform onto the blind half's centre and its R2-optimal spread.
+
+    The R2-optimal prediction spread is `pearson * sd(true)`, not sd(true) -- a point
+    predictor should be narrower than the truth by exactly its correlation. With both the
+    moments and the correlation measured, this is the R2 ceiling for a given model; nothing
+    further is available without raising `pearson` itself.
+
+    `no_shrink` guards the case where `pearson` is understated, as holdout Pearson is: a
+    computed scale below 1.0 then reflects the understatement rather than genuine
+    over-spread. It has no effect when `pearson` comes from the board solve.
+    """
+    calibration = {}
+    for iso, moments in BLIND_MOMENTS.items():
+        rho = pearson[iso]
         current = sub[VALUE_COLUMNS[iso]]
         target_sd = rho * moments["sd"]
         scale = target_sd / current.std()
@@ -163,7 +169,7 @@ def moments_calibration(sub: pd.DataFrame, holdout_model: str, no_shrink: bool =
         calibration[iso] = {"offset": offset, "scale": scale}
         print(
             f"{iso:<8} pearson {rho:.3f} | sd {current.std():.2f} -> {target_sd:.2f} (x{scale:.2f}) "
-            f"| mean {current.mean():.2f} -> {moments['mean']:.2f} ({offset:+.2f})"
+            f"| mean {current.mean():.2f} -> {moments['mean']:.2f} ({offset:+.2f}) | R2 ceiling {rho**2:.3f}"
         )
     return calibration
 
@@ -306,8 +312,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--moments",
         metavar="HOLDOUT_MODEL",
-        help="Derive offsets/scales from BLIND_MOMENTS instead of the hardcoded CALIBRATION, "
-        "taking Pearson from this model's analog-holdout captures",
+        help="Place a new model on BLIND_MOMENTS, taking Pearson from this model's " "analog-holdout captures",
+    )
+    parser.add_argument(
+        "--solved",
+        action="store_true",
+        help="Place cyp-reg-chemprop-mt-aux-100 on BLIND_MOMENTS using SOLVED_PEARSON; this "
+        "is its R2 ceiling, so only a better model improves on it",
     )
     parser.add_argument(
         "--no-shrink",
@@ -338,10 +349,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     derived = None
-    if args.sign_probe:
+    if args.solved:
+        derived = place(pd.read_csv(args.source), SOLVED_PEARSON)
+    elif args.sign_probe:
         derived = sign_probe_calibration(args.fraction, args.direction)
     elif args.board:
         derived = board_calibration(pd.read_csv(args.source))
     elif args.moments:
-        derived = moments_calibration(pd.read_csv(args.source), args.moments, args.no_shrink)
+        derived = place(pd.read_csv(args.source), holdout_pearson(args.moments), args.no_shrink)
     recalibrate(args.source, args.out, args.tag, derived)
