@@ -42,6 +42,9 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 - Some sessions run under a restricted role (read-only, or the builder role that
   blocks DataSource/FeatureSet deletes) and AWS denies the write. That's expected;
   report it rather than working around it.
+- **Math is Unicode text, never LaTeX** — `$$` and `\frac` print literally. Use ·
+  ≈ ∞ √ α and subscripts (kₐ kₑ Cₘₐₓ); superscripts don't nest, so exponents take
+  parens: `C(t) = (F·D·kₐ)/(V·(kₐ−kₑ)) · (e^(−kₑ·t) − e^(−kₐ·t))`.
 - Emoji: two spaces after one, and pick bright ones (🐶 ✨ 🚀 🎯 ✅ ⚠️) — dark ones
   smudge against the terminal.
 
