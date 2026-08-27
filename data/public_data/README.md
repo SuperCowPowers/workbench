@@ -32,6 +32,7 @@ comp_chem/
   aqsol/                             AqSolDB solubility
     aqsol_public_data
     alignment/                       base, low/medium/high_overlap
+  chembl/cyp_inhibition/             all_isoforms + 5 per-isoform files
   logp/                              logp_all + per-source files
   logd/                              logd_all + per-source files
   logp_logd/                         overlap_00_03, overlap_03_07, overlap_07_10
@@ -62,6 +63,7 @@ file.
 | `CC-BY-4.0` | 27 | OpenADMET ExpansionRx, SangsterLogP, the merged LogP/overlap files, UCI fixtures |
 | `MIT` | 22 | OPERA/PHYSPROP, GraphormerLogP, AstraZeneca LogD (MoleculeNet mirror), OpenADMET ASAP, Workbench-authored fixtures |
 | `Apache-2.0` | 16 | OpenADMET PXR, CYP, Octant CYP |
+| `CC-BY-SA-3.0` | 6 | ChEMBL CYP inhibition |
 | `public-domain` | 6 | PubChem BioAssay (US Government work) |
 | `CC0-1.0` | 5 | AqSolDB (Harvard Dataverse) |
 
@@ -117,6 +119,30 @@ All from the [OpenADMET Consortium](https://openadmet.org/) on HuggingFace.
 | **pxr** | hPXR induction pEC50/Emax — primary train set plus counter-assay, single-concentration, semi-pure and HT-chem library variants; blinded and phase-1-revealed test sets. | Apache-2.0 |
 | **asap** | ASAP Discovery / Polaris antiviral challenge: 5 ADMET endpoints (560 compounds) and SARS-CoV-2 / MERS-CoV Mpro potency (1,328 compounds), split on the source `Set` column. | MIT |
 | **octant_cyp** | Octant CYP3A4 inhibition dose-response, CYP3A4/CYP2J2 reactivity, and LC-MS ionization response for 11,353 compounds. Single release, no train/test split. | Apache-2.0 |
+
+### ChEMBL CYP (`pull_chembl_cyp_data.py`)
+
+Public dose-response CYP inhibition potency for five human isoforms (1A2, 2C9,
+2C19, 2D6, 3A4) — 25,841 compounds, one row per standardized structure with each
+isoform pivoted to its own `_pic50` / `_n` / `_sd` triple. Roughly a 5x compound
+expansion over the OpenADMET CYP challenge training set, which scores four of the
+same isoforms.
+
+Read over DuckDB from a public parquet mirror of ChEMBL 37
+([scigantic-chembl](https://github.com/Scigantic/scigantic-chembl)) rather than
+the 30GB SQLite release; only four tables are touched. The script owns its own
+filters, so the mirror is transport and nothing else.
+
+**This is a potency-enriched sample, not a random one.** ChEMBL assigns a
+`pchembl_value` only where a real concentration-response curve was fitted, so
+compounds too weak to produce one are systematically absent: nothing here falls
+below pIC50 4.0, while 40% of the challenge training set does. Concatenating the
+two and fitting a calibrated regressor teaches the model that CYP inhibition is
+more common and more potent than it is. Pretrain and fine-tune, or reweight.
+
+Contamination-checked by standardized InChIKey against the challenge's blinded
+test set — zero of the 750 blinded compounds survive. The 198 that also appear in
+the challenge *training* set are kept and flagged with `in_challenge_train`.
 
 ### LogP (`pull_logp_data.py`)
 

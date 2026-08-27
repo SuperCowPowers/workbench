@@ -246,6 +246,163 @@
       "https://doi.org/10.7910/DVN/OVHAW8 (AqSolDB, Harvard Dataverse)"
     ]
   },
+  "comp_chem/chembl/cyp_inhibition/all_isoforms.csv": {
+    "description": "Public CYP inhibition potency from ChEMBL 37: pIC50 for five human isoforms (1A2, 2C9, 2C19, 2D6, 3A4) over 25,841 compounds, one row per standardized structure with each isoform pivoted to its own column. Roughly a 5x compound expansion over the OpenADMET CYP challenge training set, which covers four of the same isoforms. READ BEFORE COMBINING WITH THE OPENADMET CYP CHALLENGE SET: this is a potency-enriched sample, not a random one. ChEMBL only assigns a pchembl_value where a real concentration-response curve was fitted, so compounds too weak to produce one are systematically absent -- nothing here falls below pIC50 4.0, while 40% of the challenge training set does. Concatenating and fitting a calibrated regressor teaches the model that CYP inhibition is more common and more potent than it is. Use it for pretraining, as extra actives for a classifier, or reweight. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here. The 198 compounds that also appear in the challenge TRAINING set are kept and flagged with in_challenge_train, since overlapping your own training data is not leakage. Filters applied upstream: pchembl_value present, standard_relation '=', no data_validity_comment, potential_duplicate 0, assay confidence_score >= 8. Targets are pinned to the five human isoforms by ChEMBL target ID rather than name, since ChEMBL also carries mouse and rat CYP1A2.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "n_measurements": "Total qualifying ChEMBL measurements behind this row, summed over all five isoforms",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "cyp1a2_pic50": "-log10(IC50 in M) for CYP1A2, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp1a2_n": "How many ChEMBL measurements the CYP1A2 median is over; 0 when the compound was never assayed against it",
+      "cyp1a2_sd": "Standard deviation of those CYP1A2 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp2c19_pic50": "-log10(IC50 in M) for CYP2C19, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp2c19_n": "How many ChEMBL measurements the CYP2C19 median is over; 0 when the compound was never assayed against it",
+      "cyp2c19_sd": "Standard deviation of those CYP2C19 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp2c9_pic50": "-log10(IC50 in M) for CYP2C9, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp2c9_n": "How many ChEMBL measurements the CYP2C9 median is over; 0 when the compound was never assayed against it",
+      "cyp2c9_sd": "Standard deviation of those CYP2C9 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp2d6_pic50": "-log10(IC50 in M) for CYP2D6, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp2d6_n": "How many ChEMBL measurements the CYP2D6 median is over; 0 when the compound was never assayed against it",
+      "cyp2d6_sd": "Standard deviation of those CYP2D6 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp3a4_pic50": "-log10(IC50 in M) for CYP3A4, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp3a4_n": "How many ChEMBL measurements the CYP3A4 median is over; 0 when the compound was never assayed against it",
+      "cyp3a4_sd": "Standard deviation of those CYP3A4 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 25841,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/cyp1a2.csv": {
+    "description": "ChEMBL 37 CYP1A2 inhibition potency, restricted to the 11,138 compounds with a measured pIC50. This isoform is one of the four the challenge scores. READ BEFORE COMBINING WITH THE OPENADMET CYP CHALLENGE SET: this is a potency-enriched sample, not a random one. ChEMBL only assigns a pchembl_value where a real concentration-response curve was fitted, so compounds too weak to produce one are systematically absent -- nothing here falls below pIC50 4.0, while 40% of the challenge training set does. Concatenating and fitting a calibrated regressor teaches the model that CYP inhibition is more common and more potent than it is. Use it for pretraining, as extra actives for a classifier, or reweight. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here. The 198 compounds that also appear in the challenge TRAINING set are kept and flagged with in_challenge_train, since overlapping your own training data is not leakage. Filters applied upstream: pchembl_value present, standard_relation '=', no data_validity_comment, potential_duplicate 0, assay confidence_score >= 8. Targets are pinned to the five human isoforms by ChEMBL target ID rather than name, since ChEMBL also carries mouse and rat CYP1A2.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp1a2_pic50": "-log10(IC50 in M) for CYP1A2, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp1a2_n": "How many ChEMBL measurements the CYP1A2 median is over; 0 when the compound was never assayed against it",
+      "cyp1a2_sd": "Standard deviation of those CYP1A2 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 11138,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/cyp2c19.csv": {
+    "description": "ChEMBL 37 CYP2C19 inhibition potency, restricted to the 11,188 compounds with a measured pIC50. The OpenADMET CYP challenge does not score this isoform; it is here as auxiliary signal for multi-task training. READ BEFORE COMBINING WITH THE OPENADMET CYP CHALLENGE SET: this is a potency-enriched sample, not a random one. ChEMBL only assigns a pchembl_value where a real concentration-response curve was fitted, so compounds too weak to produce one are systematically absent -- nothing here falls below pIC50 4.0, while 40% of the challenge training set does. Concatenating and fitting a calibrated regressor teaches the model that CYP inhibition is more common and more potent than it is. Use it for pretraining, as extra actives for a classifier, or reweight. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here. The 198 compounds that also appear in the challenge TRAINING set are kept and flagged with in_challenge_train, since overlapping your own training data is not leakage. Filters applied upstream: pchembl_value present, standard_relation '=', no data_validity_comment, potential_duplicate 0, assay confidence_score >= 8. Targets are pinned to the five human isoforms by ChEMBL target ID rather than name, since ChEMBL also carries mouse and rat CYP1A2.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp2c19_pic50": "-log10(IC50 in M) for CYP2C19, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp2c19_n": "How many ChEMBL measurements the CYP2C19 median is over; 0 when the compound was never assayed against it",
+      "cyp2c19_sd": "Standard deviation of those CYP2C19 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 11188,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/cyp2c9.csv": {
+    "description": "ChEMBL 37 CYP2C9 inhibition potency, restricted to the 10,782 compounds with a measured pIC50. This isoform is one of the four the challenge scores. READ BEFORE COMBINING WITH THE OPENADMET CYP CHALLENGE SET: this is a potency-enriched sample, not a random one. ChEMBL only assigns a pchembl_value where a real concentration-response curve was fitted, so compounds too weak to produce one are systematically absent -- nothing here falls below pIC50 4.0, while 40% of the challenge training set does. Concatenating and fitting a calibrated regressor teaches the model that CYP inhibition is more common and more potent than it is. Use it for pretraining, as extra actives for a classifier, or reweight. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here. The 198 compounds that also appear in the challenge TRAINING set are kept and flagged with in_challenge_train, since overlapping your own training data is not leakage. Filters applied upstream: pchembl_value present, standard_relation '=', no data_validity_comment, potential_duplicate 0, assay confidence_score >= 8. Targets are pinned to the five human isoforms by ChEMBL target ID rather than name, since ChEMBL also carries mouse and rat CYP1A2.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp2c9_pic50": "-log10(IC50 in M) for CYP2C9, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp2c9_n": "How many ChEMBL measurements the CYP2C9 median is over; 0 when the compound was never assayed against it",
+      "cyp2c9_sd": "Standard deviation of those CYP2C9 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 10782,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/cyp2d6.csv": {
+    "description": "ChEMBL 37 CYP2D6 inhibition potency, restricted to the 8,804 compounds with a measured pIC50. This isoform is one of the four the challenge scores. READ BEFORE COMBINING WITH THE OPENADMET CYP CHALLENGE SET: this is a potency-enriched sample, not a random one. ChEMBL only assigns a pchembl_value where a real concentration-response curve was fitted, so compounds too weak to produce one are systematically absent -- nothing here falls below pIC50 4.0, while 40% of the challenge training set does. Concatenating and fitting a calibrated regressor teaches the model that CYP inhibition is more common and more potent than it is. Use it for pretraining, as extra actives for a classifier, or reweight. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here. The 198 compounds that also appear in the challenge TRAINING set are kept and flagged with in_challenge_train, since overlapping your own training data is not leakage. Filters applied upstream: pchembl_value present, standard_relation '=', no data_validity_comment, potential_duplicate 0, assay confidence_score >= 8. Targets are pinned to the five human isoforms by ChEMBL target ID rather than name, since ChEMBL also carries mouse and rat CYP1A2.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp2d6_pic50": "-log10(IC50 in M) for CYP2D6, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp2d6_n": "How many ChEMBL measurements the CYP2D6 median is over; 0 when the compound was never assayed against it",
+      "cyp2d6_sd": "Standard deviation of those CYP2D6 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 8804,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/cyp3a4.csv": {
+    "description": "ChEMBL 37 CYP3A4 inhibition potency, restricted to the 16,394 compounds with a measured pIC50. This isoform is one of the four the challenge scores. READ BEFORE COMBINING WITH THE OPENADMET CYP CHALLENGE SET: this is a potency-enriched sample, not a random one. ChEMBL only assigns a pchembl_value where a real concentration-response curve was fitted, so compounds too weak to produce one are systematically absent -- nothing here falls below pIC50 4.0, while 40% of the challenge training set does. Concatenating and fitting a calibrated regressor teaches the model that CYP inhibition is more common and more potent than it is. Use it for pretraining, as extra actives for a classifier, or reweight. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here. The 198 compounds that also appear in the challenge TRAINING set are kept and flagged with in_challenge_train, since overlapping your own training data is not leakage. Filters applied upstream: pchembl_value present, standard_relation '=', no data_validity_comment, potential_duplicate 0, assay confidence_score >= 8. Targets are pinned to the five human isoforms by ChEMBL target ID rather than name, since ChEMBL also carries mouse and rat CYP1A2.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp3a4_pic50": "-log10(IC50 in M) for CYP3A4, median across all qualifying ChEMBL measurements (prediction target)",
+      "cyp3a4_n": "How many ChEMBL measurements the CYP3A4 median is over; 0 when the compound was never assayed against it",
+      "cyp3a4_sd": "Standard deviation of those CYP3A4 measurements; null when n < 2. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 16394,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
   "comp_chem/logd/logd_all.csv": {
     "description": "Merged and deduplicated experimental LogD (octanol-water distribution coefficient at pH 7.4) dataset. Standardized using the ChEMBL pipeline so SMILES are joinable to logp_all.csv. Currently a single source; structured for additional sources to be merged in.",
     "columns": {
