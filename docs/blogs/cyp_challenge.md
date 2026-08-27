@@ -1,93 +1,86 @@
 # OpenADMET CYP Challenge — Method Report
 
 !!! tip inline end "Current entry"
-    One multi-task Chemprop model, stock hyperparameters, no ensembling — plus a per-isoform calibration correction. **Macro ST-RAE 0.6171, rank 4** as of 2026-08-22.
+    One multi-task Chemprop model with auxiliary targets, stock hyperparameters, no ensembling — plus a per-isoform placement correction. **Macro ST-RAE 0.4975, rank 2** as of 2026-08-27, and rank 1 on CYP1A2, CYP2C9 and CYP3A4 individually.
 
 This is the standing method report for our entry to the [OpenADMET CYP Inhibition Blind Challenge](https://huggingface.co/spaces/openadmet/cyp-challenge) (Direct Inhibition track). It is updated as the entry changes; it always describes what is currently submitted.
 
-The short version: our first submission ranked 15th. The second ranked 4th. **The model is identical between them** — same weights, same predictions, same ordering of every compound. What changed was where those predictions sat on the pIC50 axis. That turned out to be worth more than everything else we tried put together, and it is the main thing this report has to offer.
+One thing dominated everything else we tried: the training labels and the blind set are drawn from different populations, and correcting for that is worth more than any modelling change we made.
 
 ## The Model
 
-A single multi-task Chemprop D-MPNN predicting all four isoforms from one shared encoder.
+A single multi-task Chemprop D-MPNN with eight heads on one shared encoder — the four scored pIC50 targets, plus four auxiliary targets that exist only to supervise the representation.
 
 | | |
 |---|---|
-| **Architecture** | Chemprop D-MPNN, multi-task, one shared encoder over 4 targets |
+| **Architecture** | Chemprop D-MPNN, one shared encoder, 8 task heads |
 | **Features** | SMILES only — the learned graph representation, no descriptors |
-| **Training data** | 4,905 compounds / 6,525 dose-response measurements (the challenge release, 100%) |
-| **Task weights** | Inverse task counts, correcting uneven coverage (3A4 2,335 curves vs 2C9 1,285) |
+| **Scored targets** | pIC50 for CYP1A2, CYP2C9, CYP2D6, CYP3A4 |
+| **Auxiliary targets** | Single-concentration log2 fold-change, one per isoform |
+| **Training data** | 4,905 compounds / 6,525 dose-response curves + 17,500 single-concentration measurements (the challenge release, 100%) |
+| **Task weights** | Inverse task counts on the scored targets; auxiliaries at 0.3× their mean |
 | **Hyperparameters** | Chemprop defaults |
 
 **Why multi-task.** The isoforms are correlated and the per-isoform data is small — roughly 1,300–2,300 curves each. One encoder learning from all 6,525 measurements is a data-efficiency argument, not a claim that graph learning resolves activity cliffs; on cliffs, descriptor models match or beat GNNs. OpenADMET report the same finding in their own tutorial.
 
-## Evaluation
+**Why auxiliary targets.** The dose-response arm covers 26–48% of compounds per isoform. The single-concentration arm measured *every* compound against *every* isoform — 17,500 readings at 89% coverage — but its values are a fold-change, not a pIC50, so they cannot be pooled with the scored labels. As separate heads they do not need to be: they supervise the shared encoder and the pIC50 heads keep their own scale.
 
-The blind set is not a random draw. OpenADMET built it by hit expansion: the top 25 hits for CYP1A2, CYP2C9 and CYP3A4, then the top 10 catalog chemisimilars purchased for each — 750 compounds in dense clusters around potent molecules.
+This is the single largest modelling gain we have found, and it landed exactly where we needed it:
 
-So we evaluate on an **analog holdout** rather than cross-validation: take the top hits per target, hold out their nearest neighbours, keep the hits themselves in training. A random split of the same size flatters a baseline by roughly 2×.
+| isoform | Pearson on a held-out analog set, without → with |
+|---|---|
+| CYP3A4 | 0.739 → 0.760 |
+| CYP2C9 | 0.674 → 0.678 |
+| **CYP2D6** | **0.419 → 0.502** |
+| CYP1A2 | 0.588 → 0.619 |
 
-The holdout lands on the real set's difficulty. OpenADMET report the blind set's maximum ECFP4 Tanimoto to training centring around 0.50–0.55 with a tail to 0.7; our 529-compound holdout measures a median of 0.509 and a p90 of 0.646.
+CYP2D6 had resisted censored labels, architecture changes and extra data. Only its +0.083 clears the spread we measure between identical training runs at different random seeds (0.031 on CYP1A2 and CYP2D6, 0.008 and 0.007 on the other two); the remaining rows sit inside it and are not established.
 
-On that holdout our model scores **macro ST-RAE 0.423**. We also replicated OpenADMET's own tutorial baseline — a stock gradient-boosted tree on RDKit descriptors — and scored it the same way: **0.575**, worse on all four isoforms. That gap is the honest measure of what the modelling bought us.
+It also sidesteps what killed our censored-label attempt below: the fold-change readout being flat at the low end stops mattering when it is a target to predict rather than a bound to respect.
 
-Model differences are quoted with a paired bootstrap (1,000 resamples). The noise floor on this holdout is about 0.03 macro ST-RAE, large enough to have swallowed at least one result we initially believed.
+## Two Populations
 
-## What Actually Helped: Calibration
+The blind set is not a random draw. OpenADMET built it by hit expansion: the top 25 hits for CYP1A2, CYP2C9 and CYP3A4, then the top 10 catalog chemisimilars purchased for each — 750 compounds in dense structural clusters around potent molecules.
 
-Our first submission scored macro ST-RAE 0.8414 — about twice what our holdout predicted. Breaking it down per isoform showed something strange:
+Structurally clustered around hits is not the same as active. Analogs of a potent compound are mostly not potent, and CYP2D6 was not among the isoforms hits were selected on, so it received no enrichment at all. Meanwhile every training label survived two filters: a compound was screened because someone thought it might be active, and it was labelled only if its dose-response curve actually fit. Compounds that did nothing produce no curve and no label.
 
-| isoform | R² | Spearman | R² achievable at that ranking | achieved |
-|---|---|---|---|---|
-| CYP2C9 | 0.593 | 0.771 | 0.595 | **100%** |
-| CYP3A4 | 0.593 | 0.778 | 0.605 | **98%** |
-| CYP1A2 | 0.206 | 0.723 | 0.522 | 39% |
-| CYP2D6 | **−1.020** | 0.432 | 0.187 | **−547%** |
+The two distributions therefore differ, and in a way you can estimate before submitting anything. The public PubChem qHTS panel puts CYP2D6 inactivity at roughly 65%; a set that is 65% inactive centres near pIC50 3.7, against the 4.69 our model predicted. The blind population is also *wider* than the training labels on all four isoforms — a squared-error model shrinks toward the mean, and a label set built from successful curve fits is already narrower than the population it came from.
 
-Two isoforms were extracting essentially everything their ranking allowed. Two were far below — and CYP2D6 was scoring *worse than predicting a constant*, despite ordering compounds perfectly respectably.
+## Placement
 
-That pattern rules out most explanations. A model that can't tell CYP2D6 compounds apart would have a bad Spearman; ours was fine. What it had was a **bad zero point**. Our CYP2D6 predictions clustered at 4.77 with a floor at 4.15 — we never called a single compound a non-inhibitor — while the blind set's true values sat well over a log unit lower.
+Predictions carry two independent things. Their **order**, which is the model, and their **placement** on the axis, which is not. R² decomposes exactly:
 
-The cause is a dataset shift that will be familiar to anyone doing ADMET work. Our training labels are **doubly hit-enriched**: compounds were screened because someone thought they might be active, and only those producing a fittable dose-response curve got a label at all. The blind set is a screening population — mostly compounds that do nothing. A model calibrated to the first systematically over-predicts activity on the second.
+$$R^2 = 2\rho k - k^2 - b^2$$
 
-So we shifted CYP2D6 down by 1.2 log units and CYP1A2 by 0.6, and left CYP2C9 and CYP3A4 completely untouched since they were already at ceiling:
+with ρ the Pearson correlation, `k = sd(pred)/sd(true)` the spread ratio, and `b` the mean offset in units of sd(true). Only ρ depends on the ordering; `k` and `b` are set by an affine transform that touches no compound's rank. Two consequences: **R² ≤ ρ²** is a hard ceiling, and a model far below its own ρ² is *mis-placed, not weak*.
 
-| isoform | ST-RAE before → after | rank |
-|---|---|---|
-| CYP2D6 | 1.5176 → **0.7301** | 41 → **7** |
-| CYP1A2 | 0.7877 → **0.6782** | 22 → **10** |
-| CYP2C9 | 0.4944 — unchanged | 8 → 8 |
-| CYP3A4 | 0.5659 — unchanged | 12 → 12 |
-| **Macro** | **0.8414 → 0.6171** | **15 → 4** |
+The optimum is **`k = ρ`, not `k = 1`**. Matching the spread of the truth is wrong — a model with ρ = 0.7 should be 70% as wide as reality, because shrinking toward the mean is the correct response to uncertainty. Ours were narrower even than that.
 
-Spearman and Kendall came back bit-identical, as they must — a constant offset cannot reorder anything. That was also our integrity check: if the rank metrics had moved, the problem would have been in our submission pipeline rather than our calibration.
+So: estimate the target population's centre and spread, then place each isoform there with spread `ρ·sd`.
 
-!!! note "Is this just leaderboard fitting?"
-    Partly, and worth being straight about. The exact offsets were estimated from leaderboard feedback, which you would not have in a deployment setting. Two things make us comfortable calling it a real correction rather than a fit: it is two parameters against 750 compounds, and the predicted effect matched the observed one closely (we projected CYP2D6 R² ≈ 0.16 and measured 0.149) — noise-fitting does not extrapolate that well.
+<img src="../../images/cyp_calibration_applied.svg" alt="Four panels, one per isoform, each overlaying raw blind-set predictions, the same predictions after placement, and the blind population curve. CYP2C9 and CYP3A4 barely move. CYP1A2 shifts down and widens. CYP2D6 moves dramatically: a narrow spike at 4.5 with standard deviation 0.49 becomes a broad distribution centred at 3.1 matching the population curve." style="width: 100%; height: auto; display: block;">
 
-    More usefully, we had an **independent estimate that used no leaderboard data at all**. The public PubChem qHTS panel puts CYP2D6 inactivity at roughly 65%. A blind set that is 65% inactive centres near pIC50 3.7 against our 4.69 — implying a shift of about 1.0, against the 1.2 that proved correct. The correction was available from chemistry alone, before we ever submitted. We just didn't think to ask what the population we were predicting on actually looked like.
+CYP2D6 shows the failure at full scale: raw predictions are a spike at 4.5 with sd 0.49 against a population centred at 3.1 with sd 1.60. The model never called a single compound a non-inhibitor, and was predicting into less than a third of the actual range.
 
-The transferable lesson is not "shift your predictions." It is that we spent two days asking *how do we model CYP2D6 better* and the answer was that we were modelling it fine and pointing it at the wrong distribution.
+Placement is the whole of the difference between our worst and best submissions — same weights, same predictions, same ordering of every compound. Spearman and Kendall come back bit-identical under an affine transform, which is also the integrity check: if they move, the bug is in the submission pipeline.
+
+**The catch.** Placement that maximises R² does not minimise the scored metric. Soft-threshold RAE is zero anywhere inside a compound's credible interval, and low-activity compounds — below the lowest tested dose — carry wide intervals, so predicting high is nearly free while predicting low is punished by the actives. Placing CYP2D6 on its true centre raised R² from 0.363 to 0.447 and *worsened* ST-RAE from 0.565 to 0.694. Where the ST-RAE optimum actually sits is the open question we find most interesting.
 
 ## What Didn't Help
 
-Recorded because negative results are the expensive half of the work, and because several of these are things a reasonable person would try first.
+**Censored labels via bounded loss.** ~2,900 compounds showed no CYP2D6 inhibition at 50 µM — real measurements, not missing data. Bounded loss has no gradient below the bound, so the cheapest way to satisfy 2,627 rows bounded at one value is a constant just under it. That is what happened (σ 0.07), and it propagated: blind-set CYP2D6 predictions got **narrower** (σ 0.41 → 0.30), not wider. The root cause is the assay — CYP2D6's single-concentration response is flat across the low end where CYP3A4's is monotone. It can say "not an inhibitor" but not how far below.
 
-**Censored labels via bounded loss.** The challenge's single-concentration arm measured all 4,376 compounds against every isoform, and ~2,900 showed no CYP2D6 inhibition at 50 µM. Those are real measurements, not missing data, so we fed them in as left-censored labels using Chemprop's bounded loss. It failed, and instructively: bounded loss has no gradient *below* the bound, so the cheapest way to satisfy 2,627 rows bounded at the same value is to predict a constant just under it. That is exactly what happened — those predictions collapsed to a standard deviation of 0.07 — and because those compounds span a huge swath of chemical space, the constant propagated. Blind-set CYP2D6 predictions got **narrower** (σ 0.41 → 0.30), not wider.
+**Architecture changes.** Single-task descriptor models tie the multi-task network on CYP2D6 (holdout Pearson 0.414 vs 0.419) while losing on the other three. Four primary-weighted variants tie the symmetric model at four times the cost.
 
-The root cause is in the assay, not the loss. CYP2D6's single-concentration response is flat across the whole low end — a compound at pIC50 2.0 and one at 4.6 look identical — where CYP3A4's is cleanly monotone. The readout can say "not an inhibitor" but not how far below. The one isoform we needed it for is the one it cannot serve.
+**More data, in general.** CYP2C9 reaches Pearson 0.666 on fewer rows than CYP2D6 manages 0.398 with. Volume was never the constraint.
 
-**Architecture changes.** Single-task descriptor models tie the multi-task network on CYP2D6 (holdout Pearson 0.414 vs 0.419) while losing clearly on the other three — so shared-encoder interference was not what suppressed it. Four primary-weighted variants (each isoform at 1.0, the rest at 0.3) were a statistical tie with the symmetric model at four times the training cost.
+**Treating "no fitted curve" as "inactive."** Of CYP3A4's 2,570 unfitted compounds, 1,511 inhibited hard and simply failed to fit. CYP2D6 has zero such rows, which is why the rule looks safe if you check it there first.
 
-**More data, in general.** CYP2C9 reaches Pearson 0.666 on *fewer* training rows than CYP2D6 manages 0.398 with. Volume was never the constraint. Most tellingly, OpenADMET's own reference baseline uses strictly less data than we do — no multi-task, no censoring, no external sources — and out-scored us on the CYP2D6 leaderboard tab while ranking compounds *worse* than we did. Its advantage was entirely that its predictions were wider and reached into the inactive range ours refused to enter.
-
-**Treating "no fitted curve" as "inactive."** Tempting, and wrong in a way that depends on the isoform. Of CYP3A4's 2,570 unfitted compounds, 1,511 inhibited hard and simply failed to produce a curve. A blanket rule would have labelled 1,511 potent inhibitors as inactive. CYP2D6 happens to have zero such rows — which is why the rule looked safe when we checked it there first.
-
-**Hyperparameter search** (carried over from our PXR entry): gains on in-distribution cross-validation reversed on the analog set. Stock defaults remain the baseline to beat.
+**Hyperparameter search.** Gains on in-distribution cross-validation reverse out of distribution. Stock defaults remain the baseline to beat.
 
 ## Still To Come
 
-Calibration is nearly exhausted — about +0.05 macro R² remains at our current ranking. Past that, the gap to the leader is **ranking**, concentrated in CYP2D6, where our Spearman of 0.432 trails the top entry's 0.543. That is now a clean modelling target rather than something hidden behind a placement error. No TDI entry yet.
+Ranking is the remaining gap, concentrated in CYP2D6, where our Spearman of 0.468 trails the best entry's 0.561 while the other three sit within 0.025 of the best. Queued: averaging across random seeds, measured to add 0.024–0.044 Spearman on every isoform; the PubChem qHTS panel, which adds ~16,000 molecules of essentially disjoint chemistry and agrees with the challenge assay best on CYP2D6; and a sweep of the auxiliary-target weight. No TDI entry yet.
 
 ## Reproducing This
 
@@ -96,20 +89,16 @@ Calibration is nearly exhausted — about +0.05 macro R² remains at our current
 Built with [ADMET Workbench](https://github.com/SuperCowPowers/workbench):
 
 ```bash
-# FeatureSets from the challenge release (2D + 3D features; Chemprop uses SMILES only)
+# FeatureSets from the challenge release, then the auxiliary-target FeatureSet
 python ml_pipelines/OpenADMET/cyp/cyp_feature_sets.py
+python ml_pipelines/OpenADMET/cyp/cyp_aux_features.py
 
-# The evaluated model — holds out the analog set, reports honest ST-RAE
-python ml_pipelines/OpenADMET/cyp/cyp_chemprop_mt_all.py
+# The submitted model — 8 heads, trained on 100% of the data
+python ml_pipelines/OpenADMET/cyp/cyp_chemprop_mt_aux_100.py
 
-# The submitted model — same configuration, trained on 100% of the data
-python ml_pipelines/OpenADMET/cyp/cyp_chemprop_mt_100.py
-
-# Predict the 750 blinded compounds and write a validated submission
+# Predict the 750 blinded compounds, then place them on the target population
 python ml_pipelines/OpenADMET/cyp/scripts/cyp_submit.py
-
-# Apply the per-isoform calibration correction
-python ml_pipelines/OpenADMET/cyp/scripts/cyp_recalibrate.py
+python ml_pipelines/OpenADMET/cyp/scripts/cyp_recalibrate.py --solved
 ```
 
 Submission files are checked with OpenADMET's own validator, vendored from their tutorial repository, so the gate before uploading is the same code the platform runs.
