@@ -46,16 +46,19 @@ PUBLIC_ISOFORMS = ISOFORMS + ["cyp2c19"]
 # a bare capture's `prediction` column holds target[0].
 TARGETS = [f"{iso}_pic50_direct_inhibition" for iso in ISOFORMS]
 LOG2FC_TARGETS = [f"{iso}_log2fc" for iso in ISOFORMS]
-PUBLIC_TARGETS = ([f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS]
-                  + [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS])
+PUBLIC_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS] + [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
 ALL_TARGETS = TARGETS + LOG2FC_TARGETS + PUBLIC_TARGETS
 
 # Unchanged from the model this one extends, so the log2fc arm stays a fixed quantity.
 LOG2FC_WEIGHT = 0.3
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--public-weight", type=float, required=True,
-                    help="Per-head weight for the ChEMBL and Veith targets, as a multiple of mean(primary)")
+parser.add_argument(
+    "--public-weight",
+    type=float,
+    required=True,
+    help="Per-head weight for the ChEMBL and Veith targets, as a multiple of mean(primary)",
+)
 args = parser.parse_args()
 
 model_name = f"cyp-reg-chemprop-union-p{int(round(args.public_weight * 100)):02d}"
@@ -67,9 +70,7 @@ primary_weights = compute_inverse_count_task_weights(df, TARGETS)
 mean_primary = float(np.mean(primary_weights))
 log2fc_weight = LOG2FC_WEIGHT * mean_primary
 public_weight = args.public_weight * mean_primary
-task_weights = (list(primary_weights)
-                + [log2fc_weight] * len(LOG2FC_TARGETS)
-                + [public_weight] * len(PUBLIC_TARGETS))
+task_weights = list(primary_weights) + [log2fc_weight] * len(LOG2FC_TARGETS) + [public_weight] * len(PUBLIC_TARGETS)
 
 aux_share = (log2fc_weight * len(LOG2FC_TARGETS) + public_weight * len(PUBLIC_TARGETS)) / sum(task_weights)
 print(f"Building {model_name} on all {len(df):,} rows — no holdout")

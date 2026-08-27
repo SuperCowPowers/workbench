@@ -75,12 +75,18 @@ OOF_TO_BLIND = {"CYP1A2": 1.32, "CYP2C9": 1.23, "CYP2D6": 1.66, "CYP3A4": 1.07}
 # That spans enough to solve var(y), mean(y) and cov(y, p) exactly.
 OUTPUTS = Path(__file__).parent / "outputs"
 SOLVE_ENTRIES = [
-    (OUTPUTS / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux.csv",
-     {"CYP1A2": 0.518857, "CYP2C9": 0.677782, "CYP2D6": 0.345047, "CYP3A4": 0.683557}),
-    (OUTPUTS / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux_aux2.csv",
-     {"CYP1A2": 0.5595, "CYP2C9": 0.6875, "CYP2D6": 0.3630, "CYP3A4": 0.6777}),
-    (OUTPUTS / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux_aux2_probe.csv",
-     {"CYP1A2": 0.5361, "CYP2C9": 0.6638, "CYP2D6": 0.4298, "CYP3A4": 0.5732}),
+    (
+        OUTPUTS / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux.csv",
+        {"CYP1A2": 0.518857, "CYP2C9": 0.677782, "CYP2D6": 0.345047, "CYP3A4": 0.683557},
+    ),
+    (
+        OUTPUTS / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux_aux2.csv",
+        {"CYP1A2": 0.5595, "CYP2C9": 0.6875, "CYP2D6": 0.3630, "CYP3A4": 0.6777},
+    ),
+    (
+        OUTPUTS / "cyp-reg-chemprop-mt-aux-100_activity_submission_aux_aux2_probe.csv",
+        {"CYP1A2": 0.5361, "CYP2C9": 0.6638, "CYP2D6": 0.4298, "CYP3A4": 0.5732},
+    ),
 ]
 
 VALUE_COLUMNS = {iso: f"{iso}_pIC50_direct_inhibition" for iso in BLIND_MOMENTS}
@@ -118,11 +124,13 @@ def solve_blind_moments() -> dict:
 
         # (delta^2 - d_r2*V)^2 / (4*delta^2) * (beta-1) = V*(r2_b - beta*r2_a) + var_b - beta*var_a
         scale = (beta - 1) / (4 * delta**2)
-        roots = np.roots([
-            scale * d_r2**2,
-            -2 * scale * delta**2 * d_r2 - (r2_b[iso] - beta * r2_a[iso]),
-            scale * delta**4 - (var_b - beta * var_a),
-        ])
+        roots = np.roots(
+            [
+                scale * d_r2**2,
+                -2 * scale * delta**2 * d_r2 - (r2_b[iso] - beta * r2_a[iso]),
+                scale * delta**4 - (var_b - beta * var_a),
+            ]
+        )
         candidates = [r.real for r in roots if abs(r.imag) < 1e-9 and 0.25 < r.real < 9.0]
         if not candidates:
             raise ValueError(f"{iso}: no physical root for var(y) — board numbers may be stale")
@@ -132,8 +140,10 @@ def solve_blind_moments() -> dict:
         cov = (r2_a[iso] * var_y + var_a + offset**2) / 2
         rho = cov / np.sqrt(var_y * var_a)
         solved[iso] = {"mean": p_a.mean() + offset, "sd": np.sqrt(var_y), "pearson": rho}
-        print(f"{iso:<8} mean {solved[iso]['mean']:>6.3f}  sd {solved[iso]['sd']:>5.3f}  "
-              f"pearson {rho:.3f}  R2 ceiling {rho**2:.3f}")
+        print(
+            f"{iso:<8} mean {solved[iso]['mean']:>6.3f}  sd {solved[iso]['sd']:>5.3f}  "
+            f"pearson {rho:.3f}  R2 ceiling {rho**2:.3f}"
+        )
     return solved
 
 
@@ -174,9 +184,11 @@ def place(sub: pd.DataFrame, pearson: dict) -> dict:
             "offset": moments["mean"] - current.mean(),
             "scale": target_sd / current.std(),
         }
-        print(f"{iso:<8} pearson {rho:.3f} | sd {current.std():.2f} -> {target_sd:.2f} "
-              f"(x{calibration[iso]['scale']:.2f}) | mean {current.mean():.2f} -> "
-              f"{moments['mean']:.2f} ({calibration[iso]['offset']:+.2f}) | R2 ceiling {rho**2:.3f}")
+        print(
+            f"{iso:<8} pearson {rho:.3f} | sd {current.std():.2f} -> {target_sd:.2f} "
+            f"(x{calibration[iso]['scale']:.2f}) | mean {current.mean():.2f} -> "
+            f"{moments['mean']:.2f} ({calibration[iso]['offset']:+.2f}) | R2 ceiling {rho**2:.3f}"
+        )
     return calibration
 
 
