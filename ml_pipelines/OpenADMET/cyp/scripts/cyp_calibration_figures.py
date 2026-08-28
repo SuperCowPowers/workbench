@@ -1,7 +1,9 @@
 """The placement figure for `docs/blogs/cyp_challenge.md`.
 
-Writes `docs/images/cyp_calibration_applied.svg` -- our raw blind-set predictions, the
-same predictions after placement, and the blind population they are scored against.
+Writes `docs/images/cyp_calibration_applied.svg` -- the submitted model's raw blind-set
+predictions, the same predictions after placement, and the blind population they are scored
+against. CYP2D6 deliberately does not match that population: its ST-RAE optimum sits above
+the true centre and narrower, so it is placed there instead.
 
 That population is drawn as a curve rather than a histogram because its labels are hidden;
 only its mean and sd are known, solved from scored submissions.
@@ -14,7 +16,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from cyp_recalibrate import BLIND_MOMENTS, SOLVED_PEARSON, VALUE_COLUMNS
+from cyp_recalibrate import BLIND_MOMENTS, VALUE_COLUMNS
 
 IMAGES = Path(__file__).resolve().parents[4] / "docs" / "images"
 OUT = Path(__file__).parent / "outputs"
@@ -57,22 +59,22 @@ def figure_applied(raw: pd.DataFrame, placed: pd.DataFrame) -> None:
         m, sd = BLIND_MOMENTS[iso]["mean"], BLIND_MOMENTS[iso]["sd"]
         normal(ax, m, sd, BLIND, "blind population")
         ax.set_title(
-            f"{iso}   sd {raw[col].std():.2f} → {placed[col].std():.2f}"
-            f"   (target ρ·sd = {SOLVED_PEARSON[iso] * sd:.2f})"
+            f"{iso}   mean {raw[col].mean():.2f} → {placed[col].mean():.2f}"
+            f"   sd {raw[col].std():.2f} → {placed[col].std():.2f}"
         )
         ax.set_xlabel("pIC50")
         ax.set_ylabel("density")
         ax.set_xlim(1, 9)
         ax.legend(loc="upper left", framealpha=0.9)
-    fig.suptitle("The same predictions, moved onto the population they are scored against", fontsize=15, y=0.98)
+    fig.suptitle("Raw predictions, the placement we submit, and the population being scored against", fontsize=15, y=0.98)
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(IMAGES / "cyp_calibration_applied.svg")
     plt.close(fig)
 
 
 if __name__ == "__main__":
-    raw = pd.read_csv(OUT / "cyp-reg-chemprop-mt-aux-100_activity_submission.csv")
-    placed = pd.read_csv(OUT / "cyp-reg-chemprop-mt-aux-100_activity_submission_solved.csv")
+    raw = pd.read_csv(OUT / "cyp-reg-chemprop-union-p30_activity_submission.csv")
+    placed = pd.read_csv(OUT / "cyp-reg-chemprop-union-p30_activity_submission_strae.csv")
 
     figure_applied(raw, placed)
     print(f"Wrote cyp_calibration_applied.svg to {IMAGES}")
