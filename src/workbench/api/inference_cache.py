@@ -123,6 +123,10 @@ class InferenceCache:
         Returns:
             pd.DataFrame: ``eval_df`` with the endpoint's added columns
             left-joined on ``cache_key_column``.
+
+        Raises:
+            RuntimeError: If any chunk's inference failed, or the endpoint
+                returned no rows at all.
         """
         key_col = self.cache_key_column
         if key_col not in eval_df.columns:
@@ -139,9 +143,8 @@ class InferenceCache:
         self.log.info(f"InferenceCache[{self._endpoint.name}]: {hits}/{len(eval_df)} cache hits")
 
         # Run the endpoint on the uncached rows. The decorator on
-        # _chunked_endpoint_inference handles chunking, per-chunk cache
-        # writes, and error recovery so a single failed write doesn't
-        # destroy the rest of the batch.
+        # _chunked_endpoint_inference handles chunking and per-chunk cache
+        # writes, and raises if any chunk's inference failed.
         new_results = pd.DataFrame()
         if not uncached_df.empty:
             to_compute = uncached_df.drop_duplicates(subset=[key_col])
@@ -153,7 +156,11 @@ class InferenceCache:
         # dtype inference on empty entries.)
         frames = [f for f in (cached_hits, new_results) if not f.empty]
         if not frames:
-            return eval_df.copy()
+            if eval_df.empty:
+                return eval_df.copy()
+            raise RuntimeError(
+                f"InferenceCache[{self._endpoint.name}]: endpoint returned no rows for " f"{len(eval_df)} inputs"
+            )
         feature_table = pd.concat(frames, ignore_index=True).drop_duplicates(subset=[key_col], keep="last")
         feature_cols = [c for c in feature_table.columns if c not in eval_df.columns]
         return eval_df.merge(feature_table[[key_col] + feature_cols], on=key_col, how="left")

@@ -196,6 +196,16 @@ class FeaturesToModel(Transform):
 
         # Get our Feature Set and build the model's own training view
         feature_set = FeatureSetCore(self.input_name)
+
+        # Validate an explicit feature list before the training view and the model delete below
+        if feature_list:
+            missing = [c for c in feature_list if c not in feature_set.columns]
+            if missing:
+                raise ValueError(
+                    f"FeatureSet {self.input_name} is missing {len(missing)}/{len(feature_list)} "
+                    f"requested features: {missing[:10]}{' ...' if len(missing) > 10 else ''}"
+                )
+
         short_id = uuid.uuid4().hex[:6]
         self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training_{short_id}".lower()
         self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")

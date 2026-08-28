@@ -11,8 +11,8 @@ one that:
 1. Slices its input DataFrame into snapshots of ``self.snapshot`` rows.
 2. Calls the wrapped method on each snapshot.
 3. After each snapshot, calls ``self._update_cache(results)`` to persist.
-4. Catches exceptions from both inference and cache writes — a single bad
-   snapshot does not kill the rest of the batch.
+4. Attempts every snapshot even after one fails, so a bad snapshot doesn't
+   cost the rest of the batch its compute, then raises if any failed.
 5. Concatenates surviving snapshots and returns the merged DataFrame.
 """
 
@@ -37,9 +37,12 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
     - ``self._endpoint.name`` (str): used in log messages
     - ``self.log``: a workbench logger
 
-    Returns the concatenation of every successful snapshot's results. May be
-    shorter than the input if any snapshots failed (failures are logged at
-    ERROR level).
+    Returns the concatenation of every snapshot's results.
+
+    Raises:
+        RuntimeError: If any snapshot's inference failed. Every snapshot is
+            attempted first and successful ones are cached, so a retry resumes
+            from the cache rather than recomputing them.
     """
 
     @functools.wraps(method)
@@ -54,6 +57,7 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
         self.log.info(f"{label}: chunking {total} rows into {n_chunks} snapshots of {snapshot}")
 
         results = []
+        failures = []
         for i in range(n_chunks):
             chunk = to_compute.iloc[i * snapshot : (i + 1) * snapshot]
             sent = len(chunk)
@@ -64,6 +68,7 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
                 chunk_results = method(self, chunk, **kwargs)
             except Exception as e:
                 self.log.error(f"{label}: chunk {i + 1}/{n_chunks} inference failed: {e}")
+                failures.append(f"chunk {i + 1}/{n_chunks}: {e}")
                 continue
 
             got = len(chunk_results)
@@ -103,6 +108,12 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
                     )
 
             results.append(chunk_results)
+
+        # A caller that silently accepted partial results would build downstream
+        # artifacts (FeatureSets, models) on a truncated feature table.
+        if failures:
+            detail = "; ".join(failures)
+            raise RuntimeError(f"{label}: {len(failures)}/{n_chunks} chunks failed: {detail}")
 
         # Filter empty frames before concat to dodge the pandas FutureWarning
         # about dtype inference on empty entries.
