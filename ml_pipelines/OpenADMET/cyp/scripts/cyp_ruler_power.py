@@ -29,7 +29,7 @@ from cyp_seed_noise import oof
 ISOFORMS = ["cyp1a2", "cyp2c9", "cyp2d6", "cyp3a4"]
 SEEDS = ["cyp-reg-chemprop-mt-aux-100", "cyp-reg-chemprop-mt-aux-100-s43", "cyp-reg-chemprop-mt-aux-100-s44"]
 PAIR = ("cyp-reg-chemprop-mt-aux-100", "cyp-reg-chemprop-union-p30")
-BOARD_N = 375          # the live half
+BOARD_N = 375  # the live half
 # Spearman on each ruler, needed because sampling noise scales with (1 - rho^2). OOF is the
 # control model's; board is the mean of the two entries being compared.
 RHO_OOF = {"cyp1a2": 0.556, "cyp2c9": 0.683, "cyp2d6": 0.436, "cyp3a4": 0.802}
@@ -68,19 +68,20 @@ if __name__ == "__main__":
         samp, n_oof = paired_sampling_sd(iso)
         seed = seed_sd(iso)
         # Carry both terms: sqrt(n) for set size, (1 - rho^2) for where each ruler sits.
-        board_samp = (samp * np.sqrt(n_oof / BOARD_N)
-                      * (1 - RHO_BOARD[iso] ** 2) / (1 - RHO_OOF[iso] ** 2))
-        rows.append({
-            "isoform": iso,
-            "n_oof": n_oof,
-            "row sd @OOF": samp,
-            "row sd @board": board_samp,
-            "seed sd": seed,
-            # one build per arm: both noise sources; k seeds per arm: seed part /sqrt(k)
-            "OOF 1x": 2 * np.hypot(samp, seed * np.sqrt(2)),
-            "OOF 3x": 2 * np.hypot(samp, seed * np.sqrt(2 / 3)),
-            "board 1x": 2 * np.hypot(board_samp, seed * np.sqrt(2)),
-        })
+        board_samp = samp * np.sqrt(n_oof / BOARD_N) * (1 - RHO_BOARD[iso] ** 2) / (1 - RHO_OOF[iso] ** 2)
+        rows.append(
+            {
+                "isoform": iso,
+                "n_oof": n_oof,
+                "row sd @OOF": samp,
+                "row sd @board": board_samp,
+                "seed sd": seed,
+                # one build per arm: both noise sources; k seeds per arm: seed part /sqrt(k)
+                "OOF 1x": 2 * np.hypot(samp, seed * np.sqrt(2)),
+                "OOF 3x": 2 * np.hypot(samp, seed * np.sqrt(2 / 3)),
+                "board 1x": 2 * np.hypot(board_samp, seed * np.sqrt(2)),
+            }
+        )
     df = pd.DataFrame(rows).set_index("isoform")
     pd.set_option("display.width", 200)
     print(df.round(4).to_string())

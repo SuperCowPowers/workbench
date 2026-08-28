@@ -66,7 +66,9 @@ def figure_applied(raw: pd.DataFrame, placed: pd.DataFrame) -> None:
         ax.set_ylabel("density")
         ax.set_xlim(1, 9)
         ax.legend(loc="upper left", framealpha=0.9)
-    fig.suptitle("Raw predictions, the placement we submit, and the population being scored against", fontsize=15, y=0.98)
+    fig.suptitle(
+        "Raw predictions, the placement we submit, and the population being scored against", fontsize=15, y=0.98
+    )
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(IMAGES / "cyp_calibration_applied.svg")
     plt.close(fig)
