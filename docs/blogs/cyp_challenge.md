@@ -29,7 +29,9 @@ That also sidesteps what killed our censored-label attempt below. A readout that
 
 **What the public data bought.** ChEMBL contributes ~24,700 compounds of chemistry disjoint from the challenge deck (185 structures overlap; **zero** overlap with the blind set). The qHTS panel contributes max-response, which is recorded for every compound whether or not it inhibited — so the ~42,000 rows that showed nothing carry signal, where a potency-only source drops them.
 
-Against the same model without it, blind-set ranking improves on CYP1A2. The other three isoforms move by less than the leaderboard can resolve, so that is the one gain we claim rather than four.
+Against the same model without it, CYP1A2's ranking on the blind set improves enough to take that isoform to first place on its leaderboard. That is the only modelling change we have been able to confirm against the real test set rather than against our own cross-validation — roughly twenty-five thousand compounds of chemistry the challenge never touched, improving how a held-out screening deck gets ordered.
+
+The other three isoforms moved by less than the leaderboard can resolve, which is a statement about the board's resolution rather than about the gain: two of the three moved in the right direction, and none of them cleared the noise in either direction.
 
 ## Two Populations
 
