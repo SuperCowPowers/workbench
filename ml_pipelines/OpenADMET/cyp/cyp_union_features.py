@@ -34,6 +34,13 @@ by two orders of magnitude across isoforms (CYP2D6's 99.5th is +35, CYP2C9's is 
 a percentile clip keeps CYP2C9's artifacts and cuts CYP2D6's real signal. The fixed window
 touches at most 3% of any isoform.
 
+The assay's other arms go in too. `tdi.csv` and `emax.csv` cover 6,145 compounds where the
+fitted-curve set covers 4,905, and those extra 1,240 molecules carry 1,238 CYP3A4
+TDI-condition curves -- so TDI-condition pIC50 lifts CYP3A4 coverage from 2,335 to 3,583
+and brings new chemistry with it. Emax adds no molecules but is the one readout carrying
+CYP2D6-specific signal: it correlates 0.555 with CYP2D6 potency and near zero on every
+other isoform, which for the isoform that resists everything else is worth a head.
+
 Every target lives here; the model scripts choose which to train on via `target_column`.
 A FeatureSet is a data asset and the experiment variable belongs in the model, so adding
 a source does not mean rebuilding data to isolate it.
@@ -62,6 +69,10 @@ PUBLIC_ISOFORMS = ISOFORMS + ["cyp2c19"]
 CHEMBL_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS]
 VEITH_TARGETS = [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
 VEITH = "comp_chem/pubchem/cyp_inhibition/all_isoforms"
+TDI = "comp_chem/openadmet/cyp/training/tdi"
+EMAX = "comp_chem/openadmet/cyp/training/emax"
+TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
+EMAX_TARGETS = [f"{iso}_emax_vs_pos_ctrl_direct_inhibition" for iso in ISOFORMS]
 MAX_RESPONSE_CLIP = (-150.0, 50.0)
 
 
@@ -76,6 +87,19 @@ def skeletons(smiles: pd.Series) -> pd.Series:
 
 challenge = FeatureSet(SOURCE_FS).pull_dataframe()
 challenge = challenge[["molecule_name", "smiles"] + TARGETS + AUX_TARGETS + CI_COLUMNS].copy()
+
+# The other arms of the same assay: extra readouts on these compounds, plus the molecules
+# that produced a TDI-condition curve without a direct-inhibition one.
+tdi = PublicData().get(TDI)[["molecule_name", "smiles"] + TDI_TARGETS]
+emax = PublicData().get(EMAX)[["molecule_name"] + EMAX_TARGETS]
+# tdi carries the SMILES, so it is the base — emax has one molecule tdi lacks and no
+# structure for it.
+side = tdi.merge(emax, on="molecule_name", how="left")
+challenge = challenge.merge(side.drop(columns=["smiles"]), on="molecule_name", how="left")
+side_only = side[~side["molecule_name"].isin(set(challenge["molecule_name"]))]
+challenge = pd.concat([challenge, side_only], ignore_index=True)
+print(f"challenge rows {len(challenge):,} ({len(side_only):,} from the TDI arm alone)")
+
 challenge["key"] = skeletons(challenge["smiles"])
 
 chembl = PublicData().get(CHEMBL)
@@ -119,7 +143,7 @@ veith_only["molecule_name"] = "VEITH-" + veith_only["key"]
 out = pd.concat([joined, veith_only.drop(columns=["key"])], ignore_index=True)
 out = out.drop(columns=["key"])
 
-ALL_TARGETS = TARGETS + AUX_TARGETS + CHEMBL_TARGETS + VEITH_TARGETS
+ALL_TARGETS = TARGETS + AUX_TARGETS + TDI_TARGETS + EMAX_TARGETS + CHEMBL_TARGETS + VEITH_TARGETS
 if out["molecule_name"].duplicated().any():
     raise ValueError("duplicate molecule_name after the union")
 if out["smiles"].isna().any():

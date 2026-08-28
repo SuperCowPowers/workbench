@@ -1,31 +1,27 @@
-"""Multi-task Chemprop over the challenge data plus public ChEMBL and Veith targets.
+"""Multi-task Chemprop with one isoform deliberately up- or down-weighted.
 
-Eighteen heads on one shared encoder: the four scored pIC50 targets, the four
-single-concentration log2fc auxiliaries that already earned their place, five ChEMBL pIC50
-targets and five Veith max_response targets. Only the scored four are ever submitted --
-the rest exist to shape the representation.
+A contrast, not a candidate. Our models differ on CYP2D6 by 0.01-0.03 Spearman while OOF
+resolves 0.056 and the board 0.089, so nothing we have built can be told apart there --
+and a ruler cannot be validated with models that do not differ. This makes them differ on
+purpose.
 
-`--public-weight` is the experiment. The proven configuration (`cyp_chemprop_mt_aux_100.py`)
-puts auxiliaries at ~23% of total gradient with four heads at `0.3 * mean(primary)`. Ten
-more heads at that same per-head weight would put auxiliaries near 51%, outweighing the
-targets we are scored on, so whether 0.3 is a per-head number or a per-family budget is an
-open question rather than a settled one. Two arms bracket it:
+    python cyp_chemprop_contrast.py --isoform cyp2d6 --primary-weight 4.0   # specialist
+    python cyp_chemprop_contrast.py --isoform cyp2d6 --primary-weight 0.1   # starved
 
-    --public-weight 0.05   ~30% auxiliary share
-    --public-weight 0.30   ~51% auxiliary share
+Two questions, one pair of builds:
 
-`cyp-reg-chemprop-mt-aux-100` is the control at 0% public data. Six-fold apart on the
-variable, everything else identical.
+  * whether CYP2D6 weighting does anything at all. The board's two best CYP2D6 entries are
+    poor on the other three isoforms, which is what specialisation looks like, and the
+    primary-weighted rotation we ran before came back "a tie" on a CI of [-0.035, +0.021]
+    -- an interval containing every effect we care about. That was never a null result.
+  * whether `cyp2d6_log2fc` works as a ruler. It has 4,375 rows against the target's 1,493
+    and is weighted identically in every model we build, so it is uncontaminated -- but
+    unvalidated. If the two arms differ, both rulers should see it and we learn whether
+    they agree.
 
-Read the arms on OOF against the seed noise floor -- 0.05 Pearson on CYP1A2 and CYP2D6,
-0.013 and 0.012 on CYP2C9 and CYP3A4 (`scripts/cyp_seed_noise.py`). Treat a smaller CYP2D6
-difference as unresolved. The union's scaffold split runs over 31,670 rows, so the
-challenge compounds sit in folds alongside public chemistry where the control's folds were
-challenge-only; that is the experiment rather than a flaw, but it is not a seed-for-seed
-contrast.
-
-Place its predictions with `scripts/cyp_recalibrate.py --oof MODEL` -- this model has no
-board history, so its Pearson comes from its own out-of-fold captures.
+Everything else is held at the p30 configuration. Read with
+`scripts/cyp_seed_noise.py --models ...` against the thresholds in
+`scripts/cyp_ruler_power.py`.
 
 Build the FeatureSet first: python cyp_union_features.py
 """
@@ -58,27 +54,40 @@ ALL_TARGETS = TARGETS + ASSAY_TARGETS + PUBLIC_TARGETS
 ASSAY_WEIGHT = 0.3
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--isoform", required=True, choices=ISOFORMS, help="Isoform to re-weight")
+parser.add_argument(
+    "--primary-weight",
+    type=float,
+    required=True,
+    help="Multiplier on that isoform's scored head; >1 specialises it, <1 starves it",
+)
 parser.add_argument(
     "--public-weight",
     type=float,
-    required=True,
+    default=0.30,
     help="Per-head weight for the ChEMBL and Veith targets, as a multiple of mean(primary)",
 )
 args = parser.parse_args()
 
-model_name = f"cyp-reg-chemprop-union-p{int(round(args.public_weight * 100)):02d}"
+tag = f"{args.isoform[3:]}-{str(args.primary_weight).replace('.', 'p')}"
+model_name = f"cyp-reg-chemprop-contrast-{tag}"
 
 fs = FeatureSet(FS_NAME)
 df = fs.pull_dataframe()
 
-primary_weights = compute_inverse_count_task_weights(df, TARGETS)
+primary_weights = list(compute_inverse_count_task_weights(df, TARGETS))
 mean_primary = float(np.mean(primary_weights))
+# Re-weight one scored head, leaving the other three and every auxiliary untouched, so the
+# pair differs in exactly one number.
+idx = TARGETS.index(f"{args.isoform}_pic50_direct_inhibition")
+primary_weights[idx] *= args.primary_weight
 assay_weight = ASSAY_WEIGHT * mean_primary
 public_weight = args.public_weight * mean_primary
-task_weights = list(primary_weights) + [assay_weight] * len(ASSAY_TARGETS) + [public_weight] * len(PUBLIC_TARGETS)
+task_weights = primary_weights + [assay_weight] * len(ASSAY_TARGETS) + [public_weight] * len(PUBLIC_TARGETS)
 
 aux_share = (assay_weight * len(ASSAY_TARGETS) + public_weight * len(PUBLIC_TARGETS)) / sum(task_weights)
 print(f"Building {model_name} on all {len(df):,} rows — no holdout")
+print(f"{args.isoform} scored head x{args.primary_weight}; all other heads unchanged")
 print(f"pIC50 weights: {dict(zip(ISOFORMS, [round(float(w), 3) for w in primary_weights]))}")
 print(f"assay weight:  {assay_weight:.3f} each ({ASSAY_WEIGHT} x mean primary), {len(ASSAY_TARGETS)} heads")
 print(f"public weight: {public_weight:.3f} each ({args.public_weight} x mean primary), {len(PUBLIC_TARGETS)} heads")
@@ -90,8 +99,8 @@ model = fs.to_model(
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],
     target_column=ALL_TARGETS,
-    description=f"Multi-task Chemprop, challenge + public targets, public weight {args.public_weight}",
-    tags=TAGS + [f"public_weight_{args.public_weight}"],
+    description=f"Contrast build: {args.isoform} scored head x{args.primary_weight}",
+    tags=TAGS + ["contrast", f"{args.isoform}_x{args.primary_weight}"],
     hyperparameters={"task_weights": task_weights, "uq_version": "v1"},
 )
 model.set_owner("openadmet_cyp")
