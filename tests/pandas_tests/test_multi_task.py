@@ -401,3 +401,31 @@ def test_combine_passthrough_length_mismatch_raises():
             target_columns=[["t1"], ["t2"]],
             passthrough_columns=[["x"]],  # only one entry for two DFs
         )
+
+
+def test_combine_date_passthrough_takes_latest():
+    """A smiles-keyed collapse keeps each source's LATEST date, not an arbitrary batch's."""
+    # Two batches of the same molecule, assayed on different dates
+    internal = _make_df(
+        ids=["BATCH-1", "BATCH-2"],
+        smiles=["CC", "CC"],
+        features={"feat1": [1.0, 1.0]},
+        targets={"t1": [0.5, 0.7], "__date_internal": pd.to_datetime(["2025-01-01", "2026-06-01"])},
+    )
+    public = _make_df(
+        ids=["P1"],
+        smiles=["CCC"],
+        features={"feat1": [3.0]},
+        targets={"t2": [0.9], "__date_public": pd.Series([pd.NaT], dtype="datetime64[ns]")},
+    )
+
+    result = combine_multi_task_data(
+        [internal, public],
+        target_columns=[["t1"], ["t2"]],
+        passthrough_columns=[["__date_internal"], ["__date_public"]],
+        merge_on_smiles=True,
+        standardize_smiles=False,
+    )
+
+    row = result[result["smiles"] == "CC"].iloc[0]
+    assert row["__date_internal"] == pd.Timestamp("2026-06-01")

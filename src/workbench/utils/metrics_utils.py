@@ -245,7 +245,12 @@ def print_regression_metrics(metrics: Dict[str, float]) -> None:
 
     Args:
         metrics: Output of `compute_regression_metrics`
+
+    Raises:
+        ValueError: If `metrics` is empty -- every truth/prediction pair was NaN.
     """
+    if not metrics:
+        raise ValueError("No regression metrics to print: every truth/prediction pair was NaN.")
     for name in TRAINING_METRICS:
         value = metrics[name]
         print(f"{name}: {value}" if isinstance(value, int) else f"{name}: {value:.3f}")

@@ -289,6 +289,7 @@ class ChempropAdapter(HpoAdapter):
                 hyperparameters=merge_best_config(hyperparameters, config),
                 smiles_column=self.smiles_column,
                 n_targets=len(target_columns),
+                target_columns=target_columns,
                 enable_progress_bar=False,
                 verbose=False,
                 num_workers=num_workers,

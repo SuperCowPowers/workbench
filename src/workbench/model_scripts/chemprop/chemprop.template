@@ -425,17 +425,28 @@ if __name__ == "__main__":
         print(f"Dropped {initial_count - len(all_df)} rows with missing SMILES/targets")
 
     print(f"Data shape: {all_df.shape}")
-    for tc in target_columns:
-        print(f"  {tc}: {all_df[tc].notna().sum()} samples")
 
     # Route held-out validation rows out of training BEFORE label encoding / feature-mean fitting,
     # so nothing downstream (CV/UQ/SHAP) sees them. They're scored held-out just before save.
     from workbench.training.splits import get_split_indices
     from workbench.training.validation import split_validation_set
 
+    totals = all_df[target_columns].notna().sum()
     all_df, holdout_df = split_validation_set(all_df)
     if len(holdout_df):
         print(f"Held-out validation set: {len(holdout_df)} rows (excluded from training/CV/UQ)")
+    # Counts are per-target TRAINING support: what each head actually learns from.
+    for tc in target_columns:
+        print(f"  {tc}: {all_df[tc].notna().sum()} training samples ({totals[tc]} total)")
+
+    # A target the training split left unlabeled cannot be learned -- it scales to a NaN
+    # mean/std and its head predicts NaN for every molecule. Catch it here, before the folds.
+    starved = [t for t in target_columns if all_df[t].notna().sum() == 0]
+    if starved:
+        raise ValueError(
+            f"No training rows for target(s) {starved} -- every labeled row landed in the "
+            f"held-out validation set. Check the validation_ids / temporal split."
+        )
 
     # -------------------------------------------------------------------------
     # Classification setup
@@ -603,6 +614,7 @@ if __name__ == "__main__":
         model_type=model_type,
         smiles_column=smiles_column,
         n_targets=n_targets,
+        target_columns=target_columns,
         num_classes=num_classes,
         n_extra_descriptors=n_extra,
         task_weights=task_weights,
@@ -727,6 +739,8 @@ if __name__ == "__main__":
             valid_mask = ~np.isnan(y_oof[:, t_idx])
             if valid_mask.sum() > 0:
                 metrics = compute_regression_metrics(y_oof[valid_mask, t_idx], preds[valid_mask, t_idx])
+                if not metrics:
+                    raise ValueError(f"Out-of-fold predictions for '{t_name}' are all NaN.")
                 print_regression_metrics(metrics)
 
             df_oof[f"{t_name}_pred"] = preds[:, t_idx]
@@ -924,6 +938,10 @@ if __name__ == "__main__":
                     mask = h_df[t_name].notna().values
                     if mask.sum() > 0:
                         metrics = compute_regression_metrics(h_df[t_name].values[mask], h_preds[mask, t_idx])
+                        if not metrics:
+                            raise ValueError(
+                                f"Held-out predictions for '{t_name}' are all NaN ({int(mask.sum())} labeled rows)."
+                            )
                         print_regression_metrics(metrics)
                         if t_idx == 0:
                             print(f"holdout_mae: {metrics['mae']:.3f}")

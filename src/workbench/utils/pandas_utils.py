@@ -319,7 +319,9 @@ def compute_confusion(df: pd.DataFrame, n_classes: int = None) -> pd.DataFrame:
 def temporal_split(df: pd.DataFrame, date_column: str, end_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Split a DataFrame into train/test sets based on a date boundary.
 
-    Rows with date <= end_date go to train, rows with date > end_date go to test.
+    Rows with date > end_date go to test; every other row goes to train, including
+    rows whose date is null or unparseable (date-less rows carry no temporal
+    information, so they are never held out).
 
     Args:
         df (pd.DataFrame): Input DataFrame.
@@ -349,10 +351,11 @@ def temporal_split(df: pd.DataFrame, date_column: str, end_date: str) -> Tuple[p
             f"(treated as training). Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
         )
 
+    # NaT compares False against the cutoff either way, so the holdout mask is the
+    # only side that can be expressed directly -- train is its complement.
     cutoff = pd.to_datetime(end_date)
-    train_df = df[df[date_column] <= cutoff].copy()
-    test_df = df[df[date_column] > cutoff].copy()
-    return train_df, test_df
+    holdout_mask = df[date_column] > cutoff
+    return df[~holdout_mask].copy(), df[holdout_mask].copy()
 
 
 def get_percent_nan(df):

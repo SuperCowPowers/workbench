@@ -19,6 +19,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+import numpy as np
 import torch
 from chemprop import data, models, nn
 from lightning import pytorch as pl
@@ -209,6 +210,8 @@ class FoldSpec:
     model_type: str = "regressor"
     smiles_column: str = "smiles"
     n_targets: int = 1
+    # Target names, for diagnostics only; falls back to positional indices when unset.
+    target_columns: list | None = None
     num_classes: int | None = None
     n_extra_descriptors: int = 0
     task_weights: Any = None
@@ -285,6 +288,16 @@ def train_chemprop_fold(
 
     output_transform = None
     if spec.model_type in ["regressor", "uq_regressor"]:
+        # A target with no labels in this fold scales to a NaN mean/std, and that head then
+        # predicts NaN for every molecule -- which only surfaces as empty metrics much later,
+        # and poisons the whole ensemble mean since one member is enough.
+        empty = np.flatnonzero(np.isnan(train_dataset.Y).all(axis=0))
+        if empty.size:
+            names = spec.target_columns or list(range(spec.n_targets))
+            raise ValueError(
+                f"Fold {fold_idx}: no training labels for target(s) {[names[i] for i in empty]}. "
+                f"Every labeled row landed outside this fold's training split."
+            )
         target_scaler = train_dataset.normalize_targets()
         val_dataset.normalize_targets(target_scaler)
         output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)

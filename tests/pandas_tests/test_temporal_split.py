@@ -48,11 +48,18 @@ class TestTemporalSplitEdgeCases:
     """Tests for edge cases and data quality."""
 
     def test_nat_handling(self):
+        """A date-less row carries no temporal information, so it trains and is never held out."""
         df = pd.DataFrame({"id": [1, 2, 3, 4], "date": ["2023-01-01", "2023-02-01", "not-a-date", "2023-04-01"]})
-        # Should not raise — unparseable values become NaT
-        # NaT rows may be excluded from both splits since date comparisons with NaT are falsy
         train, test = temporal_split(df, "date", end_date="2023-02-15")
-        assert len(train) + len(test) >= 3
+        assert set(train["id"]) == {1, 2, 3}
+        assert set(test["id"]) == {4}
+
+    def test_all_dates_null(self):
+        """An entirely date-less column holds nothing out."""
+        df = pd.DataFrame({"id": [1, 2, 3], "date": [None, None, None]})
+        train, test = temporal_split(df, "date", end_date="2023-02-15")
+        assert len(train) == 3
+        assert len(test) == 0
 
     def test_string_dates_parsed(self):
         df = pd.DataFrame({"id": [1, 2, 3, 4], "date": ["2023-01-01", "2023-02-01", "2023-03-01", "2023-04-01"]})

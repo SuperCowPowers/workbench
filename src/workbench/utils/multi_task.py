@@ -212,9 +212,15 @@ def combine_multi_task_data(
     dup_counts = result[merge_key].value_counts()
     dup_ids = dup_counts[dup_counts > 1]
     numeric_cols = [c for c in result.select_dtypes(include="number").columns if c != merge_key]
-    non_numeric_cols = [c for c in result.columns if c not in numeric_cols and c != merge_key]
+    # Dates take the latest, not an arbitrary row. A molecule reaching this collapse from
+    # several batches (the smiles-keyed pass) must keep its most recent per-source assay
+    # date, or the row-wise max a temporal split reads is no longer the true latest.
+    date_cols = [c for c in result.select_dtypes(include="datetime").columns if c != merge_key]
+    picked = set(numeric_cols) | set(date_cols) | {merge_key}
+    other_cols = [c for c in result.columns if c not in picked]
     agg_dict = {c: "mean" for c in numeric_cols}
-    agg_dict.update({c: "first" for c in non_numeric_cols})
+    agg_dict.update({c: "max" for c in date_cols})
+    agg_dict.update({c: "first" for c in other_cols})
     result = result.groupby(merge_key, as_index=False).agg(agg_dict)
     log.info(f"Collapsing {n_before} rows -> {len(result)} ({len(dup_ids)} molecules appear in multiple sources)")
 
