@@ -12,7 +12,13 @@ measurements; this is the index.
 | `cyp_chemprop_mt_aux.py` | analog-holdout counterpart of the aux model | holdout retired; its gains were never confirmed against the board |
 | `cyp_censored_features.py` | CYP2D6 left-censored FeatureSet | see below |
 | `cyp_chemprop_mt_censored.py` | bounded-loss model on it | negative, and the mechanism is the useful part: bounded loss has no gradient below the bound, so 2,627 rows at one bound collapsed to a constant that propagated through the shared encoder |
+| `cyp_xgb_fp.py` | four single-task XGBoost on Morgan count fingerprints | decorrelated as hoped (0.55-0.67 vs chemprop) but 0.11-0.20 Pearson too weak; pool delta +0.001 to -0.007, inside noise on all four |
 
 The isoform-weighting question these partly address is now settled: a 40x contrast on
-CYP2D6's task weight (`cyp_chemprop_contrast.py`) moved its ranking by 0.004 on an
-8,415-row ruler. Weighting is not the lever -- the shared encoder is.
+CYP2D6's task weight moved its ranking by 0.004 on an 8,415-row ruler. Weighting is not
+the lever -- the shared encoder is.
+
+The fingerprint arm sets the other bound. A candidate earns a pool slot on decorrelation,
+but only within roughly a tenth of the pool's best: the CYP2D6 specialists sit 0.01-0.06
+behind at similar correlation and earn theirs, the fingerprint models sit 0.11-0.20 behind
+and do not.

@@ -1,7 +1,7 @@
 """CYP2D6 with its own encoder — does dropping the sharing do what re-weighting could not?
 
-Re-weighting CYP2D6's head by 40x moved its ranking by 0.004 on an 8,415-row ruler
-(`cyp_chemprop_contrast.py`). A head with enough capacity fits its target whatever the loss
+Re-weighting CYP2D6's head by 40x moved its ranking by 0.004 on an 8,415-row ruler.
+A head with enough capacity fits its target whatever the loss
 says, so CYP2D6's ordering is coming from the shared encoder, which every other target also
 shapes. That leaves one structural question the weighting experiment could not reach:
 whether sharing an encoder across isoforms is what holds CYP2D6 back.
