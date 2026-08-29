@@ -24,8 +24,6 @@ Only the four scored pIC50 heads are ever submitted; the rest exist to shape the
 
 **Why auxiliary heads rather than more rows.** Every extra source measures something adjacent to the scored target, not identical to it: the single-concentration arm reports a fold-change, ChEMBL's potency comes from other labs and reads ~0.5 log more potent on shared compounds, and the qHTS panel reports efficacy at the top concentration. Pooling any of them into the scored columns needs a cross-assay correction; as separate heads none is required — the encoder learns from all of them and each head keeps its own scale.
 
-A readout that cannot say *how far* below a threshold a compound sits is useless as a bound and perfectly usable as a target.
-
 **Why an ensemble.** Averaging decorrelated models cancels the error that belongs to architecture and training run rather than to the chemistry. Members are chosen for how differently they see the problem, not for how they score alone — the best-scoring subset of many overfits the ruler used to select it. The two CYP2D6 specialists earn their slots that way: a different slice of the data, so different compounds missed. The average beats every member it contains, and the gain flattens by the fourth.
 
 **What the public data contributes.** ChEMBL adds ~24,700 compounds disjoint from the challenge deck — 185 structures overlap it, **zero** overlap the blind set. The qHTS panel adds max-response, recorded whether or not a compound inhibited, so the ~42,000 rows that showed nothing still carry signal where a potency-only source drops them.
