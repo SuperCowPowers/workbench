@@ -157,25 +157,45 @@ def solve_blind_moments() -> dict:
     return solved
 
 
-def oof_pearson(model_name: str) -> dict:
-    """Estimate a new model's blind Pearson from its out-of-fold captures.
+def oof_pearson(model_names: str) -> dict:
+    """Estimate blind Pearson from the out-of-fold captures of one or more models.
 
-    The stand-in for SOLVED_PEARSON before a model has any board history. Scaffold-OOF
-    understates the blind half, so each isoform is scaled by OOF_TO_BLIND; without that
-    correction the placement under-spreads, badly on CYP2D6.
+    The stand-in for SOLVED_PEARSON before a model has board history. Pass several
+    comma-separated names to describe an ensemble: their out-of-fold predictions are
+    averaged per isoform on the rows they share, which is the same quantity the submission
+    averages. A model without an isoform's capture is skipped for that isoform, so a CYP2D6
+    specialist contributes where it can and nowhere else.
+
+    Scaffold-OOF understates the blind half, so each isoform is scaled by OOF_TO_BLIND;
+    without that correction the placement under-spreads, badly on CYP2D6.
     """
-    model = Model(model_name)
-    runs = model.list_inference_runs()
+    models = [m.strip() for m in model_names.split(",") if m.strip()]
     pearson = {}
     for iso in BLIND_MOMENTS:
         target = f"{iso.lower()}_pic50_direct_inhibition"
-        run = f"cv_{target}"
-        if run not in runs:
-            raise ValueError(f"'{model_name}' has no capture '{run}'")
-        d = model.get_inference_predictions(run)[[target, "prediction"]].dropna()
-        raw = pearsonr(d[target], d["prediction"]).statistic
+        frames = []
+        for name in models:
+            model = Model(name)
+            runs = model.list_inference_runs()
+            # Single-target models report under `full_cross_fold`; multi-target under `cv_<target>`.
+            run = f"cv_{target}" if f"cv_{target}" in runs else "full_cross_fold"
+            if run not in runs:
+                continue
+            d = model.get_inference_predictions(run)
+            if d is None or target not in d.columns:
+                continue
+            frames.append(d[["molecule_name", target, "prediction"]].dropna().set_index("molecule_name"))
+        if not frames:
+            raise ValueError(f"no model supplied an out-of-fold capture for {iso}")
+        common = sorted(set.intersection(*[set(f.index) for f in frames]))
+        truth = frames[0].loc[common, target]
+        averaged = np.column_stack([f.loc[common, "prediction"] for f in frames]).mean(axis=1)
+        raw = pearsonr(truth, averaged).statistic
         pearson[iso] = raw * OOF_TO_BLIND[iso]
-        print(f"{iso:<8} OOF pearson {raw:.3f} -> blind estimate {pearson[iso]:.3f}")
+        print(
+            f"{iso:<8} {len(frames)} member(s), n={len(common):,} | OOF pearson {raw:.3f} "
+            f"-> blind estimate {pearson[iso]:.3f}"
+        )
     return pearson
 
 
@@ -264,9 +284,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=Path, default=OUTPUTS, help="Output directory")
     parser.add_argument(
         "--oof",
-        metavar="MODEL",
-        help="Estimate Pearson from this model's out-of-fold captures instead of using "
-        "SOLVED_PEARSON; for a model with no board history",
+        metavar="MODELS",
+        help="Estimate Pearson from out-of-fold captures instead of SOLVED_PEARSON; "
+        "comma-separate several names to describe an ensemble",
     )
     parser.add_argument("--solve", action="store_true", help="Re-derive BLIND_MOMENTS and SOLVED_PEARSON")
     parser.add_argument(

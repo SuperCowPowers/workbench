@@ -1,17 +1,18 @@
-# Retired CYP model scripts
+# Retired CYP scripts
 
-Kept for the record, not run by the pipeline. Scored on the 529-compound analog
-holdout, macro ST-RAE (lower is better, ~0.03 noise floor):
+Kept for the record, not run by the pipeline. Each script's docstring carries its own
+measurements; this is the index.
 
-| script | models | macro ST-RAE |
+| script | what it built | outcome |
 |---|---|---|
-| `cyp_chemprop_mt.py` | four rotations, one per primary isoform | 0.702 |
-| `cyp_pytorch_3dv2.py` | four single-task PyTorch on 2D + 3D-v2 | 0.916 |
+| `cyp_chemprop_mt.py` | four multi-task rotations, one per primary isoform | tie with the symmetric model at 4x cost, CI [-0.035, +0.021] |
+| `cyp_pytorch_3dv2.py` | four single-task PyTorch on 2D + 3D-v2 | beaten by XGBoost on the same features, every isoform |
+| `cyp_chemprop_mt_all.py` | the analog-holdout baseline | holdout retired: built from top hits, so active-enriched where the blind half is not |
+| `cyp_chemprop_mt_100.py` | the first submission model | superseded by the auxiliary-target model |
+| `cyp_chemprop_mt_aux.py` | analog-holdout counterpart of the aux model | holdout retired; its gains were never confirmed against the board |
+| `cyp_censored_features.py` | CYP2D6 left-censored FeatureSet | see below |
+| `cyp_chemprop_mt_censored.py` | bounded-loss model on it | negative, and the mechanism is the useful part: bounded loss has no gradient below the bound, so 2,627 rows at one bound collapsed to a constant that propagated through the shared encoder |
 
-`cyp_chemprop_mt.py` builds one multi-task model per isoform, that isoform weighted
-1.0 and the rest 0.3. Against the symmetric single model in `cyp_chemprop_mt_all.py`
-(0.696) the paired bootstrap gives a delta of -0.006, 95% CI [-0.035, +0.021] — a
-tie at four times the training cost.
-
-`cyp_pytorch_3dv2.py` is beaten by the XGBoost models on the same features across
-every isoform.
+The isoform-weighting question these partly address is now settled: a 40x contrast on
+CYP2D6's task weight (`cyp_chemprop_contrast.py`) moved its ranking by 0.004 on an
+8,415-row ruler. Weighting is not the lever -- the shared encoder is.
