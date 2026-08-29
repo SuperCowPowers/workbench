@@ -3,7 +3,7 @@
 !!! tip inline end "Current entry"
     An average of four multi-task Chemprop models over the challenge data plus public CYP potency, stock hyperparameters, plus a per-isoform placement correction. **Macro ST-RAE 0.4378, rank 1 of 81** as of 2026-08-28.
 
-**Work in progress.** The [OpenADMET CYP Inhibition Blind Challenge](https://huggingface.co/spaces/openadmet/cyp-challenge) (Direct Inhibition track) is still open, so these are notes on a moving entry. The model changes between submissions, the live leaderboard scores only half the test set, and the rulers for deciding whether a change helped are underpowered for most differences worth chasing.
+**Work in progress.** The [OpenADMET CYP Inhibition Blind Challenge](https://huggingface.co/spaces/openadmet/cyp-challenge) (Direct Inhibition track) is still open. The model changes between submissions, and the live leaderboard scores only half the test set. So these are just some early observations that may, or may not, translate well to the final leaderboard.
 
 Two things carry the entry. First, a multi-task graph model trained on the challenge assay alongside every adjacent public readout we could align, ensembled across architectures. Second, an explicit correction for the distribution shift between the training labels and the blind set. The second is a modelling decision, not a scoring trick. Predicting into the wrong population is a real error, and correcting it is the shrinkage any calibrated regressor should already be doing.
 
