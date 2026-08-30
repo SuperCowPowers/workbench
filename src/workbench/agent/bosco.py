@@ -25,6 +25,7 @@ from workbench.agent.tools import (
     guide_index,
     general_guide,
     egress_text,
+    mode_text,
     provider_egress_text,
     personality_text,
     DEFAULT_PERSONALITY,
@@ -87,6 +88,8 @@ Workbench builds AWS SageMaker model pipelines: DataSource -> FeatureSet -> Mode
 You work in the user's live REPL session. Variables you create stay available to
 them afterwards, so use clear names and tell them what you left behind.
 
+{mode}
+
 {general}
 
 ## Egress
@@ -112,6 +115,7 @@ your own assumptions rather than answering from general knowledge."""
 
 def _system_prompt() -> str:
     return SYSTEM_PROMPT.format(
+        mode=mode_text(),
         general=general_guide().strip(),
         egress=egress_text(),
         provider_egress=provider_egress_text(),

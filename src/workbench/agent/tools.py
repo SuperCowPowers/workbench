@@ -104,6 +104,30 @@ PROVIDER_EGRESS = {
 }
 
 
+# Local mode changes what is reachable before any guide is read, so it goes in the
+# system prompt rather than a guide the agent may or may not open.
+LOCAL_MODE_TEXT = """## This session
+
+There is **no AWS account** here — the REPL came up in local mode.
+
+- Artifacts are files on this machine. The bare `DataSource`, `FeatureSet`, `Model`,
+  and `Endpoint` names are the local classes, and `pub_data` is the usual data source.
+- **Constructing anything from `workbench.api` raises `FatalConfigError`** — it builds
+  an AWS client. That includes `CachedMeta`. The bound `models()`, `feature_sets()`,
+  `data_sources()`, and `endpoints()` already read local storage; use those.
+- Publishing, deployed endpoints, monitoring, contests, and promotion need an account.
+  Say so rather than working around it.
+
+Read the `local_models` guide before building anything here."""
+
+
+def mode_text() -> str:
+    """The session-shape block for the system prompt, empty on an AWS session."""
+    from workbench.utils.config_manager import ConfigManager
+
+    return "" if ConfigManager().config_okay() else LOCAL_MODE_TEXT
+
+
 def provider_egress_text() -> str:
     """Where this session's conversation goes, for the system prompt."""
     from workbench.utils.llm_utils import llm_provider

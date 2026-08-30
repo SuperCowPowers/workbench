@@ -4,8 +4,10 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
 
 ## Always
 
-- Use `CachedMeta()` — much faster, and a 30-second TTL, so it is current. Not in
-  the REPL namespace, so `from workbench.api import CachedMeta`.
+- **On an AWS session**, use `CachedMeta()` — much faster, and a 30-second TTL, so
+  it is current. Not in the REPL namespace: `from workbench.api import CachedMeta`.
+  It needs an account, so in local mode use the bound `models()` / `feature_sets()`
+  instead — they already read local storage.
 - **Always pass `details=True` when retrieving metadata** — `models()`,
   `endpoints()`, `feature_sets()`, `data_sources()`. The default summary leaves
   Health, Type, Framework, metrics, and counts **empty**, so without it you report
