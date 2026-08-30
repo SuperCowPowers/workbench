@@ -69,9 +69,10 @@ SOLVED_PEARSON = {"CYP1A2": 0.753, "CYP2C9": 0.838, "CYP2D6": 0.678, "CYP3A4": 0
 # R2 rose across that sequence (0.363 -> 0.430 -> 0.447) while ST-RAE fell. ST-RAE scores
 # zero anywhere inside a compound's credible interval and low-activity compounds carry wide
 # ones, so predicting high is nearly free while predicting low is punished by the actives,
-# whose intervals are narrow. Until that optimum is derived rather than sampled, use the
-# best measured placement. `sd` here is the spread to hit outright, not `rho * sd`.
-STRAE_MOMENTS = {"CYP2D6": {"mean": 3.57, "sd": 0.90}}
+# whose intervals are narrow. `scripts/cyp_strae_optimum.py` derives the minimum offline
+# against the challenge's own intervals; it orders the three CYP2D6 board probes correctly
+# at a stable offset. `sd` here is the spread to hit outright, not `rho * sd`.
+STRAE_MOMENTS = {"CYP2D6": {"mean": 4.35, "sd": 0.90}}
 
 # Scaffold-OOF Pearson understates blind Pearson -- the split is harder than the blind half,
 # and an OOF prediction comes from one fold model where the endpoint averages five.
