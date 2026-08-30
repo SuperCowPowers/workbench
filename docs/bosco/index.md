@@ -95,9 +95,8 @@ so he can speak to the outcome.
 ## Where your data goes
 
 Bosco's prompts carry real data by design, and they travel over Bedrock inside
-your own AWS account — same IAM, same CloudTrail, same bill. Our default Bedrock's
-setup uses ZDR (Zero Data Retention) ensuring that the model provider never 
-sees your data.
+your own AWS account — same IAM, same CloudTrail, same bill. Our standard Bedrock
+setup turns on ZDR (Zero Data Retention), so no data is stored.
 
 The full picture — enabling Bosco, retention modes, zero data retention,
 invocation logging, auditing, and PrivateLink — is on
