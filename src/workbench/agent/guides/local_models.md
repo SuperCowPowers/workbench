@@ -161,5 +161,9 @@ model disagrees with the local one, check `version_drift()`.
 
 - Delete through the API. A local `Model.delete()` takes its endpoints with it;
   removing directories by hand leaves them pointing at a model that's gone.
-- No plots, inference store, monitoring, contests, or promotion. When the user
-  wants those, they want a published model.
+- No inference store, monitoring, contests, or promotion. When the user wants
+  those, they want a published model.
+- Plots work — `get_inference_predictions()` feeds parity and residual plots exactly
+  as it does for an AWS model, so build them (`plotting` guide). What's missing is
+  the plots whose inputs are AWS-only methods: SHAP, confusion matrix, HPO, and the
+  neighborhood graph (`shap_*`, `confusion_matrix`, `hpo_*`, `prox`).

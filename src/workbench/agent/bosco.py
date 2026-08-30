@@ -25,6 +25,7 @@ from workbench.agent.tools import (
     guide_index,
     general_guide,
     egress_text,
+    provider_egress_text,
     personality_text,
     DEFAULT_PERSONALITY,
 )
@@ -90,6 +91,8 @@ them afterwards, so use clear names and tell them what you left behind.
 
 ## Egress
 
+{provider_egress}
+
 {egress}
 
 ## Voice
@@ -111,6 +114,7 @@ def _system_prompt() -> str:
     return SYSTEM_PROMPT.format(
         general=general_guide().strip(),
         egress=egress_text(),
+        provider_egress=provider_egress_text(),
         personality=personality_text(getattr(bosco, "personality", DEFAULT_PERSONALITY)).strip(),
         guides=guide_index() or "  (none)",
     )

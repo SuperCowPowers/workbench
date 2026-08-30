@@ -80,6 +80,35 @@ def egress_text() -> str:
     return _sections(EGRESS_FILE).get(EGRESS_MODE, "")
 
 
+# Where the conversation itself goes. The egress modes cover requests the agent
+# makes; this covers the prompts, which carry whatever it has already read.
+PROVIDER_EGRESS = {
+    "bedrock": (
+        "This conversation runs on Claude through Bedrock inside the user's own AWS "
+        "account, so the prompts never leave it."
+    ),
+    "anthropic": (
+        "This conversation runs on Claude through the Anthropic API on the user's own "
+        "API key, so prompt content -- including anything you read from their files, "
+        "dataframes, or artifacts -- leaves this machine. Say so plainly if they ask."
+    ),
+    "trial": (
+        "This conversation runs on Claude through the SuperCowPowers trial proxy, which "
+        "forwards to Bedrock with zero data retention. Prompt content -- including "
+        "anything you read from their files, dataframes, or artifacts -- leaves this "
+        "machine and reaches SuperCowPowers. Say so plainly if they ask, and mention "
+        "that connecting their own AWS account keeps it in-house."
+    ),
+}
+
+
+def provider_egress_text() -> str:
+    """Where this session's conversation goes, for the system prompt."""
+    from workbench.utils.llm_utils import llm_provider
+
+    return PROVIDER_EGRESS.get(llm_provider(), "")
+
+
 def read_guide(name: str) -> str:
     """Read a bundled guide by name."""
     path = GUIDES_DIR / f"{name}.md"
