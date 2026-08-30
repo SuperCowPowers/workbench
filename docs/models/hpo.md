@@ -45,6 +45,12 @@ deployed and used exactly like any other.
 | `gpus_per_trial` | `0.5`, or `1.0` multi-task | GPU share one trial claims (Ray only) |
 | `max_parallel` | GPUs ÷ `gpus_per_trial` | concurrent trials (Ray only) — derived from the box, set it only to override |
 
+Those five keys are the whole block. Anything else raises at submit time rather than
+running a different search than you asked for — a typo (`n_trails`) as an unknown key, and
+`metric`, `rerank_top_k` and `n_folds` as retired ones, each naming what replaced it. The
+objective is always pooled out-of-fold MAE, trials always use the model's own `n_folds`, and
+your own hyperparameters ride along as a trial instead of being re-ranked against the winner.
+
 The searched knobs differ per framework, and a model knows its own — `hpo_search_space()`
 dispatches on the model's framework and returns one row per knob, carrying its range **and**
 where it sits untuned. A space is judgeable without running anything:
@@ -61,21 +67,23 @@ without leaving holes:
 |---|---|---|---|
 | `max_depth` | 7 | int | `{"low": 3, "high": 16, "step": 1}` |
 | `learning_rate` | 0.05 | float | `{"low": 0.003, "high": 0.3, "log": true}` |
-| `ffn_hidden_dim` | "300-300" | choice | `{"options": ["300", "600", "300-100", "1024-256-64", ...]}` |
+| `ffn_hidden_dim` | "300-300" | choice | `{"options": ["300", "600", "1200", "1800", "300-300", ...]}` |
 
 `json.loads` the `spec` cell to read it. This is always the framework's full space.
 
 To search only part of it, set `hpo["search_space"]` to a group name or a `+`-joined
-combination. `basic` is capacity everywhere; the second group differs because the frameworks'
-second lever does:
+combination. Every framework splits its space in two, along the lever that matters for it:
 
 | framework | groups |
 |---|---|
-| ChemProp, PyTorch | `basic` + `optimizer` (learning rate, batch size) |
-| XGBoost | `basic` + `reg` (sampling and penalty terms) |
+| ChemProp | `basic` (depth, hidden and FFN widths) + `optimizer` (`max_lr`, batch size) |
+| PyTorch | `basic` (layer shape, dropout) + `optimizer` (learning rate, weight decay, batch size) |
+| XGBoost | `basic` (tree capacity **and** learning rate) + `reg` (sampling and penalty terms) |
 
-So `hpo={"search_space": "basic"}` spends the whole budget on architecture — useful when you
-already trust your optimizer settings.
+So `hpo={"search_space": "basic"}` on ChemProp or PyTorch spends the whole budget on
+architecture — useful when you already trust your optimizer settings. Read the XGBoost row
+before doing the same there: boosting rate lives in `basic`, so that call searches the
+learning rate and drops the regularization terms instead.
 
 ### Your own ranges and defaults
 
