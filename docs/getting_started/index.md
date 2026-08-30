@@ -6,13 +6,21 @@
 ## Install and run
 
 ```bash
-pip install 'workbench[all]'
+pip install workbench
 workbench
 ```
 
 `workbench` starts the REPL. With no AWS configuration it comes up in **local
 mode**: artifacts live on your filesystem, so there's no account to create, no
 credentials to manage, and nothing to pay for.
+
+The base install carries XGBoost, RDKit, and the descriptor stack — everything on
+this page. Two extras add the rest:
+
+| Extra | Adds |
+| --- | --- |
+| `workbench[modeling]` | Chemprop and PyTorch models (pulls torch, a large download) |
+| `workbench[ui]` | The dashboard and its plugin pages |
 
 ## Build a model
 
@@ -38,6 +46,28 @@ model.get_inference_metrics()
 Training runs the same model script SageMaker runs, so a model that works here
 publishes and produces the same model. See [Local Mode](../local/index.md) for
 scoring, endpoints, and the rest of the local API.
+
+## Or just ask
+
+[Bosco](../bosco/index.md), the Workbench ML agent, runs in local mode too. Give it
+an Anthropic API key and it writes and runs that chain for you:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+workbench
+```
+
+`Bosco` appears in the prompt, and anything you type that isn't Python goes to it:
+
+```
+Workbench:Bosco> build me a solubility model from the aqsol public data
+Workbench:Bosco> show me a predicted vs actual plot
+Workbench:Bosco> what are the nearest neighbors of the worst outlier?
+```
+
+It works in your live session, so the variables it creates stay in your namespace.
+Prompts go to the Anthropic API rather than an AWS account in this mode — `status`
+always names where they go. See [Security & Admin](../bosco/security.md).
 
 ## Connect your AWS account
 
