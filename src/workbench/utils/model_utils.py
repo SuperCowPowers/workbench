@@ -273,7 +273,9 @@ def _resolve_uq_version(model: "Model", version: Optional[str]) -> str:
     return "v0"
 
 
-def load_uq_from_dir(model_dir: str, version: str, model_name: str, fresh_prox=None):
+def load_uq_from_dir(
+    model_dir: str, version: str, model_name: str, fresh_prox: Optional["Proximity"] = None  # noqa: F821
+) -> "UQModelV0 | UQModelV1 | UQModelV2":  # noqa: F821
     """Load a fitted UQModel from an unpacked model bundle.
 
     The bundle is a directory either way: AWS unpacks the artifact tarball into a temp
@@ -283,10 +285,11 @@ def load_uq_from_dir(model_dir: str, version: str, model_name: str, fresh_prox=N
         model_dir (str): Directory holding the model bundle.
         version (str): "v0", "v1", or "v2".
         model_name (str): The model's name, for error messages.
-        fresh_prox: Proximity backend to use instead of the embedded one (V1/V2).
+        fresh_prox (Proximity, optional): Proximity backend to use instead of the
+            embedded one (V1/V2 only).
 
     Returns:
-        A ready-to-use UQModelV0, UQModelV1, or UQModelV2.
+        UQModelV0 | UQModelV1 | UQModelV2: A ready-to-use UQ model.
 
     Raises:
         FileNotFoundError: If the requested version's artifact isn't in the bundle.

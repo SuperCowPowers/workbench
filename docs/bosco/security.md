@@ -10,6 +10,13 @@ Bosco runs Claude through **Amazon Bedrock**, which keeps that boundary inside
 AWS: prompts are authenticated by your existing Workbench IAM roles, billed
 through your AWS account, and never leave AWS.
 
+!!! note "Evaluating without an account"
+    Workbench also runs in [local mode](../local/index.md) with no AWS account at
+    all, where Bosco reaches Claude through the Anthropic API instead. That is an
+    evaluation path, not a deployment one — this page describes the configuration
+    every Workbench account runs. See [Local mode](#local-mode-evaluation-only) for
+    what it does and does not give you.
+
 ## Turning Bosco on
 
 Set `ENABLE_BOSCO` in the personal Workbench **config** for each account. It's
@@ -319,3 +326,16 @@ AWS references:
     SuperCowPowers team is happy to help — reach us at
     [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on
     [Discord](https://discord.gg/WHAJuz8sw8).
+
+## Local mode (evaluation only)
+
+With no Workbench config the REPL starts in local mode: artifacts are files on your
+filesystem, and Bosco reaches Claude through the Anthropic API using an
+`ANTHROPIC_API_KEY` from your environment. It exists so you can try Workbench
+before setting up an official account.
+
+**Note:** This is for evaluation only. It does not give you the
+same security guarantees as running inside your AWS account.
+
+**Connect an account before pointing Bosco at proprietary chemistry.** Everything
+above this section is what that buys you.
