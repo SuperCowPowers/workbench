@@ -46,9 +46,6 @@ from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
-
-# Where local-mode users go to set up their own AWS account
-SCP_URL = "https://www.supercowpowers.com/"
 from workbench.utils.log_utils import silence_logs
 from workbench.utils.aws_utils import sso_login_hint
 from workbench.utils.web_utils import EGRESS_MODE
@@ -56,6 +53,18 @@ from workbench.utils.chem_utils import vis
 
 # Egress dots
 EGRESS_LIGHTS = {"off": Token.Lightgreen, "guarded": Token.Blue, "full": Token.Darkyellow}
+
+# Where local-mode users go to set up their own AWS account
+SCP_URL = "https://www.supercowpowers.com/"
+
+
+def aws_only(name: str):
+    """A stand-in for a command that needs an AWS account, used in local mode"""
+
+    def unavailable(*args, **kwargs):
+        cprint("darkyellow", f"{name}() needs an AWS account. Run aws_setup() to connect one.")
+
+    return unavailable
 
 
 def aws_setup():
@@ -145,7 +154,9 @@ class WorkbenchShell:
                 self.import_workbench()
 
         # Try cached meta (if that fails it will be set to direct meta)
-        if not self.local_only:
+        if self.local_only:
+            self.meta = LocalMeta()
+        else:
             self.try_cached_meta()
 
         # Register our custom commands
@@ -166,10 +177,14 @@ class WorkbenchShell:
             self.commands[f"Local{class_name}"] = local_class
             if self.local_only:
                 self.commands[class_name] = local_class
-        self.commands["contests"] = self.contests
-        self.commands["incoming_data"] = self.incoming_data
-        self.commands["glue_jobs"] = self.glue_jobs
-        self.commands["batch_jobs"] = importlib.import_module("workbench.utils.batch_utils").batch_jobs
+        if self.local_only:
+            for name in ("contests", "incoming_data", "glue_jobs", "batch_jobs"):
+                self.commands[name] = aws_only(name)
+        else:
+            self.commands["contests"] = self.contests
+            self.commands["incoming_data"] = self.incoming_data
+            self.commands["glue_jobs"] = self.glue_jobs
+            self.commands["batch_jobs"] = importlib.import_module("workbench.utils.batch_utils").batch_jobs
         self.commands["data_sources"] = self.data_sources
         self.commands["feature_sets"] = self.feature_sets
         self.commands["models"] = self.models

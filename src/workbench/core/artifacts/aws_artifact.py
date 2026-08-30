@@ -61,9 +61,6 @@ def _bucket() -> str:
 class AWSArtifact(Artifact):
     """AWSArtifact: Base Class for all AWS-backed Artifact classes in Workbench"""
 
-    # Config Manager
-    cm = ConfigManager()
-
     # AWS Account Clamp
     aws_account_clamp = _LazyClassAttr(AWSAccountClamp)
     boto3_session = _LazyClassAttr(lambda: AWSAccountClamp().boto3_session)
