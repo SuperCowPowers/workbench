@@ -639,6 +639,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#local-mode-evaluation-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local mode (evaluation only)
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -5554,6 +5565,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#local-mode-evaluation-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local mode (evaluation only)
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -5580,6 +5602,14 @@ reaches a language model, but <strong>which boundary it crosses to get there</st
 <p>Bosco runs Claude through <strong>Amazon Bedrock</strong>, which keeps that boundary inside
 AWS: prompts are authenticated by your existing Workbench IAM roles, billed
 through your AWS account, and never leave AWS.</p>
+<div class="admonition note">
+<p class="admonition-title">Public/Evaluation without an AWS Account</p>
+<p>Workbench also runs in <a href="../../local/">local mode</a> with no AWS account at
+all, where Bosco reaches Claude through the Anthropic API instead. That is an
+evaluation path, not a deployment one — this page describes the configuration
+every Workbench account runs. See <a href="#local-mode-evaluation-only">Local mode</a> for
+what it does and does not give you.</p>
+</div>
 <h2 id="turning-bosco-on">Turning Bosco on</h2>
 <p>Set <code>ENABLE_BOSCO</code> in the personal Workbench <strong>config</strong> for each account. It's
 also handy to set the dashboard URL so Bosco can open Dashboard pages for you.</p>
@@ -5787,20 +5817,26 @@ sits on top of it, covering the one direction IAM has no opinion about.</p>
 rights to your inputs, you own the outputs, and the model provider may not
 train on them.</p>
 <p>Bedrock enforces a <strong>zero-operator-access</strong> model: no AWS operator can read your
-inputs or outputs. Under the default retention setting AWS may retain them for
-safety and abuse prevention, but the model provider never receives them.</p>
-<p>Retention is configurable at the account or project level. The modes are
-<code>none</code> (nothing retained), <code>default</code> (AWS-only retention, above), and
-<code>provider_data_share</code> (prompts and completions shared with the model provider
-and retained up to 30 days, with possible human review).</p>
+inputs or outputs, and the model provider never receives them. That holds under
+every retention mode below except <code>provider_data_share</code> — it is a property of how
+Bedrock runs the model, not of what gets retained.</p>
+<p>Retention is the separate question of whether <strong>AWS itself</strong> stores inputs and
+outputs. It is configurable at the account or project level, and the modes are
+<code>none</code> (nothing retained), <code>default</code> (AWS may retain for safety and abuse
+prevention), and <code>provider_data_share</code> (prompts and completions shared with the
+model provider and retained up to 30 days, with possible human review).</p>
+<p><strong>Every Bedrock setup we do turns retention off.</strong> ZDR (<code>none</code>) is part of standard
+onboarding rather than hardening you add later — <a href="#zero-data-retention">Zero data
+retention</a> below covers how to verify it.</p>
 <p>Invocation logging — which writes full prompt and completion text to S3 or
 CloudWatch — is <strong>off unless you turn it on</strong>. If you enable it for auditing,
 that log becomes the most sensitive artifact in your account and should be
 treated accordingly.</p>
 <h2 id="zero-data-retention">Zero data retention</h2>
-<p>Setting the account retention mode to <code>none</code> guarantees nothing is stored at
-all. There is no console for this — it is an API call, and it needs admin
-credentials:</p>
+<p>Retention mode <code>none</code> guarantees nothing is stored at all. We set it during
+onboarding, so this section is mostly about verifying it and knowing what changing
+it would mean. There is no console for this — it is an API call, and it needs
+admin credentials:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">AWS_PROFILE</span><span class="o">=</span>&lt;profile&gt;<span class="w"> </span>aws<span class="w"> </span>bedrock<span class="w"> </span>put-account-data-retention<span class="w"> </span>--region<span class="w"> </span>&lt;region&gt;<span class="w"> </span>--mode<span class="w"> </span>none
 </span></code></pre></div>
 <p>Verify it took:</p>
@@ -5884,6 +5920,15 @@ SuperCowPowers team is happy to help — reach us at
 <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on
 <a href="https://discord.gg/WHAJuz8sw8">Discord</a>.</p>
 </div>
+<h2 id="local-mode-evaluation-only">Local mode (evaluation only)</h2>
+<p>With no Workbench config the REPL starts in local mode: artifacts are files on your
+filesystem, and Bosco reaches Claude through the Anthropic API using an
+<code>ANTHROPIC_API_KEY</code> from your environment. It exists so you can try Workbench
+before setting up an official account.</p>
+<p><strong>Note:</strong> This is for evaluation only. It does not give you the
+same security guarantees as running inside your AWS account.</p>
+<p><strong>Connect an account before pointing Bosco at proprietary chemistry.</strong> Everything
+above this section is what that buys you.</p>
 
 
 

@@ -370,6 +370,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#or-just-ask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Or just ask
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#connect-your-aws-account" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5271,6 +5282,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#or-just-ask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Or just ask
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#connect-your-aws-account" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5343,12 +5365,32 @@
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and ADMET Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 </div>
 <h2 id="install-and-run">Install and run</h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'workbench[all]'</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>workbench
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>workbench
 </span></code></pre></div>
 <p><code>workbench</code> starts the REPL. With no AWS configuration it comes up in <strong>local
 mode</strong>: artifacts live on your filesystem, so there's no account to create, no
 credentials to manage, and nothing to pay for.</p>
+<p>The base install carries XGBoost, RDKit, and the descriptor stack — everything on
+this page. Two extras add the rest:</p>
+<table>
+<thead>
+<tr>
+<th>Extra</th>
+<th>Adds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workbench[modeling]</code></td>
+<td>Chemprop and PyTorch models (pulls torch, a large download)</td>
+</tr>
+<tr>
+<td><code>workbench[ui]</code></td>
+<td>The dashboard and its plugin pages</td>
+</tr>
+</tbody>
+</table>
 <h2 id="build-a-model">Build a model</h2>
 <p><code>pub_data</code> reads public datasets from S3 anonymously, and the local classes are
 already bound at the prompt, so this runs as-is:</p>
@@ -5369,20 +5411,34 @@ already bound at the prompt, so this runs as-is:</p>
 <p>Training runs the same model script SageMaker runs, so a model that works here
 publishes and produces the same model. See <a href="../local/">Local Mode</a> for
 scoring, endpoints, and the rest of the local API.</p>
+<h2 id="or-just-ask">Or just ask</h2>
+<p><a href="../bosco/">Bosco</a>, the Workbench ML agent, runs in local mode too. Give it
+an Anthropic API key and it writes and runs that chain for you:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>workbench
+</span></code></pre></div>
+<p><code>Bosco</code> appears in the prompt, and anything you type that isn't Python goes to it:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Workbench:Bosco&gt; build me a solubility model from the aqsol public data
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Workbench:Bosco&gt; show me a predicted vs actual plot
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Workbench:Bosco&gt; what are the nearest neighbors of the worst outlier?
+</span></code></pre></div>
+<p>It works in your live session, so the variables it creates stay in your namespace.
+Prompts go to the Anthropic API rather than an AWS account in this mode — <code>status</code>
+always names where they go. See <a href="../bosco/security/">Security &amp; Admin</a>.</p>
 <h2 id="connect-your-aws-account">Connect your AWS account</h2>
 <p>Publishing a model, deployed endpoints, monitoring, and the dashboard all need an
 AWS account. ADMET Workbench uses your existing AWS account/profile/SSO — if you
 don't have one yet, start with <a href="../aws_setup/aws_setup/">AWS Setup</a>.</p>
 <p>Then run <code>aws_setup()</code> from the REPL:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>aws_setup()
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>AWS_PROFILE: my_aws_profile
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>WORKBENCH_BUCKET: my-company-workbench
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>[optional] REDIS_HOST(localhost): my-redis.cache.amazon (or leave blank)
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>[optional] REDIS_PORT(6379):
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>[optional] REDIS_PASSWORD():
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>[optional] DASHBOARD_URL():
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>[optional] ENABLE_BOSCO -- run the Bosco ML agent? (y/N):
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aws_setup()
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>AWS_PROFILE: my_aws_profile
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>WORKBENCH_BUCKET: my-company-workbench
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>[optional] REDIS_HOST(localhost): my-redis.cache.amazon (or leave blank)
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>[optional] REDIS_PORT(6379):
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>[optional] REDIS_PASSWORD():
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>[optional] DASHBOARD_URL():
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>[optional] ENABLE_BOSCO -- run the Bosco ML agent? (y/N):
 </span></code></pre></div>
 <p>It writes the config, prints the one environment variable to export, and exits.
 Add that line, open a new terminal, and run <code>workbench</code> again — you only do this

@@ -5393,15 +5393,23 @@ Where your data goes: <a href="security/">Security &amp; Admin</a>.</p>
 <a href="../repl/">Workbench REPL</a>. He writes and runs Python in <strong>your</strong>
 session — the variables he creates stay in your namespace, and he reads your
 real FeatureSets, models, and predictions.</p>
-<p>Bosco is opt-in per account. Set <code>ENABLE_BOSCO</code> in your Workbench config and
-make sure Bedrock is reachable (<a href="security/">Security &amp; Admin</a>); when both are
-true, <code>Bosco</code> appears in the REPL prompt.</p>
+<p>How Bosco reaches a model depends on whether you have an AWS account.</p>
+<p><strong>With one</strong>, Bosco is opt-in per account: set <code>ENABLE_BOSCO</code> in your Workbench
+config and make sure Bedrock is reachable (<a href="security/">Security &amp; Admin</a>).
+Prompts stay inside your account.</p>
+<p><strong>Without one</strong>, the REPL comes up in <a href="../local/">local mode</a> and there is
+no Bedrock to reach, so Bosco uses an Anthropic API key instead:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>workbench
+</span></code></pre></div>
+<p>Either way <code>Bosco</code> appears in the REPL prompt once a model is reachable, and
+<code>status</code> names the path it took.</p>
 <h2 id="talking-to-it">Talking to it</h2>
 <p>There is no mode to switch into. Type a question and it goes to Bosco; type
 Python and it runs as Python.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Workbench:scp_sandbox:Bosco&gt; what pxr models do we have?
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Workbench:scp_sandbox:Bosco&gt; models_df = models(details=True)
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Workbench:scp_sandbox:Bosco&gt; compare those two on their holdout
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Workbench:scp_sandbox:Bosco&gt; what pxr models do we have?
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Workbench:scp_sandbox:Bosco&gt; models_df = models(details=True)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Workbench:scp_sandbox:Bosco&gt; compare those two on their holdout
 </span></code></pre></div>
 <p><strong>How the REPL decides:</strong></p>
 <table>
@@ -5444,9 +5452,9 @@ you the docstring.</p>
 <h2 id="settings">Settings</h2>
 <p>Say <strong>"show code"</strong> or <strong>"hide code"</strong> and Bosco flips it himself, or set the
 attributes directly:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">bosco</span><span class="o">.</span><span class="n">show_code</span> <span class="o">=</span> <span class="kc">True</span>         <span class="c1"># echo the code Bosco runs (default False)</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">bosco</span><span class="o">.</span><span class="n">effort</span> <span class="o">=</span> <span class="s2">"medium"</span>        <span class="c1"># low, medium, high (default), xhigh, max</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">bosco</span><span class="o">.</span><span class="n">usage</span>                    <span class="c1"># session token counts and estimated cost_usd</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">bosco</span><span class="o">.</span><span class="n">show_code</span> <span class="o">=</span> <span class="kc">True</span>         <span class="c1"># echo the code Bosco runs (default False)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">bosco</span><span class="o">.</span><span class="n">effort</span> <span class="o">=</span> <span class="s2">"medium"</span>        <span class="c1"># low, medium, high (default), xhigh, max</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">bosco</span><span class="o">.</span><span class="n">usage</span>                    <span class="c1"># session token counts and estimated cost_usd</span>
 </span></code></pre></div>
 <p><code>effort</code> is thinking depth per turn, not reply length — lower is faster, and the
 difference only shows on questions hard enough to think about.</p>
@@ -5455,10 +5463,11 @@ stays usable, so the next question works normally.</p>
 <h2 id="sessions">Sessions</h2>
 <p>Bosco can write a session report — the goal, the artifacts involved, what was
 concluded, what is still open — to the Parameter Store, so anyone on the account
-can pick the thread back up.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">recent_sessions</span><span class="p">()</span>          <span class="c1"># what's saved, most recent first</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"logd-cleanup"</span><span class="p">)</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">show_session</span><span class="p">()</span>             <span class="c1"># the most recently saved, any user</span>
+can pick the thread back up. In local mode they are files under
+<code>WORKBENCH_LOCAL_PATH</code> instead, private to that machine.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">recent_sessions</span><span class="p">()</span>          <span class="c1"># what's saved, most recent first</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"logd-cleanup"</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">show_session</span><span class="p">()</span>             <span class="c1"># the most recently saved, any user</span>
 </span></code></pre></div>
 <p>Ask Bosco to "save a session" and it writes one. Reports are prose, not
 transcripts: they name artifacts rather than restating them.</p>
@@ -5469,10 +5478,8 @@ completed since your last turn is handed to Bosco at the start of the next one,
 so he can speak to the outcome.</p>
 <h2 id="where-your-data-goes">Where your data goes</h2>
 <p>Bosco's prompts carry real data by design, and they travel over Bedrock inside
-your own AWS account — same IAM, same CloudTrail, same bill. Bedrock's default
-retention keeps inputs and outputs for AWS safety and abuse prevention; the
-model provider never receives them, and an account-wide setting turns retention
-off entirely.</p>
+your own AWS account — same IAM, same CloudTrail, same bill. Our standard Bedrock
+setup turns on ZDR (Zero Data Retention), so no data is stored.</p>
 <p>The full picture — enabling Bosco, retention modes, zero data retention,
 invocation logging, auditing, and PrivateLink — is on
 <a href="security/">Security &amp; Admin</a>.</p>
