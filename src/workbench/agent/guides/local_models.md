@@ -25,14 +25,18 @@ in AWS, start a local chain from `FeatureSet("aqsol_features").pull_dataframe()`
 
 ## Flow
 
-`PublicData` reads public S3 anonymously — no AWS account — and is re-exported
-from `workbench.local`, so it's the usual first step.
+**Use the `Local*` names, never `from workbench.local import ...`.** Your code runs
+in the user's live REPL namespace, so that import rebinds `DataSource` there for the
+rest of the session — in an AWS-connected one, the next artifact they build by hand
+silently lands on disk. `LocalDataSource`, `LocalFeatureSet`, `LocalModel`, and
+`LocalEndpoint` are bound in every session and always mean the local class.
+
+`PublicData` reads public S3 anonymously — no AWS account — so it's the usual first
+step, and `pub_data` is already an instance at the prompt.
 
 ```python
-from workbench.local import DataSource, PublicData, ModelType, ModelFramework
-
-df = PublicData().get("comp_chem/aqsol/aqsol_public_data")
-local_ds = DataSource(df, name="aqsol_local")
+df = pub_data.get("comp_chem/aqsol/aqsol_public_data")
+local_ds = LocalDataSource(df, name="aqsol_local")
 local_fs = local_ds.to_features("aqsol_local_features", id_column="ID")
 local_model = local_fs.to_model(
     "aqsol-local-reg",
@@ -133,7 +137,7 @@ these two calls:
 from workbench.utils.chem_utils.mol_descriptors import compute_descriptors
 from workbench.utils.chem_utils.mol_standardize import standardize
 
-local_ds = DataSource(compute_descriptors(standardize(df, extract_salts=True)), name="cyp_2d_local")
+local_ds = LocalDataSource(compute_descriptors(standardize(df, extract_salts=True)), name="cyp_2d_local")
 ```
 
 Standardization is not optional — skipping it yields different features with no error

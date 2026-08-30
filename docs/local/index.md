@@ -51,6 +51,15 @@ print(model.get_inference_metrics())
 predictions = model.to_endpoint().inference(fs.pull_dataframe().head(10))
 ```
 
+!!! warning "In the REPL, use the bound names"
+    The import above is for scripts. In a REPL connected to AWS, running it rebinds
+    `DataSource` to the local class for the rest of your session — the next artifact
+    you build lands on disk instead of AWS.
+
+    The names are already bound for you: in local mode the bare `DataSource` /
+    `FeatureSet` / `Model` / `Endpoint` are the local classes, and in any session
+    `LocalDataSource`, `LocalFeatureSet`, `LocalModel`, and `LocalEndpoint` are.
+
 `to_features()` lowercases column names, same as the AWS path, so `target_column`
 and `feature_list` refer to the FeatureSet's names rather than the source frame's.
 Use `fs.columns` to see them.
@@ -61,11 +70,6 @@ predictions match what a deployed endpoint returns.
 
 `validation_ids`, `sample_weights`, and `exclude_ids` work as they do in AWS, and
 they're recorded so publishing can replay them.
-
-In the REPL these are already bound, though which names depends on the session: in
-local mode the bare names are the local classes, while a session connected to AWS
-gives those names to the AWS classes and the local ones to `LocalDataSource`,
-`LocalFeatureSet`, and so on.
 
 ## Scoring
 
@@ -110,7 +114,7 @@ package versions that differ between this machine and the training image.
 ## Listing and deleting
 
 ```python
-from workbench.local import Meta
+from workbench.local import Meta   # in the REPL: LocalMeta
 
 Meta().models()     # also data_sources(), feature_sets(), endpoints()
 ```
