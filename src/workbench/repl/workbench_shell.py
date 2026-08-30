@@ -225,7 +225,7 @@ class WorkbenchShell:
             # Bosco needs Bedrock; light the prompt tag only when it's actually reachable
             if self.aws_status:
                 with silence_logs():
-                    self.bedrock_status = importlib.import_module("workbench.utils.bedrock_utils").bedrock_available()
+                    self.bedrock_status = importlib.import_module("workbench.utils.llm_utils").llm_available()
 
         self.commands["show"] = vis.show
 

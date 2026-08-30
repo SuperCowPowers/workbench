@@ -1,7 +1,7 @@
 """Bosco: the Workbench ML agent.
 
-Runs Claude (via Bedrock) in the REPL with tools that execute against the
-user's live session. Anything typed that isn't valid Python is routed here:
+Runs Claude in the REPL with tools that execute against the user's live
+session. Anything typed that isn't valid Python is routed here:
 
     what pxr models do we have?           # auto-routed
     bosco what models do we have          # explicit, for text that IS valid Python
@@ -17,7 +17,7 @@ from contextlib import contextmanager
 # Workbench Imports
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
-from workbench.utils.bedrock_utils import message_stream, DEFAULT_MODEL
+from workbench.utils.llm_utils import message_stream, default_model
 from workbench.utils.job_tracker import job_updates
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
@@ -231,7 +231,7 @@ def _run_turn(namespace: dict) -> None:
         with _spinner("🐶  Bosco is thinking:"):
             response = message_stream(
                 on_phase=_show_phase,
-                model=DEFAULT_MODEL,
+                model=default_model(),
                 max_tokens=MAX_TOKENS,
                 output_config={"effort": _effort()},
                 system=_system_prompt(),
