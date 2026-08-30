@@ -459,7 +459,7 @@
   <span class="md-ellipsis">
     
   
-    Local Models
+    Local Mode
   
 
     
@@ -5736,7 +5736,7 @@ must implement the abstract transform_impl() method</p>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="n">cm</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">()</span>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">cm</span><span class="o">.</span><span class="n">config_okay</span><span class="p">():</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Workbench Configuration Incomplete..."</span><span class="p">)</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Run the 'workbench' command and follow the prompts..."</span><span class="p">)</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Run the 'workbench' REPL and call aws_setup() to set up your AWS account..."</span><span class="p">)</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>            <span class="k">raise</span> <span class="n">FatalConfigError</span><span class="p">()</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">workbench_bucket</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">"WORKBENCH_BUCKET"</span><span class="p">)</span>
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">data_sources_s3_path</span> <span class="o">=</span> <span class="s2">"s3://"</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">workbench_bucket</span> <span class="o">+</span> <span class="s2">"/data-sources"</span>
@@ -5971,7 +5971,7 @@ must implement the abstract transform_impl() method</p>
 </span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>    <span class="n">cm</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">()</span>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">cm</span><span class="o">.</span><span class="n">config_okay</span><span class="p">():</span>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Workbench Configuration Incomplete..."</span><span class="p">)</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Run the 'workbench' command and follow the prompts..."</span><span class="p">)</span>
+</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Run the 'workbench' REPL and call aws_setup() to set up your AWS account..."</span><span class="p">)</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="k">raise</span> <span class="n">FatalConfigError</span><span class="p">()</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">workbench_bucket</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">"WORKBENCH_BUCKET"</span><span class="p">)</span>
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">data_sources_s3_path</span> <span class="o">=</span> <span class="s2">"s3://"</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">workbench_bucket</span> <span class="o">+</span> <span class="s2">"/data-sources"</span>
