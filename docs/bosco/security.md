@@ -10,7 +10,7 @@ Bosco runs Claude through **Amazon Bedrock**, which keeps that boundary inside
 AWS: prompts are authenticated by your existing Workbench IAM roles, billed
 through your AWS account, and never leave AWS.
 
-!!! note "Evaluating without an account"
+!!! note "Public/Evaluation without an AWS Account"
     Workbench also runs in [local mode](../local/index.md) with no AWS account at
     all, where Bosco reaches Claude through the Anthropic API instead. That is an
     evaluation path, not a deployment one — this page describes the configuration
