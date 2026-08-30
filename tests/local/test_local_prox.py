@@ -33,6 +33,11 @@ SUBSTITUENTS = ["C", "CC", "CCC", "CO", "CN"]
 DESCRIPTORS = ["molwt", "mollogp", "tpsa"]
 
 
+def _no_uq_artifact(*args, **kwargs):
+    """Stand in for a model bundle that carries no UQ artifact"""
+    raise FileNotFoundError("no uq artifact")
+
+
 @pytest.fixture(autouse=True)
 def local_storage(tmp_path):
     """Point local storage at a temp directory for every test"""
@@ -148,6 +153,30 @@ class TestModelProx:
         assert model.prox("features") is None
 
     def test_missing_feature_set(self, model, monkeypatch):
-        """A model whose FeatureSet is gone has nothing to build from"""
+        """With no embedded proximity and no FeatureSet, there is nothing to build from"""
+        monkeypatch.setattr(model, "uq_model", _no_uq_artifact)
         monkeypatch.setattr(model, "parent", lambda: None)
         assert model.prox("fingerprint") is None
+
+    def test_prefers_the_embedded_proximity(self, feature_set, monkeypatch):
+        """The training-time proximity wins over a fresh build off the FeatureSet
+
+        Excluding rows from training makes the two reference sets different sizes, so
+        which one came back is visible rather than inferred.
+        """
+        excluded = [f"c0_{j}" for j in range(len(SUBSTITUENTS))]
+        model = feature_set.to_model(
+            "prox-excluded-model",
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            target_column="logs",
+            feature_list=DESCRIPTORS,
+            exclude_ids=excluded,
+        )
+        embedded = model.prox("fingerprint")
+        assert len(embedded.df) == feature_set.num_rows() - len(excluded)
+
+        # Without the artifact it falls back to the whole FeatureSet
+        monkeypatch.setattr(model, "uq_model", _no_uq_artifact)
+        model._prox_cache.clear()
+        assert len(model.prox("fingerprint").df) == feature_set.num_rows()

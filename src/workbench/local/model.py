@@ -561,13 +561,60 @@ class Model(LocalArtifact):
             class_labels = sorted(predictions[target].unique().tolist())
         return compute_metrics_from_predictions(predictions, target, class_labels)
 
-    def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
-        """Return a proximity model for this Model, built from its FeatureSet.
+    def hyperparameters(self) -> dict:
+        """The hyperparameters recorded in the model bundle.
 
-        A local model carries no frozen proximity -- that rides in the UQ artifact,
-        which is an AWS thing -- so this always builds fresh over the FeatureSet the
-        model trained on, using the model's own features and target. Cached per
-        ``space`` on this instance.
+        Returns:
+            dict: The bundle's hyperparameters, empty if it has none.
+        """
+        path = os.path.join(self.model_dir, "hyperparameters.json")
+        if not os.path.exists(path):
+            return {}
+        with open(path, "r") as fp:
+            return json.load(fp)
+
+    def uq_model(
+        self,
+        version: str = None,
+        refresh_proximity: bool = False,
+        radius: int = 2,
+        n_bits: int = 4096,
+    ) -> "UQModelV0 | UQModelV1 | UQModelV2":  # noqa: F821
+        """Load this model's fitted UQ model for uncertainty-quantified inference.
+
+        The local bundle is already an unpacked directory, so this reads it in place --
+        the AWS path only differs by downloading and extracting the artifact first.
+
+        Args:
+            version (str, optional): "v0", "v1", or "v2". Defaults to the bundle's
+                ``hyperparameters["uq_version"]``, then "v0".
+            refresh_proximity (bool): Not supported locally -- see Raises.
+            radius (int): Morgan fingerprint radius (refresh_proximity only).
+            n_bits (int): Fingerprint bit width (refresh_proximity only).
+
+        Returns:
+            A ready-to-use UQModelV0, UQModelV1, or UQModelV2.
+
+        Raises:
+            FileNotFoundError: If the requested version isn't in the bundle.
+            NotImplementedError: If refresh_proximity is True.
+        """
+        from workbench.utils.model_utils import _resolve_uq_version, load_uq_from_dir
+
+        if refresh_proximity:
+            raise NotImplementedError(
+                "refresh_proximity needs the AWS training view; use the embedded proximity, "
+                "or fs.prox('fingerprint') for a fresh one over the whole FeatureSet."
+            )
+        return load_uq_from_dir(self.model_dir, _resolve_uq_version(self, version), self.name)
+
+    def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
+        """Return a proximity model for this Model -- precomputed if it has one, else fresh.
+
+        Precomputed-first: returns the proximity the model already carries for ``space``
+        (frozen at training time in the UQ artifact). If it has none, builds one fresh
+        over the FeatureSet the model trained on, using the model's own features and
+        target. Cached per ``space`` on this instance.
 
         Returns ``None`` for ``space="features"`` when the model's features include
         ``smiles`` or ``fingerprint`` -- that's a structure model, so feature-space
@@ -581,6 +628,7 @@ class Model(LocalArtifact):
             A FingerprintProximity or FeatureSpaceProximity (or None -- see above).
         """
         from workbench.utils.metrics_utils import resolve_primary_target
+        from workbench.utils.prox_utils import precomputed_model_proximity
 
         if space not in ("fingerprint", "features"):
             raise ValueError(f"space must be 'fingerprint' or 'features', got {space!r}")
@@ -597,15 +645,19 @@ class Model(LocalArtifact):
         if not hasattr(self, "_prox_cache"):
             self._prox_cache = {}
         if space not in self._prox_cache:
-            feature_set = self.parent()
-            if feature_set is None:
-                self.log.error(f"{self.name}: FeatureSet '{self.get_input()}' is gone, so no proximity to build.")
-                return None
-            target = resolve_primary_target(self.workbench_meta().get("workbench_model_target"))
-            if space == "features":
-                self._prox_cache[space] = feature_set.prox("features", feature_list=features, target=target)
-            else:
-                self._prox_cache[space] = feature_set.prox("fingerprint", target=target)
+            prox = precomputed_model_proximity(self, space)
+            if prox is None:
+                feature_set = self.parent()
+                if feature_set is None:
+                    self.log.error(f"{self.name}: FeatureSet '{self.get_input()}' is gone, so no proximity to build.")
+                    return None
+                self.log.important(f"No precomputed {space} proximity for {self.name}; building from its FeatureSet...")
+                target = resolve_primary_target(self.workbench_meta().get("workbench_model_target"))
+                if space == "features":
+                    prox = feature_set.prox("features", feature_list=features, target=target)
+                else:
+                    prox = feature_set.prox("fingerprint", target=target)
+            self._prox_cache[space] = prox
         return self._prox_cache[space]
 
     def to_endpoint(self, name: str = None) -> "Endpoint":  # noqa: F821

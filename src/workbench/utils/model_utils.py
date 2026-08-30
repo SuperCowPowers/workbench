@@ -273,6 +273,47 @@ def _resolve_uq_version(model: "Model", version: Optional[str]) -> str:
     return "v0"
 
 
+def load_uq_from_dir(model_dir: str, version: str, model_name: str, fresh_prox=None):
+    """Load a fitted UQModel from an unpacked model bundle.
+
+    The bundle is a directory either way: AWS unpacks the artifact tarball into a temp
+    dir first, while a local model is already one on disk.
+
+    Args:
+        model_dir (str): Directory holding the model bundle.
+        version (str): "v0", "v1", or "v2".
+        model_name (str): The model's name, for error messages.
+        fresh_prox: Proximity backend to use instead of the embedded one (V1/V2).
+
+    Returns:
+        A ready-to-use UQModelV0, UQModelV1, or UQModelV2.
+
+    Raises:
+        FileNotFoundError: If the requested version's artifact isn't in the bundle.
+    """
+    from workbench.algorithms.dataframe.uq_model_v0 import UQModelV0
+    from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1
+    from workbench.algorithms.dataframe.uq_model_v2 import UQModelV2
+
+    if version == "v0":
+        return UQModelV0.load(model_dir)
+
+    if version == "v1":
+        if not os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
+            raise FileNotFoundError(
+                f"Model '{model_name}' does not have a fitted UQModelV1 "
+                "(expected uq_model.joblib in the model artifact)."
+            )
+        return UQModelV1.load(model_dir, prox=fresh_prox)
+
+    if not os.path.exists(os.path.join(model_dir, UQModelV2.METADATA_FILENAME)):
+        raise FileNotFoundError(
+            f"Model '{model_name}' does not have a fitted UQModelV2 "
+            f"(expected {UQModelV2.METADATA_FILENAME} in the model artifact)."
+        )
+    return UQModelV2.load(model_dir, prox=fresh_prox)
+
+
 def uq_model_local(
     model: Model,
     version: Optional[str] = None,
@@ -308,10 +349,6 @@ def uq_model_local(
     Raises:
         FileNotFoundError: If the requested version's artifact is not in the bundle.
     """
-    from workbench.algorithms.dataframe.uq_model_v0 import UQModelV0  # noqa: F401
-    from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1  # noqa: F401
-    from workbench.algorithms.dataframe.uq_model_v2 import UQModelV2  # noqa: F401
-
     model_artifact_uri = model.model_data_url()
     if model_artifact_uri is None:
         raise ValueError(f"No model artifact found for {model.name}")
@@ -331,25 +368,7 @@ def uq_model_local(
         local_tar_path = os.path.join(tmpdir, "model.tar.gz")
         wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
         safe_extract_tarfile(local_tar_path, tmpdir)
-
-        if effective_version == "v0":
-            return UQModelV0.load(tmpdir)
-
-        if effective_version == "v1":
-            if not os.path.exists(os.path.join(tmpdir, "uq_model.joblib")):
-                raise FileNotFoundError(
-                    f"Model '{model.name}' does not have a fitted UQModelV1 "
-                    "(expected uq_model.joblib in the model artifact)."
-                )
-            return UQModelV1.load(tmpdir, prox=fresh_prox)
-
-        # v2
-        if not os.path.exists(os.path.join(tmpdir, UQModelV2.METADATA_FILENAME)):
-            raise FileNotFoundError(
-                f"Model '{model.name}' does not have a fitted UQModelV2 "
-                f"(expected {UQModelV2.METADATA_FILENAME} in the model artifact)."
-            )
-        return UQModelV2.load(tmpdir, prox=fresh_prox)
+        return load_uq_from_dir(tmpdir, effective_version, model.name, fresh_prox=fresh_prox)
 
 
 def noise_model_local(model: Model) -> NoiseModel:
