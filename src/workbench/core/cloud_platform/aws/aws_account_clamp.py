@@ -50,7 +50,7 @@ class AWSAccountClamp:
         self.cm = ConfigManager()
         if not self.cm.config_okay():
             self.log.error("Workbench Configuration Incomplete...")
-            self.log.error("Run the 'workbench' command and follow the prompts...")
+            self.log.error("Run the 'workbench' REPL and call aws_setup() to set up your AWS account...")
             raise FatalConfigError()
         self.workbench_bucket_name = self.cm.get_config("WORKBENCH_BUCKET")
         self.aws_session = AWSSession()

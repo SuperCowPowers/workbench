@@ -20,47 +20,79 @@ from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
 
 
-class AWSArtifact(Artifact):
-    """AWSArtifact: Base Class for all AWS-backed Artifact classes in Workbench"""
+class _LazyClassAttr:
+    """A class attribute resolved on first read instead of at class definition.
 
-    # Config Manager
+    The AWS attributes below need a complete config and make live STS calls, so
+    building them in the class body makes importing this module a network round
+    trip that fails outright without one. Reads through ``self.x`` and ``cls.x``
+    are unchanged; the first one swaps the value in for the descriptor.
+    """
+
+    def __init__(self, factory):
+        self.factory = factory
+
+    def __set_name__(self, owner, name):
+        self.owner = owner
+        self.name = name
+
+    def __get__(self, obj, cls):
+        value = self.factory()
+        setattr(self.owner, self.name, value)
+        return value
+
+
+def _require_config() -> ConfigManager:
+    """Internal: The config, or a FatalConfigError naming what to run"""
     cm = ConfigManager()
     if not cm.config_okay():
         log = logging.getLogger("workbench")
         log.critical("Workbench Configuration Incomplete...")
-        log.critical("Run the 'workbench' command and follow the prompts...")
+        log.critical("Run the 'workbench' REPL and call aws_setup() to set up your AWS account...")
         raise FatalConfigError()
+    return cm
+
+
+def _bucket() -> str:
+    """Internal: The Workbench bucket name"""
+    return _require_config().get_config("WORKBENCH_BUCKET")
+
+
+class AWSArtifact(Artifact):
+    """AWSArtifact: Base Class for all AWS-backed Artifact classes in Workbench"""
 
     # AWS Account Clamp
-    aws_account_clamp = AWSAccountClamp()
-    boto3_session = aws_account_clamp.boto3_session
-    sm_session = aws_account_clamp.sagemaker_session()
-    sm_client = aws_account_clamp.sagemaker_client()
-    aws_region = aws_account_clamp.region
+    aws_account_clamp = _LazyClassAttr(AWSAccountClamp)
+    boto3_session = _LazyClassAttr(lambda: AWSAccountClamp().boto3_session)
+    sm_session = _LazyClassAttr(lambda: AWSAccountClamp().sagemaker_session())
+    sm_client = _LazyClassAttr(lambda: AWSAccountClamp().sagemaker_client())
+    aws_region = _LazyClassAttr(lambda: AWSAccountClamp().region)
 
     # Setup Bucket Paths
-    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
-    data_sources_s3_path = f"s3://{workbench_bucket}/data-sources"
-    feature_sets_s3_path = f"s3://{workbench_bucket}/feature-sets"
-    models_s3_path = f"s3://{workbench_bucket}/models"
-    endpoints_s3_path = f"s3://{workbench_bucket}/endpoints"
+    workbench_bucket = _LazyClassAttr(_bucket)
+    data_sources_s3_path = _LazyClassAttr(lambda: f"s3://{_bucket()}/data-sources")
+    feature_sets_s3_path = _LazyClassAttr(lambda: f"s3://{_bucket()}/feature-sets")
+    models_s3_path = _LazyClassAttr(lambda: f"s3://{_bucket()}/models")
+    endpoints_s3_path = _LazyClassAttr(lambda: f"s3://{_bucket()}/endpoints")
     # Scratch root for transient files, separate from the protected artifact
     # prefixes. Each use owns a subfolder (temp/training_data/, temp/athena_output/).
-    temp_s3_path = f"s3://{workbench_bucket}/temp"
+    temp_s3_path = _LazyClassAttr(lambda: f"s3://{_bucket()}/temp")
 
     # Grab our Dataframe Cache Storage (use the endpoint-safe core class directly
     # with our refreshable session + config-loaded bucket — equivalent to going
     # through workbench.api.DFStore but without triggering workbench.api.__init__
     # while artifact.py is still loading).
-    df_cache = DFStoreCore(
-        path_prefix="/workbench/dataframe_cache",
-        s3_bucket=workbench_bucket,
-        boto3_session=boto3_session,
+    df_cache = _LazyClassAttr(
+        lambda: DFStoreCore(
+            path_prefix="/workbench/dataframe_cache",
+            s3_bucket=_bucket(),
+            boto3_session=AWSAccountClamp().boto3_session,
+        )
     )
 
     # Artifact may want to use the Parameter Store or Dataframe Store
-    param_store = ParameterStore(boto3_session=boto3_session)
-    df_store = DFStoreCore(s3_bucket=workbench_bucket, boto3_session=boto3_session)
+    param_store = _LazyClassAttr(lambda: ParameterStore(boto3_session=AWSAccountClamp().boto3_session))
+    df_store = _LazyClassAttr(lambda: DFStoreCore(s3_bucket=_bucket(), boto3_session=AWSAccountClamp().boto3_session))
 
     def __init__(self, name: str, **kwargs):
         """Initialize the AWSArtifact Base Class

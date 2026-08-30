@@ -1,4 +1,4 @@
-"""Tests for LocalEndpoint inference (no AWS required)
+"""Tests for Endpoint inference (no AWS required)
 
 These load an XGBoost model in-process. If the worker already imported torch, the
 two OpenMP runtimes segfault the interpreter, so the module skips rather than taking
@@ -13,9 +13,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from workbench.local import LocalDataSource, LocalEndpoint, LocalModel, ModelType, ModelFramework
+from workbench.local import DataSource, Endpoint, Model, ModelType, ModelFramework
 from workbench.local.local_artifact import LocalArtifact
 from workbench.utils.config_manager import ConfigManager
+
+pytestmark = pytest.mark.medium
 
 
 @pytest.fixture(autouse=True)
@@ -43,7 +45,7 @@ def trained_model():
     df = pd.DataFrame({"id": range(n), "mw": rng.normal(300, 50, n), "logp": rng.normal(2.5, 1, n)})
     df["sol"] = -0.01 * df["mw"] - 0.5 * df["logp"] + rng.normal(0, 0.3, n)
 
-    fs = LocalDataSource(df, name="e_data").to_features("e_features", id_column="id")
+    fs = DataSource(df, name="e_data").to_features("e_features", id_column="id")
     return fs.to_model(
         "e-model",
         model_type=ModelType.REGRESSOR,
@@ -64,7 +66,7 @@ class TestInferenceBundle:
 class TestEndpoint:
     def test_inference_returns_predictions(self, trained_model):
         endpoint = trained_model.to_endpoint()
-        eval_df = LocalDataSource("e_data").pull_dataframe().head(10)
+        eval_df = DataSource("e_data").pull_dataframe().head(10)
 
         predictions = endpoint.inference(eval_df)
         assert len(predictions) == 10
@@ -73,7 +75,7 @@ class TestEndpoint:
     def test_uq_columns_present(self, trained_model):
         """A UQ regressor serves quantiles, same as a deployed endpoint"""
         endpoint = trained_model.to_endpoint()
-        predictions = endpoint.inference(LocalDataSource("e_data").pull_dataframe().head(5))
+        predictions = endpoint.inference(DataSource("e_data").pull_dataframe().head(5))
 
         assert "prediction_std" in predictions.columns
         assert {"q_025", "q_50", "q_975"}.issubset(set(predictions.columns))
@@ -87,7 +89,7 @@ class TestEndpoint:
 
     def test_model_bundle_loaded_once(self, trained_model):
         endpoint = trained_model.to_endpoint()
-        eval_df = LocalDataSource("e_data").pull_dataframe().head(3)
+        eval_df = DataSource("e_data").pull_dataframe().head(3)
 
         endpoint.inference(eval_df)
         first = endpoint._model_bundle
@@ -97,7 +99,7 @@ class TestEndpoint:
     def test_untrained_model_cannot_be_served(self, trained_model):
         """A model that never trained has nothing to load"""
         with pytest.raises(ValueError, match="has not trained successfully"):
-            LocalEndpoint.from_model(LocalModel("never-trained"))
+            Endpoint.from_model(Model("never-trained"))
 
 
 class TestModelDelete:
@@ -107,26 +109,26 @@ class TestModelDelete:
         trained_model.delete()
 
         assert not trained_model.exists()
-        assert not LocalEndpoint(endpoint.name).exists()
+        assert not Endpoint(endpoint.name).exists()
 
     def test_custom_named_endpoint_is_found(self, trained_model):
         """The cascade matches on model_name, not on the naming convention"""
         endpoint = trained_model.to_endpoint("custom-serving")
         trained_model.delete()
 
-        assert not LocalEndpoint(endpoint.name).exists()
+        assert not Endpoint(endpoint.name).exists()
 
     def test_other_models_endpoints_are_untouched(self, trained_model):
         """Only the endpoints serving this model come down"""
         endpoint = trained_model.to_endpoint()
-        bystander = LocalEndpoint("someone-elses")
+        bystander = Endpoint("someone-elses")
         bystander._init_storage(input_name="other-model")
         bystander.upsert_workbench_meta({"model_name": "other-model"})
 
         trained_model.delete()
 
-        assert not LocalEndpoint(endpoint.name).exists()
-        assert LocalEndpoint("someone-elses").exists()
+        assert not Endpoint(endpoint.name).exists()
+        assert Endpoint("someone-elses").exists()
 
     def test_orphaned_endpoint_reports_the_missing_model(self, trained_model):
         """An endpoint orphaned some other way fails readably rather than on an open()"""
@@ -140,7 +142,7 @@ class TestModelDelete:
 class TestCaptures:
     def test_capture_and_recall(self, trained_model):
         endpoint = trained_model.to_endpoint()
-        eval_df = LocalDataSource("e_data").pull_dataframe().head(8)
+        eval_df = DataSource("e_data").pull_dataframe().head(8)
 
         endpoint.inference(eval_df, capture_name="auto_inference")
         assert endpoint.list_captures() == ["auto_inference"]
@@ -149,7 +151,7 @@ class TestCaptures:
         assert len(recalled) == 8
 
         # A fresh handle reads the same captures off disk
-        assert LocalEndpoint(endpoint.name).list_captures() == ["auto_inference"]
+        assert Endpoint(endpoint.name).list_captures() == ["auto_inference"]
 
     def test_missing_capture_returns_none(self, trained_model):
         endpoint = trained_model.to_endpoint()
@@ -165,14 +167,12 @@ class TestInferenceRuns:
 
     def test_endpoint_captures_join_the_list(self, trained_model):
         endpoint = trained_model.to_endpoint()
-        endpoint.inference(LocalDataSource("e_data").pull_dataframe().head(5), capture_name="holdout")
+        endpoint.inference(DataSource("e_data").pull_dataframe().head(5), capture_name="holdout")
 
         assert trained_model.list_inference_runs() == ["full_cross_fold", "holdout"]
 
     def test_default_prefers_cross_fold(self, trained_model):
-        trained_model.to_endpoint().inference(
-            LocalDataSource("e_data").pull_dataframe().head(5), capture_name="holdout"
-        )
+        trained_model.to_endpoint().inference(DataSource("e_data").pull_dataframe().head(5), capture_name="holdout")
         assert trained_model.default_inference_run() == "full_cross_fold"
 
     def test_predictions_from_the_training_run(self, trained_model):
@@ -180,9 +180,7 @@ class TestInferenceRuns:
         assert predictions.equals(trained_model.oof_predictions())
 
     def test_predictions_from_an_endpoint_capture(self, trained_model):
-        trained_model.to_endpoint().inference(
-            LocalDataSource("e_data").pull_dataframe().head(5), capture_name="holdout"
-        )
+        trained_model.to_endpoint().inference(DataSource("e_data").pull_dataframe().head(5), capture_name="holdout")
         assert len(trained_model.get_inference_predictions("holdout")) == 5
 
     def test_metrics_are_computed_from_predictions(self, trained_model):
@@ -206,14 +204,14 @@ class TestInferenceRuns:
         assert metrics["support"].iloc[0] == predictions["sol"].notna().sum()
 
     def test_untrained_model_has_no_runs(self):
-        model = LocalModel("never-trained")
+        model = Model("never-trained")
         assert model.list_inference_runs() == []
         assert model.default_inference_run() is None
         assert model.get_inference_predictions() is None
 
     def test_inference_without_capture_stores_nothing(self, trained_model):
         endpoint = trained_model.to_endpoint()
-        endpoint.inference(LocalDataSource("e_data").pull_dataframe().head(3))
+        endpoint.inference(DataSource("e_data").pull_dataframe().head(3))
         assert endpoint.list_captures() == []
 
     def test_sm_model_dir_is_restored(self, trained_model):
@@ -221,7 +219,7 @@ class TestInferenceRuns:
         os.environ["SM_MODEL_DIR"] = "/sentinel"
         try:
             endpoint = trained_model.to_endpoint()
-            endpoint.inference(LocalDataSource("e_data").pull_dataframe().head(3))
+            endpoint.inference(DataSource("e_data").pull_dataframe().head(3))
             assert os.environ["SM_MODEL_DIR"] == "/sentinel"
         finally:
             os.environ.pop("SM_MODEL_DIR", None)

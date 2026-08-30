@@ -1,4 +1,4 @@
-"""LocalFeatureSet: Engineered features on local disk, queryable with DuckDB."""
+"""FeatureSet: Engineered features on local disk, queryable with DuckDB."""
 
 import os
 from typing import Any, Union
@@ -13,12 +13,12 @@ from workbench.local import storage
 from workbench.utils import feature_prep
 
 
-class LocalFeatureSet(LocalArtifact):
-    """LocalFeatureSet: Workbench Local FeatureSet Class
+class FeatureSet(LocalArtifact):
+    """FeatureSet: Workbench Local FeatureSet Class
 
     Common Usage:
         ```python
-        my_features = LocalFeatureSet("my_features")
+        my_features = FeatureSet("my_features")
         my_features.query("select * from my_features where solubility < -5")
         my_model = my_features.to_model(...)
         ```
@@ -27,7 +27,7 @@ class LocalFeatureSet(LocalArtifact):
     artifact_type = "feature_set"
 
     def __init__(self, name: str, **kwargs):
-        """Initialize a LocalFeatureSet
+        """Initialize a FeatureSet
 
         Args:
             name (str): The name of an existing local feature set
@@ -45,8 +45,8 @@ class LocalFeatureSet(LocalArtifact):
         event_time_column: str = None,
         one_hot_columns: list = None,
         input_name: str = "dataframe",
-    ) -> "LocalFeatureSet":
-        """Create a LocalFeatureSet from a DataFrame, running the shared column prep.
+    ) -> "FeatureSet":
+        """Create a FeatureSet from a DataFrame, running the shared column prep.
 
         Args:
             df (pd.DataFrame): The DataFrame of features
@@ -57,7 +57,7 @@ class LocalFeatureSet(LocalArtifact):
             input_name (str): Name of this feature set's input (default: "dataframe")
 
         Returns:
-            LocalFeatureSet: The created feature set
+            FeatureSet: The created feature set
         """
         # Same prep the AWS ingest path runs, so columns/names/dtypes match after publish
         df, id_column = feature_prep.prep_dataframe(
@@ -139,10 +139,10 @@ class LocalFeatureSet(LocalArtifact):
         return df.head(limit) if limit else df
 
     def details(self, **kwargs) -> dict:
-        """LocalFeatureSet Details
+        """FeatureSet Details
 
         Returns:
-            dict: A dictionary of details about the LocalFeatureSet
+            dict: A dictionary of details about the FeatureSet
         """
         return {
             **super().details(),
@@ -151,30 +151,28 @@ class LocalFeatureSet(LocalArtifact):
             "num_columns": self.num_columns(),
         }
 
-    def to_model(self, name: str, model_type, model_framework, **kwargs: Any) -> "LocalModel":  # noqa: F821
-        """Train a LocalModel from this FeatureSet.
+    def to_model(self, name: str, model_type, model_framework, **kwargs: Any) -> "Model":  # noqa: F821
+        """Train a Model from this FeatureSet.
 
         Args:
             name (str): The name of the Model to create
             model_type (ModelType): The type of model to create
             model_framework (ModelFramework): The framework to use
-            **kwargs: Passed to LocalModel.from_feature_set (target_column, feature_list,
+            **kwargs: Passed to Model.from_feature_set (target_column, feature_list,
                 hyperparameters, sample_weights, validation_ids, exclude_ids, wait)
 
         Returns:
-            LocalModel: The Model created from this FeatureSet
+            Model: The Model created from this FeatureSet
         """
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        return LocalModel.from_feature_set(
-            self, name=name, model_type=model_type, model_framework=model_framework, **kwargs
-        )
+        return Model.from_feature_set(self, name=name, model_type=model_type, model_framework=model_framework, **kwargs)
 
     def parent(self):
-        """The LocalDataSource this FeatureSet came from, if it still exists locally"""
-        from workbench.local.local_data_source import LocalDataSource
+        """The DataSource this FeatureSet came from, if it still exists locally"""
+        from workbench.local.data_source import DataSource
 
-        source = LocalDataSource(self.get_input())
+        source = DataSource(self.get_input())
         return source if source.exists() else None
 
     def aws_exists(self) -> bool:
@@ -183,15 +181,15 @@ class LocalFeatureSet(LocalArtifact):
         Returns:
             bool: True if AWS already has this FeatureSet
         """
-        from workbench.api import FeatureSet
+        from workbench.api import FeatureSet as AWSFeatureSet
 
-        return FeatureSet(self.name).exists()
+        return AWSFeatureSet(self.name).exists()
 
     def _aws_artifact(self):
         """Internal: The AWS FeatureSet for this local one"""
-        from workbench.api import FeatureSet
+        from workbench.api import FeatureSet as AWSFeatureSet
 
-        return FeatureSet(self.name)
+        return AWSFeatureSet(self.name)
 
     def _publish_self(self, **kwargs):
         """Internal: Push this FeatureSet's engineered features to AWS.
@@ -202,14 +200,14 @@ class LocalFeatureSet(LocalArtifact):
         Returns:
             FeatureSet: The created AWS FeatureSet
         """
-        from workbench.api import FeatureSet
+        from workbench.api import FeatureSet as AWSFeatureSet
         from workbench.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 
         to_features = PandasToFeatures(self.name)
         to_features.set_input(self.pull_dataframe(), id_column=self.id_column)
         to_features.set_output_tags([self.name])
         to_features.transform()
-        return FeatureSet(self.name)
+        return AWSFeatureSet(self.name)
 
     def training_view(
         self,
@@ -245,7 +243,7 @@ class LocalFeatureSet(LocalArtifact):
 
 
 if __name__ == "__main__":
-    """Exercise the LocalFeatureSet Class"""
+    """Exercise the FeatureSet Class"""
     from pprint import pprint
 
     df = pd.DataFrame(
@@ -256,7 +254,7 @@ if __name__ == "__main__":
             "Solubility": [-1.0, -3.0, -5.0, -2.0],
         }
     )
-    fs = LocalFeatureSet.from_dataframe(df, name="local_test_features", id_column="ID", one_hot_columns=["Food"])
+    fs = FeatureSet.from_dataframe(df, name="local_test_features", id_column="ID", one_hot_columns=["Food"])
     pprint(fs.details())
 
     print(fs.query("select * from local_test_features where solubility < -2"))

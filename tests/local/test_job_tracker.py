@@ -114,9 +114,9 @@ class TestStatusDuringTheWatcherGap:
         return proc.pid
 
     def test_training_pending_while_watched(self):
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        model = LocalModel("gap-model")
+        model = Model("gap-model")
         model._init_storage(input_name="some_features")
         model._write_status(state="training", pid=self.dead_pid())
 
@@ -124,9 +124,9 @@ class TestStatusDuringTheWatcherGap:
         assert model.training_state()["state"] == "training"
 
     def test_training_interrupted_when_nobody_is_watching(self):
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        model = LocalModel("orphan-model")
+        model = Model("orphan-model")
         model._init_storage(input_name="some_features")
         model._write_status(state="training", pid=self.dead_pid())
 

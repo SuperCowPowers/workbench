@@ -1,4 +1,4 @@
-"""LocalMeta: Listings for the artifacts in local storage.
+"""Meta: Listings for the artifacts in local storage.
 
 A directory glob plus a ``meta.json`` read per artifact. No caching tier and no
 artifact objects constructed, so listing stays cheap.
@@ -15,12 +15,12 @@ from workbench.core.artifact import Artifact
 from workbench.local import storage
 
 
-class LocalMeta:
-    """LocalMeta: Workbench Local Metadata Class
+class Meta:
+    """Meta: Workbench Local Metadata Class
 
     Common Usage:
         ```python
-        meta = LocalMeta()
+        meta = Meta()
         meta.data_sources()
         meta.feature_sets()
         meta.models()
@@ -29,7 +29,7 @@ class LocalMeta:
     """
 
     def __init__(self):
-        """Initialize the LocalMeta class"""
+        """Initialize the Meta class"""
         self.log = Artifact.log
 
     def data_sources(self) -> pd.DataFrame:
@@ -40,16 +40,24 @@ class LocalMeta:
         """
         return self._summary("data_source", extra={"Rows": "num_rows", "Columns": "num_columns"})
 
-    def feature_sets(self) -> pd.DataFrame:
+    def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the local Feature Sets
+
+        Args:
+            details (bool): Accepted for parity with the AWS Meta; the local summary
+                already carries everything stored on disk
 
         Returns:
             pd.DataFrame: A summary of the local Feature Sets
         """
         return self._summary("feature_set", extra={"Rows": "num_rows", "Columns": "num_columns", "Id": "id_column"})
 
-    def models(self) -> pd.DataFrame:
+    def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the local Models
+
+        Args:
+            details (bool): Accepted for parity with the AWS Meta; the local summary
+                already carries everything stored on disk
 
         Returns:
             pd.DataFrame: A summary of the local Models
@@ -63,6 +71,10 @@ class LocalMeta:
             pd.DataFrame: A summary of the local Endpoints
         """
         return self._summary("endpoint", extra={"Model": "model_name"})
+
+    def close(self):
+        """Release resources. Nothing to release -- local Meta reads the filesystem."""
+        pass
 
     def _summary(self, artifact_type: str, extra: dict = None) -> pd.DataFrame:
         """Internal: Build a summary DataFrame for one artifact type.
@@ -160,8 +172,8 @@ class LocalMeta:
 
 
 if __name__ == "__main__":
-    """Exercise the LocalMeta Class"""
-    meta = LocalMeta()
+    """Exercise the Meta Class"""
+    meta = Meta()
     print("Data Sources:")
     print(meta.data_sources())
     print("\nFeature Sets:")

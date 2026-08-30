@@ -210,17 +210,21 @@ class ConfigManager:
 
     def config_okay(self) -> bool:
         """Returns True if the configuration is okay."""
+        # With no site config the user is in local mode, which is a supported state.
+        # Only an incomplete site config -- they meant to connect -- is alarming.
+        report = self.log.info if self.using_default_config else self.log.critical
+
         required_keys = ["WORKBENCH_ROLE", "WORKBENCH_BUCKET"]
         for key in required_keys:
             if key not in self.config:
-                self.log.critical(f"Missing required config: {key}")
+                report(f"Missing required config: {key}")
                 return False
 
         # Also make sure that the WORKBENCH_BUCKET is not the default value
         if self.config["WORKBENCH_BUCKET"] == "env-will-overwrite":
             self.overwrite_config_with_env()
             if self.config["WORKBENCH_BUCKET"] == "env-will-overwrite":
-                self.log.critical("WORKBENCH_BUCKET needs to be set with ENV var...")
+                report("WORKBENCH_BUCKET needs to be set with ENV var...")
                 return False
 
         return True
@@ -287,7 +291,7 @@ class ConfigManager:
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("WORKBENCH_CONFIG")
         if self.site_config_path is None or self.site_config_path == "":
-            self.log.warning("WORKBENCH_CONFIG ENV var not set")
+            self.log.debug("WORKBENCH_CONFIG ENV var not set")
             return self._load_default_config()
 
         # Load site specific configuration file
@@ -337,7 +341,7 @@ class ConfigManager:
             Dict[str, Any]: Configuration dictionary.
         """
         self.using_default_config = True
-        self.log.warning("Loading default config and pulling ENV vars...")
+        self.log.debug("Loading default config and pulling ENV vars...")
         config = {
             "WORKBENCH_ROLE": "Workbench-ExecutionRole",
             "WORKBENCH_PLUGINS": "package",

@@ -1,4 +1,4 @@
-"""LocalDataSource: A DataFrame on local disk, queryable with DuckDB."""
+"""DataSource: A DataFrame on local disk, queryable with DuckDB."""
 
 import os
 from typing import Union
@@ -12,12 +12,12 @@ from workbench.local.local_artifact import LocalArtifact
 from workbench.local import storage
 
 
-class LocalDataSource(LocalArtifact):
-    """LocalDataSource: Workbench Local DataSource Class
+class DataSource(LocalArtifact):
+    """DataSource: Workbench Local DataSource Class
 
     Common Usage:
         ```python
-        my_data = LocalDataSource(df, name="my_data")
+        my_data = DataSource(df, name="my_data")
         my_data.query("select * from my_data where height > 0.3")
         my_features = my_data.to_features("my_features", id_column="id")
         ```
@@ -26,11 +26,11 @@ class LocalDataSource(LocalArtifact):
     artifact_type = "data_source"
 
     def __init__(self, source: Union[str, pd.DataFrame] = None, name: str = None, **kwargs):
-        """Initialize a LocalDataSource
+        """Initialize a DataSource
 
         Args:
             source (Union[str, pd.DataFrame]): A DataFrame, a CSV/parquet file path, or an
-                existing LocalDataSource name. If None, `name` must reference an existing source.
+                existing DataSource name. If None, `name` must reference an existing source.
             name (str): The name of the data source (must be lowercase). Required for DataFrames.
         """
         # A bare name refers to an existing local data source
@@ -43,7 +43,7 @@ class LocalDataSource(LocalArtifact):
             name = Artifact.generate_valid_name(os.path.splitext(os.path.basename(source))[0])
 
         if name is None:
-            msg = "Set the 'name' argument: LocalDataSource(df, name='my_data')"
+            msg = "Set the 'name' argument: DataSource(df, name='my_data')"
             self.log.critical(msg)
             raise ValueError(msg)
         Artifact.is_name_valid(name)
@@ -107,10 +107,10 @@ class LocalDataSource(LocalArtifact):
         return len(self.columns)
 
     def details(self, **kwargs) -> dict:
-        """LocalDataSource Details
+        """DataSource Details
 
         Returns:
-            dict: A dictionary of details about the LocalDataSource
+            dict: A dictionary of details about the DataSource
         """
         return {**super().details(), "num_rows": self.num_rows(), "num_columns": self.num_columns()}
 
@@ -121,8 +121,8 @@ class LocalDataSource(LocalArtifact):
         tags: list = None,
         event_time_column: str = None,
         one_hot_columns: list = None,
-    ) -> Union["LocalFeatureSet", None]:  # noqa: F821
-        """Convert this LocalDataSource to a LocalFeatureSet
+    ) -> Union["FeatureSet", None]:  # noqa: F821
+        """Convert this DataSource to a FeatureSet
 
         Args:
             name (str): Set the name for the feature set (must be lowercase).
@@ -132,15 +132,15 @@ class LocalDataSource(LocalArtifact):
             one_hot_columns (list, optional): Columns to one-hot encode (default: None).
 
         Returns:
-            LocalFeatureSet: The FeatureSet created from this DataSource (or None on invalid name)
+            FeatureSet: The FeatureSet created from this DataSource (or None on invalid name)
         """
-        from workbench.local.local_feature_set import LocalFeatureSet
+        from workbench.local.feature_set import FeatureSet
 
         if not Artifact.is_name_valid(name):
             self.log.critical(f"Invalid FeatureSet name: {name}, not creating FeatureSet!")
             return None
 
-        return LocalFeatureSet.from_dataframe(
+        return FeatureSet.from_dataframe(
             self.pull_dataframe(),
             name=name,
             id_column=id_column,
@@ -155,15 +155,15 @@ class LocalDataSource(LocalArtifact):
         Returns:
             bool: True if AWS already has this DataSource
         """
-        from workbench.api import DataSource
+        from workbench.api import DataSource as AWSDataSource
 
-        return DataSource(self.name).exists()
+        return AWSDataSource(self.name).exists()
 
     def _aws_artifact(self):
         """Internal: The AWS DataSource for this local one"""
-        from workbench.api import DataSource
+        from workbench.api import DataSource as AWSDataSource
 
-        return DataSource(self.name)
+        return AWSDataSource(self.name)
 
     def _publish_self(self, **kwargs):
         """Internal: Create the AWS DataSource from this local one
@@ -171,9 +171,9 @@ class LocalDataSource(LocalArtifact):
         Returns:
             DataSource: The created AWS DataSource
         """
-        from workbench.api import DataSource
+        from workbench.api import DataSource as AWSDataSource
 
-        return DataSource(self.pull_dataframe(), name=self.name)
+        return AWSDataSource(self.pull_dataframe(), name=self.name)
 
     def _load_source(self, source: Union[str, pd.DataFrame]):
         """Internal: Write the source data to local storage
@@ -203,11 +203,11 @@ class LocalDataSource(LocalArtifact):
 
 
 if __name__ == "__main__":
-    """Exercise the LocalDataSource Class"""
+    """Exercise the DataSource Class"""
     from pprint import pprint
 
     df = pd.DataFrame({"id": [1, 2, 3], "height": [0.1, 0.4, 0.8], "name": ["a", "b", "c"]})
-    my_data = LocalDataSource(df, name="local_test_data")
+    my_data = DataSource(df, name="local_test_data")
     pprint(my_data.details())
 
     print(my_data.query("select * from local_test_data where height > 0.3"))

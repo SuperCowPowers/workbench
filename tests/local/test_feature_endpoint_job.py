@@ -164,7 +164,7 @@ class TestInitDirs:
         assert not os.path.isfile(job.status_path)
 
     def test_jobs_live_outside_the_artifact_directories(self):
-        """LocalMeta globs the artifact subdirs, so jobs must not look like artifacts"""
+        """Meta globs the artifact subdirs, so jobs must not look like artifacts"""
         assert os.path.basename(job_root()) == "feature_endpoint_jobs"
 
 

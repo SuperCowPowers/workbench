@@ -1,9 +1,9 @@
-# Local Models
+# Local Mode
 
 !!! tip inline end "No AWS Required"
     Local artifacts need no AWS account, no config, and no credentials. Paired with `PublicData`, you can go from install to a trained model without touching AWS at all.
 
-The Local classes mirror the Workbench artifact API against your filesystem. The
+`workbench.local` mirrors the Workbench artifact API against your filesystem. The
 chain is the same — `DataSource → FeatureSet → Model → Endpoint` — and training
 runs the same generated model script that SageMaker runs, as a subprocess. So a
 script written locally publishes to AWS and produces the same model.
@@ -15,16 +15,29 @@ hyperparameters. There's no build cost and deleting is instant. AWS is where a
 model lands once it's worth keeping — that's where monitoring, deployed
 endpoints, and everything else the team consumes live.
 
+## Starting from nothing
+
+With no AWS config, the REPL starts in **local mode**:
+
+```bash
+pip install workbench
+workbench
+```
+
+The prompt comes up with the local classes and `pub_data` already bound, so the
+example below runs as-is with no imports. When you're ready to connect an AWS
+account, run `aws_setup()` from that prompt.
+
 ## Try it
 
 `PublicData` reads public S3 anonymously, so this runs with no AWS setup:
 
 ```python
-from workbench.local import LocalDataSource, PublicData, ModelType, ModelFramework
+from workbench.local import DataSource, PublicData, ModelType, ModelFramework
 
 df = PublicData().get("comp_chem/aqsol/aqsol_public_data")
 
-ds = LocalDataSource(df, name="aqsol_local")
+ds = DataSource(df, name="aqsol_local")
 fs = ds.to_features("aqsol_local_features", id_column="ID")
 model = fs.to_model(
     "aqsol-local-reg",
@@ -38,18 +51,25 @@ print(model.get_inference_metrics())
 predictions = model.to_endpoint().inference(fs.pull_dataframe().head(10))
 ```
 
+!!! warning "In the REPL, use the bound names"
+    The import above is for scripts. In a REPL connected to AWS, running it rebinds
+    `DataSource` to the local class for the rest of your session — the next artifact
+    you build lands on disk instead of AWS.
+
+    The names are already bound for you: in local mode the bare `DataSource` /
+    `FeatureSet` / `Model` / `Endpoint` are the local classes, and in any session
+    `LocalDataSource`, `LocalFeatureSet`, `LocalModel`, and `LocalEndpoint` are.
+
 `to_features()` lowercases column names, same as the AWS path, so `target_column`
 and `feature_list` refer to the FeatureSet's names rather than the source frame's.
 Use `fs.columns` to see them.
 
-A LocalEndpoint isn't deployed anywhere. `inference()` loads the model in-process
+A local Endpoint isn't deployed anywhere. `inference()` loads the model in-process
 through the same `model_fn`/`predict_fn` a real endpoint container uses, so the
 predictions match what a deployed endpoint returns.
 
 `validation_ids`, `sample_weights`, and `exclude_ids` work as they do in AWS, and
 they're recorded so publishing can replay them.
-
-The Workbench REPL exposes all of these, so none of the imports are needed there.
 
 ## Scoring
 
@@ -94,16 +114,16 @@ package versions that differ between this machine and the training image.
 ## Listing and deleting
 
 ```python
-from workbench.local import LocalMeta
+from workbench.local import Meta   # in the REPL: LocalMeta
 
-LocalMeta().models()     # also data_sources(), feature_sets(), endpoints()
+Meta().models()     # also data_sources(), feature_sets(), endpoints()
 ```
 
 The Workbench REPL prints a local summary at startup and on `local_summary()`.
 
-Always delete through the API. `LocalModel.delete()` takes its endpoints with it;
+Always delete through the API. A local `Model.delete()` takes its endpoints with it;
 removing directories by hand leaves endpoints pointing at a model that no longer
-exists. That's the only cascade — deleting a LocalFeatureSet leaves its models
+exists. That's the only cascade — deleting a FeatureSet leaves its models
 alone.
 
 ## What's not here
@@ -112,12 +132,12 @@ Local covers training and scoring. Plots, the inference store, monitoring,
 contests, and promotion are all properties of published artifacts — when you want
 those, publish.
 
-::: workbench.local.local_data_source
+::: workbench.local.data_source
 
-::: workbench.local.local_feature_set
+::: workbench.local.feature_set
 
-::: workbench.local.local_model
+::: workbench.local.model
 
-::: workbench.local.local_endpoint
+::: workbench.local.endpoint
 
-::: workbench.local.local_meta
+::: workbench.local.meta

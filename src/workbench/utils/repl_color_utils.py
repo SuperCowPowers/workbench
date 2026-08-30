@@ -39,6 +39,22 @@ def cprint(*args):
     print()
 
 
+def hyperlink(url: str, text: str = None) -> str:
+    """Wrap a URL as a clickable terminal hyperlink (OSC 8).
+
+    Terminals without OSC 8 drop the escape and show `text`, so it defaults to the
+    URL itself -- a label would leave those users with no address to copy.
+
+    Args:
+        url (str): Where the link points
+        text (str, optional): The clickable text (default: the URL)
+
+    Returns:
+        str: The wrapped string, ready to pass to cprint or print
+    """
+    return f"\033]8;;{url}\033\\{text or url}\033]8;;\033\\"
+
+
 def render_markdown(text: str) -> None:
     """Render markdown (tables, bold, headers, lists) in the terminal.
 

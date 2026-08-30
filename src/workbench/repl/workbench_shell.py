@@ -14,6 +14,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import IPython
+from IPython import get_ipython
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -38,8 +39,8 @@ except ImportError:
 
 
 # Workbench Imports
-from workbench.local.local_meta import LocalMeta
-from workbench.utils.repl_utils import cprint, Spinner
+from workbench.local.meta import Meta as LocalMeta
+from workbench.utils.repl_utils import cprint, hyperlink, Spinner
 from workbench.utils.repl_themes import prompt_styles, current_theme, token_color
 from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
@@ -53,9 +54,21 @@ from workbench.utils.chem_utils import vis
 # Egress dots
 EGRESS_LIGHTS = {"off": Token.Lightgreen, "guarded": Token.Blue, "full": Token.Darkyellow}
 
+# Where local-mode users go to set up their own AWS account
+SCP_URL = "https://www.supercowpowers.com/"
 
-def onboard():
-    """Onboard a new user to Workbench"""
+
+def aws_only(name: str):
+    """A stand-in for a command that needs an AWS account, used in local mode"""
+
+    def unavailable(*args, **kwargs):
+        cprint("darkyellow", f"{name}() needs an AWS account. Run aws_setup() to connect one.")
+
+    return unavailable
+
+
+def aws_setup():
+    """Set up this user's AWS account for Workbench"""
     cprint("lightgreen", "Welcome to Workbench!")
     cprint("lightblue", "Looks like this is your first time using Workbench...")
     cprint("lightblue", "Let's get you set up...")
@@ -65,11 +78,12 @@ def onboard():
     cm.create_site_config()
     cm.platform_specific_instructions()
 
-    # Tell the user to restart the shell
-    cprint("lightblue", "After doing these instructions ^")
-    cprint("lightblue", "Please rerun the Workbench REPL to complete the onboarding process.")
-    cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
-    sys.exit(0)
+    cprint("darkyellow", "\nAdd the export line above, then run 'workbench' in a NEW terminal.")
+    cprint("darkyellow", "Exiting now...")
+    if shell := get_ipython():
+        shell.ask_exit()
+    else:
+        sys.exit(0)
 
 
 # Set the log level to important
@@ -95,7 +109,7 @@ class WorkbenchPrompt(Prompts):
             lights = []
         else:
             lights = workbench_shell.status_lights()
-        aws_profile_prompt = [(Token.Blue, ":"), (Token.Darkyellow, f"{aws_profile}")]
+        aws_profile_prompt = [(Token.Blue, ":"), (Token.Darkyellow, aws_profile)] if aws_profile else []
         prompt = lights + [(Token.Workbench, "Workbench")] + aws_profile_prompt
         if workbench_shell is not None and workbench_shell.bedrock_status:
             prompt += [(Token.Blue, ":"), (Token.Lightgreen, "Bosco")]
@@ -108,15 +122,21 @@ class WorkbenchShell:
         version = importlib.import_module("workbench").__version__
         cprint("lightpurple", f"Workbench Version: {version}")
 
-        # Check the Workbench config
+        # Check the Workbench config. No config at all means the user never set AWS up,
+        # which is a supported mode -- local artifacts and PublicData need none. A config
+        # that exists but is incomplete means they meant to connect, so run setup.
         self.cm = ConfigManager()
+        self.local_only = False
         if not self.cm.config_okay():
-            # Invoke Onboarding Procedure
-            onboard()
+            if self.cm.using_default_config:
+                self.local_only = True
+            else:
+                aws_setup()
 
-        # Show which role this session is running as
-        role = self.cm.get_config("WORKBENCH_ROLE")
-        cprint("lightpurple", f"Workbench Role: {role}")
+        if not self.local_only:
+            # Show which role this session is running as
+            role = self.cm.get_config("WORKBENCH_ROLE")
+            cprint("lightpurple", f"Workbench Role: {role}")
 
         # Our Metadata Object pull information from the Cloud Platform
         self.meta = None
@@ -128,13 +148,16 @@ class WorkbenchShell:
 
         # Perform AWS connection test and other checks
         self.commands = dict()
-        self.aws_status = self.check_aws_account()
+        self.aws_status = False if self.local_only else self.check_aws_account()
         if self.aws_status:
             with silence_logs():
                 self.import_workbench()
 
         # Try cached meta (if that fails it will be set to direct meta)
-        self.try_cached_meta()
+        if self.local_only:
+            self.meta = LocalMeta()
+        else:
+            self.try_cached_meta()
 
         # Register our custom commands
         self.commands["help"] = self.help
@@ -146,13 +169,22 @@ class WorkbenchShell:
         # whether or not the account check passed -- a broken config is when the
         # local classes are most useful
         local = importlib.import_module("workbench.local")
-        local_names = ["LocalDataSource", "LocalFeatureSet", "LocalModel", "LocalEndpoint", "LocalMeta"]
+        local_names = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta"]
         for class_name in local_names + ["ModelType", "ModelFramework"]:
-            self.commands[class_name] = getattr(local, class_name)
-        self.commands["contests"] = self.contests
-        self.commands["incoming_data"] = self.incoming_data
-        self.commands["glue_jobs"] = self.glue_jobs
-        self.commands["batch_jobs"] = importlib.import_module("workbench.utils.batch_utils").batch_jobs
+            local_class = getattr(local, class_name)
+            # The Local* alias always reaches the local class; the bare name is the
+            # local one only when there's no AWS session to claim it.
+            self.commands[f"Local{class_name}"] = local_class
+            if self.local_only:
+                self.commands[class_name] = local_class
+        if self.local_only:
+            for name in ("contests", "incoming_data", "glue_jobs", "batch_jobs"):
+                self.commands[name] = aws_only(name)
+        else:
+            self.commands["contests"] = self.contests
+            self.commands["incoming_data"] = self.incoming_data
+            self.commands["glue_jobs"] = self.glue_jobs
+            self.commands["batch_jobs"] = importlib.import_module("workbench.utils.batch_utils").batch_jobs
         self.commands["data_sources"] = self.data_sources
         self.commands["feature_sets"] = self.feature_sets
         self.commands["models"] = self.models
@@ -163,16 +195,19 @@ class WorkbenchShell:
         self.commands["log_important"] = self.log_important
         self.commands["log_warning"] = self.log_warning
         self.commands["config"] = self.show_config
+        self.commands["aws_setup"] = aws_setup
         self.commands["status"] = self.status_description
         self.commands["log"] = logging.getLogger("workbench")
         self.commands["get_meta"] = self.get_meta
-        self.commands["params"] = importlib.import_module("workbench.api.parameter_store").ParameterStore()
-        self.commands["secrets"] = importlib.import_module(
-            "workbench.core.cloud_platform.aws.aws_secrets_manager"
-        ).AWSSecretsManager()
-        self.commands["df_store"] = importlib.import_module("workbench.api.df_store").DFStore()
-        self.commands["inf_store"] = importlib.import_module("workbench.api.inference_store").InferenceStore()
-        self.commands["graph_store"] = importlib.import_module("workbench.api.graph_store").GraphStore()
+        # These build AWS clients as they're registered, so they exist only when AWS does
+        if self.aws_status:
+            self.commands["params"] = importlib.import_module("workbench.api.parameter_store").ParameterStore()
+            self.commands["secrets"] = importlib.import_module(
+                "workbench.core.cloud_platform.aws.aws_secrets_manager"
+            ).AWSSecretsManager()
+            self.commands["df_store"] = importlib.import_module("workbench.api.df_store").DFStore()
+            self.commands["inf_store"] = importlib.import_module("workbench.api.inference_store").InferenceStore()
+            self.commands["graph_store"] = importlib.import_module("workbench.api.graph_store").GraphStore()
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
@@ -197,7 +232,12 @@ class WorkbenchShell:
     def start(self):
         """Start the Workbench IPython shell"""
         cprint("magenta", "\nWelcome to Workbench!")
-        if not self.aws_status:
+        if self.local_only:
+            self.cow_pun()
+            self.local_summary()
+            cprint("lightpurple", "\nAlready have an AWS account? Run aws_setup() to connect it.")
+            cprint("lightpurple", f"Need one set up? {hyperlink(SCP_URL)}\n")
+        elif not self.aws_status:
             cprint("red", "AWS Account Connection Failed...Review/Fix the Workbench Config:")
             cprint("red", f"Path: {self.cm.site_config_path}")
             self.show_config()
@@ -238,10 +278,11 @@ class WorkbenchShell:
                 ipython_argv = []
             start_ipython(ipython_argv, user_ns=locs, config=config)
         finally:
-            spinner = self.spinner_start("Goodbye to AWS:")
-            with silence_logs():
-                self.meta.close()
-            spinner.stop()
+            if self.meta:
+                spinner = self.spinner_start("Goodbye to AWS:")
+                with silence_logs():
+                    self.meta.close()
+                spinner.stop()
             cprint("lightgreen", "Goodbye from Workbench!\n")
 
     @staticmethod
@@ -522,9 +563,12 @@ class WorkbenchShell:
         Returns:
             list[(Token, str)]: A Token color and label per status row
         """
-        aws = (
-            (Token.Lightgreen, "AWS Account: OK") if self.aws_status else (Token.Red, "AWS Account: Failed to Connect")
-        )
+        if self.local_only:
+            aws = (Token.Darkyellow, "AWS Account: Local Mode")
+        elif self.aws_status:
+            aws = (Token.Lightgreen, "AWS Account: OK")
+        else:
+            aws = (Token.Red, "AWS Account: Failed to Connect")
         cached = self.meta_status == "CACHED"
         redis = (Token.Lightgreen, "Redis: Connected") if cached else (Token.Darkyellow, "Redis: Not Connected")
         return [aws, redis, (EGRESS_LIGHTS[EGRESS_MODE], f"Egress: {EGRESS_MODE}")]
@@ -596,7 +640,7 @@ def launch_shell():
     try:
         workbench_shell = WorkbenchShell()
     except FatalConfigError:
-        onboard()
+        aws_setup()
         return
     workbench_shell.start()
 
