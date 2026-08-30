@@ -331,7 +331,7 @@
                 "type": "scattergl"
             }
         ],
-        "scattermapbox": [
+        "scattermap": [
             {
                 "marker": {
                     "colorbar": {
@@ -339,7 +339,7 @@
                         "ticks": ""
                     }
                 },
-                "type": "scattermapbox"
+                "type": "scattermap"
             }
         ],
         "scatterpolargl": [
@@ -553,7 +553,7 @@
             }
         },
         "hovermode": "closest",
-        "mapbox": {
+        "map": {
             "style": "dark"
         },
         "paper_bgcolor": "rgba(0, 0, 0, 0.0)",

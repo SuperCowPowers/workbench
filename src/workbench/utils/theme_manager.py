@@ -52,8 +52,12 @@ class ThemeManager:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
+            instance = super().__new__(cls)
             cls._initialize()  # Initialize class-level state
+            # Published only after _initialize() succeeds. Caching a half-built instance
+            # would let every later call return one with no themes loaded, surfacing as a
+            # KeyError deep in an unrelated component instead of the real failure here.
+            cls._instance = instance
         return cls._instance
 
     @classmethod
