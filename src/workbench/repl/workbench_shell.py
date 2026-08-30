@@ -82,8 +82,7 @@ def aws_only(name: str):
 def aws_setup():
     """Set up this user's AWS account for Workbench"""
     cprint("lightgreen", "Welcome to Workbench!")
-    cprint("lightblue", "Looks like this is your first time using Workbench...")
-    cprint("lightblue", "Let's get you set up...")
+    cprint("lightblue", "Please enter your AWS account info...")
 
     # Create a Site Specific Config File
     cm = ConfigManager()
