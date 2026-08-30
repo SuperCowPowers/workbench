@@ -18,7 +18,7 @@ import sys
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint
-from workbench.utils.bedrock_utils import DEFAULT_MODEL, bedrock_client, ping_model
+from workbench.utils.llm_utils import bedrock_client, default_model, ping_model
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 DOC_HINT = "See docs/bosco/security.md for setup and model availability."
@@ -56,13 +56,13 @@ def main():
         return
 
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    model_id = args[0] if args else DEFAULT_MODEL
+    model_id = args[0] if args else default_model("bedrock")
 
     clamp = AWSAccountClamp()
     cprint("lightpurple", f"Region: {clamp.region}")
     cprint("lightpurple", f"Model:  {model_id}")
 
-    ok, detail = ping_model(model_id)
+    ok, detail = ping_model(model_id, provider="bedrock")
     if not ok:
         cprint("red", f"Bedrock call failed: {detail}")
         if "marketplace" in detail.lower():

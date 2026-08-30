@@ -9,9 +9,22 @@ Bosco is an ML engineering agent living inside the
 session — the variables he creates stay in your namespace, and he reads your
 real FeatureSets, models, and predictions.
 
-Bosco is opt-in per account. Set `ENABLE_BOSCO` in your Workbench config and
-make sure Bedrock is reachable ([Security & Admin](security.md)); when both are
-true, `Bosco` appears in the REPL prompt.
+How Bosco reaches a model depends on whether you have an AWS account.
+
+**With one**, Bosco is opt-in per account: set `ENABLE_BOSCO` in your Workbench
+config and make sure Bedrock is reachable ([Security & Admin](security.md)).
+Prompts stay inside your account.
+
+**Without one**, the REPL comes up in [local mode](../local/index.md) and there is
+no Bedrock to reach, so Bosco uses an Anthropic API key instead:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+workbench
+```
+
+Either way `Bosco` appears in the REPL prompt once a model is reachable, and
+`status` names the path it took.
 
 ## Talking to it
 
@@ -60,7 +73,8 @@ stays usable, so the next question works normally.
 
 Bosco can write a session report — the goal, the artifacts involved, what was
 concluded, what is still open — to the Parameter Store, so anyone on the account
-can pick the thread back up.
+can pick the thread back up. In local mode they are files under
+`WORKBENCH_LOCAL_PATH` instead, private to that machine.
 
 ```python
 recent_sessions()          # what's saved, most recent first
@@ -81,10 +95,8 @@ so he can speak to the outcome.
 ## Where your data goes
 
 Bosco's prompts carry real data by design, and they travel over Bedrock inside
-your own AWS account — same IAM, same CloudTrail, same bill. Bedrock's default
-retention keeps inputs and outputs for AWS safety and abuse prevention; the
-model provider never receives them, and an account-wide setting turns retention
-off entirely.
+your own AWS account — same IAM, same CloudTrail, same bill. Our standard Bedrock
+setup turns on ZDR (Zero Data Retention), so no data is stored.
 
 The full picture — enabling Bosco, retention modes, zero data retention,
 invocation logging, auditing, and PrivateLink — is on

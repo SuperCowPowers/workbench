@@ -10,6 +10,13 @@ Bosco runs Claude through **Amazon Bedrock**, which keeps that boundary inside
 AWS: prompts are authenticated by your existing Workbench IAM roles, billed
 through your AWS account, and never leave AWS.
 
+!!! note "Public/Evaluation without an AWS Account"
+    Workbench also runs in [local mode](../local/index.md) with no AWS account at
+    all, where Bosco reaches Claude through the Anthropic API instead. That is an
+    evaluation path, not a deployment one — this page describes the configuration
+    every Workbench account runs. See [Local mode](#local-mode-evaluation-only) for
+    what it does and does not give you.
+
 ## Turning Bosco on
 
 Set `ENABLE_BOSCO` in the personal Workbench **config** for each account. It's
@@ -195,13 +202,19 @@ rights to your inputs, you own the outputs, and the model provider may not
 train on them.
 
 Bedrock enforces a **zero-operator-access** model: no AWS operator can read your
-inputs or outputs. Under the default retention setting AWS may retain them for
-safety and abuse prevention, but the model provider never receives them.
+inputs or outputs, and the model provider never receives them. That holds under
+every retention mode below except `provider_data_share` — it is a property of how
+Bedrock runs the model, not of what gets retained.
 
-Retention is configurable at the account or project level. The modes are
-`none` (nothing retained), `default` (AWS-only retention, above), and
-`provider_data_share` (prompts and completions shared with the model provider
-and retained up to 30 days, with possible human review).
+Retention is the separate question of whether **AWS itself** stores inputs and
+outputs. It is configurable at the account or project level, and the modes are
+`none` (nothing retained), `default` (AWS may retain for safety and abuse
+prevention), and `provider_data_share` (prompts and completions shared with the
+model provider and retained up to 30 days, with possible human review).
+
+**Every Bedrock setup we do turns retention off.** ZDR (`none`) is part of standard
+onboarding rather than hardening you add later — [Zero data
+retention](#zero-data-retention) below covers how to verify it.
 
 Invocation logging — which writes full prompt and completion text to S3 or
 CloudWatch — is **off unless you turn it on**. If you enable it for auditing,
@@ -210,9 +223,10 @@ treated accordingly.
 
 ## Zero data retention
 
-Setting the account retention mode to `none` guarantees nothing is stored at
-all. There is no console for this — it is an API call, and it needs admin
-credentials:
+Retention mode `none` guarantees nothing is stored at all. We set it during
+onboarding, so this section is mostly about verifying it and knowing what changing
+it would mean. There is no console for this — it is an API call, and it needs
+admin credentials:
 
 ```bash
 AWS_PROFILE=<profile> aws bedrock put-account-data-retention --region <region> --mode none
@@ -319,3 +333,16 @@ AWS references:
     SuperCowPowers team is happy to help — reach us at
     [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on
     [Discord](https://discord.gg/WHAJuz8sw8).
+
+## Local mode (evaluation only)
+
+With no Workbench config the REPL starts in local mode: artifacts are files on your
+filesystem, and Bosco reaches Claude through the Anthropic API using an
+`ANTHROPIC_API_KEY` from your environment. It exists so you can try Workbench
+before setting up an official account.
+
+**Note:** This is for evaluation only. It does not give you the
+same security guarantees as running inside your AWS account.
+
+**Connect an account before pointing Bosco at proprietary chemistry.** Everything
+above this section is what that buys you.

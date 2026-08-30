@@ -61,7 +61,15 @@ class Finding(NamedTuple):
 
 
 def egress_mode() -> str:
-    """The configured egress mode, falling back to the default when unrecognized."""
+    """The egress mode for this session.
+
+    Only an AWS-connected session can offer `off`, whose promise is that nothing
+    reaches the public web. Local mode has no such boundary -- the agent's own
+    prompts already leave the machine -- so it runs `guarded`, where outbound
+    requests are checked for structures rather than refused outright.
+    """
+    if not ConfigManager().config_okay():
+        return "guarded"
     mode = ConfigManager().get_config("BOSCO_EGRESS", DEFAULT_EGRESS)
     if mode not in EGRESS_MODES:
         log.warning(f"Unknown BOSCO_EGRESS {mode!r}; using {DEFAULT_EGRESS!r} ({', '.join(EGRESS_MODES)})")

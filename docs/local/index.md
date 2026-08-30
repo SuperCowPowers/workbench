@@ -28,6 +28,21 @@ The prompt comes up with the local classes and `pub_data` already bound, so the
 example below runs as-is with no imports. When you're ready to connect an AWS
 account, run `aws_setup()` from that prompt.
 
+## The agent
+
+[Bosco](../bosco/index.md) runs here too. With no AWS account it needs an Anthropic
+API key to reach a model:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+workbench
+```
+
+`Bosco` then appears in the prompt and you can ask for a model in English rather
+than writing the chain yourself. The status line names where prompts go — `status`
+shows `Bosco: your AWS account` on a connected session and `Bosco: Anthropic API
+key` here — so it is always visible whether your data leaves the machine.
+
 ## Try it
 
 `PublicData` reads public S3 anonymously, so this runs with no AWS setup:
@@ -92,6 +107,21 @@ model.get_inference_metrics("holdout")
 The `model_training` run an AWS Model carries has no local equivalent — those
 metrics come from SageMaker scraping the training job's output.
 
+## Neighbors and uncertainty
+
+A local model carries the same proximity and UQ artifacts an AWS one does, because
+training writes them either way:
+
+```python
+prox = model.prox("fingerprint")        # training-time neighbors, or fresh from the FeatureSet
+prox.neighbors("compound-42", n_neighbors=6)
+
+model.uq_model()                        # the fitted UQ model, for calibrated intervals
+```
+
+`fs.prox(...)` builds one over a FeatureSet before any model exists — the pre-model
+path for hunting analogs and activity cliffs.
+
 ## Publishing
 
 ```python
@@ -128,9 +158,21 @@ alone.
 
 ## What's not here
 
-Local covers training and scoring. Plots, the inference store, monitoring,
-contests, and promotion are all properties of published artifacts — when you want
-those, publish.
+The inference store, monitoring, contests, and promotion are properties of
+published artifacts — when you want those, publish.
+
+**Plots work.** `get_inference_predictions()` feeds parity and residual plots and
+`prox()` backs neighborhood graphs, the same as an AWS model. What's missing are
+the plots fed by AWS-only methods: SHAP, confusion matrix, and HPO.
+
+**Chemprop and PyTorch need `pip install workbench[modeling]`** — the base install
+carries XGBoost, RDKit, and the descriptor stack, but not torch. Local inference
+loads the model in this process, and torch and XGBoost each bring their own OpenMP
+runtime, so a session that predicts with chemprop can't then predict with an
+XGBoost model until the REPL restarts.
+
+There is no local 3D featurization: conformers plus xTB run in the training images
+only. 2D descriptors compute in process.
 
 ::: workbench.local.data_source
 

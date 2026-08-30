@@ -22,11 +22,12 @@ import inspect
 
 import pytest
 
-from workbench.api import DataSource, Endpoint, FeatureSet, Model
+from workbench.api import DataSource, Endpoint, FeatureSet, Model, ParameterStore
 from workbench.local import DataSource as LocalDataSource
 from workbench.local import Endpoint as LocalEndpoint
 from workbench.local import FeatureSet as LocalFeatureSet
 from workbench.local import Model as LocalModel
+from workbench.local import ParameterStore as LocalParameterStore
 
 # Local class -> its AWS counterpart
 COUNTERPARTS = {
@@ -34,6 +35,7 @@ COUNTERPARTS = {
     LocalFeatureSet: FeatureSet,
     LocalModel: Model,
     LocalEndpoint: Endpoint,
+    LocalParameterStore: ParameterStore,
 }
 
 # The methods each local class promises to match. A script using only these
@@ -49,6 +51,7 @@ DECLARED = {
         "get_inference_metrics",
     ],
     LocalEndpoint: ["inference"],
+    LocalParameterStore: ["list", "get", "upsert", "delete", "delete_recursive", "last_modified"],
 }
 
 # Parameters that legitimately differ: AWS-only knobs on a shared method name.
@@ -58,6 +61,8 @@ ALLOWED_EXTRA_AWS_PARAMS = {
     ("inference", "threads"),
     ("inference", "drop_error_rows"),
     ("pull_dataframe", "include_aws_columns"),
+    # Local files are not encrypted, so there is nothing to decrypt on the way out
+    ("get", "decrypt"),
 }
 
 

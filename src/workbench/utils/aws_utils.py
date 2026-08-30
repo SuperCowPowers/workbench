@@ -185,7 +185,11 @@ def current_user() -> str:
         if user and not user.startswith("workbench-"):
             return slugify(user)
     except Exception as e:
-        log.warning(f"Could not resolve AWS identity ({e}), falling back to the local user...")
+        # Local mode has no AWS identity to find, so this is the expected path there
+        from workbench.utils.config_manager import ConfigManager
+
+        report = log.warning if ConfigManager().config_okay() else log.debug
+        report(f"Could not resolve AWS identity ({e}), falling back to the local user...")
     return slugify(getpass.getuser().split("@")[0])
 
 

@@ -89,11 +89,35 @@ local_model.training_state()   # includes "interrupted" for a run whose process 
 `training_state()` reports `interrupted` rather than leaving a dead run claiming to be
 training, so a train that never finished never reads as done.
 
+## Chemprop and PyTorch
+
+Both live in the `modeling` extra, so a base `pip install workbench` has neither and
+`to_model` refuses up front naming what's missing. **Offer to install it and wait for a
+yes** — it changes their environment, and torch is a large download, so say that first:
+
+```python
+import subprocess, sys, importlib
+
+subprocess.run([sys.executable, "-m", "pip", "install", "workbench[modeling]"], check=True)
+importlib.invalidate_caches()
+```
+
+Training works right away afterwards — it runs as a subprocess, which imports fresh.
+
+Inference is the catch. A local Endpoint loads the model **in this process**, and torch
+and XGBoost each bring their own OpenMP runtime. Once torch is imported, serving an
+XGBoost model in that session raises. So a session that predicts with chemprop is done
+with XGBoost predictions until the REPL restarts — do the XGBoost work first when the
+user wants both.
+
 ## Molecular features
 
 Chemprop takes `feature_list=["smiles"]` and needs no featurization pass. Descriptor
 models (XGBoost, PyTorch) do, and **the rung depends on whether the features need
 xTB**, not on how many molecules there are.
+
+The first two rungs below run in AWS. With no account the in-process 2D pass is the
+only one available, and 3D features are out of reach entirely.
 
 Whichever endpoint produced the features, `end.output_columns()` is the feature
 list — it returns exactly the columns that endpoint emits, so labels, ids and
@@ -161,5 +185,10 @@ model disagrees with the local one, check `version_drift()`.
 
 - Delete through the API. A local `Model.delete()` takes its endpoints with it;
   removing directories by hand leaves them pointing at a model that's gone.
-- No plots, inference store, monitoring, contests, or promotion. When the user
-  wants those, they want a published model.
+- No inference store, monitoring, contests, or promotion. When the user wants
+  those, they want a published model.
+- Plots work — `get_inference_predictions()` feeds parity and residual plots exactly
+  as it does for an AWS model, and `model.prox()` / `fs.prox()` back neighborhood
+  graphs (`plotting`, `proximity` guides). What's missing is the plots whose inputs
+  are AWS-only: SHAP, confusion matrix, and HPO (`shap_*`, `confusion_matrix`,
+  `hpo_*`).

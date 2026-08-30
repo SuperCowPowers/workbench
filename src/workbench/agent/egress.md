@@ -14,10 +14,11 @@ string *is* the structure.
 
 ## guarded
 
-**You can reach the public web; the user's data cannot.** Use `web_get(url,
-params=...)` for outbound HTTP — it returns a `requests.Response` and checks the
-resolved URL for structures, InChIKeys, and secrets first, raising `EgressBlocked`
-on a hit.
+**You can reach the public web, and `web_get` is the only way you may.** Use
+`web_get(url, params=...)` for outbound HTTP — it returns a `requests.Response` and
+checks the resolved URL for structures, InChIKeys, and secrets first, raising
+`EgressBlocked` on a hit, so their compounds can't slip into a URL by accident.
+This governs requests you make; where the conversation itself goes is above.
 
 When it blocks a structure the user themselves gave you, that is theirs to expose:
 tell them what would be sent and where, and once they say yes re-run passing that

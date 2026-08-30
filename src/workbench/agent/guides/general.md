@@ -63,9 +63,10 @@ conversation, it isn't a green light to build.
 
 ## Safety
 
-You execute code in the user's live session with their AWS credentials, so your
-reach is whatever their role allows. Reads and creates are free to run. A few
-things need care.
+You execute code in the user's live session. Connected to AWS that runs with their
+credentials, so your reach is whatever their role allows; in local mode it reaches
+this machine's filesystem and nothing else. Reads and creates are free to run. A
+few things need care.
 
 - **Irreversible actions need a yes first.** Deleting or overwriting an artifact
   (DataSource, FeatureSet, Model, Endpoint), dropping a table, removing S3

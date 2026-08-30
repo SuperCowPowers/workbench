@@ -138,6 +138,46 @@ class FeatureSet(LocalArtifact):
         df = pd.read_parquet(self.data_path)
         return df.head(limit) if limit else df
 
+    def prox(
+        self,
+        space: str,
+        feature_list: list = None,
+        target: str = None,
+        include_all_columns: bool = False,
+    ) -> "Union[FingerprintProximity, FeatureSpaceProximity]":  # noqa: F821
+        """Create (or reuse) a proximity model over this FeatureSet.
+
+        For finding issues/anomalies or nearest neighbors before building a model.
+        Cached per ``(space, feature_list, target)`` on this instance, so repeated
+        calls return the same model.
+
+        Args:
+            space: ``"fingerprint"`` (Tanimoto over SMILES/fingerprints) or
+                ``"features"`` (standardized Euclidean over numeric features).
+            feature_list: Numeric columns for neighbor computation. Required for
+                ``space="features"``; ignored for ``"fingerprint"``.
+            target: Target column surfaced in neighbor results (optional).
+            include_all_columns: Include all DataFrame columns in neighbor results.
+
+        Returns:
+            FingerprintProximity or FeatureSpaceProximity.
+        """
+        from workbench.utils.prox_utils import build_proximity
+
+        key = (space, tuple(feature_list) if feature_list else None, target)
+        if not hasattr(self, "_prox_cache"):
+            self._prox_cache = {}
+        if key not in self._prox_cache:
+            self._prox_cache[key] = build_proximity(
+                self.pull_dataframe(),
+                space,
+                self.id_column,
+                feature_list=feature_list,
+                target=target,
+                include_all_columns=include_all_columns,
+            )
+        return self._prox_cache[key]
+
     def details(self, **kwargs) -> dict:
         """FeatureSet Details
 

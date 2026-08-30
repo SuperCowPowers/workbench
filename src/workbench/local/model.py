@@ -1,5 +1,6 @@
 """Model: A model trained on this machine by the generated model script."""
 
+import importlib.util
 import json
 import os
 import shutil
@@ -21,6 +22,31 @@ from workbench.utils.json_utils import write_json_atomic
 
 # The training run's out-of-fold predictions, named to match the AWS capture
 CROSS_FOLD_RUN = "full_cross_fold"
+
+
+# Framework -> the module its model script imports. Neither ships in the base install;
+# both live in the `modeling` extra.
+FRAMEWORK_MODULES = {
+    ModelFramework.CHEMPROP: "chemprop",
+    ModelFramework.PYTORCH: "torch",
+}
+
+
+def framework_available(model_framework: ModelFramework) -> Union[str, None]:
+    """The module a framework needs but can't find, or None when it's installed.
+
+    Uses ``find_spec`` rather than importing: pulling torch into this process is what
+    the OpenMP guard in the local Endpoint exists to prevent, and an availability check
+    has no business doing it.
+
+    Args:
+        model_framework (ModelFramework): The framework to check.
+
+    Returns:
+        str: The missing module name, or None if the framework is usable.
+    """
+    module = FRAMEWORK_MODULES.get(model_framework)
+    return module if module and importlib.util.find_spec(module) is None else None
 
 
 class Model(LocalArtifact):
@@ -102,6 +128,15 @@ class Model(LocalArtifact):
         )
         if target_column is None and supervised:
             raise ValueError("target_column is required for supervised models (pass target_column=...)")
+
+        # Fail here rather than inside the training subprocess, where a ModuleNotFoundError
+        # lands in the log and surfaces to the user as "training failed"
+        missing = framework_available(model_framework)
+        if missing:
+            raise ModuleNotFoundError(
+                f"{model_framework.value} models need the '{missing}' package, which the base "
+                f"install doesn't carry. Install it with: pip install 'workbench[modeling]'"
+            )
 
         model = cls(name)
         model._init_dirs(input_name=feature_set.name)
@@ -525,6 +560,105 @@ class Model(LocalArtifact):
         if self.workbench_meta().get("model_type") == ModelType.CLASSIFIER.value:
             class_labels = sorted(predictions[target].unique().tolist())
         return compute_metrics_from_predictions(predictions, target, class_labels)
+
+    def hyperparameters(self) -> dict:
+        """The hyperparameters recorded in the model bundle.
+
+        Returns:
+            dict: The bundle's hyperparameters, empty if it has none.
+        """
+        path = os.path.join(self.model_dir, "hyperparameters.json")
+        if not os.path.exists(path):
+            return {}
+        with open(path, "r") as fp:
+            return json.load(fp)
+
+    def uq_model(
+        self,
+        version: str = None,
+        refresh_proximity: bool = False,
+        radius: int = 2,
+        n_bits: int = 4096,
+    ) -> "UQModelV0 | UQModelV1 | UQModelV2":  # noqa: F821
+        """Load this model's fitted UQ model for uncertainty-quantified inference.
+
+        The local bundle is already an unpacked directory, so this reads it in place --
+        the AWS path only differs by downloading and extracting the artifact first.
+
+        Args:
+            version (str, optional): "v0", "v1", or "v2". Defaults to the bundle's
+                ``hyperparameters["uq_version"]``, then "v0".
+            refresh_proximity (bool): Not supported locally -- see Raises.
+            radius (int): Morgan fingerprint radius (refresh_proximity only).
+            n_bits (int): Fingerprint bit width (refresh_proximity only).
+
+        Returns:
+            A ready-to-use UQModelV0, UQModelV1, or UQModelV2.
+
+        Raises:
+            FileNotFoundError: If the requested version isn't in the bundle.
+            NotImplementedError: If refresh_proximity is True.
+        """
+        from workbench.utils.model_utils import _resolve_uq_version, load_uq_from_dir
+
+        if refresh_proximity:
+            raise NotImplementedError(
+                "refresh_proximity needs the AWS training view; use the embedded proximity, "
+                "or fs.prox('fingerprint') for a fresh one over the whole FeatureSet."
+            )
+        return load_uq_from_dir(self.model_dir, _resolve_uq_version(self, version), self.name)
+
+    def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
+        """Return a proximity model for this Model -- precomputed if it has one, else fresh.
+
+        Precomputed-first: returns the proximity the model already carries for ``space``
+        (frozen at training time in the UQ artifact). If it has none, builds one fresh
+        over the FeatureSet the model trained on, using the model's own features and
+        target. Cached per ``space`` on this instance.
+
+        Returns ``None`` for ``space="features"`` when the model's features include
+        ``smiles`` or ``fingerprint`` -- that's a structure model, so feature-space
+        proximity is meaningless; use ``prox("fingerprint")`` instead. Also ``None``
+        if the FeatureSet it trained on is gone.
+
+        Args:
+            space: ``"fingerprint"`` or ``"features"``.
+
+        Returns:
+            A FingerprintProximity or FeatureSpaceProximity (or None -- see above).
+        """
+        from workbench.utils.metrics_utils import resolve_primary_target
+        from workbench.utils.prox_utils import precomputed_model_proximity
+
+        if space not in ("fingerprint", "features"):
+            raise ValueError(f"space must be 'fingerprint' or 'features', got {space!r}")
+
+        features = self.workbench_meta().get("workbench_model_features") or []
+        structure_cols = {"smiles", "fingerprint"}.intersection(f.lower() for f in features)
+        if space == "features" and structure_cols:
+            self.log.important(
+                f"{self.name}: features are structural ({structure_cols}) — "
+                "use prox('fingerprint') for structural neighbors."
+            )
+            return None
+
+        if not hasattr(self, "_prox_cache"):
+            self._prox_cache = {}
+        if space not in self._prox_cache:
+            prox = precomputed_model_proximity(self, space)
+            if prox is None:
+                feature_set = self.parent()
+                if feature_set is None:
+                    self.log.error(f"{self.name}: FeatureSet '{self.get_input()}' is gone, so no proximity to build.")
+                    return None
+                self.log.important(f"No precomputed {space} proximity for {self.name}; building from its FeatureSet...")
+                target = resolve_primary_target(self.workbench_meta().get("workbench_model_target"))
+                if space == "features":
+                    prox = feature_set.prox("features", feature_list=features, target=target)
+                else:
+                    prox = feature_set.prox("fingerprint", target=target)
+            self._prox_cache[space] = prox
+        return self._prox_cache[space]
 
     def to_endpoint(self, name: str = None) -> "Endpoint":  # noqa: F821
         """Create a Endpoint that serves this model.
