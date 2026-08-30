@@ -2,8 +2,9 @@
 
 A session report is prose, not a transcript and not a variable dump. It records the
 goal, the artifacts involved (by name, since those are re-derivable), what was
-concluded, and what is still open. Reports live in the Parameter Store so any user
-on the account can recall one, including someone else's.
+concluded, and what is still open. Reports live in the Parameter Store: on an AWS
+account any user can recall one, including someone else's; in local mode they are
+files on the user's own disk.
 """
 
 import logging
@@ -11,8 +12,8 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from workbench.api import ParameterStore
 from workbench.utils.aws_utils import current_user, slugify
+from workbench.utils.config_manager import ConfigManager
 from workbench.utils.repl_color_utils import cprint, render_markdown
 
 log = logging.getLogger("workbench")
@@ -20,8 +21,23 @@ log = logging.getLogger("workbench")
 SESSION_ROOT = "/workbench/bosco/sessions"
 
 # Reports are distilled, not dumped. Past this the content belongs in a DFStore frame
-# that the report points at. The Parameter Store compresses above 4KB on its own.
+# that the report points at, and the AWS store starts compressing.
 MAX_REPORT_CHARS = 6000
+
+
+def param_store():
+    """The parameter store backing session reports.
+
+    An AWS account gets the shared store, so a report is recallable by the whole
+    team. Local mode has no account to share through, so reports stay on disk.
+    """
+    if ConfigManager().config_okay():
+        from workbench.api import ParameterStore
+
+        return ParameterStore()
+    from workbench.local import ParameterStore as LocalParameterStore
+
+    return LocalParameterStore()
 
 
 def session_path(name: str, user: str = None) -> str:
@@ -59,7 +75,7 @@ def save_session(name: str, report: str, user: str = None) -> str:
             "Name artifacts instead of restating them, and park bulk findings in a DFStore frame."
         )
     path = session_path(name, user)
-    ParameterStore().upsert(path, report)
+    param_store().upsert(path, report)
     return path
 
 
@@ -74,7 +90,7 @@ def read_session(name: str, user: str = None) -> str:
         str: The report markdown, or a message naming what is available.
     """
     path = session_path(name, user)
-    report = ParameterStore().get(path)
+    report = param_store().get(path)
     if report is None:
         available = list_sessions(all_users=True)["session"].tolist()
         listing = ", ".join(available) if available else "none saved yet"
@@ -111,7 +127,7 @@ def list_sessions(all_users: bool = False) -> pd.DataFrame:
     prefix = SESSION_ROOT if all_users else f"{SESSION_ROOT}/{current_user()}"
     rows = [
         {"session": p["name"][len(SESSION_ROOT) + 1 :], "modified": p["modified"]}
-        for p in ParameterStore().list(prefix, details=True)
+        for p in param_store().list(prefix, details=True)
     ]
     df = pd.DataFrame(rows, columns=["session", "modified"])
     return df.sort_values("modified", ascending=False, na_position="last").reset_index(drop=True)

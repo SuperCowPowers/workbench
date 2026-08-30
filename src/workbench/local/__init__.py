@@ -10,6 +10,7 @@ under ``WORKBENCH_LOCAL_PATH`` (default ``~/.workbench/local``).
 - Model: A model trained on this machine by the generated model script
 - Endpoint: In-process inference against a locally trained model
 - Meta: Listings for the artifacts in local storage
+- ParameterStore: Key/value store on local disk
 
 PublicData is re-exported here: it reads public S3 anonymously, so it needs no
 AWS account and is the usual starting point for a local model.
@@ -24,6 +25,7 @@ from .feature_set import FeatureSet
 from .model import Model
 from .endpoint import Endpoint
 from .meta import Meta
+from .parameter_store import ParameterStore
 
 __all__ = [
     "LocalArtifact",
@@ -32,6 +34,7 @@ __all__ = [
     "Model",
     "Endpoint",
     "Meta",
+    "ParameterStore",
     "ModelType",
     "ModelFramework",
     "PublicData",

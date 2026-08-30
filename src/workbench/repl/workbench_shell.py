@@ -54,8 +54,20 @@ from workbench.utils.chem_utils import vis
 # Egress dots
 EGRESS_LIGHTS = {"off": Token.Lightgreen, "guarded": Token.Blue, "full": Token.Darkyellow}
 
+# Where Bosco's prompts go, and how alarming that should look. Green stays inside
+# the user's own AWS account; anything else leaves it.
+PROVIDER_LABELS = {
+    "bedrock": "your AWS account",
+    "anthropic": "your Anthropic key",
+    "trial": "SuperCowPowers (trial)",
+}
+PROVIDER_LIGHTS = {"bedrock": Token.Lightgreen, "anthropic": Token.Blue, "trial": Token.Darkyellow}
+
 # Where local-mode users go to set up their own AWS account
 SCP_URL = "https://www.supercowpowers.com/"
+
+# Shown at startup whenever Bosco is live
+BOSCO_INVITE = "\n🐶  New to Workbench? Ask me to walk you through building your first model."
 
 
 def aws_only(name: str):
@@ -111,7 +123,7 @@ class WorkbenchPrompt(Prompts):
             lights = workbench_shell.status_lights()
         aws_profile_prompt = [(Token.Blue, ":"), (Token.Darkyellow, aws_profile)] if aws_profile else []
         prompt = lights + [(Token.Workbench, "Workbench")] + aws_profile_prompt
-        if workbench_shell is not None and workbench_shell.bedrock_status:
+        if workbench_shell is not None and workbench_shell.bosco_status:
             prompt += [(Token.Blue, ":"), (Token.Lightgreen, "Bosco")]
         return prompt + [(Token.Blue, "> ")]
 
@@ -141,10 +153,8 @@ class WorkbenchShell:
         # Our Metadata Object pull information from the Cloud Platform
         self.meta = None
         self.meta_status = "DIRECT"
-        self.bedrock_status = False  # set once AWS is confirmed (Bosco needs Bedrock)
-
-        # Bosco is opt-in per account: only wired up when ENABLE_BOSCO is truthy in the config.
-        self.bosco_enabled = str(self.cm.get_config("ENABLE_BOSCO", False)).strip().lower() in ("true", "1", "yes")
+        self.bosco_status = False  # set below, once a path to Claude is confirmed
+        self.bosco_provider = "none"
 
         # Perform AWS connection test and other checks
         self.commands = dict()
@@ -169,7 +179,7 @@ class WorkbenchShell:
         # whether or not the account check passed -- a broken config is when the
         # local classes are most useful
         local = importlib.import_module("workbench.local")
-        local_names = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta"]
+        local_names = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta", "ParameterStore"]
         for class_name in local_names + ["ModelType", "ModelFramework"]:
             local_class = getattr(local, class_name)
             # The Local* alias always reaches the local class; the bare name is the
@@ -208,6 +218,8 @@ class WorkbenchShell:
             self.commands["df_store"] = importlib.import_module("workbench.api.df_store").DFStore()
             self.commands["inf_store"] = importlib.import_module("workbench.api.inference_store").InferenceStore()
             self.commands["graph_store"] = importlib.import_module("workbench.api.graph_store").GraphStore()
+        elif self.local_only:
+            self.commands["params"] = local.ParameterStore()
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
@@ -215,17 +227,21 @@ class WorkbenchShell:
         self.commands["reconnect"] = self.check_aws_account
         self.commands["pub_data"] = importlib.import_module("workbench.public_data").PublicData()
         self.commands["web_get"] = importlib.import_module("workbench.utils.web_utils").web_get
-        # Bosco is opt-in (ENABLE_BOSCO); when off, the agent, prompt tag, and router stay dark
-        if self.bosco_enabled:
+        # Bosco is opt-in per account via ENABLE_BOSCO; local mode has no config to carry
+        # that, so there a reachable model is the only gate. Without one the agent, prompt
+        # tag, and line router all stay dark rather than failing on the first question.
+        enable_bosco = str(self.cm.get_config("ENABLE_BOSCO", False)).strip().lower() in ("true", "1", "yes")
+        if self.local_only or enable_bosco:
+            llm_utils = importlib.import_module("workbench.utils.llm_utils")
+            with silence_logs():
+                self.bosco_status = llm_utils.llm_available()
+                self.bosco_provider = llm_utils.llm_provider()
+        if self.bosco_status:
             self.commands["bosco"] = importlib.import_module("workbench.agent.bosco").bosco
             bosco_utils = importlib.import_module("workbench.utils.bosco_utils")
             self.commands["show_session"] = bosco_utils.show_session
             self.commands["recent_sessions"] = bosco_utils.recent_sessions
-
-            # Bosco needs Bedrock; light the prompt tag only when it's actually reachable
-            if self.aws_status:
-                with silence_logs():
-                    self.bedrock_status = importlib.import_module("workbench.utils.llm_utils").llm_available()
+            cprint("lightpurple", f"Bosco: Claude via {PROVIDER_LABELS[self.bosco_provider]}")
 
         self.commands["show"] = vis.show
 
@@ -235,6 +251,10 @@ class WorkbenchShell:
         if self.local_only:
             self.cow_pun()
             self.local_summary()
+            if self.bosco_status:
+                cprint("lightpurple", BOSCO_INVITE)
+            else:
+                cprint("grey", "\nWant the Bosco ML agent? Set ANTHROPIC_API_KEY and restart.")
             cprint("lightpurple", "\nAlready have an AWS account? Run aws_setup() to connect it.")
             cprint("lightpurple", f"Need one set up? {hyperlink(SCP_URL)}\n")
         elif not self.aws_status:
@@ -246,8 +266,8 @@ class WorkbenchShell:
             self.local_summary()
             self.summary()
             self.contests()
-            if self.bosco_enabled:
-                cprint("lightpurple", "\n🐶  New to Workbench? Ask me to walk you through building your first model.")
+            if self.bosco_status:
+                cprint("lightpurple", BOSCO_INVITE)
 
         # Load the default IPython configuration
         config = load_default_config()
@@ -259,7 +279,7 @@ class WorkbenchShell:
         # Wire up the shell once it exists: job lights on the right prompt, and
         # the `bosco <text>` line router when Bosco is enabled.
         exec_lines = ["from workbench.utils.job_tracker import install_job_lights; install_job_lights()"]
-        if self.bosco_enabled:
+        if self.bosco_status:
             exec_lines.append("from workbench.agent.bosco import register; register()")
         config.InteractiveShellApp.exec_lines = exec_lines
 
@@ -387,8 +407,8 @@ class WorkbenchShell:
         - log_(debug/info/important/warning): Set the Workbench log level
         - exit: Exit Workbench REPL"""
 
-        # Bosco is only usable when Bedrock is reachable
-        if self.bedrock_status:
+        # Bosco is only listed when it has a reachable model
+        if self.bosco_status:
             help_msg += """
 
     Bosco (ML Agent):
@@ -571,7 +591,11 @@ class WorkbenchShell:
             aws = (Token.Red, "AWS Account: Failed to Connect")
         cached = self.meta_status == "CACHED"
         redis = (Token.Lightgreen, "Redis: Connected") if cached else (Token.Darkyellow, "Redis: Not Connected")
-        return [aws, redis, (EGRESS_LIGHTS[EGRESS_MODE], f"Egress: {EGRESS_MODE}")]
+        rows = [aws, redis, (EGRESS_LIGHTS[EGRESS_MODE], f"Egress: {EGRESS_MODE}")]
+        if self.bosco_status:
+            label = PROVIDER_LABELS[self.bosco_provider]
+            rows.append((PROVIDER_LIGHTS[self.bosco_provider], f"Bosco: {label}"))
+        return rows
 
     def status_lights(self) -> list[(Token, str)]:
         """The bracketed status dots shown in the prompt.

@@ -212,7 +212,7 @@ class ConfigManager:
         """Returns True if the configuration is okay."""
         # With no site config the user is in local mode, which is a supported state.
         # Only an incomplete site config -- they meant to connect -- is alarming.
-        report = self.log.info if self.using_default_config else self.log.critical
+        report = self.log.debug if self.using_default_config else self.log.critical
 
         required_keys = ["WORKBENCH_ROLE", "WORKBENCH_BUCKET"]
         for key in required_keys:
