@@ -251,12 +251,12 @@ class WorkbenchShell:
         if self.local_only:
             self.cow_pun()
             self.local_summary()
+            cprint("darkyellow", "\nPublic/Evaluation Mode: No AWS Account Connected")
+            cprint("lightgreen", f"For secured usage, run aws_setup() to connect an AWS account. Need help? {hyperlink(SCP_URL)}")
             if self.bosco_status:
                 cprint("lightpurple", BOSCO_INVITE)
             else:
                 cprint("grey", "\nWant the Bosco ML agent? Set ANTHROPIC_API_KEY and restart.")
-            cprint("lightpurple", "\nAlready have an AWS account? Run aws_setup() to connect it.")
-            cprint("lightpurple", f"Need one set up? {hyperlink(SCP_URL)}\n")
         elif not self.aws_status:
             cprint("red", "AWS Account Connection Failed...Review/Fix the Workbench Config:")
             cprint("red", f"Path: {self.cm.site_config_path}")
