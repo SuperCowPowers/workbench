@@ -5561,6 +5561,11 @@ deployed and used exactly like any other.</p>
 </tr>
 </tbody>
 </table>
+<p>Those five keys are the whole block. Anything else raises at submit time rather than
+running a different search than you asked for — a typo (<code>n_trails</code>) as an unknown key, and
+<code>metric</code>, <code>rerank_top_k</code> and <code>n_folds</code> as retired ones, each naming what replaced it. The
+objective is always pooled out-of-fold MAE, trials always use the model's own <code>n_folds</code>, and
+your own hyperparameters ride along as a trial instead of being re-ranked against the winner.</p>
 <p>The searched knobs differ per framework, and a model knows its own — <code>hpo_search_space()</code>
 dispatches on the model's framework and returns one row per knob, carrying its range <strong>and</strong>
 where it sits untuned. A space is judgeable without running anything:</p>
@@ -5595,14 +5600,13 @@ without leaving holes:</p>
 <td><code>ffn_hidden_dim</code></td>
 <td>"300-300"</td>
 <td>choice</td>
-<td><code>{"options": ["300", "600", "300-100", "1024-256-64", ...]}</code></td>
+<td><code>{"options": ["300", "600", "1200", "1800", "300-300", ...]}</code></td>
 </tr>
 </tbody>
 </table>
 <p><code>json.loads</code> the <code>spec</code> cell to read it. This is always the framework's full space.</p>
 <p>To search only part of it, set <code>hpo["search_space"]</code> to a group name or a <code>+</code>-joined
-combination. <code>basic</code> is capacity everywhere; the second group differs because the frameworks'
-second lever does:</p>
+combination. Every framework splits its space in two, along the lever that matters for it:</p>
 <table>
 <thead>
 <tr>
@@ -5612,17 +5616,23 @@ second lever does:</p>
 </thead>
 <tbody>
 <tr>
-<td>ChemProp, PyTorch</td>
-<td><code>basic</code> + <code>optimizer</code> (learning rate, batch size)</td>
+<td>ChemProp</td>
+<td><code>basic</code> (depth, hidden and FFN widths) + <code>optimizer</code> (<code>max_lr</code>, batch size)</td>
+</tr>
+<tr>
+<td>PyTorch</td>
+<td><code>basic</code> (layer shape, dropout) + <code>optimizer</code> (learning rate, weight decay, batch size)</td>
 </tr>
 <tr>
 <td>XGBoost</td>
-<td><code>basic</code> + <code>reg</code> (sampling and penalty terms)</td>
+<td><code>basic</code> (tree capacity <strong>and</strong> learning rate) + <code>reg</code> (sampling and penalty terms)</td>
 </tr>
 </tbody>
 </table>
-<p>So <code>hpo={"search_space": "basic"}</code> spends the whole budget on architecture — useful when you
-already trust your optimizer settings.</p>
+<p>So <code>hpo={"search_space": "basic"}</code> on ChemProp or PyTorch spends the whole budget on
+architecture — useful when you already trust your optimizer settings. Read the XGBoost row
+before doing the same there: boosting rate lives in <code>basic</code>, so that call searches the
+learning rate and drops the regularization terms instead.</p>
 <h3 id="your-own-ranges-and-defaults">Your own ranges and defaults</h3>
 <p><strong>A default is just a hyperparameter.</strong> Set a knob normally alongside the <code>hpo</code> block and it
 becomes the baseline the search has to beat — and the value used for any knob outside the
