@@ -79,10 +79,6 @@ class DashboardStatus(PluginInterface):
         details += f"**Plugin Path:** {config_info.get('WORKBENCH_PLUGINS', 'unknown')}<br>"
         details += f"**Themes Path:** {config_info.get('WORKBENCH_THEMES', 'unknown')}<br>"
         details += f"**UI Update Rate:** {config_info.get('UI_UPDATE_RATE', 'unknown')}<br>"
-        details += "**Workbench API Key:**\n"
-        for key, value in config_info["API_KEY_INFO"].items():
-            details += f"  - **{key}:** {value}\n"
-
         # Fill in the support details
         support_header = "Support Information"
         support_details = "- **Email:** [support@supercowpowers.com](mailto:support@supercowpowers.com)\n"

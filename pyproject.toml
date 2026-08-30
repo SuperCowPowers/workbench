@@ -25,9 +25,8 @@ authors = [{ name = "SuperCowPowers LLC", email = "support@supercowpowers.com" }
 
 dependencies = [
     # AWS clients & SDKs
-    # boto3/botocore/cryptography floors come from sagemaker-core's
-    # transitive requirements (sagemaker → sagemaker-core →
-    # boto3>=1.42.2, cryptography>=46.0.0).
+    # boto3/botocore floors come from sagemaker-core's transitive
+    # requirements (sagemaker → sagemaker-core → boto3>=1.42.2).
     "boto3 >= 1.42.2",
     "botocore >= 1.42.2",
     "awswrangler >= 3.4.0",
@@ -46,7 +45,6 @@ dependencies = [
     "sagemaker-serve >= 1.12.0, < 1.13",
     "sagemaker-train >= 1.12.0, < 1.13",
     "redis >= 5.0.1",
-    "cryptography >= 46.0.0",
     "requests >= 2.26.0",
     # aiobotocore floor — each release pins botocore to a one-minor window,
     # so without this pip backtracks through every historical version hunting
@@ -139,8 +137,6 @@ packages = { find = { where = ["src"] } }
 
 [tool.setuptools.package-data]
 "workbench" = [
-    "resources/signature_verify_pub.pem",
-    "resources/open_source_api.key",
     "model_scripts/**",
     "themes/**",
     "agent/guides/*.md",

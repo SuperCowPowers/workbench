@@ -12,10 +12,9 @@ from contextlib import contextmanager
 from importlib.metadata import version
 
 # Note: CloudWatchHandler is imported lazily inside logging_setup() because its
-# import chain (AWSSession → ConfigManager → LicenseManager → cryptography) is
-# orchestration-only and would otherwise force every `import workbench` to pay
-# that cost — including endpoint containers that don't have the [aws] extra
-# installed. The endpoint-import-smoke CI job enforces this.
+# import chain (AWSSession → ConfigManager) is orchestration-only and would
+# otherwise force every `import workbench` to pay that import cost. The
+# endpoint-import-smoke CI job enforces this.
 
 # New botocore version barfs a bunch of checksum logs
 logging.getLogger("botocore.httpchecksum").setLevel(logging.WARNING)
@@ -195,7 +194,7 @@ def logging_setup(color_logs=True):
 
     # Add a CloudWatch handler (lazy-imported — see note at module top).
     # Expected silent-fallback cases (log at debug, no traceback):
-    #   - ImportError/ModuleNotFoundError: endpoint-safe install without [aws] extras
+    #   - ImportError/ModuleNotFoundError: lean endpoint install (see ci/endpoint_smoke_requirements.txt)
     #   - NoRegionError: no AWS region configured (smoke tests, offline dev)
     #   - NoCredentialsError: no creds available (smoke tests, sandboxed CI)
     # Anything else is a real fault and gets the full log.exception treatment.

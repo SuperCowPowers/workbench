@@ -22,9 +22,8 @@ def _build_boto3_session():
     * Service contexts (SageMaker endpoint, Lambda, ECS, Glue, Docker) — use the
       lightweight :func:`get_boto3_session`. The container has its own attached
       IAM role with CloudWatch Logs permissions; no role assumption or refresh
-      needed, and crucially no transitive dependency on ``ConfigManager`` /
-      ``LicenseManager`` / ``cryptography`` (those live in the ``[aws]`` extra,
-      not in endpoint-safe core).
+      needed, and no dependency on ``ConfigManager`` — a service context has no
+      Workbench config file to read.
     * Local dev — use :class:`AWSSession` for refreshable credentials so
       long-running processes (dashboard, multi-hour scripts) don't lose
       CloudWatch logging when their STS token expires (~1 hour).
@@ -40,10 +39,9 @@ def _build_boto3_session():
 
         return AWSSession().boto3_session
     except ImportError:
-        # Dev install without [aws] extras (no cryptography → LicenseManager
-        # import chain fails). Fall back to the lightweight session — CloudWatch
-        # logging still works for short-running scripts; long-running processes
-        # would need [aws] for refreshable creds.
+        # Install without the orchestration import chain. Fall back to the
+        # lightweight session — CloudWatch logging still works for short-running
+        # scripts; long-running processes need AWSSession for refreshable creds.
         from workbench.core.cloud_platform.aws.boto_session import get_boto3_session
 
         return get_boto3_session()

@@ -129,7 +129,6 @@ class WorkbenchShell:
         # Perform AWS connection test and other checks
         self.commands = dict()
         self.aws_status = self.check_aws_account()
-        self.open_source_api_key = self.check_open_source_api_key()
         if self.aws_status:
             with silence_logs():
                 self.import_workbench()
@@ -244,15 +243,6 @@ class WorkbenchShell:
                 self.meta.close()
             spinner.stop()
             cprint("lightgreen", "Goodbye from Workbench!\n")
-
-    def check_open_source_api_key(self) -> bool:
-        """Check the current Configuration Status
-
-        Returns:
-            bool: True if Open Source API Key, False otherwise
-        """
-        config = self.cm.get_all_config()
-        return config["API_KEY_INFO"]["license_id"] == "Open Source"
 
     @staticmethod
     def check_aws_account() -> bool:

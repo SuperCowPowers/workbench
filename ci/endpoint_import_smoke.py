@@ -6,7 +6,7 @@ dep manifest in the stack (``ci/endpoint_smoke_requirements.txt`` —
 the intersection of every deployed endpoint container's requirements).
 If a refactor moves a heavy transitive import (sagemaker, aiobotocore,
 dash, cleanlab, umap-learn, matplotlib, mordred, ipython, networkx,
-datasets, redis, cryptography, xgboost) into the import chain of any
+datasets, redis, xgboost) into the import chain of any
 ``workbench.endpoints`` submodule, this script fails — telling us before
 an endpoint deploy does.
 

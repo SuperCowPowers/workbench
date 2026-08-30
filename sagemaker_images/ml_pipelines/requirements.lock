@@ -144,7 +144,6 @@ contourpy==1.3.3
 cryptography==48.0.1
     # via
     #   -c ci/.uv-constraints.txt
-    #   workbench (pyproject.toml)
     #   google-auth
     #   mlflow
     #   paramiko

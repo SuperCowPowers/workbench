@@ -72,11 +72,6 @@ class AWSAccountClamp:
         # Check if we have tag write permissions (if we don't, we are read-only)
         self.read_only = not self.check_tag_permissions()
 
-        # Check our Workbench API Key and Load the License
-        self.log.info("Checking Workbench API License...")
-        self.cm.load_and_check_license(self.account_id)
-        self.cm.print_license_info()
-
         # Mark the instance as initialized
         self._initialized = True
 

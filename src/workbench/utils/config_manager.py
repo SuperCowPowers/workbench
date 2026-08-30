@@ -4,10 +4,8 @@ import os
 import platform
 import logging
 from typing import Any, Dict
-from importlib.resources import files, as_file
 
 # Workbench imports
-from workbench.utils.license_manager import LicenseManager
 from workbench.utils.execution_environment import running_as_service
 
 
@@ -38,9 +36,6 @@ class ConfigManager:
 
         # Load the configuration
         self.config = self._load_config()
-
-        # Load the LicenseManager
-        self.license_manager = LicenseManager()
 
         # Check if we're running as a service
         self.running_as_service = False
@@ -105,14 +100,7 @@ class ConfigManager:
         Returns:
             Dict[str, Any]: All configuration values.
         """
-        # Grab all config except the WORKBENCH_API_KEY
-        output = {key: value for key, value in self.config.items() if key != "WORKBENCH_API_KEY"}
-
-        # Add the WORKBENCH_API_KEY info
-        api_key_info = self.get_api_key_info()
-        output["API_KEY_INFO"] = api_key_info
-
-        # Add the UI_UPDATE_RATE
+        output = dict(self.config)
         output["UI_UPDATE_RATE"] = self.ui_update_rate()
         return output
 
@@ -130,7 +118,6 @@ class ConfigManager:
         overwrites = [
             "WORKBENCH_ROLE",
             "WORKBENCH_BUCKET",
-            "WORKBENCH_API_KEY",
             "WORKBENCH_PLUGINS",
             "WORKBENCH_THEMES",
             "ML_PIPELINES_ROOT",
@@ -156,7 +143,6 @@ class ConfigManager:
         overwrites = [
             "WORKBENCH_ROLE",
             "WORKBENCH_BUCKET",
-            "WORKBENCH_API_KEY",
             "WORKBENCH_PLUGINS",
             "REDIS_HOST",
             "REDIS_PORT",
@@ -170,23 +156,6 @@ class ConfigManager:
                 self.log.important(f"Overwriting {key} with Parameter Store: {value}")
                 self.config[key] = value
         """
-
-    def is_open_source(self) -> bool:
-        """Returns True if the API is open source."""
-        api_key_info = self.get_api_key_info()
-        if api_key_info["license_id"] == "Open Source":
-            return True
-        return False
-
-    def open_source_api_key(self) -> str:
-        """Read the open source API key from the package resources.
-
-        Returns:
-            str: The open source API key.
-        """
-        with as_file(files("workbench.resources").joinpath("open_source_api.key")) as open_source_key_path:
-            with open(open_source_key_path, "r") as key_file:
-                return key_file.read().strip()
 
     def ui_update_rate(self) -> int:
         """Get the UI update rate from the configuration.
@@ -224,11 +193,6 @@ class ConfigManager:
                         site_config_updates[key] = default_value
                     else:
                         site_config_updates[key] = value
-
-                    # Special logic for WORKBENCH_API_KEY
-                    if key == "WORKBENCH_API_KEY" and site_config_updates[key] == default_value:
-                        print("Using Open Source API Key...")
-                        site_config_updates[key] = self.open_source_api_key()
                 else:
                     value = input(f"[optional] {key}: ")
                     if value in ["", None]:
@@ -246,7 +210,7 @@ class ConfigManager:
 
     def config_okay(self) -> bool:
         """Returns True if the configuration is okay."""
-        required_keys = ["WORKBENCH_ROLE", "WORKBENCH_BUCKET", "WORKBENCH_API_KEY"]
+        required_keys = ["WORKBENCH_ROLE", "WORKBENCH_BUCKET"]
         for key in required_keys:
             if key not in self.config:
                 self.log.critical(f"Missing required config: {key}")
@@ -260,40 +224,6 @@ class ConfigManager:
                 return False
 
         return True
-
-    def get_api_key_info(self) -> Dict[str, Any]:
-        """Get the API Key information from the configuration.
-
-        Returns:
-            Dict[str, Any]: API Key information.
-        """
-        api_key = self.get_config("WORKBENCH_API_KEY")
-        api_info = self.license_manager.load_api_license(aws_account_id=None, api_key=api_key)
-        return api_info
-
-    def get_license_id(self) -> str:
-        """Get the license ID from the license information
-
-        Returns:
-            str: The license ID
-        """
-        return self.get_api_key_info().get("license_id", "Unknown")
-
-    def load_and_check_license(self, aws_account_id: int) -> bool:
-        """Check the license for expiration and signature verification.
-
-        Args:
-            aws_account_id (int): The AWS account ID (for account specific licenses).
-
-        Returns:
-            bool: True if the license is okay.
-        """
-        is_valid = self.license_manager.load_api_license(aws_account_id, self.get_config("WORKBENCH_API_KEY"))
-        return is_valid
-
-    def print_license_info(self):
-        """Print the license information to the log."""
-        self.license_manager.print_license_info()
 
     @staticmethod
     def get_platform_specific_path() -> str:
@@ -397,7 +327,6 @@ class ConfigManager:
                 "large_meta_data": "false",
                 "enterprise": "false",
             },
-            "WORKBENCH_API_KEY": "change_me_optional:open_source",
         }
         return bootstrap_config
 
@@ -412,7 +341,6 @@ class ConfigManager:
         config = {
             "WORKBENCH_ROLE": "Workbench-ExecutionRole",
             "WORKBENCH_PLUGINS": "package",
-            "WORKBENCH_API_KEY": self.open_source_api_key(),
         }
         for key, value in os.environ.items():
             if key.startswith(("WORKBENCH_", "REDIS_")) or key in ["AWS_PROFILE", "ML_PIPELINES_ROOT"]:
@@ -429,13 +357,6 @@ if __name__ == "__main__":
     print(f"WORKBENCH_ROLE: {workbench_role}")
     workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
     print(f"WORKBENCH_PLUGINS: {workbench_plugins}")
-
-    # License ID
-    print(f"WORKBENCH_LICENSE_ID: {cm.get_license_id()}")
-
-    # API Key Info
-    my_api_key_info = cm.get_api_key_info()
-    pprint(my_api_key_info)
 
     # All config
     pprint(cm.get_all_config())
