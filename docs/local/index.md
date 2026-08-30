@@ -1,9 +1,9 @@
-# Local Models
+# Local Mode
 
 !!! tip inline end "No AWS Required"
     Local artifacts need no AWS account, no config, and no credentials. Paired with `PublicData`, you can go from install to a trained model without touching AWS at all.
 
-The Local classes mirror the Workbench artifact API against your filesystem. The
+`workbench.local` mirrors the Workbench artifact API against your filesystem. The
 chain is the same — `DataSource → FeatureSet → Model → Endpoint` — and training
 runs the same generated model script that SageMaker runs, as a subprocess. So a
 script written locally publishes to AWS and produces the same model.
@@ -14,6 +14,19 @@ Local is where you iterate: try a feature list, a framework, a set of
 hyperparameters. There's no build cost and deleting is instant. AWS is where a
 model lands once it's worth keeping — that's where monitoring, deployed
 endpoints, and everything else the team consumes live.
+
+## Starting from nothing
+
+With no AWS config, the REPL starts in **local mode**:
+
+```bash
+pip install workbench
+workbench
+```
+
+The prompt comes up with the local classes and `pub_data` already bound, so the
+example below runs as-is with no imports. When you're ready to connect an AWS
+account, run `aws_setup()` from that prompt.
 
 ## Try it
 
@@ -49,7 +62,10 @@ predictions match what a deployed endpoint returns.
 `validation_ids`, `sample_weights`, and `exclude_ids` work as they do in AWS, and
 they're recorded so publishing can replay them.
 
-The Workbench REPL exposes all of these, so none of the imports are needed there.
+In the REPL these are already bound, though which names depends on the session: in
+local mode the bare names are the local classes, while a session connected to AWS
+gives those names to the AWS classes and the local ones to `LocalDataSource`,
+`LocalFeatureSet`, and so on.
 
 ## Scoring
 

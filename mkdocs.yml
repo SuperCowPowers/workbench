@@ -7,7 +7,7 @@ nav:
     - Using Bosco: bosco/index.md
     - Security & Admin: bosco/security.md
   - Workbench REPL: repl/index.md
-  - Local Models: local/index.md
+  - Local Mode: local/index.md
   - Models:
     - Overview: models/index.md
     - XGBoost: models/xgboost_models.md
