@@ -18,7 +18,7 @@ register_page(
 cm = ConfigManager()
 config_details = cm.get_all_config()
 
-# Create a Markdown component to display the license details
+# Create a Markdown component to display the status details
 markdown_details = dashboard_status.DashboardStatus()
 details_component = markdown_details.create_component("status_details")
 updated_properties = markdown_details.update_properties(config_details)
@@ -30,7 +30,7 @@ for (component_id, prop), value in zip(markdown_details.properties, updated_prop
             setattr(child, prop, value)
             break
 
-# Simple layout for the license details
+# Simple layout for the status details
 layout = html.Div(
     children=[
         html.H2("Workbench Dashboard Status"),

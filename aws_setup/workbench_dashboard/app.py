@@ -21,7 +21,6 @@ try:
     cm = ConfigManager()
     pprint(cm.config)
     workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
-    workbench_api_key = cm.get_config("WORKBENCH_API_KEY")
     workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
     workbench_themes = cm.get_config("WORKBENCH_THEMES")
     # Resolves to the config value, or falls back to s3://<WORKBENCH_BUCKET>/ml_pipelines
@@ -74,7 +73,6 @@ WorkbenchDashboardStack(
     props=WorkbenchDashboardStackProps(
         dashboard_image=dashboard_image,
         workbench_bucket=workbench_bucket,
-        workbench_api_key=workbench_api_key,
         workbench_plugins=workbench_plugins,
         workbench_themes=workbench_themes,
         ml_pipelines_root=ml_pipelines_root,

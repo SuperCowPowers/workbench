@@ -21,7 +21,6 @@ class WorkbenchDashboardStackProps(StackProps):
         self,
         dashboard_image: str,
         workbench_bucket: str,
-        workbench_api_key: str,
         workbench_plugins: str,
         workbench_themes: Optional[str] = None,
         ml_pipelines_root: Optional[str] = None,
@@ -35,7 +34,6 @@ class WorkbenchDashboardStackProps(StackProps):
     ):
         self.dashboard_image = dashboard_image
         self.workbench_bucket = workbench_bucket
-        self.workbench_api_key = workbench_api_key
         self.workbench_plugins = workbench_plugins
         self.workbench_themes = workbench_themes
         self.ml_pipelines_root = ml_pipelines_root
@@ -140,7 +138,6 @@ class WorkbenchDashboardStack(Stack):
             environment={
                 "REDIS_HOST": redis_endpoint,
                 "WORKBENCH_BUCKET": props.workbench_bucket,
-                "WORKBENCH_API_KEY": props.workbench_api_key,
                 "WORKBENCH_PLUGINS": props.workbench_plugins,
                 "WORKBENCH_THEMES": props.workbench_themes or "",
                 "ML_PIPELINES_ROOT": props.ml_pipelines_root or "",

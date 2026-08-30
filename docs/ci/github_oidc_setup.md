@@ -118,13 +118,12 @@ aws iam put-role-policy --role-name github-actions-workbench \
 ## 5. GitHub repository secrets
 
 The workflow ([`aws-tests.yml`](https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/aws-tests.yml))
-reads three secrets:
+reads two secrets:
 
 | Secret | Value | Where it comes from |
 | --- | --- | --- |
 | `AWS_ACCOUNT_SANDBOX` | 12-digit AWS account ID | `aws sts get-caller-identity` |
 | `WORKBENCH_BUCKET_SANDBOX` | Workbench artifact bucket name | `WORKBENCH_BUCKET` in the account's workbench config |
-| `WORKBENCH_API_KEY_SANDBOX` | Workbench API key | `WORKBENCH_API_KEY` in the account's workbench config |
 
 **Via the GitHub UI:** repo → *Settings* → *Secrets and variables* →
 *Actions* → *New repository secret*.
@@ -134,11 +133,10 @@ reads three secrets:
 ```bash
 gh secret set AWS_ACCOUNT_SANDBOX --repo <org>/<repo>
 gh secret set WORKBENCH_BUCKET_SANDBOX --repo <org>/<repo>
-gh secret set WORKBENCH_API_KEY_SANDBOX --repo <org>/<repo>
 ```
 
-At runtime, `WORKBENCH_BUCKET` / `WORKBENCH_API_KEY` are injected as env vars,
-which override the placeholder values in the checked-in
+At runtime, `WORKBENCH_BUCKET` is injected as an env var, which overrides the
+placeholder value in the checked-in
 [`ci/workbench_ci_config.json`](https://github.com/SuperCowPowers/workbench/blob/main/ci/workbench_ci_config.json) —
 so no account-specific values are committed to the repo.
 

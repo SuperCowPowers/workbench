@@ -10,13 +10,6 @@ def test_config_manager():
     workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
     print(f"WORKBENCH_PLUGINS: {workbench_plugins}")
 
-    # License ID
-    print(f"WORKBENCH_LICENSE_ID: {cm.get_license_id()}")
-
-    # API Key Info
-    my_api_key_info = cm.get_api_key_info()
-    pprint(my_api_key_info)
-
     # All config
     pprint(cm.get_all_config())
 
@@ -32,13 +25,6 @@ def test_running_as_service(monkeypatch):
     print(f"WORKBENCH_ROLE: {workbench_role}")
     workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
     print(f"WORKBENCH_PLUGINS: {workbench_plugins}")
-
-    # License ID
-    print(f"WORKBENCH_LICENSE_ID: {cm.get_license_id()}")
-
-    # API Key Info
-    my_api_key_info = cm.get_api_key_info()
-    pprint(my_api_key_info)
 
     # All config
     pprint(cm.get_all_config())

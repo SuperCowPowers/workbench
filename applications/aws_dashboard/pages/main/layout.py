@@ -25,8 +25,6 @@ def main_layout(
 ) -> html.Div:
     """Main Layout for the Dashboard"""
     workbench_version = workbench.__version__.split("+")[0].strip()
-    cm = ConfigManager()
-    license_id = cm.get_license_id()
 
     # Define the layout with one table per row
     layout = html.Div(
@@ -61,15 +59,6 @@ def main_layout(
                                         f"{workbench_version}",
                                         className="orange-text",
                                         style={"fontSize": 15},
-                                    ),
-                                    html.A(
-                                        f"  [{license_id}]",
-                                        href="/license",
-                                        className="pink-text",
-                                        style={
-                                            "fontSize": 15,
-                                            "textDecoration": "none",
-                                        },
                                     ),
                                 ],
                                 style={"marginBottom": "0px"},

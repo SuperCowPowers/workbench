@@ -16,9 +16,9 @@ import posixpath
 from botocore.exceptions import ClientError
 
 # `SageSession` is only used as a type hint in `newest_path` below — keeping
-# the import lazy avoids dragging the (heavy, [aws]-extra) `sagemaker` package
-# into the endpoint-runtime import surface. The endpoint-import-smoke CI job
-# enforces that this module imports cleanly without `sagemaker` installed.
+# the import lazy avoids dragging the heavy `sagemaker` package into the
+# endpoint-runtime import surface. The endpoint-import-smoke CI job enforces
+# that this module imports cleanly without `sagemaker` installed.
 if TYPE_CHECKING:
     from sagemaker.core.helper.session_helper import Session as SageSession
 

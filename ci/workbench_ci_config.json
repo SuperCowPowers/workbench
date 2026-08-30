@@ -1,5 +1,4 @@
 {
     "WORKBENCH_BUCKET": "env-will-overwrite",
-    "WORKBENCH_ROLE": "Workbench-BuilderRole",
-    "WORKBENCH_API_KEY": "env-will-overwrite"
+    "WORKBENCH_ROLE": "Workbench-BuilderRole"
 }
