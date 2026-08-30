@@ -12,53 +12,6 @@ Workbench supports four types of ChemProp models, each suited for different use 
 | **+ Descriptors** | SMILES + molecular descriptors | Combining graph learning with domain features |
 | **Foundation** | Pretrained MPNN weights | Small datasets, transfer learning |
 
-## New in ChemProp 2.2.4
-
-Workbench's ChemProp training and inference images now run **ChemProp 2.2.4**, which adds two new tuning knobs to the model template. Both are optional — the defaults match ChemProp's, so existing models are unchanged.
-
-### Learning-Rate Schedule
-
-ChemProp trains with a Noam-style *warmup-then-decay* schedule. You can now tune every part of it directly:
-
-```python
-model = feature_set.to_model(
-    name="logd-chemprop-lr",
-    model_type=ModelType.UQ_REGRESSOR,
-    model_framework=ModelFramework.CHEMPROP,
-    target_column="logd",
-    feature_list=["smiles"],
-    hyperparameters={
-        "warmup_epochs": 2,   # epochs to ramp the LR up to max_lr
-        "init_lr": 1e-4,      # starting LR (where the warmup ramp begins)
-        "max_lr": 1e-3,       # peak LR reached after warmup
-        "final_lr": 1e-4,     # LR at the end of training
-    },
-)
-```
-
-**When to tune:** larger datasets or unstable training often benefit from a longer warmup or a lower `max_lr`. Leave the defaults for most cases.
-
-### Per-Layer FFN Dimensions
-
-The feed-forward head can **taper** across layers instead of using one fixed width — pass a list to `ffn_hidden_dim`:
-
-```python
-model = feature_set.to_model(
-    name="logd-chemprop-taper",
-    model_type=ModelType.UQ_REGRESSOR,
-    model_framework=ModelFramework.CHEMPROP,
-    target_column="logd",
-    feature_list=["smiles"],
-    hyperparameters={
-        "ffn_hidden_dim": [1024, 256, 64],  # tapered 3-layer head
-    },
-)
-```
-
-A single int (e.g. `"ffn_hidden_dim": 2000`) applies that width to every layer, with `ffn_num_layers` setting the count. When you pass a **list**, its length sets the number of layers and `ffn_num_layers` is ignored.
-
-Hyperparameter search uses the list form exclusively — see [HPO](hpo.md).
-
 ## Single-Task ChemProp
 
 The standard ChemProp model trains a D-MPNN (Directed Message Passing Neural Network) on molecular graphs to predict a single target property.
@@ -128,7 +81,15 @@ model = feature_set.to_model(
 **Key differences from single-task:**
 
 - `target_column` is a **list of strings** instead of a single string
-- Missing values are handled automatically — task weights are computed from inverse sample counts so rarer targets aren't underrepresented
+- Missing values are handled automatically — a row contributes loss only for the targets it actually has
+- Tasks are **unweighted by default**. To keep sparser targets from being drowned out, pass explicit `task_weights`:
+
+    ```python
+    from workbench.utils.multi_task import compute_inverse_count_task_weights
+
+    task_weights = compute_inverse_count_task_weights(df, ADMET_TARGETS)
+    ```
+
 - All targets share the same MPNN but have independent FFN heads
 - Regression only (not classification)
 
@@ -311,7 +272,7 @@ All ChemProp model types share a common set of tunable hyperparameters:
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">depth</td>
-      <td style="padding: 8px 16px;">6</td>
+      <td style="padding: 8px 16px;">5</td>
       <td style="padding: 8px 16px;">Number of message-passing steps</td>
     </tr>
     <tr>
@@ -321,13 +282,13 @@ All ChemProp model types share a common set of tunable hyperparameters:
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">ffn_hidden_dim</td>
-      <td style="padding: 8px 16px;">2000</td>
-      <td style="padding: 8px 16px;">FFN hidden layer dimension. A single int (uniform width) or a list like [1024, 256, 64] for a tapered head</td>
+      <td style="padding: 8px 16px;">300</td>
+      <td style="padding: 8px 16px;">FFN hidden layer width. A single int, or a per-layer shape as a list <code>[1024, 256, 64]</code> or dash-string <code>"1024-256-64"</code></td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">ffn_num_layers</td>
       <td style="padding: 8px 16px;">2</td>
-      <td style="padding: 8px 16px;">Number of FFN layers</td>
+      <td style="padding: 8px 16px;">Number of FFN layers (ignored when <code>ffn_hidden_dim</code> is a shape)</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">batch_size</td>
@@ -341,13 +302,13 @@ All ChemProp model types share a common set of tunable hyperparameters:
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">patience</td>
-      <td style="padding: 8px 16px;">50</td>
+      <td style="padding: 8px 16px;">40</td>
       <td style="padding: 8px 16px;">Early stopping patience</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">warmup_epochs</td>
       <td style="padding: 8px 16px;">2</td>
-      <td style="padding: 8px 16px;">Epochs to ramp the learning rate up to max_lr</td>
+      <td style="padding: 8px 16px;">Epochs to ramp the learning rate up to <code>max_lr</code></td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">init_lr</td>
@@ -365,14 +326,39 @@ All ChemProp model types share a common set of tunable hyperparameters:
       <td style="padding: 8px 16px;">Learning rate at the end of training</td>
     </tr>
     <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">criterion</td>
+      <td style="padding: 8px 16px;">mae</td>
+      <td style="padding: 8px 16px;">Regression loss: <code>mae</code> or <code>mse</code></td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">bounded_loss</td>
+      <td style="padding: 8px 16px;">False</td>
+      <td style="padding: 8px 16px;">Honor censored targets via <code>{target}_gt</code> / <code>{target}_lt</code> columns</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">task_weights</td>
+      <td style="padding: 8px 16px;">None</td>
+      <td style="padding: 8px 16px;">Per-task loss weights for multi-task regression (list of floats, one per target)</td>
+    </tr>
+    <tr>
       <td style="padding: 8px 16px; font-weight: bold;">n_folds</td>
       <td style="padding: 8px 16px;">5</td>
       <td style="padding: 8px 16px;">Number of cross-validation folds (ensemble size)</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">split_strategy</td>
-      <td style="padding: 8px 16px;">random</td>
-      <td style="padding: 8px 16px;">Data splitting: random, scaffold, or butina</td>
+      <td style="padding: 8px 16px;">scaffold</td>
+      <td style="padding: 8px 16px;">Data splitting: scaffold, butina, or random</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">butina_cutoff</td>
+      <td style="padding: 8px 16px;">0.4</td>
+      <td style="padding: 8px 16px;">Tanimoto distance cutoff for Butina clustering</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">seed</td>
+      <td style="padding: 8px 16px;">42</td>
+      <td style="padding: 8px 16px;">Random seed</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">from_foundation</td>
@@ -384,16 +370,62 @@ All ChemProp model types share a common set of tunable hyperparameters:
       <td style="padding: 8px 16px;">0</td>
       <td style="padding: 8px 16px;">Epochs to freeze MPNN (foundation models only)</td>
     </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">uq_version</td>
+      <td style="padding: 8px 16px;">v1</td>
+      <td style="padding: 8px 16px;">Confidence source at inference: <code>v0</code>, <code>v1</code>, or <code>v2</code></td>
+    </tr>
   </tbody>
 </table>
+
+### Learning-Rate Schedule
+
+ChemProp trains with a Noam-style *warmup-then-decay* schedule, and every part of it is tunable:
+
+```python
+model = feature_set.to_model(
+    name="logd-chemprop-lr",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.CHEMPROP,
+    target_column="logd",
+    feature_list=["smiles"],
+    hyperparameters={
+        "warmup_epochs": 2,   # epochs to ramp the LR up to max_lr
+        "init_lr": 1e-4,      # starting LR (where the warmup ramp begins)
+        "max_lr": 1e-3,       # peak LR reached after warmup
+        "final_lr": 1e-4,     # LR at the end of training
+    },
+)
+```
+
+The defaults match ChemProp's own. Larger datasets or unstable training often benefit from a longer warmup or a lower `max_lr`.
+
+### Per-Layer FFN Dimensions
+
+`ffn_hidden_dim` takes a single int — that width repeated `ffn_num_layers` times — or an explicit per-layer shape, which lets the head **taper** across layers:
+
+```python
+model = feature_set.to_model(
+    name="logd-chemprop-taper",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.CHEMPROP,
+    target_column="logd",
+    feature_list=["smiles"],
+    hyperparameters={
+        "ffn_hidden_dim": [1024, 256, 64],  # tapered 3-layer head
+    },
+)
+```
+
+A shape sets the layer count from its own length, so `ffn_num_layers` is ignored. Shapes can be a list of ints or a dash-string (`"1024-256-64"`); hyperparameter search uses the dash-string form — see [HPO](hpo.md).
 
 ### Split Strategies
 
 Workbench supports three data splitting strategies for cross-validation:
 
-- **random** — Standard random split. Good default for large, diverse datasets.
-- **scaffold** — Groups molecules by Bemis-Murcko scaffold. Ensures no scaffold appears in both train and validation. Tests generalization to new chemical series.
-- **butina** — Clusters molecules using Morgan fingerprint similarity (Tanimoto distance). Recommended for ADMET datasets where scaffold splits may be too aggressive.
+- **scaffold** (default) — Groups molecules by Bemis-Murcko scaffold so no scaffold appears in both train and validation. Tests generalization to new chemical series. Requires a `smiles` column; falls back to random with a warning if there isn't one.
+- **butina** — Clusters molecules by Morgan fingerprint similarity (Tanimoto distance). More stringent than scaffold, and O(n²) — prefer it for smaller datasets.
+- **random** — Standard random split. Use for non-molecular data or quick baselines.
 
 ```python
 model = feature_set.to_model(
@@ -414,7 +446,7 @@ model = feature_set.to_model(
 All ChemProp models include built-in uncertainty quantification:
 
 - **Regression (UQ_REGRESSOR):** Ensemble standard deviation across cross-validation folds provides calibrated confidence intervals. High confidence means the ensemble folds agree; low confidence means the compound may be outside the training domain.
-- **Classification:** Uses VGMU (Variation Gamma-Mixture Uncertainty) based on ensemble probability variation.
+- **Classification:** Uses VGMU (Variance-Gated Margin Uncertainty), which combines the top-2 probability margin with ensemble probability variance.
 
 <figure style="text-align: center;">
   <img src="../images/confidence.jpg" alt="Confidence Estimates">
@@ -432,7 +464,7 @@ All ChemProp models include built-in uncertainty quantification:
 - Start with **Single-Task** for a single endpoint — it's the simplest and a good starting point for comparison
 - Try **Multi-Task** when you have related endpoints measured on overlapping compounds
 - Add **Descriptors** — custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features
-- Use **Foundation** (CheMeleon) this is often the mose useful when your dataset is small (<1000 compounds) or when you want to leverage transfer learning from a large chemical space. The pretrained MPNN provides a strong starting point, and the two-phase training strategy can help stabilize fine-tuning.
+- Use **Foundation** (CheMeleon) when your dataset is small (<1000 compounds) or you want transfer learning from a large chemical space. The pretrained MPNN gives a strong starting point, and two-phase training helps stabilize fine-tuning.
 - All options compose — you can use Foundation + Multi-Task + Descriptors together
 
 !!! note "Examples"
