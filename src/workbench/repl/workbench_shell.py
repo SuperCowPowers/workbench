@@ -252,7 +252,10 @@ class WorkbenchShell:
             self.cow_pun()
             self.local_summary()
             cprint("darkyellow", "\nPublic/Evaluation Mode: No AWS Account Connected")
-            cprint("lightgreen", f"For secured usage, run aws_setup() to connect an AWS account. Need help? {hyperlink(SCP_URL)}")
+            cprint(
+                "lightgreen",
+                f"For secured usage, run aws_setup() to connect an AWS account. Need help? {hyperlink(SCP_URL)}",
+            )
             if self.bosco_status:
                 cprint("lightpurple", BOSCO_INVITE)
             else:
