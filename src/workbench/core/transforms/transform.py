@@ -61,7 +61,7 @@ class Transform(ABC):
         cm = ConfigManager()
         if not cm.config_okay():
             self.log.error("Workbench Configuration Incomplete...")
-            self.log.error("Run the 'workbench' command and follow the prompts...")
+            self.log.error("Run the 'workbench' REPL and call aws_setup() to set up your AWS account...")
             raise FatalConfigError()
         self.workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
         self.data_sources_s3_path = "s3://" + self.workbench_bucket + "/data-sources"
