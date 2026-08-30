@@ -7,7 +7,7 @@ import sys
 
 # The color palette, cprint, and markdown rendering live in color_utils (the one
 # place colors are defined). Re-exported here for the many `repl_utils` importers.
-from workbench.utils.repl_color_utils import colors, cprint, render_markdown  # noqa: F401
+from workbench.utils.repl_color_utils import colors, cprint, hyperlink, render_markdown  # noqa: F401
 
 
 def cprint_above_prompt(color: str, text: str) -> None:

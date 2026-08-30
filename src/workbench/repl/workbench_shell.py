@@ -39,7 +39,7 @@ except ImportError:
 
 # Workbench Imports
 from workbench.local.meta import Meta as LocalMeta
-from workbench.utils.repl_utils import cprint, Spinner
+from workbench.utils.repl_utils import cprint, hyperlink, Spinner
 from workbench.utils.repl_themes import prompt_styles, current_theme, token_color
 from workbench.utils.cow_puns import random_cow_pun
 from workbench.utils.contest_utils import contest_summary
@@ -72,7 +72,6 @@ def aws_setup():
     cprint("lightblue", "After doing these instructions ^")
     cprint("lightblue", "Please rerun the Workbench REPL to finish connecting your account.")
     cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
-    sys.exit(0)
 
 
 # Set the log level to important
@@ -121,6 +120,7 @@ class WorkbenchShell:
                 self.local_only = True
             else:
                 aws_setup()
+                sys.exit(0)
 
         if not self.local_only:
             # Show which role this session is running as
@@ -218,8 +218,8 @@ class WorkbenchShell:
         if self.local_only:
             self.cow_pun()
             self.local_summary()
-            cprint("lightpurple", "Already have an AWS account? Run aws_setup() to connect it.")
-            cprint("lightpurple", f"Need one set up? {SCP_URL}\n")
+            cprint("lightpurple", "\nAlready have an AWS account? Run aws_setup() to connect it.")
+            cprint("lightpurple", f"Need one set up? {hyperlink(SCP_URL)}\n")
         elif not self.aws_status:
             cprint("red", "AWS Account Connection Failed...Review/Fix the Workbench Config:")
             cprint("red", f"Path: {self.cm.site_config_path}")
