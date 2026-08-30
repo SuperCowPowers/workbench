@@ -164,6 +164,7 @@ model disagrees with the local one, check `version_drift()`.
 - No inference store, monitoring, contests, or promotion. When the user wants
   those, they want a published model.
 - Plots work — `get_inference_predictions()` feeds parity and residual plots exactly
-  as it does for an AWS model, so build them (`plotting` guide). What's missing is
-  the plots whose inputs are AWS-only methods: SHAP, confusion matrix, HPO, and the
-  neighborhood graph (`shap_*`, `confusion_matrix`, `hpo_*`, `prox`).
+  as it does for an AWS model, and `model.prox()` / `fs.prox()` back neighborhood
+  graphs (`plotting`, `proximity` guides). What's missing is the plots whose inputs
+  are AWS-only: SHAP, confusion matrix, and HPO (`shap_*`, `confusion_matrix`,
+  `hpo_*`).

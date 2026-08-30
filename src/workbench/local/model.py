@@ -526,6 +526,53 @@ class Model(LocalArtifact):
             class_labels = sorted(predictions[target].unique().tolist())
         return compute_metrics_from_predictions(predictions, target, class_labels)
 
+    def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
+        """Return a proximity model for this Model, built from its FeatureSet.
+
+        A local model carries no frozen proximity -- that rides in the UQ artifact,
+        which is an AWS thing -- so this always builds fresh over the FeatureSet the
+        model trained on, using the model's own features and target. Cached per
+        ``space`` on this instance.
+
+        Returns ``None`` for ``space="features"`` when the model's features include
+        ``smiles`` or ``fingerprint`` -- that's a structure model, so feature-space
+        proximity is meaningless; use ``prox("fingerprint")`` instead. Also ``None``
+        if the FeatureSet it trained on is gone.
+
+        Args:
+            space: ``"fingerprint"`` or ``"features"``.
+
+        Returns:
+            A FingerprintProximity or FeatureSpaceProximity (or None -- see above).
+        """
+        from workbench.utils.metrics_utils import resolve_primary_target
+
+        if space not in ("fingerprint", "features"):
+            raise ValueError(f"space must be 'fingerprint' or 'features', got {space!r}")
+
+        features = self.workbench_meta().get("workbench_model_features") or []
+        structure_cols = {"smiles", "fingerprint"}.intersection(f.lower() for f in features)
+        if space == "features" and structure_cols:
+            self.log.important(
+                f"{self.name}: features are structural ({structure_cols}) — "
+                "use prox('fingerprint') for structural neighbors."
+            )
+            return None
+
+        if not hasattr(self, "_prox_cache"):
+            self._prox_cache = {}
+        if space not in self._prox_cache:
+            feature_set = self.parent()
+            if feature_set is None:
+                self.log.error(f"{self.name}: FeatureSet '{self.get_input()}' is gone, so no proximity to build.")
+                return None
+            target = resolve_primary_target(self.workbench_meta().get("workbench_model_target"))
+            if space == "features":
+                self._prox_cache[space] = feature_set.prox("features", feature_list=features, target=target)
+            else:
+                self._prox_cache[space] = feature_set.prox("fingerprint", target=target)
+        return self._prox_cache[space]
+
     def to_endpoint(self, name: str = None) -> "Endpoint":  # noqa: F821
         """Create a Endpoint that serves this model.
 
