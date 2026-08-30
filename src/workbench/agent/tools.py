@@ -88,9 +88,11 @@ PROVIDER_EGRESS = {
         "account, so the prompts never leave it."
     ),
     "anthropic": (
-        "This conversation runs on Claude through the Anthropic API on the user's own "
-        "API key, so prompt content -- including anything you read from their files, "
-        "dataframes, or artifacts -- leaves this machine. Say so plainly if they ask."
+        "This conversation runs on Claude through the Anthropic API rather than the "
+        "user's own AWS account, so prompt content -- including anything you read from "
+        "their files, dataframes, or artifacts -- leaves this machine. Whose key it is "
+        "is not something you can see, so don't claim it either way. Say this plainly "
+        "if they ask."
     ),
     "trial": (
         "This conversation runs on Claude through the SuperCowPowers trial proxy, which "

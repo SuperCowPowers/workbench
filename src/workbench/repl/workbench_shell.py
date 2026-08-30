@@ -58,7 +58,7 @@ EGRESS_LIGHTS = {"off": Token.Lightgreen, "guarded": Token.Blue, "full": Token.D
 # the user's own AWS account; anything else leaves it.
 PROVIDER_LABELS = {
     "bedrock": "your AWS account",
-    "anthropic": "your Anthropic key",
+    "anthropic": "Anthropic API key",
     "trial": "SuperCowPowers (trial)",
 }
 PROVIDER_LIGHTS = {"bedrock": Token.Lightgreen, "anthropic": Token.Blue, "trial": Token.Darkyellow}
