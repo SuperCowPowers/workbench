@@ -1,4 +1,4 @@
-"""LocalEndpoint: In-process inference against a locally trained model."""
+"""Endpoint: In-process inference against a locally trained model."""
 
 import glob
 import importlib.util
@@ -12,19 +12,19 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.artifact import Artifact
 from workbench.local.local_artifact import LocalArtifact
-from workbench.local.local_model import LocalModel
+from workbench.local.model import Model
 from workbench.local import storage
 
 
-class LocalEndpoint(LocalArtifact):
-    """LocalEndpoint: Workbench Local Endpoint Class
+class Endpoint(LocalArtifact):
+    """Endpoint: Workbench Local Endpoint Class
 
     Loads the model bundle once with `model_fn` and calls `predict_fn` per
     inference, which are the same functions the serving container calls.
 
     Common Usage:
         ```python
-        my_endpoint = LocalEndpoint("my-model")
+        my_endpoint = Endpoint("my-model")
         results = my_endpoint.inference(eval_df)
         ```
     """
@@ -32,7 +32,7 @@ class LocalEndpoint(LocalArtifact):
     artifact_type = "endpoint"
 
     def __init__(self, name: str, **kwargs):
-        """Initialize a LocalEndpoint
+        """Initialize a Endpoint
 
         Args:
             name (str): The name of the endpoint
@@ -44,15 +44,15 @@ class LocalEndpoint(LocalArtifact):
         self._inference_module = None
 
     @classmethod
-    def from_model(cls, model: LocalModel, name: str = None) -> "LocalEndpoint":
-        """Create a LocalEndpoint that serves a LocalModel.
+    def from_model(cls, model: Model, name: str = None) -> "Endpoint":
+        """Create a Endpoint that serves a Model.
 
         Args:
-            model (LocalModel): The trained model to serve
+            model (Model): The trained model to serve
             name (str, optional): Endpoint name (defaults to the model name)
 
         Returns:
-            LocalEndpoint: The created endpoint
+            Endpoint: The created endpoint
 
         Raises:
             ValueError: If the model hasn't trained successfully
@@ -80,7 +80,7 @@ class LocalEndpoint(LocalArtifact):
         Resolved from the model name on every access rather than stored, so the
         endpoint keeps working when the storage root moves or the config changes.
         """
-        return LocalModel(self.model_name).model_dir
+        return Model(self.model_name).model_dir
 
     def inference(self, eval_df: pd.DataFrame, capture_name: str = None) -> pd.DataFrame:
         """Run inference on a DataFrame.
@@ -207,8 +207,8 @@ class LocalEndpoint(LocalArtifact):
         )
 
     def parent(self):
-        """The LocalModel this endpoint serves, if it still exists locally"""
-        model = LocalModel(self.get_input())
+        """The Model this endpoint serves, if it still exists locally"""
+        model = Model(self.get_input())
         return model if model.exists() else None
 
     def aws_exists(self) -> bool:
@@ -217,15 +217,15 @@ class LocalEndpoint(LocalArtifact):
         Returns:
             bool: True if AWS already has this Endpoint
         """
-        from workbench.api import Endpoint
+        from workbench.api import Endpoint as AWSEndpoint
 
-        return Endpoint(self.name).exists()
+        return AWSEndpoint(self.name).exists()
 
     def _aws_artifact(self):
         """Internal: The AWS Endpoint for this local one"""
-        from workbench.api import Endpoint
+        from workbench.api import Endpoint as AWSEndpoint
 
-        return Endpoint(self.name)
+        return AWSEndpoint(self.name)
 
     def _publish_self(self, **kwargs):
         """Internal: Deploy the published Model as an AWS Endpoint
@@ -233,14 +233,14 @@ class LocalEndpoint(LocalArtifact):
         Returns:
             Endpoint: The created AWS Endpoint
         """
-        from workbench.api import Model
+        from workbench.api import Model as AWSModel
 
-        return Model(self.model_name).to_endpoint(name=self.name, **kwargs)
+        return AWSModel(self.model_name).to_endpoint(name=self.name, **kwargs)
 
     def details(self, **kwargs) -> dict:
-        """LocalEndpoint Details
+        """Endpoint Details
 
         Returns:
-            dict: A dictionary of details about the LocalEndpoint
+            dict: A dictionary of details about the Endpoint
         """
         return {**super().details(), "model_name": self.model_name, "captures": self.list_captures()}

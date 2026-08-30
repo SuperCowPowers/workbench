@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from workbench.local import LocalDataSource, LocalMeta
+from workbench.local import DataSource, Meta
 from workbench.utils.config_manager import ConfigManager
 
 
@@ -33,35 +33,35 @@ def sample_df():
 
 class TestLocalDataSource:
     def test_create_and_reload(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         assert ds.exists()
         assert ds.num_rows() == 5
         assert ds.num_columns() == 5
 
         # A bare name reloads the existing artifact
-        assert LocalDataSource("my_data").num_rows() == 5
+        assert DataSource("my_data").num_rows() == 5
 
     def test_requires_name_for_dataframe(self, sample_df):
         with pytest.raises(ValueError):
-            LocalDataSource(sample_df)
+            DataSource(sample_df)
 
     def test_query(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         result = ds.query("select id, Height from my_data where Height > 0.3 order by Height")
         assert list(result["id"]) == [2, 4, 3]
 
     def test_pull_dataframe_limit(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         assert len(ds.pull_dataframe()) == 5
         assert len(ds.pull_dataframe(limit=2)) == 2
 
     def test_missing_artifact_returns_empty(self):
-        assert LocalDataSource("nope").pull_dataframe().empty
+        assert DataSource("nope").pull_dataframe().empty
 
 
 class TestLocalFeatureSet:
     def test_to_features_column_prep(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         fs = ds.to_features("my_features", id_column="id", one_hot_columns=["Food"])
 
         # Columns are lowercased and one-hot columns expanded
@@ -71,7 +71,7 @@ class TestLocalFeatureSet:
         assert "food" not in fs.columns
 
     def test_to_features_dtype_coercion(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         fs = ds.to_features("my_features", id_column="id", one_hot_columns=["Food"])
         df = fs.pull_dataframe()
 
@@ -82,22 +82,22 @@ class TestLocalFeatureSet:
 
     def test_mixed_case_id_column(self, sample_df):
         """Column names lowercase, and the id reference follows them down"""
-        ds = LocalDataSource(sample_df.rename(columns={"id": "ID"}), name="my_data")
+        ds = DataSource(sample_df.rename(columns={"id": "ID"}), name="my_data")
         fs = ds.to_features("my_features", id_column="ID")
         assert fs.id_column == "id"
 
     def test_auto_id_column(self, sample_df):
-        ds = LocalDataSource(sample_df.drop(columns=["id"]), name="my_data")
+        ds = DataSource(sample_df.drop(columns=["id"]), name="my_data")
         fs = ds.to_features("my_features", id_column="auto")
         assert fs.id_column == "auto_id"
 
     def test_missing_id_column_raises(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         with pytest.raises(ValueError):
             ds.to_features("my_features", id_column="not_a_column")
 
     def test_lineage_recorded(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         fs = ds.to_features("my_features", id_column="id")
         assert fs.get_input() == "my_data"
 
@@ -105,7 +105,7 @@ class TestLocalFeatureSet:
 class TestTrainingView:
     @pytest.fixture
     def feature_set(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         return ds.to_features("my_features", id_column="id")
 
     def test_defaults(self, feature_set):
@@ -135,43 +135,43 @@ class TestTrainingView:
 
 class TestLocalMeta:
     def test_listings(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         ds.to_features("my_features", id_column="id")
 
-        meta = LocalMeta()
+        meta = Meta()
         assert list(meta.data_sources()["Name"]) == ["my_data"]
         assert list(meta.feature_sets()["Name"]) == ["my_features"]
         assert meta.feature_sets()["Input"].item() == "my_data"
 
     def test_empty_listings_keep_columns(self):
-        models = LocalMeta().models()
+        models = Meta().models()
         assert models.empty
         assert "Framework" in models.columns
 
     def test_tags_and_owner(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         ds.add_tag("experimental")
         ds.set_owner("briford")
 
-        row = LocalMeta().data_sources().iloc[0]
+        row = Meta().data_sources().iloc[0]
         assert "experimental" in row["Tags"]
         assert row["Owner"] == "briford"
 
 
 class TestLocalArtifactMeta:
     def test_status_and_delete(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         assert ds.get_status() == "ready"
         assert ds.ready()
 
         ds.set_status("stale")
-        assert LocalDataSource("my_data").get_status() == "stale"
+        assert DataSource("my_data").get_status() == "stale"
 
         ds.delete()
         assert not ds.exists()
 
     def test_no_aws_surface(self, sample_df):
-        ds = LocalDataSource(sample_df, name="my_data")
+        ds = DataSource(sample_df, name="my_data")
         assert not hasattr(ds, "arn")
         assert not hasattr(ds, "aws_url")
         assert "aws_arn" not in ds.summary()

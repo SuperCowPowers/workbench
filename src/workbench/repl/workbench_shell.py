@@ -38,7 +38,7 @@ except ImportError:
 
 
 # Workbench Imports
-from workbench.local.local_meta import LocalMeta
+from workbench.local.meta import Meta as LocalMeta
 from workbench.utils.repl_utils import cprint, Spinner
 from workbench.utils.repl_themes import prompt_styles, current_theme, token_color
 from workbench.utils.cow_puns import random_cow_pun
@@ -156,9 +156,14 @@ class WorkbenchShell:
         # whether or not the account check passed -- a broken config is when the
         # local classes are most useful
         local = importlib.import_module("workbench.local")
-        local_names = ["LocalDataSource", "LocalFeatureSet", "LocalModel", "LocalEndpoint", "LocalMeta"]
+        local_names = ["DataSource", "FeatureSet", "Model", "Endpoint", "Meta"]
         for class_name in local_names + ["ModelType", "ModelFramework"]:
-            self.commands[class_name] = getattr(local, class_name)
+            local_class = getattr(local, class_name)
+            # The Local* alias always reaches the local class; the bare name is the
+            # local one only when there's no AWS session to claim it.
+            self.commands[f"Local{class_name}"] = local_class
+            if self.local_only:
+                self.commands[class_name] = local_class
         self.commands["contests"] = self.contests
         self.commands["incoming_data"] = self.incoming_data
         self.commands["glue_jobs"] = self.glue_jobs
@@ -213,10 +218,7 @@ class WorkbenchShell:
         if self.local_only:
             self.cow_pun()
             self.local_summary()
-            cprint("lightpurple", "Local Mode: no AWS account, everything runs on this machine.")
-            cprint("lightpurple", "  pub_data.list()                public datasets, no credentials needed")
-            cprint("lightpurple", "  LocalDataSource(df, name=...)  -> to_features() -> to_model()")
-            cprint("lightpurple", "\nAlready have an AWS account? Run aws_setup() to connect it.")
+            cprint("lightpurple", "Already have an AWS account? Run aws_setup() to connect it.")
             cprint("lightpurple", f"Need one set up? {SCP_URL}\n")
         elif not self.aws_status:
             cprint("red", "AWS Account Connection Failed...Review/Fix the Workbench Config:")

@@ -20,11 +20,11 @@ endpoints, and everything else the team consumes live.
 `PublicData` reads public S3 anonymously, so this runs with no AWS setup:
 
 ```python
-from workbench.local import LocalDataSource, PublicData, ModelType, ModelFramework
+from workbench.local import DataSource, PublicData, ModelType, ModelFramework
 
 df = PublicData().get("comp_chem/aqsol/aqsol_public_data")
 
-ds = LocalDataSource(df, name="aqsol_local")
+ds = DataSource(df, name="aqsol_local")
 fs = ds.to_features("aqsol_local_features", id_column="ID")
 model = fs.to_model(
     "aqsol-local-reg",
@@ -42,7 +42,7 @@ predictions = model.to_endpoint().inference(fs.pull_dataframe().head(10))
 and `feature_list` refer to the FeatureSet's names rather than the source frame's.
 Use `fs.columns` to see them.
 
-A LocalEndpoint isn't deployed anywhere. `inference()` loads the model in-process
+A local Endpoint isn't deployed anywhere. `inference()` loads the model in-process
 through the same `model_fn`/`predict_fn` a real endpoint container uses, so the
 predictions match what a deployed endpoint returns.
 
@@ -94,16 +94,16 @@ package versions that differ between this machine and the training image.
 ## Listing and deleting
 
 ```python
-from workbench.local import LocalMeta
+from workbench.local import Meta
 
-LocalMeta().models()     # also data_sources(), feature_sets(), endpoints()
+Meta().models()     # also data_sources(), feature_sets(), endpoints()
 ```
 
 The Workbench REPL prints a local summary at startup and on `local_summary()`.
 
-Always delete through the API. `LocalModel.delete()` takes its endpoints with it;
+Always delete through the API. A local `Model.delete()` takes its endpoints with it;
 removing directories by hand leaves endpoints pointing at a model that no longer
-exists. That's the only cascade — deleting a LocalFeatureSet leaves its models
+exists. That's the only cascade — deleting a FeatureSet leaves its models
 alone.
 
 ## What's not here
@@ -112,12 +112,12 @@ Local covers training and scoring. Plots, the inference store, monitoring,
 contests, and promotion are all properties of published artifacts — when you want
 those, publish.
 
-::: workbench.local.local_data_source
+::: workbench.local.data_source
 
-::: workbench.local.local_feature_set
+::: workbench.local.feature_set
 
-::: workbench.local.local_model
+::: workbench.local.model
 
-::: workbench.local.local_endpoint
+::: workbench.local.endpoint
 
-::: workbench.local.local_meta
+::: workbench.local.meta

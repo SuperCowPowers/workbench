@@ -29,10 +29,10 @@ in AWS, start a local chain from `FeatureSet("aqsol_features").pull_dataframe()`
 from `workbench.local`, so it's the usual first step.
 
 ```python
-from workbench.local import LocalDataSource, PublicData, ModelType, ModelFramework
+from workbench.local import DataSource, PublicData, ModelType, ModelFramework
 
 df = PublicData().get("comp_chem/aqsol/aqsol_public_data")
-local_ds = LocalDataSource(df, name="aqsol_local")
+local_ds = DataSource(df, name="aqsol_local")
 local_fs = local_ds.to_features("aqsol_local_features", id_column="ID")
 local_model = local_fs.to_model(
     "aqsol-local-reg",
@@ -45,7 +45,7 @@ preds = local_model.to_endpoint().inference(eval_df)
 ```
 
 Same argument names as AWS, including `validation_ids` / `sample_weights` /
-`exclude_ids` — those are recorded and replayed on publish. A LocalEndpoint isn't
+`exclude_ids` — those are recorded and replayed on publish. A local Endpoint isn't
 deployed anywhere; `inference()` loads the model in-process through the
 container's own `model_fn`/`predict_fn`.
 
@@ -69,7 +69,7 @@ Pick the runner by how long the work runs, not by how big it looks:
 | subprocess, `wait=False` | minutes | the turn, not the REPL |
 | Batch (`batch`) | hours | the session |
 
-Local DataSources, FeatureSets, and `LocalEndpoint.inference()` are all in process.
+Local DataSources, FeatureSets, and `Endpoint.inference()` are all in process.
 
 Training is a subprocess and **defaults to `wait=True`**, which blocks until it
 finishes. Pass `wait=False` for **any** model creation, not just the ones that look
@@ -116,6 +116,8 @@ a Batch script (`batch`). Its product is a warmed cache, so the features then re
 back locally in seconds:
 
 ```python
+from workbench.api import Endpoint
+
 cached = InferenceCache(Endpoint("smiles-to-3d-v2")).inference(df)
 ```
 
@@ -131,8 +133,7 @@ these two calls:
 from workbench.utils.chem_utils.mol_descriptors import compute_descriptors
 from workbench.utils.chem_utils.mol_standardize import standardize
 
-local_ds = LocalDataSource(compute_descriptors(standardize(df, extract_salts=True)),
-                           name="cyp_2d_local")
+local_ds = DataSource(compute_descriptors(standardize(df, extract_salts=True)), name="cyp_2d_local")
 ```
 
 Standardization is not optional — skipping it yields different features with no error
@@ -154,7 +155,7 @@ model disagrees with the local one, check `version_drift()`.
 
 ## Watch for
 
-- Delete through the API. `LocalModel.delete()` takes its endpoints with it;
+- Delete through the API. A local `Model.delete()` takes its endpoints with it;
   removing directories by hand leaves them pointing at a model that's gone.
 - No plots, inference store, monitoring, contests, or promotion. When the user
   wants those, they want a published model.

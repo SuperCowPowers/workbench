@@ -39,7 +39,10 @@ from workbench.api import (
     Reports,
 )
 from workbench.cached.cached_meta import CachedMeta
-from workbench.local import LocalDataSource, LocalEndpoint, LocalFeatureSet, LocalModel
+from workbench.local import DataSource as LocalDataSource
+from workbench.local import Endpoint as LocalEndpoint
+from workbench.local import FeatureSet as LocalFeatureSet
+from workbench.local import Model as LocalModel
 
 # Class name as written in the guides -> the actual class.
 CLASS_REFS = {
@@ -59,10 +62,6 @@ CLASS_REFS = {
     "PublicData": PublicData,
     "Monitor": Monitor,
     "CachedMeta": CachedMeta,
-    "LocalDataSource": LocalDataSource,
-    "LocalFeatureSet": LocalFeatureSet,
-    "LocalModel": LocalModel,
-    "LocalEndpoint": LocalEndpoint,
 }
 
 # Instance-variable names the guides use consistently -> their class. These are the

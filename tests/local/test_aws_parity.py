@@ -1,6 +1,6 @@
 """Conformance: the Local classes keep the shape of their AWS counterparts
 
-A script written against a LocalModel should run against a Model. That promise
+A script written against a Model should run against a Model. That promise
 holds only as long as the two surfaces agree, and nothing else checks it -- the
 classes share a metadata base but no method-level ancestor, so a rename or a
 changed parameter on one side is invisible to the other until someone hits it.
@@ -23,7 +23,10 @@ import inspect
 import pytest
 
 from workbench.api import DataSource, Endpoint, FeatureSet, Model
-from workbench.local import LocalDataSource, LocalEndpoint, LocalFeatureSet, LocalModel
+from workbench.local import DataSource as LocalDataSource
+from workbench.local import Endpoint as LocalEndpoint
+from workbench.local import FeatureSet as LocalFeatureSet
+from workbench.local import Model as LocalModel
 
 # Local class -> its AWS counterpart
 COUNTERPARTS = {

@@ -10,7 +10,7 @@ import types
 import pandas as pd
 import pytest
 
-from workbench.local import LocalDataSource
+from workbench.local import DataSource
 from workbench.utils import version_drift
 from workbench.utils.config_manager import ConfigManager
 
@@ -29,7 +29,7 @@ def local_storage(tmp_path):
 def chain():
     """A local DataSource -> FeatureSet chain"""
     df = pd.DataFrame({"id": [1, 2, 3], "x": [0.1, 0.2, 0.3], "y": [1.0, 2.0, 3.0]})
-    ds = LocalDataSource(df, name="pub_data")
+    ds = DataSource(df, name="pub_data")
     fs = ds.to_features("pub_features", id_column="id")
     return ds, fs
 
@@ -46,7 +46,7 @@ def stub_aws(monkeypatch):
         published.append(self)
         return f"aws:{self.name}"
 
-    for cls_name in ("local_data_source.LocalDataSource", "local_feature_set.LocalFeatureSet"):
+    for cls_name in ("data_source.DataSource", "feature_set.FeatureSet"):
         module, cls = cls_name.split(".")
         target = getattr(__import__(f"workbench.local.{module}", fromlist=[cls]), cls)
         monkeypatch.setattr(target, "aws_exists", fake_exists)
@@ -122,9 +122,9 @@ class TestRowRolesSurvivePublish:
     A dropped role is a model that silently differs from the one that was validated."""
 
     def test_weights_as_pairs_round_trip(self):
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        pairs = LocalModel._weights_as_pairs({1: 2.5, 2: 0.5})
+        pairs = Model._weights_as_pairs({1: 2.5, 2: 0.5})
         assert dict(pairs) == {1: 2.5, 2: 0.5}
 
         # Integer ids must stay integers: JSON object keys would stringify them and
@@ -132,23 +132,23 @@ class TestRowRolesSurvivePublish:
         assert all(isinstance(key, int) for key, _ in pairs)
 
     def test_weights_from_dataframe(self):
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
         weights_df = pd.DataFrame({"id": [1, 2], "sample_weight": [3.0, 0.25]})
-        assert dict(LocalModel._weights_as_pairs(weights_df)) == {1: 3.0, 2: 0.25}
+        assert dict(Model._weights_as_pairs(weights_df)) == {1: 3.0, 2: 0.25}
 
     def test_no_weights_is_none(self):
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        assert LocalModel._weights_as_pairs(None) is None
-        assert LocalModel._weights_as_pairs({}) is None
-        assert LocalModel._weights_as_pairs(pd.DataFrame()) is None
+        assert Model._weights_as_pairs(None) is None
+        assert Model._weights_as_pairs({}) is None
+        assert Model._weights_as_pairs(pd.DataFrame()) is None
 
     def test_publish_replays_all_three_roles(self, monkeypatch):
         """The AWS retrain must receive the weights, not just the id lists"""
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        model = LocalModel("role-model")
+        model = Model("role-model")
         model.upsert_workbench_meta(
             {
                 "model_type": "regressor",
@@ -176,7 +176,7 @@ class TestRowRolesSurvivePublish:
         fake_api = types.ModuleType("workbench.api")
         fake_api.FeatureSet = FakeFeatureSet
         monkeypatch.setitem(sys.modules, "workbench.api", fake_api)
-        monkeypatch.setattr(LocalModel, "version_drift", lambda self: "")
+        monkeypatch.setattr(Model, "version_drift", lambda self: "")
 
         assert model._publish_self() == "aws-model"
         assert captured["sample_weights"] == {1: 2.5}
@@ -190,12 +190,12 @@ class TestEndpointStep:
 
     @pytest.fixture
     def model(self, monkeypatch):
-        from workbench.local.local_model import LocalModel
+        from workbench.local.model import Model
 
-        model = LocalModel("end-model")
-        monkeypatch.setattr(LocalModel, "parent", lambda self: None)
-        monkeypatch.setattr(LocalModel, "aws_exists", lambda self: False)
-        monkeypatch.setattr(LocalModel, "_publish_self", lambda self, **kwargs: FakeAWSModel())
+        model = Model("end-model")
+        monkeypatch.setattr(Model, "parent", lambda self: None)
+        monkeypatch.setattr(Model, "aws_exists", lambda self: False)
+        monkeypatch.setattr(Model, "_publish_self", lambda self, **kwargs: FakeAWSModel())
         return model
 
     def test_default_endpoint_name(self, model):
@@ -203,9 +203,9 @@ class TestEndpointStep:
 
     def test_custom_local_endpoint_name_is_reused(self, model):
         """A local endpoint's name carries over, so local and AWS stay addressable alike"""
-        from workbench.local.local_endpoint import LocalEndpoint
+        from workbench.local.endpoint import Endpoint
 
-        endpoint = LocalEndpoint("my-custom-serving")
+        endpoint = Endpoint("my-custom-serving")
         endpoint._init_storage(input_name=model.name)
         endpoint.upsert_workbench_meta({"model_name": model.name})
 

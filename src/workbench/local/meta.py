@@ -1,4 +1,4 @@
-"""LocalMeta: Listings for the artifacts in local storage.
+"""Meta: Listings for the artifacts in local storage.
 
 A directory glob plus a ``meta.json`` read per artifact. No caching tier and no
 artifact objects constructed, so listing stays cheap.
@@ -15,12 +15,12 @@ from workbench.core.artifact import Artifact
 from workbench.local import storage
 
 
-class LocalMeta:
-    """LocalMeta: Workbench Local Metadata Class
+class Meta:
+    """Meta: Workbench Local Metadata Class
 
     Common Usage:
         ```python
-        meta = LocalMeta()
+        meta = Meta()
         meta.data_sources()
         meta.feature_sets()
         meta.models()
@@ -29,7 +29,7 @@ class LocalMeta:
     """
 
     def __init__(self):
-        """Initialize the LocalMeta class"""
+        """Initialize the Meta class"""
         self.log = Artifact.log
 
     def data_sources(self) -> pd.DataFrame:
@@ -160,8 +160,8 @@ class LocalMeta:
 
 
 if __name__ == "__main__":
-    """Exercise the LocalMeta Class"""
-    meta = LocalMeta()
+    """Exercise the Meta Class"""
+    meta = Meta()
     print("Data Sources:")
     print(meta.data_sources())
     print("\nFeature Sets:")

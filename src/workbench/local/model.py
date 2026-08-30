@@ -1,4 +1,4 @@
-"""LocalModel: A model trained on this machine by the generated model script."""
+"""Model: A model trained on this machine by the generated model script."""
 
 import json
 import os
@@ -23,15 +23,15 @@ from workbench.utils.json_utils import write_json_atomic
 CROSS_FOLD_RUN = "full_cross_fold"
 
 
-class LocalModel(LocalArtifact):
-    """LocalModel: Workbench Local Model Class
+class Model(LocalArtifact):
+    """Model: Workbench Local Model Class
 
     Training runs the same generated model script that SageMaker runs, with the
     same arguments, as a subprocess against local directories.
 
     Common Usage:
         ```python
-        my_model = LocalModel("my_model")
+        my_model = Model("my_model")
         my_model.training_state()
         my_model.oof_predictions()
         ```
@@ -41,7 +41,7 @@ class LocalModel(LocalArtifact):
     data_files = ()
 
     def __init__(self, name: str, **kwargs):
-        """Initialize a LocalModel
+        """Initialize a Model
 
         Args:
             name (str): The name of the model
@@ -72,11 +72,11 @@ class LocalModel(LocalArtifact):
         validation_ids: list = None,
         exclude_ids: list = None,
         wait: bool = True,
-    ) -> "LocalModel":
-        """Train a LocalModel from a LocalFeatureSet.
+    ) -> "Model":
+        """Train a Model from a FeatureSet.
 
         Args:
-            feature_set (LocalFeatureSet): The feature set to train on
+            feature_set (FeatureSet): The feature set to train on
             name (str): The name of the model to create
             model_type (ModelType): The type of model to create
             model_framework (ModelFramework): The framework to use
@@ -92,7 +92,7 @@ class LocalModel(LocalArtifact):
             wait (bool): Block until training finishes (default: True)
 
         Returns:
-            LocalModel: The model (trained if wait=True, still training otherwise)
+            Model: The model (trained if wait=True, still training otherwise)
         """
         supervised = model_type in (
             ModelType.CLASSIFIER,
@@ -204,7 +204,7 @@ class LocalModel(LocalArtifact):
         """Internal: Guess a feature list from the FeatureSet's numeric columns.
 
         Args:
-            feature_set (LocalFeatureSet): The feature set being trained on
+            feature_set (FeatureSet): The feature set being trained on
             target_list (list): Target column(s) to exclude
 
         Returns:
@@ -526,24 +526,24 @@ class LocalModel(LocalArtifact):
             class_labels = sorted(predictions[target].unique().tolist())
         return compute_metrics_from_predictions(predictions, target, class_labels)
 
-    def to_endpoint(self, name: str = None) -> "LocalEndpoint":  # noqa: F821
-        """Create a LocalEndpoint that serves this model.
+    def to_endpoint(self, name: str = None) -> "Endpoint":  # noqa: F821
+        """Create a Endpoint that serves this model.
 
         Args:
             name (str, optional): Endpoint name (defaults to the model name)
 
         Returns:
-            LocalEndpoint: The endpoint serving this model
+            Endpoint: The endpoint serving this model
         """
-        from workbench.local.local_endpoint import LocalEndpoint
+        from workbench.local.endpoint import Endpoint
 
-        return LocalEndpoint.from_model(self, name=name)
+        return Endpoint.from_model(self, name=name)
 
     def parent(self):
-        """The LocalFeatureSet this model trained on, if it still exists locally"""
-        from workbench.local.local_feature_set import LocalFeatureSet
+        """The FeatureSet this model trained on, if it still exists locally"""
+        from workbench.local.feature_set import FeatureSet
 
-        feature_set = LocalFeatureSet(self.get_input())
+        feature_set = FeatureSet(self.get_input())
         return feature_set if feature_set.exists() else None
 
     def aws_exists(self) -> bool:
@@ -552,15 +552,15 @@ class LocalModel(LocalArtifact):
         Returns:
             bool: True if AWS already has this Model
         """
-        from workbench.api import Model
+        from workbench.api import Model as AWSModel
 
-        return Model(self.name).exists()
+        return AWSModel(self.name).exists()
 
     def _aws_artifact(self):
         """Internal: The AWS Model for this local one"""
-        from workbench.api import Model
+        from workbench.api import Model as AWSModel
 
-        return Model(self.name)
+        return AWSModel(self.name)
 
     def version_drift(self) -> str:
         """Package versions that differ between this machine and the training image.
@@ -582,10 +582,10 @@ class LocalModel(LocalArtifact):
         Returns:
             Model: The created AWS Model
         """
-        from workbench.api import FeatureSet
+        from workbench.api import FeatureSet as AWSFeatureSet
 
         meta = self.workbench_meta()
-        feature_set = FeatureSet(self.get_input())
+        feature_set = AWSFeatureSet(self.get_input())
         return feature_set.to_model(
             name=self.name,
             model_type=ModelType(meta["model_type"]),
@@ -609,14 +609,14 @@ class LocalModel(LocalArtifact):
         Returns:
             Model: The published AWS Model
         """
-        from workbench.api import Endpoint
+        from workbench.api import Endpoint as AWSEndpoint
 
         aws_model = super().publish(**kwargs)
         if not endpoint:
             return aws_model
 
         endpoint_name = self._endpoint_name()
-        if Endpoint(endpoint_name).exists():
+        if AWSEndpoint(endpoint_name).exists():
             self.log.important(f"AWS endpoint '{endpoint_name}' already exists, skipping...")
         else:
             self.log.important(f"Deploying endpoint '{endpoint_name}' to AWS...")
@@ -626,9 +626,9 @@ class LocalModel(LocalArtifact):
     def _endpoints(self) -> list:
         """Internal: The local endpoints serving this model"""
         from workbench.local import storage
-        from workbench.local.local_endpoint import LocalEndpoint
+        from workbench.local.endpoint import Endpoint
 
-        serving = [LocalEndpoint(name) for name in storage.list_artifacts("endpoint")]
+        serving = [Endpoint(name) for name in storage.list_artifacts("endpoint")]
         return [endpoint for endpoint in serving if endpoint.model_name == self.name]
 
     def _endpoint_name(self) -> str:
@@ -655,9 +655,9 @@ class LocalModel(LocalArtifact):
         super().delete()
 
     def details(self, **kwargs) -> dict:
-        """LocalModel Details
+        """Model Details
 
         Returns:
-            dict: A dictionary of details about the LocalModel
+            dict: A dictionary of details about the Model
         """
         return {**super().details(), "training": self.training_state()}

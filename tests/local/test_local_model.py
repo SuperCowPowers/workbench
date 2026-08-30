@@ -1,4 +1,4 @@
-"""Tests for LocalModel training (no AWS required)
+"""Tests for Model training (no AWS required)
 
 These run the real generated model script as a subprocess, so they're slower than
 the rest of the local suite.
@@ -12,9 +12,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from workbench.local import LocalDataSource, LocalModel, ModelType, ModelFramework
+from workbench.local import DataSource, Model, ModelType, ModelFramework
 from workbench.utils import job_tracker
 from workbench.utils.config_manager import ConfigManager
+
+pytestmark = pytest.mark.medium
 
 
 @pytest.fixture(autouse=True)
@@ -34,7 +36,7 @@ def feature_set():
     n = 100
     df = pd.DataFrame({"id": range(n), "a": rng.normal(0, 1, n), "b": rng.normal(0, 1, n)})
     df["y"] = 2 * df["a"] - df["b"] + rng.normal(0, 0.2, n)
-    return LocalDataSource(df, name="reg_data").to_features("reg_features", id_column="id")
+    return DataSource(df, name="reg_data").to_features("reg_features", id_column="id")
 
 
 class TestTraining:
@@ -109,7 +111,7 @@ class TestFailure:
                 feature_list=["a", "b"],
             )
 
-        model = LocalModel("bad-model")
+        model = Model("bad-model")
         assert model.training_state()["state"] == "failed"
         assert model.get_status() == "failed"
         assert model.training_state()["returncode"] != 0
@@ -147,7 +149,7 @@ class TestRerun:
                 feature_list=["a", "b"],
             )
 
-        assert LocalModel("rerun-model").oof_predictions().empty
+        assert Model("rerun-model").oof_predictions().empty
 
 
 class TestInterruptedRun:
@@ -168,7 +170,7 @@ class TestInterruptedRun:
         dead.wait()
 
         model._write_status(state="training", pid=dead.pid)
-        assert LocalModel("interrupted-model").training_state()["state"] == "interrupted"
+        assert Model("interrupted-model").training_state()["state"] == "interrupted"
 
     def test_live_pid_still_reports_training(self, feature_set):
         model = feature_set.to_model(
@@ -180,7 +182,7 @@ class TestInterruptedRun:
         )
 
         model._write_status(state="training", pid=os.getpid())
-        assert LocalModel("live-model").training_state()["state"] == "training"
+        assert Model("live-model").training_state()["state"] == "training"
 
 
 class TestDetached:
@@ -205,7 +207,7 @@ class TestDetached:
         assert rows[0]["status"] == "COMPLETED"
 
         # A detached run leaves the same on-disk state a blocking one would
-        fresh = LocalModel("async-model")
+        fresh = Model("async-model")
         assert fresh.training_state()["state"] == "completed"
         assert fresh.get_status() == "ready"
         assert len(fresh.oof_predictions()) == 100
