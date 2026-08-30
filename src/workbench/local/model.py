@@ -1,5 +1,6 @@
 """Model: A model trained on this machine by the generated model script."""
 
+import importlib.util
 import json
 import os
 import shutil
@@ -21,6 +22,31 @@ from workbench.utils.json_utils import write_json_atomic
 
 # The training run's out-of-fold predictions, named to match the AWS capture
 CROSS_FOLD_RUN = "full_cross_fold"
+
+
+# Framework -> the module its model script imports. Neither ships in the base install;
+# both live in the `modeling` extra.
+FRAMEWORK_MODULES = {
+    ModelFramework.CHEMPROP: "chemprop",
+    ModelFramework.PYTORCH: "torch",
+}
+
+
+def framework_available(model_framework: ModelFramework) -> Union[str, None]:
+    """The module a framework needs but can't find, or None when it's installed.
+
+    Uses ``find_spec`` rather than importing: pulling torch into this process is what
+    the OpenMP guard in the local Endpoint exists to prevent, and an availability check
+    has no business doing it.
+
+    Args:
+        model_framework (ModelFramework): The framework to check.
+
+    Returns:
+        str: The missing module name, or None if the framework is usable.
+    """
+    module = FRAMEWORK_MODULES.get(model_framework)
+    return module if module and importlib.util.find_spec(module) is None else None
 
 
 class Model(LocalArtifact):
@@ -102,6 +128,15 @@ class Model(LocalArtifact):
         )
         if target_column is None and supervised:
             raise ValueError("target_column is required for supervised models (pass target_column=...)")
+
+        # Fail here rather than inside the training subprocess, where a ModuleNotFoundError
+        # lands in the log and surfaces to the user as "training failed"
+        missing = framework_available(model_framework)
+        if missing:
+            raise ModuleNotFoundError(
+                f"{model_framework.value} models need the '{missing}' package, which the base "
+                f"install doesn't carry. Install it with: pip install 'workbench[modeling]'"
+            )
 
         model = cls(name)
         model._init_dirs(input_name=feature_set.name)
