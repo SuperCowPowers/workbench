@@ -5478,7 +5478,7 @@ the builder role:</p>
 </span></code></pre></div>
 <h2 id="5-github-repository-secrets">5. GitHub repository secrets</h2>
 <p>The workflow (<a href="https://github.com/SuperCowPowers/workbench/blob/main/.github/workflows/aws-tests.yml"><code>aws-tests.yml</code></a>)
-reads three secrets:</p>
+reads two secrets:</p>
 <table>
 <thead>
 <tr>
@@ -5498,11 +5498,6 @@ reads three secrets:</p>
 <td>Workbench artifact bucket name</td>
 <td><code>WORKBENCH_BUCKET</code> in the account's workbench config</td>
 </tr>
-<tr>
-<td><code>WORKBENCH_API_KEY_SANDBOX</code></td>
-<td>Workbench API key</td>
-<td><code>WORKBENCH_API_KEY</code> in the account's workbench config</td>
-</tr>
 </tbody>
 </table>
 <p><strong>Via the GitHub UI:</strong> repo → <em>Settings</em> → <em>Secrets and variables</em> →
@@ -5510,10 +5505,9 @@ reads three secrets:</p>
 <p><strong>Via the <code>gh</code> CLI</strong> (prompts for each value; nothing lands in shell history):</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>gh<span class="w"> </span>secret<span class="w"> </span><span class="nb">set</span><span class="w"> </span>AWS_ACCOUNT_SANDBOX<span class="w"> </span>--repo<span class="w"> </span>&lt;org&gt;/&lt;repo&gt;
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>gh<span class="w"> </span>secret<span class="w"> </span><span class="nb">set</span><span class="w"> </span>WORKBENCH_BUCKET_SANDBOX<span class="w"> </span>--repo<span class="w"> </span>&lt;org&gt;/&lt;repo&gt;
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>gh<span class="w"> </span>secret<span class="w"> </span><span class="nb">set</span><span class="w"> </span>WORKBENCH_API_KEY_SANDBOX<span class="w"> </span>--repo<span class="w"> </span>&lt;org&gt;/&lt;repo&gt;
 </span></code></pre></div>
-<p>At runtime, <code>WORKBENCH_BUCKET</code> / <code>WORKBENCH_API_KEY</code> are injected as env vars,
-which override the placeholder values in the checked-in
+<p>At runtime, <code>WORKBENCH_BUCKET</code> is injected as an env var, which overrides the
+placeholder value in the checked-in
 <a href="https://github.com/SuperCowPowers/workbench/blob/main/ci/workbench_ci_config.json"><code>ci/workbench_ci_config.json</code></a> —
 so no account-specific values are committed to the repo.</p>
 <h2 id="6-verify-end-to-end">6. Verify end-to-end</h2>
