@@ -142,7 +142,8 @@ class WorkbenchShell:
             with silence_logs():
                 self.import_workbench()
 
-            # Try cached meta (if that fails it will be set to direct meta)
+        # Try cached meta (if that fails it will be set to direct meta)
+        if not self.local_only:
             self.try_cached_meta()
 
         # Register our custom commands
@@ -258,10 +259,11 @@ class WorkbenchShell:
                 ipython_argv = []
             start_ipython(ipython_argv, user_ns=locs, config=config)
         finally:
-            spinner = self.spinner_start("Goodbye to AWS:")
-            with silence_logs():
-                self.meta.close()
-            spinner.stop()
+            if self.meta:
+                spinner = self.spinner_start("Goodbye to AWS:")
+                with silence_logs():
+                    self.meta.close()
+                spinner.stop()
             cprint("lightgreen", "Goodbye from Workbench!\n")
 
     @staticmethod
