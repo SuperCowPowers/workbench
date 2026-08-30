@@ -14,6 +14,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import IPython
+from IPython import get_ipython
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -68,10 +69,12 @@ def aws_setup():
     cm.create_site_config()
     cm.platform_specific_instructions()
 
-    # Tell the user to restart the shell
-    cprint("lightblue", "After doing these instructions ^")
-    cprint("lightblue", "Please rerun the Workbench REPL to finish connecting your account.")
-    cprint("darkyellow", "Note: You'll need to start a NEW terminal to inherit the new ENV vars.")
+    cprint("darkyellow", "\nAdd the export line above, then run 'workbench' in a NEW terminal.")
+    cprint("darkyellow", "Exiting now...")
+    if shell := get_ipython():
+        shell.ask_exit()
+    else:
+        sys.exit(0)
 
 
 # Set the log level to important
@@ -97,7 +100,7 @@ class WorkbenchPrompt(Prompts):
             lights = []
         else:
             lights = workbench_shell.status_lights()
-        aws_profile_prompt = [(Token.Blue, ":"), (Token.Darkyellow, f"{aws_profile}")]
+        aws_profile_prompt = [(Token.Blue, ":"), (Token.Darkyellow, aws_profile)] if aws_profile else []
         prompt = lights + [(Token.Workbench, "Workbench")] + aws_profile_prompt
         if workbench_shell is not None and workbench_shell.bedrock_status:
             prompt += [(Token.Blue, ":"), (Token.Lightgreen, "Bosco")]
@@ -120,7 +123,6 @@ class WorkbenchShell:
                 self.local_only = True
             else:
                 aws_setup()
-                sys.exit(0)
 
         if not self.local_only:
             # Show which role this session is running as
