@@ -6,7 +6,7 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 ## Blogs
 
-- **[The Workbench ML Agent](ml_agent.md):** Workbench embeds an ML agent directly in the Python REPL, so chemists and data scientists can ask for what they want in plain language and get code that runs in the live session. We cover how the loop works, why variables persisting in your namespace matters, and where the model actually runs.
+- **[Bosco: Workbench ML Agent](ml_agent.md):** Workbench embeds a resident ML agent directly in the Python REPL — it knows your AWS, your session namespace, and your ADMET domain. We walk a real five-turn session on the CYP challenge, and cover where the model runs: Bedrock inside your own account, with Zero Data Retention.
 
 - **[Confusion Explorer: Beyond the Confusion Matrix](confusion_explorer.md):** The standard confusion matrix tells you *what* your model gets wrong — the Confusion Explorer shows you *why*. We pair a residual-colored matrix with an interactive ternary probability plot, linked through a confidence slider. Filter to high-confidence predictions, click a cell to isolate misclassified compounds, and hover to see molecular structures.
 

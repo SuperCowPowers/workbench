@@ -56,7 +56,7 @@ nav:
     - Overview: confidence/index.md
   - Blogs:
     - OverView: blogs/index.md
-    - The Workbench ML Agent: blogs/ml_agent.md
+    - "Bosco: Workbench ML Agent": blogs/ml_agent.md
     - Confusion Explorer: blogs/confusion_explorer.md
     - Model Confidence: blogs/model_confidence.md
     - Chemprop Shap Values: blogs/chemprop_shap.md

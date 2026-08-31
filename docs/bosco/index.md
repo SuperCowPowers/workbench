@@ -1,11 +1,12 @@
-# Bosco: the Workbench ML Agent
+# Using Bosco
 
 !!! tip inline end "Background"
-    Why an agent in the REPL at all: [The Workbench ML Agent](../blogs/ml_agent.md).
+    Why an agent in the REPL at all: [Bosco: Workbench ML Agent](../blogs/ml_agent.md).
     Where your data goes: [Security & Admin](security.md).
 
-Bosco is an ML engineering agent living inside the
-[Workbench REPL](../repl/index.md). He writes and runs Python in **your**
+Bosco is a **resident ML agent** living inside the
+[Workbench REPL](../repl/index.md) — resident in your session, in your AWS
+account, and in your problem domain. He writes and runs Python in **your**
 session — the variables he creates stay in your namespace, and he reads your
 real FeatureSets, models, and predictions.
 
