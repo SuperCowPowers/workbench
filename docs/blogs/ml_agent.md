@@ -6,7 +6,7 @@
 
 Workbench embeds a **resident ML agent** — **Bosco** — directly in the Python
 REPL. Chemists and data scientists describe what they want in plain language —
-*"show me recent batch jobs"*, *"which compounds does this model get worst?"*,
+*"show me recent batch jobs"*, *"which compounds does this model predict the worst?"*,
 *"build me a solubility model from this FeatureSet"* — and Bosco writes the code,
 runs it in the live session, reads the output, and adjusts.
 
