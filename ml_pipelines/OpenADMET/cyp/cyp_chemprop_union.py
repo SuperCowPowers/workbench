@@ -14,6 +14,13 @@ open question rather than a settled one. Two arms bracket it:
     --public-weight 0.05   ~30% auxiliary share
     --public-weight 0.30   ~51% auxiliary share
 
+`--activity-heads` adds the panel's binary active/inactive call as five more 0/1 heads at
+the same public weight. It is the only public readout covering compounds with no fitted
+curve, and the scored heads have almost no low-activity signal without it: 129 of CYP2D6's
+1,493 rows sit below pIC50 4.0, and out-of-fold the model predicts above the credible
+ceiling for 126 of those 129. Contrast it against the same `--public-weight` without the
+flag -- one variable, and `scripts/cyp_member_diversity.py` says whether it earns a slot.
+
 `cyp-reg-chemprop-mt-aux-100` is the control at 0% public data. Six-fold apart on the
 variable, everything else identical.
 
@@ -51,7 +58,11 @@ TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
 EMAX_TARGETS = [f"{iso}_emax_vs_pos_ctrl_direct_inhibition" for iso in ISOFORMS]
 ASSAY_TARGETS = LOG2FC_TARGETS + TDI_TARGETS + EMAX_TARGETS
 PUBLIC_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS] + [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
-ALL_TARGETS = TARGETS + ASSAY_TARGETS + PUBLIC_TARGETS
+# The panel's binary call, carried as a 0/1 regression head. It is the only public readout
+# that covers compounds with no fitted curve, which is where the scored heads have almost no
+# training signal -- 129 of CYP2D6's 1,493 rows sit below pIC50 4.0, against a blind half
+# that is mostly low-activity.
+ACTIVITY_TARGETS = [f"{iso}_is_active" for iso in PUBLIC_ISOFORMS]
 
 # One weight for every challenge-assay auxiliary, at the value the log2fc arm was validated
 # at, so adding heads does not silently re-tune the arm that already worked.
@@ -64,9 +75,19 @@ parser.add_argument(
     required=True,
     help="Per-head weight for the ChEMBL and Veith targets, as a multiple of mean(primary)",
 )
+parser.add_argument(
+    "--activity-heads",
+    action="store_true",
+    help="Add the panel's binary active/inactive heads at the same public weight",
+)
 args = parser.parse_args()
 
+public_targets = PUBLIC_TARGETS + (ACTIVITY_TARGETS if args.activity_heads else [])
+all_targets = TARGETS + ASSAY_TARGETS + public_targets
+
 model_name = f"cyp-reg-chemprop-union-p{int(round(args.public_weight * 100)):02d}"
+if args.activity_heads:
+    model_name += "-act"
 
 fs = FeatureSet(FS_NAME)
 df = fs.pull_dataframe()
@@ -75,13 +96,16 @@ primary_weights = compute_inverse_count_task_weights(df, TARGETS)
 mean_primary = float(np.mean(primary_weights))
 assay_weight = ASSAY_WEIGHT * mean_primary
 public_weight = args.public_weight * mean_primary
-task_weights = list(primary_weights) + [assay_weight] * len(ASSAY_TARGETS) + [public_weight] * len(PUBLIC_TARGETS)
+task_weights = list(primary_weights) + [assay_weight] * len(ASSAY_TARGETS) + [public_weight] * len(public_targets)
 
-aux_share = (assay_weight * len(ASSAY_TARGETS) + public_weight * len(PUBLIC_TARGETS)) / sum(task_weights)
+aux_share = (assay_weight * len(ASSAY_TARGETS) + public_weight * len(public_targets)) / sum(task_weights)
 print(f"Building {model_name} on all {len(df):,} rows — no holdout")
 print(f"pIC50 weights: {dict(zip(ISOFORMS, [round(float(w), 3) for w in primary_weights]))}")
 print(f"assay weight:  {assay_weight:.3f} each ({ASSAY_WEIGHT} x mean primary), {len(ASSAY_TARGETS)} heads")
-print(f"public weight: {public_weight:.3f} each ({args.public_weight} x mean primary), {len(PUBLIC_TARGETS)} heads")
+print(f"public weight: {public_weight:.3f} each ({args.public_weight} x mean primary), {len(public_targets)} heads")
+if args.activity_heads:
+    labelled = {t.split("_")[0]: int(df[t].notna().sum()) for t in ACTIVITY_TARGETS}
+    print(f"activity heads: {labelled}")
 print(f"auxiliary share of total gradient: {100 * aux_share:.0f}%")
 
 model = fs.to_model(
@@ -89,7 +113,7 @@ model = fs.to_model(
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],
-    target_column=ALL_TARGETS,
+    target_column=all_targets,
     description=f"Multi-task Chemprop, challenge + public targets, public weight {args.public_weight}",
     tags=TAGS + [f"public_weight_{args.public_weight}"],
     hyperparameters={"task_weights": task_weights, "uq_version": "v1"},

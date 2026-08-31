@@ -68,6 +68,13 @@ CI_COLUMNS = [f"{t}_{b}" for t in TARGETS for b in ("ci_lower", "ci_upper")]
 PUBLIC_ISOFORMS = ISOFORMS + ["cyp2c19"]
 CHEMBL_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS]
 VEITH_TARGETS = [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
+# The panel's own QC'd call, where `max_response` is the raw clipped efficacy it was made
+# from. This is the only source of low-activity signal anywhere public: a compound that did
+# not inhibit gets no fitted curve and therefore no potency, but it does get an outcome.
+ACTIVITY_TARGETS = [f"{iso}_is_active" for iso in PUBLIC_ISOFORMS]
+# Inconclusive is dropped rather than folded either way -- it is the assay declining to call
+# the compound, not a weak call.
+ACTIVITY_CODES = {"Active": 1.0, "Inactive": 0.0}
 VEITH = "comp_chem/pubchem/cyp_inhibition/all_isoforms"
 TDI = "comp_chem/openadmet/cyp/training/tdi"
 EMAX = "comp_chem/openadmet/cyp/training/emax"
@@ -123,18 +130,19 @@ out = out.drop(columns=["key"])
 # --- Veith efficacy: joins onto whatever is already here, appends what is not ---------
 
 veith = PublicData().get(VEITH)
-wide = veith.pivot_table(index="smiles", columns="isoform", values="max_response")
-wide.columns = [f"{c}_max_response" for c in wide.columns]
-missing = [c for c in VEITH_TARGETS if c not in wide.columns]
+veith["is_active"] = veith["activity_outcome"].map(ACTIVITY_CODES)
+wide = veith.pivot_table(index="smiles", columns="isoform", values=["max_response", "is_active"])
+wide.columns = [f"{iso}_{readout}" for readout, iso in wide.columns]
+missing = [c for c in VEITH_TARGETS + ACTIVITY_TARGETS if c not in wide.columns]
 if missing:
     raise ValueError(f"{VEITH} did not yield {missing} — isoform names changed?")
-wide = wide[VEITH_TARGETS].reset_index()
+wide = wide[VEITH_TARGETS + ACTIVITY_TARGETS].reset_index()
 wide[VEITH_TARGETS] = wide[VEITH_TARGETS].clip(lower=MAX_RESPONSE_CLIP[0], upper=MAX_RESPONSE_CLIP[1])
 wide["key"] = skeletons(wide["smiles"])
 wide = wide.dropna(subset=["key"]).drop_duplicates(subset=["key"])
 
 out["key"] = pd.concat([challenge["key"], new["key"]], ignore_index=True).values
-joined = out.merge(wide[["key"] + VEITH_TARGETS], on="key", how="left")
+joined = out.merge(wide[["key"] + VEITH_TARGETS + ACTIVITY_TARGETS], on="key", how="left")
 if len(joined) != len(out):
     raise ValueError(f"veith join changed the row count: {len(out)} -> {len(joined)}")
 
@@ -143,7 +151,7 @@ veith_only["molecule_name"] = "VEITH-" + veith_only["key"]
 out = pd.concat([joined, veith_only.drop(columns=["key"])], ignore_index=True)
 out = out.drop(columns=["key"])
 
-ALL_TARGETS = TARGETS + AUX_TARGETS + TDI_TARGETS + EMAX_TARGETS + CHEMBL_TARGETS + VEITH_TARGETS
+ALL_TARGETS = TARGETS + AUX_TARGETS + TDI_TARGETS + EMAX_TARGETS + CHEMBL_TARGETS + VEITH_TARGETS + ACTIVITY_TARGETS
 if out["molecule_name"].duplicated().any():
     raise ValueError("duplicate molecule_name after the union")
 if out["smiles"].isna().any():
