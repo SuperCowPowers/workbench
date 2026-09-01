@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -42,6 +42,9 @@ log = logging.getLogger("workbench")
 
 
 DEFAULT_CONFIDENCE_LEVELS = [0.50, 0.68, 0.80, 0.90, 0.95]
+
+# Key for a single-target model's calibration, which has no target name to go by.
+DEFAULT_TARGET = "__default__"
 DEFAULT_RESIDUAL_CALIBRATOR_BINS = 10
 MIN_SAMPLES_PER_BIN = 20
 
@@ -152,8 +155,14 @@ class UQModelV0:
           because it has no reference index.
 
     Usage:
-        uq0 = UQModelV0.fit(y_oof, y_pred_oof, prediction_std_oof)
+        uq0 = UQModelV0().fit(y_oof, y_pred_oof, prediction_std_oof)
         out = uq0.predict(ids, predictions, prediction_std)
+
+        # Multi-target: fit once per target, then name the target at predict time
+        uq0 = UQModelV0(targets=["logp", "logd"])
+        uq0.fit(y_logp, pred_logp, std_logp, target="logp")
+        uq0.fit(y_logd, pred_logd, std_logd, target="logd")
+        out = uq0.predict(ids, pred_logd, std_logd, target="logd")
 
         # Save / load (uq_metadata_v0.json)
         uq0.save(model_dir)
@@ -165,43 +174,66 @@ class UQModelV0:
 
     def __init__(
         self,
-        confidence_levels: List[float],
-        scale_factors: dict,
-        residual_calibrator: dict,
-        residual_percentiles: List[float],
+        targets: Optional[Union[str, List[str]]] = None,
+        confidence_levels: Optional[List[float]] = None,
     ):
-        self.confidence_levels = list(confidence_levels)
-        self.scale_factors = dict(scale_factors)
-        self.residual_calibrator = residual_calibrator
-        self.residual_percentiles = list(residual_percentiles)
+        """
+        Args:
+            targets: Target column name(s) this calibrator covers. The first is the
+                primary — what predict() scores when no target is named. Defaults to
+                a single unnamed target for single-target models.
+            confidence_levels: Target coverage levels for prediction intervals.
+                Default: [0.50, 0.68, 0.80, 0.90, 0.95].
+        """
+        if targets is None:
+            self.targets = [DEFAULT_TARGET]
+        else:
+            self.targets = [targets] if isinstance(targets, str) else list(targets)
+        self.confidence_levels = list(confidence_levels or DEFAULT_CONFIDENCE_LEVELS)
+
+        # Fitted state, keyed by target (set by fit() or from_dict())
+        self.scale_factors: Dict[str, dict] = {}
+        self.residual_calibrator: Dict[str, dict] = {}
+        self.residual_percentiles: Dict[str, List[float]] = {}
+
+    @property
+    def primary_target(self) -> str:
+        """The target predict() scores when the caller doesn't name one."""
+        return self.targets[0]
+
+    def _resolve_target(self, target: Optional[str]) -> str:
+        """Name the target to act on, defaulting to the primary."""
+        return target or self.primary_target
 
     # ------------------------------------------------------------------
     # Calibration
     # ------------------------------------------------------------------
-    @classmethod
     def fit(
-        cls,
+        self,
         y_oof: Union[np.ndarray, pd.Series],
         y_pred_oof: Union[np.ndarray, pd.Series],
         prediction_std_oof: Union[np.ndarray, pd.Series],
-        confidence_levels: Optional[List[float]] = None,
+        target: Optional[str] = None,
         verbose: bool = True,
     ) -> "UQModelV0":
-        """Fit the v0 calibrator on out-of-fold predictions.
+        """Fit one target's v0 calibrator on out-of-fold predictions.
+
+        Call once per target. Each call adds to the per-target fitted state.
 
         Args:
             y_oof: True target values, shape (n,).
             y_pred_oof: Out-of-fold predicted values from the model, shape (n,).
             prediction_std_oof: Ensemble std for each prediction, shape (n,).
-            confidence_levels: Target coverage levels for prediction intervals.
-                Default: [0.50, 0.68, 0.80, 0.90, 0.95].
+            target: Which target these predictions are for, defaulting to the primary.
             verbose: If True, print per-level scale factor + empirical coverage.
 
         Returns:
-            A fitted UQModelV0.
+            self (fitted)
         """
-        if confidence_levels is None:
-            confidence_levels = DEFAULT_CONFIDENCE_LEVELS
+        target = self._resolve_target(target)
+        if target not in self.targets:
+            self.targets.append(target)
+        confidence_levels = self.confidence_levels
 
         y_oof = np.asarray(y_oof, dtype=float).flatten()
         y_pred_oof = np.asarray(y_pred_oof, dtype=float).flatten()
@@ -244,12 +276,10 @@ class UQModelV0:
                 f"max={expected_residual_cal.max():.4f}"
             )
 
-        return cls(
-            confidence_levels=confidence_levels,
-            scale_factors=scale_factors,
-            residual_calibrator=residual_calibrator,
-            residual_percentiles=residual_percentiles,
-        )
+        self.scale_factors[target] = scale_factors
+        self.residual_calibrator[target] = residual_calibrator
+        self.residual_percentiles[target] = residual_percentiles
+        return self
 
     # ------------------------------------------------------------------
     # Inference
@@ -259,6 +289,7 @@ class UQModelV0:
         query: Optional[Union[List, pd.Series, np.ndarray, pd.DataFrame]],
         predictions: Union[np.ndarray, pd.Series],
         prediction_std: Union[np.ndarray, pd.Series],
+        target: Optional[str] = None,
     ) -> pd.DataFrame:
         """Compute v0 UQ outputs (expected residual, confidence, intervals).
 
@@ -273,12 +304,19 @@ class UQModelV0:
                 RangeIndex.
             predictions: Model predictions (ensemble mean), shape (n,).
             prediction_std: Ensemble standard deviation, shape (n,).
+            target: Which target `predictions` are for, defaulting to the primary.
 
         Returns:
             DataFrame with columns:
                 expected_residual, confidence, q_025, q_05, q_10, q_16, q_25,
                 q_50, q_75, q_84, q_90, q_95, q_975
         """
+        target = self._resolve_target(target)
+        if target not in self.residual_calibrator:
+            raise RuntimeError(
+                f"UQModelV0 has no calibration for '{target}' "
+                f"(fitted: {sorted(self.residual_calibrator)}). Call .fit(..., target=...) or .load(...)."
+            )
         predictions = np.asarray(predictions, dtype=float).flatten()
         prediction_std = np.asarray(prediction_std, dtype=float).flatten()
         if len(predictions) != len(prediction_std):
@@ -298,9 +336,9 @@ class UQModelV0:
 
         safe_std = np.maximum(prediction_std, 1e-10)
 
-        expected_residual = _apply_residual_calibrator(predictions, prediction_std, self.residual_calibrator)
+        expected_residual = _apply_residual_calibrator(predictions, prediction_std, self.residual_calibrator[target])
 
-        residual_percentiles = np.asarray(self.residual_percentiles)
+        residual_percentiles = np.asarray(self.residual_percentiles[target])
         ranks = np.searchsorted(residual_percentiles, expected_residual, side="right") / len(residual_percentiles)
         confidence = np.clip(1.0 - ranks, 0.0, 1.0)
 
@@ -314,7 +352,7 @@ class UQModelV0:
         )
 
         for alpha in self.confidence_levels:
-            q = self.scale_factors[f"{alpha:.2f}"]
+            q = self.scale_factors[target][f"{alpha:.2f}"]
             lower = predictions - q * safe_std
             upper = predictions + q * safe_std
             if alpha in _QUANTILE_COLUMNS:
@@ -332,10 +370,16 @@ class UQModelV0:
     def to_dict(self) -> dict:
         """Serialize to a JSON-compatible dict."""
         return {
+            "targets": list(self.targets),
             "confidence_levels": list(self.confidence_levels),
-            "scale_factors": dict(self.scale_factors),
-            "residual_calibrator": self.residual_calibrator,
-            "residual_percentiles": list(self.residual_percentiles),
+            "per_target": {
+                target: {
+                    "scale_factors": self.scale_factors[target],
+                    "residual_calibrator": self.residual_calibrator[target],
+                    "residual_percentiles": list(self.residual_percentiles[target]),
+                }
+                for target in self.residual_calibrator
+            },
         }
 
     def save(self, model_dir: str) -> None:
@@ -352,12 +396,12 @@ class UQModelV0:
     @classmethod
     def from_dict(cls, metadata: dict) -> "UQModelV0":
         """Reconstruct from a metadata dict."""
-        return cls(
-            confidence_levels=metadata["confidence_levels"],
-            scale_factors=metadata["scale_factors"],
-            residual_calibrator=metadata["residual_calibrator"],
-            residual_percentiles=metadata["residual_percentiles"],
-        )
+        instance = cls(targets=metadata["targets"], confidence_levels=metadata["confidence_levels"])
+        for target, per_target in metadata["per_target"].items():
+            instance.scale_factors[target] = per_target["scale_factors"]
+            instance.residual_calibrator[target] = per_target["residual_calibrator"]
+            instance.residual_percentiles[target] = per_target["residual_percentiles"]
+        return instance
 
     @classmethod
     def load(cls, model_dir: str, filename: Optional[str] = None) -> "UQModelV0":

@@ -496,18 +496,14 @@ if __name__ == "__main__":
         prox_df["in_model"] = in_model_mask
 
         uq_dict = fit_regression_uq(
-            y_true=y_true,
-            y_pred=y_pred,
-            y_std=oof_std,
-            oof_ids=oof_ids,
+            per_target={target: {"ids": oof_ids, "y_true": y_true, "y_pred": y_pred, "y_std": oof_std}},
             prox_df=prox_df,
             id_column=id_column,
-            target=target,
             features=features,
             active_version=hyperparameters.get("uq_version", "v1"),
         )
 
-        uq_out = uq_dict["uq_model"].predict(oof_ids, y_pred, oof_std)
+        uq_out = uq_dict["uq_model"].predict(oof_ids, y_pred, oof_std, target=target)
         for col in uq_out.columns:
             df_oof[col] = uq_out[col].values
 

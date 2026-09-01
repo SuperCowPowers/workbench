@@ -55,13 +55,9 @@ def _fit(ref_df, features, active_version="v1"):
     y_pred = y_true + rng.normal(scale=0.3, size=n)
     y_std = np.abs(rng.normal(0.3, 0.1, n))
     return fit_regression_uq(
-        y_true=y_true,
-        y_pred=y_pred,
-        y_std=y_std,
-        oof_ids=ref_df["id"].tolist(),
+        per_target={"y": {"ids": ref_df["id"].tolist(), "y_true": y_true, "y_pred": y_pred, "y_std": y_std}},
         prox_df=ref_df,
         id_column="id",
-        target="y",
         features=features,
         active_version=active_version,
     )
@@ -71,7 +67,7 @@ def _fit(ref_df, features, active_version="v1"):
 # _build_proximity — backend selection
 # =============================================================================
 def test_smiles_builds_fingerprint_backend(smiles_ref_df):
-    prox = _build_proximity(smiles_ref_df, id_column="id", target="y", features=None)
+    prox = _build_proximity(smiles_ref_df, id_column="id", targets=["y"], features=None)
     assert prox.space == "fingerprint"
 
 
@@ -80,24 +76,24 @@ def test_smiles_wins_over_features(smiles_ref_df):
     df = smiles_ref_df.copy()
     for f in FEATURES:
         df[f] = np.arange(len(df), dtype=float)
-    prox = _build_proximity(df, id_column="id", target="y", features=FEATURES)
+    prox = _build_proximity(df, id_column="id", targets=["y"], features=FEATURES)
     assert prox.space == "fingerprint"
 
 
 def test_features_build_feature_space_backend(feature_ref_df):
-    prox = _build_proximity(feature_ref_df, id_column="id", target="y", features=FEATURES)
+    prox = _build_proximity(feature_ref_df, id_column="id", targets=["y"], features=FEATURES)
     assert prox.space == "features"
     assert prox.features == FEATURES
 
 
 def test_no_smiles_and_no_features_builds_nothing(feature_ref_df):
-    assert _build_proximity(feature_ref_df, id_column="id", target="y", features=None) is None
-    assert _build_proximity(None, id_column="id", target="y", features=FEATURES) is None
+    assert _build_proximity(feature_ref_df, id_column="id", targets=["y"], features=None) is None
+    assert _build_proximity(None, id_column="id", targets=["y"], features=FEATURES) is None
 
 
 def test_features_absent_from_reference_set_builds_nothing(feature_ref_df):
     """Named features that aren't actually columns can't index anything."""
-    prox = _build_proximity(feature_ref_df, id_column="id", target="y", features=["nope", "also_nope"])
+    prox = _build_proximity(feature_ref_df, id_column="id", targets=["y"], features=["nope", "also_nope"])
     assert prox is None
 
 

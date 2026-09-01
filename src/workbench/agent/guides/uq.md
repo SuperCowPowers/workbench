@@ -51,6 +51,20 @@ means "expected error lower than 70% of calibration-set predictions."
 `inference()` and `cross_fold_inference()` take `include_quantiles=False` by
 default — pass `True` to persist the `q_*` columns.
 
+A multi-task model calibrates every target and repeats the block per target as
+`{target}_confidence`, `{target}_expected_residual`, `{target}_q_*`; the
+unprefixed names alias the primary. Each target's per-target capture carries its
+own values. Scoring a specific target directly:
+
+```python
+uq = Model("my-multi-task-model").uq_model()
+uq.predict(df[["smiles"]], preds, stds, target="logd")
+```
+
+Confidence for a sparse target is calibrated on that target's labeled rows and
+its nearest *labeled* neighbors, so a target measured on a small slice of the
+FeatureSet still gets a real confidence rather than a mostly-empty column.
+
 ## The three regression versions
 
 All three are fit at training time and saved in the bundle; `uq_version` picks

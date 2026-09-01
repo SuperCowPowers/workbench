@@ -38,7 +38,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import joblib
 import numpy as np
@@ -123,53 +123,89 @@ class UQModelV2:
     # Capped at the reference set size to avoid the proximity's
     # broadcasting bug when n_neighbors > n_train.
     _NEIGHBOR_OVERSHOOT = 10
+    _MAX_NEIGHBOR_REQUEST = 250
 
-    def _request_count(self, default_factor: int = None) -> int:
+    @staticmethod
+    def _label_coverage(prox: Proximity, target: str) -> float:
+        """Fraction of the reference set carrying a label for this target."""
+        return float(prox.df[target].notna().mean()) if target in prox.df.columns else 0.0
+
+    @classmethod
+    def _raw_request(cls, prox: Proximity, k: int, target: Optional[str] = None) -> int:
         """How many raw neighbors to request before dedup-to-k-unique.
 
-        Capped at the proximity reference set size minus one (to leave room
-        for excluding self on training-set queries).
+        Scaled up by the target's label coverage so that k *labeled* neighbors are
+        reachable in a sparse multi-target reference set. Capped at the reference
+        set size minus one (to leave room for excluding self on training queries).
         """
-        factor = default_factor or self._NEIGHBOR_OVERSHOOT
-        raw = self.k * factor
-        max_available = max(1, len(self.prox.df) - 1)
-        return min(raw, max_available)
+        raw = k * cls._NEIGHBOR_OVERSHOOT
+        if target is not None:
+            coverage = cls._label_coverage(prox, target)
+            if coverage > 0.0:
+                raw = max(raw, int(np.ceil(k / coverage * cls._NEIGHBOR_OVERSHOOT)))
+            raw = min(raw, cls._MAX_NEIGHBOR_REQUEST)
+        return min(raw, max(1, len(prox.df) - 1))
+
+    def _request_count(self, target: Optional[str] = None) -> int:
+        """Instance-side wrapper over :meth:`_raw_request`."""
+        return self._raw_request(self.prox, self.k, target)
 
     def __init__(
         self,
         prox: Proximity,
         k: int = 10,
+        targets: Optional[Union[str, List[str]]] = None,
         distance_percentiles: Optional[List[float]] = None,
-        variance_percentiles: Optional[List[float]] = None,
+        variance_percentiles: Optional[Dict[str, List[float]]] = None,
         confidence_levels: Optional[List[float]] = None,
     ):
         """
         Args:
-            prox: Proximity backend (target required) for neighborhood lookups.
+            prox: Proximity backend for neighborhood lookups, shared across targets.
             k: Number of unique nearest neighbors per query (default 10).
+            targets: Target column(s) to model, defaulting to the backend's. The first
+                is the primary — what predict() scores when no target is named.
             distance_percentiles: 0..100 percentiles of mean-neighbor-distance across
-                the training set. Populated by fit() or load().
-            variance_percentiles: 0..100 percentiles of neighbor-target-std across the
-                training set. Populated by fit() or load().
+                the training set. Target-independent. Populated by fit() or load().
+            variance_percentiles: Per target, the 0..100 percentiles of
+                neighbor-target-std across the training set. Populated by fit() or load().
             confidence_levels: Coverage levels used for the neighbor-target quantile
                 output (q_025..q_975). Default [0.50, 0.68, 0.80, 0.90, 0.95].
         """
         if prox is None:
             raise ValueError("UQModelV2 requires a non-None Proximity backend")
-        if not getattr(prox, "target", None):
-            raise ValueError("UQModelV2 requires the Proximity to have a target column set")
 
         self.prox = prox
         self.k = k
+        if targets is None:
+            self.targets = list(prox.targets)
+        else:
+            self.targets = [targets] if isinstance(targets, str) else list(targets)
+        if not self.targets:
+            raise ValueError("UQModelV2 requires at least one target column")
         self.distance_percentiles = list(distance_percentiles) if distance_percentiles is not None else None
-        self.variance_percentiles = list(variance_percentiles) if variance_percentiles is not None else None
+        self.variance_percentiles = dict(variance_percentiles) if variance_percentiles is not None else None
         self.confidence_levels = confidence_levels or list(self.DEFAULT_CONFIDENCE_LEVELS)
+
+    @property
+    def primary_target(self) -> str:
+        """The target predict() scores when the caller doesn't name one."""
+        return self.targets[0]
+
+    def _resolve_target(self, target: Optional[str]) -> str:
+        """Name the target to act on, defaulting to the primary."""
+        target = target or self.primary_target
+        if self.variance_percentiles is not None and target not in self.variance_percentiles:
+            raise RuntimeError(
+                f"UQModelV2 has no calibration for '{target}' " f"(fitted: {sorted(self.variance_percentiles)})."
+            )
+        return target
 
     # ------------------------------------------------------------------
     # Calibration
     # ------------------------------------------------------------------
     @classmethod
-    def fit(cls, prox: Proximity, k: int = 10) -> "UQModelV2":
+    def fit(cls, prox: Proximity, k: int = 10, targets: Optional[Union[str, List[str]]] = None) -> "UQModelV2":
         """Compute reference percentile distributions of (mean_distance, target_std).
 
         For every training compound (rows in ``prox.df``), find its k unique nearest
@@ -177,61 +213,70 @@ class UQModelV2:
         percentiles of those two distributions become the reference for ranking
         query stats at predict time.
 
+        Distance is target-independent, so its distribution is calibrated once over
+        the whole reference set. Target spread is calibrated per target, over that
+        target's labeled rows and their labeled neighbors.
+
         Args:
-            prox: FingerprintProximity over the training set, with target column set.
+            prox: FingerprintProximity over the training set, with target column(s) set.
             k: Unique nearest-neighbor count for each query (default 10).
+            targets: Target column(s) to calibrate, defaulting to the backend's.
 
         Returns:
             A fitted UQModelV2.
         """
         id_col = prox.id_column
-        target_col = prox.target
+        if targets is None:
+            target_list = list(prox.targets)
+        else:
+            target_list = [targets] if isinstance(targets, str) else list(targets)
+        if not target_list:
+            raise ValueError("UQModelV2.fit requires at least one target column")
         train_ids = prox.df[id_col].unique().tolist()
 
-        log.info(f"Fitting UQModelV2 on {len(train_ids)} training compounds (k={k}) ...")
+        log.info(f"Fitting UQModelV2 on {len(train_ids)} training compounds " f"(k={k}, targets={target_list}) ...")
 
-        # Bulk neighbor lookup with over-request to absorb replicate rows.
-        # Cap at reference-set size minus one (proximity has a broadcasting bug
-        # when n_neighbors > n_train, and we always exclude self anyway).
-        n_request = min(k * cls._NEIGHBOR_OVERSHOOT, max(1, len(prox.df) - 1))
-        raw_nbrs = prox.neighbors(
-            train_ids,
-            n_neighbors=n_request,
-            include_self=False,
-        )
-        unique_nbrs = _unique_neighbors_per_query(raw_nbrs, query_col=id_col, k=k)
-
-        # Per-query stats: mean distance, std of neighbor targets
-        unique_nbrs = _with_distance(unique_nbrs)
-        stats = unique_nbrs.groupby(id_col).agg(
-            mean_distance=("distance", "mean"),
-            target_std=(target_col, "std"),
-        )
-
-        # Reference distributions — handle NaN (e.g. compounds with <2 neighbors)
-        mean_distances = stats["mean_distance"].dropna().to_numpy()
-        target_stds = stats["target_std"].dropna().to_numpy()
-        if len(mean_distances) == 0 or len(target_stds) == 0:
+        # Distance calibration: one pass over the whole reference set. Over-request
+        # to absorb replicate rows, capped at reference-set size minus one (proximity
+        # has a broadcasting bug when n_neighbors > n_train, and self is excluded).
+        raw_nbrs = prox.neighbors(train_ids, n_neighbors=cls._raw_request(prox, k), include_self=False)
+        unique_nbrs = _with_distance(_unique_neighbors_per_query(raw_nbrs, query_col=id_col, k=k))
+        mean_distances = unique_nbrs.groupby(id_col)["distance"].mean().dropna().to_numpy()
+        if len(mean_distances) == 0:
             raise RuntimeError(
                 "UQModelV2 fit produced no valid neighborhood stats. "
                 "Check that the proximity contains at least k+1 training compounds."
             )
-
         distance_percentiles = [float(np.percentile(mean_distances, p)) for p in range(101)]
-        variance_percentiles = [float(np.percentile(target_stds, p)) for p in range(101)]
-
         log.info(
             f"  mean_distance:   min={mean_distances.min():.4f}, "
             f"median={np.median(mean_distances):.4f}, max={mean_distances.max():.4f}"
         )
-        log.info(
-            f"  target_std:      min={target_stds.min():.4f}, "
-            f"median={np.median(target_stds):.4f}, max={target_stds.max():.4f}"
-        )
+
+        # Spread calibration, per target, over that target's labeled neighborhoods.
+        variance_percentiles = {}
+        for target in target_list:
+            labeled_ids = prox.df.loc[prox.df[target].notna(), id_col].unique().tolist()
+            if not labeled_ids:
+                raise RuntimeError(f"UQModelV2 fit: no labeled rows for target '{target}'")
+            raw = prox.neighbors(labeled_ids, n_neighbors=cls._raw_request(prox, k, target), include_self=False)
+            labeled_nbrs = _unique_neighbors_per_query(raw[raw[target].notna()], query_col=id_col, k=k)
+            target_stds = labeled_nbrs.groupby(id_col)[target].std().dropna().to_numpy()
+            if len(target_stds) == 0:
+                raise RuntimeError(
+                    f"UQModelV2 fit: target '{target}' has no neighborhood with two labeled "
+                    "neighbors; its labels are too sparse for applicability-domain UQ."
+                )
+            variance_percentiles[target] = [float(np.percentile(target_stds, p)) for p in range(101)]
+            log.info(
+                f"  target_std [{target}]: min={target_stds.min():.4f}, "
+                f"median={np.median(target_stds):.4f}, max={target_stds.max():.4f}"
+            )
 
         return cls(
             prox=prox,
             k=k,
+            targets=target_list,
             distance_percentiles=distance_percentiles,
             variance_percentiles=variance_percentiles,
         )
@@ -244,6 +289,7 @@ class UQModelV2:
         query: Union[List, pd.Series, np.ndarray, pd.DataFrame],
         predictions: Optional[Union[np.ndarray, pd.Series]] = None,
         prediction_std: Optional[Union[np.ndarray, pd.Series]] = None,
+        target: Optional[str] = None,
     ) -> pd.DataFrame:
         """Compute V2 UQ outputs (AD confidence + neighbor-derived intervals).
 
@@ -257,6 +303,7 @@ class UQModelV2:
                 'fingerprint' for FingerprintProximity).
             predictions: Ignored. Accepted for V0/V1 compatibility.
             prediction_std: Ignored. Accepted for V0/V1 compatibility.
+            target: Which target to score, defaulting to the primary.
 
         Returns:
             DataFrame indexed by query id (or query_id for novel queries) with columns:
@@ -265,10 +312,10 @@ class UQModelV2:
                 distance_percentile, variance_percentile,
                 q_025, q_05, q_10, q_16, q_25, q_50, q_75, q_84, q_90, q_95, q_975
         """
-        if self.distance_percentiles is None or self.variance_percentiles is None:
+        if self.distance_percentiles is None or not self.variance_percentiles:
             raise RuntimeError("UQModelV2 not fitted. Call .fit(...) first or .load(...).")
 
-        target_col = self.prox.target
+        target_col = self._resolve_target(target)
 
         # Auto-dispatch on query type (parallel to V1.predict). Cap n_neighbors
         # at the reference set size to avoid the proximity's broadcasting bug.
@@ -276,7 +323,7 @@ class UQModelV2:
         # back to the input length even when the proximity silently drops rows
         # (e.g. unparseable SMILES). Callers do `df_val[col] = uq_out[col].values`
         # and expect len(uq_out) == len(query).
-        n_request = self._request_count()
+        n_request = self._request_count(target_col)
         if isinstance(query, pd.DataFrame):
             raw_nbrs = self.prox.neighbors_from_query_df(query, n_neighbors=n_request)
             query_col = "query_id"
@@ -298,12 +345,16 @@ class UQModelV2:
                 dtype=float,
             )
 
-        unique_nbrs = _unique_neighbors_per_query(raw_nbrs, query_col=query_col, k=self.k)
-        unique_nbrs = _with_distance(unique_nbrs)
+        raw_nbrs = _with_distance(raw_nbrs)
 
-        # Per-query aggregates
-        agg = unique_nbrs.groupby(query_col).agg(
-            neighbor_distance=("distance", "mean"),
+        # Distance spans every neighbor — it describes the query's applicability
+        # domain whether or not the neighbourhood happens to carry this target's label.
+        unique_nbrs = _unique_neighbors_per_query(raw_nbrs, query_col=query_col, k=self.k)
+        agg = unique_nbrs.groupby(query_col).agg(neighbor_distance=("distance", "mean"))
+
+        # Target statistics come from the k nearest *labeled* neighbors.
+        labeled_nbrs = _unique_neighbors_per_query(raw_nbrs[raw_nbrs[target_col].notna()], query_col, self.k)
+        target_agg = labeled_nbrs.groupby(query_col).agg(
             neighbor_target_mean=(target_col, "mean"),
             neighbor_target_std=(target_col, "std"),
         )
@@ -311,15 +362,17 @@ class UQModelV2:
         # Per-query neighbor-target quantiles (the V2 prediction intervals)
         # pandas groupby.quantile handles a single q at a time; build column-by-column
         for q_num, col_name in _NEIGHBOR_QUANTILES.items():
-            agg[col_name] = unique_nbrs.groupby(query_col)[target_col].quantile(q_num / 100.0)
+            target_agg[col_name] = labeled_nbrs.groupby(query_col)[target_col].quantile(q_num / 100.0)
+        agg = agg.join(target_agg, how="outer")
 
         # Rank each query's mean_distance / target_std against stored distributions
+        variance_percentiles = self.variance_percentiles[target_col]
         dist_pct = np.searchsorted(self.distance_percentiles, agg["neighbor_distance"].values, side="right") / len(
             self.distance_percentiles
         )
-        # std can be NaN for queries with <2 neighbors; treat as worst-case (pct=1)
+        # std is NaN for queries with under two labeled neighbors; treat as worst-case (pct=1)
         var_values = agg["neighbor_target_std"].fillna(np.inf).values
-        var_pct = np.searchsorted(self.variance_percentiles, var_values, side="right") / len(self.variance_percentiles)
+        var_pct = np.searchsorted(variance_percentiles, var_values, side="right") / len(variance_percentiles)
         dist_pct = np.clip(dist_pct, 0.0, 1.0)
         var_pct = np.clip(var_pct, 0.0, 1.0)
 
@@ -358,7 +411,7 @@ class UQModelV2:
         from the source FeatureSet, set ``save_proximity=False`` to skip the
         proximity file entirely.
         """
-        if self.distance_percentiles is None or self.variance_percentiles is None:
+        if self.distance_percentiles is None or not self.variance_percentiles:
             raise RuntimeError("UQModelV2 not fitted; nothing to save.")
         os.makedirs(model_dir, exist_ok=True)
 
@@ -376,9 +429,10 @@ class UQModelV2:
 
         metadata = {
             "k": self.k,
+            "targets": self.targets,
             "confidence_levels": self.confidence_levels,
             "distance_percentiles": list(self.distance_percentiles),
-            "variance_percentiles": list(self.variance_percentiles),
+            "variance_percentiles": {t: list(p) for t, p in self.variance_percentiles.items()},
         }
         with open(os.path.join(model_dir, self.METADATA_FILENAME), "w") as fp:
             json.dump(metadata, fp, indent=2)
@@ -413,6 +467,7 @@ class UQModelV2:
         return cls(
             prox=prox,
             k=metadata["k"],
+            targets=metadata["targets"],
             distance_percentiles=metadata["distance_percentiles"],
             variance_percentiles=metadata["variance_percentiles"],
             confidence_levels=metadata.get("confidence_levels"),

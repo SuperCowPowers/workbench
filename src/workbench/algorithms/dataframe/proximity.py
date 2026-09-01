@@ -40,7 +40,7 @@ class Proximity(ABC):
         df: pd.DataFrame,
         id_column: str,
         features: List[str],
-        target: Optional[str] = None,
+        target: Optional[Union[str, List[str]]] = None,
         include_all_columns: bool = False,
     ):
         """
@@ -50,13 +50,17 @@ class Proximity(ABC):
             df: DataFrame containing the reference set for neighbor computations.
             id_column: Name of the column used as the identifier.
             features: List of feature column names used for neighbor computations.
-            target: Name of the target column. Defaults to None.
+            target: Name of the target column, or a list of them for a reference set
+                carrying several labels. Neighbor results carry every target column
+                present in the reference set; `self.target` is the first (primary).
+                Defaults to None.
             include_all_columns: Include all DataFrame columns in neighbor results.
                 Defaults to False.
         """
         self.id_column = id_column
         self.features = features
-        self.target = target
+        self.targets = [target] if isinstance(target, str) else list(target or [])
+        self.target = self.targets[0] if self.targets else None
         self.include_all_columns = include_all_columns
 
         # Store the DataFrame (subclasses may filter/modify in _prepare_data)
@@ -279,9 +283,10 @@ class Proximity(ABC):
             "distance": flat_distances,
         }
 
-        # Add target if present
-        if self.target and self.target in self.df.columns:
-            result[self.target] = self.df[self.target].values[flat_indices]
+        # Add target columns present in the reference set
+        for target in self.targets:
+            if target in self.df.columns:
+                result[target] = self.df[target].values[flat_indices]
 
         # Pass through prediction-related and in_model columns
         for col in self.df.columns:

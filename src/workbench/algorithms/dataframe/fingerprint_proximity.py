@@ -201,7 +201,7 @@ class FingerprintProximity(Proximity):
         df: pd.DataFrame,
         id_column: str,
         fingerprint_column: Optional[str] = None,
-        target: Optional[str] = None,
+        target: Optional[Union[str, List[str]]] = None,
         include_all_columns: bool = False,
         radius: int = 2,
         n_bits: int = 4096,
@@ -215,7 +215,7 @@ class FingerprintProximity(Proximity):
             id_column: Name of the column used as an identifier.
             fingerprint_column: Name of the column containing fingerprints (bit strings).
                 If None, looks for existing "fingerprint" column or computes from SMILES.
-            target: Name of the target column. Defaults to None.
+            target: Name of the target column, or a list of them. Defaults to None.
             include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
             radius: Radius for Morgan fingerprint computation (default: 2).
             n_bits: Number of bits for fingerprint (default: 4096).

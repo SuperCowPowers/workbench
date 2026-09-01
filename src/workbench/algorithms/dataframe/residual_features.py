@@ -18,9 +18,22 @@ Feature definitions per query compound:
                       failures (e.g. solubility censored-attractor case).
                       A query with knn_target_std >> 0 sits in a region where
                       the ensemble's tight agreement is misleadingly confident.
+    knn_target_count How many of those neighbors actually carry a label. Sparse
+                      multi-target reference sets leave most neighbors unlabeled
+                      for any one target, and the mean/std of one or zero labels
+                      says nothing — this is how the residual model learns to
+                      distrust them.
     local_pred_gap   prediction - knn_target_mean. Catches "model predicts the
                       cluster mean but neighbors are diverse" — only computed
                       when predictions are passed in.
+
+`knn_distance` covers every neighbor; the target statistics cover only the
+labeled ones, so an unlabeled neighborhood still reports its applicability
+domain. Neighbor requests are over-fetched in proportion to the target's label
+coverage so that k labeled neighbors are reachable in a sparse reference set.
+
+One reference set can serve several targets: the Proximity backend is shared and
+each ResidualFeatures instance names the target column it aggregates.
 
 Composition over inheritance: takes any Proximity backend.
 """
@@ -58,22 +71,40 @@ class ResidualFeatures:
         )
     """
 
-    def __init__(self, prox: Proximity):
+    # Over-fetch factor applied on top of the coverage-scaled neighbor request,
+    # absorbing local clustering of unlabeled rows and `training_only` filtering.
+    NEIGHBOR_OVERSHOOT = 1.5
+    MAX_NEIGHBOR_REQUEST = 250
+
+    def __init__(self, prox: Proximity, target: Optional[str] = None):
         """
         Args:
-            prox: Proximity backend with a target column set (required for
-                knn_target_mean / knn_target_std).
+            prox: Proximity backend for neighbor lookups.
+            target: Target column to aggregate, defaulting to the backend's primary.
+                Must be a column of ``prox.df`` — knn_target_mean / knn_target_std
+                need its values.
         """
-        if not prox.target:
+        self.target = target or prox.target
+        if not self.target:
             raise ValueError(
-                "ResidualFeatures requires a Proximity backend with `target` set "
-                "(knn_target_mean and knn_target_std need target values)"
+                "ResidualFeatures requires a target column (knn_target_mean and "
+                "knn_target_std need target values); pass `target=` or set it on the backend"
             )
+        if self.target not in prox.df.columns:
+            raise ValueError(f"Target '{self.target}' is not a column of the proximity reference set")
         self.prox = prox
         # Detect whether the backend returns 'similarity' (FingerprintProximity)
         # or 'distance' (FeatureSpaceProximity, etc.). We normalize to distance
         # internally so feature names are consistent across backends.
         self._distance_col = "similarity" if hasattr(prox, "_add_similarity_column") else "distance"
+        self._label_coverage = float(prox.df[self.target].notna().mean())
+
+    def _request_count(self, k: int) -> int:
+        """Neighbors to pull so that ~k of them carry a label for this target."""
+        if self._label_coverage <= 0.0:
+            return k
+        scaled = int(np.ceil(k / self._label_coverage * self.NEIGHBOR_OVERSHOOT))
+        return int(min(max(scaled, k), self.MAX_NEIGHBOR_REQUEST, len(self.prox.df)))
 
     # ------------------------------------------------------------------
     # Public feature-computation API
@@ -99,11 +130,12 @@ class ResidualFeatures:
 
         Returns:
             DataFrame indexed by query id with columns:
-                knn_distance, knn_target_mean, knn_target_std, [local_pred_gap]
+                knn_distance, knn_target_mean, knn_target_std, knn_target_count,
+                [local_pred_gap]
         """
         ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
 
-        nbrs = self.prox.neighbors(ids, n_neighbors=k, include_self=False)
+        nbrs = self.prox.neighbors(ids, n_neighbors=self._request_count(k), include_self=False)
 
         return self._aggregate(
             nbrs,
@@ -134,10 +166,11 @@ class ResidualFeatures:
 
         Returns:
             DataFrame indexed by query_id (or positional index) with columns:
-                knn_distance, knn_target_mean, knn_target_std, [local_pred_gap]
+                knn_distance, knn_target_mean, knn_target_std, knn_target_count,
+                [local_pred_gap]
         """
         # Novel queries are never self-matches; just ask for k neighbors directly
-        nbrs = self.prox.neighbors_from_query_df(query_df, n_neighbors=k)
+        nbrs = self.prox.neighbors_from_query_df(query_df, n_neighbors=self._request_count(k))
 
         if "query_id" in query_df.columns:
             query_ids = query_df["query_id"].tolist()
@@ -176,10 +209,6 @@ class ResidualFeatures:
                 )
             nbrs = nbrs[nbrs["in_model"]].copy()
 
-        # Defensive: cap each query to its top-k neighbors. training_only filtering can
-        # asymmetrically reduce per-query neighbor counts; this normalizes back to k.
-        nbrs = nbrs.groupby(id_col, group_keys=False).head(k)
-
         # Normalize: produce a "distance"-style column regardless of backend
         if self._distance_col == "similarity":
             nbrs = nbrs.copy()
@@ -188,16 +217,29 @@ class ResidualFeatures:
         else:
             dist_col = "distance"
 
-        # Aggregate per query
-        target = self.prox.target
-        agg = nbrs.groupby(id_col).agg(
-            knn_distance=(dist_col, "mean"),
-            knn_target_mean=(target, "mean"),
-            knn_target_std=(target, "std"),
+        # Distance is an applicability-domain signal, so it spans the top-k neighbors
+        # whether or not they carry this target's label. Neighbor requests are
+        # over-fetched for label coverage, so cap back to k here.
+        nearest = nbrs.groupby(id_col, group_keys=False).head(k)
+        agg = nearest.groupby(id_col).agg(knn_distance=(dist_col, "mean"))
+
+        # Target statistics come from the k nearest *labeled* neighbors — an
+        # unlabeled neighbor carries no information about the local target surface.
+        labeled = nbrs[nbrs[self.target].notna()].groupby(id_col, group_keys=False).head(k)
+        target_agg = labeled.groupby(id_col).agg(
+            knn_target_mean=(self.target, "mean"),
+            knn_target_std=(self.target, "std"),
+            knn_target_count=(self.target, "size"),
         )
+        agg = agg.join(target_agg, how="outer")
 
         # Reindex to preserve caller's query order and surface missing queries as NaN
         agg = agg.reindex(query_ids)
+
+        # A query with no labeled neighbors has a count of zero, not an unknown one.
+        # std needs two labels, so a single-label neighborhood also lands here with
+        # a NaN std; the count is what tells the residual model to discount it.
+        agg["knn_target_count"] = agg["knn_target_count"].fillna(0).astype(float)
 
         if predictions is not None:
             predictions = np.asarray(predictions, dtype=float)

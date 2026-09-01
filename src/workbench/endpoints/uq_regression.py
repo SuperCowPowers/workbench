@@ -12,12 +12,16 @@ regression UQ:
     4. At inference (``model_fn``), load whichever version the bundle's
        ``hyperparameters["uq_version"]`` selects.
 
+A multi-target model calibrates every target, not just the primary. The three UQ
+models each hold per-target state over one shared proximity index, so callers
+name the target at predict time: ``uq.predict(query, preds, stds, target=...)``.
+
 That logic lives here so each template can call:
 
     # ---- Training ----
-    uq_dict = fit_regression_uq(...)
-    uq_out = uq_dict["uq_model"].predict(...)         # active for df_oof cols
-    save_regression_uq(uq_dict, args.model_dir)       # writes V0, V1, V2
+    uq_dict = fit_regression_uq(per_target={...}, ...)
+    uq_out = uq_dict["uq_model"].predict(..., target=t)   # active, per target
+    save_regression_uq(uq_dict, args.model_dir)           # writes V0, V1, V2
 
     # ---- Inference (model_fn) ----
     uq_model = load_regression_uq(model_dir)          # returns just the active
@@ -58,26 +62,29 @@ def _normalize_version(version: Optional[str]) -> str:
     return v
 
 
-def _build_proximity(prox_df, *, id_column: str, target: str, features: Optional[list] = None) -> Optional[Proximity]:
+def _build_proximity(prox_df, *, id_column: str, targets: list, features: Optional[list] = None) -> Optional[Proximity]:
     """Pick the neighbor backend for V1/V2 from what the reference set carries.
 
     A 'smiles' column wins — structure-based neighborhoods are the stronger signal.
     Otherwise fall back to the model's own feature columns. Returns None when
     neither is available, which leaves V1/V2 unfit.
+
+    One index serves every target: neighborhoods are structural, and only the label
+    column being aggregated changes from target to target.
     """
     if prox_df is None:
         return None
 
     if "smiles" in prox_df.columns:
         log.info("Building FingerprintProximity reference set ('smiles') ...")
-        return FingerprintProximity(prox_df, id_column=id_column, target=target)
+        return FingerprintProximity(prox_df, id_column=id_column, target=targets)
 
     usable = [f for f in (features or []) if f in prox_df.columns]
     if not usable:
         return None
 
     log.info(f"No 'smiles' column: building FeatureSpaceProximity over {len(usable)} feature columns ...")
-    return FeatureSpaceProximity(prox_df, id_column=id_column, features=usable, target=target)
+    return FeatureSpaceProximity(prox_df, id_column=id_column, features=usable, target=targets)
 
 
 def uq_query_df(uq_model, df, features: Optional[list] = None):
@@ -118,13 +125,9 @@ def uq_query_df(uq_model, df, features: Optional[list] = None):
 
 def fit_regression_uq(
     *,
-    y_true,
-    y_pred,
-    y_std,
-    oof_ids: list,
+    per_target: dict,
     prox_df=None,
     id_column: str,
-    target: str,
     features: Optional[list] = None,
     active_version: str = "v1",
 ) -> dict:
@@ -136,21 +139,23 @@ def fit_regression_uq(
     otherwise ``features`` gives ``FeatureSpaceProximity`` over the model's own
     feature columns. V1/V2 are skipped only when neither is available.
 
+    Every target in ``per_target`` is calibrated over one shared proximity index.
+    The first key is the primary — the one scored when a caller doesn't name a target.
+
     Future me: the prox_df construction is currently duplicated in the
     xgb/pytorch/chemprop templates. Consider passing the training df here and
     building the reference set in this one place so the templates just call this.
 
     Args:
-        y_true: True target values for the out-of-fold rows, shape (n,).
-        y_pred: Out-of-fold predicted values (ensemble mean), shape (n,).
-        y_std: Ensemble standard deviation, shape (n,).
-        oof_ids: Compound IDs aligned with the above arrays.
+        per_target: ``{target_column: {"ids", "y_true", "y_pred", "y_std"}}``, each
+            entry holding that target's out-of-fold rows: compound IDs, true values,
+            predicted values (ensemble mean), and ensemble standard deviation.
+            Insertion order sets the primary.
         prox_df: DataFrame for the V1/V2 proximity reference set, or None. Must
-            contain ``id_column``, the target column, and either a ``smiles``
+            contain ``id_column``, every target column, and either a ``smiles``
             column or the ``features`` columns (CV rows marked ``in_model=True``).
             When None, only V0 is fit.
         id_column: Name of the ID column in ``prox_df``.
-        target: Name of the target column in ``prox_df``.
         features: Model feature columns, used to build a FeatureSpaceProximity when
             ``prox_df`` has no ``smiles`` column.
         active_version: Which version is the "primary" one (``"v0"``, ``"v1"``,
@@ -159,23 +164,30 @@ def fit_regression_uq(
 
     Returns:
         dict with keys ``uq_model`` (the active instance), ``v0``, ``v1``, ``v2``
-        (``v1``/``v2`` are None when no proximity backend could be built).
+        (``v1``/``v2`` are None when no proximity backend could be built), and
+        ``targets`` (the calibrated target names, primary first).
     """
     active = _normalize_version(active_version)
+    if not per_target:
+        raise ValueError("fit_regression_uq requires at least one target in `per_target`")
+    targets = list(per_target)
 
-    log.info("Fitting UQModelV0 (isotonic on prediction+std) ...")
-    uq_model_v0 = UQModelV0.fit(y_true, y_pred, y_std)
+    log.info(f"Fitting UQModelV0 (isotonic on prediction+std) for {len(targets)} target(s) ...")
+    uq_model_v0 = UQModelV0(targets=targets)
+    for target, data in per_target.items():
+        uq_model_v0.fit(data["y_true"], data["y_pred"], data["y_std"], target=target)
 
     uq_model_v1 = None
     uq_model_v2 = None
-    prox = _build_proximity(prox_df, id_column=id_column, target=target, features=features)
+    prox = _build_proximity(prox_df, id_column=id_column, targets=targets, features=features)
     if prox is not None:
         log.info("Fitting UQModelV1 (proximity-augmented RF error model) ...")
-        uq_model_v1 = UQModelV1(prox)
-        uq_model_v1.fit(oof_ids, y_true, y_pred, y_std)
+        uq_model_v1 = UQModelV1(prox, targets=targets)
+        for target, data in per_target.items():
+            uq_model_v1.fit(data["ids"], data["y_true"], data["y_pred"], data["y_std"], target=target)
 
         log.info("Fitting UQModelV2 (applicability-domain from proximity) ...")
-        uq_model_v2 = UQModelV2.fit(prox)
+        uq_model_v2 = UQModelV2.fit(prox, targets=targets)
 
     active_lookup = {"v0": uq_model_v0, "v1": uq_model_v1, "v2": uq_model_v2}
     uq_model_active = active_lookup.get(active)
@@ -189,6 +201,7 @@ def fit_regression_uq(
         "v0": uq_model_v0,
         "v1": uq_model_v1,
         "v2": uq_model_v2,
+        "targets": targets,
     }
 
 

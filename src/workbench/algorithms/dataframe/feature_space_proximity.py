@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import List, Optional
+from typing import List, Optional, Union
 import logging
 
 # Workbench Imports
@@ -32,7 +32,7 @@ class FeatureSpaceProximity(Proximity):
         df: pd.DataFrame,
         id_column: str,
         features: List[str],
-        target: Optional[str] = None,
+        target: Optional[Union[str, List[str]]] = None,
         include_all_columns: bool = False,
     ):
         """
@@ -42,7 +42,7 @@ class FeatureSpaceProximity(Proximity):
             df: DataFrame containing data for neighbor computations.
             id_column: Name of the column used as the identifier.
             features: List of feature column names to be used for neighbor computations.
-            target: Name of the target column. Defaults to None.
+            target: Name of the target column, or a list of them. Defaults to None.
             include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
         """
         self._raw_features = features

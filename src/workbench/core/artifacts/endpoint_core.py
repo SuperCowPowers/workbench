@@ -1032,28 +1032,35 @@ class EndpointCore(AWSArtifact):
 
     @staticmethod
     def _remap_multi_target_columns(df: pd.DataFrame, target: str) -> pd.DataFrame:
-        """Point the standard prediction columns at one target's outputs.
+        """Point the standard prediction and UQ columns at one target's outputs.
 
-        A multi-target model emits `{target}_pred` per target, while `prediction` carries
-        only the primary target. A per-target capture has to carry that target's own
-        values, or its stored predictions disagree with the metrics saved beside them.
+        A multi-target model emits `{target}_pred` and `{target}_confidence` per target,
+        while the unprefixed columns carry only the primary target. A per-target capture
+        has to carry that target's own values, or its stored predictions disagree with
+        the metrics saved beside them. A standard column with no counterpart for this
+        target is dropped rather than left holding the primary target's values under
+        another target's name.
 
         Args:
             df (pd.DataFrame): Prediction results carrying per-target columns
             target (str): The target whose columns become the standard ones
 
         Returns:
-            pd.DataFrame: Copy with prediction/prediction_std/confidence set from target
+            pd.DataFrame: Copy with the standard columns set from target
         """
         remapped = df.copy()
-        for standard, per_target in [
-            ("prediction", f"{target}_pred"),
-            ("prediction_std", f"{target}_pred_std"),
-            ("confidence", f"{target}_confidence"),
-        ]:
+        standard_columns = ["prediction", "prediction_std", "confidence", "expected_residual"]
+        standard_columns += [c for c in remapped.columns if c.startswith("q_")]
+        per_target_names = {"prediction": f"{target}_pred", "prediction_std": f"{target}_pred_std"}
+
+        drop_columns = []
+        for standard in standard_columns:
+            per_target = per_target_names.get(standard, f"{target}_{standard}")
             if per_target in remapped.columns:
                 remapped[standard] = remapped[per_target]
-        return remapped
+            elif standard in remapped.columns:
+                drop_columns.append(standard)
+        return remapped.drop(columns=drop_columns)
 
     def _capture_inference_results(
         self,
