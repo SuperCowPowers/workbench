@@ -58,12 +58,16 @@ def test_single_target_frame_passes_through():
     assert out["prediction_std"].tolist() == [0.1]
 
 
-def test_partial_columns_remap_what_exists():
-    """Not every model emits confidence; remap the columns that are present."""
+def test_missing_per_target_column_is_dropped_not_leaked():
+    """A target with no confidence of its own must not inherit the primary's.
+
+    Leaving it would label the primary target's confidence with another target's
+    capture name — wrong rather than merely missing, and impossible to spot downstream.
+    """
     df = pd.DataFrame({"id": ["a"], "cyp2c9_pred": [1.0], "prediction": [5.0], "confidence": [0.9]})
     out = remap(df, "cyp2c9")
     assert out["prediction"].tolist() == [1.0]
-    assert out["confidence"].tolist() == [0.9]  # no cyp2c9_confidence, so untouched
+    assert "confidence" not in out.columns
 
 
 def test_capture_can_reproduce_its_own_metric(multi_target_df):
@@ -73,3 +77,25 @@ def test_capture_can_reproduce_its_own_metric(multi_target_df):
     from_capture = (out["prediction"] - truth).abs().mean()
     from_target = (multi_target_df["cyp2c9_pred"] - truth).abs().mean()
     assert from_capture == pytest.approx(from_target)
+
+
+def test_per_target_uq_columns_are_remapped():
+    """Confidence and the interval columns follow their target, same as prediction."""
+    df = pd.DataFrame(
+        {
+            "id": ["a"],
+            "cyp3a4_pred": [5.0],
+            "cyp3a4_confidence": [0.9],
+            "cyp3a4_q_05": [4.0],
+            "cyp2c9_pred": [1.0],
+            "cyp2c9_confidence": [0.4],
+            "cyp2c9_q_05": [0.5],
+            "prediction": [5.0],
+            "confidence": [0.9],
+            "q_05": [4.0],
+        }
+    )
+    out = remap(df, "cyp2c9")
+    assert out["prediction"].tolist() == [1.0]
+    assert out["confidence"].tolist() == [0.4]
+    assert out["q_05"].tolist() == [0.5]

@@ -1037,9 +1037,12 @@ class EndpointCore(AWSArtifact):
         A multi-target model emits `{target}_pred` and `{target}_confidence` per target,
         while the unprefixed columns carry only the primary target. A per-target capture
         has to carry that target's own values, or its stored predictions disagree with
-        the metrics saved beside them. A standard column with no counterpart for this
-        target is dropped rather than left holding the primary target's values under
-        another target's name.
+        the metrics saved beside them.
+
+        `{target}_pred` is what marks the frame as carrying per-target columns at all. In
+        one that does, a standard column with no counterpart for this target is dropped
+        rather than left holding the primary target's values under another target's name.
+        A frame without it is single-target and passes through untouched.
 
         Args:
             df (pd.DataFrame): Prediction results carrying per-target columns
@@ -1049,6 +1052,9 @@ class EndpointCore(AWSArtifact):
             pd.DataFrame: Copy with the standard columns set from target
         """
         remapped = df.copy()
+        if f"{target}_pred" not in remapped.columns:
+            return remapped
+
         standard_columns = ["prediction", "prediction_std", "confidence", "expected_residual"]
         standard_columns += [c for c in remapped.columns if c.startswith("q_")]
         per_target_names = {"prediction": f"{target}_pred", "prediction_std": f"{target}_pred_std"}
