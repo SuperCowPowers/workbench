@@ -20,6 +20,7 @@ import pytest
 
 from workbench.agent.tools import GUIDES_DIR
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+from workbench.algorithms.dataframe.multi_task_alignment import MultiTaskAlignment
 from workbench.algorithms.dataframe.target_landscape import TargetLandscape
 from workbench.api import (
     DataSource,
@@ -62,6 +63,7 @@ CLASS_REFS = {
     "PublicData": PublicData,
     "Monitor": Monitor,
     "CachedMeta": CachedMeta,
+    "MultiTaskAlignment": MultiTaskAlignment,
 }
 
 # Instance-variable names the guides use consistently -> their class. These are the
@@ -75,6 +77,7 @@ CONVENTIONAL_VARS = {
     "endpoint": Endpoint,
     "prox": FingerprintProximity,
     "land": TargetLandscape,
+    "mta": MultiTaskAlignment,
     "local_ds": LocalDataSource,
     "local_fs": LocalFeatureSet,
     "local_model": LocalModel,
