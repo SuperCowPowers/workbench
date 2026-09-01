@@ -334,7 +334,10 @@ class AWSMeta:
                             "Owner": "-",
                             "Instance": "-",
                             "Created": to_utc(endpoint["CreationTime"]),
-                            "Modified": to_utc(endpoint["LastModifiedTime"]),
+                            # A deploy recreates the endpoint, so CreationTime is when its
+                            # content last changed. LastModifiedTime tracks state transitions
+                            # (serverless scaling) and would drift on an untouched endpoint.
+                            "Modified": to_utc(endpoint["CreationTime"]),
                             "Input": "-",
                             "Status": "-",
                             "Config": "-",
@@ -373,7 +376,7 @@ class AWSMeta:
             "Owner": aws_tags.get("workbench_owner", "-"),
             "Instance": config_info["instance"],
             "Created": to_utc(endpoint_details["CreationTime"]),
-            "Modified": to_utc(endpoint_details["LastModifiedTime"]),
+            "Modified": to_utc(config_info["created"] or endpoint_details["LastModifiedTime"]),
             "Input": aws_tags.get("workbench_input", "-"),
             "Status": endpoint_details.get("EndpointStatus", "-"),
             "Config": endpoint_details.get("EndpointConfigName", "-"),
@@ -425,10 +428,14 @@ class AWSMeta:
                 concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
                 instance_type = f"Serverless ({mem_size // 1024}GB/{concurrency})"
 
-            return {"instance": instance_type, "variant": production_variant.get("VariantName", "-")}
+            return {
+                "instance": instance_type,
+                "variant": production_variant.get("VariantName", "-"),
+                "created": endpoint_config["CreationTime"],
+            }
         except self.sm_client.exceptions.ClientError as e:
             self.log.error(f"Error retrieving endpoint config {endpoint_config_name}: {e}")
-            return {"instance": "-", "variant": "-"}
+            return {"instance": "-", "variant": "-", "created": None}
 
     @not_found_returns_none
     @aws_throttle

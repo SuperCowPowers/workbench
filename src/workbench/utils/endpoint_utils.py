@@ -33,7 +33,6 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.api import FeatureSet, Model, Endpoint, ParameterStore
-from workbench.lambda_layer.artifact_times import ArtifactTimes
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -200,12 +199,11 @@ def input_columns_key(endpoint_name: str) -> str:
 def _deploy_modified(endpoint) -> Optional[datetime]:
     """When ``endpoint``'s deployed content last changed, or None if unavailable.
 
-    Shares :class:`ArtifactTimes` with the pipeline DAG's freshness walk so both
-    judge an endpoint by the same clock. A lookup failure degrades to None here
-    (keep serving the cached columns) rather than propagating.
+    A lookup failure degrades to None (keep serving the cached columns) rather
+    than propagating.
     """
     try:
-        modified = ArtifactTimes(endpoint.boto3_session).mtime(f"endpoint:{endpoint.name}")
+        modified = endpoint.modified()
         return modified if isinstance(modified, datetime) else None
     except Exception:
         return None
@@ -220,10 +218,9 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
     ``LastModifiedDate`` is older than the endpoint's deploy time, invokes
     ``register_fn(endpoint)`` to re-derive and rewrite the cache.
 
-    Freshness anchors on the EndpointConfig, not the endpoint: SageMaker bumps
-    an endpoint's ``LastModifiedTime`` on every autoscaling event, so an
-    endpoint that scales to zero would look stale on every call — and
-    re-deriving is a live smoke inference.
+    Freshness anchors on :meth:`Endpoint.modified` (the EndpointConfig time), so
+    an endpoint that scales to zero doesn't look stale on every call — re-deriving
+    is a live smoke inference.
 
     Args:
         endpoint: The Workbench Endpoint instance.

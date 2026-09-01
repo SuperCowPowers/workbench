@@ -260,8 +260,14 @@ class EndpointCore(AWSArtifact):
         return self.endpoint_meta["CreationTime"]
 
     def modified(self) -> datetime:
-        """Return the datetime when this artifact was last modified"""
-        return self.endpoint_meta["LastModifiedTime"]
+        """Return the datetime when this endpoint's deployed content last changed
+
+        Anchored on the EndpointConfig: the endpoint's own LastModifiedTime tracks
+        state transitions (capacity, serverless scaling), so it drifts forward on an
+        untouched endpoint. A re-deploy always mints a new EndpointConfig.
+        """
+        config = SagemakerEndpointConfig.get(self.endpoint_meta["EndpointConfigName"], session=self.boto3_session)
+        return config.creation_time
 
     def model_data_url(self) -> Optional[str]:
         """Return the model data URL for this endpoint
