@@ -15,6 +15,8 @@ and FeatureSet builds live one directory up and are driven by `pipelines.json`.
 | `cyp_seed_noise.py` | Reads seed replicates and reports the per-isoform noise floor |
 | `cyp_member_diversity.py` | Whether a candidate arm earns a slot in an isoform's ensemble pool |
 | `cyp_calibration_figures.py` | Writes the placement figure used in the blog |
+| `cyp_tox21_anchors.py` | Whether the Tox21 -> challenge pIC50 offset holds below the range it is measured on |
+| `cyp_verify_claims.py` | Re-derives the planning doc's data and leaderboard claims from source |
 
 ## openadmet_validation/
 
