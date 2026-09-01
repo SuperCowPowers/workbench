@@ -1,6 +1,6 @@
 {
   "common/abalone.csv": {
-    "description": "UCI Abalone dataset \u2014 physical measurements of abalone used to predict age (number of rings). A small, non-chemistry reference dataset for Workbench test pipelines.",
+    "description": "UCI Abalone dataset — physical measurements of abalone used to predict age (number of rings). A small, non-chemistry reference dataset for Workbench test pipelines.",
     "columns": {
       "Sex": "M, F, or I (infant)",
       "Length": "Longest shell measurement (mm)",
@@ -19,7 +19,7 @@
     ]
   },
   "common/test_data.csv": {
-    "description": "Synthetic person data (100 rows, seeded) for Workbench test pipelines \u2014 a fixed fixture with correlated numeric, categorical, boolean, and datetime columns.",
+    "description": "Synthetic person data (100 rows, seeded) for Workbench test pipelines — a fixed fixture with correlated numeric, categorical, boolean, and datetime columns.",
     "columns": {
       "Id": "Row id",
       "Name": "Person label",
@@ -439,11 +439,11 @@
     ]
   },
   "comp_chem/logp/logp_all.csv": {
-    "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. For compounds present in SangsterLogP (Cirino et al. 2026 \u2014 the most rigorously curated source), the `logp` value is taken from SangsterLogP; otherwise it is the cross-source mean (see `primary_source` column). Joinable on `smiles` to logd_all.csv.",
+    "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. For compounds present in SangsterLogP (Cirino et al. 2026 — the most rigorously curated source), the `logp` value is taken from SangsterLogP; otherwise it is the cross-source mean (see `primary_source` column). Joinable on `smiles` to logd_all.csv.",
     "columns": {
       "id": "Integer row index (0 to N)",
       "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
-      "logp": "Experimental logP \u2014 Sangster value if present, else cross-source mean",
+      "logp": "Experimental logP — Sangster value if present, else cross-source mean",
       "logp_std": "Standard deviation of logP across all reporting sources (0 if single source)",
       "logp_count": "Number of sources reporting this compound",
       "sources": "Pipe-delimited list of source names that reported this compound",
@@ -494,7 +494,7 @@
     ]
   },
   "comp_chem/logp/logp_sangster.csv": {
-    "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + \u0394DP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via \u0394DP) from the main sheet of the source XLSX.",
+    "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + ΔDP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via ΔDP) from the main sheet of the source XLSX.",
     "columns": {
       "smiles": "Standardized structure (salt-stripped, neutralized, canonical tautomer) -- use this for modeling and joining",
       "orig_smiles": "Structure exactly as provided by the source, before standardization",
@@ -512,7 +512,7 @@
     ]
   },
   "comp_chem/logp_logd/overlap_00_03.csv": {
-    "description": "Multi-task LogD/LogP dataset, LOW-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.0, 0.3) \u2014 auxiliary chemistry the LogD set doesn't cover. Tests whether 'novel' auxiliary representation transfers to LogD prediction. Auxiliary LogP rows share no SMILES with LogD. Built by data/public_data/build_logp_logd_overlap.py.",
+    "description": "Multi-task LogD/LogP dataset, LOW-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.0, 0.3) — auxiliary chemistry the LogD set doesn't cover. Tests whether 'novel' auxiliary representation transfers to LogD prediction. Auxiliary LogP rows share no SMILES with LogD. Built by data/public_data/build_logp_logd_overlap.py.",
     "columns": {
       "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
       "logp": "Experimental logP (NaN if not measured)",
@@ -527,7 +527,7 @@
     ]
   },
   "comp_chem/logp_logd/overlap_03_07.csv": {
-    "description": "Multi-task LogD/LogP dataset, MEDIUM-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.3, 0.7). The band excludes Tanimoto = 1.0, so the auxiliary LogP rows share no SMILES with LogD \u2014 no rows have both columns populated. Auxiliary chemistry is similar to LogD's neighborhood without duplicating it; this tier represents the 'complementary supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
+    "description": "Multi-task LogD/LogP dataset, MEDIUM-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.3, 0.7). The band excludes Tanimoto = 1.0, so the auxiliary LogP rows share no SMILES with LogD — no rows have both columns populated. Auxiliary chemistry is similar to LogD's neighborhood without duplicating it; this tier represents the 'complementary supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
     "columns": {
       "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
       "logp": "Experimental logP (NaN if not measured)",
@@ -542,7 +542,7 @@
     ]
   },
   "comp_chem/logp_logd/overlap_07_10.csv": {
-    "description": "Multi-task LogD/LogP dataset, HIGH-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.7, 1.0]. The band includes Tanimoto = 1.0 (exact-SMILES matches), so a portion of rows have both `logp` and `logd` populated \u2014 these are the same compounds measured in both source datasets. Auxiliary chemistry is close to LogD's; this tier represents the 'duplicate / nearby supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
+    "description": "Multi-task LogD/LogP dataset, HIGH-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.7, 1.0]. The band includes Tanimoto = 1.0 (exact-SMILES matches), so a portion of rows have both `logp` and `logd` populated — these are the same compounds measured in both source datasets. Auxiliary chemistry is close to LogD's; this tier represents the 'duplicate / nearby supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
     "columns": {
       "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
       "logp": "Experimental logP (NaN if not measured)",
@@ -1218,7 +1218,7 @@
     ]
   },
   "comp_chem/openadmet/pxr/testing/blinded.csv": {
-    "description": "Blinded activity-track test set (513 compounds) for the PXR challenge \u2014 SMILES only, ground-truth pEC50 withheld for scoring (Relative Absolute Error). Split into two analog sets: Analog Set 1 (scored on the Phase 1 live leaderboard, then unblinded on 2026-05-26 \u2014 see pxr_test_phase1_unblinded) and Analog Set 2 (held out for final scoring after 2026-07-01).",
+    "description": "Blinded activity-track test set (513 compounds) for the PXR challenge — SMILES only, ground-truth pEC50 withheld for scoring (Relative Absolute Error). Split into two analog sets: Analog Set 1 (scored on the Phase 1 live leaderboard, then unblinded on 2026-05-26 — see pxr_test_phase1_unblinded) and Analog Set 2 (held out for final scoring after 2026-07-01).",
     "columns": {
       "molecule_name": "Compound name / identifier",
       "smiles": "Compound structure (SMILES)"
@@ -1307,7 +1307,7 @@
     ]
   },
   "comp_chem/openadmet/pxr/training/htchem_libraries.csv": {
-    "description": "High-throughput chemistry (HT-chem) library screening data, released during Phase 2 \u2014 library-scale measurements that broaden training coverage of chemical space. Measured on crude library material, with Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
+    "description": "High-throughput chemistry (HT-chem) library screening data, released during Phase 2 — library-scale measurements that broaden training coverage of chemical space. Measured on crude library material, with Charged Aerosol Detector (CAD) analytical columns used to correct potency by the actual measured compound concentration.",
     "columns": {
       "smiles": "Compound structure (SMILES)",
       "ocnt_id": "Octant compound identifier",
@@ -1348,7 +1348,7 @@
       "molecule_name": "Compound name / identifier",
       "smiles": "Compound structure (SMILES)",
       "ocnt_batch": "Octant batch identifier for the assayed material",
-      "pec50": "Dose-response potency, -log10(EC50 in M) \u2014 the challenge prediction target",
+      "pec50": "Dose-response potency, -log10(EC50 in M) — the challenge prediction target",
       "emax_estimate": "Maximal induction efficacy (Emax) from the dose-response fit",
       "emax_vs_pos_ctrl_estimate": "Emax expressed relative to the positive-control agonist",
       "pec50_std_error": "Standard error of pec50",
@@ -1408,7 +1408,7 @@
     ]
   },
   "comp_chem/openadmet/pxr/training/single_concentration.csv": {
-    "description": "Single-concentration primary-screen training data (log2 fold-change) \u2014 a large, lower-resolution screen useful for pretraining or as auxiliary signal before fine-tuning on the dose-response pEC50 set.",
+    "description": "Single-concentration primary-screen training data (log2 fold-change) — a large, lower-resolution screen useful for pretraining or as auxiliary signal before fine-tuning on the dose-response pEC50 set.",
     "columns": {
       "molecule_name": "Compound name / identifier",
       "ocnt_batch": "Octant batch identifier for the assayed material",
@@ -1703,13 +1703,13 @@
     "references": []
   },
   "comp_chem/reference_compounds/tagging.csv": {
-    "description": "Reference compounds with known expected outputs of workbench.utils.chem_utils.mol_tagging.tag_molecules(). Each row pairs an input SMILES with the standardized SMILES, undefined-chiral count, and the curation-namespace tags that should be emitted after running standardize() then tag_molecules(). Complements the standardization reference set: that set exercises salt / charge / tautomer / stereo handling; this set exercises ADMET-curation tag derivation across composition, structure, physchem, liability, and curation categories. Used as a regression gate \u2014 changes that shift any expected tag are either intentional policy updates or bugs.",
+    "description": "Reference compounds with known expected outputs of workbench.utils.chem_utils.mol_tagging.tag_molecules(). Each row pairs an input SMILES with the standardized SMILES, undefined-chiral count, and the curation-namespace tags that should be emitted after running standardize() then tag_molecules(). Complements the standardization reference set: that set exercises salt / charge / tautomer / stereo handling; this set exercises ADMET-curation tag derivation across composition, structure, physchem, liability, and curation categories. Used as a regression gate — changes that shift any expected tag are either intentional policy updates or bugs.",
     "columns": {
       "id": "Integer row index",
       "name": "Short identifier for the test case",
       "input_smiles": "Raw SMILES fed to standardize() then tag_molecules()",
       "standardized_smiles": "Expected output of standardize() (canonical form)",
-      "expected_undefined_chiral_centers": "Expected value of the 'undefined_chiral_centers' column from standardize() \u2014 count of chiral centers in the original input SMILES with no stereo flag",
+      "expected_undefined_chiral_centers": "Expected value of the 'undefined_chiral_centers' column from standardize() — count of chiral centers in the original input SMILES with no stereo flag",
       "expected_curation_tags": "Pipe-delimited list of curation:* tags expected from tag_molecules() (empty string means no curation flags expected)",
       "notes": "Why this compound is in the reference set"
     },
@@ -1717,9 +1717,9 @@
     "license": "MIT",
     "license_note": "Curated by Workbench as test fixtures; released under the Workbench license.",
     "references": [
-      "https://doi.org/10.1023/A:1008130001697 (Oprea 2000 \u2014 Ro5 \u2260 druglike)",
-      "https://doi.org/10.1021/jm901137j (Baell & Holloway 2010 \u2014 PAINS)",
-      "https://doi.org/10.1002/cmdc.200700139 (Brenk et al. 2008 \u2014 BRENK alerts)"
+      "https://doi.org/10.1023/A:1008130001697 (Oprea 2000 — Ro5 ≠ druglike)",
+      "https://doi.org/10.1021/jm901137j (Baell & Holloway 2010 — PAINS)",
+      "https://doi.org/10.1002/cmdc.200700139 (Brenk et al. 2008 — BRENK alerts)"
     ]
   },
   "comp_chem/synthetic/multi_task/log_d.csv": {
@@ -1781,5 +1781,184 @@
     "license": "MIT",
     "license_note": "Synthetically generated by Workbench; released under the Workbench license.",
     "references": []
+  },
+  "comp_chem/tox21/cyp_inhibition/all_isoforms.csv": {
+    "description": "Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. All five isoforms in one long table, one row per compound-isoform pair.",
+    "columns": {
+      "isoform": "CYP isoform this row was measured against",
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M), the prediction target. Populated only where activity_outcome is Active: the assay writes a per-replicate fit even for compounds it calls inactive, and those extrapolate past the top concentration. NaN therefore means 'no potency the assay stands behind', which for an Inactive row is left-censored rather than unmeasured",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "license": "public-domain",
+    "license_note": "PubChem BioAssay records are US Government works in the public domain.",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671199 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671198 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671197 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671196 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671201 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ]
+  },
+  "comp_chem/tox21/cyp_inhibition/cyp1a2.csv": {
+    "description": "Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP1A2.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M), the prediction target. Populated only where activity_outcome is Active: the assay writes a per-replicate fit even for compounds it calls inactive, and those extrapolate past the top concentration. NaN therefore means 'no potency the assay stands behind', which for an Inactive row is left-censored rather than unmeasured",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "license": "public-domain",
+    "license_note": "PubChem BioAssay records are US Government works in the public domain.",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671199 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ]
+  },
+  "comp_chem/tox21/cyp_inhibition/cyp2c9.csv": {
+    "description": "Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP2C9.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M), the prediction target. Populated only where activity_outcome is Active: the assay writes a per-replicate fit even for compounds it calls inactive, and those extrapolate past the top concentration. NaN therefore means 'no potency the assay stands behind', which for an Inactive row is left-censored rather than unmeasured",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "license": "public-domain",
+    "license_note": "PubChem BioAssay records are US Government works in the public domain.",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671198 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ]
+  },
+  "comp_chem/tox21/cyp_inhibition/cyp2c19.csv": {
+    "description": "Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP2C19.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M), the prediction target. Populated only where activity_outcome is Active: the assay writes a per-replicate fit even for compounds it calls inactive, and those extrapolate past the top concentration. NaN therefore means 'no potency the assay stands behind', which for an Inactive row is left-censored rather than unmeasured",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "license": "public-domain",
+    "license_note": "PubChem BioAssay records are US Government works in the public domain.",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671197 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ]
+  },
+  "comp_chem/tox21/cyp_inhibition/cyp2d6.csv": {
+    "description": "Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP2D6.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M), the prediction target. Populated only where activity_outcome is Active: the assay writes a per-replicate fit even for compounds it calls inactive, and those extrapolate past the top concentration. NaN therefore means 'no potency the assay stands behind', which for an Inactive row is left-censored rather than unmeasured",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "license": "public-domain",
+    "license_note": "PubChem BioAssay records are US Government works in the public domain.",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671196 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ]
+  },
+  "comp_chem/tox21/cyp_inhibition/cyp3a4.csv": {
+    "description": "Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP3A4.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M), the prediction target. Populated only where activity_outcome is Active: the assay writes a per-replicate fit even for compounds it calls inactive, and those extrapolate past the top concentration. NaN therefore means 'no potency the assay stands behind', which for an Inactive row is left-censored rather than unmeasured",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "license": "public-domain",
+    "license_note": "PubChem BioAssay records are US Government works in the public domain.",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671201 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ]
   }
 }
