@@ -33,34 +33,85 @@ class EnsembleSimulator:
         ```
     """
 
-    def __init__(self, model_names: list[str], id_column: str = "id", capture_name: str = "full_cross_fold"):
+    def __init__(
+        self,
+        model_names: list[str],
+        id_column: str = "id",
+        capture_name: str | None = None,
+        target: str | None = None,
+    ):
         """Initialize the simulator with a list of model names.
+
+        A multi-target model keeps one out-of-fold capture per target (`cv_<target>`),
+        already remapped so `prediction` / `prediction_std` / `confidence` carry that
+        target's values. Analysis is therefore per target: member decorrelation and
+        weights on one target say nothing about another. Build one simulator per target
+        you care about:
+
+            {t: EnsembleSimulator(models, target=t) for t in targets}
 
         Args:
             model_names: List of model names to include in the ensemble
             id_column: Column name to use for row alignment (default: "id")
-            capture_name: Inference capture name to load predictions from (default: "full_cross_fold")
+            capture_name: Inference capture to load. Defaults to the one holding `target`'s
+                out-of-fold rows — `full_cross_fold` single-target, `cv_<target>` multi.
+            target: Target column to analyze. Required for multi-target models.
         """
         self.model_names = model_names
         self.id_column = id_column
         self.capture_name = capture_name
+        self._requested_capture = capture_name
+        self._requested_target = target
+        # Resolved per model, not once: a pool can mix a multi-target model (cv_<target>)
+        # with a single-target one trained on that same target (full_cross_fold).
+        self.capture_names: dict[str, str] = {}
         self._dfs: dict[str, pd.DataFrame] = {}
         self._conf_error_corr: dict[str, float] = {}
         self._target_column: str | None = None
         self._load_predictions()
+
+    @staticmethod
+    def _declared_targets(model: Model) -> list[str]:
+        """A model's targets as a list, however it declares them.
+
+        `target()` returns a str or a list, and a list of one is a single-target model —
+        `EndpointCore` gates on `len(targets) > 1`, so a one-element list captures under
+        `full_cross_fold` like any other single-target model. Matching that test here is
+        what keeps capture resolution agreeing with what was actually written.
+        """
+        declared = model.target()
+        return list(declared) if isinstance(declared, list) else [declared]
+
+    @classmethod
+    def _resolve_target(cls, model: Model, target: str | None) -> str:
+        """The target column to analyze, checked against what the model declares."""
+        declared = cls._declared_targets(model)
+        if len(declared) > 1:
+            if target is None:
+                raise ValueError(f"Model '{model.name}' is multi-target — pass target= to choose one of: {declared}")
+            if target not in declared:
+                raise ValueError(f"Target {target!r} not among model '{model.name}' targets: {declared}")
+            return target
+        if target is not None and target != declared[0]:
+            raise ValueError(f"Model '{model.name}' has a single target {declared[0]!r}, not {target!r}")
+        return declared[0]
 
     def _load_predictions(self):
         """Load endpoint inference predictions for all models."""
         log.info(f"Loading predictions for {len(self.model_names)} models...")
         for name in self.model_names:
             model = Model(name)
+            target = self._resolve_target(model, self._requested_target)
             if self._target_column is None:
-                self._target_column = model.target()
-            df = model.get_inference_predictions(self.capture_name)
+                self._target_column = target
+            elif target != self._target_column:
+                raise ValueError(f"Model '{name}' resolves to target {target!r}, not {self._target_column!r}")
+            multi = len(self._declared_targets(model)) > 1
+            capture = self._requested_capture or (f"cv_{target}" if multi else "full_cross_fold")
+            self.capture_names[name] = capture
+            df = model.get_inference_predictions(capture)
             if df is None:
-                raise ValueError(
-                    f"No '{self.capture_name}' predictions found for model '{name}'. Run endpoint inference first."
-                )
+                raise ValueError(f"No '{capture}' predictions found for model '{name}'. Run endpoint inference first.")
             df["residual"] = df["prediction"] - df[self._target_column]
             df["abs_residual"] = df["residual"].abs()
             self._dfs[name] = df

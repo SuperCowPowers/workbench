@@ -34,8 +34,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--capture-name",
-        default="full_cross_fold",
-        help="Inference capture name to load predictions from (default: full_cross_fold)",
+        default=None,
+        help="Inference capture to load (default: full_cross_fold, or cv_<target> for multi-target models)",
+    )
+    parser.add_argument(
+        "--target",
+        default=None,
+        help="Target column to analyze. Required for multi-target models, which capture one target each.",
     )
     parser.add_argument(
         "--output",
@@ -52,7 +57,7 @@ def main() -> None:
         if id_column is None:
             id_column = fs_id_column
 
-    sim = EnsembleSimulator(model_names, id_column=id_column, capture_name=args.capture_name)
+    sim = EnsembleSimulator(model_names, id_column=id_column, capture_name=args.capture_name, target=args.target)
     sim.report()
 
     if args.output:
