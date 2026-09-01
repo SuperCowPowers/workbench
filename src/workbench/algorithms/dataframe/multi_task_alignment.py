@@ -6,7 +6,8 @@ auxiliaries) will lift over a single-task model on the primary. Two ingredients 
     1. **Chemical-space coverage** — do auxiliary compounds occupy the same chemistry as the
        primary? Strong coverage means the aux head's gradient on shared chemistry can refine
        the encoder. Aux-only chemistry that's well-connected to primary extends coverage.
-    2. **Per-aux alignment** — where they overlap, do the targets agree (Pearson r) and do
+    2. **Per-aux alignment** — where they overlap, do the targets agree (Spearman rank
+       correlation, so a monotone-but-nonlinear readout is not penalized for its shape) and do
        the local SAR neighborhoods predict each other (z-scored residual)?
 
 Build one shared ``FingerprintProximity`` (ECFP + KNN + UMAP) on the union of all rows that
@@ -95,6 +96,8 @@ class MultiTaskAlignment:
         self.primary = primary
         self.auxiliaries = list(auxiliaries)
         self.k_neighbors = k_neighbors
+        self.radius = radius
+        self.n_bits = n_bits
         self.min_n_shared = min_n_shared
         self.extension_ratio_threshold = extension_ratio_threshold
 
@@ -164,10 +167,17 @@ class MultiTaskAlignment:
             DataFrame with columns:
                 - ``aux``: aux target name
                 - ``n_primary``, ``n_aux``, ``n_shared``, ``n_aux_only``: row counts
-                - ``pearson_r``: correlation on shared rows (NaN if ``n_shared < min_n_shared``)
+                - ``spearman_r``: rank correlation on shared rows, and what the verdicts are
+                  scored on (NaN if ``n_shared < min_n_shared``)
+                - ``pearson_r``: linear correlation on the same rows. A large gap between the
+                  two means the relationship is monotone but nonlinear, which is fine for a
+                  shared encoder and is why the verdicts use the rank version
                 - ``r_confidence``: ``high`` / ``moderate`` / ``low`` / ``unmeasured``
-                - ``tanimoto_coverage_mean``: mean Tanimoto from aux-having rows to nearest
-                  primary-having row
+                - ``tanimoto_coverage_mean``: mean Tanimoto from aux-having rows to their
+                  nearest primary-having row. Rows that have the primary themselves count as
+                  1.0, so an aux that mostly overlaps the primary scores near 1.0 by
+                  construction -- compare this across extending auxes, not against
+                  overlapping ones
                 - ``frac_coverage_ge_05``, ``frac_coverage_ge_03``: fraction of aux-having
                   rows with Tanimoto coverage above the threshold
                 - ``residual_abs_mean``, ``residual_abs_p95``: z-scored residual stats over
@@ -208,13 +218,28 @@ class MultiTaskAlignment:
         primary_mask = df[self.primary].notna()
         primary_ids = set(df.loc[primary_mask, self.id_column])
 
-        # One bulk neighbor lookup; we'll filter to primary-having neighbors below
-        n_lookup = max(50, self.k_neighbors * 10)
-        nbrs = self._prox.neighbors(all_ids, n_neighbors=n_lookup)
+        # Index the primary-having rows and query every row against them, rather than taking
+        # a union-wide top-N and filtering it down. The filtering approach silently returns
+        # nothing whenever the primary is a small share of the index: at 7% of rows a top-50
+        # contains no primary row for ~40% of compounds, and those land at coverage 0.0 as
+        # though they were chemically unrelated. Querying the primary index directly gives
+        # every compound its true nearest primary neighbor.
+        primary_ref = df.loc[primary_mask, [self.id_column, "smiles"]].copy()
+        prox_primary = FingerprintProximity(
+            primary_ref,
+            id_column=self.id_column,
+            target=None,
+            include_all_columns=False,
+            radius=self.radius,
+            n_bits=self.n_bits,
+        )
+        query = df[[self.id_column, "smiles"]].rename(columns={self.id_column: "query_id"})
+        # k+1 so a primary row still has k neighbors once its self-match is dropped.
+        nbrs = prox_primary.neighbors_from_query_df(query, n_neighbors=self.k_neighbors + 1)
+        nbrs = nbrs.rename(columns={"query_id": self.id_column})
 
         # Drop self-neighbors so a primary row's own value doesn't satisfy its coverage
-        nbrs_no_self = nbrs[nbrs[self.id_column] != nbrs["neighbor_id"]].copy()
-        primary_nbrs = nbrs_no_self[nbrs_no_self["neighbor_id"].isin(primary_ids)].copy()
+        primary_nbrs = nbrs[nbrs[self.id_column] != nbrs["neighbor_id"]].copy()
 
         # Tanimoto-to-primary: best similarity to any primary-having compound
         best_sim = primary_nbrs.groupby(self.id_column)["similarity"].max()
@@ -234,10 +259,18 @@ class MultiTaskAlignment:
         topk["primary_z"] = topk["neighbor_id"].map(primary_z)
         primary_z_pred = topk.groupby(self.id_column)["primary_z"].median()
 
-        # Per-aux z-scored residual: defined only where the aux is measured
+        # Per-aux z-scored residual: defined only where the aux is measured. Each aux is
+        # oriented by the sign of its own correlation with the primary first -- without that,
+        # an anti-correlated readout differences against the negation of what its neighborhood
+        # predicts, and scores roughly twice the z-score however well it actually agrees.
         for aux in self.auxiliaries:
             aux_vals = df.set_index(self.id_column)[aux]
-            aux_z = self._zscore(aux_vals)
+            shared = df[primary_mask & df[aux].notna()]
+            sign = 1.0
+            if len(shared) >= self.min_n_shared:
+                r = float(shared[[self.primary, aux]].corr(method="spearman").iloc[0, 1])
+                sign = -1.0 if r < 0 else 1.0
+            aux_z = sign * self._zscore(aux_vals)
             aux_z_aligned = result[self.id_column].map(aux_z)
             primary_pred_aligned = result[self.id_column].map(primary_z_pred)
             residual = aux_z_aligned - primary_pred_aligned
@@ -261,9 +294,11 @@ class MultiTaskAlignment:
             n_aux_only = int((~primary_mask & aux_mask).sum())
 
             if n_shared >= self.min_n_shared:
-                pearson_r = float(df.loc[primary_mask & aux_mask, [self.primary, aux]].corr().iloc[0, 1])
+                shared_df = df.loc[primary_mask & aux_mask, [self.primary, aux]]
+                pearson_r = float(shared_df.corr().iloc[0, 1])
+                spearman_r = float(shared_df.corr(method="spearman").iloc[0, 1])
             else:
-                pearson_r = float("nan")
+                pearson_r = spearman_r = float("nan")
 
             aux_ids = df.loc[aux_mask, self.id_column]
             cov = self._per_compound.set_index(self.id_column).loc[aux_ids, "tanimoto_to_primary"]
@@ -275,8 +310,12 @@ class MultiTaskAlignment:
             res_abs_mean = float(residuals.abs().mean()) if len(residuals) else float("nan")
             res_abs_p95 = float(residuals.abs().quantile(0.95)) if len(residuals) else float("nan")
 
-            overlap, _ = _assess_overlap(pearson_r, n_shared, self.min_n_shared)
-            extension, _ = _assess_extension(pearson_r, n_aux_only, n_primary, self.extension_ratio_threshold)
+            # Verdicts run on Spearman: a shared encoder exploits any monotone relationship,
+            # and the efficacy-style readouts (percent-of-control, fold-change) are monotone in
+            # potency but saturate at both ends. Pearson scores those on their functional form
+            # rather than their information -- emax reads 0.55 linear against 0.77 by rank.
+            overlap, _ = _assess_overlap(spearman_r, n_shared, self.min_n_shared)
+            extension, _ = _assess_extension(spearman_r, n_aux_only, n_primary, self.extension_ratio_threshold)
             recommendation, _ = _combine_assessments(overlap, extension)
 
             rows.append(
@@ -286,6 +325,7 @@ class MultiTaskAlignment:
                     "n_aux": n_aux,
                     "n_shared": n_shared,
                     "n_aux_only": n_aux_only,
+                    "spearman_r": spearman_r,
                     "pearson_r": pearson_r,
                     "r_confidence": _confidence_tier(n_shared, self.min_n_shared),
                     "tanimoto_coverage_mean": cov_mean,
@@ -298,7 +338,7 @@ class MultiTaskAlignment:
                     "recommendation": recommendation,
                 }
             )
-            r_str = f"r={pearson_r:.3f}" if not np.isnan(pearson_r) else "r=NA"
+            r_str = f"rs={spearman_r:.3f}" if not np.isnan(spearman_r) else "rs=NA"
             log.info(
                 f"  {aux}: shared={n_shared:,} aux_only={n_aux_only:,} {r_str} "
                 f"cov_mean={cov_mean:.2f} -> overlap={overlap}, extension={extension} "
@@ -322,7 +362,7 @@ class MultiTaskAlignment:
 
 
 def _confidence_tier(n_shared: int, min_n_shared: int) -> str:
-    """Bucket how trustworthy a Pearson r is, given shared-compound count."""
+    """Bucket how trustworthy a correlation is, given shared-compound count."""
     if n_shared < min_n_shared:
         return "unmeasured"
     if n_shared < 30:
@@ -335,20 +375,26 @@ def _confidence_tier(n_shared: int, min_n_shared: int) -> str:
 def _assess_overlap(r: float, n_shared: int, min_n_shared: int) -> tuple[str, str]:
     """Score the overlap region (compounds with both primary and aux measured).
 
-    Thresholds (label-correlation on shared rows):
-        r in [0.4, 0.95]  -> Beneficial : sweet spot — heads predict related but distinct targets
-        r > 0.95          -> Neutral    : redundant; aux head just re-weights primary
-        r < 0.4           -> Harmful    : discordant; gradient conflict / negative-transfer risk
-        n_shared too low  -> N/A
+    Scored on |r|, not r. A shared encoder learns features predictive of both targets and
+    the aux head's own weights carry the sign, so an anti-correlated readout (an efficacy or
+    fold-change arm, where more inhibition means a lower number) is as informative as a
+    positively correlated one. The signed r is still reported.
+
+    Thresholds (|Spearman| on shared rows):
+        |r| in [0.4, 0.95]  -> Beneficial : sweet spot — related but distinct targets
+        |r| > 0.95          -> Neutral    : redundant; aux head just re-weights primary
+        |r| < 0.4           -> Harmful    : discordant; gradient conflict / negative-transfer risk
+        n_shared too low    -> N/A
     """
     if n_shared < min_n_shared:
         return ("N/A", f"only {n_shared} shared compounds (need >= {min_n_shared} to score)")
-    if 0.4 <= r <= 0.95:
+    strength = abs(r)
+    if 0.4 <= strength <= 0.95:
         return (
             "Beneficial",
             f"sweet-spot r={r:.2f} on {n_shared:,} shared compounds — encoder learns richer features",
         )
-    if r > 0.95:
+    if strength > 0.95:
         return (
             "Neutral",
             f"redundant r={r:.2f} on {n_shared:,} shared compounds — aux head just re-weights primary",
@@ -365,7 +411,10 @@ def _assess_extension(
     n_primary: int,
     ratio_threshold: float,
 ) -> tuple[str, str]:
-    """Score the extension region (aux-only compounds; primary head is masked there)."""
+    """Score the extension region (aux-only compounds; primary head is masked there).
+
+    Task similarity is judged on |r|, for the same reason as the overlap score.
+    """
     if n_aux_only == 0:
         return ("None", "no aux-only compounds")
 
@@ -378,7 +427,7 @@ def _assess_extension(
             return ("Strong", f"{ratio:.1f}x primary of novel chemistry; {sim_str}")
         return ("Modest", f"{n_aux_only:,} aux-only compounds ({ratio:.1f}x primary); {sim_str}")
 
-    similar = r >= 0.4
+    similar = abs(r) >= 0.4
     if has_volume and similar:
         return ("Strong", f"{ratio:.1f}x primary of novel chemistry x similar task (r={r:.2f})")
     if has_volume:
