@@ -69,6 +69,12 @@ SCP_URL = "https://www.supercowpowers.com/"
 # Shown at startup whenever Bosco is live
 BOSCO_INVITE = "\n🐶  New to Workbench? Ask me to walk you through building your first model."
 
+# Shown at startup in local mode when no model is reachable
+BOSCO_NO_KEY = (
+    "\nWant the Bosco ML agent? Set ANTHROPIC_API_KEY and restart, or contact "
+    "workbench@supercowpowers.com and we'll issue you a trial key."
+)
+
 
 def aws_only(name: str):
     """A stand-in for a command that needs an AWS account, used in local mode"""
@@ -258,7 +264,7 @@ class WorkbenchShell:
             if self.bosco_status:
                 cprint("lightpurple", BOSCO_INVITE)
             else:
-                cprint("grey", "\nWant the Bosco ML agent? Set ANTHROPIC_API_KEY and restart.")
+                cprint("lightpurple", BOSCO_NO_KEY)
         elif not self.aws_status:
             cprint("red", "AWS Account Connection Failed...Review/Fix the Workbench Config:")
             cprint("red", f"Path: {self.cm.site_config_path}")

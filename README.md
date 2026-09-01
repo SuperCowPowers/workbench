@@ -13,12 +13,6 @@ Bosco: Claude via Anthropic API key
 
 Welcome to Workbench!
 
-🐄  ...cow pun...
-   ...local artifacts...
-
-Public/Evaluation Mode: No AWS Account Connected
-For secured usage, run aws_setup() to connect an AWS account.
-
 🐶  New to Workbench? Ask me to walk you through building your first model.
 
 Workbench:Bosco>
