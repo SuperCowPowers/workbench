@@ -14,12 +14,12 @@ open question rather than a settled one. Two arms bracket it:
     --public-weight 0.05   ~30% auxiliary share
     --public-weight 0.30   ~51% auxiliary share
 
-`--activity-heads` adds the panel's binary active/inactive call as five more 0/1 heads at
-the same public weight. It is the only public readout covering compounds with no fitted
-curve, and the scored heads have almost no low-activity signal without it: 129 of CYP2D6's
-1,493 rows sit below pIC50 4.0, and out-of-fold the model predicts above the credible
-ceiling for 126 of those 129. Contrast it against the same `--public-weight` without the
-flag -- one variable, and `scripts/cyp_member_diversity.py` says whether it earns a slot.
+`--tox21` adds Tox21's CYP potency as five more heads at the same public weight. What it
+brings is range rather than volume: its actives are weak ones, median pIC50 4.76, where
+ChEMBL bottoms out at 4.0 and the challenge set is hit-enriched. Out-of-fold the model
+predicts above the credible ceiling for 126 of CYP2D6's 129 sub-4.0 rows, so low-end
+examples are the thing it has never had. Contrast against the same `--public-weight`
+without the flag -- one variable, though the extra rows do move the scaffold folds.
 
 `cyp-reg-chemprop-mt-aux-100` is the control at 0% public data. Six-fold apart on the
 variable, everything else identical.
@@ -58,11 +58,11 @@ TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
 EMAX_TARGETS = [f"{iso}_emax_vs_pos_ctrl_direct_inhibition" for iso in ISOFORMS]
 ASSAY_TARGETS = LOG2FC_TARGETS + TDI_TARGETS + EMAX_TARGETS
 PUBLIC_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS] + [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
-# The panel's binary call, carried as a 0/1 regression head. It is the only public readout
-# that covers compounds with no fitted curve, which is where the scored heads have almost no
-# training signal -- 129 of CYP2D6's 1,493 rows sit below pIC50 4.0, against a blind half
-# that is mostly low-activity.
-ACTIVITY_TARGETS = [f"{iso}_is_active" for iso in PUBLIC_ISOFORMS]
+# Tox21's CYP potency on its own scale. The reason it is here is range, not volume: its
+# actives are weak ones, median pIC50 4.76, where ChEMBL stops at 4.0 and the challenge set
+# is hit-enriched. It also reaches ~5.6k compounds neither other source covers, and covers
+# them where the blind set is furthest from our training chemistry.
+TOX21_TARGETS = [f"{iso}_pic50_tox21" for iso in PUBLIC_ISOFORMS]
 
 # One weight for every challenge-assay auxiliary, at the value the log2fc arm was validated
 # at, so adding heads does not silently re-tune the arm that already worked.
@@ -76,18 +76,18 @@ parser.add_argument(
     help="Per-head weight for the ChEMBL and Veith targets, as a multiple of mean(primary)",
 )
 parser.add_argument(
-    "--activity-heads",
+    "--tox21",
     action="store_true",
-    help="Add the panel's binary active/inactive heads at the same public weight",
+    help="Add the Tox21 potency heads at the same public weight",
 )
 args = parser.parse_args()
 
-public_targets = PUBLIC_TARGETS + (ACTIVITY_TARGETS if args.activity_heads else [])
+public_targets = PUBLIC_TARGETS + (TOX21_TARGETS if args.tox21 else [])
 all_targets = TARGETS + ASSAY_TARGETS + public_targets
 
 model_name = f"cyp-reg-chemprop-union-p{int(round(args.public_weight * 100)):02d}"
-if args.activity_heads:
-    model_name += "-act"
+if args.tox21:
+    model_name += "-tox"
 
 fs = FeatureSet(FS_NAME)
 df = fs.pull_dataframe()
@@ -103,9 +103,9 @@ print(f"Building {model_name} on all {len(df):,} rows — no holdout")
 print(f"pIC50 weights: {dict(zip(ISOFORMS, [round(float(w), 3) for w in primary_weights]))}")
 print(f"assay weight:  {assay_weight:.3f} each ({ASSAY_WEIGHT} x mean primary), {len(ASSAY_TARGETS)} heads")
 print(f"public weight: {public_weight:.3f} each ({args.public_weight} x mean primary), {len(public_targets)} heads")
-if args.activity_heads:
-    labelled = {t.split("_")[0]: int(df[t].notna().sum()) for t in ACTIVITY_TARGETS}
-    print(f"activity heads: {labelled}")
+if args.tox21:
+    labelled = {t.split("_")[0]: int(df[t].notna().sum()) for t in TOX21_TARGETS}
+    print(f"tox21 heads: {labelled}")
 print(f"auxiliary share of total gradient: {100 * aux_share:.0f}%")
 
 model = fs.to_model(
