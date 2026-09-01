@@ -30,6 +30,11 @@ log = logging.getLogger("workbench")
 class Proximity(ABC):
     """Abstract base for compound proximity backends."""
 
+    # Pair count above which a radius query warns. Not a cap — truncating would
+    # silently change the answer — just the point where the caller likely meant
+    # a tighter radius.
+    RADIUS_RESULT_WARN = 5_000_000
+
     def __init__(
         self,
         df: pd.DataFrame,
@@ -235,6 +240,14 @@ class Proximity(ABC):
             flat_indices = np.concatenate(indices) if len(indices) else np.array([], dtype=int)
             repeat_counts = [len(d) for d in distances]
             query_ids_repeated = np.repeat(query_ids, repeat_counts)
+            # A radius query returns every match, so a loose radius on a large reference
+            # set can build a result far bigger than the reference itself.
+            if len(flat_indices) > self.RADIUS_RESULT_WARN:
+                log.warning(
+                    f"proximity: radius={radius:.3f} matched {len(flat_indices):,} pairs across "
+                    f"{len(query_ids):,} queries. Tighten the radius (raise min_similarity) if "
+                    "this is larger than intended — radius queries are not capped."
+                )
         else:
             # include_self=False means the query is in the reference set and the backend
             # counts it among the k — ask for one extra to replace the self-hit dropped below

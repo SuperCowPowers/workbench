@@ -185,7 +185,7 @@ class FingerprintProximity(Proximity):
         - `neighbors_from_query_df`  novel-input lookups (query_df needs a 'smiles'
                                      or 'fingerprint' column)
 
-    Supports both binary and count fingerprints (auto-detected):
+    Fingerprint form is set by `counts`, or auto-detected from a supplied column:
         - Binary: uses Jaccard distance (equivalent to 1 - Tanimoto for binary vectors)
         - Count: uses Ruzicka distance (weighted Tanimoto for count vectors), computed
           on-the-fly via sparse operations — supports novel queries and scales to large N.
@@ -205,6 +205,7 @@ class FingerprintProximity(Proximity):
         include_all_columns: bool = False,
         radius: int = 2,
         n_bits: int = 4096,
+        counts: bool = True,
     ) -> None:
         """
         Initialize FingerprintProximity for Tanimoto similarity on molecular fingerprints.
@@ -218,9 +219,16 @@ class FingerprintProximity(Proximity):
             include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
             radius: Radius for Morgan fingerprint computation (default: 2).
             n_bits: Number of bits for fingerprint (default: 4096).
+            counts: Count fingerprints scored by Ruzicka (default), or binary scored by
+                Jaccard. Ignored when the DataFrame already carries a fingerprint column,
+                whose format is detected instead. The two metrics are not interchangeable:
+                Ruzicka runs above binary Tanimoto on similar pairs, so a threshold
+                admits a different set of neighbors under each. Choose binary to compare
+                against a published ECFP4 similarity.
         """
         self._fp_radius = radius
         self._fp_n_bits = n_bits
+        self._fp_counts = counts
         self.fingerprint_column = self._resolve_fingerprint_column_name(df, fingerprint_column)
 
         super().__init__(
@@ -256,8 +264,11 @@ class FingerprintProximity(Proximity):
     def _prepare_data(self) -> None:
         """Compute fingerprints from SMILES if needed."""
         if self.fingerprint_column not in self.df.columns:
-            log.info(f"Computing Morgan fingerprints (radius={self._fp_radius}, n_bits={self._fp_n_bits})...")
-            self.df = feature_fingerprints(self.df, radius=self._fp_radius, n_bits=self._fp_n_bits)
+            kind = "count" if self._fp_counts else "binary"
+            log.info(f"Computing Morgan {kind} fingerprints (radius={self._fp_radius}, n_bits={self._fp_n_bits})...")
+            self.df = feature_fingerprints(
+                self.df, radius=self._fp_radius, n_bits=self._fp_n_bits, counts=self._fp_counts
+            )
 
     def _build_model(self) -> None:
         """Build the fingerprint proximity model for Tanimoto similarity.
@@ -324,7 +335,7 @@ class FingerprintProximity(Proximity):
                 raise ValueError(
                     f"Query DataFrame must contain either '{self.fingerprint_column}' " "or a 'smiles' column"
                 )
-            df = feature_fingerprints(df, radius=self._fp_radius, n_bits=self._fp_n_bits)
+            df = feature_fingerprints(df, radius=self._fp_radius, n_bits=self._fp_n_bits, counts=self._fp_counts)
 
         matrix, _ = self._fingerprints_to_matrix(df)
         if self._is_count_fp:
@@ -338,7 +349,10 @@ class FingerprintProximity(Proximity):
             - Bitstrings: "10110010..." → binary matrix (bool), is_count=False
             - Count vectors: "0,3,0,1,5,..." → count matrix (uint8), is_count=True
         """
-        sample = str(df[self.fingerprint_column].iloc[0])
+        usable = df[self.fingerprint_column].dropna()
+        if usable.empty:
+            raise ValueError(f"Column '{self.fingerprint_column}' has no usable fingerprints")
+        sample = str(usable.iloc[0])
         if "," in sample:
             fingerprint_values = df[self.fingerprint_column].apply(
                 lambda fp: np.array([int(x) for x in fp.split(",")], dtype=np.uint8)

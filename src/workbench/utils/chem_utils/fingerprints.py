@@ -75,12 +75,13 @@ def similarity_fingerprints(
     return fps, positions
 
 
-def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096) -> pd.DataFrame:
-    """Compute Morgan count fingerprints for ADMET modeling.
+def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096, counts: bool = True) -> pd.DataFrame:
+    """Compute Morgan fingerprints for ADMET modeling.
 
-    Generates true count fingerprints where each bit position contains the
-    number of times that substructure appears in the molecule (clamped to 0-255).
-    This is the recommended approach for ADMET prediction per 2025 research.
+    Counts by default: each position holds the number of times that substructure
+    appears (clamped to 0-255), which is the recommended form for ADMET prediction.
+    Binary is available for callers who need Tanimoto in the same metric as a
+    published ECFP4 similarity -- the two disagree enough to move a threshold count.
 
     Args:
         df: Input DataFrame containing SMILES strings.
@@ -88,10 +89,11 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096) 
         n_bits: Number of bits for the fingerprint (default 4096). Wide enough to
             limit count-corrupting bit collisions (a collision sums two unrelated
             substructure counts).
+        counts: Count fingerprints (default) or binary.
 
     Returns:
-        pd.DataFrame: Input DataFrame with 'fingerprint' column added.
-                      Values are comma-separated uint8 counts.
+        pd.DataFrame: Input DataFrame with 'fingerprint' column added. Comma-separated
+                      uint8 counts, or an unseparated bitstring when counts=False.
 
     Note:
         Count fingerprints outperform binary for ADMET prediction.
@@ -154,15 +156,20 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096) 
         fp = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=n_bits)
 
         # Initialize array and populate with counts (clamped to uint8 range)
-        counts = np.zeros(n_bits, dtype=np.uint8)
+        bit_counts = np.zeros(n_bits, dtype=np.uint8)
         for idx, count in fp.GetNonzeroElements().items():
-            counts[idx] = min(count, 255)
+            bit_counts[idx] = min(count, 255)
 
         # Return as comma-separated string
-        return ",".join(map(str, counts))
+        return ",".join(map(str, bit_counts))
 
-    # Compute Morgan count fingerprints
-    fingerprints = largest_frags.apply(mol_to_count_string)
+    def mol_to_bit_string(mol):
+        """Convert molecule to an unseparated bitstring."""
+        if mol is None:
+            return pd.NA
+        return AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits).ToBitString()
+
+    fingerprints = largest_frags.apply(mol_to_count_string if counts else mol_to_bit_string)
 
     # Add the fingerprints to the DataFrame
     df["fingerprint"] = fingerprints
