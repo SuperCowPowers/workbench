@@ -414,6 +414,10 @@ def _assess_extension(
     """Score the extension region (aux-only compounds; primary head is masked there).
 
     Task similarity is judged on |r|, for the same reason as the overlap score.
+
+    An unmeasurable r caps the score at Modest however much volume there is. Extension
+    lift needs both novel chemistry and a task the encoder can carry across; volume on
+    its own is a count of rows, not evidence either mechanism is present.
     """
     if n_aux_only == 0:
         return ("None", "no aux-only compounds")
@@ -422,10 +426,10 @@ def _assess_extension(
     has_volume = ratio >= ratio_threshold
 
     if np.isnan(r):
-        sim_str = "task similarity unknown (no overlap to measure)"
+        sim_str = "task similarity unmeasurable (too little overlap)"
         if has_volume:
-            return ("Strong", f"{ratio:.1f}x primary of novel chemistry; {sim_str}")
-        return ("Modest", f"{n_aux_only:,} aux-only compounds ({ratio:.1f}x primary); {sim_str}")
+            return ("Modest", f"{ratio:.1f}x primary of novel chemistry but {sim_str}")
+        return ("Minimal", f"low volume ({ratio:.1f}x primary) and {sim_str}")
 
     similar = abs(r) >= 0.4
     if has_volume and similar:
