@@ -6,22 +6,49 @@ so that the confidence/weight computations stay identical between
 DAG-runtime aggregation and offline strategy simulation.
 """
 
+import logging
+
 import numpy as np
+
+log = logging.getLogger("workbench")
 
 
 def conf_weights_with_fallback(conf_arr: np.ndarray, fallback_w: np.ndarray) -> np.ndarray:
-    """Compute normalized confidence weights, falling back to static weights for zero-confidence rows.
+    """Compute normalized confidence weights, falling back to static weights per row.
+
+    A row falls back when its confidences carry no usable signal: they sum to ~0, or any
+    member's is missing. Missing counts because a model with no confidence cannot be
+    weighted against one that has it — zeroing it would silently drop that model from the
+    average, which is a larger change than weighting the row statically.
+
+    Every returned row is finite. That matters: this feeds both the deployed aggregation
+    nodes and the offline simulator, so a non-finite weight becomes a NaN *prediction* —
+    served in one path, and in the other silently skipped by a NaN-tolerant mean, which
+    scores that strategy on a different row set than its rivals.
 
     Args:
         conf_arr: (N, M) array of confidence-based values (raw, scaled, or calibrated)
-        fallback_w: (M,) array of static weights to use when row confidence sums to ~0
+        fallback_w: (M,) array of static weights to use where confidence is unusable
 
     Returns:
         (N, M) array of normalized per-row weights
     """
-    conf_sum = conf_arr.sum(axis=1, keepdims=True)
-    zero_conf = (conf_sum < 1e-12).ravel()
-    return np.where(zero_conf[:, None], fallback_w, conf_arr / (conf_sum + 1e-12))
+    conf = np.asarray(conf_arr, dtype=float)
+    usable = np.isfinite(conf).all(axis=1)
+    conf_sum = np.where(usable, conf.sum(axis=1), 0.0)
+    fallback = ~usable | (conf_sum < 1e-12)
+
+    n_fallback = int(fallback.sum())
+    if n_fallback:
+        n_missing = int((~usable).sum())
+        log.warning(
+            f"conf_weights_with_fallback: {n_fallback:,} of {len(conf):,} rows using static weights "
+            f"({n_missing:,} with a missing confidence). Confidence weighting is inactive for those rows."
+        )
+
+    # Zero the fallback rows before dividing so no NaN reaches the arithmetic.
+    safe = np.where(fallback[:, None], 0.0, conf)
+    return np.where(fallback[:, None], fallback_w, safe / (conf_sum[:, None] + 1e-12))
 
 
 def ensemble_confidence(
