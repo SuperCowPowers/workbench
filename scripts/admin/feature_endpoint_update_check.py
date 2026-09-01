@@ -28,10 +28,12 @@ STALE_AFTER = timedelta(weeks=2)
 def main():
     now = datetime.now(timezone.utc)
     stale = []
+    missing = []
 
     for name in FEATURE_ENDPOINTS:
         end = Endpoint(name)
         if not end.exists():
+            missing.append(name)
             print(f"{name:28} NOT FOUND")
             continue
 
@@ -48,7 +50,11 @@ def main():
         print(f"{len(stale)} endpoint(s) need to be updated:")
         for name in stale:
             print(f"  - {name}")
-    else:
+    if missing:
+        print(f"{len(missing)} endpoint(s) need to be created:")
+        for name in missing:
+            print(f"  - {name}")
+    if not stale and not missing:
         print("All feature endpoints are up to date.")
 
 
