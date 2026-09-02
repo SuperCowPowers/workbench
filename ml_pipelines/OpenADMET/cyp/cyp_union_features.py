@@ -45,8 +45,21 @@ Every target lives here; the model scripts choose which to train on via `target_
 A FeatureSet is a data asset and the experiment variable belongs in the model, so adding
 a source does not mean rebuilding data to isolate it.
 
-Run after cyp_aux_features.py:  python cyp_union_features.py
+`--censored` swaps ChEMBL for its censored variant, which keeps the records reporting only
+`IC50 > x`. Those arrive as a bound in `{iso}_pic50_chembl` with `{iso}_pic50_chembl_lt`
+marking them -- the column pair `chemprop.template` reads under `bounded_loss=True`. It adds
+3,609 compounds the fitted-curve file has no row for, and bounds are 15-29% of each ChEMBL
+head's labels, so the head keeps a majority of real measurements to fix its scale.
+
+A bound is not a measurement, and this FeatureSet is only worth building for a model that
+knows the difference. With `bounded_loss` off the flags are ignored and every bound reads as
+an exact label, which is strictly worse than the uncensored FeatureSet -- useful as the
+control that shows the loss is doing the work, and wrong as anything else.
+
+Run after cyp_aux_features.py:  python cyp_union_features.py [--censored]
 """
+
+import argparse
 
 import pandas as pd
 from rdkit import Chem, RDLogger
@@ -54,9 +67,17 @@ from workbench.api import DataSource, FeatureSet, PublicData
 
 RDLogger.DisableLog("rdApp.*")
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--censored",
+    action="store_true",
+    help="Take ChEMBL's censored variant, carrying IC50>x records as bounds with _lt flags",
+)
+args = parser.parse_args()
+
 SOURCE_FS = "openadmet_cyp_aux_f1"
-FS_NAME = "openadmet_cyp_union_f1"
-CHEMBL = "comp_chem/chembl/cyp_inhibition/all_isoforms"
+FS_NAME = "openadmet_cyp_union_censored_f1" if args.censored else "openadmet_cyp_union_f1"
+CHEMBL = "comp_chem/chembl/cyp_inhibition/" + ("censored/all_isoforms" if args.censored else "all_isoforms")
 
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 TARGETS = [f"{iso}_pic50_direct_inhibition" for iso in ISOFORMS]
@@ -67,6 +88,8 @@ CI_COLUMNS = [f"{t}_{b}" for t in TARGETS for b in ("ci_lower", "ci_upper")]
 # panel supplies for free.
 PUBLIC_ISOFORMS = ISOFORMS + ["cyp2c19"]
 CHEMBL_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS]
+# Left-censor flags, named for the target they bound so chemprop's bounded loss finds them.
+CHEMBL_LT = [f"{t}_lt" for t in CHEMBL_TARGETS] if args.censored else []
 VEITH_TARGETS = [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
 
 # Tox21's CYP screen: a different library and a different detection chemistry (P450-Glo
@@ -111,15 +134,20 @@ print(f"challenge rows {len(challenge):,} ({len(side_only):,} from the TDI arm a
 challenge["key"] = skeletons(challenge["smiles"])
 
 chembl = PublicData().get(CHEMBL)
-chembl = chembl[["chembl_id", "smiles", "inchi_key"] + [f"{i}_pic50" for i in PUBLIC_ISOFORMS]].copy()
-chembl = chembl.rename(columns={f"{i}_pic50": f"{i}_pic50_chembl" for i in PUBLIC_ISOFORMS})
+source_cols = [f"{i}_pic50" for i in PUBLIC_ISOFORMS] + (
+    [f"{i}_pic50_lt" for i in PUBLIC_ISOFORMS] if args.censored else []
+)
+chembl = chembl[["chembl_id", "smiles", "inchi_key"] + source_cols].copy()
+renames = {f"{i}_pic50": f"{i}_pic50_chembl" for i in PUBLIC_ISOFORMS}
+renames.update({f"{i}_pic50_lt": f"{i}_pic50_chembl_lt" for i in PUBLIC_ISOFORMS})
+chembl = chembl.rename(columns=renames)
 chembl["key"] = chembl["inchi_key"].str.split("-").str[0]
 chembl = chembl.drop(columns=["inchi_key"]).dropna(subset=["key"]).drop_duplicates(subset=["key"])
 
 # Shared structures become one row carrying both label sets, keyed by the challenge's own
 # identifier so the submission path and the analog split are unaffected.
 shared = chembl[chembl["key"].isin(set(challenge["key"]))]
-out = challenge.merge(shared[["key"] + CHEMBL_TARGETS], on="key", how="left")
+out = challenge.merge(shared[["key"] + CHEMBL_TARGETS + CHEMBL_LT], on="key", how="left")
 if len(out) != len(challenge):
     raise ValueError(f"join changed the row count: {len(challenge)} -> {len(out)}")
 
@@ -189,6 +217,11 @@ for target in ALL_TARGETS:
     n = int(out[target].notna().sum())
     print(f"{target:<30} {n:>9,} {100 * n / len(out):>8.1f}%")
 print(f"total labels: {int(out[ALL_TARGETS].notna().sum().sum()):,}")
+if CHEMBL_LT:
+    # A bound only means something to a model trained with bounded_loss=True.
+    out[CHEMBL_LT] = out[CHEMBL_LT].fillna(False).astype(bool)
+    bounded = {c.replace("_pic50_chembl_lt", ""): int(out[c].sum()) for c in CHEMBL_LT}
+    print(f"chembl bounds (left-censored): {bounded}")
 
 DataSource(out, name=f"{FS_NAME}_ds").to_features(
     FS_NAME, id_column="molecule_name", tags=["openadmet_cyp", "multi_task", "activity", "public"]

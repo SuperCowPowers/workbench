@@ -21,6 +21,28 @@ predicts above the credible ceiling for 126 of CYP2D6's 129 sub-4.0 rows, so low
 examples are the thing it has never had. Contrast against the same `--public-weight`
 without the flag -- one variable, though the extra rows do move the scaffold folds.
 
+`--censored` trains on `openadmet_cyp_union_censored_f1`, where ChEMBL's `IC50 > x` records
+arrive as bounds, and turns on `bounded_loss`. A bound then costs the model only when its
+prediction rises above it, which is what lets the ChEMBL heads stop punishing a low
+prediction -- the uncensored file has no label under pIC50 4.0 at all, while 9% of the
+challenge's CYP2D6 labels and 40% of its CYP3A4 ones sit there.
+
+Bounds are 15-29% of each ChEMBL head's labels -- 29% on CYP2D6, so that head still has 71%
+real measurements to fix its scale -- and they are spread, because each record carries its own
+reported cutoff: 74-109 distinct values per isoform, with 29-35% of bounds on the most
+common one. That spread is the point. Bounded loss has no gradient below the bound, so a head
+whose rows are mostly one repeated bound is cheapest satisfied by a constant just under it.
+The qHTS panels are exactly that shape -- 53-77% of their bounds sit on a single value, and
+Veith's CYP2D6 arm is 11,118 bounds over three -- and are deliberately not in this arm.
+
+Three arms read together, one variable at a time:
+
+    --public-weight W                 uncensored ChEMBL, bounds absent
+    --public-weight W --censored      bounds honoured by the loss
+    --public-weight W --censored --bounds-as-labels    bounds read as exact measurements
+
+The third is the control that shows the loss is doing the work rather than the extra rows.
+
 `cyp-reg-chemprop-mt-aux-100` is the control at 0% public data. Six-fold apart on the
 variable, everything else identical.
 
@@ -34,7 +56,7 @@ contrast.
 Place its predictions with `scripts/cyp_recalibrate.py --oof MODEL` -- this model has no
 board history, so its Pearson comes from its own out-of-fold captures.
 
-Build the FeatureSet first: python cyp_union_features.py
+Build the FeatureSet first: python cyp_union_features.py [--censored]
 """
 
 import argparse
@@ -43,7 +65,8 @@ import numpy as np
 from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
-FS_NAME = "openadmet_cyp_union_f1"
+UNCENSORED_FS = "openadmet_cyp_union_f1"
+CENSORED_FS = "openadmet_cyp_union_censored_f1"
 TAGS = ["openadmet_cyp", "chemprop", "multi_task", "activity", "public"]
 
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
@@ -80,7 +103,19 @@ parser.add_argument(
     action="store_true",
     help="Add the Tox21 potency heads at the same public weight",
 )
+parser.add_argument(
+    "--censored",
+    action="store_true",
+    help="Train on the censored FeatureSet with bounded_loss, so ChEMBL's IC50>x records act as bounds",
+)
+parser.add_argument(
+    "--bounds-as-labels",
+    action="store_true",
+    help="Control arm: take the censored FeatureSet but leave bounded_loss off, so bounds read as exact labels",
+)
 args = parser.parse_args()
+if args.bounds_as_labels and not args.censored:
+    parser.error("--bounds-as-labels only means something with --censored")
 
 public_targets = PUBLIC_TARGETS + (TOX21_TARGETS if args.tox21 else [])
 all_targets = TARGETS + ASSAY_TARGETS + public_targets
@@ -88,8 +123,11 @@ all_targets = TARGETS + ASSAY_TARGETS + public_targets
 model_name = f"cyp-reg-chemprop-union-p{int(round(args.public_weight * 100)):02d}"
 if args.tox21:
     model_name += "-tox"
+if args.censored:
+    model_name += "-cenlabels" if args.bounds_as_labels else "-cen"
 
-fs = FeatureSet(FS_NAME)
+bounded_loss = args.censored and not args.bounds_as_labels
+fs = FeatureSet(CENSORED_FS if args.censored else UNCENSORED_FS)
 df = fs.pull_dataframe()
 
 primary_weights = compute_inverse_count_task_weights(df, TARGETS)
@@ -107,6 +145,12 @@ if args.tox21:
     labelled = {t.split("_")[0]: int(df[t].notna().sum()) for t in TOX21_TARGETS}
     print(f"tox21 heads: {labelled}")
 print(f"auxiliary share of total gradient: {100 * aux_share:.0f}%")
+if args.censored:
+    flags = [f"{t}_lt" for t in PUBLIC_TARGETS if f"{t}_lt" in df.columns]
+    counts = {c.replace("_pic50_chembl_lt", ""): int(df[c].fillna(False).astype(bool).sum()) for c in flags}
+    print(f"chembl bounds: {counts}  (bounded_loss={bounded_loss})")
+    if not flags:
+        raise ValueError(f"{CENSORED_FS} carries no _lt columns — rebuild it with cyp_union_features.py --censored")
 
 model = fs.to_model(
     name=model_name,
@@ -114,9 +158,10 @@ model = fs.to_model(
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],
     target_column=all_targets,
-    description=f"Multi-task Chemprop, challenge + public targets, public weight {args.public_weight}",
-    tags=TAGS + [f"public_weight_{args.public_weight}"],
-    hyperparameters={"task_weights": task_weights, "uq_version": "v1"},
+    description=f"Multi-task Chemprop, challenge + public targets, public weight {args.public_weight}"
+    + (", ChEMBL bounds honoured" if bounded_loss else ", ChEMBL bounds as labels" if args.censored else ""),
+    tags=TAGS + [f"public_weight_{args.public_weight}"] + (["censored"] if args.censored else []),
+    hyperparameters={"task_weights": task_weights, "uq_version": "v1", "bounded_loss": bounded_loss},
 )
 model.set_owner("openadmet_cyp")
 
