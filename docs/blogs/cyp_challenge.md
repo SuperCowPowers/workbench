@@ -7,6 +7,35 @@
 
 Two things carry the entry. First, a multi-task graph model trained on the challenge assay alongside every adjacent public readout we could align, ensembled across architectures. Second, an explicit correction for the distribution shift between the training labels and the blind set.
 
+## The Data
+
+Everything the entry trains on is public. Four sources, aligned on standardized InChIKey
+connectivity blocks so salt and stereo variants match.
+
+- **OpenADMET CYP challenge release** — 4,905 compounds. Fitted dose-response pIC50 with
+  credible intervals for the four scored isoforms, plus adjacent arms of the same assay:
+  single-concentration log2fc on 4,375 of them (recorded whether or not a compound
+  inhibited), TDI-condition curves, and emax.
+- **ChEMBL 37** ([CC BY-SA 3.0](https://www.ebi.ac.uk/chembl/)) — 24,918 compounds, five
+  isoforms. Almost entirely new chemistry: 185 structures overlap the challenge deck and
+  **zero** overlap the blind set. Potency exists only where a curve was fitted, so nothing
+  sits below pIC50 4.0.
+- **PubChem AID 1851, the Veith qHTS panel** (public domain) — 17,107 compounds in 15-point
+  dose-response against five isoforms. We keep `max_response` rather than its pIC50: it is
+  recorded at 100% coverage, so the 42,355 rows the screen called inactive still carry
+  signal where a potency-only source drops them.
+- **Tox21 CYP screen** (public domain) — 7,196 compounds, P450-Glo bioluminescent qHTS in
+  triplicate, pulled from the raw assay records. The only public source weak-inhibitor-rich
+  enough to reach below pIC50 5.0. Available but *not* in the current entry.
+
+Each public source is also published in a censored variant, where records reporting only
+`IC50 > x`, or a screen calling a compound inactive, carry the bound as a label with an
+`_lt` flag rather than a null. That is the honest representation — a bound is not a
+measurement — though on this challenge it has not moved the scored metric.
+
+ChEMBL and the qHTS panel are what the current entry uses. The rest of the model section
+explains why they go in as separate heads rather than as extra rows.
+
 ## The Model
 
 Four Chemprop D-MPNNs, averaged. All are SMILES-only with stock hyperparameters, trained on the challenge release plus ChEMBL and the NCATS qHTS panel, up to 32,900 compounds and 175,700 labels. They differ in which targets share an encoder.
@@ -26,7 +55,7 @@ Only the four scored pIC50 heads are ever submitted; the rest exist to shape the
 
 **Why an ensemble.** Averaging decorrelated models cancels the error that belongs to architecture and training run rather than to the chemistry. Members are chosen for how differently they see the problem, not for how they score alone. The two CYP2D6 specialists earn their slots that way: a different slice of the data, so different compounds missed. The average beats every member it contains, and the gain flattens by the fourth.
 
-**What the public data contributes.** ChEMBL adds ~24,700 compounds disjoint from the challenge deck: 185 structures overlap it, **zero** overlap the blind set. The qHTS panel adds max-response, recorded whether or not a compound inhibited, so the ~42,000 rows that showed nothing still carry signal where a potency-only source drops them.
+**What the public data contributes.** Breadth, not more labels on the same molecules. ChEMBL is almost entirely chemistry the challenge deck never saw, which is what a shared encoder can use; the qHTS panel is the only source that says anything at all about the compounds that did nothing.
 
 ## Two Populations
 
@@ -95,6 +124,12 @@ Submission files are checked with OpenADMET's own validator, vendored from their
 - [CYP Challenge Tutorial](https://github.com/OpenADMET/CYP-Challenge-Tutorial) — baseline notebooks, scoring harness, submission validators
 - [A Weekend on the OpenADMET PXR Challenge](pxr_weekend_experiments.md) — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from
 - van Tilborg et al., *Exposing the Limitations of Molecular Machine Learning with Activity Cliffs*, J. Chem. Inf. Model. 2022
+
+**Data sources**
+
+- [ChEMBL 37](https://www.ebi.ac.uk/chembl/) (CC BY-SA 3.0) — Mendez et al., *ChEMBL: towards direct deposition of bioassay data*, Nucleic Acids Res. 2019, [doi:10.1093/nar/gky1075](https://doi.org/10.1093/nar/gky1075)
+- [PubChem AID 1851](https://pubchem.ncbi.nlm.nih.gov/bioassay/1851) (public domain) — Veith et al., *Comprehensive characterization of cytochrome P450 isozyme selectivity across chemical libraries*, Nat. Biotechnol. 2009, [doi:10.1038/nbt.1581](https://doi.org/10.1038/nbt.1581)
+- Tox21 CYP screen (public domain) — PubChem AIDs [1671196](https://pubchem.ncbi.nlm.nih.gov/bioassay/1671196), [1671197](https://pubchem.ncbi.nlm.nih.gov/bioassay/1671197), [1671198](https://pubchem.ncbi.nlm.nih.gov/bioassay/1671198), [1671199](https://pubchem.ncbi.nlm.nih.gov/bioassay/1671199), [1671201](https://pubchem.ncbi.nlm.nih.gov/bioassay/1671201), with firefly-luciferase counter-screen [1224835](https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835)
 
 ## Questions?
 
