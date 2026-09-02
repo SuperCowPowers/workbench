@@ -39,6 +39,37 @@ def test_censoring_ignores_tiny_sets():
     assert severity(result, "pileup") == "ok"
 
 
+def test_censoring_reports_declared_bounds_instead_of_warning():
+    """A stack the data labels with {target}_lt is reported, not warned about."""
+    values = [100.0] * 20 + list(np.linspace(0, 90, 80))
+    df = frame(values)
+    df["target_lt"] = df["target"] == 100.0
+    result = target_health(df, "target")
+
+    assert severity(result, "censoring") == "info"
+    assert "target_lt: 20 rows" in result.loc[result["check"] == "censoring", "value"].iloc[0]
+
+
+def test_censoring_still_warns_on_an_unlabelled_stack_beside_a_declared_one():
+    """Declared rows sit out the heuristic; a second undeclared pileup still trips it."""
+    values = [0.0] * 20 + [100.0] * 20 + list(np.linspace(1, 90, 60))
+    df = frame(values)
+    df["target_lt"] = df["target"] == 0.0
+    result = target_health(df, "target")
+
+    assert severity(result, "censoring") == "warn"
+    assert "100" in result.loc[result["check"] == "censoring", "value"].iloc[0]
+
+
+def test_censoring_ok_when_bound_columns_exist_but_flag_nothing():
+    """An all-False bound column is not a declaration."""
+    df = frame(list(np.linspace(0, 100, 100)))
+    df["target_gt"] = False
+    result = target_health(df, "target")
+
+    assert severity(result, "censoring") == "ok"
+
+
 def test_discretization_flags_a_coarse_reporting_grid():
     """A target rounded to few distinct values caps achievable error."""
     result = target_health(frame([round(v, 1) for v in np.linspace(0, 5, 2000)]), "target")

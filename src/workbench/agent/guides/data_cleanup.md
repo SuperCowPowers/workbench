@@ -104,9 +104,12 @@ One row per check, `severity` of `ok` / `info` / `warn`:
 | `pileup` | one value carries an outsized share of rows |
 | `skew` | \|skew\| > 2 |
 
-`censoring` fires only on a *pileup* at the boundary, so an assay clipped at limits few
-compounds reach still reports `ok` — read it alongside `discretization` and `range`. A
-qualifier column in the raw data (`>`, `<`, `ND`) beats any inference from the numbers.
+`censoring` reads the sibling `{target}_lt` / `{target}_gt` boolean columns first. Where
+they mark a row the bound is declared, so the check reports `info` and names the count
+rather than warning — train with `bounded_loss=True` to honor it. Rows the flags do not
+cover fall through to the pileup heuristic, which fires only on a *stack* at the exact min
+or max: an assay clipped at limits few compounds reach still reports `ok`, so read it
+alongside `discretization` and `range`.
 
 On a multi-task FeatureSet pass only the rows carrying the target, or `missing` just
 reports the shape of the blend: `target_health(df[df[target].notna()], target)`.

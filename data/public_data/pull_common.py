@@ -1,14 +1,15 @@
-"""Shared helpers for pull_logp_data.py and pull_logd_data.py.
+"""Shared helpers for the pull scripts.
 
-Standardization, downloading, and merge/dedup logic that is identical between
-the LogP and LogD pipelines. The two pull scripts only differ in their source
-list and the value column name (logp vs logd).
+Downloading, standardization and merge/dedup logic shared by the LogP and LogD
+pipelines, plus the qHTS concentration parsing the CYP pulls share.
 """
 
 import io
 import logging
+import re
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import requests
 from tqdm import tqdm
@@ -124,3 +125,33 @@ def merge_and_deduplicate(
         log.info(f"  primary_source='{priority_source}': {n_pri:,} rows ({n_pri/len(dedup)*100:.1f}%)")
         log.info(f"  primary_source='consensus':       {len(dedup)-n_pri:,} rows")
     return dedup
+
+
+# qHTS results carry one reading per point in the concentration series, named
+# "Activity at 57.5 uM" (with a "-Replicate_N" suffix where the screen was replicated).
+CONCENTRATION_COLUMN = re.compile(r"^Activity at ([0-9.eE+-]+) uM(?:-Replicate_\d+)?$")
+
+
+def top_tested_concentration(raw: pd.DataFrame) -> pd.Series:
+    """Highest concentration in uM that each row was actually read at.
+
+    The assay stopped there, so an inactive call is the observation that the true AC50
+    lies above it -- that is the bound a left-censored label carries. NaN where a row has
+    no readings at all.
+    """
+    matches = [(c, float(m.group(1))) for c in raw.columns if (m := CONCENTRATION_COLUMN.match(c))]
+    if not matches:
+        raise ValueError("No 'Activity at <c> uM' columns found -- the assay CSV shape changed")
+
+    columns, concentrations = zip(*matches)
+    read = raw[list(columns)].apply(pd.to_numeric, errors="coerce").notna().to_numpy()
+    tested = np.where(read, np.array(concentrations), np.nan)
+    empty = ~read.any(axis=1)
+    top = np.full(len(raw), np.nan)
+    top[~empty] = np.nanmax(tested[~empty], axis=1)
+    return pd.Series(top, index=raw.index)
+
+
+def censoring_bound(top_uM: pd.Series) -> pd.Series:
+    """The pIC50 a top tested concentration implies: -log10 of that concentration in M."""
+    return 6 - np.log10(top_uM)

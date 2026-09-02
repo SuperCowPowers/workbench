@@ -1960,5 +1960,676 @@
       "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
       "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
     ]
+  },
+  "comp_chem/chembl/cyp_inhibition/censored/all_isoforms.csv": {
+    "description": "ChEMBL 37 CYP inhibition potency for five human isoforms (1A2, 2C9, 2C19, 2D6, 3A4) with left-censored records included: 29,450 compounds, a superset of comp_chem/chembl/cyp_inhibition/all_isoforms.csv. Where an isoform has an 'IC50 > x' record and no fitted curve, {iso}_pic50 holds the pIC50 that bound implies and {iso}_pic50_lt marks the row. 15,540 labels across the five isoforms are bounds, and 3,609 of these compounds appear in the uncensored file not at all. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is strictly worse than the uncensored one. What the bounds buy is room below the floor. ChEMBL assigns a pchembl_value only where a concentration-response curve was fitted, so nothing in the uncensored file falls below pIC50 4.0 while 40% of the OpenADMET CYP challenge training set does. A bound does not add a label under 4.0 either -- the bounds themselves run 4.0 to 8.3 -- it removes the penalty for predicting one, which is what lets a model put these compounds where they belong. Filters match the uncensored file; the censored arm additionally requires standard_relation '>' or '>=', a standard_type ChEMBL summarizes into pchembl_value (AC50, Potency, IC50, Ki, Kd, EC50), and nM units. A fitted curve always wins where a compound has both. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "n_measurements": "Total qualifying ChEMBL measurements behind this row, censored records included",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "cyp1a2_pic50": "-log10(IC50 in M) for CYP1A2. The median of the fitted ChEMBL measurements, or -- where cyp1a2_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp1a2_pic50_lt": "True where cyp1a2_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP1A2 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp1a2_n": "How many ChEMBL measurements the CYP1A2 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp1a2_pic50_lt is true",
+      "cyp1a2_sd": "Standard deviation of those CYP1A2 measurements; null when n < 2. Where cyp1a2_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp2c19_pic50": "-log10(IC50 in M) for CYP2C19. The median of the fitted ChEMBL measurements, or -- where cyp2c19_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp2c19_pic50_lt": "True where cyp2c19_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP2C19 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp2c19_n": "How many ChEMBL measurements the CYP2C19 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp2c19_pic50_lt is true",
+      "cyp2c19_sd": "Standard deviation of those CYP2C19 measurements; null when n < 2. Where cyp2c19_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp2c9_pic50": "-log10(IC50 in M) for CYP2C9. The median of the fitted ChEMBL measurements, or -- where cyp2c9_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp2c9_pic50_lt": "True where cyp2c9_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP2C9 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp2c9_n": "How many ChEMBL measurements the CYP2C9 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp2c9_pic50_lt is true",
+      "cyp2c9_sd": "Standard deviation of those CYP2C9 measurements; null when n < 2. Where cyp2c9_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp2d6_pic50": "-log10(IC50 in M) for CYP2D6. The median of the fitted ChEMBL measurements, or -- where cyp2d6_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp2d6_pic50_lt": "True where cyp2d6_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP2D6 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp2d6_n": "How many ChEMBL measurements the CYP2D6 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp2d6_pic50_lt is true",
+      "cyp2d6_sd": "Standard deviation of those CYP2D6 measurements; null when n < 2. Where cyp2d6_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "cyp3a4_pic50": "-log10(IC50 in M) for CYP3A4. The median of the fitted ChEMBL measurements, or -- where cyp3a4_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp3a4_pic50_lt": "True where cyp3a4_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP3A4 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp3a4_n": "How many ChEMBL measurements the CYP3A4 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp3a4_pic50_lt is true",
+      "cyp3a4_sd": "Standard deviation of those CYP3A4 measurements; null when n < 2. Where cyp3a4_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 29450,
+    "censoring": {
+      "cyp1a2_pic50": {
+        "direction": "left",
+        "flag_column": "cyp1a2_pic50_lt",
+        "n_censored": 2820,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      },
+      "cyp2c19_pic50": {
+        "direction": "left",
+        "flag_column": "cyp2c19_pic50_lt",
+        "n_censored": 2034,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      },
+      "cyp2c9_pic50": {
+        "direction": "left",
+        "flag_column": "cyp2c9_pic50_lt",
+        "n_censored": 2917,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      },
+      "cyp2d6_pic50": {
+        "direction": "left",
+        "flag_column": "cyp2d6_pic50_lt",
+        "n_censored": 3589,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      },
+      "cyp3a4_pic50": {
+        "direction": "left",
+        "flag_column": "cyp3a4_pic50_lt",
+        "n_censored": 4180,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      }
+    },
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/censored/cyp1a2.csv": {
+    "description": "ChEMBL 37 CYP1A2 inhibition potency with left-censored records included: 13,958 compounds, of which 2,820 carry a bound rather than a fitted pIC50 (median bound 4.70). A superset of comp_chem/chembl/cyp_inhibition/cyp1a2.csv. This isoform is one of the four the challenge scores. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is strictly worse than the uncensored one. What the bounds buy is room below the floor. ChEMBL assigns a pchembl_value only where a concentration-response curve was fitted, so nothing in the uncensored file falls below pIC50 4.0 while 40% of the OpenADMET CYP challenge training set does. A bound does not add a label under 4.0 either -- the bounds themselves run 4.0 to 8.3 -- it removes the penalty for predicting one, which is what lets a model put these compounds where they belong. Filters match the uncensored file; the censored arm additionally requires standard_relation '>' or '>=', a standard_type ChEMBL summarizes into pchembl_value (AC50, Potency, IC50, Ki, Kd, EC50), and nM units. A fitted curve always wins where a compound has both. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp1a2_pic50": "-log10(IC50 in M) for CYP1A2. The median of the fitted ChEMBL measurements, or -- where cyp1a2_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp1a2_pic50_lt": "True where cyp1a2_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP1A2 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp1a2_n": "How many ChEMBL measurements the CYP1A2 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp1a2_pic50_lt is true",
+      "cyp1a2_sd": "Standard deviation of those CYP1A2 measurements; null when n < 2. Where cyp1a2_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 13958,
+    "censoring": {
+      "cyp1a2_pic50": {
+        "direction": "left",
+        "flag_column": "cyp1a2_pic50_lt",
+        "n_censored": 2820,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      }
+    },
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/censored/cyp2c19.csv": {
+    "description": "ChEMBL 37 CYP2C19 inhibition potency with left-censored records included: 13,222 compounds, of which 2,034 carry a bound rather than a fitted pIC50 (median bound 4.70). A superset of comp_chem/chembl/cyp_inhibition/cyp2c19.csv. The OpenADMET CYP challenge does not score this isoform; it is here as auxiliary signal for multi-task training. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is strictly worse than the uncensored one. What the bounds buy is room below the floor. ChEMBL assigns a pchembl_value only where a concentration-response curve was fitted, so nothing in the uncensored file falls below pIC50 4.0 while 40% of the OpenADMET CYP challenge training set does. A bound does not add a label under 4.0 either -- the bounds themselves run 4.0 to 8.3 -- it removes the penalty for predicting one, which is what lets a model put these compounds where they belong. Filters match the uncensored file; the censored arm additionally requires standard_relation '>' or '>=', a standard_type ChEMBL summarizes into pchembl_value (AC50, Potency, IC50, Ki, Kd, EC50), and nM units. A fitted curve always wins where a compound has both. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp2c19_pic50": "-log10(IC50 in M) for CYP2C19. The median of the fitted ChEMBL measurements, or -- where cyp2c19_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp2c19_pic50_lt": "True where cyp2c19_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP2C19 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp2c19_n": "How many ChEMBL measurements the CYP2C19 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp2c19_pic50_lt is true",
+      "cyp2c19_sd": "Standard deviation of those CYP2C19 measurements; null when n < 2. Where cyp2c19_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 13222,
+    "censoring": {
+      "cyp2c19_pic50": {
+        "direction": "left",
+        "flag_column": "cyp2c19_pic50_lt",
+        "n_censored": 2034,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      }
+    },
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/censored/cyp2c9.csv": {
+    "description": "ChEMBL 37 CYP2C9 inhibition potency with left-censored records included: 13,699 compounds, of which 2,917 carry a bound rather than a fitted pIC50 (median bound 4.70). A superset of comp_chem/chembl/cyp_inhibition/cyp2c9.csv. This isoform is one of the four the challenge scores. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is strictly worse than the uncensored one. What the bounds buy is room below the floor. ChEMBL assigns a pchembl_value only where a concentration-response curve was fitted, so nothing in the uncensored file falls below pIC50 4.0 while 40% of the OpenADMET CYP challenge training set does. A bound does not add a label under 4.0 either -- the bounds themselves run 4.0 to 8.3 -- it removes the penalty for predicting one, which is what lets a model put these compounds where they belong. Filters match the uncensored file; the censored arm additionally requires standard_relation '>' or '>=', a standard_type ChEMBL summarizes into pchembl_value (AC50, Potency, IC50, Ki, Kd, EC50), and nM units. A fitted curve always wins where a compound has both. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp2c9_pic50": "-log10(IC50 in M) for CYP2C9. The median of the fitted ChEMBL measurements, or -- where cyp2c9_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp2c9_pic50_lt": "True where cyp2c9_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP2C9 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp2c9_n": "How many ChEMBL measurements the CYP2C9 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp2c9_pic50_lt is true",
+      "cyp2c9_sd": "Standard deviation of those CYP2C9 measurements; null when n < 2. Where cyp2c9_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 13699,
+    "censoring": {
+      "cyp2c9_pic50": {
+        "direction": "left",
+        "flag_column": "cyp2c9_pic50_lt",
+        "n_censored": 2917,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      }
+    },
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/censored/cyp2d6.csv": {
+    "description": "ChEMBL 37 CYP2D6 inhibition potency with left-censored records included: 12,393 compounds, of which 3,589 carry a bound rather than a fitted pIC50 (median bound 4.60). A superset of comp_chem/chembl/cyp_inhibition/cyp2d6.csv. This isoform is one of the four the challenge scores. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is strictly worse than the uncensored one. What the bounds buy is room below the floor. ChEMBL assigns a pchembl_value only where a concentration-response curve was fitted, so nothing in the uncensored file falls below pIC50 4.0 while 40% of the OpenADMET CYP challenge training set does. A bound does not add a label under 4.0 either -- the bounds themselves run 4.0 to 8.3 -- it removes the penalty for predicting one, which is what lets a model put these compounds where they belong. Filters match the uncensored file; the censored arm additionally requires standard_relation '>' or '>=', a standard_type ChEMBL summarizes into pchembl_value (AC50, Potency, IC50, Ki, Kd, EC50), and nM units. A fitted curve always wins where a compound has both. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp2d6_pic50": "-log10(IC50 in M) for CYP2D6. The median of the fitted ChEMBL measurements, or -- where cyp2d6_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp2d6_pic50_lt": "True where cyp2d6_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP2D6 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp2d6_n": "How many ChEMBL measurements the CYP2D6 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp2d6_pic50_lt is true",
+      "cyp2d6_sd": "Standard deviation of those CYP2D6 measurements; null when n < 2. Where cyp2d6_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 12393,
+    "censoring": {
+      "cyp2d6_pic50": {
+        "direction": "left",
+        "flag_column": "cyp2d6_pic50_lt",
+        "n_censored": 3589,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      }
+    },
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/chembl/cyp_inhibition/censored/cyp3a4.csv": {
+    "description": "ChEMBL 37 CYP3A4 inhibition potency with left-censored records included: 20,574 compounds, of which 4,180 carry a bound rather than a fitted pIC50 (median bound 4.70). A superset of comp_chem/chembl/cyp_inhibition/cyp3a4.csv. This isoform is one of the four the challenge scores. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is strictly worse than the uncensored one. What the bounds buy is room below the floor. ChEMBL assigns a pchembl_value only where a concentration-response curve was fitted, so nothing in the uncensored file falls below pIC50 4.0 while 40% of the OpenADMET CYP challenge training set does. A bound does not add a label under 4.0 either -- the bounds themselves run 4.0 to 8.3 -- it removes the penalty for predicting one, which is what lets a model put these compounds where they belong. Filters match the uncensored file; the censored arm additionally requires standard_relation '>' or '>=', a standard_type ChEMBL summarizes into pchembl_value (AC50, Potency, IC50, Ki, Kd, EC50), and nM units. A fitted curve always wins where a compound has both. Contamination-checked by standardized InChIKey against the challenge's blinded test set: zero of the 750 blinded compounds survive here.",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the join key used for deduplication and the challenge contamination check",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "cyp3a4_pic50": "-log10(IC50 in M) for CYP3A4. The median of the fitted ChEMBL measurements, or -- where cyp3a4_pic50_lt is true -- the bound the censored records imply (prediction target)",
+      "cyp3a4_pic50_lt": "True where cyp3a4_pic50 is a left-censored bound rather than a fitted value: the assay saw no inhibition up to its highest concentration, so the true CYP3A4 pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "cyp3a4_n": "How many ChEMBL measurements the CYP3A4 value is over; 0 when the compound was never assayed against it. Counts censored records where cyp3a4_pic50_lt is true",
+      "cyp3a4_sd": "Standard deviation of those CYP3A4 measurements; null when n < 2. Where cyp3a4_pic50_lt is true this is the spread of the bounds rather than of fitted values. Public data disagrees with itself more than one lab's does, so a wide spread is a real signal about the value",
+      "max_confidence_score": "Highest ChEMBL target-assignment confidence across this compound's measurements (>= 8 by construction; 9 is a direct single-protein assignment)",
+      "in_challenge_train": "True if this structure also appears in the OpenADMET CYP challenge training set -- drop these to avoid double-weighting"
+    },
+    "num_compounds": 20574,
+    "censoring": {
+      "cyp3a4_pic50": {
+        "direction": "left",
+        "flag_column": "cyp3a4_pic50_lt",
+        "n_censored": 4180,
+        "bound_source": "the concentration each record reports the IC50 exceeded"
+      }
+    },
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
+  "comp_chem/pubchem/cyp_inhibition/censored/all_isoforms.csv": {
+    "description": "The 42,355 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 4.94; a few plates ran further, so the full range is 4.24 to 6.34) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Long format: one row per compound-isoform pair, with the isoform in its own column.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "isoform": "CYP isoform assayed: cyp1a2, cyp2c9, cyp2c19, cyp2d6, or cyp3a4",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 42355,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/pubchem/cyp_inhibition/censored/cyp1a2.csv": {
+    "description": "The 7,236 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 5.64; a few plates ran further, so the full range is 4.24 to 5.64) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP1A2.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 7236,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/pubchem/cyp_inhibition/censored/cyp2c19.csv": {
+    "description": "The 7,515 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 4.94; a few plates ran further, so the full range is 4.24 to 4.94) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP2C19 -- not a challenge target, but a fifth correlated task for multi-task pretraining.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 7515,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/pubchem/cyp_inhibition/censored/cyp2c9.csv": {
+    "description": "The 8,764 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 5.64; a few plates ran further, so the full range is 4.24 to 5.64) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP2C9.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 8764,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/pubchem/cyp_inhibition/censored/cyp2d6.csv": {
+    "description": "The 11,118 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 4.94; a few plates ran further, so the full range is 4.24 to 4.94) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP2D6, the sparsest isoform in the panel.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 11118,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/pubchem/cyp_inhibition/censored/cyp3a4.csv": {
+    "description": "The 7,722 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 5.64; a few plates ran further, so the full range is 4.24 to 6.34) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Restricted to CYP3A4.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "ac50_um": "Fitted AC50 in micromolar, as reported by the assay",
+      "fit_log_ac50": "log10(AC50 in M) from the Hill-equation fit",
+      "curve_class": "qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, -3.0 single-point, 4 inactive (no curve)",
+      "fit_r2": "R^2 of the Hill-equation fit; closer to 1.0 is a better fit",
+      "hill_slope": "Hill slope of the fitted dose-response curve",
+      "max_response": "Maximal response observed across the concentration series"
+    },
+    "num_compounds": 17107,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 7722,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1851 (source assay, public domain)",
+      "https://doi.org/10.1038/nbt.1581 (Veith et al., Nat Biotechnol 2009)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/tox21/cyp_inhibition/censored/all_isoforms.csv": {
+    "description": "The 26,390 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 3.94, 90% of them between 3.94 and 4.28; a few plates ran further, so the full range is 1.24 to 6.36) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Tox21 CYP inhibition screen file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. All five isoforms in one long table, one row per compound-isoform pair.",
+    "columns": {
+      "isoform": "CYP isoform this row was measured against",
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 26390,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671199 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671198 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671197 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671196 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671201 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/tox21/cyp_inhibition/censored/cyp1a2.csv": {
+    "description": "The 4,390 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 3.94, 90% of them between 3.94 and 4.28; a few plates ran further, so the full range is 2.96 to 6.36) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Tox21 CYP inhibition screen file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP1A2.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 4390,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671199 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/tox21/cyp_inhibition/censored/cyp2c9.csv": {
+    "description": "The 4,791 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 3.94, 90% of them between 3.94 and 4.28; a few plates ran further, so the full range is 2.96 to 6.36) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Tox21 CYP inhibition screen file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP2C9.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 4791,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671198 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/tox21/cyp_inhibition/censored/cyp2c19.csv": {
+    "description": "The 4,756 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 3.94, 90% of them between 3.94 and 4.28; a few plates ran further, so the full range is 2.96 to 6.36) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Tox21 CYP inhibition screen file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP2C19.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 4756,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671197 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/tox21/cyp_inhibition/censored/cyp2d6.csv": {
+    "description": "The 5,684 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 3.94, 90% of them between 3.94 and 4.28; a few plates ran further, so the full range is 3.52 to 6.36) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Tox21 CYP inhibition screen file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP2D6.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 5684,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671196 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
+  },
+  "comp_chem/tox21/cyp_inhibition/censored/cyp3a4.csv": {
+    "description": "The 6,769 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 3.94, 90% of them between 3.94 and 4.28; a few plates ran further, so the full range is 1.24 to 6.36) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Tox21 CYP inhibition screen file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Tox21 CYP inhibition screen: the Tox21 10K library in 15-point dose-response against five human CYP isoforms on P450-Glo bioluminescent substrates, run in triplicate. A distinct screen from the Veith panel (AID 1851) -- different library, different detection chemistry -- and the only public CYP source here that is weak-inhibitor-rich: median fitted pIC50 is 4.76 and most actives fall below 5.0, where ChEMBL bottoms out at 4.0. Bioluminescent CYP assays report firefly-luciferase inhibitors as CYP inhibitors, so the counter-screen call rides along as luciferase_inhibitor; filter on it before training. Restricted to CYP3A4.",
+    "columns": {
+      "sid": "PubChem substance ID for the assayed sample",
+      "cid": "PubChem compound ID (the standardized structure)",
+      "smiles": "Standardized structure (salt-stripped, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "Structure exactly as deposited with the assay, before standardization",
+      "activity_outcome": "PubChem call: Active, Inactive, or Inconclusive",
+      "potency": "Median AC50 across replicates, in micromolar. Populated only where activity_outcome is Active",
+      "efficacy": "Median maximal effect across replicates, as a percentage of the assay control",
+      "fit_r2": "Median R^2 of the Hill-equation fit across replicates; closer to 1.0 is a better fit",
+      "fit_hillslope": "Median Hill slope of the fitted dose-response curve across replicates",
+      "fit_curveclass": "Median qHTS curve class. -1.1/-1.2 are complete high-quality curves, -2.x partial, 4 inactive",
+      "max_response": "Median maximal response observed across the concentration series",
+      "pic50": "-log10(AC50 in M). The fitted value where the screen called the compound active, or -- where pic50_lt is true -- the bound the top tested concentration implies (prediction target)",
+      "pic50_lt": "True where pic50 is a left-censored bound rather than a fitted value: the screen read this compound to the top of its concentration series without a dose-response, so the true pIC50 is at or below the label. Train with bounded_loss=True; ignoring this column treats the bound as a measurement",
+      "pic50_n": "Replicates (of 3) that produced a fitted potency. Kept for every row, including inactives",
+      "pic50_sd": "Standard deviation of pIC50 across the replicates that fitted -- the assay's own reproducibility",
+      "phenotype": "Modal per-replicate call: Inhibitor, Activator, or Inactive",
+      "luciferase_inhibitor": "True if the firefly-luciferase counter-screen (AID 1224835) calls this substance active. These are assay artifacts in a bioluminescent readout, not CYP inhibitors"
+    },
+    "num_compounds": 9521,
+    "censoring": {
+      "pic50": {
+        "direction": "left",
+        "flag_column": "pic50_lt",
+        "n_censored": 6769,
+        "bound_source": "highest concentration tested, per record"
+      }
+    },
+    "license": "public-domain",
+    "references": [
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1671201 (source assay, public domain)",
+      "https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835 (firefly luciferase counter-screen)",
+      "https://doi.org/10.1016/j.tox.2025.154120 (Tox21 CYP profiling)"
+    ],
+    "license_note": "PubChem BioAssay records are US Government works in the public domain."
   }
 }

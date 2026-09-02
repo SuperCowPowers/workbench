@@ -758,27 +758,41 @@ def target_health(df: pd.DataFrame, target: str, pileup_percent: float = 2.0) ->
         f"target resolves to {n_unique} distinct values — model error can't go below the grid spacing",
     )
 
-    # Pileups, and specifically pileups at the extremes: a stack of rows on the exact
-    # min or max is the signature of a censored assay ("> 300" recorded as 300).
+    # Censoring. The sibling "{target}_lt" / "{target}_gt" booleans are the convention
+    # for a bound the data already declares, and chemprop reads that same pair under
+    # bounded_loss. Declared rows are reported and sit out the pileup heuristic below,
+    # which exists only to catch censoring nobody labelled ("> 300" recorded as 300).
     counts = clean.value_counts()
     top_value, top_count = counts.index[0], int(counts.iloc[0])
     top_percent = 100 * top_count / len(clean)
     lo, hi = clean.min(), clean.max()
-    boundary = {v: int(counts.get(v, 0)) for v in (lo, hi)}
+
+    bound_columns = [f"{target}_lt", f"{target}_gt"]
+    flags = df.reindex(columns=bound_columns).reindex(clean.index).eq(True)
+    declared = {c: int(flags[c].sum()) for c in bound_columns if c in df.columns and flags[c].any()}
+    unlabelled = clean[~flags.any(axis=1)]
+
+    boundary = {v: int((unlabelled == v).sum()) for v in (lo, hi)}
     # A couple of rows on the boundary is just the extremes of a distribution — a
     # pileup needs both a real share and enough rows to be a stack.
     boundary_hits = {
         v: c for v, c in boundary.items() if c >= MIN_PILEUP_ROWS and 100 * c / len(clean) >= pileup_percent
     }
 
+    declared_note = ", ".join(f"{c}: {n} rows" for c, n in declared.items())
+    pileup_note = ", ".join(f"{v:g}: {c} rows" for v, c in boundary_hits.items())
     add(
         "censoring",
-        "warn" if boundary_hits else "ok",
-        ", ".join(f"{v:g}: {c} rows" for v, c in boundary_hits.items()) if boundary_hits else "none",
+        "warn" if boundary_hits else "info" if declared else "ok",
+        "; ".join(n for n in (declared_note, pileup_note) if n) or "none",
         (
             "rows stacked on the min/max — censored assay values, consider dropping or modeling as bounded"
             if boundary_hits
-            else "no pileup at the target's min or max"
+            else (
+                "bounds declared — train with bounded_loss=True to honor them"
+                if declared
+                else "no pileup at the target's min or max"
+            )
         ),
     )
     add(

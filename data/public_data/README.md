@@ -144,6 +144,17 @@ Contamination-checked by standardized InChIKey against the challenge's blinded
 test set — zero of the 750 blinded compounds survive. The 198 that also appear in
 the challenge *training* set are kept and flagged with `in_challenge_train`.
 
+`cyp_inhibition/censored/` adds the weak compounds back. Where an isoform has an
+"IC50 > x" record and no fitted curve, `{iso}_pic50` holds the pIC50 that bound implies
+and `{iso}_pic50_lt` marks the row — 15,540 such labels over 29,450 compounds, 3,609 of
+which the fitted-only files do not contain at all.
+
+This does not put a label under pIC50 4.0; the bounds themselves run 4.0 to 8.3, median
+4.7. It removes the *penalty* for predicting one, which is the half of the calibration
+gap above that more fitted curves can never close. That only works with
+`bounded_loss=True` — with bounded loss off a bound reads as an exact measurement and
+these files are worse than the uncensored ones. See [Censored values](#censored-values).
+
 ### LogP (`pull_logp_data.py`)
 
 Experimental octanol-water partition coefficients — neutral form, single
@@ -206,6 +217,51 @@ Deduplicated on canonical SMILES; multi-source compounds are aggregated.
 | `<value>_count` | Number of sources reporting this compound |
 | `sources` | Pipe-delimited source names |
 | `<value>_values` | Pipe-delimited individual values |
+
+### Censored values
+
+An assay that saw no effect up to its highest concentration has measured something
+real: the value lies below that limit. Dropping those rows leaves a potency-enriched
+sample, and filling them with a null loses the observation entirely.
+
+Datasets that carry them use the same convention the chemprop trainer reads, so a
+published file feeds `bounded_loss=True` with no glue:
+
+| Column | Meaning |
+|--------|---------|
+| `<target>` | The bound itself, per row, in the target's own units |
+| `<target>_lt` | True where the true value is at or **below** the label (left-censored) |
+| `<target>_gt` | True where the true value is at or **above** the label (right-censored) |
+
+Three rules hold everywhere:
+
+1. **The bound is per row, not per file.** One record says "above 20 uM" and the next
+   says "above 100 uM"; both go in the target column as the pIC50 they imply. A consumer
+   who wants one uniform bound can clamp, but the file reports what the assay reported.
+2. **The bound is the assay's own limit, never a modeling choice.** Moving a bound above
+   the detection limit to buy label purity is a real technique and it belongs in a
+   pipeline script, not in published data.
+3. **Bounds ship in their own file.** With `bounded_loss=False` a bound reads as an exact
+   label, so writing one into an existing dataset would silently degrade every consumer
+   who is not asking for it. The censored file is the uncensored one plus its bounds: the
+   same rows, with a label where there was a null, and any extra rows the bounds bring
+   with them. Nothing else differs, which is what makes the A/B clean.
+
+`descriptions.json` carries a `censoring` block per file naming the target, the flag
+column, the direction, the row count and where the bound came from. `target_health()`
+reads the flag columns directly and reports censored rows instead of warning about them.
+
+Three CYP sources ship a `censored/` family today. The bound comes from the assay in each
+case, so where the assay reaches decides how far down the labels go:
+
+| Family | Bound source | Reach |
+|--------|--------------|-------|
+| `chembl/cyp_inhibition/censored/` | The "IC50 > x" the record carries | 4.0 to 8.3, median 4.7 |
+| `pubchem/cyp_inhibition/censored/` | Top of the 15-point qHTS series, ~57 uM | ~4.24 |
+| `tox21/cyp_inhibition/censored/` | Top of the 15-point qHTS series, ~115 uM | ~3.94, the lowest of the three |
+
+Only the ChEMBL family adds rows. The two qHTS screens already publish their inactive rows
+with a null `pic50`; the censored family gives those same rows a bound instead.
 
 ## Sources Considered but Not Integrated
 

@@ -9,8 +9,14 @@ The public ML datasets derived from this screen (TDC, MoleculeNet) binarize it a
 columns, which is what regression against a dose-response target needs.
 
 Writes `output/comp_chem/pubchem/cyp_inhibition/` -- one long file over all
-isoforms plus a per-isoform file. The shared `upload_data.py` then publishes them
-and merges the matching `descriptions.json` entries.
+isoforms plus a per-isoform file -- and the same set again under `censored/`, where
+the rows the screen calls inactive carry a bound instead of a null. Those rows are
+already present in both families; only the label differs. `pic50` holds the pIC50
+implied by the highest concentration that row was read at and `pic50_lt` marks it,
+so the true value is at or below the label. Train these with `bounded_loss=True`;
+with bounded loss off a bound reads as an exact measurement. The shared
+`upload_data.py` then publishes both and merges the matching `descriptions.json`
+entries.
 
 Run:
     python pull_pubchem_cyp_data.py
@@ -28,7 +34,7 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-from pull_common import standardize_smiles
+from pull_common import censoring_bound, standardize_smiles, top_tested_concentration
 
 log = logging.getLogger("workbench")
 
@@ -94,6 +100,9 @@ def pull_cyp_panel() -> dict[str, pd.DataFrame]:
     raw = raw[raw["PUBCHEM_SID"].notna()]
 
     df = raw[list(COLUMNS)].rename(columns=COLUMNS)
+    # Read off `raw` before the per-concentration columns are dropped: an inactive call is
+    # the observation that the AC50 lies above the point the assay stopped at.
+    df["censor_bound"] = censoring_bound(top_tested_concentration(raw))
     df["isoform"] = df["isoform"].map(ISOFORMS)
     df = df[df["isoform"].notna()]
 
@@ -118,6 +127,25 @@ def pull_cyp_panel() -> dict[str, pd.DataFrame]:
 
     df = df.sort_values(["sid", "isoform"]).reset_index(drop=True)
 
+    return {"": split_by_isoform(df.drop(columns=["censor_bound"])), "censored": split_by_isoform(apply_censoring(df))}
+
+
+def apply_censoring(df: pd.DataFrame) -> pd.DataFrame:
+    """Give the inactive rows the bound the assay stopped at, and flag them.
+
+    A compound the screen calls inactive was read to the top of the series without a
+    dose-response, so its true pIC50 is at or below what that concentration implies.
+    Inconclusive rows are left null -- the assay did not decide, so there is no bound.
+    """
+    out = df.copy()
+    censored = out["activity_outcome"].eq("Inactive") & out["pic50"].isna() & out["censor_bound"].notna()
+    out["pic50"] = out["pic50"].where(~censored, out["censor_bound"])
+    out.insert(out.columns.get_loc("pic50") + 1, "pic50_lt", censored)
+    return out.drop(columns=["censor_bound"])
+
+
+def split_by_isoform(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """The long table plus one table per isoform."""
     out = {"all_isoforms": df}
     for isoform in sorted(ISOFORMS.values()):
         out[isoform] = df[df["isoform"] == isoform].drop(columns=["isoform"]).reset_index(drop=True)
@@ -135,17 +163,33 @@ def main():
     print("\n" + "=" * 70)
     print("PubChem CYP Panel Pull (AID 1851)")
     print("=" * 70)
-    for name, df in pull_cyp_panel().items():
-        out_path = args.output_dir / f"{name}.csv"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(out_path, index=False)
-        measured = int(df["pic50"].notna().sum())
-        log.info(f"  {name}.csv  ({len(df):,} rows, {measured:,} with a fitted pIC50)")
-        skeleton[f"comp_chem/pubchem/cyp_inhibition/{name}.csv"] = {
-            "num_compounds": int(df["sid"].nunique()),
-            "license": "public-domain",
-            "columns": {c: "" for c in df.columns},
-        }
+    for subdir, family in pull_cyp_panel().items():
+        for name, df in family.items():
+            out_path = args.output_dir / subdir / f"{name}.csv"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            df.to_csv(out_path, index=False)
+            labelled = int(df["pic50"].notna().sum())
+            bounds = int(df["pic50_lt"].sum()) if "pic50_lt" in df.columns else 0
+            log.info(
+                f"  {subdir + '/' if subdir else ''}{name}.csv  ({len(df):,} rows, "
+                f"{labelled:,} labelled, {bounds:,} of them bounds)"
+            )
+            entry = {
+                "num_compounds": int(df["sid"].nunique()),
+                "license": "public-domain",
+                "columns": {c: "" for c in df.columns},
+            }
+            if bounds:
+                entry["censoring"] = {
+                    "pic50": {
+                        "direction": "left",
+                        "flag_column": "pic50_lt",
+                        "n_censored": bounds,
+                        "bound_source": "highest concentration tested, per record",
+                    }
+                }
+            key = "/".join(part for part in ("comp_chem/pubchem/cyp_inhibition", subdir, f"{name}.csv") if part)
+            skeleton[key] = entry
 
     print(f"\nWrote {len(skeleton)} files -> {args.output_dir}")
     print("\ndescriptions.json skeleton (fill in column meanings, merge into descriptions.json):")
