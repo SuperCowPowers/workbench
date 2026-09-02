@@ -22,7 +22,7 @@ Two scopes, both with an encoder that sees CYP2D6 and nothing else:
 
 Compare against `cyp-reg-chemprop-union-p30` on `cv_cyp2d6_pic50_direct_inhibition`, against
 the thresholds in `scripts/cyp_ruler_power.py` -- 0.056 on the target itself, 0.031 on
-log2fc. The training row set differs between arms, so scaffold folds differ too; that is
+log2fc. The training row set differs between variants, so scaffold folds differ too; that is
 inherent to the comparison rather than a flaw, but it is not seed-for-seed.
 
 If neither scope moves CYP2D6, representation sharing is not the problem and the remaining
@@ -47,7 +47,7 @@ ISOFORM_AUX = [
     "cyp2d6_pic50_chembl",
     "cyp2d6_max_response",
 ]
-AUX_WEIGHT = 0.3  # the value the auxiliary arm was validated at elsewhere
+AUX_WEIGHT = 0.3  # the value the auxiliary heads were validated at elsewhere
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(

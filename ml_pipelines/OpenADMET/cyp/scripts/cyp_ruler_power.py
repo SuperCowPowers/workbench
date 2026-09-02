@@ -12,7 +12,7 @@ two independent parts:
 A difference is resolvable at roughly 2 sigma of their sum. Row sampling shrinks as
 1/sqrt(n) but also as (1 - rho^2), so a ruler on which the model already correlates well is
 quieter at the same size -- transporting a noise estimate between rulers has to carry both
-terms. Training noise shrinks only by averaging k seeds per arm.
+terms. Training noise shrinks only by averaging k seeds per variant.
 
 The board is therefore not the weak ruler its 375 rows suggest: our board Spearman runs far
 above our OOF Spearman, and the two effects nearly cancel.
@@ -76,7 +76,7 @@ if __name__ == "__main__":
                 "row sd @OOF": samp,
                 "row sd @board": board_samp,
                 "seed sd": seed,
-                # one build per arm: both noise sources; k seeds per arm: seed part /sqrt(k)
+                # one build per variant: both noise sources; k seeds per variant: seed part /sqrt(k)
                 "OOF 1x": 2 * np.hypot(samp, seed * np.sqrt(2)),
                 "OOF 3x": 2 * np.hypot(samp, seed * np.sqrt(2 / 3)),
                 "board 1x": 2 * np.hypot(board_samp, seed * np.sqrt(2)),

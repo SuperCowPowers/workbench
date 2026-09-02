@@ -1,13 +1,13 @@
 """What MultiTaskAlignment predicts about each auxiliary head, per scored isoform.
 
 The union model carries ~19 auxiliary heads on one encoder and we have never had a prior
-about which of them earn their place -- arms get built and read afterwards. MTA claims to
+about which of them earn their place -- variants get built and read afterwards. MTA claims to
 answer that from the data alone: per aux it scores the overlap region (do the targets agree
 where both are measured) and the extension region (does the aux reach chemistry the primary
 misses), and combines them into Use / Marginal / Risky / Skip.
 
 This runs it once per scored isoform and tabulates the verdicts, so they are on record
-*before* the arms are built. A prediction written down after the result is not a prediction.
+*before* the variants are built. A prediction written down after the result is not a prediction.
 
 Two things it cannot see, which is why its verdicts are read rather than obeyed:
 

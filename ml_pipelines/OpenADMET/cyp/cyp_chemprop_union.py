@@ -9,7 +9,7 @@ the rest exist to shape the representation.
 puts auxiliaries at ~23% of total gradient with four heads at `0.3 * mean(primary)`. Ten
 more heads at that same per-head weight would put auxiliaries near 51%, outweighing the
 targets we are scored on, so whether 0.3 is a per-head number or a per-family budget is an
-open question rather than a settled one. Two arms bracket it:
+open question rather than a settled one. Two variants bracket it:
 
     --public-weight 0.05   ~30% auxiliary share
     --public-weight 0.30   ~51% auxiliary share
@@ -33,9 +33,9 @@ reported cutoff: 74-109 distinct values per isoform, with 29-35% of bounds on th
 common one. That spread is the point. Bounded loss has no gradient below the bound, so a head
 whose rows are mostly one repeated bound is cheapest satisfied by a constant just under it.
 The qHTS panels are exactly that shape -- 53-77% of their bounds sit on a single value, and
-Veith's CYP2D6 arm is 11,118 bounds over three -- and are deliberately not in this arm.
+Veith's CYP2D6 arm is 11,118 bounds over three -- and are deliberately not in this variant.
 
-Three arms read together, one variable at a time:
+Three variants read together, one variable at a time:
 
     --public-weight W                 uncensored ChEMBL, bounds absent
     --public-weight W --censored      bounds honoured by the loss
@@ -46,7 +46,7 @@ The third is the control that shows the loss is doing the work rather than the e
 `cyp-reg-chemprop-mt-aux-100` is the control at 0% public data. Six-fold apart on the
 variable, everything else identical.
 
-Read the arms on OOF against the seed noise floor -- 0.05 Pearson on CYP1A2 and CYP2D6,
+Read the variants on OOF against the seed noise floor -- 0.05 Pearson on CYP1A2 and CYP2D6,
 0.013 and 0.012 on CYP2C9 and CYP3A4 (`scripts/cyp_seed_noise.py`). Treat a smaller CYP2D6
 difference as unresolved. The union's scaffold split runs over 31,670 rows, so the
 challenge compounds sit in folds alongside public chemistry where the control's folds were
@@ -87,8 +87,8 @@ PUBLIC_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS] + [f"{iso}_m
 # them where the blind set is furthest from our training chemistry.
 TOX21_TARGETS = [f"{iso}_pic50_tox21" for iso in PUBLIC_ISOFORMS]
 
-# One weight for every challenge-assay auxiliary, at the value the log2fc arm was validated
-# at, so adding heads does not silently re-tune the arm that already worked.
+# One weight for every challenge-assay auxiliary, at the value the log2fc heads were validated
+# at, so adding heads does not silently re-tune the configuration that already worked.
 ASSAY_WEIGHT = 0.3
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -111,7 +111,7 @@ parser.add_argument(
 parser.add_argument(
     "--bounds-as-labels",
     action="store_true",
-    help="Control arm: take the censored FeatureSet but leave bounded_loss off, so bounds read as exact labels",
+    help="Control variant: take the censored FeatureSet but leave bounded_loss off, so bounds read as exact labels",
 )
 args = parser.parse_args()
 if args.bounds_as_labels and not args.censored:
@@ -170,5 +170,5 @@ end.set_owner("openadmet_cyp")
 end.test_inference()
 
 # Out-of-fold over every row. The scored targets exist on 4,905 of them, which is the
-# subset the arms are compared on.
+# subset the variants are compared on.
 end.cross_fold_inference()

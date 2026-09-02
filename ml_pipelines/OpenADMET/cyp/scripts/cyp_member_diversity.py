@@ -1,4 +1,4 @@
-"""Does a candidate arm earn a slot in an isoform's ensemble pool?
+"""Does a candidate model earn a slot in an isoform's ensemble pool?
 
 Membership is decided by decorrelation, not by solo score, so this reports both: each
 member's own out-of-fold Pearson, how correlated its predictions are with the rest of

@@ -18,7 +18,7 @@ The isoform-weighting question these partly address is now settled: a 40x contra
 CYP2D6's task weight moved its ranking by 0.004 on an 8,415-row ruler. Weighting is not
 the lever -- the shared encoder is.
 
-The fingerprint arm sets the other bound. A candidate earns a pool slot on decorrelation,
+The fingerprint variant sets the other bound. A candidate earns a pool slot on decorrelation,
 but only within roughly a tenth of the pool's best: the CYP2D6 specialists sit 0.01-0.06
 behind at similar correlation and earn theirs, the fingerprint models sit 0.11-0.20 behind
 and do not.

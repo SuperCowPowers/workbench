@@ -1,6 +1,6 @@
 """CYP XGBoost UQ models on Morgan count fingerprints — one per isoform.
 
-An ensemble-diversity arm, not an accuracy play. The chemprop members all read the
+An ensemble-diversity variant, not an accuracy play. The chemprop members all read the
 molecule the same way, so the two-member pools (CYP1A2, CYP2C9, CYP3A4) average two
 highly correlated models. Substructure counts are a different representation
 entirely, which is what an average needs.
@@ -13,11 +13,11 @@ Rebuilding needs an `openadmet_cyp_fp` FeatureSet: run the challenge rows throug
 XGBoost is single-target, so each scored isoform gets its own model. Single-target also
 means the public ChEMBL and qHTS columns are unreachable here: they are separate
 targets, and pooling them into the scored column needs a cross-assay offset the
-auxiliary-head models avoid by construction. So this arm trains on challenge rows only,
+auxiliary-head models avoid by construction. So this variant trains on challenge rows only,
 roughly 1,300-2,300 per isoform.
 
 Outcome: negative. The decorrelation was real -- 0.55-0.67 against the chemprop members,
-against the 0.69-0.90 they share -- but the arm is 0.11-0.20 Pearson behind them, and an
+against the 0.69-0.90 they share -- but the variant is 0.11-0.20 Pearson behind them, and an
 average pays more for that than it collects for the independence. Pool deltas ran +0.001
 to -0.007 against resolutions of 0.018-0.056.
 """

@@ -13,11 +13,11 @@ and FeatureSet builds live one directory up and are driven by `pipelines.json`.
 | `cyp_compare.py` | Scores a model's captures, ST-RAE against the challenge's own intervals |
 | `cyp_ruler_power.py` | What each ruler can resolve: paired row-sampling and seed noise |
 | `cyp_seed_noise.py` | Reads seed replicates and reports the per-isoform noise floor |
-| `cyp_member_diversity.py` | Whether a candidate arm earns a slot in an isoform's ensemble pool |
+| `cyp_member_diversity.py` | Whether a candidate model earns a slot in an isoform's ensemble pool |
 | `cyp_calibration_figures.py` | Writes the placement figure used in the blog |
 | `cyp_tox21_anchors.py` | Whether the Tox21 -> challenge pIC50 offset holds below the range it is measured on |
 | `cyp_verify_claims.py` | Re-derives the planning doc's data and leaderboard claims from source |
-| `cyp_aux_alignment.py` | MultiTaskAlignment's per-aux verdicts, recorded before the arms are built |
+| `cyp_aux_alignment.py` | MultiTaskAlignment's per-aux verdicts, recorded before the variants are built |
 
 ## openadmet_validation/
 
