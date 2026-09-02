@@ -149,7 +149,7 @@ class UQModelV0:
         * No proximity backend, no neighborhood features.
         * Calibrator is a per-bin isotonic over (prediction, std), not a
           RandomForest over (prediction, std, knn_distance, knn_target_std,
-          local_pred_gap).
+          knn_target_count, local_pred_gap).
         * ``query`` argument is accepted for signature compatibility but used
           only to label the result DataFrame's index — V0 has no id-lookup
           because it has no reference index.

@@ -108,7 +108,7 @@ For each compound, v1 computes five scalar features that describe its local cont
 v1 fits a `RandomForestRegressor` (200 trees, max depth 8) on the validation predictions, mapping the five features to the **absolute residual**:
 
 ```
-error_model: [prediction, prediction_std, knn_distance, knn_target_std, local_pred_gap] → |actual − predicted|
+error_model: [prediction, prediction_std, knn_distance, knn_target_std, knn_target_count, local_pred_gap] → |actual − predicted|
 ```
 
 Because it's fit on cross-fold validation data, every training compound's residual comes from a model that didn't see it during that fold. The model learns, for instance, that a large `knn_target_std` inflates expected error even when `prediction_std` is small — precisely the correction std-only confidence can't make. At fit time it prints a feature-importance breakdown so you can see which signals are actually driving error on your endpoint.
@@ -270,8 +270,8 @@ For truly out-of-distribution detection, pair confidence with applicability-doma
 
 **Regression** — three versions on one ensemble-std foundation:
 
-1. **v0 (beta, default)** — binned `IsotonicRegression(std → |residual|)` + split conformal. No molecular structure needed; fast and auditable. Following [Lei et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116).
-2. **v1 (beta, recommended)** — RandomForest error model on `[prediction, std, knn_distance, knn_target_std, local_pred_gap]` + normalized conformal intervals + residual-aware confidence. Catches the dense-region/censored-attractor failure that std-only UQ misses. Validated by [JCIM 2025 (PMC12848971)](https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/).
+1. **v0 (beta, fallback)** — binned `IsotonicRegression(std → |residual|)` + split conformal. No molecular structure needed; fast and auditable, and what you get when no neighborhood can be built. Following [Lei et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116).
+2. **v1 (beta, default)** — RandomForest error model on `[prediction, std, knn_distance, knn_target_std, knn_target_count, local_pred_gap]` + normalized conformal intervals + residual-aware confidence. Catches the dense-region/censored-attractor failure that std-only UQ misses. Validated by [JCIM 2025 (PMC12848971)](https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/).
 3. **v2 (experimental)** — pure applicability-domain score from fingerprint proximity, with neighbor-derived intervals and a cliff diagnostic. Most interpretable; a relative ranking rather than calibrated error.
 
 **Classification** — VGMU (margin ÷ ensemble disagreement) + isotonic calibration to P(correct), following [Gillis et al. (2025)](https://arxiv.org/abs/2602.08142).

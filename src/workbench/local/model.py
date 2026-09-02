@@ -587,7 +587,8 @@ class Model(LocalArtifact):
 
         Args:
             version (str, optional): "v0", "v1", or "v2". Defaults to the bundle's
-                ``hyperparameters["uq_version"]``, then "v0".
+                ``hyperparameters["uq_version"]``, then "v1", then "v0" when that
+                version isn't in the bundle.
             refresh_proximity (bool): Not supported locally -- see Raises.
             radius (int): Morgan fingerprint radius (refresh_proximity only).
             n_bits (int): Fingerprint bit width (refresh_proximity only).
@@ -596,7 +597,7 @@ class Model(LocalArtifact):
             A ready-to-use UQModelV0, UQModelV1, or UQModelV2.
 
         Raises:
-            FileNotFoundError: If the requested version isn't in the bundle.
+            FileNotFoundError: If an explicitly requested version isn't in the bundle.
             NotImplementedError: If refresh_proximity is True.
         """
         from workbench.utils.model_utils import _resolve_uq_version, load_uq_from_dir
@@ -606,7 +607,9 @@ class Model(LocalArtifact):
                 "refresh_proximity needs the AWS training view; use the embedded proximity, "
                 "or fs.prox('fingerprint') for a fresh one over the whole FeatureSet."
             )
-        return load_uq_from_dir(self.model_dir, _resolve_uq_version(self, version), self.name)
+        return load_uq_from_dir(
+            self.model_dir, _resolve_uq_version(self, version), self.name, fallback_v0=version is None
+        )
 
     def prox(self, space: str) -> "Optional[Union[FingerprintProximity, FeatureSpaceProximity]]":  # noqa: F821
         """Return a proximity model for this Model -- precomputed if it has one, else fresh.

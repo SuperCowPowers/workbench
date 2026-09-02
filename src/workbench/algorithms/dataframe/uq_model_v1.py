@@ -3,7 +3,7 @@
 Encapsulates the full regression UQ pipeline:
     1. A learned error model (Random Forest) predicting |residual| from
        residual features [prediction, prediction_std, knn_distance,
-       knn_target_std, local_pred_gap]
+       knn_target_std, knn_target_count, local_pred_gap]
     2. Normalized conformal calibration → prediction intervals with target coverage
     3. Percentile-rank confidence scores
 
@@ -22,7 +22,9 @@ from typing import Dict, List, Optional, Union
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import cross_val_predict
 
 from workbench.algorithms.dataframe.proximity import Proximity
 from workbench.algorithms.dataframe.residual_features import ResidualFeatures
@@ -191,7 +193,10 @@ class UQModelV1:
         error_model.fit(X_cal, y_cal)
         self.error_models[target] = error_model
 
-        expected_cal = error_model.predict(X_cal)
+        # Calibrate on out-of-fold error-model predictions. A forest scoring the rows it
+        # was fit on tracks them too closely, which compresses the nonconformity spread
+        # and yields intervals narrower than their nominal coverage.
+        expected_cal = self._oof_expected(error_model, X_cal, y_cal)
 
         # 3. Normalized conformal scale factors
         safe_expected = np.maximum(expected_cal, 1e-10)
@@ -210,6 +215,18 @@ class UQModelV1:
         self._log_fit_diagnostics(target, y_true, predictions, expected_cal)
 
         return self
+
+    @staticmethod
+    def _oof_expected(error_model: RandomForestRegressor, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Out-of-fold |residual| estimates for calibration.
+
+        Falls back to in-sample predictions when there are too few rows to split,
+        which keeps tiny calibration sets working but lets their intervals run narrow.
+        """
+        n_splits = min(5, len(y))
+        if n_splits < 2:
+            return error_model.predict(X)
+        return cross_val_predict(clone(error_model), X, y, cv=n_splits, n_jobs=-1)
 
     def _log_fit_diagnostics(
         self,

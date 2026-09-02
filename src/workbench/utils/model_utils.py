@@ -15,7 +15,6 @@ import tempfile
 import tarfile
 import awswrangler as wr
 from typing import Iterator, Optional, Dict, Any, TYPE_CHECKING
-from scipy.stats import norm
 
 if TYPE_CHECKING:
     from workbench.api import Model
@@ -249,6 +248,7 @@ def copy_model_artifacts(model: "Model", dst_name: str) -> str:
 
 
 _VALID_UQ_VERSIONS = ("v0", "v1", "v2")
+DEFAULT_UQ_VERSION = "v1"
 
 
 def _resolve_uq_version(model: "Model", version: Optional[str]) -> str:
@@ -256,8 +256,9 @@ def _resolve_uq_version(model: "Model", version: Optional[str]) -> str:
 
     Order of precedence:
         1. Explicit `version` argument ("v0", "v1", or "v2").
-        2. `hyperparameters["uq_version"]` from the model artifact.
-        3. Default "v0".
+        2. `hyperparameters["uq_version"]` from the model artifact, when it names
+           a known version.
+        3. ``DEFAULT_UQ_VERSION``.
     """
     if version is not None:
         return version
@@ -266,15 +267,22 @@ def _resolve_uq_version(model: "Model", version: Optional[str]) -> str:
     try:
         hp = model.hyperparameters() if hasattr(model, "hyperparameters") else None
         if hp and "uq_version" in hp:
-            return str(hp["uq_version"])
+            hp_version = str(hp["uq_version"]).strip().lower()
+            if hp_version in _VALID_UQ_VERSIONS:
+                return hp_version
+            log.warning(f"Unknown uq_version '{hp['uq_version']}'; using '{DEFAULT_UQ_VERSION}'")
     except Exception:  # noqa: BLE001 — best-effort lookup, fall through to default
         pass
 
-    return "v0"
+    return DEFAULT_UQ_VERSION
 
 
 def load_uq_from_dir(
-    model_dir: str, version: str, model_name: str, fresh_prox: Optional["Proximity"] = None  # noqa: F821
+    model_dir: str,
+    version: str,
+    model_name: str,
+    fresh_prox: Optional["Proximity"] = None,  # noqa: F821
+    fallback_v0: bool = False,
 ) -> "UQModelV0 | UQModelV1 | UQModelV2":  # noqa: F821
     """Load a fitted UQModel from an unpacked model bundle.
 
@@ -287,34 +295,41 @@ def load_uq_from_dir(
         model_name (str): The model's name, for error messages.
         fresh_prox (Proximity, optional): Proximity backend to use instead of the
             embedded one (V1/V2 only).
+        fallback_v0 (bool): Return V0 instead of raising when the requested version
+            isn't in the bundle. Set only when the version came from a default rather
+            than an explicit request, so a model fit without a proximity backend still
+            loads. Defaults to False.
 
     Returns:
         UQModelV0 | UQModelV1 | UQModelV2: A ready-to-use UQ model.
 
     Raises:
-        FileNotFoundError: If the requested version's artifact isn't in the bundle.
+        ValueError: If ``version`` doesn't name a known UQ version.
+        FileNotFoundError: If the requested version's artifact isn't in the bundle
+            and ``fallback_v0`` is False.
     """
     from workbench.algorithms.dataframe.uq_model_v0 import UQModelV0
     from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1
     from workbench.algorithms.dataframe.uq_model_v2 import UQModelV2
 
+    if version not in _VALID_UQ_VERSIONS:
+        raise ValueError(f"Unknown UQ version '{version}' (expected one of {_VALID_UQ_VERSIONS})")
+
     if version == "v0":
         return UQModelV0.load(model_dir)
 
-    if version == "v1":
-        if not os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
-            raise FileNotFoundError(
-                f"Model '{model_name}' does not have a fitted UQModelV1 "
-                "(expected uq_model.joblib in the model artifact)."
-            )
-        return UQModelV1.load(model_dir, prox=fresh_prox)
-
-    if not os.path.exists(os.path.join(model_dir, UQModelV2.METADATA_FILENAME)):
+    artifact = "uq_model.joblib" if version == "v1" else UQModelV2.METADATA_FILENAME
+    if not os.path.exists(os.path.join(model_dir, artifact)):
+        if fallback_v0:
+            log.important(f"Model '{model_name}' has no fitted UQModel{version.upper()}; falling back to V0")
+            return UQModelV0.load(model_dir)
         raise FileNotFoundError(
-            f"Model '{model_name}' does not have a fitted UQModelV2 "
-            f"(expected {UQModelV2.METADATA_FILENAME} in the model artifact)."
+            f"Model '{model_name}' does not have a fitted UQModel{version.upper()} "
+            f"(expected {artifact} in the model artifact)."
         )
-    return UQModelV2.load(model_dir, prox=fresh_prox)
+
+    loader = UQModelV1.load if version == "v1" else UQModelV2.load
+    return loader(model_dir, prox=fresh_prox)
 
 
 def uq_model_local(
@@ -337,7 +352,7 @@ def uq_model_local(
             ``"v1"`` (proximity-augmented RF), or ``"v2"`` (pure applicability-domain
             from fingerprint neighbors). If ``None``, reads
             ``hyperparameters["uq_version"]`` from the bundle and falls back
-            to ``"v0"``.
+            to ``"v1"``, then to ``"v0"`` when that version isn't in the bundle.
         refresh_proximity: V1/V2 only. If False (default), use the proximity backend
             that was embedded in the model artifact at training time — exact
             reference set used to fit the residual estimator, reproducible, no
@@ -350,7 +365,8 @@ def uq_model_local(
         A ready-to-use UQModelV0, UQModelV1, or UQModelV2 instance.
 
     Raises:
-        FileNotFoundError: If the requested version's artifact is not in the bundle.
+        FileNotFoundError: If an explicitly requested version's artifact is not in
+            the bundle. A version that came from the default falls back to V0.
     """
     model_artifact_uri = model.model_data_url()
     if model_artifact_uri is None:
@@ -371,7 +387,9 @@ def uq_model_local(
         local_tar_path = os.path.join(tmpdir, "model.tar.gz")
         wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
         safe_extract_tarfile(local_tar_path, tmpdir)
-        return load_uq_from_dir(tmpdir, effective_version, model.name, fresh_prox=fresh_prox)
+        return load_uq_from_dir(
+            tmpdir, effective_version, model.name, fresh_prox=fresh_prox, fallback_v0=version is None
+        )
 
 
 def noise_model_local(model: Model) -> NoiseModel:
@@ -565,7 +583,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     Args:
         df: DataFrame with predictions and uncertainty estimates. Must contain the target
             column, a "prediction" column, and a "prediction_std" column (required for
-            CRPS and median_std). Quantile columns ("q_025", "q_975", "q_05", "q_95",
+            median_std). Quantile columns ("q_025", "q_975", "q_05", "q_95",
             "q_10", "q_90", "q_25", "q_75") are used for coverage/width when present;
             otherwise Gaussian bounds are derived from "prediction_std".
         target_col: Name of the true target column in the DataFrame.
@@ -644,20 +662,6 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     median_width_50 = np.median(upper_50 - lower_50)
     median_width_68 = np.median(upper_68 - lower_68)
 
-    # --- CRPS (measures calibration + sharpness) ---
-    z = (df[target_col] - df["prediction"]) / df["prediction_std"]
-    crps = df["prediction_std"] * (z * (2 * norm.cdf(z) - 1) + 2 * norm.pdf(z) - 1 / np.sqrt(np.pi))
-    mean_crps = np.mean(crps)
-
-    # --- Interval Score @ 95% (penalizes miscoverage) ---
-    alpha_95 = 0.05
-    is_95 = (
-        (upper_95 - lower_95)
-        + (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95)
-        + (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
-    )
-    mean_is_95 = np.mean(is_95)
-
     # --- Interval to Error Correlation ---
     abs_residuals = np.abs(df[target_col] - df["prediction"])
     width_68 = upper_68 - lower_68
@@ -699,8 +703,6 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     print(f"Median 80% Width: {median_width_80:.3f}")
     print(f"Median 90% Width: {median_width_90:.3f}")
     print(f"Median 95% Width: {median_width_95:.3f}")
-    print(f"CRPS: {mean_crps:.3f} (lower is better)")
-    print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
     print(f"Interval/Error Corr: {interval_to_error_corr:.3f} (higher is better, target: >0.5)")
     if confidence_to_error_corr is not None:
         print(f"Confidence/Error Corr: {confidence_to_error_corr:.3f} (lower is better, target: <-0.5)")

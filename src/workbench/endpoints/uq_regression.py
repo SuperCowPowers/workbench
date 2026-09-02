@@ -50,16 +50,33 @@ from workbench.endpoints.uq_model_v2 import UQModelV2
 log = logging.getLogger("workbench")
 
 _VALID_VERSIONS = ("v0", "v1", "v2")
+DEFAULT_VERSION = "v1"
 
 
 def _normalize_version(version: Optional[str]) -> str:
-    """Coerce a UQ version string to canonical form, defaulting to 'v0'."""
+    """Coerce a UQ version string to canonical form, defaulting to ``DEFAULT_VERSION``.
+
+    Raises ValueError on an unknown version — callers naming one explicitly get a
+    hard failure. Bundle-supplied versions go through ``_bundle_version`` instead.
+    """
     if version is None:
-        return "v0"
+        return DEFAULT_VERSION
     v = str(version).strip().lower()
     if v not in _VALID_VERSIONS:
         raise ValueError(f"Unknown UQ version '{version}' (expected one of {_VALID_VERSIONS})")
     return v
+
+
+def _bundle_version(version: Optional[str]) -> str:
+    """Coerce a bundle's ``uq_version`` to canonical form, tolerating junk.
+
+    A stale or misspelled hyperparameter falls back to the default rather than
+    breaking inference on an otherwise healthy endpoint.
+    """
+    if version is not None and str(version).strip().lower() not in _VALID_VERSIONS:
+        log.warning(f"Unknown uq_version '{version}' in bundle; using '{DEFAULT_VERSION}'")
+        return DEFAULT_VERSION
+    return _normalize_version(version)
 
 
 def _build_proximity(prox_df, *, id_column: str, targets: list, features: Optional[list] = None) -> Optional[Proximity]:
@@ -229,8 +246,9 @@ def load_regression_uq(model_dir: str) -> Optional[Union[UQModelV0, UQModelV1, U
     """Load the active regression UQ model from a bundle.
 
     Reads ``hyperparameters.json["uq_version"]`` to decide which version is
-    active (defaults to ``"v0"``), then loads that one. Falls back to any
-    other available version if the requested one's artifact isn't present.
+    active (defaults to ``"v1"``), then loads that one. Falls back to any
+    other available version if the requested one's artifact isn't present,
+    so a bundle fit without a proximity backend lands on v0.
     Returns ``None`` if no UQ artifacts are in the bundle (e.g. a
     classification model).
 
@@ -250,7 +268,7 @@ def load_regression_uq(model_dir: str) -> Optional[Union[UQModelV0, UQModelV1, U
     if os.path.exists(bundle_hp_path):
         with open(bundle_hp_path) as fp:
             bundle_hp = json.load(fp)
-    active_version = _normalize_version(bundle_hp.get("uq_version", "v0"))
+    active_version = _bundle_version(bundle_hp.get("uq_version"))
 
     # Try active version first; if missing, fall back in v0 → v1 → v2 order.
     order = [active_version] + [v for v in _VALID_VERSIONS if v != active_version]
