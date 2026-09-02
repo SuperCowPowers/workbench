@@ -5383,7 +5383,7 @@
 <p><code>knn_target_std</code> and <code>local_pred_gap</code> are exactly the signals the solubility failure needs: they flag a compound sitting in a region where the ensemble's tight agreement is misleadingly confident.</p>
 <h2 id="step-2-the-error-model">Step 2: The Error Model</h2>
 <p>v1 fits a <code>RandomForestRegressor</code> (200 trees, max depth 8) on the validation predictions, mapping the five features to the <strong>absolute residual</strong>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>error_model: [prediction, prediction_std, knn_distance, knn_target_std, local_pred_gap] → |actual − predicted|
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>error_model: [prediction, prediction_std, knn_distance, knn_target_std, knn_target_count, local_pred_gap] → |actual − predicted|
 </span></code></pre></div>
 <p>Because it's fit on cross-fold validation data, every training compound's residual comes from a model that didn't see it during that fold. The model learns, for instance, that a large <code>knn_target_std</code> inflates expected error even when <code>prediction_std</code> is small — precisely the correction std-only confidence can't make. At fit time it prints a feature-importance breakdown so you can see which signals are actually driving error on your endpoint.</p>
 <h2 id="step-3-normalized-conformal-intervals">Step 3: Normalized Conformal Intervals</h2>
@@ -5498,8 +5498,8 @@
 <h2 id="summary">Summary</h2>
 <p><strong>Regression</strong> — three versions on one ensemble-std foundation:</p>
 <ol>
-<li><strong>v0 (beta, default)</strong> — binned <code>IsotonicRegression(std → |residual|)</code> + split conformal. No molecular structure needed; fast and auditable. Following <a href="https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116">Lei et al. (2018)</a>.</li>
-<li><strong>v1 (beta, recommended)</strong> — RandomForest error model on <code>[prediction, std, knn_distance, knn_target_std, local_pred_gap]</code> + normalized conformal intervals + residual-aware confidence. Catches the dense-region/censored-attractor failure that std-only UQ misses. Validated by <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/">JCIM 2025 (PMC12848971)</a>.</li>
+<li><strong>v0 (beta, fallback)</strong> — binned <code>IsotonicRegression(std → |residual|)</code> + split conformal. No molecular structure needed; fast and auditable, and what you get when no neighborhood can be built. Following <a href="https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116">Lei et al. (2018)</a>.</li>
+<li><strong>v1 (beta, default)</strong> — RandomForest error model on <code>[prediction, std, knn_distance, knn_target_std, knn_target_count, local_pred_gap]</code> + normalized conformal intervals + residual-aware confidence. Catches the dense-region/censored-attractor failure that std-only UQ misses. Validated by <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/">JCIM 2025 (PMC12848971)</a>.</li>
 <li><strong>v2 (experimental)</strong> — pure applicability-domain score from fingerprint proximity, with neighbor-derived intervals and a cliff diagnostic. Most interpretable; a relative ranking rather than calibrated error.</li>
 </ol>
 <p><strong>Classification</strong> — VGMU (margin ÷ ensemble disagreement) + isotonic calibration to P(correct), following <a href="https://arxiv.org/abs/2602.08142">Gillis et al. (2025)</a>.</p>
