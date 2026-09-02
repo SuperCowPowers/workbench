@@ -10,7 +10,8 @@ Two families are written, from the same query and the same aggregation:
 `cyp_inhibition/` is fitted curves only. ChEMBL assigns a `pchembl_value` only
 where a real concentration-response curve was fitted, so compounds too weak to
 produce one are systematically absent: nothing here falls below pIC50 4.0, while
-~40% of the challenge set does. It is pretraining data, not extra rows for a
+24% of the challenge set does -- 9% of its CYP2D6 labels, 40% of its CYP3A4 ones.
+It is pretraining data, not extra rows for a
 calibrated regressor. Read the potency-enrichment note in descriptions.json first.
 
 `cyp_inhibition/censored/` is the same table plus the weak tail those files drop.

@@ -136,7 +136,9 @@ filters, so the mirror is transport and nothing else.
 **This is a potency-enriched sample, not a random one.** ChEMBL assigns a
 `pchembl_value` only where a real concentration-response curve was fitted, so
 compounds too weak to produce one are systematically absent: nothing here falls
-below pIC50 4.0, while 40% of the challenge training set does. Concatenating the
+below pIC50 4.0, while 24% of the challenge training set does -- and that share
+swings hard by isoform, from 9% of its CYP2D6 labels to 40% of its CYP3A4 ones.
+Concatenating the
 two and fitting a calibrated regressor teaches the model that CYP inhibition is
 more common and more potent than it is. Pretrain and fine-tune, or reweight.
 

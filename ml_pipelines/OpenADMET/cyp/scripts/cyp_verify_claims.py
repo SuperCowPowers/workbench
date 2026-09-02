@@ -19,6 +19,7 @@ RDLogger.DisableLog("rdApp.*")
 
 D = "../../../../data/public_data/output/comp_chem"
 ISOFORMS = ["cyp1a2", "cyp2c9", "cyp2d6", "cyp3a4"]
+PUBLIC_ISOFORMS = ISOFORMS + ["cyp2c19"]
 RESULTS = []
 
 
@@ -200,6 +201,50 @@ n_sub4 = int((ch["cyp2d6_pic50_direct_inhibition"] < 4.0).sum())
 check("129 sub-4.0 CYP2D6 scored rows", 129, n_sub4, n_sub4 == 129)
 n_lab = int(ch["cyp2d6_pic50_direct_inhibition"].notna().sum())
 check("1,493 CYP2D6 labelled rows", 1493, n_lab, n_lab == 1493)
+
+print("\n== Sub-4.0 share of the challenge labels ==")
+# Quoted in data/public_data/descriptions.json and README.md to say what room the ChEMBL
+# censored bounds buy. It swings 9%-40% by isoform, so the pooled figure misreads any one.
+label_cols = [f"{i}_pic50_direct_inhibition" for i in ISOFORMS]
+pooled = ch[label_cols].stack()
+per_iso = {i: round(float((ch[f"{i}_pic50_direct_inhibition"].dropna() < 4.0).mean()), 3) for i in ISOFORMS}
+stated_iso = {"cyp1a2": 0.16, "cyp2c9": 0.20, "cyp2d6": 0.09, "cyp3a4": 0.40}
+check(
+    "24% of challenge labels sit below pIC50 4.0",
+    0.24,
+    round(float((pooled < 4.0).mean()), 3),
+    near(float((pooled < 4.0).mean()), 0.24, 0.005),
+)
+check("per isoform 16/20/9/40%", stated_iso, per_iso, all(near(per_iso[i], stated_iso[i], 0.005) for i in ISOFORMS))
+
+print("\n== ChEMBL censored bounds ==")
+# Quoted in cyp_chemprop_union.py and cyp_union_features.py. Measured on the frame the union
+# ingests: the censored all_isoforms file, deduped on the InChIKey connectivity block.
+# Two traps this pins: the share is bounds over *labels*, not over rows (that reads 7-14%),
+# and distinct values are counted raw -- rounding to 2dp reads 62-86 instead of 74-109.
+cen = pd.read_csv(f"{D}/chembl/cyp_inhibition/censored/all_isoforms.csv")
+cen["key"] = cen["inchi_key"].str.split("-").str[0]
+cen = cen.dropna(subset=["key"]).drop_duplicates(subset=["key"])
+shares, distinct, modal = {}, {}, {}
+for iso in PUBLIC_ISOFORMS:
+    lt = cen[f"{iso}_pic50_lt"].fillna(False).astype(bool)
+    b = cen.loc[lt, f"{iso}_pic50"]
+    shares[iso] = round(100 * lt.sum() / cen[f"{iso}_pic50"].notna().sum(), 1)
+    distinct[iso] = int(b.nunique())
+    modal[iso] = round(float((b.round(2) == b.round(2).mode().iloc[0]).mean()), 2)
+check(
+    "bounds are 15-29% of ChEMBL labels", "15-29%", shares, 15 <= min(shares.values()) and max(shares.values()) <= 29.5
+)
+check("CYP2D6 keeps ~71% real measurements", "71%", round(100 - shares["cyp2d6"], 1), near(shares["cyp2d6"], 29.4, 0.3))
+check(
+    "74-109 distinct bound values", "74-109", distinct, 74 <= min(distinct.values()) and max(distinct.values()) <= 109
+)
+check(
+    "29-35% of bounds on the modal value",
+    "0.29-0.35",
+    modal,
+    0.29 <= min(modal.values()) and max(modal.values()) <= 0.35,
+)
 
 print("\n== Leaderboard snapshot ==")
 board = open("../../../../docs/planning/cyp_leaderboard_2026_09_01.md").read()
