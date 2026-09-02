@@ -43,6 +43,12 @@ Three variants read together, one variable at a time:
 
 The third is the control that shows the loss is doing the work rather than the extra rows.
 
+Compare only models built from the same target set. The name is derived from the flags, so
+it does not record how many heads were in the script on the day a model was built, and this
+script has gained heads over time -- `cyp-reg-chemprop-union-p30` carries 18 against the
+26 a bare `--public-weight` run produces now. `--name-suffix` keeps a rebuild from replacing
+an older model that meant something else, and the run warns when the head counts differ.
+
 `cyp-reg-chemprop-mt-aux-100` is the control at 0% public data. Six-fold apart on the
 variable, everything else identical.
 
@@ -62,7 +68,7 @@ Build the FeatureSet first: python cyp_union_features.py [--censored]
 import argparse
 
 import numpy as np
-from workbench.api import FeatureSet, ModelFramework, ModelType
+from workbench.api import FeatureSet, Model, ModelFramework, ModelType
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
 UNCENSORED_FS = "openadmet_cyp_union_f1"
@@ -113,6 +119,12 @@ parser.add_argument(
     action="store_true",
     help="Control variant: take the censored FeatureSet but leave bounded_loss off, so bounds read as exact labels",
 )
+parser.add_argument(
+    "--name-suffix",
+    default=None,
+    help="Append to the model name. The name is derived from the flags, not the head count, "
+    "so rebuilding after heads are added silently replaces a model that meant something else",
+)
 args = parser.parse_args()
 if args.bounds_as_labels and not args.censored:
     parser.error("--bounds-as-labels only means something with --censored")
@@ -125,8 +137,23 @@ if args.tox21:
     model_name += "-tox"
 if args.censored:
     model_name += "-cenlabels" if args.bounds_as_labels else "-cen"
+if args.name_suffix:
+    model_name += f"-{args.name_suffix.strip('-')}"
 
 bounded_loss = args.censored and not args.bounds_as_labels
+
+# A name derived from flags alone cannot distinguish head counts, so say plainly when this
+# run would replace a model that trained on a different target set.
+existing = Model(model_name)
+if existing.exists():
+    prior = existing.target()
+    prior = list(prior) if isinstance(prior, list) else [prior]
+    if len(prior) != len(all_targets):
+        print(
+            f"WARNING: '{model_name}' exists with {len(prior)} targets; this run has {len(all_targets)}. "
+            f"Replacing it makes any comparison against the old one confounded — use --name-suffix instead."
+        )
+
 fs = FeatureSet(CENSORED_FS if args.censored else UNCENSORED_FS)
 df = fs.pull_dataframe()
 
