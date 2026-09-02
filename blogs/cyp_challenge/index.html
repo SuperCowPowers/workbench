@@ -2338,6 +2338,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5256,6 +5267,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5356,6 +5378,32 @@
 </div>
 <p><strong>Work in progress.</strong> The <a href="https://huggingface.co/spaces/openadmet/cyp-challenge">OpenADMET CYP Inhibition Blind Challenge</a> (Direct Inhibition track) is still open. The model changes between submissions, and the live leaderboard scores only half the test set. So these are just some early observations that may, or may not, translate well to the final leaderboard.</p>
 <p>Two things carry the entry. First, a multi-task graph model trained on the challenge assay alongside every adjacent public readout we could align, ensembled across architectures. Second, an explicit correction for the distribution shift between the training labels and the blind set.</p>
+<h2 id="the-data">The Data</h2>
+<p>Everything the entry trains on is public. Four sources, aligned on standardized InChIKey
+connectivity blocks so salt and stereo variants match.</p>
+<ul>
+<li><strong>OpenADMET CYP challenge release</strong> — 4,905 compounds. Fitted dose-response pIC50 with
+  credible intervals for the four scored isoforms, plus adjacent arms of the same assay:
+  single-concentration log2fc on 4,375 of them (recorded whether or not a compound
+  inhibited), TDI-condition curves, and emax.</li>
+<li><strong>ChEMBL 37</strong> (<a href="https://www.ebi.ac.uk/chembl/">CC BY-SA 3.0</a>) — 24,918 compounds, five
+  isoforms. Almost entirely new chemistry: 185 structures overlap the challenge deck and
+  <strong>zero</strong> overlap the blind set. Potency exists only where a curve was fitted, so nothing
+  sits below pIC50 4.0.</li>
+<li><strong>PubChem AID 1851, the Veith qHTS panel</strong> (public domain) — 17,107 compounds in 15-point
+  dose-response against five isoforms. We keep <code>max_response</code> rather than its pIC50: it is
+  recorded at 100% coverage, so the 42,355 rows the screen called inactive still carry
+  signal where a potency-only source drops them.</li>
+<li><strong>Tox21 CYP screen</strong> (public domain) — 7,196 compounds, P450-Glo bioluminescent qHTS in
+  triplicate, pulled from the raw assay records. The only public source weak-inhibitor-rich
+  enough to reach below pIC50 5.0. Available but <em>not</em> in the current entry.</li>
+</ul>
+<p>Each public source is also published in a censored variant, where records reporting only
+<code>IC50 &gt; x</code>, or a screen calling a compound inactive, carry the bound as a label with an
+<code>_lt</code> flag rather than a null. That is the honest representation — a bound is not a
+measurement — though on this challenge it has not moved the scored metric.</p>
+<p>ChEMBL and the qHTS panel are what the current entry uses. The rest of the model section
+explains why they go in as separate heads rather than as extra rows.</p>
 <h2 id="the-model">The Model</h2>
 <p>Four Chemprop D-MPNNs, averaged. All are SMILES-only with stock hyperparameters, trained on the challenge release plus ChEMBL and the NCATS qHTS panel, up to 32,900 compounds and 175,700 labels. They differ in which targets share an encoder.</p>
 <table>
@@ -5393,7 +5441,7 @@
 <p><strong>Why multi-task.</strong> The isoforms are correlated and the per-isoform data is small, 1,300–2,300 curves each. One encoder learning from all 6,525 measurements is a data-efficiency argument, not a claim that graph learning resolves activity cliffs; on cliffs descriptor models match or beat GNNs, as OpenADMET's own tutorial reports.</p>
 <p><strong>Why auxiliary heads rather than more rows.</strong> Every extra source measures something adjacent to the scored target, not identical to it: the single-concentration arm reports a fold-change, ChEMBL's potency comes from other labs and reads ~0.5 log more potent on shared compounds, and the qHTS panel reports efficacy at the top concentration. Pooling any of them into the scored columns needs a cross-assay correction; as separate heads none is required, since the encoder learns from all of them and each head keeps its own scale.</p>
 <p><strong>Why an ensemble.</strong> Averaging decorrelated models cancels the error that belongs to architecture and training run rather than to the chemistry. Members are chosen for how differently they see the problem, not for how they score alone. The two CYP2D6 specialists earn their slots that way: a different slice of the data, so different compounds missed. The average beats every member it contains, and the gain flattens by the fourth.</p>
-<p><strong>What the public data contributes.</strong> ChEMBL adds ~24,700 compounds disjoint from the challenge deck: 185 structures overlap it, <strong>zero</strong> overlap the blind set. The qHTS panel adds max-response, recorded whether or not a compound inhibited, so the ~42,000 rows that showed nothing still carry signal where a potency-only source drops them.</p>
+<p><strong>What the public data contributes.</strong> Breadth, not more labels on the same molecules. ChEMBL is almost entirely chemistry the challenge deck never saw, which is what a shared encoder can use; the qHTS panel is the only source that says anything at all about the compounds that did nothing.</p>
 <h2 id="two-populations">Two Populations</h2>
 <p>The blind set is not a random draw. OpenADMET built it by hit expansion: the top 25 hits for CYP1A2, CYP2C9 and CYP3A4, then the top 10 catalog chemisimilars purchased for each, giving 750 compounds in dense structural clusters around potent molecules.</p>
 <p>Clustered around hits is not the same as active: analogs of a potent compound are mostly not potent, and CYP2D6 was not among the isoforms hits were selected on, so it got no enrichment at all. Every training label meanwhile survived two filters: a compound was screened because someone thought it might be active, and labelled only if its dose-response curve fit. Compounds that did nothing produce no curve and no label.</p>
@@ -5437,6 +5485,12 @@
 <li><a href="https://github.com/OpenADMET/CYP-Challenge-Tutorial">CYP Challenge Tutorial</a> — baseline notebooks, scoring harness, submission validators</li>
 <li><a href="../pxr_weekend_experiments/">A Weekend on the OpenADMET PXR Challenge</a> — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from</li>
 <li>van Tilborg et al., <em>Exposing the Limitations of Molecular Machine Learning with Activity Cliffs</em>, J. Chem. Inf. Model. 2022</li>
+</ul>
+<p><strong>Data sources</strong></p>
+<ul>
+<li><a href="https://www.ebi.ac.uk/chembl/">ChEMBL 37</a> (CC BY-SA 3.0) — Mendez et al., <em>ChEMBL: towards direct deposition of bioassay data</em>, Nucleic Acids Res. 2019, <a href="https://doi.org/10.1093/nar/gky1075">doi:10.1093/nar/gky1075</a></li>
+<li><a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1851">PubChem AID 1851</a> (public domain) — Veith et al., <em>Comprehensive characterization of cytochrome P450 isozyme selectivity across chemical libraries</em>, Nat. Biotechnol. 2009, <a href="https://doi.org/10.1038/nbt.1581">doi:10.1038/nbt.1581</a></li>
+<li>Tox21 CYP screen (public domain) — PubChem AIDs <a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1671196">1671196</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1671197">1671197</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1671198">1671198</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1671199">1671199</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1671201">1671201</a>, with firefly-luciferase counter-screen <a href="https://pubchem.ncbi.nlm.nih.gov/bioassay/1224835">1224835</a></li>
 </ul>
 <h2 id="questions">Questions?</h2>
 <p>Open an issue on <a href="https://github.com/SuperCowPowers/workbench">GitHub</a> or reach us at <a href="https://www.supercowpowers.com">SuperCowPowers</a>.</p>
