@@ -77,7 +77,9 @@ def align_frame(spec: PyTorchFoldSpec, df):
     return df
 
 
-def train_pytorch_fold(spec: PyTorchFoldSpec, train_tensors, val_tensors, *, fold_idx: int = 0):
+def train_pytorch_fold(
+    spec: PyTorchFoldSpec, train_tensors, val_tensors, *, fold_idx: int = 0, train_sample_weight=None
+):
     """Train one ensemble member on prepared tensors and return it.
 
     The single definition of "train one PyTorch tabular model" — used both to publish
@@ -90,6 +92,8 @@ def train_pytorch_fold(spec: PyTorchFoldSpec, train_tensors, val_tensors, *, fol
         train_tensors: ``(x_cont, x_cat, y)`` from ``pytorch_utils.prepare_data``.
         val_tensors: ``(x_cont, x_cat, y)`` — drives early stopping.
         fold_idx: ensemble member index — offsets the seed so members differ.
+        train_sample_weight: per-row loss weights for this fold's training rows. Validation is
+            left unweighted, matching the XGBoost path, which weights ``train_idx`` only.
 
     Returns:
         tuple: ``(model, history)`` — the trained model and its training history.
@@ -124,4 +128,5 @@ def train_pytorch_fold(spec: PyTorchFoldSpec, train_tensors, val_tensors, *, fol
         device=spec.device,
         restore_best_weights=hp["restore_best_weights"],
         verbose=spec.verbose,
+        train_sample_weight=train_sample_weight,
     )

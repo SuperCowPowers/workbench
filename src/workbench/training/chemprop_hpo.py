@@ -283,6 +283,8 @@ class ChempropAdapter(HpoAdapter):
 
         target_columns = self.target_columns
         all_y = train_df[target_columns].to_numpy(dtype=float)
+        # Trials must train the way the published model does, weights included.
+        sample_weight = train_df["sample_weight"].to_numpy(dtype=float) if "sample_weight" in train_df.columns else None
 
         def trial_fn(config, report):
             spec = FoldSpec(
@@ -310,6 +312,7 @@ class ChempropAdapter(HpoAdapter):
                         all_y[va_idx],
                         fold_idx=fold_idx,
                         checkpoint_dir=ckpt_dir,
+                        train_sample_weight=None if sample_weight is None else sample_weight[tr_idx],
                     )
 
                 oof_pred.append(fold_preds[:, 0])

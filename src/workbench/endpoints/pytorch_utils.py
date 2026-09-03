@@ -238,11 +238,14 @@ def train_model(
     device: str = "cpu",
     restore_best_weights: bool = False,
     verbose: bool = True,
+    train_sample_weight: Optional[torch.Tensor] = None,
 ) -> tuple[TabularMLP, dict]:
     """Train the model with early stopping.
 
     Args:
         weight_decay: AdamW L2 regularization coefficient. Default 1e-4.
+        train_sample_weight: per-row loss weights, one per training row. Validation stays
+            unweighted so early stopping still selects on the natural distribution.
         verbose: Print per-epoch progress. Set False for hyperparameter-search trials,
             where one line per epoch per fold per trial buries the run's own log.
         restore_best_weights: If False (default for Workbench UQ ensembles), keep
@@ -255,23 +258,30 @@ def train_model(
     """
     model = model.to(device)
 
+    # Weights ride in the dataset so the batch unpack is the same shape either way;
+    # uniform weights reduce to the plain mean the loss computed before.
+    w_train = (
+        torch.ones(train_x_cont.shape[0]) if train_sample_weight is None else train_sample_weight.reshape(-1).float()
+    )
+    w_val = torch.ones(val_x_cont.shape[0])
+
     # Create dataloaders
     if train_x_cat is not None:
-        train_dataset = TensorDataset(train_x_cont, train_x_cat, train_y)
-        val_dataset = TensorDataset(val_x_cont, val_x_cat, val_y)
+        train_dataset = TensorDataset(train_x_cont, train_x_cat, train_y, w_train)
+        val_dataset = TensorDataset(val_x_cont, val_x_cat, val_y, w_val)
     else:
         # Use dummy categorical tensor
         dummy_cat = torch.zeros(train_x_cont.shape[0], 0, dtype=torch.long)
         dummy_val_cat = torch.zeros(val_x_cont.shape[0], 0, dtype=torch.long)
-        train_dataset = TensorDataset(train_x_cont, dummy_cat, train_y)
-        val_dataset = TensorDataset(val_x_cont, dummy_val_cat, val_y)
+        train_dataset = TensorDataset(train_x_cont, dummy_cat, train_y, w_train)
+        val_dataset = TensorDataset(val_x_cont, dummy_val_cat, val_y, w_val)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
     # Loss and optimizer
     if task == "classification":
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss(reduction="none")
     else:
         # Map loss name to PyTorch loss class
         loss_map = {
@@ -282,7 +292,14 @@ def train_model(
         }
         if loss not in loss_map:
             raise ValueError(f"Unknown loss '{loss}'. Supported: {list(loss_map.keys())}")
-        criterion = loss_map[loss]()
+        criterion = loss_map[loss](reduction="none")
+
+    def weighted_loss(out, y, w):
+        """Per-row loss, weighted and normalized. Uniform weights give the plain mean."""
+        per_row = criterion(out, y.view(-1).long()) if task == "classification" else criterion(out, y)
+        if per_row.ndim > 1:
+            per_row = per_row.mean(dim=1)
+        return (per_row * w).sum() / w.sum()
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=patience // 3)
@@ -298,16 +315,12 @@ def train_model(
         model.train()
         train_losses = []
         for batch in train_loader:
-            x_cont, x_cat, y = [b.to(device) for b in batch]
+            x_cont, x_cat, y, w = [b.to(device) for b in batch]
             x_cat = x_cat if x_cat.shape[1] > 0 else None
 
             optimizer.zero_grad()
             out = model(x_cont, x_cat)
-
-            if task == "classification":
-                loss = criterion(out, y.view(-1).long())
-            else:
-                loss = criterion(out, y)
+            loss = weighted_loss(out, y, w)
 
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -319,15 +332,10 @@ def train_model(
         val_losses = []
         with torch.no_grad():
             for batch in val_loader:
-                x_cont, x_cat, y = [b.to(device) for b in batch]
+                x_cont, x_cat, y, w = [b.to(device) for b in batch]
                 x_cat = x_cat if x_cat.shape[1] > 0 else None
                 out = model(x_cont, x_cat)
-
-                if task == "classification":
-                    loss = criterion(out, y.view(-1).long())
-                else:
-                    loss = criterion(out, y)
-                val_losses.append(loss.item())
+                val_losses.append(weighted_loss(out, y, w).item())
 
         train_loss = np.mean(train_losses)
         val_loss = np.mean(val_losses)

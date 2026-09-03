@@ -151,13 +151,27 @@ class PyTorchAdapter(HpoAdapter):
             (prep(train_df.iloc[tr].reset_index(drop=True)), prep(train_df.iloc[va].reset_index(drop=True)))
             for tr, va in folds
         ]
+        # Trials must train the way the published model does, weights included.
+        import torch as _torch
+
+        has_w = "sample_weight" in train_df.columns
+        fold_sample_weight = [
+            _torch.tensor(train_df.iloc[tr]["sample_weight"].to_numpy(dtype="float32")) if has_w else None
+            for tr, _ in folds
+        ]
 
         def trial_fn(config, report):
             trial_spec = replace(spec, hyperparameters=self.merge_config(hyperparameters, config), verbose=False)
 
             oof_pred, oof_true = [], []
             for fold_idx, (train_tensors, val_tensors) in enumerate(prepared):
-                model, _ = train_pytorch_fold(trial_spec, train_tensors, val_tensors, fold_idx=fold_idx)
+                model, _ = train_pytorch_fold(
+                    trial_spec,
+                    train_tensors,
+                    val_tensors,
+                    fold_idx=fold_idx,
+                    train_sample_weight=fold_sample_weight[fold_idx],
+                )
 
                 va_cont, va_cat, va_y = val_tensors
                 oof_pred.append(predict(model, va_cont, va_cat).flatten())

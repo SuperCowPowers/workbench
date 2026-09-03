@@ -244,6 +244,7 @@ def train_chemprop_fold(
     train_lt=None,
     val_gt=None,
     val_lt=None,
+    train_sample_weight=None,
 ):
     """Train one ensemble member and predict its validation fold.
 
@@ -264,6 +265,9 @@ def train_chemprop_fold(
         train_extra / val_extra: scaled extra descriptors; ``val_extra_raw`` is the
             unscaled copy used for prediction (the model's ``x_d_transform`` rescales).
         train_gt / train_lt / val_gt / val_lt: bounded-loss censoring masks.
+        train_sample_weight: per-row loss weights for the training rows. Validation is left
+            unweighted so early stopping still selects on the natural distribution —
+            the same split the XGBoost path makes, which weights `train_idx` only.
 
     Returns:
         tuple: ``(mpnn, val_predictions)`` — the fitted model in eval mode and its
@@ -273,7 +277,12 @@ def train_chemprop_fold(
     batch_size = hp["batch_size"]
 
     train_dps, _ = create_molecule_datapoints(
-        train_df[spec.smiles_column].tolist(), train_targets, train_extra, gt_mask=train_gt, lt_mask=train_lt
+        train_df[spec.smiles_column].tolist(),
+        train_targets,
+        train_extra,
+        gt_mask=train_gt,
+        lt_mask=train_lt,
+        sample_weight=train_sample_weight,
     )
     val_dps, _ = create_molecule_datapoints(
         val_df[spec.smiles_column].tolist(), val_targets, val_extra, gt_mask=val_gt, lt_mask=val_lt

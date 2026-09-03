@@ -113,12 +113,17 @@ def create_molecule_datapoints(
     extra_descriptors: np.ndarray | None = None,
     gt_mask: np.ndarray | None = None,
     lt_mask: np.ndarray | None = None,
+    sample_weight: np.ndarray | None = None,
 ) -> tuple[list[data.MoleculeDatapoint], list[int]]:
     """Create ChemProp MoleculeDatapoints from SMILES strings.
 
     gt_mask/lt_mask are per-(row, target) boolean arrays for bounded-loss training:
     gt_mask[i, j] == True means target j on row i is right-censored (true value >= y).
     lt_mask[i, j] == True means target j on row i is left-censored (true value <= y).
+
+    sample_weight is one float per row, chemprop's per-datapoint loss weight — it scales
+    every target on that molecule, since the weight belongs to the datapoint rather than to
+    a task. Use `task_weights` on the criterion to weight a target.
 
     Returns the datapoints plus the indices of the SMILES RDKit could parse (rows that
     fail to parse are dropped, so callers must align downstream arrays on these indices).
@@ -142,6 +147,8 @@ def create_molecule_datapoints(
             kwargs["gt_mask"] = gt_mask[i]
         if lt_mask is not None:
             kwargs["lt_mask"] = lt_mask[i]
+        if sample_weight is not None:
+            kwargs["weight"] = float(sample_weight[i])
         datapoints.append(data.MoleculeDatapoint.from_smi(smi, **kwargs))
         valid_indices.append(i)
 

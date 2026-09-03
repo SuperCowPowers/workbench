@@ -498,6 +498,16 @@ if __name__ == "__main__":
     # bound value as exact truth, which slightly understates accuracy on
     # censored rows. Revisit when adding censored-aware metrics.
     # ---------------------------------------------------------------------
+    # Per-row loss weights. The training view always carries `sample_weight`, so a model
+    # built without them trains on a column of 1.0 and behaves as before.
+    all_sample_weight = None
+    if "sample_weight" in all_df.columns:
+        w = pd.to_numeric(all_df["sample_weight"], errors="coerce").fillna(1.0).to_numpy(dtype=np.float64)
+        if not np.allclose(w, 1.0):
+            all_sample_weight = w
+            print(f"Sample weights: min={w.min():.2f} max={w.max():.2f} mean={w.mean():.2f}, "
+                  f"{int((w != 1.0).sum()):,} of {len(w):,} rows reweighted")
+
     all_gt_mask, all_lt_mask = None, None
     use_bounded_loss = bool(hyperparameters.get("bounded_loss", False)) and model_type != "classifier"
     resolved_bound_columns: dict = {}
@@ -531,6 +541,8 @@ if __name__ == "__main__":
     # Filter invalid SMILES
     _, valid_indices = create_molecule_datapoints(all_df[smiles_column].tolist(), all_targets, all_extra_features)
     all_df = all_df.iloc[valid_indices].reset_index(drop=True)
+    if all_sample_weight is not None:
+        all_sample_weight = all_sample_weight[valid_indices]
     all_targets = all_targets[valid_indices]
     if all_extra_features is not None:
         all_extra_features = all_extra_features[valid_indices]
@@ -650,6 +662,7 @@ if __name__ == "__main__":
             train_lt=all_lt_mask[train_idx] if all_lt_mask is not None else None,
             val_gt=all_gt_mask[val_idx] if all_gt_mask is not None else None,
             val_lt=all_lt_mask[val_idx] if all_lt_mask is not None else None,
+            train_sample_weight=all_sample_weight[train_idx] if all_sample_weight is not None else None,
         )
         ensemble_models.append(mpnn)
         print(f"Fold {fold_idx + 1} OOF predictions complete.", flush=True)

@@ -501,6 +501,14 @@ if __name__ == "__main__":
             df_oof, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
 
+        # Per-row loss weights. The training view always carries `sample_weight`, so a
+        # model built without them trains on a column of 1.0 and behaves as before.
+        fold_sample_weight = None
+        if "sample_weight" in df_train.columns:
+            w = pd.to_numeric(df_train["sample_weight"], errors="coerce").fillna(1.0).to_numpy(dtype=np.float32)
+            if not np.allclose(w, 1.0):
+                fold_sample_weight = torch.from_numpy(w)
+
         # Same trainer the HPO objective scores its trials with, so a searched config
         # maps to this exact model.
         model, _ = train_pytorch_fold(
@@ -508,6 +516,7 @@ if __name__ == "__main__":
             (train_x_cont, train_x_cat, train_y),
             (val_x_cont, val_x_cat, val_y),
             fold_idx=fold_idx,
+            train_sample_weight=fold_sample_weight,
         )
         ensemble_models.append(model)
 
