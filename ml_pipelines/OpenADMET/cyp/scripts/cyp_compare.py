@@ -12,9 +12,20 @@ and lacks the inactives where better ordering there pays.
 Credible intervals are label metadata rather than features, so `output_columns()` trims
 them and they never reach a capture -- they are joined back from the FeatureSet by id.
 
+Scores whichever capture a model has: the analog holdout where one was written, otherwise
+the out-of-fold predictions, which the ruler table rates the better instrument anyway. The
+holdout was retired, so nothing built since carries it.
+
+`--bands` splits each isoform by activity, which is where CYP2D6's problem lives. Out of
+fold the union model ranks the low band at 0.159 against 0.383 above it, and the blind
+population is centred at 3.107 -- so an overall Spearman averages a band we cannot order
+with one we can. Reported alongside is `sd_pred` per band: a model that has given up
+predicts near a constant, and that shows up in the spread before it shows up in the rank.
+
 Usage:
     python cyp_compare.py                             # baseline vs every other CYP model
     python cyp_compare.py MODEL [MODEL ...]
+    python cyp_compare.py MODEL [MODEL ...] --bands
 """
 
 import argparse
@@ -28,6 +39,20 @@ from workbench.utils.metrics_utils import soft_threshold_rae
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 TARGETS = [f"{iso}_pic50_direct_inhibition" for iso in ISOFORMS]
 CAPTURE = "cyp_analog_holdout"
+# Activity bands. 4.0 is where the labels stop carrying spread -- between 4.0 and 4.5 the
+# CYP2D6 labels have sd 0.11 against a median measurement std of 0.069, so they are very
+# nearly tied and nothing can order them.
+BANDS = [("<4.0", -np.inf, 4.0), ("4.0-4.5", 4.0, 4.5), (">=4.5", 4.5, np.inf)]
+# Smallest OOF-resolvable Spearman difference per isoform (scripts/cyp_ruler_power.py).
+RESOLUTION = {"cyp1a2": 0.043, "cyp2c9": 0.031, "cyp2d6": 0.056, "cyp3a4": 0.018}
+
+
+def resolve_capture(runs: list, target: str) -> str | None:
+    """The capture holding this target's scored rows, newest convention first."""
+    for candidate in (f"{CAPTURE}_{target}", CAPTURE, f"cv_{target}", "full_cross_fold"):
+        if candidate in runs:
+            return candidate
+    return None
 
 
 def score(model_name: str) -> pd.DataFrame:
@@ -41,15 +66,15 @@ def score(model_name: str) -> pd.DataFrame:
 
     rows = []
     for target in TARGETS:
-        run = f"{CAPTURE}_{target}" if f"{CAPTURE}_{target}" in runs else CAPTURE
-        if run not in runs:
+        run = resolve_capture(runs, target)
+        if run is None:
             continue
         df = model.get_inference_predictions(run)
         pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
         if any(c not in df.columns for c in (target, pred_col)):
             continue
-        # A multi-target model's bare capture scores every isoform off target[0].
-        if run == CAPTURE and len(TARGETS) > 1 and target != TARGETS[0]:
+        # A bare capture scores every isoform off target[0], so only claim the first.
+        if run in (CAPTURE, "full_cross_fold") and target not in df.columns:
             continue
 
         lower, upper = f"{target}_ci_lower", f"{target}_ci_upper"
@@ -69,6 +94,7 @@ def score(model_name: str) -> pd.DataFrame:
         rows.append(
             {
                 "isoform": target.split("_")[0],
+                "capture": run,
                 "n": len(y),
                 "pearson": pearsonr(y, p).statistic,
                 "spearman": spearmanr(y, p).statistic,
@@ -80,9 +106,41 @@ def score(model_name: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def score_bands(model_name: str) -> pd.DataFrame:
+    """Spearman and prediction spread per activity band, for one model."""
+    model = Model(model_name)
+    runs = model.list_inference_runs()
+    rows = []
+    for target in TARGETS:
+        run = resolve_capture(runs, target)
+        if run is None:
+            continue
+        df = model.get_inference_predictions(run)
+        pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
+        if any(c not in df.columns for c in (target, pred_col)):
+            continue
+        d = df[[target, pred_col]].dropna()
+        for label, lo, hi in BANDS:
+            band = d[(d[target] >= lo) & (d[target] < hi)]
+            # Spearman on a handful of rows is not a measurement.
+            rho = spearmanr(band[target], band[pred_col]).statistic if len(band) > 20 else np.nan
+            rows.append(
+                {
+                    "isoform": target.split("_")[0],
+                    "band": label,
+                    "n": len(band),
+                    "spearman": rho,
+                    "sd_label": band[target].std() if len(band) > 1 else np.nan,
+                    "sd_pred": band[pred_col].std() if len(band) > 1 else np.nan,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("models", nargs="*", help="Model names (default: every CYP regression model)")
+    parser.add_argument("--bands", action="store_true", help="Split each isoform by activity band")
     args = parser.parse_args()
 
     names = args.models
@@ -106,3 +164,18 @@ if __name__ == "__main__":
             table.loc["MACRO"] = table.mean()
         print(f"\n=== {metric} ===")
         print(table.round(3).to_string())
+
+    if args.bands:
+        banded = {}
+        for name in scored:
+            b = score_bands(name)
+            if not b.empty:
+                banded[name] = b.set_index(["isoform", "band"])
+        for metric in ("spearman", "sd_pred"):
+            table = pd.DataFrame({n: d[metric] for n, d in banded.items()})
+            print(f"\n=== {metric} by band ===")
+            print(table.round(3).to_string())
+        first = next(iter(banded.values()))
+        print("\n=== band sizes and label spread (identical across models) ===")
+        print(first[["n", "sd_label"]].round(3).to_string())
+        print("\nresolvable Spearman difference per isoform (overall, OOF): " f"{RESOLUTION}")
