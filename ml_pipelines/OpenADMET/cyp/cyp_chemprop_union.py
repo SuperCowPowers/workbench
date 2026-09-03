@@ -5,14 +5,28 @@ single-concentration log2fc auxiliaries that already earned their place, five Ch
 targets and five Veith max_response targets. Only the scored four are ever submitted --
 the rest exist to shape the representation.
 
-`--public-weight` is the experiment. The proven configuration (`cyp_chemprop_mt_aux_100.py`)
-puts auxiliaries at ~23% of total gradient with four heads at `0.3 * mean(primary)`. Ten
-more heads at that same per-head weight would put auxiliaries near 51%, outweighing the
-targets we are scored on, so whether 0.3 is a per-head number or a per-family budget is an
-open question rather than a settled one. Two variants bracket it:
+`--public-weight` is the experiment, and it moves more than its name suggests.
 
-    --public-weight 0.05   ~30% auxiliary share
-    --public-weight 0.30   ~51% auxiliary share
+**A task's gradient share is its label count times its weight, not its share of the task
+list.** chemprop multiplies the per-element loss by `task_weights` and reduces by summing
+over observed labels (`nn/metrics.py`: `L * weights * task_weights * mask`, then
+`total_loss / mask.sum()`), so a task with twenty times the labels dominates a task with the
+same weight. The public targets carry 137,375 labels against the four scored targets' 6,525,
+which is why a 0.3 multiplier on them is not a modest thing:
+
+    --public-weight 0.05    scored 27%   assay 42%   public 30%
+    --public-weight 0.30    scored 11%   assay 17%   public 72%
+
+For reference the proven configuration (`cyp_chemprop_mt_aux_100.py`, four scored targets
+plus four log2fc) runs the scored targets at 54%. At `--public-weight 0.30` this script puts
+them at 11%, so the model is mostly fitting ChEMBL and Veith and the outputs we are scored on
+are a minority interest. Whether that is the point or the problem is the experiment.
+
+`--tox21` shifts these by about a point (26.9% / 10.4% scored), since it adds tasks that are
+small next to the ChEMBL and Veith label counts already present.
+
+These shares depend on the label counts in the FeatureSet, not just on the flag, so they move
+whenever a source is added or re-pulled. Read the value the script prints at build time.
 
 `--tox21` adds Tox21's CYP potency as five more heads at the same public weight. What it
 brings is range rather than volume: its actives are weak ones, median pIC50 4.76, where
@@ -163,15 +177,38 @@ assay_weight = ASSAY_WEIGHT * mean_primary
 public_weight = args.public_weight * mean_primary
 task_weights = list(primary_weights) + [assay_weight] * len(ASSAY_TARGETS) + [public_weight] * len(public_targets)
 
-aux_share = (assay_weight * len(ASSAY_TARGETS) + public_weight * len(public_targets)) / sum(task_weights)
+
+def gradient_share(columns: list[str], weights: list[float]) -> tuple[int, float]:
+    """Labels, and the loss mass they carry.
+
+    chemprop weights the per-element loss and sums over observed labels, so a task
+    contributes in proportion to its label count times its weight. Counting tasks instead
+    understates a group holding twenty times the labels at the same weight.
+    """
+    labels = sum(int(df[c].notna().sum()) for c in columns if c in df.columns)
+    mass = sum(int(df[c].notna().sum()) * w for c, w in zip(columns, weights) if c in df.columns)
+    return labels, mass
+
+
+groups = {
+    "scored": (TARGETS, list(primary_weights)),
+    "assay": (ASSAY_TARGETS, [assay_weight] * len(ASSAY_TARGETS)),
+    "public": (public_targets, [public_weight] * len(public_targets)),
+}
+measured = {name: gradient_share(cols, ws) for name, (cols, ws) in groups.items()}
+total_mass = sum(mass for _, mass in measured.values())
+
 print(f"Building {model_name} on all {len(df):,} rows — no holdout")
 print(f"pIC50 weights: {dict(zip(ISOFORMS, [round(float(w), 3) for w in primary_weights]))}")
-print(f"assay weight:  {assay_weight:.3f} each ({ASSAY_WEIGHT} x mean primary), {len(ASSAY_TARGETS)} heads")
-print(f"public weight: {public_weight:.3f} each ({args.public_weight} x mean primary), {len(public_targets)} heads")
+print(f"assay weight:  {assay_weight:.3f} each ({ASSAY_WEIGHT} x mean primary), {len(ASSAY_TARGETS)} tasks")
+print(f"public weight: {public_weight:.3f} each ({args.public_weight} x mean primary), {len(public_targets)} tasks")
 if args.tox21:
     labelled = {t.split("_")[0]: int(df[t].notna().sum()) for t in TOX21_TARGETS}
-    print(f"tox21 heads: {labelled}")
-print(f"auxiliary share of total gradient: {100 * aux_share:.0f}%")
+    print(f"tox21 tasks: {labelled}")
+print("gradient share (label count x weight, which is how chemprop reduces the loss):")
+for name, (cols, _) in groups.items():
+    labels, mass = measured[name]
+    print(f"    {name:8s} {len(cols):3d} tasks {labels:9,} labels  {100 * mass / total_mass:5.1f}%")
 if args.censored:
     flags = [f"{t}_lt" for t in PUBLIC_TARGETS if f"{t}_lt" in df.columns]
     counts = {c.replace("_pic50_chembl_lt", ""): int(df[c].fillna(False).astype(bool).sum()) for c in flags}
