@@ -45,11 +45,18 @@ Every target lives here; the model scripts choose which to train on via `target_
 A FeatureSet is a data asset and the experiment variable belongs in the model, so adding
 a source does not mean rebuilding data to isolate it.
 
-`--censored` swaps ChEMBL for its censored variant, which keeps the records reporting only
-`IC50 > x`. Those arrive as a bound in `{iso}_pic50_chembl` with `{iso}_pic50_chembl_lt`
-marking them -- the column pair `chemprop.template` reads under `bounded_loss=True`. It adds
-3,609 compounds the fitted-curve file has no row for, and bounds are 15-29% of each ChEMBL
-head's labels, so the head keeps a majority of real measurements to fix its scale.
+`--censored` swaps all three public sources for their censored variants, which keep the
+records a fitted-curve file drops: ChEMBL's `IC50 > x` reports, and the compounds the qHTS
+panels screened and called inactive. Those arrive as a bound in the source's own pIC50
+column with a matching `_lt` flag -- the column pair `chemprop.template` reads under
+`bounded_loss=True`. On CYP2D6 that is 3,589 ChEMBL bounds, 11,118 from Veith and 5,349 from
+Tox21, against the 129 sub-pIC50-4.0 rows the scored column has.
+
+Veith's pIC50 is carried as its own target family in *both* modes, not only the censored one.
+Its fitted values were left out originally as 97% redundant with ChEMBL, which is true of the
+fitted half and false of the censored half -- ChEMBL has 3,589 CYP2D6 bounds where Veith has
+11,118. Keeping the family in both modes is what makes censored-vs-uncensored a one-variable
+comparison; adding targets only on one side is how a task-set confound gets in.
 
 A bound is not a measurement, and this FeatureSet is only worth building for a model that
 knows the difference. With `bounded_loss` off the flags are ignored and every bound reads as
@@ -77,7 +84,8 @@ args = parser.parse_args()
 
 SOURCE_FS = "openadmet_cyp_aux_f1"
 FS_NAME = "openadmet_cyp_union_censored_f1" if args.censored else "openadmet_cyp_union_f1"
-CHEMBL = "comp_chem/chembl/cyp_inhibition/" + ("censored/all_isoforms" if args.censored else "all_isoforms")
+_CEN = "censored/all_isoforms" if args.censored else "all_isoforms"
+CHEMBL = f"comp_chem/chembl/cyp_inhibition/{_CEN}"
 
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 TARGETS = [f"{iso}_pic50_direct_inhibition" for iso in ISOFORMS]
@@ -91,15 +99,20 @@ CHEMBL_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS]
 # Left-censor flags, named for the target they bound so chemprop's bounded loss finds them.
 CHEMBL_LT = [f"{t}_lt" for t in CHEMBL_TARGETS] if args.censored else []
 VEITH_TARGETS = [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
+# Veith potency as its own family. Redundant with ChEMBL where a curve fitted; not redundant
+# at all where one did not, which is the half that matters here.
+VEITH_PIC50_TARGETS = [f"{iso}_pic50_veith" for iso in PUBLIC_ISOFORMS]
+VEITH_LT = [f"{t}_lt" for t in VEITH_PIC50_TARGETS] if args.censored else []
 
 # Tox21's CYP screen: a different library and a different detection chemistry (P450-Glo
 # bioluminescent) from Veith, so it carries its own scale and its own head. It is the only
 # public source that is weak-inhibitor-rich -- median fitted pIC50 4.76, where ChEMBL stops
 # at 4.0 and the challenge set is hit-enriched -- and it reaches ~5.6k compounds neither
 # other source covers.
-TOX21 = "comp_chem/tox21/cyp_inhibition/all_isoforms"
+TOX21 = f"comp_chem/tox21/cyp_inhibition/{_CEN}"
 TOX21_TARGETS = [f"{iso}_pic50_tox21" for iso in PUBLIC_ISOFORMS]
-VEITH = "comp_chem/pubchem/cyp_inhibition/all_isoforms"
+TOX21_LT = [f"{t}_lt" for t in TOX21_TARGETS] if args.censored else []
+VEITH = f"comp_chem/pubchem/cyp_inhibition/{_CEN}"
 TDI = "comp_chem/openadmet/cyp/training/tdi"
 EMAX = "comp_chem/openadmet/cyp/training/emax"
 TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
@@ -166,11 +179,22 @@ if missing:
     raise ValueError(f"{VEITH} did not yield {missing} — isoform names changed?")
 wide = wide[VEITH_TARGETS].reset_index()
 wide[VEITH_TARGETS] = wide[VEITH_TARGETS].clip(lower=MAX_RESPONSE_CLIP[0], upper=MAX_RESPONSE_CLIP[1])
+
+# Potency as its own family. In the censored file `pic50` already holds the bound where the
+# screen called a compound inactive, so the same pivot serves both modes.
+pot = veith.pivot_table(index="smiles", columns="isoform", values="pic50")
+pot.columns = [f"{c}_pic50_veith" for c in pot.columns]
+wide = wide.merge(pot[VEITH_PIC50_TARGETS].reset_index(), on="smiles", how="left")
+if VEITH_LT:
+    lt = veith.pivot_table(index="smiles", columns="isoform", values="pic50_lt", aggfunc="max")
+    lt.columns = [f"{c}_pic50_veith_lt" for c in lt.columns]
+    wide = wide.merge(lt[VEITH_LT].reset_index(), on="smiles", how="left")
+
 wide["key"] = skeletons(wide["smiles"])
 wide = wide.dropna(subset=["key"]).drop_duplicates(subset=["key"])
 
 out["key"] = pd.concat([challenge["key"], new["key"]], ignore_index=True).values
-joined = out.merge(wide[["key"] + VEITH_TARGETS], on="key", how="left")
+joined = out.merge(wide[["key"] + VEITH_TARGETS + VEITH_PIC50_TARGETS + VEITH_LT], on="key", how="left")
 if len(joined) != len(out):
     raise ValueError(f"veith join changed the row count: {len(out)} -> {len(joined)}")
 
@@ -191,11 +215,15 @@ missing = [c for c in TOX21_TARGETS if c not in tox.columns]
 if missing:
     raise ValueError(f"{TOX21} did not yield {missing} — isoform names changed?")
 tox = tox[TOX21_TARGETS].reset_index()
+if TOX21_LT:
+    lt = tox21.pivot_table(index="smiles", columns="isoform", values="pic50_lt", aggfunc="max")
+    lt.columns = [f"{c}_pic50_tox21_lt" for c in lt.columns]
+    tox = tox.merge(lt[TOX21_LT].reset_index(), on="smiles", how="left")
 tox["key"] = skeletons(tox["smiles"])
 tox = tox.dropna(subset=["key"]).drop_duplicates(subset=["key"])
 
 out["key"] = skeletons(out["smiles"])
-joined = out.merge(tox[["key"] + TOX21_TARGETS], on="key", how="left")
+joined = out.merge(tox[["key"] + TOX21_TARGETS + TOX21_LT], on="key", how="left")
 if len(joined) != len(out):
     raise ValueError(f"tox21 join changed the row count: {len(out)} -> {len(joined)}")
 
@@ -205,7 +233,16 @@ out = pd.concat([joined, tox_only.drop(columns=["key"])], ignore_index=True)
 out = out.drop(columns=["key"])
 print(f"tox21: {len(tox):,} compounds, {len(tox_only):,} new to the union")
 
-ALL_TARGETS = TARGETS + AUX_TARGETS + TDI_TARGETS + EMAX_TARGETS + CHEMBL_TARGETS + VEITH_TARGETS + TOX21_TARGETS
+ALL_TARGETS = (
+    TARGETS
+    + AUX_TARGETS
+    + TDI_TARGETS
+    + EMAX_TARGETS
+    + CHEMBL_TARGETS
+    + VEITH_TARGETS
+    + VEITH_PIC50_TARGETS
+    + TOX21_TARGETS
+)
 if out["molecule_name"].duplicated().any():
     raise ValueError("duplicate molecule_name after the union")
 if out["smiles"].isna().any():
@@ -217,11 +254,14 @@ for target in ALL_TARGETS:
     n = int(out[target].notna().sum())
     print(f"{target:<30} {n:>9,} {100 * n / len(out):>8.1f}%")
 print(f"total labels: {int(out[ALL_TARGETS].notna().sum().sum()):,}")
-if CHEMBL_LT:
+ALL_LT = CHEMBL_LT + VEITH_LT + TOX21_LT
+if ALL_LT:
     # A bound only means something to a model trained with bounded_loss=True.
-    out[CHEMBL_LT] = out[CHEMBL_LT].fillna(False).astype(bool)
-    bounded = {c.replace("_pic50_chembl_lt", ""): int(out[c].sum()) for c in CHEMBL_LT}
-    print(f"chembl bounds (left-censored): {bounded}")
+    out[ALL_LT] = out[ALL_LT].fillna(False).astype(bool)
+    print("left-censored bounds by source:")
+    for source, cols in (("chembl", CHEMBL_LT), ("veith", VEITH_LT), ("tox21", TOX21_LT)):
+        counts = {c.split("_")[0]: int(out[c].sum()) for c in cols}
+        print(f"  {source:7s} {counts}")
 
 DataSource(out, name=f"{FS_NAME}_ds").to_features(
     FS_NAME, id_column="molecule_name", tags=["openadmet_cyp", "multi_task", "activity", "public"]

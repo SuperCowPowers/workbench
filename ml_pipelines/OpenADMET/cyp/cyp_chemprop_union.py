@@ -1,9 +1,8 @@
 """Multi-task Chemprop over the challenge data plus public ChEMBL and Veith targets.
 
-Eighteen heads on one shared encoder: the four scored pIC50 targets, the four
-single-concentration log2fc auxiliaries that already earned their place, five ChEMBL pIC50
-targets and five Veith max_response targets. Only the scored four are ever submitted --
-the rest exist to shape the representation.
+Many tasks on one shared encoder: the four scored pIC50 targets, the challenge assay's own
+auxiliaries, and the public panels' potency and efficacy readouts. Only the scored four are
+ever submitted -- the rest exist to shape the representation.
 
 `--public-weight` is the experiment, and it moves more than its name suggests.
 
@@ -100,7 +99,14 @@ LOG2FC_TARGETS = [f"{iso}_log2fc" for iso in ISOFORMS]
 TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
 EMAX_TARGETS = [f"{iso}_emax_vs_pos_ctrl_direct_inhibition" for iso in ISOFORMS]
 ASSAY_TARGETS = LOG2FC_TARGETS + TDI_TARGETS + EMAX_TARGETS
-PUBLIC_TARGETS = [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS] + [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
+PUBLIC_TARGETS = (
+    [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS]
+    + [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS]
+    # Veith potency. Present in both modes so censored-vs-uncensored stays one variable —
+    # uncensored it holds fitted curves only, censored it also holds the inactives' bounds,
+    # which on CYP2D6 is 11,118 rows against ChEMBL's 3,589.
+    + [f"{iso}_pic50_veith" for iso in PUBLIC_ISOFORMS]
+)
 # Tox21's CYP potency on its own scale. The reason it is here is range, not volume: its
 # actives are weak ones, median pIC50 4.76, where ChEMBL stops at 4.0 and the challenge set
 # is hit-enriched. It also reaches ~5.6k compounds neither other source covers, and covers
