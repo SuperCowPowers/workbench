@@ -505,8 +505,10 @@ if __name__ == "__main__":
         w = pd.to_numeric(all_df["sample_weight"], errors="coerce").fillna(1.0).to_numpy(dtype=np.float64)
         if not np.allclose(w, 1.0):
             all_sample_weight = w
-            print(f"Sample weights: min={w.min():.2f} max={w.max():.2f} mean={w.mean():.2f}, "
-                  f"{int((w != 1.0).sum()):,} of {len(w):,} rows reweighted")
+            print(
+                f"Sample weights: min={w.min():.2f} max={w.max():.2f} mean={w.mean():.2f}, "
+                f"{int((w != 1.0).sum()):,} of {len(w):,} rows reweighted"
+            )
 
     all_gt_mask, all_lt_mask = None, None
     use_bounded_loss = bool(hyperparameters.get("bounded_loss", False)) and model_type != "classifier"
