@@ -38,7 +38,9 @@ def compute_inverse_count_task_weights(df: pd.DataFrame, target_columns: list[st
     if missing:
         raise ValueError(f"Target column(s) not found in DataFrame: {missing}")
 
-    counts = df[target_columns].notna().sum().to_numpy(dtype=np.float32)
+    # float64: the counts are exact integers either way, but a float32 divide leaves
+    # 0.3 * mean(weights) reading as 0.29999998211860657 in the stored hyperparameters.
+    counts = df[target_columns].notna().sum().to_numpy(dtype=np.float64)
     if not (counts > 0).all():
         raise ValueError(f"All tasks must have at least one non-NaN row; got counts {counts.tolist()}")
 

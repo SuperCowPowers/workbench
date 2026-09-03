@@ -15,6 +15,7 @@ from workbench.utils.markdown_utils import (
     dict_to_markdown,
     dict_to_collapsible_html,
     df_to_html_table,
+    display_names,
 )
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
@@ -88,12 +89,10 @@ class ModelSummary(PluginInterface):
         endpoints = ", ".join(summary.get("workbench_registered_endpoints", []))
         markdown += f"**registered_endpoints:** {endpoints or '-'}  \n"
         markdown += f"**model_type:** {summary.get('workbench_model_type', '-')}  \n"
-        markdown += f"**model_target:** {summary.get('workbench_model_target', '-')}  \n"
+        markdown += f"**model_target:** {display_names(summary.get('workbench_model_target'))}  \n"
 
-        # Features (truncated)
-        features = summary.get("workbench_model_features", [])
-        features_str = f"({len(features)}) {', '.join(features)[:100]}..."
-        markdown += f"**features:** {features_str}  \n"
+        # Features
+        markdown += f"**features:** {display_names(summary.get('workbench_model_features', []))}  \n"
 
         # Parameter Store metadata
         model_name = model.name

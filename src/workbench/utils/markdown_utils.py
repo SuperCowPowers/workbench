@@ -5,6 +5,39 @@ import math
 from workbench.utils.symbols import health_icons
 
 
+def display_value(value, sig_figs: int = 3) -> str:
+    """A float rendered for reading rather than for round-tripping.
+
+    Model hyperparameters arrive as float32, so a task weight of 0.3 prints as
+    0.29999998211860657 and a list of them fills the panel. Significant figures rather than
+    decimal places, so a learning rate of 1e-05 survives what `%.2f` would flatten to 0.00.
+    Non-floats pass through untouched.
+    """
+    if isinstance(value, bool) or not isinstance(value, float):
+        return str(value)
+    if not math.isfinite(value):
+        return str(value)
+    return f"{value:.{sig_figs}g}"
+
+
+def display_list(values: list, sig_figs: int = 3) -> str:
+    """A list rendered for reading, collapsing a run of equal values into `0.3 (x22)`.
+
+    Multi-task weights are mostly one repeated number, and printing it twenty-two times
+    tells the reader nothing the run-length does not.
+    """
+    rendered = [display_value(v, sig_figs) for v in values]
+    parts, i = [], 0
+    while i < len(rendered):
+        j = i
+        while j < len(rendered) and rendered[j] == rendered[i]:
+            j += 1
+        run = j - i
+        parts.append(f"{rendered[i]} (x{run})" if run > 2 else ", ".join(rendered[i:j]))
+        i = j
+    return ", ".join(parts)
+
+
 def health_tag_markdown(health_tags: list[str]) -> str:
     """Internal method to generate the health tag markdown
     Args:
@@ -86,6 +119,39 @@ def tags_to_markdown(tags: str) -> str:
     return tag_markdown
 
 
+def display_names(values, max_chars: int = 100) -> str:
+    """A list of names as `(count) first, second, ... +N more`.
+
+    Long name lists — a multi-task model's targets, a wide feature list — otherwise run to
+    several hundred characters in a details panel. The count leads because it is the part
+    worth reading at a glance, and the names that survive are the leading ones, which is
+    where the conventions in this codebase put the ones that matter (scored targets first).
+
+    Truncation is reported honestly: nothing is elided unless something was.
+    """
+    if values is None:
+        return "-"
+    if isinstance(values, str):
+        values = [values]
+    names = [str(v) for v in values]
+    if not names:
+        return "(0)"
+
+    kept, used = [], 0
+    for name in names:
+        cost = len(name) + (2 if kept else 0)
+        if kept and used + cost > max_chars:
+            break
+        kept.append(name)
+        used += cost
+
+    shown = ", ".join(kept)
+    remaining = len(names) - len(kept)
+    if remaining:
+        shown += f", ... +{remaining} more"
+    return f"({len(names)}) {shown}"
+
+
 def dict_to_markdown(data: dict, title: str = None) -> str:
     """Convert a dictionary to pretty Markdown format.
     Args:
@@ -114,10 +180,10 @@ def dict_to_markdown(data: dict, title: str = None) -> str:
                         markdown += _convert_dict(dict_item, indent_level + 2)
                 else:
                     # Regular list values
-                    markdown += f"{indent_str}* *{key}:* {', '.join(map(str, value))}\n"
+                    markdown += f"{indent_str}* *{key}:* {display_list(value)}\n"
             else:
                 # Simple key-value pair
-                markdown += f"{indent_str}* *{key}:* {value}\n"
+                markdown += f"{indent_str}* *{key}:* {display_value(value)}\n"
 
         return markdown
 
@@ -168,10 +234,10 @@ def dict_to_collapsible_html(data: dict, title: str = None, collapse_all: bool =
                     html += "</details>\n"
                 else:
                     # Leaf node - use bullet with reduced indentation
-                    html += f"<div {leaf_indent_style}>• <em>{key}:</em> {', '.join(map(str, value))}</div>\n"
+                    html += f"<div {leaf_indent_style}>• <em>{key}:</em> {display_list(value)}</div>\n"
             else:
                 # Leaf node - use bullet with reduced indentation
-                html += f"<div {leaf_indent_style}>• <em>{key}:</em> {value}</div>\n"
+                html += f"<div {leaf_indent_style}>• <em>{key}:</em> {display_value(value)}</div>\n"
         return html
 
     # Add title and content
