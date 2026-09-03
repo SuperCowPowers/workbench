@@ -45,7 +45,14 @@ INSTANCE_LADDERS = {
         "ml.g6.12xlarge",  # 4x NVIDIA L4
         "ml.g5.12xlarge",  # 4x NVIDIA A10G
     ],
-    "gpu": ["ml.g6.2xlarge"],  # NVIDIA L4 + 8 vCPUs for data loading
+    # Single-GPU chemprop/pytorch training. Every rung must hold the fattest job on this
+    # workload: 24.5GB host RAM and 16.2GB VRAM observed (the multi-task models), so no
+    # 16GB-RAM rungs and no T4 rungs.
+    "gpu": [
+        "ml.g6.2xlarge",  # 1x NVIDIA L4 24GB, 8 vCPUs for data loading, 32GB RAM
+        "ml.g5.2xlarge",  # 1x NVIDIA A10G 24GB, same shape, separate capacity pool
+        "ml.g6.4xlarge",  # 1x NVIDIA L4 24GB, 16 vCPUs, 64GB RAM
+    ],
     # A search is hundreds of fits. XGBoost spreads one fit across every core, so cores cut
     # wall-clock even though the search itself is serial.
     "cpu_hpo": ["ml.c7i.4xlarge"],  # 16 vCPUs
