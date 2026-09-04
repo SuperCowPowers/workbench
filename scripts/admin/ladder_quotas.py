@@ -83,7 +83,7 @@ def check_rung(client, codes: dict, instance: str, target: int, apply: bool) -> 
         request = client.request_service_quota_increase(ServiceCode=SERVICE_CODE, QuotaCode=code, DesiredValue=target)[
             "RequestedQuota"
         ]
-        print(f"    {instance:<18} {value:>6.0f}  requested {target}  case {request['Id']}")
+        print(f"    {instance:<18} {value:>6.0f}  requested {target}  {request['Status']} ({request['Id']})")
     return False
 
 
