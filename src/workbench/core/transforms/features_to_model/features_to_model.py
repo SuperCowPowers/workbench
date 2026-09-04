@@ -41,17 +41,16 @@ INSTANCE_LADDERS = {
     # Multi-GPU only. A single-card rung "succeeds" into a run that takes days and can
     # exhaust host RAM on a real dataset, hours after the point where it could have failed
     # cleanly — so a search with no multi-GPU capacity should not start.
-    "gpu_parallel_hpo": [
+    "gpu_hpo": [
         "ml.g6.12xlarge",  # 4x NVIDIA L4
         "ml.g5.12xlarge",  # 4x NVIDIA A10G
     ],
-    # Single-GPU chemprop/pytorch training. Every rung must hold the fattest job on this
-    # workload: 24.5GB host RAM and 16.2GB VRAM observed (the multi-task models), so no
-    # 16GB-RAM rungs and no T4 rungs.
+    # Single-GPU chemprop/pytorch training. Both rungs are a 24GB card with 32GB host RAM,
+    # clearing the 16.2GB VRAM and 24.5GB host peak of the multi-task models, and they draw
+    # on separate capacity pools.
     "gpu": [
-        "ml.g6.2xlarge",  # 1x NVIDIA L4 24GB, 8 vCPUs for data loading, 32GB RAM
-        "ml.g5.2xlarge",  # 1x NVIDIA A10G 24GB, same shape, separate capacity pool
-        "ml.g6.4xlarge",  # 1x NVIDIA L4 24GB, 16 vCPUs, 64GB RAM
+        "ml.g6.2xlarge",  # 1x NVIDIA L4, 8 vCPUs for data loading
+        "ml.g5.2xlarge",  # 1x NVIDIA A10G, same shape
     ],
     # A search is hundreds of fits. XGBoost spreads one fit across every core, so cores cut
     # wall-clock even though the search itself is serial.
@@ -87,7 +86,7 @@ def training_workload(hyperparameters: Union[dict, None], *, gpu_framework: bool
     if not gpu_framework:
         return "cpu_hpo"
     serial = hpo.get("backend", "auto") == "optuna" or hpo.get("max_parallel") == 1
-    return "gpu" if serial else "gpu_parallel_hpo"
+    return "gpu" if serial else "gpu_hpo"
 
 
 class CapacityTimeout(RuntimeError):

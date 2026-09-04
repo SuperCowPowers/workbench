@@ -19,13 +19,13 @@ def test_a_plain_model_never_asks_for_the_parallel_box(hyperparameters):
 
 def test_an_empty_hpo_block_still_gets_a_search_box():
     """`{}` asks for a search on every default — the promise that defaults work."""
-    assert training_workload({"hpo": {}}, gpu_framework=True) == "gpu_parallel_hpo"
+    assert training_workload({"hpo": {}}, gpu_framework=True) == "gpu_hpo"
     assert training_workload({"hpo": {}}, gpu_framework=False) == "cpu_hpo"
 
 
 def test_a_gpu_search_gets_the_parallel_ladder():
     """Concurrency is derived from the cards, so the box has to have cards to derive from."""
-    assert training_workload({"hpo": {"n_trials": 60}}, gpu_framework=True) == "gpu_parallel_hpo"
+    assert training_workload({"hpo": {"n_trials": 60}}, gpu_framework=True) == "gpu_hpo"
 
 
 @pytest.mark.parametrize("block", [{"backend": "optuna"}, {"max_parallel": 1}])
@@ -44,7 +44,7 @@ def test_a_parallel_search_never_lands_on_a_single_gpu_box():
     from workbench.utils.model_utils import model_instance_info
 
     gpus = model_instance_info().set_index("Instance Name")["Num GPUs"]
-    for instance in INSTANCE_LADDERS["gpu_parallel_hpo"]:
+    for instance in INSTANCE_LADDERS["gpu_hpo"]:
         assert gpus.get(instance, 0) > 1, f"{instance} is a single-GPU rung"
 
 
