@@ -11,14 +11,15 @@ once, while a parallel HPO search takes a whole multi-GPU box and rarely runs co
 Exits nonzero when any rung is below target, so it can gate a new account's setup.
 
 Usage:
-    python scripts/admin/ladder_quotas.py           # report
-    python scripts/admin/ladder_quotas.py --apply   # request increases for anything low
+    AWS_PROFILE=<admin> python scripts/admin/ladder_quotas.py           # report
+    AWS_PROFILE=<admin> python scripts/admin/ladder_quotas.py --apply   # request increases
 """
 
 import argparse
 import sys
 
-from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+import boto3
+
 from workbench.core.transforms.features_to_model.features_to_model import INSTANCE_LADDERS
 
 SERVICE_CODE = "sagemaker"
@@ -87,9 +88,10 @@ def check_rung(client, codes: dict, instance: str, target: int, apply: bool) -> 
 
 
 def main(apply: bool) -> int:
-    clamp = AWSAccountClamp()
-    client = clamp.boto3_session.client("service-quotas")
-    print(f"Account {clamp.account_id}, region {clamp.region}\n")
+    session = boto3.Session()
+    client = session.client("service-quotas")
+    account_id = session.client("sts").get_caller_identity()["Account"]
+    print(f"Account {account_id}, region {session.region_name}\n")
 
     codes = quota_codes(client)
     low = 0
