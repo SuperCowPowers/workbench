@@ -526,9 +526,11 @@ class AthenaSource(DataSourceAbstract):
         """
         table = data_source_name  # The table name is the same as the data_source_name
 
-        # Check if the Glue Catalog Table exists
+        # The base table can already be gone (SageMaker drops a FeatureSet's offline table when
+        # the Feature Group is deleted) while its views and supplemental data are still around.
         if not wr.catalog.does_table_exist(database, table, boto3_session=cls.boto3_session):
-            cls.log.info(f"DataSource {table} not found in database {database}.")
+            cls.log.info(f"DataSource {table} not found in {database}, cleaning up derived tables...")
+            cls.delete_views(table, database)
             return
 
         try:
