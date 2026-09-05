@@ -35,16 +35,6 @@ def model_instance_info() -> pd.DataFrame:
     """
     data = [
         {
-            "Instance Name": "ml.t2.medium",
-            "Num CPUs": 2,
-            "Num GPUs": 0,
-            "Memory": 4,
-            "Price per Hour": 0.06,
-            "Category": "General",
-            "Architecture": "x86_64",
-            "Usage": "Hosting",
-        },
-        {
             "Instance Name": "ml.m7i.large",
             "Num CPUs": 2,
             "Num GPUs": 0,

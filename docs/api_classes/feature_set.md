@@ -119,7 +119,7 @@ pprint(my_model.details())
 {'approval_status': 'Approved',
  'content_types': ['text/csv'],
  ...
- 'inference_types': ['ml.t2.medium'],
+ 'inference_types': ['ml.c7i.large'],
  'input': 'test_features',
  'model_metrics':   metric_name  value
 				0        RMSE  7.924

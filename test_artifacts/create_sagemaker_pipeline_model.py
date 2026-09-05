@@ -19,7 +19,7 @@ if __name__ == "__main__":
     )
 
     # Deploy the pipeline endpoint
-    pipeline_model.deploy(initial_instance_count=1, instance_type="ml.t2.medium")
+    pipeline_model.deploy(initial_instance_count=1, instance_type="ml.c7i.large")
 
     # Create a pipeline model with slightly better endpoint instance
     pipeline_model = PipelineModel(

@@ -328,7 +328,7 @@ def main():
         model.register(
             content_types=["text/csv", "application/json"],
             response_types=["text/csv", "application/json"],
-            inference_instances=["ml.t2.medium"],
+            inference_instances=["ml.c7i.large"],
             transform_instances=["ml.m5.large"],
             description="Test model",
         )

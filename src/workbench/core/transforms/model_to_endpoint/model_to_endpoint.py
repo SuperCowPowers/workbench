@@ -223,11 +223,8 @@ class ModelToEndpoint(Transform):
             elif self.async_endpoint:
                 instance_type = "ml.c7i.xlarge"
                 self.log.important(f"Async Endpoint: Default instance type: {instance_type}")
-            elif needs_more_resources:
-                instance_type = "ml.c7i.large"
-                self.log.important(f"{workbench_model.model_framework} needs more resources (using {instance_type})")
             else:
-                instance_type = "ml.t2.medium"
+                instance_type = "ml.c7i.large"
                 self.log.important(f"Realtime Endpoint: Instance Type={instance_type}")
 
         # Configure data capture if requested (and not serverless)
