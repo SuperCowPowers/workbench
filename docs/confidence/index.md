@@ -59,7 +59,7 @@ The regression confidence calibrator comes in **three versions**, all built on t
   </tbody>
 </table>
 
-**v1** is the default; **v0** is the fallback when no neighborhood can be built; **v2** is an experimental applicability-domain diagnostic. See the [Model Confidence Blog](../blogs/model_confidence.md) for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.
+**v1** is the default; **v0** is the fallback when no neighborhood can be built; **v2** is an experimental applicability-domain diagnostic. See the [Uncertainty Quantification Blog](../blogs/uncertainty_quantification.md) for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.
 
 ## Three-Step Pipeline
 
@@ -68,6 +68,9 @@ The regression confidence calibrator comes in **three versions**, all built on t
 Each fold of the 5-fold cross-validation produces a model trained on a different slice of the data. At inference time, all 5 models make a prediction and we take the average. The **standard deviation** across the 5 predictions (`prediction_std`) is the raw uncertainty signal.
 
 When the models agree closely (low std), the prediction is more reliable. When they disagree (high std), something about that compound is tricky.
+
+!!! note "Reading `prediction_std`"
+    Extreme `prediction_std` outliers — values above the IQR fence — are soft log-compressed before storing. The transform is monotonic, so ranking is preserved and percentile-rank confidence and conformal intervals are unaffected. It does mean reported `prediction_std` values are uncertainty *scores* rather than literal standard deviations.
 
 ### 2. Conformal Calibration
 
@@ -136,7 +139,7 @@ For each confidence level (50%, 68%, 80%, 90%, 95%), the percentage of true valu
 
 ## Deep Dive
 
-For more details on the approach, including code walkthrough and validation results, see the [Model Confidence Blog](../blogs/model_confidence.md).
+For more details on the approach, including code walkthrough and validation results, see the [Uncertainty Quantification Blog](../blogs/uncertainty_quantification.md).
 
 ## Additional Resources
 

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 690" width="900" height="690">
+  <defs>
+    <linearGradient id="dataBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5f6b7a"/>
+      <stop offset="100%" stop-color="#454f5c"/>
+    </linearGradient>
+    <linearGradient id="modelBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <linearGradient id="uqBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9b59b6"/>
+      <stop offset="100%" stop-color="#7d3f96"/>
+    </linearGradient>
+    <linearGradient id="outBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00d4aa"/>
+      <stop offset="100%" stop-color="#00a080"/>
+    </linearGradient>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="36" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Deployed Endpoint with UQ</text>
+  <text x="450" y="62" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="15">what goes in, what comes out</text>
+
+  <rect x="340" y="88" width="220" height="54" rx="8" fill="url(#dataBox)"/>
+  <text x="450" y="112" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="17" font-weight="bold">SMILES batch</text>
+  <text x="450" y="132" text-anchor="middle" fill="#dde3ea" font-family="Helvetica, Arial" font-size="13">one row per compound</text>
+
+
+  <line x1="450" y1="142" x2="450" y2="170" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <rect x="270" y="176" width="360" height="94" rx="8" fill="url(#modelBox)"/>
+  <text x="450" y="202" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="17" font-weight="bold">ChemProp 5-fold ensemble</text>
+  <rect x="286" y="216" width="60" height="34" rx="5" fill="#ffffff" opacity="0.18"/>
+  <text x="316" y="238" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">fold 1</text>
+  <rect x="354" y="216" width="60" height="34" rx="5" fill="#ffffff" opacity="0.18"/>
+  <text x="384" y="238" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">fold 2</text>
+  <rect x="422" y="216" width="60" height="34" rx="5" fill="#ffffff" opacity="0.18"/>
+  <text x="452" y="238" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">fold 3</text>
+  <rect x="490" y="216" width="60" height="34" rx="5" fill="#ffffff" opacity="0.18"/>
+  <text x="520" y="238" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">fold 4</text>
+  <rect x="558" y="216" width="60" height="34" rx="5" fill="#ffffff" opacity="0.18"/>
+  <text x="588" y="238" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">fold 5</text>
+
+  <line x1="450" y1="270" x2="450" y2="298" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <rect x="250" y="304" width="190" height="58" rx="8" fill="url(#dataBox)"/>
+  <text x="345" y="328" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">prediction</text>
+  <text x="345" y="348" text-anchor="middle" fill="#dde3ea" font-family="Helvetica, Arial" font-size="13">mean over folds</text>
+
+  <rect x="460" y="304" width="190" height="58" rx="8" fill="url(#dataBox)"/>
+  <text x="555" y="328" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">prediction_std</text>
+  <text x="555" y="348" text-anchor="middle" fill="#dde3ea" font-family="Helvetica, Arial" font-size="13">spread over folds</text>
+
+  <line x1="345" y1="362" x2="345" y2="396" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#ar)"/>
+  <line x1="555" y1="362" x2="555" y2="396" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <rect x="230" y="400" width="440" height="84" rx="8" fill="url(#uqBox)"/>
+  <text x="450" y="436" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="21" font-weight="bold">UQ Model v0/v1/v2</text>
+  <text x="450" y="462" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">turns the raw signal into calibrated uncertainty</text>
+
+  <line x1="450" y1="484" x2="450" y2="512" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <rect x="140" y="518" width="620" height="152" rx="8" fill="url(#outBox)" opacity="0.16" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="450" y="544" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="17" font-weight="bold">13 columns added to every row</text>
+
+  <rect x="160" y="558" width="180" height="94" rx="6" fill="#00d4aa" opacity="0.12"/>
+  <text x="250" y="584" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="bold">confidence</text>
+  <text x="250" y="606" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">0 = don't trust it</text>
+  <text x="250" y="626" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">1 = trust it</text>
+
+  <rect x="360" y="558" width="180" height="94" rx="6" fill="#00d4aa" opacity="0.12"/>
+  <text x="450" y="584" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="bold">expected_residual</text>
+  <text x="450" y="606" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">predicted error size</text>
+  <text x="450" y="626" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">in target units</text>
+
+  <rect x="560" y="558" width="180" height="94" rx="6" fill="#00d4aa" opacity="0.12"/>
+  <text x="650" y="584" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="bold">q_025 … q_975</text>
+  <text x="650" y="606" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">11 interval bounds</text>
+  <text x="650" y="626" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">q_50 = prediction</text>
+</svg>

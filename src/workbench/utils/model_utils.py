@@ -310,7 +310,9 @@ def load_uq_from_dir(
 
     artifact = "uq_model.joblib" if version == "v1" else UQModelV2.METADATA_FILENAME
     if not os.path.exists(os.path.join(model_dir, artifact)):
-        if fallback_v0:
+        # Only fall back when V0 is actually there; a bundle with no UQ at all should
+        # report the version that was asked for, not a missing V0 file in a temp dir.
+        if fallback_v0 and os.path.exists(os.path.join(model_dir, UQModelV0.METADATA_FILENAME)):
             log.important(f"Model '{model_name}' has no fitted UQModel{version.upper()}; falling back to V0")
             return UQModelV0.load(model_dir)
         raise FileNotFoundError(

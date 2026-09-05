@@ -1,6 +1,6 @@
 # Confusion Explorer: Beyond the Confusion Matrix
 !!! tip inline end "How Does Confidence Work?"
-    The confidence slider is powered by VGMU — see our [Model Confidence](model_confidence.md) blog for the full details on how Workbench scores prediction uncertainty.
+    The confidence slider is powered by VGMU — see our [Uncertainty Quantification](uncertainty_quantification.md) blog for the full details on how Workbench scores prediction uncertainty.
 
 Classification models get a lot of mileage out of the standard confusion matrix — it's simple, familiar, and gives you a quick read on where your model is getting things right and wrong. But when you want to understand *why* certain compounds are being misclassified and *how confident* the model was when it got them wrong, the traditional matrix falls short. The Confusion Explorer pairs an enhanced confusion matrix with an interactive ternary probability plot, giving you a linked view that connects aggregate performance to individual predictions.
 
@@ -22,7 +22,7 @@ Coloring by **residual** (the default) makes misclassifications immediately visi
 
 A key insight in model evaluation is that **not all predictions deserve equal scrutiny**. A model that's uncertain about a compound and gets it wrong is behaving reasonably — that's an expected failure mode. But a model that's highly confident *and* wrong? That's where you should focus your attention.
 
-The confidence slider at the top lets you filter predictions by their [confidence score](model_confidence.md). When you slide the lower bound up to 0.5 or higher, you're asking: "Among the predictions the model is most confident about, how does it perform?"
+The confidence slider at the top lets you filter predictions by their [confidence score](uncertainty_quantification.md). When you slide the lower bound up to 0.5 or higher, you're asking: "Among the predictions the model is most confident about, how does it perform?"
 
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/confusion_explorer/high_confidence.png" alt="High confidence filtering shows near-perfect classification" style="max-width: 800px; width: 100%;">
@@ -52,7 +52,7 @@ A few design details that make the explorer more informative:
 
 ## Under the Hood: VGMU Confidence
 
-The confidence scores driving the slider come from **VGMU** (Variance-Gated Margin Uncertainty), which combines two signals from the 5-model ensemble: the probability margin between the top two classes and the ensemble's disagreement on those probabilities. This produces scores where high confidence means both a clear winner *and* model agreement — not just a high max probability. The scores are then calibrated via isotonic regression so that a confidence of 0.85 genuinely reflects ~85% accuracy. For the full details on how Workbench computes confidence for both classification and regression models, see our [Model Confidence](model_confidence.md#vgmu-variance-gated-margin-uncertainty) blog.
+The confidence scores driving the slider come from **VGMU** (Variance-Gated Margin Uncertainty), which combines two signals from the 5-model ensemble: the probability margin between the top two classes and the ensemble's disagreement on those probabilities. This produces scores where high confidence means both a clear winner *and* model agreement — not just a high max probability. The scores are then calibrated via isotonic regression so that a confidence of 0.85 genuinely reflects ~85% accuracy. For the full details on how Workbench computes confidence for both classification and regression models, see our [Uncertainty Quantification](uncertainty_quantification.md#vgmu-variance-gated-margin-uncertainty) blog.
 
 ## References
 

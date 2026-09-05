@@ -58,7 +58,7 @@ nav:
     - OverView: blogs/index.md
     - "Bosco: Workbench ML Agent": blogs/ml_agent.md
     - Confusion Explorer: blogs/confusion_explorer.md
-    - Model Confidence: blogs/model_confidence.md
+    - Uncertainty Quantification: blogs/uncertainty_quantification.md
     - Chemprop Shap Values: blogs/chemprop_shap.md
     - Chemprop Multi-Task: blogs/chemprop_multi_task.md
     - AWS Endpoint Architecture: blogs/aws_endpoint_architecture.md

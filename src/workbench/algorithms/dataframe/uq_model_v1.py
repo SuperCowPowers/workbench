@@ -3,7 +3,7 @@
 Encapsulates the full regression UQ pipeline:
     1. A learned error model (Random Forest) predicting |residual| from
        residual features [prediction, prediction_std, knn_distance,
-       knn_target_std, knn_target_count, local_pred_gap]
+       knn_target_std, local_pred_gap]
     2. Normalized conformal calibration → prediction intervals with target coverage
     3. Percentile-rank confidence scores
 
@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import cross_val_predict
+from sklearn.model_selection import KFold, cross_val_predict
 
 from workbench.algorithms.dataframe.proximity import Proximity
 from workbench.algorithms.dataframe.residual_features import ResidualFeatures
@@ -65,7 +65,6 @@ class UQModelV1:
         "prediction_std",
         "knn_distance",
         "knn_target_std",
-        "knn_target_count",
         "local_pred_gap",
     ]
 
@@ -220,13 +219,17 @@ class UQModelV1:
     def _oof_expected(error_model: RandomForestRegressor, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Out-of-fold |residual| estimates for calibration.
 
+        Folds are shuffled so the split doesn't depend on the order the out-of-fold
+        rows happen to arrive in.
+
         Falls back to in-sample predictions when there are too few rows to split,
         which keeps tiny calibration sets working but lets their intervals run narrow.
         """
         n_splits = min(5, len(y))
         if n_splits < 2:
             return error_model.predict(X)
-        return cross_val_predict(clone(error_model), X, y, cv=n_splits, n_jobs=-1)
+        folds = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+        return cross_val_predict(clone(error_model), X, y, cv=folds, n_jobs=-1)
 
     def _log_fit_diagnostics(
         self,
@@ -473,16 +476,13 @@ class UQModelV1:
 
     @staticmethod
     def _stack_features(predictions: np.ndarray, prediction_std: np.ndarray, feat: pd.DataFrame) -> np.ndarray:
-        """Build the (n, 6) feature matrix in canonical column order."""
-        # NaN-fill the target statistics with neutral values; knn_target_count carries
-        # how much label evidence stood behind them, so the RF can discount the fill.
+        """Build the (n, 5) feature matrix in canonical column order."""
+        # NaN-fill the target statistics with neutral values. A query whose proximity
+        # couldn't be resolved at all has its outputs overwritten to NaN downstream.
         knn_distance = np.nan_to_num(feat["knn_distance"].values, nan=0.5)
         knn_target_std = np.nan_to_num(feat["knn_target_std"].values, nan=0.0)
-        knn_target_count = np.nan_to_num(feat["knn_target_count"].values, nan=0.0)
         local_pred_gap = np.nan_to_num(feat.get("local_pred_gap", pd.Series(0.0, index=feat.index)).values, nan=0.0)
-        return np.column_stack(
-            [predictions, prediction_std, knn_distance, knn_target_std, knn_target_count, local_pred_gap]
-        )
+        return np.column_stack([predictions, prediction_std, knn_distance, knn_target_std, local_pred_gap])
 
     @staticmethod
     def _slim_proximity(prox: Proximity) -> Proximity:

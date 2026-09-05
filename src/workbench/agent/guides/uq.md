@@ -131,4 +131,4 @@ interval alongside the point prediction rather than averaging uncertainty away.
 
 ## More
 
-- https://supercowpowers.github.io/workbench/blogs/model_confidence/
+- https://supercowpowers.github.io/workbench/blogs/uncertainty_quantification/
