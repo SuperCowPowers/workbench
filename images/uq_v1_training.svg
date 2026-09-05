@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 660" width="900" height="660">
+  <defs>
+    <linearGradient id="srcBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <linearGradient id="keepBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9b59b6"/>
+      <stop offset="100%" stop-color="#7d3f96"/>
+    </linearGradient>
+    <linearGradient id="tossBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff9f43"/>
+      <stop offset="100%" stop-color="#cc7a30"/>
+    </linearGradient>
+    <marker id="tr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="34" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Fitting UQ v1</text>
+  <text x="450" y="58" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="15">what happens at training time</text>
+
+  <rect x="90" y="84" width="350" height="62" rx="8" fill="url(#srcBox)"/>
+  <text x="265" y="110" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">5-fold cross-validation</text>
+  <text x="265" y="132" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">out-of-fold prediction + std</text>
+
+  <rect x="470" y="84" width="340" height="62" rx="8" fill="url(#srcBox)"/>
+  <text x="640" y="110" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">proximity model</text>
+  <text x="640" y="132" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">fingerprints + labels, training rows</text>
+
+  <line x1="265" y1="146" x2="265" y2="162" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="640" y1="146" x2="640" y2="162" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="265" y1="162" x2="640" y2="162" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="450" y1="162" x2="450" y2="178" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+
+  <path d="M810 115 L862 115 L862 600 L788 600" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#tr)"/>
+
+  <rect x="250" y="184" width="400" height="66" rx="8" fill="#3a3f4a" stroke="#8b95a3" stroke-width="1.2"/>
+  <text x="266" y="204" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13" font-weight="bold">Step 1</text>
+  <text x="450" y="210" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Residual Features</text>
+  <text x="450" y="234" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">five per compound: 2 ensemble + 3 neighborhood</text>
+
+  <line x1="450" y1="250" x2="450" y2="266" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="250" y1="266" x2="650" y2="266" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="250" y1="266" x2="250" y2="284" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+  <line x1="650" y1="266" x2="650" y2="284" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+
+  <rect x="90" y="290" width="320" height="76" rx="8" fill="url(#keepBox)"/>
+  <text x="106" y="310" fill="#ffffff" opacity="0.7" font-family="Helvetica, Arial" font-size="13" font-weight="bold">Step 2</text>
+  <text x="250" y="332" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="18" font-weight="bold">Error Model</text>
+  <text x="250" y="354" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">Random Forest: Residual Features → abs(residual)</text>
+
+  <rect x="490" y="290" width="320" height="76" rx="8" fill="url(#tossBox)"/>
+  <text x="650" y="332" text-anchor="middle" fill="#3a2a12" font-family="Helvetica, Arial" font-size="18" font-weight="bold">Calibration Model</text>
+  <text x="650" y="354" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">5 RF Models → OOF rows combined</text>
+
+  <line x1="650" y1="366" x2="650" y2="382" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="558" y1="382" x2="742" y2="382" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="558" y1="382" x2="558" y2="400" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+  <line x1="742" y1="382" x2="742" y2="400" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+
+  <rect x="470" y="406" width="176" height="76" rx="8" fill="#00d4aa" opacity="0.14" stroke="#00d4aa" stroke-width="1.4"/>
+  <text x="558" y="428" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13" font-weight="bold">Step 3</text>
+  <text x="558" y="451" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="15" font-weight="bold">Conformal Intervals</text>
+  <text x="558" y="472" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">scale factors</text>
+
+  <rect x="654" y="406" width="176" height="76" rx="8" fill="#00d4aa" opacity="0.14" stroke="#00d4aa" stroke-width="1.4"/>
+  <text x="742" y="428" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13" font-weight="bold">Step 4</text>
+  <text x="742" y="451" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="15" font-weight="bold">Confidence</text>
+  <text x="742" y="472" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">percentile ladder</text>
+
+  <line x1="250" y1="366" x2="250" y2="560" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+  <line x1="558" y1="482" x2="558" y2="560" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+  <line x1="742" y1="482" x2="742" y2="560" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#tr)"/>
+
+  <rect x="160" y="566" width="620" height="68" rx="8" fill="#00d4aa" opacity="0.10" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="470" y="590" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="17" font-weight="bold">saved into the model bundle</text>
+  <text x="470" y="614" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">error model  ·  scale factors  ·  percentile ladder  ·  proximity model</text>
+</svg>

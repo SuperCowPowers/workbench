@@ -2334,14 +2334,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../blogs/model_confidence/" class="md-nav__link">
+      <a href="../blogs/uncertainty_quantification/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Model Confidence
+    Uncertainty Quantification
   
 
     
@@ -5662,11 +5662,15 @@
   </tbody>
 </table>
 
-<p><strong>v1</strong> is the default; <strong>v0</strong> is the fallback when no neighborhood can be built; <strong>v2</strong> is an experimental applicability-domain diagnostic. See the <a href="../blogs/model_confidence/">Model Confidence Blog</a> for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.</p>
+<p><strong>v1</strong> is the default; <strong>v0</strong> is the fallback when no neighborhood can be built; <strong>v2</strong> is an experimental applicability-domain diagnostic. See the <a href="../blogs/uncertainty_quantification/">Uncertainty Quantification Blog</a> for the full breakdown. The three steps below describe the shared foundation and the v0/v1 confidence path.</p>
 <h2 id="three-step-pipeline">Three-Step Pipeline</h2>
 <h3 id="1-ensemble-disagreement">1. Ensemble Disagreement</h3>
 <p>Each fold of the 5-fold cross-validation produces a model trained on a different slice of the data. At inference time, all 5 models make a prediction and we take the average. The <strong>standard deviation</strong> across the 5 predictions (<code>prediction_std</code>) is the raw uncertainty signal.</p>
 <p>When the models agree closely (low std), the prediction is more reliable. When they disagree (high std), something about that compound is tricky.</p>
+<div class="admonition note">
+<p class="admonition-title">Reading <code>prediction_std</code></p>
+<p>Extreme <code>prediction_std</code> outliers — values above the IQR fence — are soft log-compressed before storing. The transform is monotonic, so ranking is preserved and percentile-rank confidence and conformal intervals are unaffected. It does mean reported <code>prediction_std</code> values are uncertainty <em>scores</em> rather than literal standard deviations.</p>
+</div>
 <h3 id="2-conformal-calibration">2. Conformal Calibration</h3>
 <p>Raw ensemble std tells you <em>which</em> predictions to trust more, but the numbers aren't calibrated — a std of 0.3 doesn't map to a meaningful interval. Workbench uses <strong>conformal prediction</strong> to fix this:</p>
 <ol>
@@ -5721,7 +5725,7 @@
 <h3 id="coverage-metrics">Coverage Metrics</h3>
 <p>For each confidence level (50%, 68%, 80%, 90%, 95%), the percentage of true values that fall within the prediction interval. Should match the target coverage.</p>
 <h2 id="deep-dive">Deep Dive</h2>
-<p>For more details on the approach, including code walkthrough and validation results, see the <a href="../blogs/model_confidence/">Model Confidence Blog</a>.</p>
+<p>For more details on the approach, including code walkthrough and validation results, see the <a href="../blogs/uncertainty_quantification/">Uncertainty Quantification Blog</a>.</p>
 <h2 id="additional-resources">Additional Resources</h2>
 <p><img align="right" src="../images/scp.png" width="180"></p>
 <p>Need help with confidence scores or uncertainty quantification? Want to develop a customized application tailored to your business needs?</p>

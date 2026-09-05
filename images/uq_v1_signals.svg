@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540">
+  <defs>
+    <linearGradient id="predChip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/><stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <marker id="sig" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="34" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Two Signals, Not One</text>
+  <text x="450" y="58" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="15">ensemble spread and the compound's neighborhood, together</text>
+
+  <text x="155" y="92" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Models Agree</text>
+  <text x="155" y="114" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Neighbors Agree</text>
+  <rect x="39" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="75" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.41</text>
+  <rect x="119" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="155" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.38</text>
+  <rect x="199" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="235" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.43</text>
+  <rect x="79" y="164" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="115" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.39</text>
+  <rect x="159" y="164" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="195" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.40</text>
+  <text x="155" y="214" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="13">pred = 2.40  ·  std = 0.02</text>
+  <text x="155" y="242" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="13">10 nearest neighbors, their labels</text>
+  <rect x="38" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="65" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.35</text>
+  <rect x="98" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="125" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.44</text>
+  <rect x="158" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="185" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.38</text>
+  <rect x="218" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="245" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.41</text>
+  <text x="155" y="298" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="13">knn_target_std = 0.06</text>
+  <line x1="155" y1="308" x2="155" y2="328" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#sig)"/>
+  <rect x="25" y="334" width="260" height="52" rx="8" fill="#3a3f4a" stroke="#8b95a3" stroke-width="1.2"/>
+  <text x="155" y="355" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14" font-weight="bold">error model</text>
+  <text x="155" y="375" text-anchor="middle" fill="#c3cad3" font-family="Helvetica, Arial" font-size="13">expected error = 0.05</text>
+  <line x1="155" y1="386" x2="155" y2="406" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#sig)"/>
+  <rect x="25" y="412" width="260" height="64" rx="8" fill="#00d4aa" opacity="0.14" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="155" y="436" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="14">confidence = 0.92</text>
+  <text x="155" y="462" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="18" font-weight="bold">HIGH</text>
+
+  <text x="450" y="92" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Models Agree</text>
+  <text x="450" y="114" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Neighbors Disagree</text>
+  <rect x="334" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="370" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">-3.56</text>
+  <rect x="414" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="450" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">-3.55</text>
+  <rect x="494" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="530" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">-3.58</text>
+  <rect x="374" y="164" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="410" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">-3.57</text>
+  <rect x="454" y="164" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="490" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">-3.56</text>
+  <text x="450" y="214" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="13">pred = -3.56  ·  std = 0.02</text>
+  <text x="450" y="242" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="13">10 nearest neighbors, their labels</text>
+  <rect x="333" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="360" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">-3.6</text>
+  <rect x="393" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="420" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">-5.4</text>
+  <rect x="453" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="480" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">-3.5</text>
+  <rect x="513" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="540" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">-4.9</text>
+  <text x="450" y="298" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="13">knn_target_std = 0.81</text>
+  <line x1="450" y1="308" x2="450" y2="328" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#sig)"/>
+  <rect x="320" y="334" width="260" height="52" rx="8" fill="#3a3f4a" stroke="#8b95a3" stroke-width="1.2"/>
+  <text x="450" y="355" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14" font-weight="bold">error model</text>
+  <text x="450" y="375" text-anchor="middle" fill="#c3cad3" font-family="Helvetica, Arial" font-size="13">expected error = 0.62</text>
+  <line x1="450" y1="386" x2="450" y2="406" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#sig)"/>
+  <rect x="320" y="412" width="260" height="64" rx="8" fill="#ff6b6b" opacity="0.14" stroke="#ff6b6b" stroke-width="1.5"/>
+  <text x="450" y="436" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="14">confidence = 0.28</text>
+  <text x="450" y="462" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="18" font-weight="bold">LOW</text>
+
+  <text x="745" y="92" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Models Disagree</text>
+  <text x="745" y="114" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Neighbors Agree</text>
+  <rect x="629" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="665" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">1.82</text>
+  <rect x="709" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="745" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.95</text>
+  <rect x="789" y="130" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="825" y="149" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">2.31</text>
+  <rect x="669" y="164" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="705" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">3.47</text>
+  <rect x="749" y="164" width="72" height="28" rx="5" fill="url(#predChip)"/>
+  <text x="785" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14">1.58</text>
+  <text x="745" y="214" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="13">pred = 2.43  ·  std = 0.71</text>
+  <text x="745" y="242" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="13">10 nearest neighbors, their labels</text>
+  <rect x="628" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="655" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.3</text>
+  <rect x="688" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="715" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.5</text>
+  <rect x="748" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="775" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.4</text>
+  <rect x="808" y="252" width="54" height="26" rx="5" fill="#9b59b6" opacity="0.75"/>
+  <text x="835" y="270" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="13">2.4</text>
+  <text x="745" y="298" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="13">knn_target_std = 0.09</text>
+  <line x1="745" y1="308" x2="745" y2="328" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#sig)"/>
+  <rect x="615" y="334" width="260" height="52" rx="8" fill="#3a3f4a" stroke="#8b95a3" stroke-width="1.2"/>
+  <text x="745" y="355" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="14" font-weight="bold">error model</text>
+  <text x="745" y="375" text-anchor="middle" fill="#c3cad3" font-family="Helvetica, Arial" font-size="13">expected error = 0.85</text>
+  <line x1="745" y1="386" x2="745" y2="406" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#sig)"/>
+  <rect x="615" y="412" width="260" height="64" rx="8" fill="#ff6b6b" opacity="0.14" stroke="#ff6b6b" stroke-width="1.5"/>
+  <text x="745" y="436" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="14">confidence = 0.15</text>
+  <text x="745" y="462" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="18" font-weight="bold">LOW</text>
+
+  <text x="450" y="508" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="14">Middle panel: the same tight ensemble spread as the left, but the neighbors disagree.</text>
+  <text x="450" y="528" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="14">Ensemble std alone would have called it confident.</text>
+</svg>

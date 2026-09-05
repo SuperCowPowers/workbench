@@ -2151,14 +2151,14 @@
   
   
     <li class="md-nav__item">
-      <a href="model_confidence/" class="md-nav__link">
+      <a href="uncertainty_quantification/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Model Confidence
+    Uncertainty Quantification
   
 
     
@@ -5254,7 +5254,7 @@
 <p><strong><a href="confusion_explorer/">Confusion Explorer: Beyond the Confusion Matrix</a>:</strong> The standard confusion matrix tells you <em>what</em> your model gets wrong — the Confusion Explorer shows you <em>why</em>. We pair a residual-colored matrix with an interactive ternary probability plot, linked through a confidence slider. Filter to high-confidence predictions, click a cell to isolate misclassified compounds, and hover to see molecular structures.</p>
 </li>
 <li>
-<p><strong><a href="model_confidence/">Model Confidence: Building on Conformal Prediction</a>:</strong> How does Workbench approach prediction uncertainty? We walk through our current pipeline — 5-fold ensemble disagreement, conformal calibration for coverage guarantees, and percentile-rank confidence scoring — discuss the trade-offs, and point to the foundational work we're building on.</p>
+<p><strong><a href="uncertainty_quantification/">Uncertainty Quantification (UQ)</a>:</strong> When can you trust a prediction? We trace the whole path for a ChemProp endpoint — 5-model ensemble disagreement, a RandomForest error model over the compound's chemical neighborhood, and normalized conformal calibration — then show exactly which columns land on every row and what each one means.</p>
 </li>
 <li>
 <p><strong><a href="chemprop_shap/">SHAP Values for ChemProp Models</a>:</strong> How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing <a href="https://shap.readthedocs.io/">SHAP values</a> on <a href="https://github.com/chemprop/chemprop">ChemProp</a> MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.</p>
