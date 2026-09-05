@@ -7,7 +7,7 @@ import pandas as pd
 import awswrangler as wr
 
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet, Meta
+from workbench.api import DataSource, FeatureSet
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.views.view_utils import list_supplemental_data_tables, delete_table, view_details
 
@@ -40,7 +40,6 @@ class View:
 
     # Class attributes
     log = logging.getLogger("workbench")
-    meta = Meta()
 
     def __init__(self, artifact: Union[DataSource, FeatureSet], view_name: str, **kwargs):
         """View Constructor: Retrieve a View for the given artifact
@@ -68,23 +67,20 @@ class View:
         # Check if the view should be auto created
         self.auto_created = False
         if kwargs.get("auto_create_view", True) and not self.exists():
+            self.log.important(
+                f"View {self.view_name} for {self.artifact_name} doesn't exist, attempting to auto-create..."
+            )
+            self.auto_created = self._auto_create_view()
 
-            # A direct double check before we auto-create
-            if not self.exists(skip_cache=True):
-                self.log.important(
-                    f"View {self.view_name} for {self.artifact_name} doesn't exist, attempting to auto-create..."
+            # Check for failure of the auto-creation
+            if not self.auto_created:
+                self.log.error(
+                    f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
                 )
-                self.auto_created = self._auto_create_view()
-
-                # Check for failure of the auto-creation
-                if not self.auto_created:
-                    self.log.error(
-                        f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
-                    )
-                    self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = (
-                        self.join_view
-                    ) = None
-                    return
+                self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = (
+                    self.join_view
+                ) = None
+                return
 
         # Now fill some details about the view
         self.columns, self.column_types, self.source_table, self.join_view = view_details(
@@ -165,11 +161,9 @@ class View:
         self.log.info("Sleeping for 3 seconds after deletion to allow AWS to catch up...")
         time.sleep(3)
 
-    def exists(self, skip_cache: bool = False) -> bool:
+    def exists(self) -> bool:
         """Check if the view exists in the database
 
-        Args:
-            skip_cache (bool): Skip the cache and check the database directly (default: False)
         Returns:
             bool: True if the view exists, False otherwise.
         """
@@ -177,29 +171,16 @@ class View:
         if self.view_name == "base":
             return True
 
-        # If we're skipping the cache, we need to check the database directly
-        if skip_cache:
-            return self._check_database()
-
-        # Use the meta class to see if the view exists
-        views_df = self.meta.views(self.database)
-
-        # Check if we have ANY views
-        if views_df.empty:
+        # A View that failed to auto-create has no table
+        if self.table is None:
             return False
 
-        # Check if the view exists
-        return self.table in views_df["Name"].values
+        # Point lookup on this ONE table (listing the database scales with catalog size)
+        return wr.catalog.does_table_exist(self.database, self.table, boto3_session=self.data_source.boto3_session)
 
     def ensure_exists(self):
-        """Ensure if the view exists by making a query directly to the database. If it doesn't exist, create it"""
-
-        # The BaseView always exists
-        if self.view_name == "base":
-            return
-
-        # Check the database directly
-        if not self._check_database():
+        """Ensure the view exists, creating it if it doesn't"""
+        if not self.exists():
             self._auto_create_view()
 
     def copy(self, dest_view_name: str) -> "View":
@@ -241,21 +222,6 @@ class View:
         # Return a new View object for the destination
         artifact = FeatureSet(self.artifact_name) if self.is_feature_set else DataSource(self.artifact_name)
         return View(artifact, dest_view_name, auto_create_view=False)
-
-    def _check_database(self) -> bool:
-        """Internal: Check if the view exists in the database
-
-        Returns:
-            bool: True if the view exists, False otherwise
-        """
-        # Query to check if the table/view exists
-        check_table_query = f"""
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = '{self.database}' AND table_name = '{self.table}'
-        """
-        _df = self.data_source.query(check_table_query)
-        return not _df.empty
 
     def _auto_create_view(self) -> bool:
         """Internal: Automatically create a view training, display, and computation views
