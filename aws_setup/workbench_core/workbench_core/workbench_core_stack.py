@@ -202,6 +202,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
+                "glue:BatchDeleteTable",
             ],
             resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
         )
@@ -231,6 +232,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
+                "glue:BatchDeleteTable",
             ],
             resources=self._workbench_database_arns() + self._inference_database_arns(),
         )
