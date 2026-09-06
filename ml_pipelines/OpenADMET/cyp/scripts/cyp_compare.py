@@ -55,46 +55,62 @@ def resolve_capture(runs: list, target: str) -> str | None:
     return None
 
 
+def model_isoforms(model) -> set:
+    """The isoforms a model actually predicts, by the prefix of its target column(s)."""
+    target = model.target()
+    names = target if isinstance(target, list) else [target]
+    return {str(n).split("_")[0] for n in names}
+
+
+def scored_frame(model, target: str):
+    """One model's predictions for `target`, graded against the challenge label.
+
+    A model may train on a derived column -- a pooled scored column, say -- so the label comes
+    from the FeatureSet rather than from the capture. That holds every model to the same rows
+    whatever it was fit on.
+    """
+    run = resolve_capture(model.list_inference_runs(), target)
+    if run is None:
+        return None, None
+    df = model.get_inference_predictions(run)
+    pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
+    if pred_col not in df.columns:
+        return None, None
+    # A bare capture holds one unnamed prediction column, which belongs to the model's own
+    # target -- claiming it for the other three isoforms would score them against it.
+    if pred_col == "prediction" and target.split("_")[0] not in model_isoforms(model):
+        return None, None
+
+    fs = FeatureSet(model.get_input())
+    id_column = fs.id_column
+    keep = [id_column, target] + [c for c in (f"{target}_ci_lower", f"{target}_ci_upper") if c in fs.columns]
+    if id_column in df.columns and target in fs.columns:
+        df = df.drop(columns=[c for c in keep if c != id_column and c in df.columns])
+        df = df.merge(fs.pull_dataframe()[keep], on=id_column, how="left")
+    if target not in df.columns:
+        return None, None
+    return df.dropna(subset=[target, pred_col]), pred_col
+
+
 def score(model_name: str) -> pd.DataFrame:
     """Per-isoform holdout metrics for one model."""
     model = Model(model_name)
-    runs = model.list_inference_runs()
-    fs = FeatureSet(model.get_input())
-    id_column = fs.id_column
-    ci_cols = [c for t in TARGETS for c in (f"{t}_ci_lower", f"{t}_ci_upper") if c in fs.columns]
-    labels = fs.pull_dataframe()[[id_column] + ci_cols] if ci_cols else None
-
     rows = []
     for target in TARGETS:
-        run = resolve_capture(runs, target)
-        if run is None:
+        d, pred_col = scored_frame(model, target)
+        if d is None or len(d) < 3:
             continue
-        df = model.get_inference_predictions(run)
-        pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
-        if any(c not in df.columns for c in (target, pred_col)):
-            continue
-        # A bare capture scores every isoform off target[0], so only claim the first.
-        if run in (CAPTURE, "full_cross_fold") and target not in df.columns:
-            continue
-
-        lower, upper = f"{target}_ci_lower", f"{target}_ci_upper"
-        if labels is not None and lower in labels.columns and id_column in df.columns:
-            df = df.drop(columns=[c for c in df.columns if c.endswith(("_ci_lower", "_ci_upper"))])
-            df = df.merge(labels, on=id_column, how="left")
-        d = df[[target, pred_col]].dropna()
         y, p = d[target].to_numpy(), d[pred_col].to_numpy()
-        if len(y) < 3:
-            continue
 
         st = np.nan
-        if lower in df.columns:
-            c = df[[target, pred_col, lower, upper]].dropna()
+        lower, upper = f"{target}_ci_lower", f"{target}_ci_upper"
+        if lower in d.columns:
+            c = d[[target, pred_col, lower, upper]].dropna()
             if len(c):
                 st = soft_threshold_rae(c[target], c[pred_col], c[lower], c[upper])
         rows.append(
             {
                 "isoform": target.split("_")[0],
-                "capture": run,
                 "n": len(y),
                 "pearson": pearsonr(y, p).statistic,
                 "spearman": spearmanr(y, p).statistic,
@@ -109,17 +125,11 @@ def score(model_name: str) -> pd.DataFrame:
 def score_bands(model_name: str) -> pd.DataFrame:
     """Spearman and prediction spread per activity band, for one model."""
     model = Model(model_name)
-    runs = model.list_inference_runs()
     rows = []
     for target in TARGETS:
-        run = resolve_capture(runs, target)
-        if run is None:
+        d, pred_col = scored_frame(model, target)
+        if d is None:
             continue
-        df = model.get_inference_predictions(run)
-        pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
-        if any(c not in df.columns for c in (target, pred_col)):
-            continue
-        d = df[[target, pred_col]].dropna()
         for label, lo, hi in BANDS:
             band = d[(d[target] >= lo) & (d[target] < hi)]
             # Spearman on a handful of rows is not a measurement.

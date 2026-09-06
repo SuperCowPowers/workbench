@@ -63,11 +63,22 @@ knows the difference. With `bounded_loss` off the flags are ignored and every bo
 an exact label, which is strictly worse than the uncensored FeatureSet -- useful as the
 control that shows the loss is doing the work, and wrong as anything else.
 
+A `{iso}_pic50_pooled` column per scored isoform carries the challenge labels plus the public
+measurements shifted onto the challenge scale, so a model can train on public potency in the
+column it is graded on rather than in a head that keeps its own scale. `{iso}_pooled_public`
+flags which rows came from the fill. On CYP2D6 that takes the scored column from 1,493 rows
+to ~11,300, of which ~1,200 sit below pIC50 4.0 against the challenge's 129.
+
+The shift is measured where two assays ran the same compound, and those compounds are potent,
+so a pooled value is approximate in absolute terms. It is faithful in rank, which is what a
+Spearman-scored column reads and what placement leaves to the model.
+
 Run after cyp_aux_features.py:  python cyp_union_features.py [--censored]
 """
 
 import argparse
 
+import numpy as np
 import pandas as pd
 from rdkit import Chem, RDLogger
 from workbench.api import DataSource, FeatureSet, PublicData
@@ -118,6 +129,19 @@ EMAX = "comp_chem/openadmet/cyp/training/emax"
 TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
 EMAX_TARGETS = [f"{iso}_emax_vs_pos_ctrl_direct_inhibition" for iso in ISOFORMS]
 MAX_RESPONSE_CLIP = (-150.0, 50.0)
+
+# The scored column with public potency folded in. Each source is shifted onto the challenge
+# scale by the mean offset over the compounds both assays ran, then written where the
+# challenge has no label; sources are averaged where they overlap. Ordered by cross-assay
+# agreement on shared CYP2D6 compounds (0.82 / 0.78 / 0.75).
+POOLED_SOURCES = ["pic50_tox21", "pic50_veith", "pic50_chembl"]
+POOLED_TARGETS = [f"{iso}_pic50_pooled" for iso in ISOFORMS]
+# A shift measured on fewer compounds than this is guessed rather than measured.
+MIN_ANCHORS = 30
+# And a shift only preserves order if the two assays agree on one. CYP2D6's sources rank at
+# 0.71-0.82 against the challenge, CYP1A2's at 0.59-0.74; below this a source contributes
+# more noise than ordering.
+MIN_AGREEMENT = 0.5
 
 
 def skeletons(smiles: pd.Series) -> pd.Series:
@@ -233,6 +257,38 @@ out = pd.concat([joined, tox_only.drop(columns=["key"])], ignore_index=True)
 out = out.drop(columns=["key"])
 print(f"tox21: {len(tox):,} compounds, {len(tox_only):,} new to the union")
 
+# The offset is measured on potent overlap compounds and applied across the range, so pooled
+# values are approximate in absolute terms and faithful in rank -- which is what the scored
+# metric reads.
+print(f"{'pooled':<30} {'anchors':>8} {'rho':>6} {'offset':>7} {'resid':>6} {'fills':>8}")
+for iso in ISOFORMS:
+    scored = f"{iso}_pic50_direct_inhibition"
+    filled = pd.DataFrame(index=out.index)
+    for suffix in POOLED_SOURCES:
+        source = f"{iso}_{suffix}"
+        if source not in out.columns:
+            continue
+        both = out[out[scored].notna() & out[source].notna()]
+        if len(both) < MIN_ANCHORS:
+            print(f"  {source:<28} {len(both):>8,} {'--':>6} {'skipped: too few anchors':>30}")
+            continue
+        delta = both[scored] - both[source]
+        offset = float(delta.mean())
+        rho = float(both[[scored, source]].corr(method="spearman").iloc[0, 1])
+        if rho < MIN_AGREEMENT:
+            print(f"  {source:<28} {len(both):>8,} {rho:>+6.2f} {'skipped: assays disagree':>30}")
+            continue
+        usable = out[scored].isna() & out[source].notna()
+        filled[source] = (out[source] + offset).where(usable)
+        print(
+            f"  {source:<28} {len(both):>8,} {rho:>+6.2f} {offset:>+7.2f} "
+            f"{float(delta.std(ddof=1)):>6.2f} {int(usable.sum()):>8,}"
+        )
+    pooled = filled.mean(axis=1) if len(filled.columns) else pd.Series(np.nan, index=out.index)
+    out[f"{iso}_pic50_pooled"] = out[scored].where(out[scored].notna(), pooled)
+    # Marks the rows a model may want to trust less than a challenge measurement.
+    out[f"{iso}_pooled_public"] = out[scored].isna() & pooled.notna()
+
 ALL_TARGETS = (
     TARGETS
     + AUX_TARGETS
@@ -242,6 +298,7 @@ ALL_TARGETS = (
     + VEITH_TARGETS
     + VEITH_PIC50_TARGETS
     + TOX21_TARGETS
+    + POOLED_TARGETS
 )
 if out["molecule_name"].duplicated().any():
     raise ValueError("duplicate molecule_name after the union")

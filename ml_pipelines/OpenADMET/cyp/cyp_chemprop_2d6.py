@@ -28,33 +28,13 @@ inherent to the comparison rather than a flaw, but it is not seed-for-seed.
 If neither scope moves CYP2D6, representation sharing is not the problem and the remaining
 hypothesis is features -- which is where the XGB-on-descriptors tie points.
 
-`--low-weight` is the separate experiment: not where CYP2D6's ordering comes from, but which
-compounds the loss pays attention to. Out of fold this model ranks at Spearman 0.159 below
-pIC50 4.5 against 0.383 above it, and the blind population is centred at 3.107 -- so it
-cannot order the compounds it is mostly scored on. The flag multiplies the loss weight of
-the 479 rows under 4.5, via `sample_weights`, which chemprop applies per datapoint.
-
-    --low-weight 3    the low band becomes ~59% of the loss, effective sample size ~76%
-    --low-weight 8    ~79% of the loss, effective sample size ~50%
-
-`--deep-weight` splits that band in two, because its halves are not alike. Between 4.0 and
-4.5 the 350 labels have a spread of 0.11 against a median measurement std of 0.069 -- they
-are very nearly tied, and out of fold we rank them at 0.024, about what no signal looks like.
-Below 4.0 the 129 labels spread 0.68 and we rank them at 0.153. A flat step spends most of
-its weight on the half with nothing to order:
-
-    --low-weight 3 --deep-weight 6    sub-4.0 takes 27% of the loss, ESS ~61%
-    --low-weight 3 --deep-weight 9    sub-4.0 takes 36% of the loss, ESS ~48%
-
-The 4.0-4.5 rows still earn a weight above 1 -- they have to sit below the actives, which is
-cross-band ordering the scored Spearman does care about -- just not the majority share.
-
-Two points bracket it, because a dose-response is worth more than either alone. Read
-**low-band** Spearman, not overall: the overall number dilutes a large low-band change across
-the 1,014 compounds already ranked well, and its 0.056 threshold would hide the effect.
-
-What weighting cannot do is manufacture signal the labels do not carry. 129 compounds with
-real spread and 350 that are one value with noise on top may simply not support an ordering.
+`--low-weight` and `--deep-weight` re-weight the low band via `sample_weights`, which chemprop
+applies per datapoint: the 479 rows under pIC50 4.5, and the 129 under 4.0 separately. Both
+degrade CYP2D6, monotonically in the share of the loss the 4.0-4.5 rows take -- 0.388
+unweighted, 0.302 at `--low-weight 3`, 0.056 at 8, where the model is a flat line at the mean.
+Those 350 labels spread 0.113 against a measurement std of 0.069, so there is no ordering in
+them to learn, and a loss they dominate is minimized by a constant. The flags are kept for
+re-measurement, not because a setting of them is expected to win.
 
 A step rather than importance weights, deliberately. Weighting by `p_blind(y)/p_train(y)` is
 the principled correction for the shift, and it fails twice here: uncapped it still only
@@ -62,6 +42,30 @@ reaches a weighted mean of 3.67 against the blind 3.107, because no reweighting 
 range with no samples in it, and it drops the effective sample size to 236 of 1,493. It also
 aims at the wrong target -- matching the blind mean is a *level* correction, and placement
 already does level. What is missing is ordering inside the band.
+
+`--scope pooled` puts the public CYP2D6 measurements *in the scored column* rather than in
+heads of their own. The scored head currently trains on 1,493 challenge rows while roughly
+35,000 CYP2D6 measurements sit beside it as auxiliaries -- and a head keeps its own scale, so
+none of that reaches the output we are graded on. Pooling is the only route that does.
+
+`cyp_union_features.py` builds that column -- each source shifted onto the challenge scale by
+the offset measured on the compounds both assays ran, averaged where sources overlap -- and
+this script trains on it. Pooling belongs in the FeatureSet because it is data, not an
+experiment knob; the knob is which column `target_column` names.
+
+The objection is that the offset is measured on potent compounds and applied to weak ones, so
+the corrected values are wrong at the low end. True, and it does not matter for the metric we
+are losing: Spearman is rank-based, an offset that is roughly right preserves ordering, and
+placement handles the absolute scale afterwards.
+
+Grade this against `single` on the 1,493 challenge-labelled rows only. Its own out-of-fold set
+now contains ~9,800 public rows, and a Spearman over those is not the number the board reads.
+
+    --scope pooled                     challenge + public in one column, public at 1.0
+    --scope pooled --public-weight 0.3 the same, public rows down-weighted
+
+Public rows carry a residual of 0.35-0.50 after the shift against the challenge's own 0.07
+label noise, so `--public-weight` is the knob for how much that noise is allowed to count.
 
 Build the FeatureSet first: python cyp_union_features.py
 """
@@ -84,6 +88,10 @@ ISOFORM_AUX = [
     "cyp2d6_max_response",
 ]
 AUX_WEIGHT = 0.3  # the value the auxiliary heads were validated at elsewhere
+# Built by cyp_union_features.py: the challenge labels with public potency shifted onto the
+# same scale filling the gaps, plus a flag marking which rows came from the fill.
+POOLED_TARGET = "cyp2d6_pic50_pooled"
+POOLED_FLAG = "cyp2d6_pooled_public"
 # Below this the model cannot order compounds (out-of-fold Spearman 0.159 against 0.383
 # above). 4.5 rather than 4.0: the sub-4.0 set is 129 rows, too few to learn an ordering
 # from, where 4.5 reaches 479.
@@ -95,8 +103,15 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--scope",
     required=True,
-    choices=["single", "isoform"],
-    help="'single' trains on the scored target alone; 'isoform' adds every CYP2D6 readout",
+    choices=["single", "isoform", "pooled"],
+    help="'single' trains on the scored target alone; 'isoform' adds every CYP2D6 readout; "
+    "'pooled' puts offset-corrected public measurements into the scored column",
+)
+parser.add_argument(
+    "--public-weight",
+    type=float,
+    default=1.0,
+    help="Loss weight for pooled public rows (--scope pooled). 1.0 trusts them like challenge rows",
 )
 parser.add_argument(
     "--low-weight",
@@ -120,14 +135,39 @@ deep_weight = args.low_weight if args.deep_weight is None else args.deep_weight
 weighted = args.low_weight != 1.0 or deep_weight != 1.0
 
 model_name = f"cyp-reg-chemprop-2d6-{args.scope}"
+if args.scope == "pooled" and args.public_weight != 1.0:
+    model_name += f"-pw{args.public_weight:g}".replace(".", "p")
 if weighted:
     model_name += f"-lw{args.low_weight:g}".replace(".", "p")
     if deep_weight != args.low_weight:
         model_name += f"-dw{deep_weight:g}".replace(".", "p")
-targets = [TARGET] if args.scope == "single" else [TARGET] + ISOFORM_AUX
+if args.scope == "pooled":
+    targets = [POOLED_TARGET]
+elif args.scope == "single":
+    targets = [TARGET]
+else:
+    targets = [TARGET] + ISOFORM_AUX
 
 fs = FeatureSet(FS_NAME)
 df = fs.pull_dataframe()
+
+pooled_rows = None
+if args.scope == "pooled":
+    missing = [c for c in (POOLED_TARGET, POOLED_FLAG) if c not in df.columns]
+    if missing:
+        raise ValueError(f"{FS_NAME} has no {missing} — rebuild it with cyp_union_features.py")
+    pooled_rows = df[POOLED_FLAG].fillna(False).astype(bool)
+    scored, both = df[TARGET].notna(), df[POOLED_TARGET].notna()
+    print(
+        f"Pooled scored column: {int(both.sum()):,} rows "
+        f"({int(scored.sum()):,} challenge, {int(pooled_rows.sum()):,} public)"
+    )
+    for label, lo, hi in (("<4.0", -np.inf, 4.0), ("4.0-4.5", 4.0, 4.5), (">=4.5", 4.5, np.inf)):
+        band = df[POOLED_TARGET].between(lo, hi, inclusive="left")
+        print(
+            f"  {label:>9s}  {int((band & scored).sum()):>6,} challenge  "
+            f"{int((band & pooled_rows).sum()):>6,} public"
+        )
 
 trainable = int(df[targets].notna().any(axis=1).sum())
 print(f"Building {model_name}: {len(targets)} target(s), {trainable:,} trainable rows of {len(df):,}")
@@ -141,12 +181,18 @@ if len(targets) > 1:
 # chemprop weights a datapoint, not a target, so on the isoform scope this reweights the
 # compound across all its CYP2D6 readouts. That is the intent -- they are the same molecule
 # being under-attended -- but it is why the single scope is the cleaner first read.
+row_weight = None
+if pooled_rows is not None and args.public_weight != 1.0:
+    row_weight = np.where(pooled_rows, args.public_weight, 1.0)
+    print(f"Pooled public rows weighted {args.public_weight:g}x against challenge rows")
+
 sample_weights = None
 if weighted:
-    y = df[TARGET]
+    y = df[targets[0]]
     deep = y.notna() & (y < DEEP_BAND)
     mid = y.notna() & (y >= DEEP_BAND) & (y < LOW_BAND)
-    row_weight = np.where(deep, deep_weight, np.where(mid, args.low_weight, 1.0))
+    band_weight = np.where(deep, deep_weight, np.where(mid, args.low_weight, 1.0))
+    row_weight = band_weight if row_weight is None else row_weight * band_weight
     sample_weights = {mol: float(w) for mol, w in zip(df["molecule_name"], row_weight) if w != 1.0}
 
     # Diagnostics over the rows that actually train — on the isoform scope that is every
@@ -165,6 +211,9 @@ if weighted:
         print(f"  {label:>9s}  {int(m.sum()):5,} rows  {100 * row_weight[m].sum() / w.sum():5.1f}% of the loss")
     ess = w.sum() ** 2 / (w**2).sum()
     print(f"  effective sample size {ess:,.0f} of {len(w):,} ({ess / len(w):.0%})")
+
+if sample_weights is None and row_weight is not None:
+    sample_weights = {mol: float(w) for mol, w in zip(df["molecule_name"], row_weight) if w != 1.0}
 
 model = fs.to_model(
     name=model_name,
