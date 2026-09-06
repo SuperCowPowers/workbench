@@ -44,22 +44,20 @@ def find_orphans(database: str, boto3_session) -> (list[dict], list[dict]):
     orphan_supplemental = []
     for table in tables:
         name = table["Name"]
-        is_view = table["TableType"] == "VIRTUAL_VIEW"
 
-        # Derived tables are {base}___{view}; supplemental data adds a leading underscore
-        stem = name if is_view else name[1:]
-        if "___" not in stem or (not is_view and not name.startswith("_")):
-            continue
-        base = stem.split("___", 1)[0]
-        if base in base_tables:
-            continue
-
-        if is_view:
-            orphan_views.append({"name": name, "base": base})
-        else:
-            orphan_supplemental.append(
-                {"name": name, "base": base, "s3_path": table.get("StorageDescriptor", {}).get("Location")}
-            )
+        # Views are {base}___{view}, supplemental data tables are _{base}___{view}
+        if table["TableType"] == "VIRTUAL_VIEW":
+            if "___" not in name:
+                continue
+            base = name.split("___", 1)[0]
+            if base not in base_tables:
+                orphan_views.append({"name": name, "base": base})
+        elif name.startswith("_") and "___" in name:
+            base = name[1:].split("___", 1)[0]
+            if base not in base_tables:
+                orphan_supplemental.append(
+                    {"name": name, "base": base, "s3_path": table.get("StorageDescriptor", {}).get("Location")}
+                )
     return orphan_views, orphan_supplemental
 
 

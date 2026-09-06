@@ -530,7 +530,10 @@ class AthenaSource(DataSourceAbstract):
         # the Feature Group is deleted) while its views and supplemental data are still around.
         if not wr.catalog.does_table_exist(database, table, boto3_session=cls.boto3_session):
             cls.log.info(f"DataSource {table} not found in {database}, cleaning up derived tables...")
-            cls.delete_views(table, database)
+            try:
+                cls.delete_views(table, database)
+            except Exception as e:
+                cls.log.error(f"Failure when trying to delete views for {data_source_name}: {e}")
             return
 
         try:
