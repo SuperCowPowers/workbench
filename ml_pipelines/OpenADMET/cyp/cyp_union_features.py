@@ -136,11 +136,14 @@ MAX_RESPONSE_CLIP = (-150.0, 50.0)
 # agreement on shared CYP2D6 compounds (0.82 / 0.78 / 0.75).
 POOLED_SOURCES = ["pic50_tox21", "pic50_veith", "pic50_chembl"]
 POOLED_TARGETS = [f"{iso}_pic50_pooled" for iso in ISOFORMS]
-# A shift measured on fewer compounds than this is guessed rather than measured.
+# A shift measured on fewer compounds than this is guessed rather than measured. This is the
+# binding gate: CYP2D6 and CYP1A2 share 43-119 compounds with each public source, CYP3A4 and
+# CYP2C9 only 19-31, and the deficit is in the libraries rather than in curve fitting --
+# Veith screened 50 of our 2,335 CYP3A4 compounds against 86 of 1,493 CYP2D6.
 MIN_ANCHORS = 30
-# And a shift only preserves order if the two assays agree on one. CYP2D6's sources rank at
-# 0.71-0.82 against the challenge, CYP1A2's at 0.59-0.74; below this a source contributes
-# more noise than ordering.
+# A shift also only preserves order if the two assays agree on one, and a source that clears
+# the anchor gate has enough overlap for the correlation to mean something. CYP2D6's sources
+# rank at 0.71-0.82 against the challenge, CYP1A2's at 0.59-0.74.
 MIN_AGREEMENT = 0.5
 
 
