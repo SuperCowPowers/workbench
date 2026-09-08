@@ -17,7 +17,7 @@ from molecular_utils.fingerprints import feature_fingerprints
 # Hyperparameters are injected here at model-creation time (fill_template), so the
 # radius / n_bits passed to to_model(hyperparameters=...) actually drive the compute.
 TEMPLATE_PARAMS = {
-    "hyperparameters": "{{hyperparameters}}",
+    "hyperparameters": json.loads("{{hyperparameters}}"),
 }
 
 # TRAINING SECTION

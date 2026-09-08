@@ -139,7 +139,7 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096, 
         # Make sure our molecules are not None
         failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
         if failed_smiles:
-            log.warning(f"Failed to convert {len(failed_smiles)} SMILES to molecules ({failed_smiles})")
+            log.warning(f"Failed to convert {len(failed_smiles)} SMILES to molecules (first 5: {failed_smiles[:5]})")
         df = df.dropna(subset=["molecule"]).copy()
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
