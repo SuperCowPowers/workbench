@@ -121,7 +121,7 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096, 
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
     # Sanity check the molecule column (sometimes it gets serialized, which doesn't work)
-    if "molecule" in df.columns and df["molecule"].dtype == "string":
+    if "molecule" in df.columns and not df["molecule"].map(lambda m: isinstance(m, Chem.Mol)).any():
         log.warning("Detected serialized molecules in 'molecule' column. Removing...")
         del df["molecule"]
 
