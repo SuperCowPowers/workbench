@@ -3,6 +3,8 @@
 import logging
 from random import random, choices
 
+import pytest
+
 # Workbench Imports
 from workbench.api import ParameterStore
 
@@ -125,11 +127,9 @@ def test_compressed_failure():
     # Dictionary with 50 keys that are 500 character random string keys with random float values
     large_incompressible_value = {"".join(choices("abcdefghijklmnopqrst", k=500)): random() for _ in range(50)}
 
-    try:
-        # Try adding a parameter that exceeds the 4KB limit
+    # Oversized values are not stored, so upsert has to raise rather than report success
+    with pytest.raises(ValueError, match="over the 4KB limit"):
         param_store.upsert("/workbench/large_incompressible_value", large_incompressible_value)
-    except Exception as e:
-        print("Caught expected Exception:", e)
 
 
 if __name__ == "__main__":
