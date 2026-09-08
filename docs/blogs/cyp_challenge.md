@@ -122,6 +122,7 @@ Submission files are checked with OpenADMET's own validator, vendored from their
 
 - [OpenADMET CYP Inhibition Blind Challenge](https://huggingface.co/spaces/openadmet/cyp-challenge)
 - [CYP Challenge Tutorial](https://github.com/OpenADMET/CYP-Challenge-Tutorial) — baseline notebooks, scoring harness, submission validators
+- [Building the OpenADMET Data Engine](https://openadmet.github.io/Octant_CYP_blog_post/?ref=openadmet.ghost.io) — Warneford-Thomson, Simpkins, Edgar and MacDermott-Opeskin on the assay platform behind this data: Echo-MS, 1536-well miniaturisation, and why well-level records are released alongside the fitted parameters
 - [A Weekend on the OpenADMET PXR Challenge](pxr_weekend_experiments.md) — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from
 - van Tilborg et al., *Exposing the Limitations of Molecular Machine Learning with Activity Cliffs*, J. Chem. Inf. Model. 2022
 
