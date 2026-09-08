@@ -5374,7 +5374,7 @@
 <h1 id="openadmet-cyp-challenge-working-notes">OpenADMET CYP Challenge — Working Notes</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Current entry</p>
-<p>An average of four multi-task Chemprop models over the challenge data plus public CYP potency, stock hyperparameters, plus a per-isoform placement correction. <strong>Macro ST-RAE 0.4378, rank 1 of 81</strong> as of 2026-08-28.</p>
+<p>An average of four Chemprop models over the challenge data plus public CYP potency, stock hyperparameters, plus a per-isoform placement correction. <strong>Macro ST-RAE 0.4378</strong> on the live half of the test set.</p>
 </div>
 <p><strong>Work in progress.</strong> The <a href="https://huggingface.co/spaces/openadmet/cyp-challenge">OpenADMET CYP Inhibition Blind Challenge</a> (Direct Inhibition track) is still open. The model changes between submissions, and the live leaderboard scores only half the test set. So these are just some early observations that may, or may not, translate well to the final leaderboard.</p>
 <p>Two things carry the entry. First, a multi-task graph model trained on the challenge assay alongside every adjacent public readout we could align, ensembled across architectures. Second, an explicit correction for the distribution shift between the training labels and the blind set.</p>
@@ -5386,11 +5386,11 @@ connectivity blocks so salt and stereo variants match.</p>
   credible intervals for the four scored isoforms, plus adjacent arms of the same assay:
   single-concentration log2fc on 4,375 of them (recorded whether or not a compound
   inhibited), TDI-condition curves, and emax.</li>
-<li><strong>ChEMBL 37</strong> (<a href="https://www.ebi.ac.uk/chembl/">CC BY-SA 3.0</a>) — 24,918 compounds, five
+<li><strong>ChEMBL 37</strong> (<a href="https://www.ebi.ac.uk/chembl/">CC BY-SA 3.0</a>) — 24,918 skeletons, five
   isoforms. Almost entirely new chemistry: 185 structures overlap the challenge deck and
   <strong>zero</strong> overlap the blind set. Potency exists only where a curve was fitted, so nothing
   sits below pIC50 4.0.</li>
-<li><strong>PubChem AID 1851, the Veith qHTS panel</strong> (public domain) — 17,107 compounds in 15-point
+<li><strong>PubChem AID 1851, the Veith qHTS panel</strong> (public domain) — 16,546 compounds in 15-point
   dose-response against five isoforms. We keep <code>max_response</code> rather than its pIC50: it is
   recorded at 100% coverage, so the 42,355 rows the screen called inactive still carry
   signal where a potency-only source drops them.</li>
@@ -5405,7 +5405,7 @@ measurement — though on this challenge it has not moved the scored metric.</p>
 <p>ChEMBL and the qHTS panel are what the current entry uses. The rest of the model section
 explains why they go in as separate heads rather than as extra rows.</p>
 <h2 id="the-model">The Model</h2>
-<p>Four Chemprop D-MPNNs, averaged. All are SMILES-only with stock hyperparameters, trained on the challenge release plus ChEMBL and the NCATS qHTS panel, up to 32,900 compounds and 175,700 labels. They differ in which targets share an encoder.</p>
+<p>Four Chemprop D-MPNNs, averaged. All are SMILES-only with stock hyperparameters, trained on the challenge release plus ChEMBL and the NCATS qHTS panel — 31,670 compounds and 161,400 labels at the current FeatureSet. They differ in which targets share an encoder.</p>
 <table>
 <thead>
 <tr>
@@ -5438,14 +5438,14 @@ explains why they go in as separate heads rather than as extra rows.</p>
 </tbody>
 </table>
 <p>Only the four scored pIC50 heads are ever submitted; the rest exist to shape the representation. The specialists carry no other isoforms, so CYP1A2, CYP2C9 and CYP3A4 average two members and CYP2D6 averages four. Predictions are averaged, then placed.</p>
-<p><strong>Why multi-task.</strong> The isoforms are correlated and the per-isoform data is small, 1,300–2,300 curves each. One encoder learning from all 6,525 measurements is a data-efficiency argument, not a claim that graph learning resolves activity cliffs; on cliffs descriptor models match or beat GNNs, as OpenADMET's own tutorial reports.</p>
+<p><strong>Why multi-task.</strong> The isoforms are correlated and the per-isoform data is small, 1,285–2,335 curves each. One encoder learning from all 6,525 measurements is a data-efficiency argument, not a claim that graph learning resolves activity cliffs; on activity cliffs descriptor models match or beat GNNs (van Tilborg et al.).</p>
 <p><strong>Why auxiliary heads rather than more rows.</strong> Every extra source measures something adjacent to the scored target, not identical to it: the single-concentration arm reports a fold-change, ChEMBL's potency comes from other labs and reads ~0.5 log more potent on shared compounds, and the qHTS panel reports efficacy at the top concentration. Pooling any of them into the scored columns needs a cross-assay correction; as separate heads none is required, since the encoder learns from all of them and each head keeps its own scale.</p>
-<p><strong>Why an ensemble.</strong> Averaging decorrelated models cancels the error that belongs to architecture and training run rather than to the chemistry. Members are chosen for how differently they see the problem, not for how they score alone. The two CYP2D6 specialists earn their slots that way: a different slice of the data, so different compounds missed. The average beats every member it contains, and the gain flattens by the fourth.</p>
+<p><strong>Why an ensemble.</strong> Averaging decorrelated models cancels the error that belongs to architecture and training run rather than to the chemistry. Members are chosen for how differently they see the problem, not for how they score alone. The two CYP2D6 specialists earn their slots that way: a different slice of the data, so different compounds missed. On CYP2D6, where all four members predict and the pool can be scored out of fold, the average beats every member it contains — 0.503 Spearman against 0.445 for the best of them — and the gain flattens by the fourth.</p>
 <p><strong>What the public data contributes.</strong> Breadth, not more labels on the same molecules. ChEMBL is almost entirely chemistry the challenge deck never saw, which is what a shared encoder can use; the qHTS panel is the only source that says anything at all about the compounds that did nothing.</p>
 <h2 id="two-populations">Two Populations</h2>
 <p>The blind set is not a random draw. OpenADMET built it by hit expansion: the top 25 hits for CYP1A2, CYP2C9 and CYP3A4, then the top 10 catalog chemisimilars purchased for each, giving 750 compounds in dense structural clusters around potent molecules.</p>
 <p>Clustered around hits is not the same as active: analogs of a potent compound are mostly not potent, and CYP2D6 was not among the isoforms hits were selected on, so it got no enrichment at all. Every training label meanwhile survived two filters: a compound was screened because someone thought it might be active, and labelled only if its dose-response curve fit. Compounds that did nothing produce no curve and no label.</p>
-<p>The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. The blind population is also <em>wider</em> on all four isoforms. Squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.</p>
+<p>The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. Solved against the blind half afterwards, the true centre is 3.107. The blind population is also <em>wider</em> on all four isoforms. Squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.</p>
 <h2 id="placement">Placement</h2>
 <p>Predictions carry two independent things. Their <strong>order</strong>, which is the model, and their <strong>placement</strong> on the axis, which is not. R² decomposes exactly:</p>
 <div class="arithmatex">\[R^2 = 2\rho k - k^2 - b^2\]</div>
@@ -5457,7 +5457,7 @@ explains why they go in as separate heads rather than as extra rows.</p>
 <p>Placement changes the score on identical weights and an identical ordering. Spearman and Kendall come back bit-identical under an affine transform, which doubles as the integrity check: if they move, the bug is in the submission pipeline.</p>
 <p><strong>The catch.</strong> The placement that maximises R² does not minimise the scored metric. Soft-threshold RAE is zero anywhere inside a compound's credible interval, and low-activity compounds carry wide intervals, so predicting high is nearly free while predicting low is punished by the actives. Placing CYP2D6 on its true centre raises R² and <em>worsens</em> ST-RAE; there the two objectives point in opposite directions.</p>
 <h2 id="open-problems">Open Problems</h2>
-<p><strong>CYP2D6.</strong> The weakest of the four and the only one not at the top of its board. It is the isoform the challenge did not select hits on, so its blind population is the lowest-centred and widest. Its R² sits above the ceiling its own Spearman supports, which happens only when Pearson runs well ahead of rank correlation: the linear fit is fine, and the cost is ordering inside the flat low-activity region where most of its compounds sit.</p>
+<p><strong>CYP2D6.</strong> The weakest of the four by a wide margin. It is the isoform the challenge did not select hits on, so its blind population is the lowest-centred and widest. Its R² sits above the ceiling its own Spearman supports, which happens only when Pearson runs well ahead of rank correlation: the linear fit is fine, and the cost is ordering inside the flat low-activity region where most of its compounds sit.</p>
 <p><strong>Both rulers are underpowered.</strong> Repeated training runs of one configuration at different seeds disagree by more than candidate models do, so out-of-fold cross-validation cannot resolve the differences now being chased. The leaderboard is not much better: a Spearman's standard error is largest where the correlation is weakest, making CYP2D6 the worst-resolved isoform on both. Anything below the noise floor is treated as unmeasured rather than as a result.</p>
 <p><strong>Where the ST-RAE optimum sits.</strong> Known by sampling placements against the board, not derived. A credible-interval width model would give it directly.</p>
 <h2 id="reproducing-this">Reproducing This</h2>
@@ -5470,7 +5470,7 @@ explains why they go in as separate heads rather than as extra rows.</p>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># The four ensemble members, each trained on 100% of the data</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_mt_aux_100.py
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_union.py<span class="w"> </span>--public-weight<span class="w"> </span><span class="m">0</span>.30
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_union.py<span class="w"> </span>--public-weight<span class="w"> </span><span class="m">0</span>.30<span class="w">  </span><span class="c1"># 26 heads now; the entry's member has 18</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_2d6.py<span class="w"> </span>--scope<span class="w"> </span>isoform
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_2d6.py<span class="w"> </span>--scope<span class="w"> </span>single
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
@@ -5483,6 +5483,7 @@ explains why they go in as separate heads rather than as extra rows.</p>
 <ul>
 <li><a href="https://huggingface.co/spaces/openadmet/cyp-challenge">OpenADMET CYP Inhibition Blind Challenge</a></li>
 <li><a href="https://github.com/OpenADMET/CYP-Challenge-Tutorial">CYP Challenge Tutorial</a> — baseline notebooks, scoring harness, submission validators</li>
+<li><a href="https://openadmet.github.io/Octant_CYP_blog_post/?ref=openadmet.ghost.io">Building the OpenADMET Data Engine</a> — Warneford-Thomson, Simpkins, Edgar and MacDermott-Opeskin on the assay platform behind this data: Echo-MS, 1536-well miniaturisation, and why well-level records are released alongside the fitted parameters</li>
 <li><a href="../pxr_weekend_experiments/">A Weekend on the OpenADMET PXR Challenge</a> — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from</li>
 <li>van Tilborg et al., <em>Exposing the Limitations of Molecular Machine Learning with Activity Cliffs</em>, J. Chem. Inf. Model. 2022</li>
 </ul>
