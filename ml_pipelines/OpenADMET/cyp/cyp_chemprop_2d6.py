@@ -28,6 +28,36 @@ inherent to the comparison rather than a flaw, but it is not seed-for-seed.
 If neither scope moves CYP2D6, representation sharing is not the problem and the remaining
 hypothesis is features -- which is where the XGB-on-descriptors tie points.
 
+`--foundation` swaps the from-scratch encoder for CheMeleon, a D-MPNN pretrained on Mordred
+descriptors over 1M PubChem molecules. Four mechanisms have now failed to move the sub-4.0
+band -- auxiliary heads, loss weighting, pooled public labels, a second assay arm -- and the
+last one matched the direct model everywhere else while failing there, which points at the
+representation rather than the target or the loss. CheMeleon's own headline is a 97% win rate
+on MoleculeACE, an activity-cliff benchmark: similar structures, different potency, which is
+the discrimination we lack.
+
+`--freeze-epochs` holds the pretrained encoder fixed before fine-tuning it. At 1,493 rows
+fine-tuning a large pretrained D-MPNN end to end will overfit, so read the two points
+together:
+
+    --foundation --freeze-epochs 0     fine-tune throughout
+    --foundation --freeze-epochs 10    fit the head first, then adapt the encoder
+
+`--scope tdi` trains on the +NADPH arm instead of the scored one and is then graded against
+the scored labels, which sounds perverse and is the point. The two arms are separate curve
+fits of the same molecules, and the TDI arm's fitted pIC50 ranks the scored labels below 4.0
+at Spearman 0.679 where log2fc manages 0.037 -- a full dose-response keeps resolving potency
+where a single-concentration readout has run out of range. That 0.679 is agreement between
+two measurements, not something reachable from structure; the union model's TDI head, one of
+26 at auxiliary weight 0.30, recovers 0.194 of it. What makes it worth a build anyway is that
+0.194 still ranks the sub-4.0 scored labels better than the direct model's own -0.011, from a
+head nobody optimised. The plausible mechanism is dynamic range: a head fit to the arm that
+still varies down there cannot shrink the low end away.
+
+Read `cyp_compare.py --bands`, which grades any CYP2D6 model against the scored labels
+whatever column it trained on. Only the band Spearmans mean anything here -- the arms sit on
+different scales, so ST-RAE and MAE do not transfer.
+
 `--low-weight` and `--deep-weight` re-weight the low band via `sample_weights`, which chemprop
 applies per datapoint: the 479 rows under pIC50 4.5, and the 129 under 4.0 separately. Both
 degrade CYP2D6, monotonically in the share of the loss the 4.0-4.5 rows take -- 0.388
@@ -91,6 +121,8 @@ AUX_WEIGHT = 0.3  # the value the auxiliary heads were validated at elsewhere
 # Built by cyp_union_features.py: the challenge labels with public potency shifted onto the
 # same scale filling the gaps, plus a flag marking which rows came from the fill.
 POOLED_TARGET = "cyp2d6_pic50_pooled"
+# The +NADPH arm: the same molecules through the same dose-response design, fitted separately.
+TDI_TARGET = "cyp2d6_pic50_tdi_condition"
 POOLED_FLAG = "cyp2d6_pooled_public"
 # Below this the model cannot order compounds (out-of-fold Spearman 0.159 against 0.383
 # above). 4.5 rather than 4.0: the sub-4.0 set is 129 rows, too few to learn an ordering
@@ -103,9 +135,21 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--scope",
     required=True,
-    choices=["single", "isoform", "pooled"],
+    choices=["single", "isoform", "pooled", "tdi"],
     help="'single' trains on the scored target alone; 'isoform' adds every CYP2D6 readout; "
-    "'pooled' puts offset-corrected public measurements into the scored column",
+    "'pooled' puts offset-corrected public measurements into the scored column; "
+    "'tdi' trains on the TDI arm instead, to be scored against the direct labels",
+)
+parser.add_argument(
+    "--foundation",
+    action="store_true",
+    help="Start from the CheMeleon pretrained encoder instead of training one from scratch",
+)
+parser.add_argument(
+    "--freeze-epochs",
+    type=int,
+    default=10,
+    help="Epochs to hold the pretrained encoder frozen before fine-tuning it (--foundation)",
 )
 parser.add_argument(
     "--public-weight",
@@ -127,6 +171,10 @@ parser.add_argument(
     f"band a flat step; raise it to favour the half of the band whose labels carry spread",
 )
 args = parser.parse_args()
+if args.freeze_epochs < 0:
+    parser.error("--freeze-epochs cannot be negative")
+if args.freeze_epochs != parser.get_default("freeze_epochs") and not args.foundation:
+    parser.error("--freeze-epochs only applies with --foundation")
 if args.low_weight <= 0:
     parser.error("--low-weight must be positive")
 if args.deep_weight is not None and args.deep_weight <= 0:
@@ -135,6 +183,8 @@ deep_weight = args.low_weight if args.deep_weight is None else args.deep_weight
 weighted = args.low_weight != 1.0 or deep_weight != 1.0
 
 model_name = f"cyp-reg-chemprop-2d6-{args.scope}"
+if args.foundation:
+    model_name += f"-chemeleon-fz{args.freeze_epochs}"
 if args.scope == "pooled" and args.public_weight != 1.0:
     model_name += f"-pw{args.public_weight:g}".replace(".", "p")
 if weighted:
@@ -145,6 +195,8 @@ if args.scope == "pooled":
     targets = [POOLED_TARGET]
 elif args.scope == "single":
     targets = [TARGET]
+elif args.scope == "tdi":
+    targets = [TDI_TARGET]
 else:
     targets = [TARGET] + ISOFORM_AUX
 
@@ -175,6 +227,9 @@ for t in targets:
     print(f"  {t:<45}{int(df[t].notna().sum()):>7,}")
 
 hyperparameters = {"uq_version": "v1"}
+if args.foundation:
+    hyperparameters["from_foundation"] = "CheMeleon"
+    hyperparameters["freeze_mpnn_epochs"] = args.freeze_epochs
 if len(targets) > 1:
     hyperparameters["task_weights"] = [1.0] + [AUX_WEIGHT] * len(ISOFORM_AUX)
 
