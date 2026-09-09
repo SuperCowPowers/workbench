@@ -5381,7 +5381,7 @@
 <img src="../../images/uq_v1_training.svg" alt="Fitting UQ v1: cross-validated residuals train the error model, out-of-fold estimates calibrate it" style="width: 100%; height: auto;">
 </figure>
 
-<p>The two tracks are the part to notice. The <strong>error model</strong> is the forest that ships. The <strong>calibration model</strong> is the same fit done out-of-fold, five forests that each score only the rows they didn't train on, and it exists purely to produce honest numbers for Steps 3 and 4 before being thrown away.</p>
+<p>The two tracks are the part to notice. The <strong>error model</strong> is the forest that ships and scores new compounds. The <strong>calibration model</strong> is the same fit done out-of-fold, five forests that each score only the rows they didn't train on. Those forests are discarded once fitting ends; their estimates are what Steps 3 and 4 calibrate against, and what the cross-fold capture reports.</p>
 <h2 id="step-1-neighborhood-residual-features">Step 1: Neighborhood Residual Features</h2>
 <p>For each compound, v1 computes five scalar features that describe its local context in the training set (via a fingerprint <code>Proximity</code> backend). The first two are the ensemble signals; the last three come from the <em>k</em> nearest training neighbors (default k=10):</p>
 <table style="width: 100%;">
@@ -5435,12 +5435,12 @@ q_\alpha &amp;= \mathrm{Quantile}_\alpha\bigl(\{s_i\}\bigr) \\[6pt]
 
 <p>The multiplier is shared by every compound; the width isn't. A 90% interval is 1.8 times whatever the error model expects for <em>that</em> molecule, so the same <span class="arithmatex">\(q_\alpha\)</span> produces a tight interval on a well-supported prediction and a wide one on a shaky one.</p>
 <p>The <code>expected_residual</code> values feeding those quantiles come from the <strong>calibration model</strong>, not the shipped error model. Conformal coverage assumes the calibration scores are exchangeable with what you'll see at inference, and that holds only when the denominator came from a forest that never saw the row.</p>
-<p>Measure coverage on held-out data. On the cross-fold rows themselves the shipped error model supplies the denominator for rows it trained on, so any figure computed there is uninformative.</p>
+<p>The cross-fold capture reports those same calibration estimates, so its <code>confidence</code>, <code>expected_residual</code> and intervals are out-of-fold alongside its out-of-fold predictions. They run slightly pessimistic, since each estimate comes from a forest fit on 4/5 of the rows. That is the direction to err in, and the same trade the out-of-fold predictions themselves make. The shipped error model is what scores new compounds at inference.</p>
 <p>Because <code>expected_residual</code> varies per-compound, intervals are <strong>sharp where the model is confident and wide where it isn't</strong>. Scale factors are computed once per level (50%, 68%, 80%, 90%, 95%) and stored, so inference is a single multiply.</p>
 <h2 id="step-4-residual-aware-confidence">Step 4: Residual-Aware Confidence</h2>
 <p>The scalar confidence score ranks a prediction's <strong>expected residual</strong> against the percentile ladder stored at training time:</p>
 <div class="arithmatex">\[\mathrm{confidence} = 1 - \mathrm{PercentileRank}(\hat{r}) \;\in\; [0, 1]\]</div>
-<p><strong>Interpretation:</strong> confidence of 0.7 means "this prediction's expected error is lower than 70% of cal-set predictions." Unlike the naïve std-percentile, this is a <em>probabilistically meaningful</em> statement, and two compounds with identical std but different neighborhoods now get different confidence, which is the correct behavior.</p>
+<p><strong>Interpretation:</strong> confidence of 0.7 means "this prediction's expected error is lower than 70% of cal-set predictions." Because the score reads the error model's estimate rather than std alone, two compounds with identical std but different neighborhoods receive different confidence.</p>
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/confidence_percentile.svg" alt="Residual-aware confidence: same std means different expected error depending on prediction band" style="width: 100%; height: auto;">
 </figure>
