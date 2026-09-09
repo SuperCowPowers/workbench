@@ -22,6 +22,17 @@ DAG construction is explicit::
     dag.set_output_node("combine")
     dag.validate()
 
+An endpoint can declare which prediction head(s) it owns, and then
+contributes only those columns::
+
+    dag.add_endpoint("cl-mouse-reg-1", targets=["log_cl"])
+
+A multi-task child then contributes one head's worth of columns instead of all
+of them. Omit ``targets`` to take the endpoint's whole output. Two nodes
+claiming the same target is an error rather than a silent first-branch-wins,
+and :meth:`MetaEndpointDAG.output_columns` gives the resulting column contract
+without deploying anything.
+
 Row-alignment across parallel branches: the walker injects a synthetic
 :data:`DAG_ROW_ID` column at the start of every ``run()`` and strips it
 before returning. Aggregation nodes use it as the join key, so callers
@@ -34,13 +45,30 @@ before any inference round-trips.
 from __future__ import annotations
 
 import json
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
 
 from workbench.utils.aggregation_nodes import DAG_ROW_ID, AggregationNode
 
 EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
+
+
+def select_target_columns(columns: List[str], targets: List[str], context: str) -> List[str]:
+    """Keep only the columns belonging to ``targets`` (``<target>`` or ``<target>_*``).
+
+    The single definition of what a declared head owns — used both for the
+    static column contract (:meth:`MetaEndpointDAG.output_columns`) and for
+    trimming an endpoint's actual output at run time.
+
+    Raises:
+        ValueError: ``columns`` is non-empty but nothing matches — a declared
+            target that owns no columns is a typo, not an empty branch.
+    """
+    kept = [c for c in columns if any(c == t or c.startswith(f"{t}_") for t in targets)]
+    if columns and not kept:
+        raise ValueError(f"{context}: declared targets {targets} match none of {columns}")
+    return kept
 
 
 class MetaEndpointDAG:
@@ -53,6 +81,7 @@ class MetaEndpointDAG:
 
     def __init__(self):
         self._endpoints: Dict[str, str] = {}  # node_name → endpoint_name
+        self._declared_targets: Dict[str, List[str]] = {}  # node_name → head(s) this node owns
         self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_child_metadata()
         self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._endpoint_max_instances: Dict[str, int] = {}  # populated by populate_child_metadata()
@@ -65,11 +94,20 @@ class MetaEndpointDAG:
     # Construction
     # ------------------------------------------------------------------
 
-    def add_endpoint(self, endpoint_name: str, node_name: Optional[str] = None) -> str:
+    def add_endpoint(
+        self, endpoint_name: str, targets: Optional[List[str]] = None, node_name: Optional[str] = None
+    ) -> str:
         """Add an endpoint reference to the DAG.
 
         Args:
             endpoint_name: Name of a deployed Workbench endpoint.
+            targets: The prediction head(s) this node contributes. Only those
+                heads' columns (``<target>_pred``, ``<target>_confidence``,
+                quantiles, ...) flow downstream; every other head and the
+                unprefixed generic aliases (``prediction``, ``confidence``,
+                ``q_*``) are dropped. Omit to take the endpoint's whole output
+                — right for feature endpoints and for a single-task child whose
+                heads can't collide with anything else in the DAG.
             node_name: Optional unique node name (defaults to ``endpoint_name``).
 
         Returns:
@@ -79,6 +117,8 @@ class MetaEndpointDAG:
         if node in self._endpoints or node in self._aggregations:
             raise ValueError(f"Node '{node}' already exists in this DAG")
         self._endpoints[node] = endpoint_name
+        if targets:
+            self._declared_targets[node] = list(targets)
         return node
 
     def add_aggregation(self, node: AggregationNode) -> str:
@@ -131,6 +171,11 @@ class MetaEndpointDAG:
     def endpoints(self) -> Dict[str, str]:
         """Mapping of node_name → endpoint_name (read-only view)."""
         return self._endpoints
+
+    @property
+    def declared_targets(self) -> Dict[str, List[str]]:
+        """Mapping of node_name → declared target head(s) (read-only view)."""
+        return self._declared_targets
 
     @property
     def aggregations(self) -> Dict[str, AggregationNode]:
@@ -218,6 +263,40 @@ class MetaEndpointDAG:
                     cols.append(c)
         return cols
 
+    def output_columns(self) -> List[str]:
+        """Columns the DAG adds, as declared by its nodes — no inference required.
+
+        Walks the topology feeding each endpoint's registered
+        :meth:`Endpoint.output_columns` into each aggregation's
+        :meth:`AggregationNode.output_columns`. A node with declared
+        ``targets`` contributes only those heads' columns.
+
+        The caller's own input columns pass through and are not listed, matching
+        :meth:`Endpoint.output_columns` semantics. Size a panel before deploying
+        it with ``len(dag.output_columns())``.
+        """
+        from workbench.api import Endpoint
+
+        if self._output_node is None:
+            raise ValueError("DAG has no output node — call set_output_node() first")
+
+        node_columns: Dict[str, List[str]] = {}
+        for node in self.topological_order():
+            if node in self._endpoints:
+                endpoint_name = self._endpoints[node]
+                cols = list(Endpoint(endpoint_name).output_columns())
+                targets = self._declared_targets.get(node)
+                if targets:
+                    cols = select_target_columns(cols, targets, f"Node '{node}' (endpoint '{endpoint_name}')")
+                parents = self._parents_of(node)
+                upstream = node_columns[parents[0]] if parents else []
+                node_columns[node] = upstream + [c for c in cols if c not in upstream]
+            else:
+                agg = self._aggregations[node]
+                node_columns[node] = agg.output_columns([node_columns[p] for p in self._parents_of(node)])
+
+        return node_columns[self._output_node]
+
     # ------------------------------------------------------------------
     # Validation
     # ------------------------------------------------------------------
@@ -232,6 +311,11 @@ class MetaEndpointDAG:
           - Endpoint nodes are either input nodes (zero parents) or have
             exactly one upstream parent — never both
           - The output node is reachable from the input nodes
+          - No two nodes declare the same target head
+
+        Topology only — no AWS round-trips. A declared head colliding with an
+        *undeclared* child's heads needs those children's targets, so it
+        surfaces in :meth:`terminal_target` instead.
         """
         if not self._input_nodes:
             raise ValueError("DAG has no input nodes")
@@ -257,6 +341,16 @@ class MetaEndpointDAG:
         for name in self._aggregations:
             if not self._parents_of(name):
                 raise ValueError(f"Aggregation node '{name}' has no upstream parents")
+
+        owner: Dict[str, str] = {}
+        for node, targets in self._declared_targets.items():
+            for target in targets:
+                if target in owner:
+                    raise ValueError(
+                        f"Nodes '{owner[target]}' and '{node}' both declare target '{target}' — "
+                        f"a target can be owned by only one node."
+                    )
+                owner[target] = node
 
         reachable = set(self._input_nodes)
         for node in order:
@@ -352,6 +446,12 @@ class MetaEndpointDAG:
         endpoint round-trip so downstream aggregation nodes can join on
         it. If an endpoint silently strips unknown input columns, this
         will fail loudly — better than misaligned rows.
+
+        A node with declared ``targets`` is trimmed to those heads: every
+        column the endpoint added that isn't ``<target>`` or ``<target>_*``
+        is dropped, so a multi-task child contributes one head's worth of
+        columns instead of all of them. Passthrough columns are never
+        touched.
         """
         endpoint_name = self._endpoints[node]
         parents = self._parents_of(node)
@@ -371,7 +471,26 @@ class MetaEndpointDAG:
                 f"without it. Endpoints must pass unknown input columns through to "
                 f"their output."
             )
+
+        declared = self._declared_targets.get(node)
+        if declared:
+            result = self._trim_to_targets(node, endpoint_name, source_df, result, declared)
         return result
+
+    @staticmethod
+    def _trim_to_targets(
+        node: str,
+        endpoint_name: str,
+        source_df: pd.DataFrame,
+        result: pd.DataFrame,
+        targets: List[str],
+    ) -> pd.DataFrame:
+        """Drop every column the endpoint added except the declared heads'."""
+        passthrough = set(source_df.columns) | {DAG_ROW_ID}
+        added = [c for c in result.columns if c not in passthrough]
+        kept = select_target_columns(added, targets, f"Node '{node}' (endpoint '{endpoint_name}')")
+        keep = passthrough | set(kept)
+        return result[[c for c in result.columns if c in keep]]
 
     def _run_aggregation(self, node: str, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single aggregation node."""
@@ -397,6 +516,7 @@ class MetaEndpointDAG:
         """
         return {
             "endpoints": dict(self._endpoints),
+            "endpoint_targets": {node: list(t) for node, t in self._declared_targets.items()},
             "endpoint_async": dict(self._endpoint_async_flags),
             "endpoint_batch_size": dict(self._endpoint_batch_sizes),
             "aggregations": [_serialize_aggregation(a) for a in self._aggregations.values()],
@@ -450,54 +570,79 @@ class MetaEndpointDAG:
             self.populate_child_metadata()
         return any(self._endpoint_async_flags.values())
 
-    def terminal_target(self) -> Optional[str]:
-        """Target column the DAG ultimately predicts, or ``None`` for feature pipelines.
+    def terminal_target(self) -> Optional[Union[str, List[str]]]:
+        """Target column(s) the DAG ultimately predicts, or ``None`` for feature pipelines.
 
-        - Output is an endpoint → return its model's target.
-        - Output is an aggregation → walk back to the closest endpoint(s),
-          collect their targets. Returns the unique target if all agree;
-          ``None`` if zero predictors are upstream or their targets disagree.
+        - Output is an endpoint → its targets.
+        - Output is an aggregation → walk back to the closest endpoint(s) and
+          union their targets in branch order.
+
+        A node's targets are the ones declared on :meth:`add_endpoint`, else
+        every head its model predicts. Returns a bare string for a single
+        target, a list for a panel, and ``None`` when nothing upstream predicts
+        anything (a feature pipeline).
 
         Used by :meth:`MetaEndpoint._derive_lineage` to anchor the meta's
         ``target_column`` on what the DAG actually predicts rather than
         inheriting from the (possibly target-less) input endpoint.
+
+        Raises:
+            ValueError: Two upstream nodes claim the same target. Declare
+                ``targets=`` on :meth:`add_endpoint` to say which one owns it.
         """
         from workbench.api import Endpoint, Model
 
-        def _target_of(ep_name: str) -> Optional[str]:
-            ep = Endpoint(ep_name)
+        def _targets_of(node: str) -> List[str]:
+            declared = self._declared_targets.get(node)
+            if declared:
+                return declared
+            ep = Endpoint(self._endpoints[node])
             if not ep.exists():
-                return None
-            return Model(ep.get_input()).target()
+                return []
+            target = Model(ep.get_input()).target()
+            if not target:
+                return []
+            return list(target) if isinstance(target, list) else [target]
 
         if self._output_node in self._endpoints:
-            return _target_of(self._endpoints[self._output_node])
+            predictors = [self._output_node]
+        else:
+            # Aggregation output — BFS back until we hit endpoints, in branch order.
+            predictors = []
+            seen: set = set()
+            queue: List[str] = list(self._parents_of(self._output_node))
+            while queue:
+                node = queue.pop(0)
+                if node in seen:
+                    continue
+                seen.add(node)
+                if node in self._endpoints:
+                    predictors.append(node)
+                else:
+                    queue.extend(self._parents_of(node))
 
-        # Aggregation output — BFS back until we hit endpoints, collecting targets.
-        targets: set = set()
-        seen: set = set()
-        queue: List[str] = list(self._parents_of(self._output_node))
-        while queue:
-            node = queue.pop(0)
-            if node in seen:
-                continue
-            seen.add(node)
-            if node in self._endpoints:
-                t = _target_of(self._endpoints[node])
-                if t:
-                    targets.add(t)
-            else:
-                queue.extend(self._parents_of(node))
+        targets: List[str] = []
+        owner: Dict[str, str] = {}
+        for node in predictors:
+            for target in _targets_of(node):
+                if target in owner:
+                    raise ValueError(
+                        f"Nodes '{owner[target]}' and '{node}' both predict '{target}'. Declare "
+                        f"targets= on add_endpoint() to say which node owns it."
+                    )
+                owner[target] = node
+                targets.append(target)
 
-        if len(targets) == 1:
-            return targets.pop()
-        return None
+        if not targets:
+            return None
+        return targets[0] if len(targets) == 1 else targets
 
     @classmethod
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
         dag = cls()
+        declared = data.get("endpoint_targets", {})
         for node_name, endpoint_name in data.get("endpoints", {}).items():
-            dag.add_endpoint(endpoint_name, node_name=node_name)
+            dag.add_endpoint(endpoint_name, declared.get(node_name), node_name=node_name)
         dag._endpoint_async_flags = dict(data.get("endpoint_async", {}))
         dag._endpoint_batch_sizes = {k: int(v) for k, v in data.get("endpoint_batch_size", {}).items()}
         for agg_data in data.get("aggregations", []):

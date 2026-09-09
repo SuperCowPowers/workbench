@@ -187,6 +187,18 @@ class MetaEndpoint(Endpoint):
             }
         )
 
+        # The DAG already knows its column contract, so register it directly.
+        # Auto-discovery would fan out a live inference across every child just
+        # to diff what came back. A failure here costs only the warm cache —
+        # `Endpoint.output_columns()` re-derives on demand — so it must not
+        # take down an endpoint that's already deployed and serving.
+        from workbench.utils.endpoint_utils import register_output_columns
+
+        try:
+            register_output_columns(endpoint, dag.output_columns())
+        except Exception as e:
+            log.warning(f"MetaEndpoint '{name}': could not register output columns ({e})")
+
         log.important(f"MetaEndpoint '{name}' created successfully!")
         return cls(name)
 
@@ -220,7 +232,7 @@ class MetaEndpoint(Endpoint):
         return ModelType.REGRESSOR
 
     @classmethod
-    def _derive_lineage(cls, dag: MetaEndpointDAG) -> tuple[list[str], str, str | None]:
+    def _derive_lineage(cls, dag: MetaEndpointDAG) -> tuple[list[str], str, str | list[str] | None]:
         """Derive a (feature_list, feature_set_name, target_column) tuple for the meta.
 
         Workbench Models need to trace back to a FeatureSet, and downstream
@@ -237,7 +249,8 @@ class MetaEndpoint(Endpoint):
             which walks back from the output node to the closest predictor
             endpoint(s) so mixed DAGs (smiles → features → predictor) report
             what the meta actually predicts, not what the input endpoint
-            happens to produce.
+            happens to produce. A panel over several predictors reports the
+            list of targets it covers.
         """
         if not dag.input_nodes:
             raise ValueError("DAG has no input nodes — cannot derive lineage")

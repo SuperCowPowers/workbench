@@ -73,6 +73,32 @@ def _patch_endpoints(monkeypatch, endpoints: dict[str, _FakeEndpoint]):
     monkeypatch.setattr(workbench_api, "Endpoint", fake_endpoint)
 
 
+def _patch_targets(monkeypatch, targets: dict[str, str | list[str] | None]):
+    """Stub ``Endpoint``/``Model`` resolution so ``terminal_target`` can read an
+    undeclared child's target(s) without AWS."""
+    import workbench.api as workbench_api
+
+    class _FakeEP:
+        def __init__(self, name):
+            self.name = name
+
+        def exists(self):
+            return self.name in targets
+
+        def get_input(self):
+            return self.name
+
+    class _FakeModel:
+        def __init__(self, name):
+            self.name = name
+
+        def target(self):
+            return targets[self.name]
+
+    monkeypatch.setattr(workbench_api, "Endpoint", _FakeEP)
+    monkeypatch.setattr(workbench_api, "Model", _FakeModel)
+
+
 # ---------------------------------------------------------------------------
 # Construction + validation
 # ---------------------------------------------------------------------------
@@ -476,6 +502,208 @@ def test_run_with_custom_endpoint_invoker():
 
     # Concat merged the invoker's outputs.
     assert {"id", "smiles", "out_ep-a", "out_ep-b"}.issubset(out.columns)
+
+
+# ---------------------------------------------------------------------------
+# Multi-task children (declared targets)
+# ---------------------------------------------------------------------------
+
+
+def _mt_panel_dag(cl_targets=None, vd_targets=None):
+    """Vd (single-task) + CL (multi-task) -> Concat."""
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("vd-ep", targets=vd_targets)
+    dag.add_endpoint("cl-ep", targets=cl_targets)
+    dag.add_aggregation(Concat(name="panel"))
+    dag.add_edge("vd-ep", "panel")
+    dag.add_edge("cl-ep", "panel")
+    dag.set_input_node("vd-ep", "cl-ep")
+    dag.set_output_node("panel")
+    return dag
+
+
+def _mt_panel_invoker(endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+    """Vd emits one head; CL emits three heads plus the generic aliases."""
+    out = df.reset_index(drop=True).copy()
+    if endpoint_name == "vd-ep":
+        heads = ["log_vd"]
+    else:
+        heads = ["log_cl", "log_vd", "logp"]
+    for head in heads:
+        out[f"{head}_pred"] = [1.0] * len(out)
+        out[f"{head}_confidence"] = [0.9] * len(out)
+    out["prediction"] = out[f"{heads[0]}_pred"]
+    out["confidence"] = out[f"{heads[0]}_confidence"]
+    return out
+
+
+def test_declared_targets_trim_multi_task_child():
+    dag = _mt_panel_dag(cl_targets=["log_cl"]).validate()
+    out = dag.run(pd.DataFrame({"smiles": ["CCO", "CCN"]}), endpoint_invoker=_mt_panel_invoker)
+
+    # The CL child contributes only its declared head.
+    assert {"log_cl_pred", "log_cl_confidence"}.issubset(out.columns)
+    assert not any(c.startswith(("logp_", "log_cl_pred_std")) for c in out.columns)
+
+    # log_vd belongs to the dedicated Vd child, not the CL child's aux head.
+    assert {"log_vd_pred", "log_vd_confidence"}.issubset(out.columns)
+
+    # Generic aliases survive only from the untrimmed (Vd) branch.
+    assert {"prediction", "confidence"}.issubset(out.columns)
+
+    # Passthrough is untouched.
+    assert "smiles" in out.columns
+
+
+def test_declared_targets_drop_generic_aliases_on_trimmed_child():
+    """A trimmed child contributes no unprefixed aliases, so nothing collides."""
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("cl-ep", targets=["log_cl"])
+    dag.add_aggregation(Concat(name="panel"))
+    dag.add_edge("cl-ep", "panel")
+    dag.set_input_node("cl-ep")
+    dag.set_output_node("panel")
+    dag.validate()
+
+    out = dag.run(pd.DataFrame({"smiles": ["CCO"]}), endpoint_invoker=_mt_panel_invoker)
+    assert set(out.columns) == {"smiles", "log_cl_pred", "log_cl_confidence"}
+
+
+def test_declared_target_with_no_matching_columns_raises():
+    dag = _mt_panel_dag(cl_targets=["log_typo"]).validate()
+    with pytest.raises(ValueError, match="match none of"):
+        dag.run(pd.DataFrame({"smiles": ["CCO"]}), endpoint_invoker=_mt_panel_invoker)
+
+
+# ---------------------------------------------------------------------------
+# Static column contract
+# ---------------------------------------------------------------------------
+
+
+def _patch_output_columns(monkeypatch, columns: dict[str, list[str]]):
+    """Stub ``Endpoint`` resolution so ``output_columns`` can read each child's
+    registered columns without AWS."""
+    import workbench.api as workbench_api
+
+    class _FakeEP:
+        def __init__(self, name):
+            self.name = name
+
+        def output_columns(self):
+            return list(columns[self.name])
+
+    monkeypatch.setattr(workbench_api, "Endpoint", _FakeEP)
+
+
+_VD_COLS = ["log_vd_pred", "log_vd_confidence", "prediction", "confidence"]
+_CL_COLS = [
+    "log_cl_pred",
+    "log_cl_confidence",
+    "log_vd_pred",
+    "log_vd_confidence",
+    "logp_pred",
+    "logp_confidence",
+    "prediction",
+    "confidence",
+]
+
+
+def test_output_columns_trims_declared_child(monkeypatch):
+    dag = _mt_panel_dag(cl_targets=["log_cl"]).validate()
+    _patch_output_columns(monkeypatch, {"vd-ep": _VD_COLS, "cl-ep": _CL_COLS})
+    assert dag.output_columns() == _VD_COLS + ["log_cl_pred", "log_cl_confidence"]
+
+
+def test_output_columns_untrimmed_is_first_branch_wins(monkeypatch):
+    """Without declared targets, Concat's dedup decides — the CL child's aux
+    log_vd and the generic aliases lose to the Vd branch."""
+    dag = _mt_panel_dag().validate()
+    _patch_output_columns(monkeypatch, {"vd-ep": _VD_COLS, "cl-ep": _CL_COLS})
+    assert dag.output_columns() == _VD_COLS + [
+        "log_cl_pred",
+        "log_cl_confidence",
+        "logp_pred",
+        "logp_confidence",
+    ]
+
+
+def test_output_columns_chains_through_feature_endpoint(monkeypatch):
+    """A predictor downstream of a feature endpoint reports both sets."""
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("features-ep")
+    dag.add_endpoint("vd-ep")
+    dag.add_edge("features-ep", "vd-ep")
+    dag.set_input_node("features-ep")
+    dag.set_output_node("vd-ep")
+    dag.validate()
+    _patch_output_columns(monkeypatch, {"features-ep": ["mw", "logp"], "vd-ep": _VD_COLS})
+    assert dag.output_columns() == ["mw", "logp"] + _VD_COLS
+
+
+def test_output_columns_rejects_typo_target(monkeypatch):
+    dag = _mt_panel_dag(cl_targets=["log_typo"]).validate()
+    _patch_output_columns(monkeypatch, {"vd-ep": _VD_COLS, "cl-ep": _CL_COLS})
+    with pytest.raises(ValueError, match="match none of"):
+        dag.output_columns()
+
+
+def test_validate_rejects_duplicate_declared_targets():
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("ep-a", targets=["log_vd"])
+    dag.add_endpoint("ep-b", targets=["log_vd"])
+    dag.add_aggregation(Concat(name="panel"))
+    dag.add_edge("ep-a", "panel")
+    dag.add_edge("ep-b", "panel")
+    dag.set_input_node("ep-a", "ep-b")
+    dag.set_output_node("panel")
+    with pytest.raises(ValueError, match="both declare target 'log_vd'"):
+        dag.validate()
+
+
+def _single_predictor_dag(targets=None):
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("vd-ep", targets=targets)
+    dag.add_aggregation(Concat(name="panel"))
+    dag.add_edge("vd-ep", "panel")
+    dag.set_input_node("vd-ep")
+    dag.set_output_node("panel")
+    return dag.validate()
+
+
+def test_terminal_target_mixes_declared_and_looked_up(monkeypatch):
+    """The declared CL head plus the undeclared Vd child's own target."""
+    dag = _mt_panel_dag(cl_targets=["log_cl"])
+    _patch_targets(monkeypatch, {"vd-ep": "log_vd"})
+    assert dag.terminal_target() == ["log_vd", "log_cl"]
+
+
+def test_terminal_target_declared_needs_no_lookup():
+    """Every node declaring its targets keeps terminal_target off AWS."""
+    dag = _mt_panel_dag(cl_targets=["log_cl"], vd_targets=["log_vd"])
+    assert dag.terminal_target() == ["log_vd", "log_cl"]
+
+
+def test_terminal_target_single_predictor_returns_string():
+    assert _single_predictor_dag(["log_vd"]).terminal_target() == "log_vd"
+
+
+def test_terminal_target_none_for_feature_pipeline(monkeypatch):
+    _patch_targets(monkeypatch, {"vd-ep": None})
+    assert _single_predictor_dag().terminal_target() is None
+
+
+def test_terminal_target_raises_on_undeclared_collision(monkeypatch):
+    """CL's aux log_vd head collides with the dedicated Vd child."""
+    dag = _mt_panel_dag()
+    _patch_targets(monkeypatch, {"vd-ep": "log_vd", "cl-ep": ["log_cl", "log_vd", "logp"]})
+    with pytest.raises(ValueError, match="both predict 'log_vd'"):
+        dag.terminal_target()
+
+
+def test_declared_targets_survive_serialization():
+    dag = _mt_panel_dag(cl_targets=["log_cl"])
+    restored = MetaEndpointDAG.from_json(dag.to_json())
+    assert restored.declared_targets == {"cl-ep": ["log_cl"]}
 
 
 if __name__ == "__main__":
