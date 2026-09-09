@@ -74,7 +74,7 @@ Almost all of the machinery is in the fitting, so that's what's worth walking th
 <img src="../../images/uq_v1_training.svg" alt="Fitting UQ v1: cross-validated residuals train the error model, out-of-fold estimates calibrate it" style="width: 100%; height: auto;">
 </figure>
 
-The two tracks are the part to notice. The **error model** is the forest that ships. The **calibration model** is the same fit done out-of-fold, five forests that each score only the rows they didn't train on, and it exists purely to produce honest numbers for Steps 3 and 4 before being thrown away.
+The two tracks are the part to notice. The **error model** is the forest that ships and scores new compounds. The **calibration model** is the same fit done out-of-fold, five forests that each score only the rows they didn't train on. Those forests are discarded once fitting ends; their estimates are what Steps 3 and 4 calibrate against, and what the cross-fold capture reports.
 
 ## Step 1: Neighborhood Residual Features
 
@@ -141,7 +141,7 @@ The multiplier is shared by every compound; the width isn't. A 90% interval is 1
 
 The `expected_residual` values feeding those quantiles come from the **calibration model**, not the shipped error model. Conformal coverage assumes the calibration scores are exchangeable with what you'll see at inference, and that holds only when the denominator came from a forest that never saw the row.
 
-Measure coverage on held-out data. On the cross-fold rows themselves the shipped error model supplies the denominator for rows it trained on, so any figure computed there is uninformative.
+The cross-fold capture reports those same calibration estimates, so its `confidence`, `expected_residual` and intervals are out-of-fold alongside its out-of-fold predictions. They run slightly pessimistic, since each estimate comes from a forest fit on 4/5 of the rows. That is the direction to err in, and the same trade the out-of-fold predictions themselves make. The shipped error model is what scores new compounds at inference.
 
 Because `expected_residual` varies per-compound, intervals are **sharp where the model is confident and wide where it isn't**. Scale factors are computed once per level (50%, 68%, 80%, 90%, 95%) and stored, so inference is a single multiply.
 
@@ -151,7 +151,7 @@ The scalar confidence score ranks a prediction's **expected residual** against t
 
 $$\mathrm{confidence} = 1 - \mathrm{PercentileRank}(\hat{r}) \;\in\; [0, 1]$$
 
-**Interpretation:** confidence of 0.7 means "this prediction's expected error is lower than 70% of cal-set predictions." Unlike the naïve std-percentile, this is a *probabilistically meaningful* statement, and two compounds with identical std but different neighborhoods now get different confidence, which is the correct behavior.
+**Interpretation:** confidence of 0.7 means "this prediction's expected error is lower than 70% of cal-set predictions." Because the score reads the error model's estimate rather than std alone, two compounds with identical std but different neighborhoods receive different confidence.
 
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/confidence_percentile.svg" alt="Residual-aware confidence: same std means different expected error depending on prediction band" style="width: 100%; height: auto;">

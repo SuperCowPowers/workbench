@@ -813,9 +813,9 @@ if __name__ == "__main__":
             # Apply active UQ to df_oof columns for oof_predictions.csv. Each target
             # gets {target}_-prefixed outputs; the primary is aliased unprefixed to
             # match prediction / prediction_std.
-            for t_name, data in per_target.items():
+            for t_name in per_target:
                 valid = df_oof[t_name].notna()
-                uq_out = uq_dict["uq_model"].predict(data["ids"], data["y_pred"], data["y_std"], target=t_name)
+                uq_out = uq_dict["oof_outputs"][t_name]
                 for col in uq_out.columns:
                     df_oof[f"{t_name}_{col}"] = np.nan
                     df_oof.loc[valid, f"{t_name}_{col}"] = uq_out[col].values

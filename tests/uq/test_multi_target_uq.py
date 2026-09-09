@@ -261,3 +261,58 @@ def test_remap_drops_rather_than_leaks_the_primary():
     remapped = EndpointCore._remap_multi_target_columns(df, SPARSE)
     assert remapped["prediction"].tolist() == [7.0, 8.0]
     assert "confidence" not in remapped.columns
+
+
+# =============================================================================
+# Out-of-fold UQ columns — what the cross-fold capture reports
+# =============================================================================
+
+
+def test_oof_outputs_cover_every_target(fit_dict):
+    """fit_regression_uq hands back UQ columns for the rows it was fit on."""
+    oof = fit_dict["oof_outputs"]
+    assert set(oof) == {DENSE, SPARSE}
+    for target, frame in oof.items():
+        assert {"expected_residual", "confidence", "q_50"} <= set(frame.columns)
+        assert frame["confidence"].notna().all()
+
+
+def test_oof_expected_residual_is_held_out(fit_dict, multi_target_df):
+    """The capture reports the calibration estimates, not the shipped forest's own rows.
+
+    A forest scoring rows it trained on reads their residuals back too closely, which
+    is the whole reason calibration uses held-out estimates. Same rows, two numbers.
+    """
+    v1 = fit_dict["v1"]
+    rng = np.random.default_rng(1)
+    data = _per_target(multi_target_df, DENSE, rng)
+    in_sample = v1.predict(data["ids"], data["y_pred"], data["y_std"], target=DENSE)
+    held_out = fit_dict["oof_outputs"][DENSE]
+
+    assert not np.allclose(in_sample["expected_residual"], held_out["expected_residual"])
+    # Held-out estimates are the wider, more pessimistic read.
+    assert held_out["expected_residual"].mean() > in_sample["expected_residual"].mean()
+
+
+def test_oof_expected_matches_the_calibration_percentiles(fit_dict):
+    """The reported residuals are the ones the percentile ladder was built from."""
+    v1 = fit_dict["v1"]
+    reported = fit_dict["oof_outputs"][DENSE]["expected_residual"].to_numpy()
+    assert np.allclose(np.sort(reported), np.sort(v1.oof_expected[DENSE].to_numpy()))
+    ladder = v1.residual_percentiles[DENSE]
+    assert np.isclose(np.percentile(reported, 50), ladder[50])
+
+
+def test_oof_predict_rejects_rows_it_never_fit(fit_dict):
+    v1 = fit_dict["v1"]
+    with pytest.raises(ValueError, match="oof_predict"):
+        v1.oof_predict(["not-a-real-id"], [0.0], target=DENSE)
+
+
+def test_oof_predict_is_unavailable_on_a_loaded_model(fit_dict, tmp_path):
+    """Held-out estimates are session state, not a saved artifact."""
+    fit_dict["v1"].save(str(tmp_path))
+    reloaded = UQModelV1.load(str(tmp_path))
+    assert reloaded.oof_expected == {}
+    with pytest.raises(RuntimeError, match="use predict"):
+        reloaded.oof_predict(["m0"], [0.0], target=DENSE)

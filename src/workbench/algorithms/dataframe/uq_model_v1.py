@@ -109,6 +109,10 @@ class UQModelV1:
         self.error_models: Dict[str, RandomForestRegressor] = {}
         self.scale_factors: Dict[str, dict] = {}
         self.residual_percentiles: Dict[str, np.ndarray] = {}
+        # Held-out expected residuals for the fit rows, keyed by target then row id.
+        # Populated by fit(), read by oof_predict(), and deliberately not persisted —
+        # a loaded model is for scoring new rows, which is what predict() is for.
+        self.oof_expected: Dict[str, pd.Series] = {}
 
     @property
     def primary_target(self) -> Optional[str]:
@@ -209,6 +213,11 @@ class UQModelV1:
 
         # 4. Percentile distribution of expected residuals (for confidence ranking)
         self.residual_percentiles[target] = np.asarray([float(np.percentile(expected_cal, p)) for p in range(101)])
+
+        # 5. Retain the held-out estimates so the out-of-fold capture can report the
+        # same numbers the calibration used, rather than the shipped forest scoring
+        # rows it trained on.
+        self.oof_expected[target] = pd.Series(expected_cal, index=ids)
 
         # Diagnostics
         self._log_fit_diagnostics(target, y_true, predictions, expected_cal)
@@ -328,30 +337,7 @@ class UQModelV1:
 
         X_test = self._stack_features(predictions, prediction_std, feat)
         expected_residual = self.error_models[target].predict(X_test)
-
-        # Confidence: percentile rank of expected residual against cal-set distribution
-        residual_percentiles = self.residual_percentiles[target]
-        ranks = np.searchsorted(residual_percentiles, expected_residual, side="right") / len(residual_percentiles)
-        confidence = np.clip(1.0 - ranks, 0.0, 1.0)
-
-        # Build result DataFrame
-        result = pd.DataFrame(
-            {
-                "expected_residual": expected_residual,
-                "confidence": confidence,
-                "q_50": predictions,
-            },
-            index=feat.index,
-        )
-
-        for alpha in self.confidence_levels:
-            q = self.scale_factors[target][f"{alpha:.2f}"]
-            lower = predictions - q * expected_residual
-            upper = predictions + q * expected_residual
-            if alpha in _QUANTILE_COLUMNS:
-                lo_col, hi_col = _QUANTILE_COLUMNS[alpha]
-                result[lo_col] = lower
-                result[hi_col] = upper
+        result = self._outputs_from_expected(expected_residual, predictions, target, feat.index)
 
         # Overwrite outputs for rows the proximity couldn't resolve: confidence
         # and intervals become NaN (q_50 keeps the model's prediction as a
@@ -370,6 +356,86 @@ class UQModelV1:
         quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975"]
         existing_q = [c for c in quantile_cols if c in result.columns]
         return result[["expected_residual", "confidence"] + existing_q]
+
+    def _outputs_from_expected(
+        self,
+        expected_residual: np.ndarray,
+        predictions: np.ndarray,
+        target: str,
+        index: pd.Index,
+    ) -> pd.DataFrame:
+        """Turn expected residuals into the UQ output columns.
+
+        Confidence is the percentile rank of the expected residual against the
+        calibration distribution; each interval is the prediction plus or minus that
+        level's conformal scale times this row's expected residual.
+        """
+        residual_percentiles = self.residual_percentiles[target]
+        ranks = np.searchsorted(residual_percentiles, expected_residual, side="right") / len(residual_percentiles)
+        result = pd.DataFrame(
+            {
+                "expected_residual": expected_residual,
+                "confidence": np.clip(1.0 - ranks, 0.0, 1.0),
+                "q_50": predictions,
+            },
+            index=index,
+        )
+        for alpha in self.confidence_levels:
+            if alpha not in _QUANTILE_COLUMNS:
+                continue
+            q = self.scale_factors[target][f"{alpha:.2f}"]
+            lo_col, hi_col = _QUANTILE_COLUMNS[alpha]
+            result[lo_col] = predictions - q * expected_residual
+            result[hi_col] = predictions + q * expected_residual
+        return result
+
+    def oof_predict(
+        self,
+        query: Union[List, pd.Series, np.ndarray],
+        predictions: Union[np.ndarray, pd.Series],
+        target: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """UQ outputs for the fit rows, using the held-out expected residuals.
+
+        `predict()` on these rows would run the shipped forest over its own training
+        data, which tracks them too closely — the same reason calibration uses the
+        held-out estimates. This reports those estimates instead, so an out-of-fold
+        capture carries out-of-fold UQ alongside its out-of-fold predictions.
+
+        The numbers run slightly pessimistic: each held-out estimate comes from a
+        forest fit on 4/5 of the rows. That is the same trade the out-of-fold
+        predictions themselves make.
+
+        Args:
+            query: Row IDs, all of which must have been passed to `fit()` for `target`.
+            predictions: Out-of-fold predictions for those rows — the interval centers.
+            target: Which target, defaulting to the primary.
+
+        Returns:
+            The same columns as `predict()`.
+        """
+        target = self._resolve_target(target)
+        if target not in self.oof_expected:
+            raise RuntimeError(
+                f"UQModelV1 has no out-of-fold estimates for '{target}' "
+                f"(fitted: {sorted(self.oof_expected)}). oof_predict() only covers rows "
+                "from this session's fit(); a loaded model has none — use predict()."
+            )
+        ids = list(query) if not isinstance(query, list) else query
+        predictions = np.asarray(predictions, dtype=float).ravel()
+        if len(predictions) != len(ids):
+            raise ValueError(f"predictions length ({len(predictions)}) must match number of queries ({len(ids)})")
+
+        expected_residual = self.oof_expected[target].reindex(ids)
+        if expected_residual.isna().any():
+            n = int(expected_residual.isna().sum())
+            raise ValueError(
+                f"{n} of {len(ids)} ids were not in fit() for '{target}'; oof_predict() covers fit rows only"
+            )
+
+        result = self._outputs_from_expected(expected_residual.to_numpy(), predictions, target, pd.Index(ids))
+        quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975"]
+        return result[["expected_residual", "confidence"] + [c for c in quantile_cols if c in result.columns]]
 
     # ------------------------------------------------------------------
     # Persistence

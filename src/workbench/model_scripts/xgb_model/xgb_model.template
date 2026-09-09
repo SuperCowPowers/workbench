@@ -503,7 +503,7 @@ if __name__ == "__main__":
             active_version=hyperparameters.get("uq_version", "v1"),
         )
 
-        uq_out = uq_dict["uq_model"].predict(oof_ids, y_pred, oof_std, target=target)
+        uq_out = uq_dict["oof_outputs"][target]
         for col in uq_out.columns:
             df_oof[col] = uq_out[col].values
 

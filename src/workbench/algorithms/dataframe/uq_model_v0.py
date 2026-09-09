@@ -153,6 +153,10 @@ class UQModelV0:
         * ``query`` argument is accepted for signature compatibility but used
           only to label the result DataFrame's index — V0 has no id-lookup
           because it has no reference index.
+        * No held-out estimates, and so no ``oof_predict()``. The isotonic is fit
+          and applied on the same rows, so the UQ columns V0 contributes to an
+          out-of-fold capture read optimistic: coverage computed there will look
+          better than it is. V1 reports cross-fit estimates in that position.
 
     Usage:
         uq0 = UQModelV0().fit(y_oof, y_pred_oof, prediction_std_oof)

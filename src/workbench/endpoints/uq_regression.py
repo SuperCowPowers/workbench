@@ -181,8 +181,9 @@ def fit_regression_uq(
 
     Returns:
         dict with keys ``uq_model`` (the active instance), ``v0``, ``v1``, ``v2``
-        (``v1``/``v2`` are None when no proximity backend could be built), and
-        ``targets`` (the calibrated target names, primary first).
+        (``v1``/``v2`` are None when no proximity backend could be built),
+        ``targets`` (the calibrated target names, primary first), and
+        ``oof_outputs`` (``{target: DataFrame}`` of UQ columns for the fit rows).
     """
     active = _normalize_version(active_version)
     if not per_target:
@@ -219,7 +220,24 @@ def fit_regression_uq(
         "v1": uq_model_v1,
         "v2": uq_model_v2,
         "targets": targets,
+        "oof_outputs": _oof_outputs(uq_model_active, per_target),
     }
+
+
+def _oof_outputs(uq_model_active, per_target: dict) -> dict:
+    """UQ columns for the rows the models were fit on.
+
+    V1 reports the held-out estimates it calibrated against, so the out-of-fold
+    capture carries out-of-fold UQ. V0 and V2 have no held-out estimate to report:
+    V2 needs none — its confidence reads the query's neighbors, and proximity
+    excludes a row from its own neighborhood — while V0's isotonic is fit and
+    applied on the same rows, so its expected residuals here run optimistic.
+    """
+    if isinstance(uq_model_active, UQModelV1):
+        return {t: uq_model_active.oof_predict(d["ids"], d["y_pred"], target=t) for t, d in per_target.items()}
+    if isinstance(uq_model_active, UQModelV0):
+        log.warning("V0 out-of-fold UQ columns are in-sample: its isotonic was fit on these same rows.")
+    return {t: uq_model_active.predict(d["ids"], d["y_pred"], d["y_std"], target=t) for t, d in per_target.items()}
 
 
 def save_regression_uq(uq_dict: Optional[dict], model_dir: str) -> None:
