@@ -29,13 +29,12 @@ What earns its place:
 - **Decisions** — what was chosen, and why the alternative lost.
 - **Open threads** — what was left undone, and any dead end worth not repeating.
 
-The report is capped at 6000 characters, which is generous when you **name
-artifacts instead of restating them**. `logd_value_f1` is thirteen characters and
-re-derivable; its column list is not. If a report won't fit, it is carrying data
-rather than conclusions — park the data in a `DFStore` frame and name the key.
-
-The store also caps the *compressed* report at 4KB, which the character count will
-not catch. Check `len(zlib.compress(report.encode())) < 4096` before saving.
+There is no character limit — the store caps the *encoded* size (compressed, then
+base64) at 4KB, and `save_session` raises with the byte count if a report exceeds it.
+Distilled prose fits easily when you **name artifacts instead of restating them**:
+`logd_value_f1` is thirteen characters and re-derivable, its column list is not. A
+report that won't fit is carrying data rather than conclusions — park the data in a
+`DFStore` frame and name the key.
 
 Write in past tense, plainly, for a reader who was not there. "Chemprop beat XGB
 by 0.04 RMSE on the analog set, so we kept chemprop" — not "we tried some models."

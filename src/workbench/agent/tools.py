@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import List
 
 from workbench.utils import bosco_utils
-from workbench.utils.bosco_utils import MAX_REPORT_CHARS
 from workbench.utils.web_utils import EGRESS_MODE
 
 GUIDES_DIR = Path(__file__).parent / "guides"
@@ -268,7 +267,7 @@ TOOL_SCHEMAS = [
             "type": "object",
             "properties": {
                 "name": {"type": "string", "description": "Short session name, e.g. 'logd-cleanup'"},
-                "report": {"type": "string", "description": f"Report markdown, under {MAX_REPORT_CHARS} chars"},
+                "report": {"type": "string", "description": "Report markdown, distilled to conclusions"},
             },
             "required": ["name", "report"],
         },

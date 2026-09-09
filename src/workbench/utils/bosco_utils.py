@@ -20,10 +20,6 @@ log = logging.getLogger("workbench")
 
 SESSION_ROOT = "/workbench/bosco/sessions"
 
-# Reports are distilled, not dumped. Past this the content belongs in a DFStore frame
-# that the report points at, and the AWS store starts compressing.
-MAX_REPORT_CHARS = 6000
-
 
 def param_store():
     """The parameter store backing session reports.
@@ -67,15 +63,17 @@ def save_session(name: str, report: str, user: str = None) -> str:
         str: The path it was saved to.
 
     Raises:
-        ValueError: If the report exceeds MAX_REPORT_CHARS.
+        ValueError: If the report is too large for the store to hold.
     """
-    if len(report) > MAX_REPORT_CHARS:
-        raise ValueError(
-            f"Report is {len(report)} chars, over the {MAX_REPORT_CHARS} limit. "
-            "Name artifacts instead of restating them, and park bulk findings in a DFStore frame."
-        )
     path = session_path(name, user)
-    param_store().upsert(path, report)
+    try:
+        param_store().upsert(path, report)
+    except ValueError as e:
+        # The store owns the size limit; it reports the encoded byte count in the cause
+        raise ValueError(
+            f"Report is too large to store ({len(report)} chars): distill it, and name artifacts "
+            f"instead of restating them. {e}"
+        ) from e
     return path
 
 
