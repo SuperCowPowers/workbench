@@ -26,9 +26,20 @@ ALWAYS_LOADED = {"general"}
 MAX_OUTPUT_CHARS = 4000
 
 
+def guide_paths() -> List[Path]:
+    """Every lazy-read guide, from the bucket directories and the root alike."""
+    return sorted(p for p in GUIDES_DIR.rglob("*.md") if p.stem not in ALWAYS_LOADED)
+
+
 def guide_names() -> List[str]:
     """Names of the lazy-read best-practice guides (excludes always-loaded ones)."""
-    return sorted(p.stem for p in GUIDES_DIR.glob("*.md") if p.stem not in ALWAYS_LOADED)
+    return sorted(p.stem for p in guide_paths())
+
+
+def _description(path: Path) -> str:
+    """The `> one-liner` under a guide's H1, or empty when it has none."""
+    head = path.read_text().splitlines()[:5]
+    return next((line.lstrip("> ").strip() for line in head if line.startswith(">")), "")
 
 
 def guide_index() -> str:
@@ -37,15 +48,21 @@ def guide_index() -> str:
     Names alone don't tell Claude what a guide covers, so it skips ones that
     would have answered the question. The description is the `> one-liner`
     under each guide's H1, so the index stays in sync with the files.
+
+    Guides are grouped under their bucket directory so the menu can be scanned by
+    task; ungrouped ones list last. `read_guide` takes the bare name either way.
     """
-    entries = []
-    for path in sorted(GUIDES_DIR.glob("*.md")):
-        if path.stem in ALWAYS_LOADED:
-            continue
-        head = path.read_text().splitlines()[:5]
-        desc = next((line.lstrip("> ").strip() for line in head if line.startswith(">")), "")
-        entries.append(f"  {path.stem:18} {desc}" if desc else f"  {path.stem}")
-    return "\n".join(entries)
+    buckets = {}
+    for path in guide_paths():
+        bucket = "" if path.parent == GUIDES_DIR else path.parent.name
+        buckets.setdefault(bucket, []).append(path)
+
+    lines = []
+    for bucket in sorted(b for b in buckets if b):
+        lines.append(f"  {bucket}/")
+        lines += [f"    {p.stem:18} {_description(p)}".rstrip() for p in buckets[bucket]]
+    lines += [f"  {p.stem:18} {_description(p)}".rstrip() for p in buckets.get("", [])]
+    return "\n".join(lines)
 
 
 def general_guide() -> str:
@@ -138,11 +155,15 @@ def provider_egress_text() -> str:
 
 
 def read_guide(name: str) -> str:
-    """Read a bundled guide by name."""
-    path = GUIDES_DIR / f"{name}.md"
-    if not path.exists():
-        return f"No guide named '{name}'. Available: {', '.join(guide_names())}"
-    return path.read_text()
+    """Read a bundled guide by name, from whichever bucket holds it.
+
+    Stems are unique across buckets, so the bare name is the address. A bucket
+    prefix or an .md suffix is tolerated rather than treated as a miss.
+    """
+    stem = Path(name).stem
+    for path in GUIDES_DIR.rglob(f"{stem}.md"):
+        return path.read_text()
+    return f"No guide named '{name}'. Available: {', '.join(guide_names())}"
 
 
 # Loggers to watch during a run. The `workbench` logger sets `propagate = False`

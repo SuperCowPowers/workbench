@@ -163,7 +163,7 @@ def import_failures(md_text: str) -> list:
 
 
 def _guides():
-    return sorted(GUIDES_DIR.glob("*.md"))
+    return sorted(GUIDES_DIR.rglob("*.md"))
 
 
 @pytest.mark.parametrize("guide", _guides(), ids=lambda p: p.stem)
