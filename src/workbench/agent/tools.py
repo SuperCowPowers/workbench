@@ -11,8 +11,11 @@ from workbench.utils import bosco_utils
 from workbench.utils.web_utils import EGRESS_MODE
 
 GUIDES_DIR = Path(__file__).parent / "guides"
-PERSONALITIES_FILE = Path(__file__).parent / "personalities.md"
-EGRESS_FILE = Path(__file__).parent / "egress.md"
+
+# Always injected into the system prompt, so they are not guides and stay out of GUIDES_DIR.
+PROMPTS_DIR = Path(__file__).parent / "prompts"
+PERSONALITIES_FILE = PROMPTS_DIR / "personalities.md"
+EGRESS_FILE = PROMPTS_DIR / "egress.md"
 DEFAULT_PERSONALITY = "chipper"
 
 # Always injected into the system prompt (not offered in the lazy-read menu).

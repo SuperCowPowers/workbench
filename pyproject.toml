@@ -139,7 +139,8 @@ packages = { find = { where = ["src"] } }
 "workbench" = [
     "model_scripts/**",
     "themes/**",
-    "agent/guides/*.md",
+    "agent/guides/**/*.md",
+    "agent/prompts/*.md",
     "plugin_pages/**"
 ]
 
