@@ -140,6 +140,9 @@ Watch the units when the inputs are predictions: ADMET models commonly report Vd
 A curve that comes out visibly flat or vertical means the V/CL pair is implausible, not
 that the plot is wrong — the `pk_data` guide has the consistency checks.
 
+For a whole set rather than one compound, `apps.pk_explorer(df)` draws a curve per
+compound and shows the structure on hover — see the `interactive_apps` guide.
+
 Units are yours to choose as long as they agree — volume in L with clearance in L/h
 gives `ke` in 1/h, and a dose in mg reads as mg/L. `ke = clearance / volume` and AUC
 are derived and annotated; **AUC does not move with `ka`**, only the curve's shape
