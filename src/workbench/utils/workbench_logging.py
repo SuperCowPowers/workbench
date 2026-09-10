@@ -19,6 +19,13 @@ from importlib.metadata import version
 # New botocore version barfs a bunch of checksum logs
 logging.getLogger("botocore.httpchecksum").setLevel(logging.WARNING)
 
+# sagemaker.core builds a client on first use and narrates it -- an INFO naming the
+# stage and region, and a "No region provided" warning that fires even though the
+# region is set on the session it was handed. Levels set here survive the
+# basicConfig that module runs at import, since that only touches the root logger.
+logging.getLogger("sagemaker").setLevel(logging.WARNING)
+logging.getLogger("sagemaker.core.utils.utils").setLevel(logging.ERROR)
+
 
 class ThrottlingFilter(logging.Filter):
     def __init__(self, rate_seconds=60):

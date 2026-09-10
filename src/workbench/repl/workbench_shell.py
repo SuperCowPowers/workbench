@@ -7,6 +7,15 @@ import webbrowser
 
 importlib.import_module("readline")  # side effect: enables line editing/history
 
+# The shell owns the root logger. Configuring it before any library loads makes a later
+# logging.basicConfig a no-op -- sagemaker.core runs one at import that would raise root
+# to INFO and install a Rich handler, printing every library's INFO chatter. Third-party
+# warnings reach stderr tagged with the library that sent them.
+_root_handler = logging.StreamHandler()
+_root_handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+logging.getLogger().addHandler(_root_handler)
+logging.getLogger().setLevel(logging.WARNING)
+
 # Disable OpenMP parallelism to avoid segfaults with PyTorch in iPython
 # This is a known issue on macOS where libomp crashes during thread synchronization
 # Must be set before importing numpy/pandas/torch or any library that uses OpenMP
