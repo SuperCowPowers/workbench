@@ -73,8 +73,8 @@ so import the submodule the function lives in (e.g. `vis`), not the package:
 
 ```python
 from workbench.utils.chem_utils import vis
-inspect.signature(vis.neighborhood_graph)
-print(inspect.getsource(vis.neighborhood_graph))
+inspect.signature(vis.molecule_grid)
+print(inspect.getsource(vis.molecule_grid))
 [f for f in dir(vis) if not f.startswith("_")]   # what the submodule offers
 ```
 

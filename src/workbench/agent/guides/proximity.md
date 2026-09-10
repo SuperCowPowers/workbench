@@ -68,8 +68,8 @@ One row per neighbor:
 
 Don't hardcode the query id column — it's `prox.id_column`. `neighbor_id` is stable.
 
-To visualize a neighborhood, `neighborhood_graph(query_id, nbrs, target_col=...)`
-(from `chem_utils.vis`) draws the query and its closest neighbors as a radial
+To visualize a neighborhood, `neighborhood.graph(query_id, nbrs, target_col=...)`
+(from `workbench.utils.plots`) draws the query and its closest neighbors as a radial
 molecule graph — see the `plotting` guide. It needs a `smiles` column, so join one
 in from the FeatureSet if the result lacks it.
 

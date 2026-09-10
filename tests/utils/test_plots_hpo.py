@@ -15,7 +15,7 @@ import pytest
 matplotlib.use("Agg")
 
 # Workbench Imports
-from workbench.utils.hpo_plots import hpo_parallel_coordinates  # noqa: E402
+from workbench.utils.plots.hpo import parallel_coordinates  # noqa: E402
 
 
 class _StubModel:
@@ -118,7 +118,7 @@ def test_a_stopped_trial_stays_off_the_scale_without_a_trajectory():
     """Its objective covers fewer members, and on some datasets that reads better than a full
     run -- colouring it by the raw value would paint the search's rejects as its winners. With
     nothing to estimate the shortfall from, grey is the honest answer."""
-    fig = hpo_parallel_coordinates(_StubModel(_frame(_default_rows())))
+    fig = parallel_coordinates(_StubModel(_frame(_default_rows())))
     colours = [_rgb(line) for line in _crowd(fig)]
 
     # Greys are r == g == b; the diverging colormap's entries are not. Both stopped trials
@@ -131,7 +131,7 @@ def test_a_stopped_trial_stays_off_the_scale_without_a_trajectory():
 def test_fold_offsets_recover_a_planted_shortfall():
     """The estimator behind the estimate: what fold *k* understates the full ensemble by,
     read off the completed trials that carry both ends of a trajectory."""
-    from workbench.utils.hpo_plots import _fold_offsets
+    from workbench.utils.plots.hpo import _fold_offsets
 
     frame = _with_trajectories(_frame(_default_rows()))
     completed = frame["completed"].astype(bool)
@@ -144,7 +144,7 @@ def test_a_trajectory_carries_a_stopped_trial_onto_the_scale():
     legend says the hue is an estimate, since that is all that separates it from a measured
     one."""
     frame = _with_trajectories(_frame(_default_rows()))
-    fig = hpo_parallel_coordinates(_StubModel(frame))
+    fig = parallel_coordinates(_StubModel(frame))
 
     assert not [line for line in _crowd(fig) if len(set(_rgb(line))) == 1], "no trial should be grey"
     caveat = fig.axes[0].get_legend().get_texts()[-1]
@@ -159,7 +159,7 @@ def test_a_trajectory_with_no_usable_step_estimates_nothing():
     frame["step"] = float("nan")
     frame["completed"] = True
 
-    fig = hpo_parallel_coordinates(_StubModel(frame))
+    fig = parallel_coordinates(_StubModel(frame))
     assert fig is not None
 
 
@@ -167,7 +167,7 @@ def test_a_fold_no_completed_trial_reported_at_leaves_its_trials_grey():
     """The offsets only cover the folds a completed trajectory passed through. A trial stopped
     anywhere else has nothing to be carried by, and is not guessed at."""
     rows = _default_rows() + [(0.32, 3, False, "trial", 5, 0.03)]  # nothing completed reports fold 3
-    fig = hpo_parallel_coordinates(_StubModel(_with_trajectories(_frame(rows))))
+    fig = parallel_coordinates(_StubModel(_with_trajectories(_frame(rows))))
 
     greys = [line for line in _crowd(fig) if len(set(_rgb(line))) == 1]
     assert len(greys) == 1
@@ -176,7 +176,7 @@ def test_a_fold_no_completed_trial_reported_at_leaves_its_trials_grey():
 def test_the_colorbar_is_the_metric_and_is_centred_on_the_baseline():
     """Ticks read as MAE rather than a margin, and the divergence point is the baseline, so
     hue still answers 'did this beat my defaults'."""
-    fig = hpo_parallel_coordinates(_StubModel(_frame(_default_rows())))
+    fig = parallel_coordinates(_StubModel(_frame(_default_rows())))
     bar = fig.axes[-1]
     rules = [line.get_ydata()[0] for line in bar.lines]
 
@@ -189,7 +189,7 @@ def test_a_search_where_nothing_beat_the_baseline_still_scales():
     """Scaling by the best margin collapses to a point when there is no margin, which would
     paint every trial as the baseline."""
     rows = [(0.50, 5, True, "baseline", 4, 0.02), (0.62, 5, True, "trial", 6, 0.01)]
-    fig = hpo_parallel_coordinates(_StubModel(_frame(rows), best=0.62))
+    fig = parallel_coordinates(_StubModel(_frame(rows), best=0.62))
     low, high = fig.axes[-1].get_ylim()
     assert high > low
 
@@ -198,7 +198,7 @@ def test_an_artifact_with_no_step_column_still_plots():
     """Runs recorded before the ladder carry no `step`; the hover loses where a trial stopped,
     not the plot."""
     frame = _frame(_default_rows()).drop(columns=["step"])
-    fig = hpo_parallel_coordinates(_StubModel(frame))
+    fig = parallel_coordinates(_StubModel(frame))
     assert len(_crowd(fig)) == 4  # the baseline row is a reference line, not one of the crowd
 
 
@@ -209,11 +209,11 @@ def test_an_unsearched_model_returns_none():
         def hpo_results(self):
             return None
 
-    assert hpo_parallel_coordinates(_Plain()) is None
+    assert parallel_coordinates(_Plain()) is None
 
 
 @pytest.mark.parametrize("space", [True, False])
 def test_a_missing_search_space_falls_back_to_observed_ranges(space):
     """The space scales the axes to what the search *could* have explored; without one the
     trials' own range has to do."""
-    assert hpo_parallel_coordinates(_StubModel(_frame(_default_rows()), space=space)) is not None
+    assert parallel_coordinates(_StubModel(_frame(_default_rows()), space=space)) is not None

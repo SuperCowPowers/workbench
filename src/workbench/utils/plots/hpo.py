@@ -363,7 +363,7 @@ def _draw_legend(ax, counts: dict, estimated: bool) -> None:
         legend.get_texts()[-1].set_style("italic")
 
 
-def hpo_parallel_coordinates(model: Any, figsize: tuple = (16, 8), title: str = None) -> Optional[Any]:
+def parallel_coordinates(model: Any, figsize: tuple = (16, 8), title: str = None) -> Optional[Any]:
     """Parallel-coordinates view of a model's hyperparameter search.
 
     One vertical axis per knob, one line per trial. Shows which regions of the space the good

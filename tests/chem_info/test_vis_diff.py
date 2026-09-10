@@ -125,7 +125,7 @@ def test_invalid_smiles_returns_none():
 
 
 def test_diff_molecules_returns_a_showable_figure():
-    """Matches molecule_grid / neighborhood_graph so callers can just fig.show()."""
+    """Matches molecule_grid / neighborhood.graph so callers can just fig.show()."""
     fig = diff_molecules(CHROMIUM, CHROMIUM_TRIFLUORIDE, captions=["a", "b"])
 
     assert hasattr(fig, "savefig")

@@ -52,7 +52,7 @@ CloudWatch logs to answer "what did HPO pick" — logs diagnose a *run*, they do
 results. `None` doubles as the "is this an HPO model?" check.
 
 It returns the published config, the values below, and a `trials` DataFrame. To visualize
-the search, `hpo_plots.hpo_parallel_coordinates(model)` — see the `plotting` guide.
+the search, `plots.parallel_coordinates(model)` — see the `plotting` guide.
 
 ## Reading the numbers (the part that misleads)
 

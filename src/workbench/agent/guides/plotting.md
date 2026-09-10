@@ -1,9 +1,12 @@
 # Plotting
 
-> readable matplotlib plots, including molecule structure and neighborhood views
+> readable plots: matplotlib, plus HPO, neighborhood, and PK concentration-time profiles
 
-Use **matplotlib**. Make sure text, legends, and axis labels have enough space to
-be readable — a cramped plot is a useless plot.
+Use **matplotlib** for anything you build yourself. Make sure text, legends, and axis
+labels have enough space to be readable — a cramped plot is a useless plot.
+
+The bundled plots in `workbench.utils.plots` are module-qualified — `hpo.parallel_coordinates`,
+`neighborhood.graph`, `pk.bateman`. Reach for one before hand-rolling the same chart.
 
 ## Readability first
 
@@ -68,10 +71,10 @@ The default view of a hyperparameter search: one vertical axis per knob, one lin
 trial, colored by the objective.
 
 ```python
-from workbench.utils.hpo_plots import hpo_parallel_coordinates
+from workbench.utils.plots import hpo
 
-fig = hpo_parallel_coordinates(model)                    # None if the model wasn't searched
-fig.show()                                               # or fig.savefig(...) if asked
+fig = hpo.parallel_coordinates(model)      # None if the model wasn't searched
+fig.show()                                 # or fig.savefig(...) if asked
 ```
 
 Only *adjacent* axes show their relationship, so axis order decides what the chart can
@@ -80,14 +83,14 @@ numbers.
 
 ## Compound neighborhood graph
 
-For a proximity result, `neighborhood_graph` renders the query at the center with
+For a proximity result, `neighborhood.graph` renders the query at the center with
 its closest neighbors around a ring — ring color = target value, edge width =
 similarity — so an activity cliff jumps out.
 
 ```python
-from workbench.utils.chem_utils.vis import neighborhood_graph
+from workbench.utils.plots import neighborhood
 
-fig = neighborhood_graph(query_id, nbrs, target_col="pec50")   # nbrs from prox.neighbors(...)
+fig = neighborhood.graph(query_id, nbrs, target_col="pec50")   # nbrs from prox.neighbors(...)
 fig.show()                                                     # or fig.savefig(...) if asked
 ```
 
@@ -98,6 +101,49 @@ result lacks it. See the `proximity` guide.
 For an arbitrary set of structures with no query/neighbor relation (e.g. a
 top-residuals panel), `vis.molecule_grid(smiles, captions, colors)` lays them out in
 a captioned grid.
+
+## PK profiles / concentration-time curves
+
+A request for a **PK profile**, a **plasma concentration-time curve**, an **exposure
+profile**, **Cp vs t**, or a **Bateman curve** all mean this plot. `pk.bateman` draws
+the single oral dose, one-compartment model with first-order absorption and first-order
+elimination, from a compound's volume of distribution and clearance.
+
+Absorption rate `ka` is rarely pinned down by an early ADMET package, so it is a
+**slider** rather than an argument — this is the one bundled plot that is Plotly,
+because the slider needs it.
+
+```python
+from workbench.utils.plots import pk
+
+fig = pk.bateman(volume=50, clearance=10, f_percent=40, dose=100)
+fig.show()      # opens a browser tab; the slider needs that or a notebook
+```
+
+Volume and clearance usually come from an endpoint rather than a literal. A
+multi-target endpoint names each head **`<target>_pred`** — `vd_pred`, `cl_pred` — while
+a single-target one returns a bare `prediction`. Read the columns off the frame you got
+back instead of assuming either shape:
+
+```python
+predictions = Endpoint("admet-meta").inference(df)
+[c for c in predictions.columns if c.endswith("_pred")]     # what this endpoint actually returned
+
+fig = pk.bateman(volume=predictions["vd_pred"].iloc[0], clearance=predictions["cl_pred"].iloc[0])
+fig.show()
+```
+
+Watch the units when the inputs are predictions: ADMET models commonly report Vd in
+**L/kg** and clearance in **mL/min/kg**, which do not agree. Convert clearance with
+`* 0.06` to reach L/h/kg before passing both, or `ke` lands ~17x too fast.
+
+A curve that comes out visibly flat or vertical means the V/CL pair is implausible, not
+that the plot is wrong — the `pk_data` guide has the consistency checks.
+
+Units are yours to choose as long as they agree — volume in L with clearance in L/h
+gives `ke` in 1/h, and a dose in mg reads as mg/L. `ke = clearance / volume` and AUC
+are derived and annotated; **AUC does not move with `ka`**, only the curve's shape
+does, which is the point of dragging the slider.
 
 ## Highlighting and structure diffs
 

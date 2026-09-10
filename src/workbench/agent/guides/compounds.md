@@ -32,7 +32,7 @@ authoritative (see `data_and_features`). Only sniff for it on a raw file.
 ## Showing a molecule
 
 The REPL has `show()`, which renders a 2D structure image. Use it for a **single
-molecule** — to compare several, use `neighborhood_graph` (see `plotting`). It
+molecule** — to compare several, use `neighborhood.graph` (see `plotting`). It
 takes a SMILES string, not a DataFrame or a Series. **Always pass the compound id** —
 it is captioned under the structure, and an unlabeled window is hard to place:
 
