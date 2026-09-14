@@ -12,6 +12,8 @@ For an end-to-end test that uses real Workbench endpoints, see
 
 from __future__ import annotations
 
+import threading
+
 import pandas as pd
 import pytest
 
@@ -704,6 +706,54 @@ def test_declared_targets_survive_serialization():
     dag = _mt_panel_dag(cl_targets=["log_cl"])
     restored = MetaEndpointDAG.from_json(dag.to_json())
     assert restored.declared_targets == {"cl-ep": ["log_cl"]}
+
+
+# ---------------------------------------------------------------------------
+# Concurrent waves
+# ---------------------------------------------------------------------------
+
+
+def test_run_invokes_parallel_branches_concurrently():
+    """Sibling endpoints must be in flight together; a sequential walk would
+    leave each waiting on the barrier alone and time out."""
+    barrier = threading.Barrier(3, timeout=5)
+
+    def invoker(endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+        barrier.wait()
+        return df.assign(**{f"out_{endpoint_name}": 1.0})
+
+    dag = MetaEndpointDAG()
+    for name in ("ep-a", "ep-b", "ep-c"):
+        dag.add_endpoint(name)
+    dag.add_aggregation(Concat(name="merge"))
+    for name in ("ep-a", "ep-b", "ep-c"):
+        dag.add_edge(name, "merge")
+    dag.set_input_node("ep-a", "ep-b", "ep-c")
+    dag.set_output_node("merge")
+    dag.validate()
+
+    out = dag.run(pd.DataFrame({"smiles": ["CCO", "CCN"]}), endpoint_invoker=invoker)
+    assert {"out_ep-a", "out_ep-b", "out_ep-c"}.issubset(out.columns)
+
+
+def test_run_waits_for_parents_before_starting_a_child():
+    """A predictor downstream of a feature endpoint sees the feature output."""
+    seen = {}
+
+    def invoker(endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+        seen[endpoint_name] = list(df.columns)
+        return df.assign(**{f"out_{endpoint_name}": 1.0})
+
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("features")
+    dag.add_endpoint("predictor")
+    dag.add_edge("features", "predictor")
+    dag.set_input_node("features")
+    dag.set_output_node("predictor")
+    dag.validate()
+
+    dag.run(pd.DataFrame({"smiles": ["CCO"]}), endpoint_invoker=invoker)
+    assert "out_features" in seen["predictor"]
 
 
 if __name__ == "__main__":

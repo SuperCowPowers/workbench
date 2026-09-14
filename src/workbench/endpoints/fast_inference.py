@@ -86,8 +86,11 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, t
             # Handle 'charset' in content type (e.g. 'text/csv; charset=utf-8')
             return pd.read_csv(StringIO(response_body))
         except Exception as e:
+            # Propagate rather than drop the chunk: a missing chunk silently loses
+            # rows, and the original message is what lets a caller tell a cold-start
+            # timeout (retry the batch) from a genuine model error.
             log.error(f"Error during prediction on '{endpoint_name}': {e}")
-            return pd.DataFrame()
+            raise
 
     # Sagemaker has a connection pool limit of 10
     if threads > 10:
@@ -101,12 +104,6 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, t
     actual_threads = min(threads, len(chunks))
     with ThreadPoolExecutor(max_workers=actual_threads) as executor:
         df_list = list(executor.map(lambda p: process_chunk(*p), chunks))
-
-    # Filter out empty DataFrames that might result from errors
-    df_list = [df for df in df_list if not df.empty]
-
-    if not df_list:
-        raise RuntimeError(f"All prediction chunks failed for endpoint '{endpoint_name}'")
 
     combined_df = pd.concat(df_list, ignore_index=True)
 

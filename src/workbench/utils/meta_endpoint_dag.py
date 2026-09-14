@@ -45,6 +45,7 @@ before any inference round-trips.
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
@@ -379,14 +380,16 @@ class MetaEndpointDAG:
         strips it before returning. Callers don't need to supply any id
         column.
 
-        Walks nodes in topological order. Endpoint nodes call
+        Walks the DAG in waves: every node whose parents have all finished
+        runs concurrently, so parallel branches invoke their endpoints at the
+        same time. A cold panel of serverless children then costs one cold
+        start rather than one per child. Endpoint nodes call
         :meth:`Endpoint.inference` on either the caller's ``input_df`` (input
-        nodes) or their upstream parent's cached output. Aggregation nodes
-        receive the cached outputs of all their parents and apply their
-        combination logic.
+        nodes) or their upstream parent's output. Aggregation nodes receive the
+        outputs of all their parents and apply their combination logic.
 
         Failure policy is fail-fast: any exception in any node propagates
-        out and the DAG run aborts.
+        out and the DAG run aborts once its wave finishes.
 
         Args:
             input_df: DataFrame supplied by the caller. Must contain the
@@ -415,12 +418,21 @@ class MetaEndpointDAG:
         input_df = input_df.copy()
         input_df[DAG_ROW_ID] = range(len(input_df))
 
-        outputs: Dict[str, pd.DataFrame] = {}
-        for node in self.topological_order():
+        def run_node(node: str) -> pd.DataFrame:
             if node in self._endpoints:
-                outputs[node] = self._run_endpoint(node, input_df, outputs, endpoint_invoker)
-            else:
-                outputs[node] = self._run_aggregation(node, outputs)
+                return self._run_endpoint(node, input_df, outputs, endpoint_invoker)
+            return self._run_aggregation(node, outputs)
+
+        # Workers only read finished parents; `outputs` is written between waves.
+        outputs: Dict[str, pd.DataFrame] = {}
+        pending = self.topological_order()
+        with ThreadPoolExecutor(max_workers=max(1, len(self._endpoints))) as pool:
+            while pending:
+                wave = [n for n in pending if all(p in outputs for p in self._parents_of(n))]
+                futures = {node: pool.submit(run_node, node) for node in wave}
+                for node, future in futures.items():
+                    outputs[node] = future.result()
+                pending = [n for n in pending if n not in outputs]
 
         result = outputs[self._output_node]
         if DAG_ROW_ID in result.columns:
