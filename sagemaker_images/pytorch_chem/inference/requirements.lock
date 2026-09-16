@@ -127,7 +127,7 @@ joblib==1.5.3
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference/requirements.in
     #   scikit-learn
-lightning==2.6.5
+lightning==2.6.6
     # via
     #   -c ci/.uv-constraints.txt
     #   chemprop

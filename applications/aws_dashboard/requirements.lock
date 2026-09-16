@@ -49,6 +49,7 @@ anyio==4.13.0
     #   -c ci/.uv-constraints.txt
     #   anthropic
     #   httpx
+    #   mlflow-skinny
     #   starlette
 asgiref==3.11.1
     # via -r applications/aws_dashboard/requirements.in
@@ -251,7 +252,7 @@ gitdb==4.0.12
     # via
     #   -c ci/.uv-constraints.txt
     #   gitpython
-gitpython==3.1.58
+gitpython==3.1.62
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
@@ -416,17 +417,17 @@ ml-dtypes==0.5.4
     # via
     #   -c ci/.uv-constraints.txt
     #   onnx
-mlflow==3.15.1
+mlflow==3.16.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
     #   sagemaker-train
-mlflow-skinny==3.15.1
+mlflow-skinny==3.16.0
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
     #   sagemaker-mlflow
-mlflow-tracing==3.15.1
+mlflow-tracing==3.16.0
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
