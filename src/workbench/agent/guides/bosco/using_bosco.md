@@ -47,6 +47,9 @@ Attributes on `bosco` — read its docstring for the current values and levels.
 - **`bosco.effort`** — thinking depth per turn, not reply length. No spoken
   toggle; lower is faster, and it only shows on questions hard enough to think
   about.
+- **`bosco.fast`** — demo mode: a faster model at low effort. Overrides
+  `bosco.effort` while set. Offer it when someone wants snappy turns over
+  careful ones.
 
 ## Interrupting
 

@@ -7,6 +7,7 @@ session. Anything typed that isn't valid Python is routed here:
     bosco what models do we have          # explicit, for text that IS valid Python
 """
 
+import os
 import re
 import ast
 import codeop
@@ -17,7 +18,7 @@ from contextlib import contextmanager
 # Workbench Imports
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
-from workbench.utils.llm_utils import message_stream, default_model
+from workbench.utils.llm_utils import message_stream, default_model, model_id, CLAUDE_MODELS, FAST_MODEL
 from workbench.utils.job_tracker import job_updates
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
@@ -63,9 +64,15 @@ MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 DEFAULT_EFFORT = "high"
 
-# USD per token for the default model (Opus 5 on Bedrock, list pricing). Cache
-# write is the 1.25x (5-minute ephemeral) rate we use; read is 0.1x input.
-_RATES = {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write": 6.25e-6}
+# Effort when bosco.fast is set; pairs with FAST_MODEL for demo-speed turns.
+FAST_EFFORT = "low"
+
+# USD per token by model (list pricing). Cache write is the 1.25x (5-minute
+# ephemeral) rate we use; read is 0.1x input.
+_RATES = {
+    "claude-opus-5": {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write": 6.25e-6},
+    "claude-sonnet-5": {"input": 2.0e-6, "output": 10.0e-6, "cache_read": 0.2e-6, "cache_write": 2.5e-6},
+}
 
 # Every round of a turn resends the whole conversation, so an unbounded history
 # costs quadratically over a session. Roughly 50k tokens.
@@ -124,8 +131,15 @@ def _system_prompt() -> str:
     )
 
 
+def _model() -> str:
+    """The model for this turn: FAST_MODEL when bosco.fast is set, else the default."""
+    return model_id(FAST_MODEL) if getattr(bosco, "fast", False) else default_model()
+
+
 def _effort() -> str:
-    """The user's effort setting, falling back to the default when it isn't a valid level."""
+    """The effort for this turn: FAST_EFFORT when bosco.fast is set, else the user's setting."""
+    if getattr(bosco, "fast", False):
+        return FAST_EFFORT
     level = getattr(bosco, "effort", DEFAULT_EFFORT)
     if level not in EFFORT_LEVELS:
         log.warning(f"Unknown bosco.effort {level!r}; using {DEFAULT_EFFORT!r} ({', '.join(EFFORT_LEVELS)})")
@@ -207,13 +221,18 @@ def _cached_messages() -> list:
 
 
 def _track_usage(usage) -> None:
-    """Accumulate one API call's token counts onto bosco.usage (session totals)."""
-    bosco.usage["input"] += usage.input_tokens
-    bosco.usage["output"] += usage.output_tokens
-    bosco.usage["cache_read"] += getattr(usage, "cache_read_input_tokens", 0) or 0
-    bosco.usage["cache_write"] += getattr(usage, "cache_creation_input_tokens", 0) or 0
+    """Accumulate one API call's token counts and cost onto bosco.usage (session totals)."""
+    counts = {
+        "input": usage.input_tokens,
+        "output": usage.output_tokens,
+        "cache_read": getattr(usage, "cache_read_input_tokens", 0) or 0,
+        "cache_write": getattr(usage, "cache_creation_input_tokens", 0) or 0,
+    }
+    rates = _RATES[FAST_MODEL if getattr(bosco, "fast", False) else CLAUDE_MODELS[0]]
+    for key, n in counts.items():
+        bosco.usage[key] += n
     bosco.usage["calls"] += 1
-    bosco.usage["cost_usd"] = round(sum(bosco.usage[k] * rate for k, rate in _RATES.items()), 2)
+    bosco.usage["cost_usd"] = round(bosco.usage["cost_usd"] + sum(counts[k] * rates[k] for k in counts), 4)
 
 
 def _phase_label(kind: str, tool_name: str) -> str:
@@ -239,7 +258,7 @@ def _run_turn(namespace: dict) -> None:
         with _spinner("🐶  Bosco is thinking:"):
             response = message_stream(
                 on_phase=_show_phase,
-                model=default_model(),
+                model=_model(),
                 max_tokens=MAX_TOKENS,
                 output_config={"effort": _effort()},
                 system=_system_prompt(),
@@ -314,6 +333,7 @@ def bosco(prompt: str = None):
     bosco.show_code = True        -> also echo the code Bosco runs
     bosco.personality = "pirate"  -> voice: chipper (default), professional, pirate
     bosco.effort = "medium"       -> how hard to work: low, medium, high (default), xhigh, max
+    bosco.fast = True             -> demo mode: Sonnet at low effort (or export BOSCO_DEMO=true)
     bosco.usage                   -> session token counts + estimated cost_usd
     """
     if prompt:
@@ -321,6 +341,10 @@ def bosco(prompt: str = None):
         return
     cprint("lightpurple", "🐶  Just ask -- type a question at the prompt.")
     cprint("grey", '(Shift+Enter = newline. Say "show code"/"hide code", or set bosco.show_code.)')
+    u = bosco.usage
+    cprint("grey", f"model={_model()}  effort={_effort()}  fast={bosco.fast}")
+    cprint("grey", f"personality={bosco.personality}  show_code={bosco.show_code}")
+    cprint("grey", f"calls={u['calls']}  in={u['input']}  out={u['output']}  cost=${u['cost_usd']:.2f}")
 
 
 # Echo the code Bosco runs. Off by default; set True to follow along.
@@ -331,6 +355,10 @@ bosco.personality = DEFAULT_PERSONALITY
 
 # How hard Bosco works per turn; lower is faster. See EFFORT_LEVELS.
 bosco.effort = DEFAULT_EFFORT
+
+# Demo mode: FAST_MODEL at FAST_EFFORT. Overrides bosco.effort while set.
+# BOSCO_DEMO=true in the environment turns it on for the session.
+bosco.fast = os.environ.get("BOSCO_DEMO", "").strip().lower() in ("true", "1", "yes")
 
 # Cumulative token counts + estimated USD for the session; type `bosco.usage` to see them.
 bosco.usage = {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0, "calls": 0, "cost_usd": 0.0}

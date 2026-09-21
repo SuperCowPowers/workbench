@@ -37,6 +37,9 @@ CLAUDE_MODELS: List[str] = [
     "claude-opus-4-8",
 ]
 
+# Lower-latency model for bosco.fast (demos, rapid iteration).
+FAST_MODEL = "claude-sonnet-5"
+
 # Bedrock's inference profile prefix; the direct API takes the bare name above.
 BEDROCK_PREFIX = "us.anthropic."
 
@@ -81,18 +84,23 @@ def proxy_url() -> Optional[str]:
     return ConfigManager().get_config(LLM_URL) or SCP_PROXY_URL
 
 
-def default_model(provider: str = None) -> str:
-    """The preferred model id, in the form the given provider expects.
+def model_id(name: str, provider: str = None) -> str:
+    """A model name in the form the given provider expects.
 
     Args:
+        name (str): Bare model name, e.g. "claude-opus-5".
         provider (str, optional): Provider to format for. Defaults to the active one.
 
     Returns:
         str: e.g. "us.anthropic.claude-opus-5" on Bedrock, "claude-opus-5" otherwise.
     """
     provider = provider or llm_provider()
-    name = CLAUDE_MODELS[0]
     return f"{BEDROCK_PREFIX}{name}" if provider == "bedrock" else name
+
+
+def default_model(provider: str = None) -> str:
+    """The preferred model id, in the form the given provider expects."""
+    return model_id(CLAUDE_MODELS[0], provider)
 
 
 def bedrock_client():
