@@ -160,7 +160,14 @@
       });
     }
     // same-type depth: longest chain of same-band predecessors (splits fs -> fs)
-    const band = (id) => typeBand(byId.get(id).type);
+    // A consumed endpoint is a feature endpoint (an input): half a band before its
+    // earliest consumer, so its edges run left-to-right.
+    const bandOf = new Map(nodes.map((n) => [n.id, typeBand(n.type)]));
+    nodes.forEach((n) => {
+      const out = succ.get(n.id);
+      if (n.type === "endpoint" && out.length) bandOf.set(n.id, Math.min(...out.map((v) => typeBand(byId.get(v).type))) - 0.5);
+    });
+    const band = (id) => bandOf.get(id);
     const sdepth = new Map(nodes.map((n) => [n.id, 0]));
     topo.forEach((u) => pred.get(u).forEach((p) => {
       if (band(p) === band(u) && sdepth.get(u) < sdepth.get(p) + 1) sdepth.set(u, sdepth.get(p) + 1);
