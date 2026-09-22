@@ -277,6 +277,24 @@
 
   const SVGNS = "http://www.w3.org/2000/svg";
 
+  // Smooth spline through an edge's points: horizontal tangents at the two nodes,
+  // Catmull-Rom tangents at the dummy waypoints so long edges flow through them.
+  function edgePath(pts) {
+    const n = pts.length;
+    const tan = pts.map((p, i) => {
+      if (i === 0) return { x: pts[1].x - p.x, y: 0 };
+      if (i === n - 1) return { x: p.x - pts[i - 1].x, y: 0 };
+      return { x: (pts[i + 1].x - pts[i - 1].x) / 2, y: (pts[i + 1].y - pts[i - 1].y) / 2 };
+    });
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < n; i++) {
+      const p0 = pts[i - 1], p1 = pts[i], t0 = tan[i - 1], t1 = tan[i];
+      const k0 = i === 1 ? 0.5 : 1 / 3, k1 = i === n - 1 ? 0.5 : 1 / 3;
+      d += ` C ${p0.x + t0.x * k0} ${p0.y + t0.y * k0}, ${p1.x - t1.x * k1} ${p1.y - t1.y * k1}, ${p1.x} ${p1.y}`;
+    }
+    return d;
+  }
+
   // Node box width sized to its name (monospace char width estimate), clamped
   function nodeWidthFor(name) {
     // +30 = 11px padding each side + 4px endcap border each side (a bit of slack so
@@ -326,13 +344,8 @@
       const pts = [{ x: pa.x + pa.w, y: pa.y + nodeH / 2 }];
       (routeByPair.get(a + ">" + b) || []).forEach((wp) => pts.push({ x: wpX(wp.rank), y: yMid(wp.y) }));
       pts.push({ x: pb.x, y: pb.y + nodeH / 2 });
-      let d = `M ${pts[0].x} ${pts[0].y}`;
-      for (let i = 1; i < pts.length; i++) {
-        const p0 = pts[i - 1], p1 = pts[i], mx = (p0.x + p1.x) / 2;
-        d += ` C ${mx} ${p0.y}, ${mx} ${p1.y}, ${p1.x} ${p1.y}`;
-      }
       const p = document.createElementNS(SVGNS, "path");
-      p.setAttribute("d", d);
+      p.setAttribute("d", edgePath(pts));
       p.setAttribute("fill", "none");
       p.setAttribute("stroke", "var(--mlp-edge)");
       p.setAttribute("stroke-width", "1.4");
@@ -396,13 +409,8 @@
       const pts = [pa];
       (routeByPair.get(a + ">" + b) || []).forEach((wp) => pts.push({ x: xAt(wp.rank), y: yAt(wp.y) }));
       pts.push(pb);
-      let d = `M ${pts[0].x} ${pts[0].y}`;
-      for (let i = 1; i < pts.length; i++) {
-        const p0 = pts[i - 1], p1 = pts[i], mx = (p0.x + p1.x) / 2;
-        d += ` C ${mx} ${p0.y}, ${mx} ${p1.y}, ${p1.x} ${p1.y}`;
-      }
       const p = document.createElementNS(SVGNS, "path");
-      p.setAttribute("d", d);
+      p.setAttribute("d", edgePath(pts));
       p.setAttribute("fill", "none");
       p.setAttribute("stroke", "var(--mlp-edge)");
       p.setAttribute("stroke-width", "1");
