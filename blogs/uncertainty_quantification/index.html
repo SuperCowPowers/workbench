@@ -5325,10 +5325,11 @@
 <h2 id="the-endpoint-end-to-end">The Endpoint, End to End</h2>
 <p>Here's the whole path for a ChemProp model, from a batch of SMILES to the columns that land on every row.</p>
 <figure style="margin: 20px auto; text-align: center;">
-<img src="../../images/uq_endpoint_flow.svg" alt="Deployed endpoint with UQ: SMILES in, 13 UQ columns out" style="width: 100%; height: auto;">
+<img src="../../images/uq_endpoint_flow.svg" alt="Deployed endpoint with UQ: ensemble and applicability domain feed five inputs to the RF UQ model" style="width: 100%; height: auto;">
 </figure>
 
-<p>The ensemble runs first and produces two numbers per compound: <code>prediction</code> (the mean across folds) and <code>prediction_std</code> (the spread). Those two, plus the compound's SMILES, are everything the UQ model receives.</p>
+<p>The <strong>RF UQ model takes five inputs from two sources.</strong> The <strong>ensemble</strong> contributes <code>prediction</code> (the mean across folds) and <code>prediction_std</code> (the spread). The <strong>applicability domain</strong> contributes three more, computed from the compound's <em>k</em> nearest training neighbors by fingerprint similarity: <code>distance</code>, <code>target_std</code> and <code>pred_gap</code>.</p>
+<p>Neither source is sufficient alone. Ensemble spread says how much the model argues with itself; the applicability domain says whether the compound sits anywhere the training data can speak to. A random forest learns how the two together map to actual error.</p>
 <p>What comes back is 13 columns:</p>
 <table>
 <thead>
@@ -5375,7 +5376,7 @@
 <p>For a multi-target model every target gets its own prefixed set (<code>{target}_confidence</code>, <code>{target}_q_95</code>, and so on), with the primary target also aliased to the unprefixed names alongside <code>prediction</code> and <code>prediction_std</code>.</p>
 <hr />
 <h1 id="v1-conformalized-residual-estimator">v1: Conformalized Residual-Estimator</h1>
-<p>v1 replaces "rank the ensemble std" with "<strong>learn how the ensemble's signals map to actual error</strong>, using the compound's neighborhood in chemical space." It's a small supervised model that predicts the magnitude of a prediction's error, conformalized to produce calibrated intervals. The approach is validated by the 2025 <em>J. Chem. Inf. Model.</em> study on UQ under data shift (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/">PMC12848971</a>), which found that error models built on <code>[prediction, ensemble variance, distance to training]</code> outperform standard UQ metrics across ADMET endpoints.</p>
+<p>v1 replaces "rank the ensemble std" with "<strong>learn how the ensemble's signals map to actual error</strong>, using the compound's <strong>applicability domain</strong>, its neighborhood in chemical space." It's a small supervised model that predicts the magnitude of a prediction's error, conformalized to produce calibrated intervals. The approach is validated by the 2025 <em>J. Chem. Inf. Model.</em> study on UQ under data shift (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/">PMC12848971</a>), which found that error models built on <code>[prediction, ensemble variance, distance to training]</code> outperform standard UQ metrics across ADMET endpoints.</p>
 <p>Almost all of the machinery is in the fitting, so that's what's worth walking through. Inference is the trivial half: five features, one forest, one multiply.</p>
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_v1_training.svg" alt="Fitting UQ v1: cross-validated residuals train the error model, out-of-fold estimates calibrate it" style="width: 100%; height: auto;">
@@ -5383,7 +5384,7 @@
 
 <p>The two tracks are the part to notice. The <strong>error model</strong> is the forest that ships and scores new compounds. The <strong>calibration model</strong> is the same fit done out-of-fold, five forests that each score only the rows they didn't train on. Those forests are discarded once fitting ends; their estimates are what Steps 3 and 4 calibrate against, and what the cross-fold capture reports.</p>
 <h2 id="step-1-neighborhood-residual-features">Step 1: Neighborhood Residual Features</h2>
-<p>For each compound, v1 computes five scalar features that describe its local context in the training set (via a fingerprint <code>Proximity</code> backend). The first two are the ensemble signals; the last three come from the <em>k</em> nearest training neighbors (default k=10):</p>
+<p>For each compound, v1 computes five scalar features that describe its local context in the training set (via a fingerprint <code>Proximity</code> backend). The first two are the ensemble signals; the last three are the applicability-domain signals, computed from the <em>k</em> nearest training neighbors (default k=10):</p>
 <table style="width: 100%;">
   <thead>
     <tr>
