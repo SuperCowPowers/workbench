@@ -179,13 +179,14 @@ class WorkbenchDashboardStack(Stack):
 
         # Build the load balancer explicitly: an ALB accepts only one subnet per AZ, and the
         # ECS pattern offers no way to scope the LB's subnets to the ones we were given.
+        # A public LB needs public subnets (route to an IGW); the given subnets serve Redis and the tasks.
         load_balancer = elbv2.ApplicationLoadBalancer(
             self,
             "WorkbenchLB",
             vpc=cluster.vpc,
             internet_facing=props.public,
             security_group=lb_security_group,
-            vpc_subnets=subnet_selection,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC) if props.public else subnet_selection,
         )
 
         # Adding LoadBalancer with Fargate Service
