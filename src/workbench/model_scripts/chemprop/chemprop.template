@@ -18,7 +18,7 @@ import time
 
 # Template revision marker — bump on edits so log output identifies the script
 # version independent of the training image's installed workbench version.
-TEMPLATE_REVISION = "2026-07-04a"
+TEMPLATE_REVISION = "2026-09-23a"
 
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below

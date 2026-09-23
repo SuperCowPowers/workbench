@@ -44,7 +44,7 @@ antlr4-python3-runtime==4.9.3
     # via
     #   -c ci/.uv-constraints.txt
     #   omegaconf
-anyio==4.13.0
+anyio==4.15.1
     # via
     #   -c ci/.uv-constraints.txt
     #   anthropic
@@ -869,7 +869,7 @@ tritonclient==2.69.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   -c ci/.uv-constraints.txt
     #   aiohttp
