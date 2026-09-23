@@ -4,7 +4,8 @@ Many tasks on one shared encoder: the four scored pIC50 targets, the challenge a
 auxiliaries, and the public panels' potency and efficacy readouts. Only the scored four are
 ever submitted -- the rest exist to shape the representation.
 
-`--public-weight` is the experiment, and it moves more than its name suggests.
+`--public-weight` is the experiment, and it moves more than its name suggests. It defaults
+to 0.30, so a bare launcher run rebuilds `cyp-reg-chemprop-union-p30`.
 
 **A task's gradient share is its label count times its weight, not its share of the task
 list.** chemprop multiplies the per-element loss by `task_weights` and reduces by summing
@@ -121,7 +122,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--public-weight",
     type=float,
-    required=True,
+    default=0.30,
     help="Per-head weight for the ChEMBL and Veith targets, as a multiple of mean(primary)",
 )
 parser.add_argument(

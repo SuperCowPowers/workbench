@@ -13,7 +13,7 @@ single-concentration readout is flat where the others are monotone, and the only
 emax carries potency signal. Several independent reasons to think it is not like the other
 three.
 
-Two scopes, both with an encoder that sees CYP2D6 and nothing else:
+Two scopes, both with an encoder that sees CYP2D6 and nothing else, `isoform` by default:
 
     --scope single    the scored target alone, 1,493 rows. Maximum isolation, minimum data.
     --scope isoform   every CYP2D6 readout we have, ~16k rows. Drops cross-isoform sharing
@@ -134,7 +134,7 @@ DEEP_BAND = 4.0
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--scope",
-    required=True,
+    default="isoform",
     choices=["single", "isoform", "pooled", "tdi"],
     help="'single' trains on the scored target alone; 'isoform' adds every CYP2D6 readout; "
     "'pooled' puts offset-corrected public measurements into the scored column; "
