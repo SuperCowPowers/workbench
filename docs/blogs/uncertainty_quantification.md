@@ -42,10 +42,12 @@ The left and right panels are the cases ensemble std already handles: agreement 
 Here's the whole path for a ChemProp model, from a batch of SMILES to the columns that land on every row.
 
 <figure style="margin: 20px auto; text-align: center;">
-<img src="../../images/uq_endpoint_flow.svg" alt="Deployed endpoint with UQ: SMILES in, 13 UQ columns out" style="width: 100%; height: auto;">
+<img src="../../images/uq_endpoint_flow.svg" alt="Deployed endpoint with UQ: ensemble and applicability domain feed five inputs to the RF UQ model" style="width: 100%; height: auto;">
 </figure>
 
-The ensemble runs first and produces two numbers per compound: `prediction` (the mean across folds) and `prediction_std` (the spread). Those two, plus the compound's SMILES, are everything the UQ model receives.
+The **RF UQ model takes five inputs from two sources.** The **ensemble** contributes `prediction` (the mean across folds) and `prediction_std` (the spread). The **applicability domain** contributes three more, computed from the compound's *k* nearest training neighbors by fingerprint similarity: `distance`, `target_std` and `pred_gap`.
+
+Neither source is sufficient alone. Ensemble spread says how much the model argues with itself; the applicability domain says whether the compound sits anywhere the training data can speak to. A random forest learns how the two together map to actual error.
 
 What comes back is 13 columns:
 
@@ -66,7 +68,7 @@ For a multi-target model every target gets its own prefixed set (`{target}_confi
 
 # v1: Conformalized Residual-Estimator
 
-v1 replaces "rank the ensemble std" with "**learn how the ensemble's signals map to actual error**, using the compound's neighborhood in chemical space." It's a small supervised model that predicts the magnitude of a prediction's error, conformalized to produce calibrated intervals. The approach is validated by the 2025 *J. Chem. Inf. Model.* study on UQ under data shift ([PMC12848971](https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/)), which found that error models built on `[prediction, ensemble variance, distance to training]` outperform standard UQ metrics across ADMET endpoints.
+v1 replaces "rank the ensemble std" with "**learn how the ensemble's signals map to actual error**, using the compound's **applicability domain**, its neighborhood in chemical space." It's a small supervised model that predicts the magnitude of a prediction's error, conformalized to produce calibrated intervals. The approach is validated by the 2025 *J. Chem. Inf. Model.* study on UQ under data shift ([PMC12848971](https://pmc.ncbi.nlm.nih.gov/articles/PMC12848971/)), which found that error models built on `[prediction, ensemble variance, distance to training]` outperform standard UQ metrics across ADMET endpoints.
 
 Almost all of the machinery is in the fitting, so that's what's worth walking through. Inference is the trivial half: five features, one forest, one multiply.
 
@@ -78,7 +80,7 @@ The two tracks are the part to notice. The **error model** is the forest that sh
 
 ## Step 1: Neighborhood Residual Features
 
-For each compound, v1 computes five scalar features that describe its local context in the training set (via a fingerprint `Proximity` backend). The first two are the ensemble signals; the last three come from the *k* nearest training neighbors (default k=10):
+For each compound, v1 computes five scalar features that describe its local context in the training set (via a fingerprint `Proximity` backend). The first two are the ensemble signals; the last three are the applicability-domain signals, computed from the *k* nearest training neighbors (default k=10):
 
 <table style="width: 100%;">
   <thead>

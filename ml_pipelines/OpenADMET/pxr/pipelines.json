@@ -1,9 +1,13 @@
 {
   "pipelines": {
     "openadmet_pxr": [
-      {"script": "pxr_feature_sets.py",
-       "inputs": ["public:comp_chem/openadmet/pxr/training/main", "public:comp_chem/openadmet/pxr/testing/phase1_unblinded"],
-       "outputs": ["fs:openadmet_pxr_f1", "fs:openadmet_pxr_f2"]},
+      {"script": "pxr_feature_sets.py", "mode": "f1",
+       "inputs": ["public:comp_chem/openadmet/pxr/training/main", "endpoint:smiles-to-2d-3d-v1"],
+       "outputs": ["fs:openadmet_pxr_f1"]},
+      {"script": "pxr_feature_sets.py", "mode": "f2",
+       "inputs": ["public:comp_chem/openadmet/pxr/training/main", "public:comp_chem/openadmet/pxr/testing/phase1_unblinded",
+                  "endpoint:smiles-to-2d-3d-v2"],
+       "outputs": ["fs:openadmet_pxr_f2"]},
       {"script": "phase1/pxr_chemprop_phase1.py", "inputs": ["fs:openadmet_pxr_f1"],
        "outputs": ["model:pxr-reg-chemprop-phase1", "endpoint:pxr-reg-chemprop-phase1"]},
       {"script": "phase1/pxr_chemprop_tuned_phase1.py", "inputs": ["fs:openadmet_pxr_f1"],

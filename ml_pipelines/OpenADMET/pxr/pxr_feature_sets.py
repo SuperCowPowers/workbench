@@ -3,7 +3,8 @@
 Generic FeatureSets shared by every model. Each carries SMILES + 2D
 (RDKit/Mordred) + 3D features; models select the subset they want via
 `feature_list` (chemprop -> ["smiles"], xgb/pytorch -> the descriptor columns).
-Two variants differ only in the 3D layer:
+Two variants differ only in the 3D layer; the pipeline mode (`f1` or `f2`) selects
+the one this run builds:
 
   - openadmet_pxr_f1  via smiles-to-2d-3d-v1  (v1 3D: 74 descriptors)
   - openadmet_pxr_f2  via smiles-to-2d-3d-v2  (v2 3D: curated, xTB-powered)
@@ -16,17 +17,18 @@ A `split` column marks each row ("train" or "phase1_test"):
 
 f2 requires the smiles-to-2d-3d-v2 endpoint to be deployed first.
 
-Run once before the phase models:  python pxr_feature_sets.py
+Run before the phase models:  ml_pipeline_launcher pxr_feature_sets
 """
 
 import pandas as pd
 from workbench.api import DataSource, Endpoint, PublicData
 from workbench.api.inference_cache import InferenceCache
+from workbench.core.pipelines.pipeline_meta import PipelineMeta
 
-# FeatureSet name -> the (Meta)Endpoint that produces its 2D+3D features.
-FEATURE_SETS = {
-    "openadmet_pxr_f1": "smiles-to-2d-3d-v1",  # v1 3D (74 descriptors)
-    "openadmet_pxr_f2": "smiles-to-2d-3d-v2",  # v2 3D (curated, xTB)
+# Variant (pipeline mode) -> the (Meta)Endpoint that produces its 2D+3D features.
+FEATURE_VARIANTS = {
+    "f1": "smiles-to-2d-3d-v1",  # v1 3D (74 descriptors)
+    "f2": "smiles-to-2d-3d-v2",  # v2 3D (curated, xTB)
 }
 
 
@@ -55,5 +57,5 @@ phase1 = (
 phase1["split"] = "phase1_test"
 df = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)
 
-for name, ep in FEATURE_SETS.items():
-    build_feature_set(name, ep, df)
+variant = PipelineMeta().mode
+build_feature_set(f"openadmet_pxr_{variant}", FEATURE_VARIANTS[variant], df)
