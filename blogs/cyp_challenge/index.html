@@ -2371,10 +2371,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#placement" class="md-nav__link">
+  <a href="#calibration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Placement
+        Calibration
       
     </span>
   </a>
@@ -5300,10 +5300,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#placement" class="md-nav__link">
+  <a href="#calibration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Placement
+        Calibration
       
     </span>
   </a>
@@ -5374,7 +5374,7 @@
 <h1 id="openadmet-cyp-challenge-working-notes">OpenADMET CYP Challenge — Working Notes</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Current entry</p>
-<p>An average of four Chemprop models over the challenge data plus public CYP potency, stock hyperparameters, plus a per-isoform placement correction. <strong>Macro ST-RAE 0.4378</strong> on the live half of the test set.</p>
+<p>An average of four Chemprop models over the challenge data plus public CYP potency, stock hyperparameters, plus a per-isoform calibration. <strong>Macro ST-RAE 0.4378</strong> on the live half of the test set.</p>
 </div>
 <p><strong>Work in progress.</strong> The <a href="https://huggingface.co/spaces/openadmet/cyp-challenge">OpenADMET CYP Inhibition Blind Challenge</a> (Direct Inhibition track) is still open. The model changes between submissions, and the live leaderboard scores only half the test set. So these are just some early observations that may, or may not, translate well to the final leaderboard.</p>
 <p>Two things carry the entry. First, a multi-task graph model trained on the challenge assay alongside every adjacent public readout we could align, ensembled across architectures. Second, an explicit correction for the distribution shift between the training labels and the blind set.</p>
@@ -5437,7 +5437,7 @@ explains why they go in as separate heads rather than as extra rows.</p>
 </tr>
 </tbody>
 </table>
-<p>Only the four scored pIC50 heads are ever submitted; the rest exist to shape the representation. The specialists carry no other isoforms, so CYP1A2, CYP2C9 and CYP3A4 average two members and CYP2D6 averages four. Predictions are averaged, then placed.</p>
+<p>Only the four scored pIC50 heads are ever submitted; the rest exist to shape the representation. The specialists carry no other isoforms, so CYP1A2, CYP2C9 and CYP3A4 average two members and CYP2D6 averages four. Predictions are averaged, then calibrated.</p>
 <p><strong>Why multi-task.</strong> The isoforms are correlated and the per-isoform data is small, 1,285–2,335 curves each. One encoder learning from all 6,525 measurements is a data-efficiency argument, not a claim that graph learning resolves activity cliffs; on activity cliffs descriptor models match or beat GNNs (van Tilborg et al.).</p>
 <p><strong>Why auxiliary heads rather than more rows.</strong> Every extra source measures something adjacent to the scored target, not identical to it: the single-concentration arm reports a fold-change, ChEMBL's potency comes from other labs and reads ~0.5 log more potent on shared compounds, and the qHTS panel reports efficacy at the top concentration. Pooling any of them into the scored columns needs a cross-assay correction; as separate heads none is required, since the encoder learns from all of them and each head keeps its own scale.</p>
 <p><strong>Why an ensemble.</strong> Averaging decorrelated models cancels the error that belongs to architecture and training run rather than to the chemistry. Members are chosen for how differently they see the problem, not for how they score alone. The two CYP2D6 specialists earn their slots that way: a different slice of the data, so different compounds missed. On CYP2D6, where all four members predict and the pool can be scored out of fold, the average beats every member it contains — 0.503 Spearman against 0.445 for the best of them — and the gain flattens by the fourth.</p>
@@ -5446,20 +5446,21 @@ explains why they go in as separate heads rather than as extra rows.</p>
 <p>The blind set is not a random draw. OpenADMET built it by hit expansion: the top 25 hits for CYP1A2, CYP2C9 and CYP3A4, then the top 10 catalog chemisimilars purchased for each, giving 750 compounds in dense structural clusters around potent molecules.</p>
 <p>Clustered around hits is not the same as active: analogs of a potent compound are mostly not potent, and CYP2D6 was not among the isoforms hits were selected on, so it got no enrichment at all. Every training label meanwhile survived two filters: a compound was screened because someone thought it might be active, and labelled only if its dose-response curve fit. Compounds that did nothing produce no curve and no label.</p>
 <p>The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. Solved against the blind half afterwards, the true centre is 3.107. The blind population is also <em>wider</em> on all four isoforms. Squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.</p>
-<h2 id="placement">Placement</h2>
+<h2 id="calibration">Calibration</h2>
+<p>Calibration here is the affine kind — shift and scale — not interval coverage.</p>
 <p>Predictions carry two independent things. Their <strong>order</strong>, which is the model, and their <strong>placement</strong> on the axis, which is not. R² decomposes exactly:</p>
 <div class="arithmatex">\[R^2 = 2\rho k - k^2 - b^2\]</div>
-<p>with ρ the Pearson correlation, <code>k = sd(pred)/sd(true)</code> the spread ratio, and <code>b</code> the mean offset in sd(true) units. Only ρ depends on the ordering; <code>k</code> and <code>b</code> come from an affine transform that touches no compound's rank. So <strong>R² ≤ ρ²</strong> is a hard ceiling, and a model far below its own ρ² is <em>mis-placed, not weak</em>.</p>
+<p>with ρ the Pearson correlation, <code>k = sd(pred)/sd(true)</code> the spread ratio, and <code>b</code> the mean offset in sd(true) units. Only ρ depends on the ordering; <code>k</code> and <code>b</code> come from an affine transform that touches no compound's rank. So <strong>R² ≤ ρ²</strong> is a hard ceiling, and a model far below its own ρ² is <em>mis-calibrated, not weak</em>. The decomposition is Murphy's (1988): the <code>k ≠ ρ</code> term is conditional bias, the <code>b</code> term unconditional bias.</p>
 <p>The optimum is <strong><code>k = ρ</code>, not <code>k = 1</code></strong>. Matching the spread of the truth is wrong: a model with ρ = 0.7 should be 70% as wide as reality, because shrinking toward the mean is the correct response to uncertainty. Raw predictions are narrower still.</p>
-<p>So: estimate the target population's centre and spread, then place each isoform there with spread <code>ρ·sd</code>.</p>
-<p><img src="../../images/cyp_calibration_applied.svg" alt="Four panels, one per isoform, each overlaying raw blind-set predictions, the same predictions after placement, and the blind population curve. CYP1A2, CYP2C9 and CYP3A4 shift and widen onto their population curves. CYP2D6 also moves down and widens but deliberately stops short, sitting above the population centre and narrower than it, because that is where the scored metric is optimised rather than R-squared." style="width: 100%; height: auto; display: block;"></p>
+<p>So: estimate the target population's centre and spread, then calibrate each isoform onto it with spread <code>ρ·sd</code>.</p>
+<p><img src="../../images/cyp_calibration_applied.svg" alt="Four panels, one per isoform, each overlaying raw blind-set predictions, the same predictions after calibration, and the blind population curve. CYP1A2, CYP2C9 and CYP3A4 shift and widen onto their population curves. CYP2D6 also moves down and widens but deliberately stops short, sitting above the population centre and narrower than it, because that is where the scored metric is optimised rather than R-squared." style="width: 100%; height: auto; display: block;"></p>
 <p>CYP2D6 shows the effect at full scale: raw predictions spike at 4.5 with sd 0.49 against a population centred at 3.1 with sd 1.60. It never calls a compound a non-inhibitor, and predicts into under a third of the actual range.</p>
-<p>Placement changes the score on identical weights and an identical ordering. Spearman and Kendall come back bit-identical under an affine transform, which doubles as the integrity check: if they move, the bug is in the submission pipeline.</p>
-<p><strong>The catch.</strong> The placement that maximises R² does not minimise the scored metric. Soft-threshold RAE is zero anywhere inside a compound's credible interval, and low-activity compounds carry wide intervals, so predicting high is nearly free while predicting low is punished by the actives. Placing CYP2D6 on its true centre raises R² and <em>worsens</em> ST-RAE; there the two objectives point in opposite directions.</p>
+<p>Calibration changes the score on identical weights and an identical ordering. Spearman and Kendall come back bit-identical under an affine transform, which doubles as the integrity check: if they move, the bug is in the submission pipeline.</p>
+<p><strong>The catch.</strong> The calibration that maximises R² does not minimise the scored metric. Soft-threshold RAE is zero anywhere inside a compound's credible interval, and low-activity compounds carry wide intervals, so predicting high is nearly free while predicting low is punished by the actives. Calibrating CYP2D6 onto its true centre raises R² and <em>worsens</em> ST-RAE; there the two objectives point in opposite directions.</p>
 <h2 id="open-problems">Open Problems</h2>
 <p><strong>CYP2D6.</strong> The weakest of the four by a wide margin. It is the isoform the challenge did not select hits on, so its blind population is the lowest-centred and widest. Its R² sits above the ceiling its own Spearman supports, which happens only when Pearson runs well ahead of rank correlation: the linear fit is fine, and the cost is ordering inside the flat low-activity region where most of its compounds sit.</p>
 <p><strong>Both rulers are underpowered.</strong> Repeated training runs of one configuration at different seeds disagree by more than candidate models do, so out-of-fold cross-validation cannot resolve the differences now being chased. The leaderboard is not much better: a Spearman's standard error is largest where the correlation is weakest, making CYP2D6 the worst-resolved isoform on both. Anything below the noise floor is treated as unmeasured rather than as a result.</p>
-<p><strong>Where the ST-RAE optimum sits.</strong> Known by sampling placements against the board, not derived. A credible-interval width model would give it directly.</p>
+<p><strong>Where the ST-RAE optimum sits.</strong> Known by sampling calibrations against the board, not derived. A credible-interval width model would give it directly.</p>
 <h2 id="reproducing-this">Reproducing This</h2>
 <p><strong>Source code:</strong> <a href="https://github.com/SuperCowPowers/workbench/tree/main/ml_pipelines/OpenADMET/cyp"><code>ml_pipelines/OpenADMET/cyp</code></a> — every script referenced here, each with its measurements in the docstring.</p>
 <p>Built with <a href="https://github.com/SuperCowPowers/workbench">ADMET Workbench</a>:</p>
@@ -5474,7 +5475,7 @@ explains why they go in as separate heads rather than as extra rows.</p>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_2d6.py<span class="w"> </span>--scope<span class="w"> </span>isoform
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/cyp_chemprop_2d6.py<span class="w"> </span>--scope<span class="w"> </span>single
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Average their predictions over the 750 blinded compounds, then place them</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Average their predictions over the 750 blinded compounds, then calibrate them</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/scripts/cyp_ensemble_submit.py
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>python<span class="w"> </span>ml_pipelines/OpenADMET/cyp/scripts/cyp_recalibrate.py<span class="w"> </span>--source<span class="w"> </span>outputs/&lt;file&gt;<span class="w"> </span>--strae
 </span></code></pre></div>
@@ -5486,6 +5487,7 @@ explains why they go in as separate heads rather than as extra rows.</p>
 <li><a href="https://openadmet.github.io/Octant_CYP_blog_post/?ref=openadmet.ghost.io">Building the OpenADMET Data Engine</a> — Warneford-Thomson, Simpkins, Edgar and MacDermott-Opeskin on the assay platform behind this data: Echo-MS, 1536-well miniaturisation, and why well-level records are released alongside the fitted parameters</li>
 <li><a href="../pxr_weekend_experiments/">A Weekend on the OpenADMET PXR Challenge</a> — our prior blind-challenge write-up, and where the HPO and 3D-descriptor priors come from</li>
 <li>van Tilborg et al., <em>Exposing the Limitations of Molecular Machine Learning with Activity Cliffs</em>, J. Chem. Inf. Model. 2022</li>
+<li>Murphy, <em>Skill Scores Based on the Mean Square Error and Their Relationships to the Correlation Coefficient</em>, <a href="https://journals.ametsoc.org/view/journals/mwre/116/12/1520-0493_1988_116_2417_ssbotm_2_0_co_2.xml">Mon. Weather Rev. 1988</a> — the R² decomposition above, as an MSE skill score</li>
 </ul>
 <p><strong>Data sources</strong></p>
 <ul>
