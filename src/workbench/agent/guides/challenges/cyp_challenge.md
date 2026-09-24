@@ -113,9 +113,7 @@ the spread reported alongside each score. Combined with the live board scoring
 only half the test set, a small gap between two entries is inside the noise —
 read the spread before treating a rank as a result.
 
-**Our analog holdout has a noise floor of about 0.03 macro ST-RAE**, measured by
-bootstrapping the 529 held-out compounds. A delta smaller than that is not a
-result. Two models are compared with a *paired* bootstrap, not by eyeballing each
+**Compare two models with a *paired* bootstrap**, not by eyeballing each
 one's interval — the marginal intervals overlap heavily while the paired test
 still separates them, because pairing cancels per-compound difficulty:
 
@@ -148,42 +146,65 @@ Predictions are required for all 750 compounds, but only confidently-labelable
 ones score. Both inferred positives and assigned negatives are real scored
 labels — do not filter them out of training as unmeasurable.
 
-## Leaderboard baselines — what the numbers actually look like
+## Where the entry stands
 
-OpenADMET posted reference entries on the real blind set. These are the calibration
-points; quote them before calling any internal score good or bad.
+Pulled 2026-09-23 with `ml_pipelines/OpenADMET/cyp/scripts/cyp_leaderboard.py`. The field
+grows by tens of entries a week, so a fixed score loses rank steadily — re-pull before
+quoting any of this.
 
-| Entry | MA-ST-RAE | MA-MAE | MA-R² | Spearman ρ |
-|---|---|---|---|---|
-| **Autopilot** (autonomous agent, rank 1) | **0.550** | 0.767 | **0.460** | 0.729 |
-| TabICL-baseline | 0.676 | 0.857 | 0.293 | 0.681 |
-| CheMeleon-baseline | 0.834 | 0.971 | 0.094 | 0.647 |
-| **ours** — `cyp-reg-chemprop-mt-100`, rank 15 | **0.841** | 0.970 | 0.093 | **0.676** |
-| LGBM-baseline | 0.893 | 1.000 | 0.066 | 0.598 |
-| XGB-baseline | 0.898 | 1.005 | 0.063 | 0.597 |
+| | macro | CYP1A2 | CYP2C9 | CYP2D6 | CYP3A4 |
+|---|---|---|---|---|---|
+| our ST-RAE | 0.4378 | 0.4483 | 0.3632 | 0.5502 | 0.3895 |
+| our rank, of 216 | 8 | 13 | 12 | **26** | 8 |
+| board best | 0.3872 | 0.3846 | 0.3354 | 0.4156 | 0.3653 |
 
-What to read from them:
+Standing entry: a four-model chemprop ensemble, placed per isoform.
 
-- **Our analog holdout underestimates the leaderboard by 2x.** We scored 0.423
-  internally and 0.841 on the board. Multiply any holdout ST-RAE by ~2 before
-  comparing to a leaderboard number. The cause is structural: every compound in
-  the training release was promoted to a dose-response curve because it was a
-  primary-screen hit, so the holdout contains only pre-screened actives while the
-  blind set is unscreened catalog purchases.
-- **The gap to the leaders is calibration, not ranking.** Our Spearman (0.676) is
-  within 0.05 of the rank-1 entry (0.729) and above TabICL, yet our R2 is 0.093
-  against their 0.460. We order compounds nearly as well and are wrong about the
-  absolute values.
-- **R2 0.46 is reachable from our current ranking.** For any predictor R2 <= r^2,
-  and 0.676^2 = 0.457 — so perfectly calibrated predictions with our existing
-  ordering would land right where the leader is. The information is present and
-  being discarded in the mapping to absolute values.
-- **Compression is not inevitable.** Earlier entries clustered at R2 0.06-0.09 with
-  Spearman 0.60-0.68, which reads as predictions shrunk toward the mean. The rank-1
-  entry breaks that pattern, so shrinkage is a solvable problem here rather than the
-  error-minimizing response to a noisy signal.
-- **Descriptor GBMs sit at 0.89-0.90**, so a descriptor model landing near 0.9 is
-  performing normally.
+**The gap is ordering, not placement.** Of the 0.0626 macro gap to rank 1, only 0.0135
+(22%) is recoverable by re-placing at our current ordering — measured as the best ST-RAE
+any entry achieves whose Spearman is within +-0.01 of ours. Chase Spearman and Pearson
+first; placement is already close to its ceiling on every isoform and exactly at it on
+CYP2D6.
+
+**CYP2D6 is the weak isoform and the gap is real, not a ruler artifact.** We rank 26th on
+its ST-RAE and 30th on Spearman (0.487 against a board best of 0.561), with 27 entries above
+0.500. A dense band of competitors that far ahead is not noise — something is being found
+that we are not finding.
+
+**Descriptor GBMs land near 0.9 raw.** A descriptor model scoring there is performing
+normally, not broken; most of the distance to a competitive score is placement.
+
+## Placement: the affine half of the score
+
+A prediction vector carries two independent things — its **order**, which is the model, and
+its **placement** on the pIC50 axis, which is not. R2 decomposes exactly:
+
+    R2 = 2*rho*k - k^2 - b^2
+
+with `rho` the Pearson correlation, `k = sd(pred)/sd(true)` the spread ratio, and `b` the
+mean offset in sd(true) units. Only `rho` depends on ordering, so **R2 <= rho^2** is a hard
+ceiling and a model far below its own `rho^2` is mis-placed rather than weak.
+
+**The optimum is `k = rho`, not `k = 1`.** Matching the truth's spread is wrong: a model at
+rho 0.7 should be 70% as wide as reality, because shrinking toward the mean is the correct
+response to uncertainty. Raw predictions are narrower still, so most models need widening.
+
+So: estimate the blind population's centre and spread, then place each isoform there with
+spread `rho*sd`. Spearman and Kendall come back bit-identical under an affine transform,
+which doubles as the integrity check — if they move, the submission pipeline has a bug.
+
+**ST-RAE and R2 want different placements**, on CYP2D6 by a wide margin, because ST-RAE
+scores zero inside a credible interval and low-activity compounds carry wide ones.
+Predicting high is nearly free; predicting low is punished by the actives. Placing CYP2D6 on
+its true centre raises R2 and *worsens* ST-RAE.
+
+**Deriving the ST-RAE optimum offline does not work** — out-of-fold interval widths do not
+represent the blind set's, so hiding predictions inside them looks free offline and is not.
+The optimum is known by sampling placements against the board. Interpolate between probed
+points, never extrapolate past them.
+
+`ml_pipelines/OpenADMET/cyp/scripts/cyp_recalibrate.py` holds the measured constants and
+applies the transform.
 
 ## The test set is analog-heavy — this is the key fact
 
@@ -197,23 +218,18 @@ regime where our measured HPO gains disappeared.
   untuned defaults on PXR's analog set (`hpo`). If an HPO run is done anyway,
   quote `model.hpo_results()` numbers and treat a baseline win as the expected
   outcome.
-- **Evaluate on an analog holdout, not cross-validation.**
-  `analog_holdout_split` reproduces how this test set was built — top hits per
-  target plus each hit's nearest neighbors, held out together:
-
-  ```python
-  from workbench.training.splits import analog_holdout_split
-  ```
-
-  Measured on the public Veith CYP3A4 data: a random split of the *same size*
-  makes a baseline look 2.1x more accurate (MAE 0.304) than the analog holdout
-  does (MAE 0.637). Quote the analog number; a CV number is the optimistic one.
-  Butina (`hyperparameters={"split_strategy": "butina"}`) is still the right
-  *training* fold strategy — it answers "new chemotypes?", which is a different
-  question from "new analogs of known hits?".
-- The holdout runs small (178 of 9,377 rows at 25 hits x 10 analogs, since
-  neighbors overlap between hits). Raise `n_hits` before trusting it to pick a
-  champion.
+- **Out-of-fold predictions are the ruler.** Score candidates on the `cv_<target>`
+  captures (multi-target) or `full_cross_fold` (single-target), with
+  `ml_pipelines/OpenADMET/cyp/scripts/cyp_compare.py`. Butina
+  (`hyperparameters={"split_strategy": "butina"}`) is the fold strategy worth testing
+  against the default scaffold split — it asks "new chemotypes?", which is closer to how
+  the blind set was built.
+- **Know what the ruler can resolve before reading a delta.** Smallest out-of-fold Spearman
+  difference distinguishable from training and sampling noise, per
+  `scripts/cyp_ruler_power.py`: CYP1A2 0.043, CYP2C9 0.031, CYP2D6 0.056, CYP3A4 0.018.
+  Our model-to-model differences run 0.01-0.03, so **most candidate comparisons here are
+  unresolvable** and come back "cannot tell" rather than negative. Say so instead of
+  reporting the sign.
 - Analog clusters mean small structural changes must move the prediction.
   Check activity cliffs and near-duplicate collisions in the training data
   before trusting a model to resolve them (`proximity`, `data_cleanup`).
@@ -323,24 +339,29 @@ encode; the mechanism here is different.
   where held-out RAE degraded monotonically as more 3D columns went in. The
   argument here is orthogonal information, which is an ensemble-diversity
   argument.
-- On PXR, 3D ranked high in SHAP and *still* failed to transfer to the analog
-  set. The verdict comes from the analog holdout, never from CV or feature
-  importance.
+- On PXR, 3D ranked high in SHAP and *still* failed to transfer. The verdict comes from
+  a held-out score against its resolution threshold, never from feature importance.
 
 ## Start from the built FeatureSets
 
-Five FeatureSets are already built from the challenge data and onboarded. Use
-them rather than rebuilding from `PublicData` — they carry the decisions below
+These FeatureSets are already built and onboarded. Use them rather than rebuilding
+from `PublicData` — they carry the decisions below
 (credible intervals present, TDI labels de-leaked, challenge target naming) and
 rebuilding re-derives all of it, usually getting one wrong.
 
-| FeatureSet | rows | cols | what it is |
-|---|---|---|---|
-| `openadmet_cyp_f1` | 4,905 | 423 | Regression track, 2D + **v1** 3D |
-| `openadmet_cyp_f2` | 4,905 | 373 | Regression track, 2D + **v2** 3D (curated, xTB) |
-| `openadmet_cyp_tdi_f1` | 6,145 | 409 | TDI track, 2D + v1 3D |
-| `openadmet_cyp_tdi_f2` | 6,145 | 359 | TDI track, 2D + v2 3D |
-| `openadmet_cyp_veith` | 14,432 | 11 | Veith pretraining, SMILES + 5 targets, no descriptors |
+| FeatureSet | rows | what it is |
+|---|---|---|
+| `openadmet_cyp_f1` | 4,905 | Regression track, 2D + **v1** 3D |
+| `openadmet_cyp_f2` | 4,905 | Regression track, 2D + **v2** 3D (curated, xTB) |
+| `openadmet_cyp_aux_f1` | 4,905 | `_f1` plus the four single-concentration log2fc targets |
+| `openadmet_cyp_union_f1` | 35,801 | `_aux_f1` plus TDI, emax, and the ChEMBL / Veith / Tox21 public heads — 35 targets |
+| `openadmet_cyp_union_censored_f1` | 35,801 | the union set with `IC50 > x` records as bounds carrying `_lt` flags |
+| `openadmet_cyp_censored_f1` | 4,905 | `_f1` with censored records as bounds |
+| `openadmet_cyp_fp` | 4,905 | Regression track, fingerprints |
+| `openadmet_cyp_tdi_f1` / `_f2` / `_fp` | 6,145 | TDI track, same three feature blocks |
+
+The current models train on `openadmet_cyp_aux_f1` and `openadmet_cyp_union_f1`; `_f1` and
+`_f2` are the controlled A/B for the 3D layer.
 
 - **`f1` vs `f2` differ only in the 3D layer** — same rows, same 2D block, same
   labels. That makes them a controlled A/B for whether the xTB electronic block
@@ -352,11 +373,11 @@ rebuilding re-derives all of it, usually getting one wrong.
   from the shift between the direct and TDI arms, so carrying either arm beside
   the label hands the model the answer. To re-derive or audit labels, go back to
   `PublicData`.
-- **`openadmet_cyp_veith` has no descriptors and no credible intervals** — SMILES
-  plus five targets, so it is chemprop-only and cannot be scored with ST-RAE. Its
-  censored inactives were dropped at build time, so CYP3A4 bottoms out at pIC50
-  4.20 and CYP1A2 at 4.10 while CYP2D6 reaches 2.05. It teaches the potent end and
-  says almost nothing about the low-activity regime ST-RAE is built around.
+- **`openadmet_cyp_union_f1` carries public potency as separate heads, not extra rows.**
+  Each source sits on its own scale, so a head keeps its own calibration and no cross-assay
+  correction is needed. Measured: the union heads move out-of-fold Spearman by a mean of
+  -0.002 against the challenge-only model, none of it resolved. Public data has not paid off
+  on any isoform.
 - The challenge training table is already one row per compound with `NaN` where an
   isoform was not measured, so it needs no `combine_multi_task_data`. That helper
   is for assembling Veith-style per-isoform sources.
@@ -405,7 +426,7 @@ QC columns (`drc_qc_status`, `activity_status`, `rollover_status`,
 CYP2C19, one row per compound-isoform pair:
 
 ```python
-all_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/all_isoforms")  # 85,535 rows, 17,107 compounds
+all_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/all_isoforms")  # 85,535 rows, 16,546 compounds
 cyp3a4_df = pub_data.get("comp_chem/pubchem/cyp_inhibition/cyp3a4")     # per-isoform files also available
 ```
 
@@ -452,8 +473,43 @@ local_model.get_inference_predictions("full_cross_fold")
 
 Those are the standard regression metrics. For ST-RAE, pull the predictions, join
 the label intervals from the FeatureSet, and call `soft_threshold_rae` directly.
-Whichever way, use the analog holdout as the eval set — a cross-fold number is the
-optimistic one.
+Score candidates on the out-of-fold captures, against the resolution thresholds above.
+
+## CYP2D6: what has been tried, and where the gap actually is
+
+Ten attempts have come back null or negative: task weighting, a dedicated encoder,
+single-task, fingerprints, binary active/inactive heads, Tox21 potency heads, a log2fc
+surrogate, empirical-Bayes shrinkage, an uncertainty-driven downward tilt, low-band loss
+weighting, pooled public labels in the scored column, and a CheMeleon pretrained encoder.
+Propose any of them again only with a reason the earlier measurement was wrong.
+
+Three of those were *resolved* negatives rather than nulls, and they share a shape —
+weighting or padding the low end collapses the model toward a constant. Low-band loss
+weighting took Spearman from 0.388 to 0.056 at 8x.
+
+**The low bands cannot be ordered, and that is a label property.** Using the credible
+intervals as a noise estimate, reliability = (var(label) - mean var(noise)) / var(label):
+
+| band | n | label sd | noise sd | ceiling on rho |
+|---|---|---|---|---|
+| < 4.0 | 129 | 0.684 | 0.662 | 0.25 |
+| 4.0-4.5 | 350 | 0.113 | 0.132 | ~0 |
+| >= 4.5 | 1,014 | 0.609 | 0.070 | 0.99 |
+
+The dead 4.0-4.5 band is not CYP2D6-specific — CYP1A2 and CYP2C9 are also ~0 there, and
+CYP3A4, our best isoform, is the only one with a live middle band.
+
+**But the headroom is between the bands, not within them.** An oracle capped at each band's
+ceiling still reaches full-set Spearman 0.98, and band membership alone is worth 0.82. We
+are at 0.44. Measured directly, AUC separating `<4.0` from `>=4.5` — a 3.5-log distinction
+that carries no label-noise excuse:
+
+| CYP3A4 | CYP2C9 | CYP1A2 | CYP2D6 |
+|---|---|---|---|
+| 0.939 | 0.912 | 0.838 | **0.750** |
+
+That is the open problem: telling a CYP2D6 non-inhibitor from an inhibitor, not ordering
+weak ones against each other. Aim there.
 
 ## Submission discipline
 
@@ -470,8 +526,8 @@ optimistic one.
   too slow and too coarse to choose a champion with.
 - Choose on internal evidence: build the candidates, run them through a contest
   on a shared `inference_run`, and promote on the deltas (`contests`,
-  `promotion`). The analog holdout is the eval that has to carry the decision.
-  Use the board to catch calibration surprises, not to rank.
+  `promotion`). Out-of-fold Spearman, read against its resolution threshold, is the eval
+  that has to carry the decision. Use the board to probe placement, not to rank models.
 - Proprietary CYP data may be used but **must be disclosed**. If the user pulls
   in private data, note that the disclosure is required.
 - No restriction on methods or external property databases.
