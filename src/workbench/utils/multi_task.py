@@ -229,7 +229,12 @@ def combine_multi_task_data(
     agg_dict = {c: "mean" for c in numeric_cols}
     agg_dict.update({c: "max" for c in date_cols})
     agg_dict.update({c: "first" for c in other_cols})
-    result = result.groupby(merge_key, as_index=False).agg(agg_dict)
+    grouped = result.groupby(merge_key)
+    for c in [p for p in all_passthrough if p in other_cols]:
+        n_conflict = (grouped[c].nunique() > 1).sum()
+        if n_conflict:
+            log.warning(f"'{c}': {n_conflict} molecules have conflicting values; keeping the first")
+    result = grouped.agg(agg_dict).reset_index()
     log.info(f"Collapsing {n_before} rows -> {len(result)} ({len(dup_ids)} molecules appear in multiple sources)")
 
     # --- Step 3b: Drop rows with no supervision ---

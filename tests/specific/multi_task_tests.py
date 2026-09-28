@@ -8,6 +8,7 @@ temporal-date handling — in particular the id-strict / smiles-lenient rule for
 source that lacks the date column.
 """
 
+import logging
 import sys
 import types
 
@@ -329,7 +330,7 @@ def test_pull_metadata_columns(monkeypatch):
     assert pd.isna(rows.loc["3", "qual_a"]) and rows.loc["3", "qual_b"] == "="
 
 
-def test_pull_metadata_shared_name_coalesces(monkeypatch):
+def test_pull_metadata_shared_name_coalesces(monkeypatch, caplog):
     """Metadata listed by several sources collapses to one column: first non-NaN, in source order."""
     frames = {
         "src_a": pd.DataFrame(
@@ -340,6 +341,8 @@ def test_pull_metadata_shared_name_coalesces(monkeypatch):
         ),
     }
     _install_fake_feature_set(monkeypatch, frames)
+    # workbench logger has propagate=False, so attach caplog's handler directly.
+    monkeypatch.setattr(logging.getLogger("workbench"), "handlers", [caplog.handler])
 
     out = pull_multi_task_data(
         {
@@ -353,6 +356,9 @@ def test_pull_metadata_shared_name_coalesces(monkeypatch):
     assert list(rows["qual"]) == ["=", ">", "="]
     # Numeric metadata is carried, not averaged: id 2 keeps src_a's 6, not mean(6, 9)
     assert list(rows["n"]) == [5, 6, 7]
+    # id 2's sources disagree on both columns, so each conflict is logged
+    assert "'qual': 1 molecules have conflicting values" in caplog.text
+    assert "'n': 1 molecules have conflicting values" in caplog.text
 
 
 def test_pull_metadata_target_name_collision_raises(monkeypatch):
