@@ -181,21 +181,21 @@ def test_combine_smiles_merge():
 # validate_multi_task_data
 # ----------------------------------------------------------------------------
 def test_validate_clean_passes():
-    df = pd.DataFrame({"udm_mol_bat_id": ["1", "2", "3"], "smiles": ["CC", "CCC", "CCCC"], "t": [1.0, np.nan, 3.0]})
+    df = pd.DataFrame({"compound_id": ["1", "2", "3"], "smiles": ["CC", "CCC", "CCCC"], "t": [1.0, np.nan, 3.0]})
     # Should not raise
-    validate_multi_task_data(df, ["t"], id_column="udm_mol_bat_id")
+    validate_multi_task_data(df, ["t"], id_column="compound_id")
 
 
 def test_validate_duplicate_ids_raise():
-    df = pd.DataFrame({"udm_mol_bat_id": ["1", "1"], "smiles": ["CC", "CCC"], "t": [1.0, 2.0]})
+    df = pd.DataFrame({"compound_id": ["1", "1"], "smiles": ["CC", "CCC"], "t": [1.0, 2.0]})
     with pytest.raises(ValueError, match="duplicate"):
-        validate_multi_task_data(df, ["t"], id_column="udm_mol_bat_id")
+        validate_multi_task_data(df, ["t"], id_column="compound_id")
 
 
 def test_validate_missing_target_raises():
-    df = pd.DataFrame({"udm_mol_bat_id": ["1", "2"], "smiles": ["CC", "CCC"], "t": [1.0, 2.0]})
+    df = pd.DataFrame({"compound_id": ["1", "2"], "smiles": ["CC", "CCC"], "t": [1.0, 2.0]})
     with pytest.raises(ValueError, match="missing"):
-        validate_multi_task_data(df, ["t", "does_not_exist"], id_column="udm_mol_bat_id")
+        validate_multi_task_data(df, ["t", "does_not_exist"], id_column="compound_id")
 
 
 # ----------------------------------------------------------------------------
@@ -206,18 +206,18 @@ def test_pull_date_synthesis_row_wise_max(monkeypatch):
     frames = {
         "src_a": pd.DataFrame(
             {
-                "udm_mol_bat_id": ["1", "2"],
+                "compound_id": ["1", "2"],
                 "smiles": ["CC", "CCC"],
                 "ta": [10.0, 20.0],
-                "udm_asy_date": ["2024-01-01", "2025-12-01"],
+                "assay_date": ["2024-01-01", "2025-12-01"],
             }
         ),
         "src_b": pd.DataFrame(
             {
-                "udm_mol_bat_id": ["2", "3"],
+                "compound_id": ["2", "3"],
                 "smiles": ["CCC", "CCCC"],
                 "tb": [30.0, 40.0],
-                "udm_asy_date": ["2025-12-31", "2023-01-01"],
+                "assay_date": ["2025-12-31", "2023-01-01"],
             }
         ),
     }
@@ -225,14 +225,14 @@ def test_pull_date_synthesis_row_wise_max(monkeypatch):
 
     out = pull_multi_task_data(
         {"src_a": {"target_info": ["ta"]}, "src_b": {"target_info": ["tb"]}},
-        id_column="udm_mol_bat_id",
-        date_col="udm_asy_date",
+        id_column="compound_id",
+        date_col="assay_date",
     )
 
     # Synthesized date is a plain YYYY-MM-DD string (not datetime64) so it stores
     # verbatim via PandasToFeatures and round-trips through a tz-naive temporal split.
-    assert out["udm_asy_date"].dtype == object
-    dates = dict(zip(out["udm_mol_bat_id"], out["udm_asy_date"]))
+    assert out["assay_date"].dtype == object
+    dates = dict(zip(out["compound_id"], out["assay_date"]))
     # id 2 is in both sources -> max(2025-12-01, 2025-12-31) = 2025-12-31
     assert dates["2"] == "2025-12-31"
     assert dates["1"] == "2024-01-01"
@@ -244,16 +244,16 @@ def test_pull_date_synthesis_row_wise_max(monkeypatch):
 def test_pull_id_source_missing_date_raises(monkeypatch):
     """An ID-based (internal) source missing date_col fails loudly — likely a typo."""
     frames = {
-        "src_a": pd.DataFrame({"udm_mol_bat_id": ["1"], "smiles": ["CC"], "ta": [1.0], "udm_asy_date": ["2024-01-01"]}),
-        "src_no_date": pd.DataFrame({"udm_mol_bat_id": ["1"], "smiles": ["CC"], "tb": [2.0]}),
+        "src_a": pd.DataFrame({"compound_id": ["1"], "smiles": ["CC"], "ta": [1.0], "assay_date": ["2024-01-01"]}),
+        "src_no_date": pd.DataFrame({"compound_id": ["1"], "smiles": ["CC"], "tb": [2.0]}),
     }
     _install_fake_feature_set(monkeypatch, frames)
 
     with pytest.raises(ValueError, match="missing required date_col"):
         pull_multi_task_data(
             {"src_a": {"target_info": ["ta"]}, "src_no_date": {"target_info": ["tb"]}},
-            id_column="udm_mol_bat_id",
-            date_col="udm_asy_date",
+            id_column="compound_id",
+            date_col="assay_date",
         )
 
 
@@ -265,13 +265,13 @@ def test_pull_smiles_source_missing_date_is_training(monkeypatch):
     frames = {
         "ppb": pd.DataFrame(
             {
-                "udm_mol_bat_id": ["1", "2"],
+                "compound_id": ["1", "2"],
                 "smiles": ["CCO", "CCC"],
                 "ppb_human": [10.0, 20.0],
-                "udm_asy_date": ["2024-01-01", "2026-01-01"],  # id 2 is post-cutoff
+                "assay_date": ["2024-01-01", "2026-01-01"],  # id 2 is post-cutoff
             }
         ),
-        # public LogP: 'id' identifier, no udm_asy_date
+        # public LogP: 'id' identifier, no assay_date
         "logp_public": pd.DataFrame(
             {"id": ["a", "b", "c"], "smiles": ["CCO", "CCCC", "CCCCC"], "logp": [1.0, 2.0, 3.0]}
         ),
@@ -281,63 +281,37 @@ def test_pull_smiles_source_missing_date_is_training(monkeypatch):
     out = pull_multi_task_data(
         {"ppb": {"target_info": ["ppb_human"]}},
         {"logp_public": {"target_info": ["logp"], "src_id_col": "id"}},
-        id_column="udm_mol_bat_id",
-        date_col="udm_asy_date",
+        id_column="compound_id",
+        date_col="assay_date",
     )
 
     # Public-only molecules (CCCC, CCCCC) have no date -> NaT
     public_only = out[out["logp"].notna() & out["ppb_human"].isna()]
     assert len(public_only) == 2
-    assert public_only["udm_asy_date"].isna().all()
+    assert public_only["assay_date"].isna().all()
 
     # The CCO molecule overlaps the internal compound -> carries the internal date
     cco = out[out["smiles"].str.contains("O", na=False)].iloc[0]
     assert cco["ppb_human"] == 10.0 and cco["logp"] == 1.0
-    assert pd.to_datetime(cco["udm_asy_date"]) == pd.Timestamp("2024-01-01")
+    assert pd.to_datetime(cco["assay_date"]) == pd.Timestamp("2024-01-01")
 
     # Temporal split: only the post-cutoff internal compound is held out; the
     # date-less public rows fall to the training side (NaT is neither <= nor > cutoff).
-    _train, holdout = temporal_split(out, "udm_asy_date", end_date="2025-10-17")
-    assert set(holdout["udm_mol_bat_id"]) == {"2"}
+    _train, holdout = temporal_split(out, "assay_date", end_date="2025-10-17")
+    assert set(holdout["compound_id"]) == {"2"}
 
 
 # ----------------------------------------------------------------------------
 # pull_multi_task_data — metadata columns
 # ----------------------------------------------------------------------------
-def test_pull_metadata_columns(monkeypatch):
-    """Per-source metadata survives the merge without becoming a task."""
+def test_pull_metadata_coalesces_across_sources(monkeypatch, caplog):
+    """Metadata from every source collapses to one column: first non-NaN, in source order, conflicts logged."""
     frames = {
         "src_a": pd.DataFrame(
-            {"udm_mol_bat_id": ["1", "2"], "smiles": ["CC", "CCC"], "ta": [1.0, 2.0], "qual_a": ["=", ">"]}
+            {"compound_id": ["1", "2"], "smiles": ["CC", "CCC"], "ta": [1.0, 2.0], "qual": ["=", ">"], "n": [5, 6]}
         ),
         "src_b": pd.DataFrame(
-            {"udm_mol_bat_id": ["2", "3"], "smiles": ["CCC", "CCCC"], "tb": [3.0, 4.0], "qual_b": ["<", "="]}
-        ),
-    }
-    _install_fake_feature_set(monkeypatch, frames)
-
-    out = pull_multi_task_data(
-        {
-            "src_a": {"target_info": ["ta"], "metadata": ["qual_a"]},
-            "src_b": {"target_info": ["tb"], "metadata": ["qual_b"]},
-        },
-        id_column="udm_mol_bat_id",
-    )
-
-    rows = out.set_index("udm_mol_bat_id")
-    assert rows.loc["1", "qual_a"] == "=" and pd.isna(rows.loc["1", "qual_b"])
-    assert rows.loc["2", "qual_a"] == ">" and rows.loc["2", "qual_b"] == "<"
-    assert pd.isna(rows.loc["3", "qual_a"]) and rows.loc["3", "qual_b"] == "="
-
-
-def test_pull_metadata_shared_name_coalesces(monkeypatch, caplog):
-    """Metadata listed by several sources collapses to one column: first non-NaN, in source order."""
-    frames = {
-        "src_a": pd.DataFrame(
-            {"udm_mol_bat_id": ["1", "2"], "smiles": ["CC", "CCC"], "ta": [1.0, 2.0], "qual": ["=", ">"], "n": [5, 6]}
-        ),
-        "src_b": pd.DataFrame(
-            {"udm_mol_bat_id": ["2", "3"], "smiles": ["CCC", "CCCC"], "tb": [3.0, 4.0], "qual": ["<", "="], "n": [9, 7]}
+            {"compound_id": ["2", "3"], "smiles": ["CCC", "CCCC"], "tb": [3.0, 4.0], "qual": ["<", "="]}
         ),
     }
     _install_fake_feature_set(monkeypatch, frames)
@@ -345,32 +319,46 @@ def test_pull_metadata_shared_name_coalesces(monkeypatch, caplog):
     monkeypatch.setattr(logging.getLogger("workbench"), "handlers", [caplog.handler])
 
     out = pull_multi_task_data(
-        {
-            "src_a": {"target_info": ["ta"], "metadata": ["qual", "n"]},
-            "src_b": {"target_info": ["tb"], "metadata": ["qual", "n"]},
-        },
-        id_column="udm_mol_bat_id",
+        {"src_a": {"target_info": ["ta"]}, "src_b": {"target_info": ["tb"]}},
+        id_column="compound_id",
+        metadata=["qual", "n"],
     )
 
-    rows = out.set_index("udm_mol_bat_id")
+    rows = out.set_index("compound_id")
     assert list(rows["qual"]) == ["=", ">", "="]
-    # Numeric metadata is carried, not averaged: id 2 keeps src_a's 6, not mean(6, 9)
-    assert list(rows["n"]) == [5, 6, 7]
-    # id 2's sources disagree on both columns, so each conflict is logged
+    # 'n' is only in src_a: it survives the merge (a shared feature would be dropped), NaN for id 3
+    assert rows.loc["1", "n"] == 5 and rows.loc["2", "n"] == 6 and pd.isna(rows.loc["3", "n"])
+    # id 2's sources disagree on 'qual', so the conflict is logged
     assert "'qual': 1 molecules have conflicting values" in caplog.text
-    assert "'n': 1 molecules have conflicting values" in caplog.text
 
 
-def test_pull_metadata_target_name_collision_raises(monkeypatch):
-    """A metadata column can't share a name with a target."""
+def test_pull_metadata_survives_public_source(monkeypatch):
+    """A SMILES-based source lacking a metadata column keeps the internal values, NaN for public-only rows."""
+    pytest.importorskip("rdkit")  # the smiles pass standardizes SMILES
     frames = {
-        "src_a": pd.DataFrame({"udm_mol_bat_id": ["1"], "smiles": ["CC"], "ta": [1.0]}),
-        "src_b": pd.DataFrame({"udm_mol_bat_id": ["1"], "smiles": ["CC"], "tb": [2.0], "ta": [3.0]}),
+        "internal": pd.DataFrame(
+            {"compound_id": ["1", "2"], "smiles": ["CCO", "CCC"], "ta": [1.0, 2.0], "project_code": ["P1", "P2"]}
+        ),
+        "public": pd.DataFrame({"id": ["a", "b"], "smiles": ["CCO", "CCCC"], "logp": [0.5, 2.0]}),
     }
     _install_fake_feature_set(monkeypatch, frames)
 
-    with pytest.raises(ValueError, match="Duplicate target/passthrough"):
-        pull_multi_task_data(
-            {"src_a": {"target_info": ["ta"]}, "src_b": {"target_info": ["tb"], "metadata": ["ta"]}},
-            id_column="udm_mol_bat_id",
-        )
+    out = pull_multi_task_data(
+        {"internal": {"target_info": ["ta"]}},
+        {"public": {"target_info": ["logp"], "src_id_col": "id"}},
+        id_column="compound_id",
+        metadata=["project_code"],
+    )
+
+    prj = dict(zip(out["smiles"], out["project_code"]))
+    assert prj["CCO"] == "P1" and prj["CCC"] == "P2"
+    assert pd.isna(prj["CCCC"])
+
+
+def test_pull_metadata_missing_everywhere_raises(monkeypatch):
+    """A metadata column found in no source is almost always a typo."""
+    frames = {"src_a": pd.DataFrame({"compound_id": ["1"], "smiles": ["CC"], "ta": [1.0]})}
+    _install_fake_feature_set(monkeypatch, frames)
+
+    with pytest.raises(ValueError, match="not found in any source"):
+        pull_multi_task_data({"src_a": {"target_info": ["ta"]}}, id_column="compound_id", metadata=["typo"])

@@ -23,18 +23,21 @@ validate_multi_task_data(df, target_columns=["logs", "logd"], id_column="id")
   several sources gets all its targets on one row. `merge_on_smiles=True` joins external
   data with no shared id namespace.
 - **`pull_multi_task_data`** — the same, sourced from FeatureSets rather than frames.
-  Each source takes a `target_info` (a list of columns or a `{src_col: output_col}`
-  rename map) and an optional `metadata` list. Metadata columns pass through as-named,
-  per source (NaN where that source has no row), but are not tasks. A column listed by
-  several sources collapses to one, holding the first non-NaN value per row.
+  Each source takes a `target_info`: a list of columns or a `{src_col: output_col}`
+  rename map. Only columns every source has survive as shared features, so a public
+  source without `project_code` drops it for every row. List such columns in
+  `metadata`: each is taken from whichever sources have it (NaN elsewhere), collapses
+  to the first non-NaN value per row, and logs conflicting values.
 
   ```python
   df = pull_multi_task_data(
       {
-          "logd_f1": {"target_info": {"udm_asy_res_value": "logd"}, "metadata": ["udm_asy_res_qualifier"]},
-          "pka_a1_f1": {"target_info": {"udm_asy_res_value": "pka_a1"}},
+          "logd_f1": {"target_info": {"assay_value": "logd"}},
+          "pka_a1_f1": {"target_info": {"assay_value": "pka_a1"}},
       },
-      id_column="udm_mol_bat_id",
+      {"logp_public": {"target_info": ["logp"], "src_id_col": "id"}},
+      id_column="compound_id",
+      metadata=["project_code"],
   )
   ```
 - **`validate_multi_task_data`** — null/duplicate ids, missing smiles, empty targets,

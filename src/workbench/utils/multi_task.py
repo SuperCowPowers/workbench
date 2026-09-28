@@ -195,7 +195,9 @@ def combine_multi_task_data(
     for df in dataframes:
         for col in df.columns:
             if col not in col_dtypes and not df[col].isna().all():
-                col_dtypes[col] = df[col].dtype
+                # These dtypes fill all-NA columns, so int/bool map to their nullable forms
+                dtype = df[col].dtype
+                col_dtypes[col] = {"i": "Int64", "u": "UInt64", "b": "boolean"}.get(dtype.kind, dtype)
 
     aligned_dfs = []
     for df, targets, passthrough in zip(dataframes, target_columns, passthrough_columns):
@@ -285,6 +287,7 @@ def pull_multi_task_data(
     smiles_based_sources: dict = None,
     id_column: str = "id",
     date_col: str | None = None,
+    metadata: list[str] | None = None,
 ) -> pd.DataFrame:
     """Pull and combine multiple FeatureSets into a multi-task DataFrame.
 
@@ -296,7 +299,6 @@ def pull_multi_task_data(
     Each source config is a dict shaped like:
         {
             "target_info": {<src_col>: <output_col>, ...} | [<col>, ...]  # required; rename map or as-named list
-            "metadata":    [<col>, ...]                                  # optional; non-target columns to keep
             "src_id_col":  "<non_default_id_column>"                     # optional; FS id column, if not id_column
             "df":          <DataFrame>                                   # optional; use this frame, not the FS
         }
@@ -304,12 +306,6 @@ def pull_multi_task_data(
     When `df` is supplied the dict key is just a label (it names the private
     per-source date column and the log line), so any source already in hand —
     a DataSource pull, a local file — can join the merge.
-
-    Metadata columns pass through as-named and merge like targets (NaN for rows
-    the source doesn't cover) but are not tasks: no target diagnostics, and they
-    don't keep an otherwise target-less row alive. A column listed by several
-    sources collapses to one, holding the first non-NaN value per row (in source
-    order).
 
     Args:
         id_based_sources: Mapping from FeatureSet name to source config.
@@ -319,7 +315,7 @@ def pull_multi_task_data(
             on canonical SMILES rather than id_column. Defaults to None / empty.
         id_column: Canonical id column name across the id-based sources.
             Defaults to "id".
-        date_col: Optional name of a per-source date column (e.g. "udm_asy_date")
+        date_col: Optional name of a per-source date column (e.g. "assay_date")
             shared across all sources. When set, each source's date is carried
             through the merge as a private per-source column and then collapsed
             post-merge as the row-wise max into the canonical `date_col`. This
@@ -335,6 +331,12 @@ def pull_multi_task_data(
             (no special date handling — `date_col` would flow through as a
             shared feature and collapse to an arbitrary "first" value across
             sources, which is unsafe for temporal splits).
+        metadata: Optional non-target columns to keep in the output, taken from
+            every source that has them. Unlike shared features, they survive a
+            source that lacks them (e.g. public data), which contributes NaN.
+            Each collapses to the first non-NaN value per row, in source order,
+            and conflicting values are logged. Raises if a column is in no
+            source. Defaults to None.
 
     Returns:
         Combined multi-task DataFrame from `combine_multi_task_data`, with all
@@ -345,6 +347,7 @@ def pull_multi_task_data(
     from workbench.api import FeatureSet
 
     smiles_based_sources = smiles_based_sources or {}
+    metadata = metadata or []
 
     def _pull_and_normalize(
         fs_name: str, fs_config: dict, date_required: bool = True
@@ -372,7 +375,7 @@ def pull_multi_task_data(
             target_cols = list(target_info)
 
         # Metadata rides the merge as passthrough columns
-        passthrough_cols: list[str] = list(fs_config.get("metadata", []))
+        passthrough_cols = [c for c in metadata if c in df.columns]
 
         # Carry per-source date through the merge as a private, source-specific
         # column. If left as a shared feature, the outer-join collapse would
@@ -430,6 +433,10 @@ def pull_multi_task_data(
         )
         merged_targets.extend(target_cols)
         merged_passthrough.extend(p for p in passthrough_cols if p not in merged_passthrough)
+
+    missing_metadata = [c for c in metadata if c not in merged.columns]
+    if missing_metadata:
+        raise ValueError(f"Metadata columns not found in any source: {missing_metadata}")
 
     # Synthesize the canonical date as the row-wise max of all per-source
     # dates. Holding out on the latest date across any task ensures no future

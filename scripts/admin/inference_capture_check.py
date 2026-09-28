@@ -19,7 +19,7 @@ CAPTURE_NAME = "ts_20200211"
 
 # Columns to compare
 COMPARE_COLS = ["prediction", "prediction_std", "confidence"]
-ID_COL = "udm_mol_bat_id"
+ID_COL = "compound_id"
 
 
 def main():

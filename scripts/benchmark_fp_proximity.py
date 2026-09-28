@@ -57,7 +57,7 @@ def main():
 
     # Auto-detect id / target / fingerprint columns
     cols = list(df.columns)
-    id_candidates = [c for c in cols if c.lower() in ("id", "udm_mol_bat_id", "molregno", "compound_id")]
+    id_candidates = [c for c in cols if c.lower() in ("id", "molregno", "compound_id")]
     id_column = id_candidates[0] if id_candidates else cols[0]
     target_col = "logp" if "logp" in cols else next((c for c in cols if "logp" in c.lower()), None)
     if target_col is None:

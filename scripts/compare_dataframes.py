@@ -24,4 +24,4 @@ old_df = old_df[~old_df["smiles"].isin([old_error_smiles_1, old_error_smiles_2])
 new_df = new_df[~new_df["smiles"].isin([old_error_smiles_1, old_error_smiles_2])]
 
 # Compare the dataframes
-comparison = compare_dataframes(old_df, new_df, ["udm_mol_bat_id", "smiles"])
+comparison = compare_dataframes(old_df, new_df, ["compound_id", "smiles"])
