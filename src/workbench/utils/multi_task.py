@@ -90,6 +90,8 @@ def combine_multi_task_data(
             "Targets" log section, the coverage-pattern log, and the all-NaN
             validation. Used by `pull_multi_task_data` to carry per-source date
             columns through the merge without polluting target diagnostics.
+            A name may repeat across sources; it collapses to one column holding
+            the first non-NaN value per row (dates take the latest).
             Defaults to None (no passthrough columns).
 
     Returns:
@@ -131,7 +133,8 @@ def combine_multi_task_data(
             raise ValueError(f"DataFrame {i} missing passthrough columns: {missing_pt}")
 
     all_targets = [t for targets in target_columns for t in targets]
-    all_passthrough = [p for ps in passthrough_columns for p in ps]
+    # Passthroughs may repeat across sources (coalesced on collapse); targets may not
+    all_passthrough = list(dict.fromkeys(p for ps in passthrough_columns for p in ps))
     # Combined set of columns that must survive the merge (treated as task-like
     # for join mechanics — excluded from features, NaN-filled across sources).
     all_merge_cols = all_targets + all_passthrough
@@ -213,7 +216,10 @@ def combine_multi_task_data(
     n_before = len(result)
     dup_counts = result[merge_key].value_counts()
     dup_ids = dup_counts[dup_counts > 1]
-    numeric_cols = [c for c in result.select_dtypes(include="number").columns if c != merge_key]
+    # Passthroughs are carried, not averaged: they fall to "first" (first non-NaN) below
+    numeric_cols = [
+        c for c in result.select_dtypes(include="number").columns if c != merge_key and c not in all_passthrough
+    ]
     # Dates take the latest, not an arbitrary row. A molecule reaching this collapse from
     # several batches (the smiles-keyed pass) must keep its most recent per-source assay
     # date, or the row-wise max a temporal split reads is no longer the true latest.
@@ -284,17 +290,21 @@ def pull_multi_task_data(
 
     Each source config is a dict shaped like:
         {
-            "target_info": {<src_col>: <output_col>, ...}  # required; column rename map
-            "src_id_col":  "<non_default_id_column>"       # optional; if the FS uses a different id column
-            "df":          <DataFrame>                     # optional; use this frame instead of pulling the FS
+            "target_info": {<src_col>: <output_col>, ...} | [<col>, ...]  # required; rename map or as-named list
+            "metadata":    [<col>, ...]                                  # optional; non-target columns to keep
+            "src_id_col":  "<non_default_id_column>"                     # optional; FS id column, if not id_column
+            "df":          <DataFrame>                                   # optional; use this frame, not the FS
         }
 
     When `df` is supplied the dict key is just a label (it names the private
     per-source date column and the log line), so any source already in hand —
     a DataSource pull, a local file — can join the merge.
 
-    Or as a shortcut, `target_info` may be a list of column names that already
-    match the desired output names (no rename needed).
+    Metadata columns pass through as-named and merge like targets (NaN for rows
+    the source doesn't cover) but are not tasks: no target diagnostics, and they
+    don't keep an otherwise target-less row alive. A column listed by several
+    sources collapses to one, holding the first non-NaN value per row (in source
+    order).
 
     Args:
         id_based_sources: Mapping from FeatureSet name to source config.
@@ -334,7 +344,7 @@ def pull_multi_task_data(
     def _pull_and_normalize(
         fs_name: str, fs_config: dict, date_required: bool = True
     ) -> tuple[pd.DataFrame, list[str], list[str]]:
-        target_info = fs_config["target_info"]
+        target_info: dict[str, str] | list[str] = fs_config["target_info"]
         src_id = fs_config.get("src_id_col", id_column)
 
         df = fs_config.get("df")
@@ -356,13 +366,15 @@ def pull_multi_task_data(
         else:
             target_cols = list(target_info)
 
+        # Metadata rides the merge as passthrough columns
+        passthrough_cols: list[str] = list(fs_config.get("metadata", []))
+
         # Carry per-source date through the merge as a private, source-specific
         # column. If left as a shared feature, the outer-join collapse would
         # take an arbitrary "first" date across sources, breaking temporal-split
         # safety. Passed to combine_multi_task_data as a passthrough (survives
         # merge, but not reported as a target). The canonical `date_col` is
         # synthesized as a row-wise max after all merging completes.
-        passthrough_cols: list[str] = []
         if date_col is not None:
             private_date = f"__date_{fs_name}"
             if date_col in df.columns:
@@ -401,7 +413,7 @@ def pull_multi_task_data(
     # in `merged` so combine_multi_task_data treats those columns correctly on
     # the next pass.
     merged_targets = [t for tl in id_targets for t in tl]
-    merged_passthrough = [p for pl in id_passthrough for p in pl]
+    merged_passthrough = list(dict.fromkeys(p for pl in id_passthrough for p in pl))
     for fs_name, fs_config in smiles_based_sources.items():
         df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config, date_required=False)
         merged = combine_multi_task_data(
@@ -412,7 +424,7 @@ def pull_multi_task_data(
             passthrough_columns=[merged_passthrough, passthrough_cols],
         )
         merged_targets.extend(target_cols)
-        merged_passthrough.extend(passthrough_cols)
+        merged_passthrough.extend(p for p in passthrough_cols if p not in merged_passthrough)
 
     # Synthesize the canonical date as the row-wise max of all per-source
     # dates. Holding out on the latest date across any task ensures no future

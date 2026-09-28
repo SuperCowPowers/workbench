@@ -298,3 +298,73 @@ def test_pull_smiles_source_missing_date_is_training(monkeypatch):
     # date-less public rows fall to the training side (NaT is neither <= nor > cutoff).
     _train, holdout = temporal_split(out, "udm_asy_date", end_date="2025-10-17")
     assert set(holdout["udm_mol_bat_id"]) == {"2"}
+
+
+# ----------------------------------------------------------------------------
+# pull_multi_task_data — metadata columns
+# ----------------------------------------------------------------------------
+def test_pull_metadata_columns(monkeypatch):
+    """Per-source metadata survives the merge without becoming a task."""
+    frames = {
+        "src_a": pd.DataFrame(
+            {"udm_mol_bat_id": ["1", "2"], "smiles": ["CC", "CCC"], "ta": [1.0, 2.0], "qual_a": ["=", ">"]}
+        ),
+        "src_b": pd.DataFrame(
+            {"udm_mol_bat_id": ["2", "3"], "smiles": ["CCC", "CCCC"], "tb": [3.0, 4.0], "qual_b": ["<", "="]}
+        ),
+    }
+    _install_fake_feature_set(monkeypatch, frames)
+
+    out = pull_multi_task_data(
+        {
+            "src_a": {"target_info": ["ta"], "metadata": ["qual_a"]},
+            "src_b": {"target_info": ["tb"], "metadata": ["qual_b"]},
+        },
+        id_column="udm_mol_bat_id",
+    )
+
+    rows = out.set_index("udm_mol_bat_id")
+    assert rows.loc["1", "qual_a"] == "=" and pd.isna(rows.loc["1", "qual_b"])
+    assert rows.loc["2", "qual_a"] == ">" and rows.loc["2", "qual_b"] == "<"
+    assert pd.isna(rows.loc["3", "qual_a"]) and rows.loc["3", "qual_b"] == "="
+
+
+def test_pull_metadata_shared_name_coalesces(monkeypatch):
+    """Metadata listed by several sources collapses to one column: first non-NaN, in source order."""
+    frames = {
+        "src_a": pd.DataFrame(
+            {"udm_mol_bat_id": ["1", "2"], "smiles": ["CC", "CCC"], "ta": [1.0, 2.0], "qual": ["=", ">"], "n": [5, 6]}
+        ),
+        "src_b": pd.DataFrame(
+            {"udm_mol_bat_id": ["2", "3"], "smiles": ["CCC", "CCCC"], "tb": [3.0, 4.0], "qual": ["<", "="], "n": [9, 7]}
+        ),
+    }
+    _install_fake_feature_set(monkeypatch, frames)
+
+    out = pull_multi_task_data(
+        {
+            "src_a": {"target_info": ["ta"], "metadata": ["qual", "n"]},
+            "src_b": {"target_info": ["tb"], "metadata": ["qual", "n"]},
+        },
+        id_column="udm_mol_bat_id",
+    )
+
+    rows = out.set_index("udm_mol_bat_id")
+    assert list(rows["qual"]) == ["=", ">", "="]
+    # Numeric metadata is carried, not averaged: id 2 keeps src_a's 6, not mean(6, 9)
+    assert list(rows["n"]) == [5, 6, 7]
+
+
+def test_pull_metadata_target_name_collision_raises(monkeypatch):
+    """A metadata column can't share a name with a target."""
+    frames = {
+        "src_a": pd.DataFrame({"udm_mol_bat_id": ["1"], "smiles": ["CC"], "ta": [1.0]}),
+        "src_b": pd.DataFrame({"udm_mol_bat_id": ["1"], "smiles": ["CC"], "tb": [2.0], "ta": [3.0]}),
+    }
+    _install_fake_feature_set(monkeypatch, frames)
+
+    with pytest.raises(ValueError, match="Duplicate target/passthrough"):
+        pull_multi_task_data(
+            {"src_a": {"target_info": ["ta"]}, "src_b": {"target_info": ["tb"], "metadata": ["ta"]}},
+            id_column="udm_mol_bat_id",
+        )
