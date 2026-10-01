@@ -48,7 +48,7 @@ def image_lock_path(model_framework: str, stage: str = "training") -> Union[Path
     images = images_dir()
     if images is None:
         return None
-    image = "pytorch_chem" if model_framework in ("pytorch", "chemprop") else "base"
+    image = "pytorch_chem" if model_framework in ("pytorch", "chemprop", "tabicl") else "base"
     return images / image / stage / "requirements.lock"
 
 

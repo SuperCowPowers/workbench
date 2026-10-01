@@ -117,7 +117,7 @@ class FeatureSet(FeatureSetCore):
         tags = [name] if tags is None else tags
 
         # Set training/inference images based on model framework
-        if model_framework in (ModelFramework.PYTORCH, ModelFramework.CHEMPROP):
+        if model_framework in (ModelFramework.PYTORCH, ModelFramework.CHEMPROP, ModelFramework.TABICL):
             training_image = "pytorch_chem_training"
             inference_image = "pytorch_chem_inference"
             inference_arch = "x86_64"

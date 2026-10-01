@@ -24,11 +24,11 @@ from workbench.utils.json_utils import write_json_atomic
 CROSS_FOLD_RUN = "full_cross_fold"
 
 
-# Framework -> the module its model script imports. Neither ships in the base install;
-# both live in the `modeling` extra.
+# Framework -> the module its model script imports. None ship in the base install.
 FRAMEWORK_MODULES = {
     ModelFramework.CHEMPROP: "chemprop",
     ModelFramework.PYTORCH: "torch",
+    ModelFramework.TABICL: "tabicl",
 }
 
 

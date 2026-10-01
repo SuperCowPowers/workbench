@@ -103,6 +103,9 @@ def generate_model_script(template_params: dict) -> str:
     elif template_params["model_framework"] == ModelFramework.CHEMPROP:
         template_name = "chemprop.template"
         model_script_dir_name = "chemprop"
+    elif template_params["model_framework"] == ModelFramework.TABICL:
+        template_name = "tabicl.template"
+        model_script_dir_name = "tabicl"
     elif template_params["model_framework"] == ModelFramework.META:
         template_name = "meta_endpoint.template"
         model_script_dir_name = "meta_endpoint"

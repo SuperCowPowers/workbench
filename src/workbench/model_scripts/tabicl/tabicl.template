@@ -1,0 +1,412 @@
+# vim: set ft=python:
+
+# TabICL Model Template for Workbench:
+#
+# Regression with a tabular foundation model. TabICL learns in context: nothing is
+# trained, and every prediction conditions on the training rows.
+# - K-fold models produce out-of-fold predictions and metrics only
+# - The served model is one cached fit on all training rows
+# - prediction_std comes from TabICL's own predictive quantiles and feeds the UQModel
+# - Optional StandardScaler + PCA feature reduction (pca_components)
+# - SHAP feature importance from tabicl.shap
+# - An inference memory probe, so to_endpoint() knows whether serverless fits
+
+import json
+import logging
+import os
+
+import pandas as pd
+
+from workbench.endpoints.inference import (
+    convert_categorical_types,
+    decompress_features,
+    match_features_case_insensitive,
+    save_output,
+)
+from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
+from workbench.endpoints.tabicl_utils import load_tabicl, predict_with_std
+from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
+
+log = logging.getLogger("workbench")
+
+# =============================================================================
+# Default Hyperparameters
+# =============================================================================
+DEFAULT_HYPERPARAMETERS = {
+    # Folds are for out-of-fold metrics and UQ calibration; the served model is always a
+    # single fit on every row (1 = one train/val split).
+    "n_folds": 5,
+    # TabICL's internal ensemble: members see different column orders and scalings.
+    "n_estimators": 8,
+    # Cache of the training rows held by the served model:
+    #   "repr": compact cache, seconds per request — fits a serverless endpoint
+    #   "kv":   ~2x the serving memory, sub-second requests
+    "kv_cache": "repr",
+    # Ensemble members per forward pass. 1 gives the lowest peak memory; predictions
+    # are identical at any value.
+    "batch_size": 1,
+    # StandardScaler + PCA to this many components before TabICL (None = raw features).
+    # TabICL is pretrained on tables of up to 100 columns.
+    "pca_components": None,
+    # Rows explained for SHAP feature importance (0 disables)
+    "shap_sample_size": 100,
+    # Split strategy: "scaffold" (default), "butina", or "random"
+    # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data).
+    #     Falls back to random with a warning if no SMILES column is present.
+    # - butina: Morgan fingerprint clustering (requires 'smiles', more stringent than scaffold,
+    #     O(n^2) compute — prefer for smaller datasets)
+    # - random: Standard random split (use only for non-molecular data or quick baselines)
+    "split_strategy": "scaffold",
+    "butina_cutoff": 0.4,  # Tanimoto distance cutoff for Butina clustering
+    # Random seed
+    "seed": 42,
+    # UQ version to use as the primary confidence source at inference:
+    #   "v0": isotonic on (prediction, std), no neighborhood required
+    #   "v1" (default): proximity-augmented RandomForest error model
+    #   "v2": pure applicability-domain confidence from neighbors
+    "uq_version": "v1",
+}
+
+# Column count TabICL is pretrained on; beyond it accuracy can degrade
+PRETRAINED_MAX_FEATURES = 100
+
+# Template parameters (filled in by Workbench)
+TEMPLATE_PARAMS = {
+    "model_type": "{{model_type}}",
+    "target": "{{target_column}}",
+    "features": "{{feature_list}}",
+    "id_column": "{{id_column}}",
+    "compressed_features": "{{compressed_features}}",
+    "model_metrics_path": "{{model_metrics_path}}",
+    "hyperparameters": json.loads("{{hyperparameters}}"),
+}
+
+
+# =============================================================================
+# Model Loading (for SageMaker inference)
+# =============================================================================
+def model_fn(model_dir: str) -> dict:
+    """Load the served TabICL model from the specified directory."""
+    model, reducer = load_tabicl(model_dir)
+
+    category_mappings = {}
+    category_path = os.path.join(model_dir, "category_mappings.json")
+    if os.path.exists(category_path):
+        with open(category_path) as f:
+            category_mappings = json.load(f)
+
+    return {
+        "model": model,
+        "reducer": reducer,
+        "category_mappings": category_mappings,
+        "uq_model": load_regression_uq(model_dir),
+    }
+
+
+# =============================================================================
+# Inference (for SageMaker inference)
+# =============================================================================
+def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
+    """Make predictions with the TabICL model."""
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+    with open(os.path.join(model_dir, "feature_columns.json")) as f:
+        features = json.load(f)
+    print(f"Model Features: {features}")
+
+    uq_model = model_dict.get("uq_model")
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
+
+    # Prepare features (compressed features are strings that decompress into numeric
+    # columns, so they stay out of the categorical conversion)
+    matched_df = match_features_case_insensitive(df, features)
+    non_compressed_features = [f for f in features if f not in (compressed_features or [])]
+    matched_df, _ = convert_categorical_types(matched_df, non_compressed_features, model_dict["category_mappings"])
+    if compressed_features:
+        print("Decompressing features for prediction...")
+        matched_df, features = decompress_features(matched_df, features, compressed_features)
+
+    df["prediction"], df["prediction_std"] = predict_with_std(
+        model_dict["model"], matched_df[features], model_dict["reducer"]
+    )
+
+    # UQModel UQ: expected_residual, confidence, and conformal intervals. V1/V2 need a
+    # neighbor-lookup payload; V0 has no backend and scores from prediction + std alone.
+    if uq_model is not None:
+        query = uq_query_df(uq_model, matched_df)
+        if query is not None or uq_model.UQ_VERSION == "v0":
+            uq_out = uq_model.predict(query, df["prediction"].values, df["prediction_std"].values)
+            for col in uq_out.columns:
+                df[col] = uq_out[col].values
+        else:
+            print("[uq] Skipping UQModel inference: batch can't satisfy the proximity backend.")
+
+    print(f"Inference complete: {len(df)} predictions")
+    return df
+
+
+# =============================================================================
+# Training
+# =============================================================================
+if __name__ == "__main__":
+    # -------------------------------------------------------------------------
+    # Training-only imports (deferred to reduce serverless startup time)
+    # -------------------------------------------------------------------------
+    import argparse
+
+    import numpy as np
+
+    from workbench.endpoints.inference import (
+        check_dataframe,
+        compute_regression_metrics,
+        print_regression_metrics,
+    )
+    from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
+    from workbench.training.splits import get_split_indices
+    from workbench.training.tabicl_core import fit_tabicl, probe_inference_memory, save_tabicl, tabicl_shap
+    from workbench.training.validation import split_validation_set
+    from workbench.training.xgb_core import align_frame
+
+    # -------------------------------------------------------------------------
+    # Setup: Parse arguments and load data
+    # -------------------------------------------------------------------------
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    args = parser.parse_args()
+
+    # Extract template parameters
+    target = TEMPLATE_PARAMS["target"]
+    features = TEMPLATE_PARAMS["features"]
+    orig_features = features.copy()
+    id_column = TEMPLATE_PARAMS["id_column"]
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
+    model_type = TEMPLATE_PARAMS["model_type"]
+    model_metrics_path = TEMPLATE_PARAMS["model_metrics_path"]
+    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
+
+    if model_type == "classifier":
+        raise ValueError("The TabICL framework supports regression only (REGRESSOR, UQ_REGRESSOR)")
+
+    # Load training data
+    training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
+    print(f"Training Files: {training_files}")
+    all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
+    check_dataframe(all_df, "training_df")
+
+    # TabICL's fit takes no per-row weights, so a weighted FeatureSet cannot be honored
+    if "sample_weight" in all_df.columns:
+        raise ValueError("TabICL does not support sample weights; use validation_ids to hold rows out of training")
+
+    # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
+    # category mappings and downstream CV/UQ/SHAP never see them. They're scored held-out below.
+    all_df, holdout_df = split_validation_set(all_df)
+    if len(holdout_df):
+        print(f"Held-out validation set: {len(holdout_df)} rows (excluded from training/CV/UQ)")
+
+    print(f"Target: {target}")
+    print(f"Features: {features}")
+    print(f"Hyperparameters: {hyperparameters}")
+
+    # -------------------------------------------------------------------------
+    # Preprocessing: Categorical features and decompression
+    # -------------------------------------------------------------------------
+    non_compressed_features = [f for f in features if f not in (compressed_features or [])]
+    all_df, category_mappings = convert_categorical_types(all_df, non_compressed_features)
+
+    if compressed_features:
+        print(f"Decompressing features: {compressed_features}")
+        all_df, features = decompress_features(all_df, features, compressed_features)
+
+    pca_components = hyperparameters["pca_components"]
+    if pca_components and category_mappings:
+        raise ValueError(f"pca_components needs numeric features; categorical: {list(category_mappings)}")
+    if len(features) > PRETRAINED_MAX_FEATURES and not pca_components:
+        print(
+            f"NOTE: {len(features)} features exceeds TabICL's pretraining range ({PRETRAINED_MAX_FEATURES} columns); "
+            "set pca_components to reduce them if accuracy suffers."
+        )
+
+    # -------------------------------------------------------------------------
+    # Cross-validation: fold models give out-of-fold predictions and metrics
+    # -------------------------------------------------------------------------
+    n_folds = hyperparameters["n_folds"]
+    folds = get_split_indices(
+        all_df,
+        n_splits=n_folds,
+        strategy=hyperparameters["split_strategy"],
+        target_column=None,
+        test_size=0.2,
+        random_state=hyperparameters["seed"],
+        butina_cutoff=hyperparameters["butina_cutoff"],
+    )
+    print(f"Split strategy: {hyperparameters['split_strategy']}")
+
+    oof_predictions = np.full(len(all_df), np.nan, dtype=np.float64)
+    oof_std = np.full(len(all_df), np.nan, dtype=np.float64)
+    for fold_idx, (train_idx, val_idx) in enumerate(folds):
+        print(f"\n{'='*50}")
+        print(f"Fold {fold_idx + 1}/{len(folds)} - Context: {len(train_idx)}, Val: {len(val_idx)}")
+        print(f"{'='*50}")
+
+        # A fold model predicts once, so it carries no cache
+        fold_df = all_df.iloc[train_idx]
+        fold_model, fold_reducer = fit_tabicl(hyperparameters, fold_df[features], fold_df[target], kv_cache=False)
+        oof_predictions[val_idx], oof_std[val_idx] = predict_with_std(
+            fold_model, all_df.iloc[val_idx][features], fold_reducer
+        )
+
+    # K-fold: every row has an out-of-fold prediction. Single split: only the validation rows.
+    oof_mask = ~np.isnan(oof_predictions)
+    df_oof = all_df[oof_mask].copy()
+    df_oof["prediction"] = oof_predictions[oof_mask]
+    df_oof["prediction_std"] = oof_std[oof_mask]
+
+    y_true = df_oof[target].values
+    y_pred = df_oof["prediction"].values
+    metrics = compute_regression_metrics(y_true, y_pred)
+    print_regression_metrics(metrics)
+    print(f"Quantile std - mean: {df_oof['prediction_std'].mean():.4f}, max: {df_oof['prediction_std'].max():.4f}")
+
+    # -------------------------------------------------------------------------
+    # Served model: one cached fit on every training row
+    # -------------------------------------------------------------------------
+    print("\n" + "=" * 50)
+    print(f"Fitting served model on {len(all_df)} rows (kv_cache={hyperparameters['kv_cache']!r})")
+    print("=" * 50)
+    model, reducer = fit_tabicl(hyperparameters, all_df[features], all_df[target], kv_cache=hyperparameters["kv_cache"])
+
+    # -------------------------------------------------------------------------
+    # Fit UQ models on the out-of-fold predictions
+    # -------------------------------------------------------------------------
+    print("\n" + "=" * 50)
+    print("Fitting UQ models")
+    print("=" * 50)
+
+    # V1/V2 neighbor reference set: 'smiles' gives fingerprint proximity, otherwise the
+    # model's features give feature-space proximity (fit_regression_uq picks). Every
+    # training row is context for the served model, so every row is an eligible neighbor.
+    prox_cols = [id_column, target] + (["smiles"] if "smiles" in all_df.columns else features)
+    prox_df = all_df[[c for c in dict.fromkeys(prox_cols) if c in all_df.columns]].copy()
+    prox_df["in_model"] = True
+
+    uq_dict = fit_regression_uq(
+        per_target={
+            target: {
+                "ids": df_oof[id_column].tolist(),
+                "y_true": y_true,
+                "y_pred": y_pred,
+                "y_std": df_oof["prediction_std"].values,
+            }
+        },
+        prox_df=prox_df,
+        id_column=id_column,
+        features=features,
+        active_version=hyperparameters["uq_version"],
+    )
+    uq_out = uq_dict["oof_outputs"][target]
+    for col in uq_out.columns:
+        df_oof[col] = uq_out[col].values
+
+    # -------------------------------------------------------------------------
+    # Compute SHAP values for feature importance
+    # -------------------------------------------------------------------------
+    # TabICL's explainer masks raw numeric features, so it is skipped when the model
+    # reads PCA components or carries categorical columns.
+    shap_sample_size = min(hyperparameters["shap_sample_size"], len(df_oof))
+    if shap_sample_size and not pca_components and not category_mappings:
+        print("\n" + "=" * 50)
+        print("Computing SHAP Values")
+        print("=" * 50)
+        shap_sample_df = df_oof.sample(n=shap_sample_size, random_state=42)
+        shap_values, base_values = tabicl_shap(model, shap_sample_df[features])
+
+        shap_importance = sorted(
+            zip(features, np.round(np.abs(shap_values).mean(axis=0), 3).tolist()), key=lambda x: x[1], reverse=True
+        )
+        print(f"Top 5 SHAP features: {shap_importance[:5]}")
+
+        top_n_features = [f for f, _ in shap_importance[:20]]
+        top_n_indices = [features.index(f) for f in top_n_features]
+        shap_df = pd.DataFrame(shap_values[:, top_n_indices], columns=top_n_features)
+        shap_df["bias"] = base_values
+        shap_df.insert(0, id_column, shap_sample_df[id_column].reset_index(drop=True))
+        save_output(shap_df, f"{model_metrics_path}/shap_values.csv")
+        save_output(
+            shap_sample_df[[id_column] + top_n_features].reset_index(drop=True),
+            f"{model_metrics_path}/shap_feature_values.csv",
+        )
+        save_output(shap_importance, f"{model_metrics_path}/shap_importance.json")
+        print(f"Saved SHAP values ({shap_sample_size} samples, {len(top_n_features)} features)")
+    else:
+        print("Skipping SHAP (disabled, PCA-reduced, or categorical features)")
+
+    # -------------------------------------------------------------------------
+    # Score the held-out validation set (honest, never-trained rows)
+    # -------------------------------------------------------------------------
+    # Starts as an empty frame with the OOF columns so val_predictions.csv always has a header row.
+    df_val = df_oof.iloc[:0].copy()
+    if len(holdout_df):
+        print("\n" + "=" * 50)
+        print(f"Scoring held-out validation set ({len(holdout_df)} rows)")
+        print("=" * 50)
+
+        # Preprocess held-out rows through the SAME fitted objects used for training
+        h_df = align_frame(holdout_df, category_mappings, orig_features, compressed_features)
+        h_pred, h_std = predict_with_std(model, h_df[features], reducer)
+        y_h_true = holdout_df[target].values
+        metrics = compute_regression_metrics(y_h_true, h_pred)
+        print("Held-out validation metrics:")
+        print_regression_metrics(metrics)
+        print(f"holdout_mae: {metrics['mae']:.3f}")
+        df_val = pd.DataFrame(
+            {id_column: holdout_df[id_column].values, target: y_h_true, "prediction": h_pred, "prediction_std": h_std}
+        )
+
+        # Held-out rows are novel to the UQ proximity reference, so score them the way
+        # inference scores a new molecule.
+        uq_active = uq_dict["uq_model"]
+        query = uq_query_df(uq_active, holdout_df)
+        if query is not None or uq_active.UQ_VERSION == "v0":
+            val_uq = uq_active.predict(query, df_val["prediction"].values, df_val["prediction_std"].values)
+            for col in val_uq.columns:
+                df_val[col] = val_uq[col].values
+
+    # -------------------------------------------------------------------------
+    # Save out-of-fold and held-out validation predictions to S3
+    # -------------------------------------------------------------------------
+    output_columns = [id_column, target, "prediction", "prediction_std"]
+    output_columns += [c for c in df_oof.columns if c.startswith("q_") or c == "confidence"]
+    save_output(df_oof[output_columns], f"{model_metrics_path}/oof_predictions.csv")
+    save_output(df_val.reindex(columns=output_columns), f"{model_metrics_path}/val_predictions.csv")
+
+    # -------------------------------------------------------------------------
+    # Save model artifacts
+    # -------------------------------------------------------------------------
+    save_tabicl(model, reducer, args.model_dir)
+
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as f:
+        json.dump(orig_features, f)
+
+    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as f:
+        json.dump(category_mappings, f)
+
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+        json.dump(hyperparameters, f, indent=2)
+
+    # Also write to the metrics path so the Model loads hyperparameters from meta
+    # (a cheap tag read) instead of downloading + extracting the full model artifact.
+    save_output(hyperparameters, f"{model_metrics_path}/hyperparameters.json")
+
+    save_regression_uq(uq_dict, args.model_dir)
+
+    # -------------------------------------------------------------------------
+    # Inference memory probe: what a serverless endpoint must hold
+    # -------------------------------------------------------------------------
+    inference_memory_gb = round(probe_inference_memory(args.model_dir, all_df[features]), 2)
+    print(f"inference_memory_gb: {inference_memory_gb}")
+    save_output({"inference_memory_gb": inference_memory_gb}, f"{model_metrics_path}/inference_profile.json")
+
+    print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

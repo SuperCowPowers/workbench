@@ -47,6 +47,18 @@ FOUNDATION_MODELS = {
         "expected_md5": "6a80b54fdb7de37ef0374d302f01e8ce",
         "expected_size_bytes": 34859448,
     },
+    "tabicl": {
+        "filename": "tabicl-regressor-v2-20260212.ckpt",
+        "s3_key": f"{FOUNDATION_PREFIX}/tabicl/4dcd344e/tabicl-regressor-v2-20260212.ckpt",
+        "origin_url": (
+            "https://huggingface.co/jingang/TabICL/resolve/"
+            "4dcd344ece2c00be9e831fdd35bed57b5ad83e19/tabicl-regressor-v2-20260212.ckpt"
+        ),
+        "provenance_id": "hf-jingang-TabICL-4dcd344e",
+        "description": "TabICL v2 regressor checkpoint (Hugging Face jingang/TabICL, revision 4dcd344e)",
+        "expected_md5": "e9b7c522e50a3fc6ad5cf3486dcebc46",
+        "expected_size_bytes": 114324594,
+    },
 }
 
 

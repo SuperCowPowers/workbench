@@ -28,6 +28,7 @@ class ModelFramework(Enum):
     XGBOOST = "xgboost"
     PYTORCH = "pytorch"
     CHEMPROP = "chemprop"
+    TABICL = "tabicl"
     TRANSFORMER = "transformer"
     META = "meta"
     UNKNOWN = "unknown"

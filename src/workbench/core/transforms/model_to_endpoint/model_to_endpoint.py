@@ -38,6 +38,11 @@ from workbench.core.transforms.transform import Transform, TransformInput, Trans
 from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
 from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
 from workbench.core.artifact import Artifact  # noqa: E402
+
+# SageMaker's serverless memory ceiling, and the most a model may use of it: the
+# inference server needs the remainder.
+SERVERLESS_MAX_MEMORY_MB = 6144
+SERVERLESS_MODEL_MEMORY_LIMIT_GB = 5.0
 from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     _DEFAULT_MAX_CAPACITY,
     _DEFAULT_SCALE_IN_IDLE_MINUTES,
@@ -146,11 +151,14 @@ class ModelToEndpoint(Transform):
     def transform_impl(self, **kwargs):
         """Deploy an Endpoint for a Model"""
 
-        # Delete endpoint (if it already exists)
-        EndpointCore.managed_delete(self.output_name)
-
         # Get the Model Package ARN for our input model
         workbench_model = ModelCore(self.input_name)
+
+        # Refuse before touching any existing endpoint
+        self._check_serverless_memory(workbench_model)
+
+        # Delete endpoint (if it already exists)
+        EndpointCore.managed_delete(self.output_name)
 
         # Deploy the model
         self._deploy_model(workbench_model, **kwargs)
@@ -162,6 +170,26 @@ class ModelToEndpoint(Transform):
         time.sleep(5)  # We wait for AWS Lag
         end = EndpointCore(self.output_name)
         self.log.important(f"Endpoint {end.name} is ready for use")
+
+    def _check_serverless_memory(self, workbench_model: ModelCore):
+        """Raise when a model's measured serving memory won't fit a serverless endpoint.
+
+        Training jobs that measure serving memory (TabICL) record it in the model's
+        metadata. A real-time instance bills around the clock, so switching to one is
+        left to the caller.
+
+        Args:
+            workbench_model(ModelCore): The model about to be deployed
+        """
+        if not self.serverless:
+            return
+        memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
+        if memory_gb is not None and memory_gb > SERVERLESS_MODEL_MEMORY_LIMIT_GB:
+            raise ValueError(
+                f"{workbench_model.name} needs {memory_gb} GB to serve, over the "
+                f"{SERVERLESS_MODEL_MEMORY_LIMIT_GB} GB a serverless endpoint can give a model. "
+                "Deploy a real-time endpoint with to_endpoint(serverless=False)."
+            )
 
     def _deploy_model(
         self,
@@ -206,6 +234,9 @@ class ModelToEndpoint(Transform):
             if needs_more_resources and mem_size < 4096:
                 self.log.important(f"{workbench_model.model_framework} needs at least 4GB of memory (setting to 4GB)")
                 mem_size = 4096
+            # TabICL holds its training rows in memory, so it gets the full allocation
+            if workbench_model.model_framework == ModelFramework.TABICL:
+                mem_size = SERVERLESS_MAX_MEMORY_MB
             serverless_config = ProductionVariantServerlessConfig(
                 memory_size_in_mb=mem_size,
                 max_concurrency=max_concurrency,

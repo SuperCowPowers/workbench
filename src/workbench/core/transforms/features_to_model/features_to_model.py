@@ -376,7 +376,11 @@ class FeaturesToModel(Transform):
             instance_ladder = [train_instance_type]
             self.log.important(f"Using user-specified instance {train_instance_type}")
         else:
-            gpu_framework = self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]
+            gpu_framework = self.model_framework in [
+                ModelFramework.CHEMPROP,
+                ModelFramework.PYTORCH,
+                ModelFramework.TABICL,
+            ]
             workload = training_workload(kwargs.get("hyperparameters"), gpu_framework=gpu_framework)
             instance_ladder = INSTANCE_LADDERS[workload]
             self.log.important(f"Using {workload} instances {instance_ladder} for {self.model_framework.value}")
@@ -628,6 +632,15 @@ class FeaturesToModel(Transform):
         hyperparameters = training_hp if training_hp is not None else kwargs.get("hyperparameters")
         if hyperparameters:
             output_model.upsert_workbench_meta({"workbench_hyperparameters": hyperparameters})
+
+        # Serving memory measured by the training job (TabICL), read by to_endpoint()
+        inference_profile = read_s3_json(
+            f"{output_model.model_training_path}/inference_profile.json", output_model.boto3_session
+        )
+        if inference_profile:
+            output_model.upsert_workbench_meta(
+                {"workbench_inference_memory_gb": inference_profile["inference_memory_gb"]}
+            )
 
         # Store the class labels (if they exist)
         if self.class_labels:

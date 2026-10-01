@@ -1,0 +1,2 @@
+# Requirements for TabICL model scripts
+# Note: The training and inference images already have torch and tabicl installed.
