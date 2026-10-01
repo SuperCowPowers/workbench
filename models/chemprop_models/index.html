@@ -5874,9 +5874,9 @@
 <li><strong>Public origin URL</strong> — last resort, logs a warning</li>
 </ol>
 <p>Training jobs receive <code>WORKBENCH_BUCKET</code> from the container environment, so rung 2 works out of the box once the weights are staged. Stage them with:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/admin/push_chemeleon_models.py
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--model<span class="w"> </span>chemeleon<span class="w"> </span>--file<span class="w"> </span>chemeleon_mp.pt
 </span></code></pre></div>
-<p>The script verifies size and checksum against the registry in <code>src/workbench/training/foundation_models.py</code>, confirms the file loads as a ChemProp checkpoint, then uploads the <code>.pt</code> plus a <code>SOURCE.json</code> provenance sidecar. Run with <code>--dry-run</code> to preview and <code>--force</code> to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.</p>
+<p>The script verifies size and checksum against the registry in <code>src/workbench/training/foundation_models.py</code>, confirms the file loads as the expected checkpoint, then uploads the <code>.pt</code> plus a <code>SOURCE.json</code> provenance sidecar. Run with <code>--dry-run</code> to preview and <code>--force</code> to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.</p>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <p>All ChemProp model types share a common set of tunable hyperparameters:</p>
 <table style="width: 100%;">
@@ -6077,7 +6077,7 @@
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Examples</p>
-<p>Full code listings are in the repository under <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop.py"><code>examples/models/chemprop.py</code></a> and <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py"><code>examples/models/chemprop_foundation.py</code></a>.</p>
+<p>Full code listings are in the repository under <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_model.py"><code>examples/models/chemprop_model.py</code></a> and <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py"><code>examples/models/chemprop_foundation.py</code></a>.</p>
 </div>
 <hr />
 <div class="admonition warning">
