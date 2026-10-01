@@ -128,7 +128,7 @@ charset-normalizer==3.4.7
     # via
     #   -c ci/.uv-constraints.txt
     #   requests
-click==8.4.1
+click==8.5.0
     # via
     #   -c ci/.uv-constraints.txt
     #   flask

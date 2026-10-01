@@ -1,5 +1,5 @@
-# Deps for the chemprop inference image. Smoke-contract subset + chemprop
-# overlay + CPU torch (lockfile pins torch==X.Y.Z+cpu via the PyTorch
+# Deps for the chemprop/tabicl inference image. Smoke-contract subset + chemprop
+# + tabicl overlay + CPU torch (lockfile pins torch==X.Y.Z+cpu via the PyTorch
 # CPU index, passed in ci/lock.sh). Chemprop inference on small batches
 # (typical real-time scoring) is CPU-bound work; GPU buys no real speedup
 # at low batch sizes and ~3GB of extra image weight.
@@ -22,6 +22,7 @@ rdkit >= 2026.3.1
 fastapi
 uvicorn
 
-# Image-specific (chemprop + CUDA torch from the PyTorch index)
+# Image-specific (chemprop + tabicl + CPU torch from the PyTorch index)
 torch
 chemprop
+tabicl
