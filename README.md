@@ -58,7 +58,7 @@ All the rage for the Open ADMET Challenge. ADMET Workbench supports:
 - Chemprop + Descriptors Models (MPNN + Molecular Descriptors)
 - Foundation Chemprop Models (CheMeleon Pretrained)
 
-Examples: [Deploying Chemprop Models](examples/models/chemprop.py) &nbsp;·&nbsp;
+Examples: [Deploying Chemprop Models](examples/models/chemprop_model.py) &nbsp;·&nbsp;
 [Deploying Foundation Chemprop Models](examples/models/chemprop_foundation.py)
 
 **References**

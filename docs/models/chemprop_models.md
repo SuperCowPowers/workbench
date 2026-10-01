@@ -468,7 +468,7 @@ All ChemProp models include built-in uncertainty quantification:
 - All options compose — you can use Foundation + Multi-Task + Descriptors together
 
 !!! note "Examples"
-    Full code listings are in the repository under [`examples/models/chemprop.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop.py) and [`examples/models/chemprop_foundation.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py).
+    Full code listings are in the repository under [`examples/models/chemprop_model.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_model.py) and [`examples/models/chemprop_foundation.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py).
 
 ---
 
