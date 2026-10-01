@@ -196,8 +196,8 @@ if __name__ == "__main__":
     all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
     check_dataframe(all_df, "training_df")
 
-    # TabICL's fit takes no per-row weights, so a weighted FeatureSet cannot be honored
-    if "sample_weight" in all_df.columns:
+    # TabICL's fit takes no per-row weights, so non-uniform weights cannot be honored
+    if "sample_weight" in all_df.columns and (all_df["sample_weight"] != 1.0).any():
         raise ValueError("TabICL does not support sample weights; use validation_ids to hold rows out of training")
 
     # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
@@ -314,14 +314,20 @@ if __name__ == "__main__":
     # Compute SHAP values for feature importance
     # -------------------------------------------------------------------------
     # TabICL's explainer masks raw numeric features, so it is skipped when the model
-    # reads PCA components or carries categorical columns.
+    # reads PCA components or carries categorical columns. It predicts once per
+    # explained row, and each "repr" predict re-runs the in-context pass over every
+    # training row, so SHAP gets its own fully cached model.
     shap_sample_size = min(hyperparameters["shap_sample_size"], len(df_oof))
     if shap_sample_size and not pca_components and not category_mappings:
         print("\n" + "=" * 50)
         print("Computing SHAP Values")
         print("=" * 50)
         shap_sample_df = df_oof.sample(n=shap_sample_size, random_state=42)
-        shap_values, base_values = tabicl_shap(model, shap_sample_df[features])
+        shap_model = model
+        if hyperparameters["kv_cache"] == "repr":
+            shap_model, _ = fit_tabicl(hyperparameters, all_df[features], all_df[target], kv_cache="kv")
+        shap_values, base_values = tabicl_shap(shap_model, shap_sample_df[features])
+        del shap_model
 
         shap_importance = sorted(
             zip(features, np.round(np.abs(shap_values).mean(axis=0), 3).tolist()), key=lambda x: x[1], reverse=True

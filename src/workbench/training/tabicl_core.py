@@ -15,7 +15,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-from workbench.endpoints.tabicl_utils import MODEL_FILE, REDUCER_FILE
+from workbench.endpoints.tabicl_utils import MODEL_FILE, REDUCER_FILE, tabicl_device
 
 # Rows the memory probe predicts: a typical small serving request
 PROBE_ROWS = 10
@@ -57,6 +57,7 @@ def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, kv_cache) -> tuple:
         batch_size=hyperparameters["batch_size"],
         kv_cache=kv_cache,
         random_state=hyperparameters["seed"],
+        device=tabicl_device(),
         model_path=str(resolve_foundation_checkpoint("tabicl")),
         allow_auto_download=False,
     ).fit(X, y)
