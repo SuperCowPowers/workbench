@@ -17,9 +17,18 @@ Arms:
 TabICL arms are averaged over SEEDS before the paired bootstrap, so the comparison
 carries row noise only; the per-seed spread is reported alongside.
 
-Without the readouts TabICL loses (RAE 0.687 vs chemprop 0.591, +0.096 [+0.056, +0.142]),
-and stacking chemprop's own OOF pEC50 prediction only recovers chemprop (0.609,
-+0.019 [-0.004, +0.043]).
+Results (phase1_test, paired RAE delta vs chemprop with 95% CI):
+
+    arm               RAE    MAE    delta
+    chemprop          0.591  0.472
+    chemprop_readout  0.569  0.454  -0.022 [-0.049, +0.008]  wins 93% of resamples
+    tabicl            0.687  0.548  +0.096 [+0.056, +0.135]
+    tabicl_readout    0.569  0.455  -0.021 [-0.052, +0.010]  wins 90% of resamples
+
+The primary-screen readouts carry the gain: they lift TabICL by 0.118 RAE to a tie with
+chemprop + readouts. On the same inputs the two models land in the same place, so TabICL
+is a competitive framework option rather than a winner here. Stacking chemprop's own OOF
+pEC50 prediction into TabICL instead of the readouts only recovers chemprop (0.609).
 
 Needs openadmet_pxr_readout and pxr-reg-chemprop-readout-phase1 (see pipelines.json).
 
