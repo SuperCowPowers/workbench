@@ -11,7 +11,7 @@ Workbench bucket and resolution walks three rungs:
 3. **origin URL** — the public internet, last resort, warns loudly. Pass
    ``allow_origin=False`` to make a missing S3 copy a hard error instead.
 
-Populate rung 2 with ``scripts/admin/push_chemeleon_models.py``. A SageMaker training
+Populate rung 2 with ``scripts/admin/push_foundation_models.py``. A SageMaker training
 job has no site config, so it gets ``WORKBENCH_BUCKET`` from the ``ModelTrainer``
 environment set in ``features_to_model.py``.
 
@@ -42,10 +42,12 @@ FOUNDATION_MODELS = {
         "provenance_id": "zenodo-15460715",
         "description": "CheMeleon MPNN foundation weights (Zenodo record 15460715)",
         # Expected integrity of the origin file, checked at staging time only (see
-        # scripts/admin/push_chemeleon_models.py). Reported by an operator, not
+        # scripts/admin/push_foundation_models.py). Reported by an operator, not
         # verified in-account -- treat a mismatch as "investigate", not "impossible".
         "expected_md5": "6a80b54fdb7de37ef0374d302f01e8ce",
         "expected_size_bytes": 34859448,
+        # Top-level keys a valid checkpoint carries, checked at staging time
+        "checkpoint_keys": ["hyper_parameters", "state_dict"],
     },
     "tabicl": {
         "filename": "tabicl-regressor-v2-20260212.ckpt",
@@ -58,6 +60,7 @@ FOUNDATION_MODELS = {
         "description": "TabICL v2 regressor checkpoint (Hugging Face jingang/TabICL, revision 4dcd344e)",
         "expected_md5": "e9b7c522e50a3fc6ad5cf3486dcebc46",
         "expected_size_bytes": 114324594,
+        "checkpoint_keys": ["config", "state_dict"],
     },
 }
 
@@ -243,7 +246,7 @@ def resolve_foundation_checkpoint(name: str, allow_origin: bool = True) -> Path:
     if not allow_origin:
         raise RuntimeError(
             f"Foundation checkpoint '{name}' not staged in S3 ({foundation_s3_uri(name)}) and "
-            f"allow_origin=False. Stage it with scripts/admin/push_chemeleon_models.py"
+            f"allow_origin=False. Stage it with scripts/admin/push_foundation_models.py"
         )
 
     url = entry["origin_url"]

@@ -1,33 +1,29 @@
 """Stage foundation-model checkpoints in the Workbench bucket.
 
-:func:`workbench.training.chemprop_core.load_foundation_weights` resolves
-warm-start weights local cache -> Workbench S3 -> public origin URL. This script
-populates the S3 rung so training jobs never depend on the public internet: a
-Zenodo ``HTTP 504`` killed ``pxr-reg-chemprop-chemeleon-phase1-frz20`` 14 seconds
-into fold 1 on 2026-07-29, after frz0 and frz10 had already trained fine.
+:func:`workbench.training.foundation_models.resolve_foundation_checkpoint` walks
+local cache -> Workbench S3 -> public origin URL. This script populates the S3 rung,
+so training jobs never depend on the public internet.
 
-The download is **not** done here — fetch the checkpoint yourself, then point this
-script at the local file::
+The download is **not** done here — fetch the checkpoint yourself (the registry entry's
+``origin_url``), then point this script at the local file::
 
     curl -O https://zenodo.org/records/15460715/files/chemeleon_mp.pt
-    python scripts/admin/push_chemeleon_models.py --file chemeleon_mp.pt
+    python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt
+
+    python scripts/admin/push_foundation_models.py --model tabicl --file tabicl-regressor-v2-20260212.ckpt
 
     # inspect + hash, no upload
-    python scripts/admin/push_chemeleon_models.py --file chemeleon_mp.pt --dry-run
+    python scripts/admin/push_foundation_models.py --model tabicl --file tabicl-regressor-v2-20260212.ckpt --dry-run
 
-    # a different registered checkpoint
-    python scripts/admin/push_chemeleon_models.py --model chemeleon --file /tmp/chemeleon_mp.pt
-
-Two objects are written per checkpoint::
+Two objects are written per checkpoint, at the registry entry's ``s3_key``::
 
     s3://$WORKBENCH_BUCKET/foundation-models/chemeleon/15460715/chemeleon_mp.pt
     s3://$WORKBENCH_BUCKET/foundation-models/chemeleon/15460715/SOURCE.json
 
-The upload refuses to clobber an existing object unless ``--force`` is given, and
-verifies the file really is a chemprop-style checkpoint first (``hyper_parameters``
-+ ``state_dict``), so a truncated or HTML-error-page download can't get staged.
-The file's md5 and byte size are also checked against the registry's expected values,
-so a truncated download fails at the gate. Torch is optional here: without it the
+The upload refuses to clobber an existing object unless ``--force`` is given. The
+file's md5 and byte size are checked against the registry's expected values, and its
+top-level keys against the entry's ``checkpoint_keys``, so a truncated or
+HTML-error-page download can't get staged. Torch is optional here: without it the
 structural check is skipped with a warning (the md5/size check still runs).
 """
 
@@ -113,14 +109,15 @@ def check_integrity(path: Path, entry: dict) -> dict:
     return {"md5": md5, "size_bytes": size, "integrity": "verified"}
 
 
-def verify_checkpoint(path: Path) -> dict:
-    """Confirm the file loads as a chemprop-style MPNN checkpoint.
+def verify_checkpoint(path: Path, entry: dict) -> dict:
+    """Confirm the file loads as a torch checkpoint with the registry entry's keys.
 
     Args:
         path (Path): Local checkpoint file.
+        entry (dict): Registry entry for this foundation model.
 
     Returns:
-        dict: Details for the sidecar ({"hidden_dim", "depth"} when known).
+        dict: Details for the sidecar — the scalar settings under each non-weight key.
     """
     try:
         import torch
@@ -135,12 +132,16 @@ def verify_checkpoint(path: Path) -> dict:
             f"{path} does not load as a torch checkpoint ({type(e).__name__}: {e}). "
             "A truncated download or an HTML error page will look like this."
         ) from None
-    missing = [k for k in ("hyper_parameters", "state_dict") if k not in ckpt]
+    missing = [k for k in entry["checkpoint_keys"] if k not in ckpt]
     if missing:
-        raise ValueError(f"{path} is not a chemprop foundation checkpoint (missing {missing})")
-    hp = ckpt["hyper_parameters"]
-    print(f"  checkpoint OK: hyper_parameters={hp}")
-    return {"hyper_parameters": {k: v for k, v in hp.items() if isinstance(v, (int, float, str, bool))}}
+        raise ValueError(f"{path} is not a {entry['filename']} checkpoint (missing {missing})")
+    details = {
+        key: {k: v for k, v in ckpt[key].items() if isinstance(v, (int, float, str, bool))}
+        for key in entry["checkpoint_keys"]
+        if key != "state_dict" and isinstance(ckpt[key], dict)
+    }
+    print(f"  checkpoint OK: {details}")
+    return details
 
 
 def object_exists(client, bucket: str, key: str) -> bool:
@@ -169,7 +170,7 @@ def push(model: str, local_file: Path, bucket: str, dry_run: bool, force: bool) 
     print(f"  target: s3://{bucket}/{key}")
 
     integrity = check_integrity(local_file, entry)
-    details = verify_checkpoint(local_file)
+    details = verify_checkpoint(local_file, entry)
     checksum = hash_of(local_file, "sha256")
     print(f"  sha256: {checksum}")
 
@@ -182,7 +183,7 @@ def push(model: str, local_file: Path, bucket: str, dry_run: bool, force: bool) 
         "sha256": checksum,
         **integrity,
         "uploaded_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "uploaded_by": "scripts/admin/push_chemeleon_models.py",
+        "uploaded_by": "scripts/admin/push_foundation_models.py",
         **details,
     }
 
@@ -213,10 +214,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--file", required=True, type=Path, help="Local checkpoint file to upload")
     parser.add_argument(
-        "--model",
-        default="chemeleon",
-        choices=known_foundation_models(),
-        help="Registered foundation model name (default: chemeleon)",
+        "--model", required=True, choices=known_foundation_models(), help="Registered foundation model name"
     )
     parser.add_argument("--bucket", default=None, help="Override the Workbench bucket")
     parser.add_argument("--dry-run", action="store_true", help="Verify and hash, but do not upload")

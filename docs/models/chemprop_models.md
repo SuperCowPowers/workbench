@@ -247,10 +247,10 @@ Registered foundation names (`"CheMeleon"`) resolve through three rungs, in orde
 Training jobs receive `WORKBENCH_BUCKET` from the container environment, so rung 2 works out of the box once the weights are staged. Stage them with:
 
 ```bash
-python scripts/admin/push_chemeleon_models.py
+python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt
 ```
 
-The script verifies size and checksum against the registry in `src/workbench/training/foundation_models.py`, confirms the file loads as a ChemProp checkpoint, then uploads the `.pt` plus a `SOURCE.json` provenance sidecar. Run with `--dry-run` to preview and `--force` to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.
+The script verifies size and checksum against the registry in `src/workbench/training/foundation_models.py`, confirms the file loads as the expected checkpoint, then uploads the `.pt` plus a `SOURCE.json` provenance sidecar. Run with `--dry-run` to preview and `--force` to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.
 
 ## Hyperparameters
 

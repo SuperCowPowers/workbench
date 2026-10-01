@@ -9,7 +9,7 @@ to predict Mordred molecular descriptors. This gives the MPNN a strong prior for
 molecular representation learning.
 
 Weights resolve from the local cache, then the Workbench bucket, then the public
-origin URL. Stage them in your bucket with scripts/admin/push_chemeleon_models.py
+origin URL. Stage them in your bucket with scripts/admin/push_foundation_models.py
 so training jobs never reach the public internet.
 
 References:
