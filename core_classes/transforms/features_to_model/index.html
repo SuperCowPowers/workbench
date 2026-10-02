@@ -694,6 +694,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../models/tabicl_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TabICL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../models/cleanlab_models/" class="md-nav__link">
         
   
@@ -6798,32 +6826,32 @@
 </span><span id="__span-0-615"><a id="__codelineno-0-615" name="__codelineno-0-615"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Post-Transform: Calling onboard() on the Model..."</span><span class="p">)</span>
 </span><span id="__span-0-616"><a id="__codelineno-0-616" name="__codelineno-0-616"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># Give AWS time to complete Model register</span>
 </span><span id="__span-0-617"><a id="__codelineno-0-617" name="__codelineno-0-617"></a>
-</span><span id="__span-0-618"><a id="__codelineno-0-618" name="__codelineno-0-618"></a>        <span class="c1"># Store the model metadata information</span>
-</span><span id="__span-0-619"><a id="__codelineno-0-619" name="__codelineno-0-619"></a>        <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_name</span><span class="p">)</span>
-</span><span id="__span-0-620"><a id="__codelineno-0-620" name="__codelineno-0-620"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">_set_model_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">)</span>
-</span><span id="__span-0-621"><a id="__codelineno-0-621" name="__codelineno-0-621"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">_set_model_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_framework</span><span class="p">)</span>
-</span><span id="__span-0-622"><a id="__codelineno-0-622" name="__codelineno-0-622"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_model_features"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">})</span>
-</span><span id="__span-0-623"><a id="__codelineno-0-623" name="__codelineno-0-623"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_model_target"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">})</span>
-</span><span id="__span-0-624"><a id="__codelineno-0-624" name="__codelineno-0-624"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_training_view"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_training_view_name</span><span class="p">})</span>
-</span><span id="__span-0-625"><a id="__codelineno-0-625" name="__codelineno-0-625"></a>
-</span><span id="__span-0-626"><a id="__codelineno-0-626" name="__codelineno-0-626"></a>        <span class="c1"># Persist hyperparameters to meta. Template frameworks write the resolved set</span>
-</span><span id="__span-0-627"><a id="__codelineno-0-627" name="__codelineno-0-627"></a>        <span class="c1"># (defaults + overrides) to S3 during training; custom scripts don't, so fall</span>
-</span><span id="__span-0-628"><a id="__codelineno-0-628" name="__codelineno-0-628"></a>        <span class="c1"># back to the passed kwarg. Prefer S3 so the stored set is complete.</span>
-</span><span id="__span-0-629"><a id="__codelineno-0-629" name="__codelineno-0-629"></a>        <span class="n">training_hp</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
-</span><span id="__span-0-630"><a id="__codelineno-0-630" name="__codelineno-0-630"></a>            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/hyperparameters.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
-</span><span id="__span-0-631"><a id="__codelineno-0-631" name="__codelineno-0-631"></a>        <span class="p">)</span>
-</span><span id="__span-0-632"><a id="__codelineno-0-632" name="__codelineno-0-632"></a>        <span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">training_hp</span> <span class="k">if</span> <span class="n">training_hp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hyperparameters"</span><span class="p">)</span>
-</span><span id="__span-0-633"><a id="__codelineno-0-633" name="__codelineno-0-633"></a>        <span class="k">if</span> <span class="n">hyperparameters</span><span class="p">:</span>
-</span><span id="__span-0-634"><a id="__codelineno-0-634" name="__codelineno-0-634"></a>            <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_hyperparameters"</span><span class="p">:</span> <span class="n">hyperparameters</span><span class="p">})</span>
-</span><span id="__span-0-635"><a id="__codelineno-0-635" name="__codelineno-0-635"></a>
-</span><span id="__span-0-636"><a id="__codelineno-0-636" name="__codelineno-0-636"></a>        <span class="c1"># Serving memory measured by the training job (TabICL), read by to_endpoint()</span>
-</span><span id="__span-0-637"><a id="__codelineno-0-637" name="__codelineno-0-637"></a>        <span class="n">inference_profile</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
-</span><span id="__span-0-638"><a id="__codelineno-0-638" name="__codelineno-0-638"></a>            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/inference_profile.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
-</span><span id="__span-0-639"><a id="__codelineno-0-639" name="__codelineno-0-639"></a>        <span class="p">)</span>
-</span><span id="__span-0-640"><a id="__codelineno-0-640" name="__codelineno-0-640"></a>        <span class="k">if</span> <span class="n">inference_profile</span><span class="p">:</span>
-</span><span id="__span-0-641"><a id="__codelineno-0-641" name="__codelineno-0-641"></a>            <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">(</span>
-</span><span id="__span-0-642"><a id="__codelineno-0-642" name="__codelineno-0-642"></a>                <span class="p">{</span><span class="s2">"workbench_inference_memory_gb"</span><span class="p">:</span> <span class="n">inference_profile</span><span class="p">[</span><span class="s2">"inference_memory_gb"</span><span class="p">]}</span>
-</span><span id="__span-0-643"><a id="__codelineno-0-643" name="__codelineno-0-643"></a>            <span class="p">)</span>
+</span><span id="__span-0-618"><a id="__codelineno-0-618" name="__codelineno-0-618"></a>        <span class="c1"># Store the model metadata in one write: each upsert is its own AWS call.</span>
+</span><span id="__span-0-619"><a id="__codelineno-0-619" name="__codelineno-0-619"></a>        <span class="c1"># onboard_with_args() below writes the type, target, and features.</span>
+</span><span id="__span-0-620"><a id="__codelineno-0-620" name="__codelineno-0-620"></a>        <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_name</span><span class="p">)</span>
+</span><span id="__span-0-621"><a id="__codelineno-0-621" name="__codelineno-0-621"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span>
+</span><span id="__span-0-622"><a id="__codelineno-0-622" name="__codelineno-0-622"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">model_framework</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_framework</span>
+</span><span id="__span-0-623"><a id="__codelineno-0-623" name="__codelineno-0-623"></a>        <span class="n">model_meta</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-0-624"><a id="__codelineno-0-624" name="__codelineno-0-624"></a>            <span class="s2">"workbench_model_framework"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_framework</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="__span-0-625"><a id="__codelineno-0-625" name="__codelineno-0-625"></a>            <span class="s2">"workbench_training_view"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_training_view_name</span><span class="p">,</span>
+</span><span id="__span-0-626"><a id="__codelineno-0-626" name="__codelineno-0-626"></a>        <span class="p">}</span>
+</span><span id="__span-0-627"><a id="__codelineno-0-627" name="__codelineno-0-627"></a>
+</span><span id="__span-0-628"><a id="__codelineno-0-628" name="__codelineno-0-628"></a>        <span class="c1"># Template frameworks write the resolved hyperparameters (defaults + overrides) to S3</span>
+</span><span id="__span-0-629"><a id="__codelineno-0-629" name="__codelineno-0-629"></a>        <span class="c1"># during training, and onboarding loads them from there. Custom scripts don't, so</span>
+</span><span id="__span-0-630"><a id="__codelineno-0-630" name="__codelineno-0-630"></a>        <span class="c1"># the passed kwarg is stored for those.</span>
+</span><span id="__span-0-631"><a id="__codelineno-0-631" name="__codelineno-0-631"></a>        <span class="n">training_hp</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
+</span><span id="__span-0-632"><a id="__codelineno-0-632" name="__codelineno-0-632"></a>            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/hyperparameters.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
+</span><span id="__span-0-633"><a id="__codelineno-0-633" name="__codelineno-0-633"></a>        <span class="p">)</span>
+</span><span id="__span-0-634"><a id="__codelineno-0-634" name="__codelineno-0-634"></a>        <span class="k">if</span> <span class="n">training_hp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hyperparameters"</span><span class="p">):</span>
+</span><span id="__span-0-635"><a id="__codelineno-0-635" name="__codelineno-0-635"></a>            <span class="n">model_meta</span><span class="p">[</span><span class="s2">"workbench_hyperparameters"</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"hyperparameters"</span><span class="p">]</span>
+</span><span id="__span-0-636"><a id="__codelineno-0-636" name="__codelineno-0-636"></a>
+</span><span id="__span-0-637"><a id="__codelineno-0-637" name="__codelineno-0-637"></a>        <span class="c1"># Serving memory measured by the training job (TabICL), read by to_endpoint()</span>
+</span><span id="__span-0-638"><a id="__codelineno-0-638" name="__codelineno-0-638"></a>        <span class="n">inference_profile</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
+</span><span id="__span-0-639"><a id="__codelineno-0-639" name="__codelineno-0-639"></a>            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/inference_profile.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
+</span><span id="__span-0-640"><a id="__codelineno-0-640" name="__codelineno-0-640"></a>        <span class="p">)</span>
+</span><span id="__span-0-641"><a id="__codelineno-0-641" name="__codelineno-0-641"></a>        <span class="k">if</span> <span class="n">inference_profile</span><span class="p">:</span>
+</span><span id="__span-0-642"><a id="__codelineno-0-642" name="__codelineno-0-642"></a>            <span class="n">model_meta</span><span class="p">[</span><span class="s2">"workbench_inference_memory_gb"</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_profile</span><span class="p">[</span><span class="s2">"inference_memory_gb"</span><span class="p">]</span>
+</span><span id="__span-0-643"><a id="__codelineno-0-643" name="__codelineno-0-643"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">(</span><span class="n">model_meta</span><span class="p">)</span>
 </span><span id="__span-0-644"><a id="__codelineno-0-644" name="__codelineno-0-644"></a>
 </span><span id="__span-0-645"><a id="__codelineno-0-645" name="__codelineno-0-645"></a>        <span class="c1"># Store the class labels (if they exist)</span>
 </span><span id="__span-0-646"><a id="__codelineno-0-646" name="__codelineno-0-646"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span><span class="p">:</span>
@@ -7256,32 +7284,32 @@ Args:
 </span><span id="__span-0-615"><a id="__codelineno-0-615" name="__codelineno-0-615"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Post-Transform: Calling onboard() on the Model..."</span><span class="p">)</span>
 </span><span id="__span-0-616"><a id="__codelineno-0-616" name="__codelineno-0-616"></a>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># Give AWS time to complete Model register</span>
 </span><span id="__span-0-617"><a id="__codelineno-0-617" name="__codelineno-0-617"></a>
-</span><span id="__span-0-618"><a id="__codelineno-0-618" name="__codelineno-0-618"></a>    <span class="c1"># Store the model metadata information</span>
-</span><span id="__span-0-619"><a id="__codelineno-0-619" name="__codelineno-0-619"></a>    <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_name</span><span class="p">)</span>
-</span><span id="__span-0-620"><a id="__codelineno-0-620" name="__codelineno-0-620"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">_set_model_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">)</span>
-</span><span id="__span-0-621"><a id="__codelineno-0-621" name="__codelineno-0-621"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">_set_model_framework</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_framework</span><span class="p">)</span>
-</span><span id="__span-0-622"><a id="__codelineno-0-622" name="__codelineno-0-622"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_model_features"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">})</span>
-</span><span id="__span-0-623"><a id="__codelineno-0-623" name="__codelineno-0-623"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_model_target"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">})</span>
-</span><span id="__span-0-624"><a id="__codelineno-0-624" name="__codelineno-0-624"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_training_view"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_training_view_name</span><span class="p">})</span>
-</span><span id="__span-0-625"><a id="__codelineno-0-625" name="__codelineno-0-625"></a>
-</span><span id="__span-0-626"><a id="__codelineno-0-626" name="__codelineno-0-626"></a>    <span class="c1"># Persist hyperparameters to meta. Template frameworks write the resolved set</span>
-</span><span id="__span-0-627"><a id="__codelineno-0-627" name="__codelineno-0-627"></a>    <span class="c1"># (defaults + overrides) to S3 during training; custom scripts don't, so fall</span>
-</span><span id="__span-0-628"><a id="__codelineno-0-628" name="__codelineno-0-628"></a>    <span class="c1"># back to the passed kwarg. Prefer S3 so the stored set is complete.</span>
-</span><span id="__span-0-629"><a id="__codelineno-0-629" name="__codelineno-0-629"></a>    <span class="n">training_hp</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
-</span><span id="__span-0-630"><a id="__codelineno-0-630" name="__codelineno-0-630"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/hyperparameters.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
-</span><span id="__span-0-631"><a id="__codelineno-0-631" name="__codelineno-0-631"></a>    <span class="p">)</span>
-</span><span id="__span-0-632"><a id="__codelineno-0-632" name="__codelineno-0-632"></a>    <span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">training_hp</span> <span class="k">if</span> <span class="n">training_hp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hyperparameters"</span><span class="p">)</span>
-</span><span id="__span-0-633"><a id="__codelineno-0-633" name="__codelineno-0-633"></a>    <span class="k">if</span> <span class="n">hyperparameters</span><span class="p">:</span>
-</span><span id="__span-0-634"><a id="__codelineno-0-634" name="__codelineno-0-634"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">"workbench_hyperparameters"</span><span class="p">:</span> <span class="n">hyperparameters</span><span class="p">})</span>
-</span><span id="__span-0-635"><a id="__codelineno-0-635" name="__codelineno-0-635"></a>
-</span><span id="__span-0-636"><a id="__codelineno-0-636" name="__codelineno-0-636"></a>    <span class="c1"># Serving memory measured by the training job (TabICL), read by to_endpoint()</span>
-</span><span id="__span-0-637"><a id="__codelineno-0-637" name="__codelineno-0-637"></a>    <span class="n">inference_profile</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
-</span><span id="__span-0-638"><a id="__codelineno-0-638" name="__codelineno-0-638"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/inference_profile.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
-</span><span id="__span-0-639"><a id="__codelineno-0-639" name="__codelineno-0-639"></a>    <span class="p">)</span>
-</span><span id="__span-0-640"><a id="__codelineno-0-640" name="__codelineno-0-640"></a>    <span class="k">if</span> <span class="n">inference_profile</span><span class="p">:</span>
-</span><span id="__span-0-641"><a id="__codelineno-0-641" name="__codelineno-0-641"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">(</span>
-</span><span id="__span-0-642"><a id="__codelineno-0-642" name="__codelineno-0-642"></a>            <span class="p">{</span><span class="s2">"workbench_inference_memory_gb"</span><span class="p">:</span> <span class="n">inference_profile</span><span class="p">[</span><span class="s2">"inference_memory_gb"</span><span class="p">]}</span>
-</span><span id="__span-0-643"><a id="__codelineno-0-643" name="__codelineno-0-643"></a>        <span class="p">)</span>
+</span><span id="__span-0-618"><a id="__codelineno-0-618" name="__codelineno-0-618"></a>    <span class="c1"># Store the model metadata in one write: each upsert is its own AWS call.</span>
+</span><span id="__span-0-619"><a id="__codelineno-0-619" name="__codelineno-0-619"></a>    <span class="c1"># onboard_with_args() below writes the type, target, and features.</span>
+</span><span id="__span-0-620"><a id="__codelineno-0-620" name="__codelineno-0-620"></a>    <span class="n">output_model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_name</span><span class="p">)</span>
+</span><span id="__span-0-621"><a id="__codelineno-0-621" name="__codelineno-0-621"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span>
+</span><span id="__span-0-622"><a id="__codelineno-0-622" name="__codelineno-0-622"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">model_framework</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_framework</span>
+</span><span id="__span-0-623"><a id="__codelineno-0-623" name="__codelineno-0-623"></a>    <span class="n">model_meta</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-0-624"><a id="__codelineno-0-624" name="__codelineno-0-624"></a>        <span class="s2">"workbench_model_framework"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_framework</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="__span-0-625"><a id="__codelineno-0-625" name="__codelineno-0-625"></a>        <span class="s2">"workbench_training_view"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_training_view_name</span><span class="p">,</span>
+</span><span id="__span-0-626"><a id="__codelineno-0-626" name="__codelineno-0-626"></a>    <span class="p">}</span>
+</span><span id="__span-0-627"><a id="__codelineno-0-627" name="__codelineno-0-627"></a>
+</span><span id="__span-0-628"><a id="__codelineno-0-628" name="__codelineno-0-628"></a>    <span class="c1"># Template frameworks write the resolved hyperparameters (defaults + overrides) to S3</span>
+</span><span id="__span-0-629"><a id="__codelineno-0-629" name="__codelineno-0-629"></a>    <span class="c1"># during training, and onboarding loads them from there. Custom scripts don't, so</span>
+</span><span id="__span-0-630"><a id="__codelineno-0-630" name="__codelineno-0-630"></a>    <span class="c1"># the passed kwarg is stored for those.</span>
+</span><span id="__span-0-631"><a id="__codelineno-0-631" name="__codelineno-0-631"></a>    <span class="n">training_hp</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
+</span><span id="__span-0-632"><a id="__codelineno-0-632" name="__codelineno-0-632"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/hyperparameters.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
+</span><span id="__span-0-633"><a id="__codelineno-0-633" name="__codelineno-0-633"></a>    <span class="p">)</span>
+</span><span id="__span-0-634"><a id="__codelineno-0-634" name="__codelineno-0-634"></a>    <span class="k">if</span> <span class="n">training_hp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hyperparameters"</span><span class="p">):</span>
+</span><span id="__span-0-635"><a id="__codelineno-0-635" name="__codelineno-0-635"></a>        <span class="n">model_meta</span><span class="p">[</span><span class="s2">"workbench_hyperparameters"</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"hyperparameters"</span><span class="p">]</span>
+</span><span id="__span-0-636"><a id="__codelineno-0-636" name="__codelineno-0-636"></a>
+</span><span id="__span-0-637"><a id="__codelineno-0-637" name="__codelineno-0-637"></a>    <span class="c1"># Serving memory measured by the training job (TabICL), read by to_endpoint()</span>
+</span><span id="__span-0-638"><a id="__codelineno-0-638" name="__codelineno-0-638"></a>    <span class="n">inference_profile</span> <span class="o">=</span> <span class="n">read_s3_json</span><span class="p">(</span>
+</span><span id="__span-0-639"><a id="__codelineno-0-639" name="__codelineno-0-639"></a>        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">output_model</span><span class="o">.</span><span class="n">model_training_path</span><span class="si">}</span><span class="s2">/inference_profile.json"</span><span class="p">,</span> <span class="n">output_model</span><span class="o">.</span><span class="n">boto3_session</span>
+</span><span id="__span-0-640"><a id="__codelineno-0-640" name="__codelineno-0-640"></a>    <span class="p">)</span>
+</span><span id="__span-0-641"><a id="__codelineno-0-641" name="__codelineno-0-641"></a>    <span class="k">if</span> <span class="n">inference_profile</span><span class="p">:</span>
+</span><span id="__span-0-642"><a id="__codelineno-0-642" name="__codelineno-0-642"></a>        <span class="n">model_meta</span><span class="p">[</span><span class="s2">"workbench_inference_memory_gb"</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_profile</span><span class="p">[</span><span class="s2">"inference_memory_gb"</span><span class="p">]</span>
+</span><span id="__span-0-643"><a id="__codelineno-0-643" name="__codelineno-0-643"></a>    <span class="n">output_model</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">(</span><span class="n">model_meta</span><span class="p">)</span>
 </span><span id="__span-0-644"><a id="__codelineno-0-644" name="__codelineno-0-644"></a>
 </span><span id="__span-0-645"><a id="__codelineno-0-645" name="__codelineno-0-645"></a>    <span class="c1"># Store the class labels (if they exist)</span>
 </span><span id="__span-0-646"><a id="__codelineno-0-646" name="__codelineno-0-646"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span><span class="p">:</span>
