@@ -26,3 +26,6 @@ uvicorn
 torch
 chemprop
 tabicl
+
+# Graph batching for the Monroe encoder (feature_endpoints/smiles_to_monroe_v1.py)
+torch-geometric

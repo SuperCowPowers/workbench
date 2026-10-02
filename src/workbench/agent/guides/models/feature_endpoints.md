@@ -5,7 +5,7 @@
 A feature endpoint is an Endpoint that computes **features instead of
 predictions** — it holds no trained model. Model type is
 `ModelType.TRANSFORMER`. Send it SMILES, get molecular features back —
-descriptors or fingerprints.
+descriptors, fingerprints, or embeddings.
 
 The point is eliminating training/inference skew: training, deployed inference,
 batch jobs, and external platforms all call the *same* endpoint, so features are
@@ -31,6 +31,7 @@ predictions = Endpoint("my-admet-model").inference(df_features)
 | `smiles-to-fingerprints-v1` | 4096-dim Morgan counts | Similarity, substructure, fingerprint models |
 | `smiles-to-3d-v2` | 26 3D descriptors | Curated GFN2-xTB set, orthogonal to 2D — async |
 | `smiles-to-2d-salt-v1` | ~315 2D descriptors | Solubility only — see below |
+| `smiles-to-monroe-v1` | 720-dim Monroe embedding | Pretrained molecular embedding — see below |
 
 Combined **MetaEndpoints** fan out to both children and concatenate in one call:
 
@@ -110,6 +111,23 @@ Model(model_name).hyperparameters()          # {'radius': 2, 'n_bits': 4096, 'co
 
 A different radius/bits/counts mix is a new version (`-v2`), self-describing via
 its own hyperparameters.
+
+## Monroe embeddings
+
+`smiles-to-monroe-v1` returns the 720-d embedding of the frozen Monroe encoder (a
+graph transformer pretrained on quantum-chemical and bioassay data) as columns
+`monroe_000`..`monroe_719`:
+
+```python
+features = [f"monroe_{i:03d}" for i in range(720)]
+```
+
+- It is a sync serverless endpoint: run it the way the 2D endpoint is run.
+- Salts are removed, and each molecule gets one seeded conformer, so a SMILES always
+  returns the same embedding.
+- A molecule that cannot be featurized keeps its row with NaN in all 720 columns.
+- The columns are not individually interpretable. Any reduction (PCA, a column subset)
+  is fit on training rows, so it belongs to the model, not the FeatureSet.
 
 ## Versioning
 

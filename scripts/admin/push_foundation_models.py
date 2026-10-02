@@ -126,7 +126,7 @@ def verify_checkpoint(path: Path, entry: dict) -> dict:
         return {}
 
     try:
-        ckpt = torch.load(path, weights_only=True)
+        ckpt = torch.load(path, weights_only=True, map_location="cpu")
     except Exception as e:
         raise ValueError(
             f"{path} does not load as a torch checkpoint ({type(e).__name__}: {e}). "

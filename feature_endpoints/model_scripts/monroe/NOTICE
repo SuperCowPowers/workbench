@@ -1,0 +1,34 @@
+Monroe
+Copyright (c) 2026 Blazej Banaszewski
+
+This product includes software adapted from the third-party projects listed
+below. Both are used under the MIT License, and their original copyright
+notices are reproduced here as that license requires.
+
+--------------------------------------------------------------------------------
+LibMTL
+https://github.com/median-research-group/LibMTL
+MIT License — Copyright (c) 2021 median-research-group
+
+The entire multi-task weighting module (monroe/mtl/) is derived from LibMTL.
+This includes the AbsWeighting base interface (monroe/mtl/abstract_weighting.py)
+and every weighting strategy: EW, UW, RLW, DWA, and STCH.
+
+LibMTL cites the original paper and reference implementation for each individual
+strategy in that strategy's class docstring; those citations are retained
+verbatim in the corresponding files here.
+
+--------------------------------------------------------------------------------
+GRIT — Graph Inductive Biases in Transformers without Message Passing
+https://github.com/LiamMa/GRIT
+MIT License — Copyright (c) 2023 Liheng Ma
+
+The encoder (monroe/model/grit.py) is a derivative work of the official GRIT
+implementation, including its attention computation
+(MultiHeadAttentionLayerGritSparse) and transformer layer (GritTransformerLayer).
+Monroe extends it with molecule-specific components — RBF edge-distance
+expansion, learned fills for missing node features, stereo edge features, and
+multi-head attention pooling — but the core architecture is GRIT's.
+
+GRIT is introduced in "Graph Inductive Biases in Transformers without Message
+Passing" (ICML 2023), Ma et al.

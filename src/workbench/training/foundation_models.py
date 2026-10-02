@@ -1,6 +1,6 @@
 """Foundation-model checkpoint registry and resolver (deliberately dep-free).
 
-Pretrained checkpoints (CheMeleon, TabICL) are published on the public internet,
+Pretrained checkpoints (CheMeleon, TabICL, Monroe) are published on the public internet,
 but a training job must never *depend* on that, so checkpoints are staged in the
 Workbench bucket and resolution walks three rungs:
 
@@ -62,6 +62,19 @@ FOUNDATION_MODELS = {
         "expected_md5": "e9b7c522e50a3fc6ad5cf3486dcebc46",
         "expected_size_bytes": 114324594,
         "checkpoint_keys": ["config", "state_dict"],
+    },
+    "monroe": {
+        "filename": "monroe-57238ed-weights.pt",
+        "s3_key": f"{FOUNDATION_PREFIX}/monroe/57238ed/weights.pt",
+        "origin_url": (
+            "https://github.com/blazejba/monroe/raw/57238edfffea03808abe761a00cd9a75fa41bb95/checkpoint/weights.pt"
+        ),
+        "provenance_id": "github-blazejba-monroe-57238ed",
+        "description": "Monroe molecular encoder weights (GitHub blazejba/monroe, commit 57238ed)",
+        "expected_md5": "2d4509e483aabf46781709146084b47e",
+        "expected_size_bytes": 300057823,
+        # A flat state dict (CUDA tensors): these are tensor names, not sections
+        "checkpoint_keys": ["encoder.missing_fill", "encoder.pooling.value_proj.weight"],
     },
 }
 
