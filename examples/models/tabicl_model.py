@@ -24,10 +24,11 @@ if recreate or not Model("aqsol-reg-tabicl").exists():
     m.set_owner("BW")
 
 # Create an Endpoint for the Regression Model. Serverless is refused when the model's
-# measured serving memory is over 5 GB; pass serverless=False for a real-time endpoint.
+# measured serving memory is over 5 GB (this one is ~9 GB), so deploy real-time: the
+# instance is sized from the measured memory.
 if recreate or not Endpoint("aqsol-reg-tabicl").exists():
     m = Model("aqsol-reg-tabicl")
-    end = m.to_endpoint(tags=["tabicl", "molecular descriptors"])
+    end = m.to_endpoint(serverless=False, tags=["tabicl", "molecular descriptors"])
     end.set_owner("BW")
 
     # Run inference on the endpoint

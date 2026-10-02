@@ -39,9 +39,12 @@ DEFAULT_HYPERPARAMETERS = {
     # TabICL's internal ensemble: members see different column orders and scalings.
     "n_estimators": 8,
     # Cache of the training rows held by the served model:
-    #   "repr": compact cache, seconds per request — fits a serverless endpoint
-    #   "kv":   ~2x the serving memory, sub-second requests
-    "kv_cache": "repr",
+    #   "kv":   requests answer in about a second. Memory grows with the training set
+    #           (~0.4 GB per 1,000 rows), so past a few thousand rows the model serves
+    #           from a real-time endpoint rather than serverless.
+    #   "repr": several times smaller, but every request re-runs the in-context pass over
+    #           all training rows (a minute at 10,000 rows) — small training sets only.
+    "kv_cache": "kv",
     # Ensemble members per forward pass. 1 gives the lowest peak memory; predictions
     # are identical at any value.
     "batch_size": 1,

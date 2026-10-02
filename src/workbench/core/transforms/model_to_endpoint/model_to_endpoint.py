@@ -43,6 +43,44 @@ from workbench.core.artifact import Artifact  # noqa: E402
 # inference server needs the remainder.
 SERVERLESS_MAX_MEMORY_MB = 6144
 SERVERLESS_MODEL_MEMORY_LIMIT_GB = 5.0
+
+# Real-time instances by RAM (GB), cheapest first. A model that records its serving
+# memory and outgrows the default instance gets the first one it fills to no more
+# than REALTIME_MEMORY_FILL.
+REALTIME_MEMORY_LADDER = [
+    (4, "ml.c7i.large"),
+    (8, "ml.m7i.large"),
+    (16, "ml.r7i.large"),
+    (32, "ml.r7i.xlarge"),
+    (64, "ml.r7i.2xlarge"),
+]
+REALTIME_MEMORY_FILL = 0.75
+REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
+ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
+INSTANCE_RAM_GB = {"ml.c7i.large": 4, "ml.c7i.xlarge": 8}
+
+
+def realtime_instance_for_memory(memory_gb: float) -> str:
+    """The cheapest real-time instance that holds a model's measured serving memory.
+
+    Args:
+        memory_gb (float): The model's serving memory in GB
+
+    Returns:
+        str: The instance type
+
+    Raises:
+        ValueError: If the model is larger than the biggest instance on the ladder
+    """
+    for ram_gb, instance in REALTIME_MEMORY_LADDER:
+        if memory_gb <= ram_gb * REALTIME_MEMORY_FILL:
+            return instance
+    raise ValueError(
+        f"A model needing {memory_gb} GB to serve is past the largest auto-sized instance "
+        f"({REALTIME_MEMORY_LADDER[-1][1]}); pass instance= to choose one."
+    )
+
+
 from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     _DEFAULT_MAX_CAPACITY,
     _DEFAULT_SCALE_IN_IDLE_MINUTES,
@@ -188,7 +226,8 @@ class ModelToEndpoint(Transform):
             raise ValueError(
                 f"{workbench_model.name} needs {memory_gb} GB to serve, over the "
                 f"{SERVERLESS_MODEL_MEMORY_LIMIT_GB} GB a serverless endpoint can give a model. "
-                "Deploy a real-time endpoint with to_endpoint(serverless=False)."
+                "Deploy a real-time endpoint with to_endpoint(serverless=False); its instance "
+                "is sized from the measured memory."
             )
 
     def _deploy_model(
@@ -248,14 +287,20 @@ class ModelToEndpoint(Transform):
             # Async endpoints default to a beefier CPU instance — they're typically
             # used for long-running compute work (RDKit conformer gen, etc.) where
             # the default realtime sizing would be undersized.
+            # A model that records its serving memory is upsized when it won't fit the default.
+            default_instance = ASYNC_DEFAULT_INSTANCE if self.async_endpoint else REALTIME_DEFAULT_INSTANCE
+            memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
             if self.instance:
                 instance_type = self.instance
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
+            elif memory_gb is not None and memory_gb > INSTANCE_RAM_GB[default_instance] * REALTIME_MEMORY_FILL:
+                instance_type = realtime_instance_for_memory(memory_gb)
+                self.log.important(f"Endpoint: Instance Type={instance_type} (sized for {memory_gb} GB serving memory)")
             elif self.async_endpoint:
-                instance_type = "ml.c7i.xlarge"
+                instance_type = default_instance
                 self.log.important(f"Async Endpoint: Default instance type: {instance_type}")
             else:
-                instance_type = "ml.c7i.large"
+                instance_type = default_instance
                 self.log.important(f"Realtime Endpoint: Instance Type={instance_type}")
 
         # Configure data capture if requested (and not serverless)
