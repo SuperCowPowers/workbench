@@ -38,7 +38,7 @@ PYPROJECT = REPO_ROOT / "pyproject.toml"
 
 # Framework-specific modules — these live under workbench.endpoints but
 # require their framework SDK at module-top. In a real SageMaker container
-# the framework comes from the base image (pytorch_chem has torch+chemprop).
+# the framework comes from the base image (pytorch_chem has torch+chemprop+tabicl).
 # The lean smoke env doesn't install them, so these are expected to
 # ImportError here — that's fine *as long as* the only thing missing is the
 # declared framework. If one of these modules fails for any OTHER reason

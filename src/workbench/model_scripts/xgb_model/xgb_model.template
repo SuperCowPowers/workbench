@@ -280,8 +280,8 @@ if __name__ == "__main__":
     # Route held-out validation rows out of training BEFORE any preprocessing/fitting, so the
     # category mappings and downstream CV/UQ/SHAP never see them. They're scored held-out below.
     from workbench.training.splits import get_split_indices
-    from workbench.training.validation import split_validation_set
-    from workbench.training.xgb_core import align_frame, train_xgb_fold, xgb_params
+    from workbench.training.validation import align_frame, split_validation_set
+    from workbench.training.xgb_core import train_xgb_fold, xgb_params
 
     all_df, holdout_df = split_validation_set(all_df)
     if len(holdout_df):

@@ -1,10 +1,10 @@
 """Foundation-model checkpoint registry and resolver (deliberately dep-free).
 
-Warm-start weights (CheMeleon and friends) are published on the public internet,
+Pretrained checkpoints (CheMeleon, TabICL) are published on the public internet,
 but a training job must never *depend* on that, so checkpoints are staged in the
 Workbench bucket and resolution walks three rungs:
 
-1. **local cache** — ``~/.chemprop/foundation/<filename>``; the only rung that
+1. **local cache** — ``~/.workbench/foundation/<filename>``; the only rung that
    survives *within* a container, and it is cold in every fresh training job.
 2. **Workbench S3** — ``s3://$WORKBENCH_BUCKET/foundation-models/...``; the
    durable copy, inside the account, no public dependency.
@@ -15,9 +15,10 @@ Populate rung 2 with ``scripts/admin/push_foundation_models.py``. A SageMaker tr
 job has no site config, so it gets ``WORKBENCH_BUCKET`` from the ``ModelTrainer``
 environment set in ``features_to_model.py``.
 
-No ``torch``/``chemprop`` imports here on purpose: :mod:`workbench.training.chemprop_core`
-consumes this inside the training container, while the admin script imports the
-same registry from a laptop that has none of the training deps installed.
+No ``torch``/``chemprop``/``tabicl`` imports here on purpose: the training cores
+(:mod:`workbench.training.chemprop_core`, :mod:`workbench.training.tabicl_core`) consume
+this inside the training container, while the admin script imports the same registry
+from a laptop that has none of the training deps installed.
 """
 
 from __future__ import annotations
@@ -134,7 +135,7 @@ def foundation_s3_uri(name: str, bucket: str = None) -> str:
 
 def foundation_cache_dir() -> Path:
     """Local checkpoint cache directory (created if absent)."""
-    cache_dir = Path.home() / ".chemprop" / "foundation"
+    cache_dir = Path.home() / ".workbench" / "foundation"
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 

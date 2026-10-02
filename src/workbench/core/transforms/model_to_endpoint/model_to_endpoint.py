@@ -9,6 +9,7 @@ built-in serving stack). See https://sagemaker.readthedocs.io/en/stable/inferenc
 """
 
 import time
+from typing import Union
 from botocore.exceptions import ClientError
 
 # SageMaker V3 Resource Classes
@@ -39,48 +40,6 @@ from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
 from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
 from workbench.core.artifact import Artifact  # noqa: E402
 
-# SageMaker's serverless memory ceiling, and the most a model may use of it: the
-# inference server needs the remainder.
-SERVERLESS_MAX_MEMORY_MB = 6144
-SERVERLESS_MODEL_MEMORY_LIMIT_GB = 5.0
-
-# Real-time instances by RAM (GB), cheapest first. A model that records its serving
-# memory and outgrows the default instance gets the first one it fills to no more
-# than REALTIME_MEMORY_FILL.
-REALTIME_MEMORY_LADDER = [
-    (4, "ml.c7i.large"),
-    (8, "ml.m7i.large"),
-    (16, "ml.r7i.large"),
-    (32, "ml.r7i.xlarge"),
-    (64, "ml.r7i.2xlarge"),
-]
-REALTIME_MEMORY_FILL = 0.75
-REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
-ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
-INSTANCE_RAM_GB = {"ml.c7i.large": 4, "ml.c7i.xlarge": 8}
-
-
-def realtime_instance_for_memory(memory_gb: float) -> str:
-    """The cheapest real-time instance that holds a model's measured serving memory.
-
-    Args:
-        memory_gb (float): The model's serving memory in GB
-
-    Returns:
-        str: The instance type
-
-    Raises:
-        ValueError: If the model is larger than the biggest instance on the ladder
-    """
-    for ram_gb, instance in REALTIME_MEMORY_LADDER:
-        if memory_gb <= ram_gb * REALTIME_MEMORY_FILL:
-            return instance
-    raise ValueError(
-        f"A model needing {memory_gb} GB to serve is past the largest auto-sized instance "
-        f"({REALTIME_MEMORY_LADDER[-1][1]}); pass instance= to choose one."
-    )
-
-
 from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     _DEFAULT_MAX_CAPACITY,
     _DEFAULT_SCALE_IN_IDLE_MINUTES,
@@ -91,6 +50,56 @@ from workbench.utils.monitor_utils import (  # noqa: E402
     CAPTURE_CSV_CONTENT_TYPES,
     CAPTURE_JSON_CONTENT_TYPES,
 )
+
+# SageMaker's serverless memory ceiling (6144 MiB is ~6.4 GB), and the most a model's
+# measured peak may use of it: the inference server needs the remainder. A 5.25 GB
+# peak loads and serves; a 9.17 GB one is killed at load.
+SERVERLESS_MAX_MEMORY_MB = 6144
+SERVERLESS_MODEL_MEMORY_LIMIT_GB = 5.5
+
+# RAM (GB) of the real-time instances Workbench deploys to
+INSTANCE_RAM_GB = {
+    "ml.c7i.large": 4,
+    "ml.c7i.xlarge": 8,
+    "ml.m7i.large": 8,
+    "ml.r7i.large": 16,
+    "ml.r7i.xlarge": 32,
+    "ml.r7i.2xlarge": 64,
+}
+REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
+# Async endpoints run long compute work (RDKit conformer generation, etc.), so their
+# default has more CPU.
+ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
+
+# A model that records its serving memory and outgrows the default instance gets the
+# first of these (cheapest first) it fills to no more than REALTIME_MEMORY_FILL.
+REALTIME_MEMORY_LADDER = ["ml.c7i.large", "ml.m7i.large", "ml.r7i.large", "ml.r7i.xlarge", "ml.r7i.2xlarge"]
+REALTIME_MEMORY_FILL = 0.75
+
+
+def realtime_instance(memory_gb: Union[float, None], async_endpoint: bool = False) -> str:
+    """The real-time instance for a model: the default, or a larger one sized to its memory.
+
+    Args:
+        memory_gb (float): The model's measured serving memory in GB (None when unmeasured)
+        async_endpoint (bool): Whether this is an async endpoint (default: False)
+
+    Returns:
+        str: The instance type
+
+    Raises:
+        ValueError: If the model is larger than the biggest instance on the ladder
+    """
+    default = ASYNC_DEFAULT_INSTANCE if async_endpoint else REALTIME_DEFAULT_INSTANCE
+    if memory_gb is None or memory_gb <= INSTANCE_RAM_GB[default] * REALTIME_MEMORY_FILL:
+        return default
+    for instance in REALTIME_MEMORY_LADDER:
+        if memory_gb <= INSTANCE_RAM_GB[instance] * REALTIME_MEMORY_FILL:
+            return instance
+    raise ValueError(
+        f"A model needing {memory_gb} GB to serve is past the largest auto-sized instance "
+        f"({REALTIME_MEMORY_LADDER[-1]}); pass instance= to choose one."
+    )
 
 
 class ModelToEndpoint(Transform):
@@ -283,25 +292,16 @@ class ModelToEndpoint(Transform):
             instance_type = None  # Not used for serverless
             self.log.important(f"Serverless Config: Memory={mem_size}MB, MaxConcurrency={max_concurrency}")
         else:
-            # Use explicit instance if provided, otherwise auto-select.
-            # Async endpoints default to a beefier CPU instance — they're typically
-            # used for long-running compute work (RDKit conformer gen, etc.) where
-            # the default realtime sizing would be undersized.
-            # A model that records its serving memory is upsized when it won't fit the default.
-            default_instance = ASYNC_DEFAULT_INSTANCE if self.async_endpoint else REALTIME_DEFAULT_INSTANCE
-            memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
+            # Use the explicit instance if provided; otherwise the default, upsized for a
+            # model whose measured serving memory won't fit it.
             if self.instance:
                 instance_type = self.instance
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
-            elif memory_gb is not None and memory_gb > INSTANCE_RAM_GB[default_instance] * REALTIME_MEMORY_FILL:
-                instance_type = realtime_instance_for_memory(memory_gb)
-                self.log.important(f"Endpoint: Instance Type={instance_type} (sized for {memory_gb} GB serving memory)")
-            elif self.async_endpoint:
-                instance_type = default_instance
-                self.log.important(f"Async Endpoint: Default instance type: {instance_type}")
             else:
-                instance_type = default_instance
-                self.log.important(f"Realtime Endpoint: Instance Type={instance_type}")
+                memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
+                instance_type = realtime_instance(memory_gb, self.async_endpoint)
+                sized = f" (sized for {memory_gb} GB serving memory)" if memory_gb is not None else ""
+                self.log.important(f"Endpoint: Instance Type={instance_type}{sized}")
 
         # Configure data capture if requested (and not serverless)
         data_capture_config = None

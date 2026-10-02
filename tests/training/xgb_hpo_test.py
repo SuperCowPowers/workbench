@@ -6,7 +6,8 @@ The framework-agnostic orchestration is covered by ``hpo_runner_test.py``.
 
 # Workbench Imports
 from workbench.training.hpo_harness import FloatRange, IntRange
-from workbench.training.xgb_core import align_frame, xgb_params
+from workbench.training.validation import align_frame
+from workbench.training.xgb_core import xgb_params
 from workbench.training.xgb_hpo import _xgb_threads, resolve_search_space, xgb_search_space
 
 

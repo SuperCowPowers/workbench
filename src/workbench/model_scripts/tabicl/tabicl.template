@@ -5,11 +5,14 @@
 # Regression with a tabular foundation model. TabICL learns in context: nothing is
 # trained, and every prediction conditions on the training rows.
 # - K-fold models produce out-of-fold predictions and metrics only
-# - The served model is one cached fit on all training rows
+# - The served model is one fit on all training rows, with those rows cached so a
+#   request costs only its own rows. The cache grows with the training set, so past a
+#   few thousand rows the model serves from a real-time endpoint rather than serverless
 # - prediction_std comes from TabICL's own predictive quantiles and feeds the UQModel
 # - Optional StandardScaler + PCA feature reduction (pca_components)
 # - SHAP feature importance from tabicl.shap
-# - An inference memory probe, so to_endpoint() knows whether serverless fits
+# - An inference memory probe: to_endpoint() uses it to decide whether serverless fits
+#   and to size a real-time instance
 
 import json
 import logging
@@ -38,13 +41,6 @@ DEFAULT_HYPERPARAMETERS = {
     "n_folds": 5,
     # TabICL's internal ensemble: members see different column orders and scalings.
     "n_estimators": 8,
-    # Cache of the training rows held by the served model:
-    #   "kv":   requests answer in about a second. Memory grows with the training set
-    #           (~0.4 GB per 1,000 rows), so past a few thousand rows the model serves
-    #           from a real-time endpoint rather than serverless.
-    #   "repr": several times smaller, but every request re-runs the in-context pass over
-    #           all training rows (a minute at 10,000 rows) — small training sets only.
-    "kv_cache": "kv",
     # Ensemble members per forward pass. 1 gives the lowest peak memory; predictions
     # are identical at any value.
     "batch_size": 1,
@@ -166,8 +162,7 @@ if __name__ == "__main__":
     from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
     from workbench.training.splits import get_split_indices
     from workbench.training.tabicl_core import fit_tabicl, probe_inference_memory, save_tabicl, tabicl_shap
-    from workbench.training.validation import split_validation_set
-    from workbench.training.xgb_core import align_frame
+    from workbench.training.validation import align_frame, split_validation_set
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
@@ -256,7 +251,7 @@ if __name__ == "__main__":
 
         # A fold model predicts once, so it carries no cache
         fold_df = all_df.iloc[train_idx]
-        fold_model, fold_reducer = fit_tabicl(hyperparameters, fold_df[features], fold_df[target], kv_cache=False)
+        fold_model, fold_reducer = fit_tabicl(hyperparameters, fold_df[features], fold_df[target], cache=False)
         oof_predictions[val_idx], oof_std[val_idx] = predict_with_std(
             fold_model, all_df.iloc[val_idx][features], fold_reducer
         )
@@ -277,9 +272,9 @@ if __name__ == "__main__":
     # Served model: one cached fit on every training row
     # -------------------------------------------------------------------------
     print("\n" + "=" * 50)
-    print(f"Fitting served model on {len(all_df)} rows (kv_cache={hyperparameters['kv_cache']!r})")
+    print(f"Fitting served model on {len(all_df)} rows")
     print("=" * 50)
-    model, reducer = fit_tabicl(hyperparameters, all_df[features], all_df[target], kv_cache=hyperparameters["kv_cache"])
+    model, reducer = fit_tabicl(hyperparameters, all_df[features], all_df[target], cache=True)
 
     # -------------------------------------------------------------------------
     # Fit UQ models on the out-of-fold predictions
@@ -317,20 +312,14 @@ if __name__ == "__main__":
     # Compute SHAP values for feature importance
     # -------------------------------------------------------------------------
     # TabICL's explainer masks raw numeric features, so it is skipped when the model
-    # reads PCA components or carries categorical columns. It predicts once per
-    # explained row, and each "repr" predict re-runs the in-context pass over every
-    # training row, so SHAP gets its own fully cached model.
+    # reads PCA components or carries categorical columns.
     shap_sample_size = min(hyperparameters["shap_sample_size"], len(df_oof))
     if shap_sample_size and not pca_components and not category_mappings:
         print("\n" + "=" * 50)
         print("Computing SHAP Values")
         print("=" * 50)
         shap_sample_df = df_oof.sample(n=shap_sample_size, random_state=42)
-        shap_model = model
-        if hyperparameters["kv_cache"] == "repr":
-            shap_model, _ = fit_tabicl(hyperparameters, all_df[features], all_df[target], kv_cache="kv")
-        shap_values, base_values = tabicl_shap(shap_model, shap_sample_df[features])
-        del shap_model
+        shap_values, base_values = tabicl_shap(model, shap_sample_df[features])
 
         shap_importance = sorted(
             zip(features, np.round(np.abs(shap_values).mean(axis=0), 3).tolist()), key=lambda x: x[1], reverse=True
@@ -412,7 +401,7 @@ if __name__ == "__main__":
     save_regression_uq(uq_dict, args.model_dir)
 
     # -------------------------------------------------------------------------
-    # Inference memory probe: what a serverless endpoint must hold
+    # Inference memory probe: the peak an endpoint must hold to load and serve the model
     # -------------------------------------------------------------------------
     inference_memory_gb = round(probe_inference_memory(args.model_dir, all_df[features]), 2)
     print(f"inference_memory_gb: {inference_memory_gb}")

@@ -109,11 +109,11 @@ folds = get_split_indices(train, n_splits=5, strategy="scaffold", target_column=
 oof_pred, oof_std = np.full(len(train), np.nan), np.full(len(train), np.nan)
 for fold_idx, (train_idx, val_idx) in enumerate(folds):
     print(f"Fold {fold_idx + 1}/{len(folds)}: context {len(train_idx)}, val {len(val_idx)}")
-    fold_model, _ = fit_tabicl(HYPERPARAMETERS, X_train.iloc[train_idx], train[target].iloc[train_idx], kv_cache=False)
+    fold_model, _ = fit_tabicl(HYPERPARAMETERS, X_train.iloc[train_idx], train[target].iloc[train_idx], cache=False)
     oof_pred[val_idx], oof_std[val_idx] = predict_with_std(fold_model, X_train.iloc[val_idx])
 
 # Served model on all train rows: held-out mean, spread, and native quantiles
-model, _ = fit_tabicl(HYPERPARAMETERS, X_train, train[target], kv_cache="repr")
+model, _ = fit_tabicl(HYPERPARAMETERS, X_train, train[target], cache=True)
 out = model.predict(X_test, output_type=["mean", "quantiles"], alphas=sorted(ALPHAS.values()))
 native = pd.DataFrame(out["quantiles"], columns=sorted(ALPHAS, key=ALPHAS.get))
 pred, std = np.asarray(out["mean"]), ((native["q_84"] - native["q_16"]) / 2).to_numpy()

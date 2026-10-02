@@ -2,7 +2,7 @@
 
 TabICL is an in-context model: ``fit`` stores the training rows (optionally caching their
 transformer projections) and every prediction conditions on them. Nothing is trained, so
-the levers here are what gets cached and how much memory serving needs.
+the concerns here are caching those rows and how much memory serving needs.
 """
 
 from __future__ import annotations
@@ -21,15 +21,16 @@ from workbench.endpoints.tabicl_utils import MODEL_FILE, REDUCER_FILE, tabicl_de
 PROBE_ROWS = 10
 
 
-def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, kv_cache) -> tuple:
+def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, cache: bool) -> tuple:
     """Fit a TabICL regressor, with the optional feature reducer in front.
 
     Args:
         hyperparameters: the template's resolved hyperparameters.
         X: training features.
         y: training target.
-        kv_cache: False for a throwaway model that predicts once (fold models); the
-            ``kv_cache`` hyperparameter for the served model.
+        cache: cache the training rows' transformer projections. True for a model that
+            answers many requests (each then costs only its own rows); False for a
+            throwaway model that predicts once, such as a fold model.
 
     Returns:
         tuple: (model, reducer) — reducer is None unless ``pca_components`` is set.
@@ -55,7 +56,7 @@ def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, kv_cache) -> tuple:
     model = TabICLRegressor(
         n_estimators=hyperparameters["n_estimators"],
         batch_size=hyperparameters["batch_size"],
-        kv_cache=kv_cache,
+        kv_cache="kv" if cache else False,
         random_state=hyperparameters["seed"],
         device=tabicl_device(),
         model_path=str(resolve_foundation_checkpoint("tabicl")),
@@ -87,12 +88,14 @@ def save_tabicl(model, reducer, model_dir: str) -> None:
 def tabicl_shap(model, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     """SHAP values from TabICL's own explainer (an all-NaN row as the background).
 
-    The permutation explainer needs at least ``2 * n_features + 1`` evaluations per
-    row. Masked rows go to the model in large batches because each predict call pays a
-    fixed cost for the in-context pass.
+    The permutation explainer is named explicitly: left to choose, SHAP switches to an
+    exact explainer at ten features or fewer, which needs ``2 ** n_features``
+    evaluations. Permutation needs ``2 * n_features + 1`` per row. Masked rows go to the
+    model in large batches because each predict call pays a fixed cost.
 
     Args:
-        model: a fitted TabICLRegressor taking raw numeric features.
+        model: a TabICLRegressor fit with ``cache=True`` on raw numeric features; the
+            explainer predicts once per explained row.
         X: numeric rows to explain.
 
     Returns:
@@ -106,7 +109,7 @@ def tabicl_shap(model, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         # The model was fit on a named frame, so masked rows go back in as one
         return model.predict(pd.DataFrame(masked, columns=X.columns))
 
-    explainer = get_shap_explainer(model, X_np, predict_fn=predict)
+    explainer = get_shap_explainer(model, X_np, predict_fn=predict, algorithm="permutation")
     sv = explainer(X_np, max_evals=2 * X_np.shape[1] + 1, batch_size=1024)
     return np.asarray(sv.values), np.asarray(sv.base_values).reshape(-1)
 
@@ -114,9 +117,10 @@ def tabicl_shap(model, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 def probe_inference_memory(model_dir: str, X_sample: pd.DataFrame) -> float:
     """Peak memory (GB) of a fresh CPU-only process that loads the saved model and predicts.
 
-    Serving runs one process per endpoint, so this is what a serverless endpoint must
-    hold. Measured rather than estimated: it tracks cache mode, ensemble size, feature
-    reduction, and TabICL's own version.
+    Serving runs one process per endpoint, so this is what an endpoint must hold. The
+    peak is at load, well above what the model settles to, and a container too small
+    for it is killed there. Measured rather than estimated: it tracks cache mode,
+    ensemble size, feature reduction, and TabICL's own version.
 
     Args:
         model_dir: directory the model was saved to.

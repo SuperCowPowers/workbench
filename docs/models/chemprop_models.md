@@ -240,7 +240,7 @@ hyperparameters={
 
 Registered foundation names (`"CheMeleon"`) resolve through three rungs, in order:
 
-1. **Local cache** — `~/.chemprop/foundation/`
+1. **Local cache** — `~/.workbench/foundation/`
 2. **Workbench bucket** — `s3://$WORKBENCH_BUCKET/foundation-models/<model>/<release>/<file>.pt`
 3. **Public origin URL** — last resort, logs a warning
 
