@@ -376,7 +376,8 @@ class FeaturesToModel(Transform):
             instance_ladder = [train_instance_type]
             self.log.important(f"Using user-specified instance {train_instance_type}")
         else:
-            gpu_framework = self.model_framework in [
+            # A TRANSFORMER model computes features and trains nothing, so it never needs a GPU
+            gpu_framework = self.model_type != ModelType.TRANSFORMER and self.model_framework in [
                 ModelFramework.CHEMPROP,
                 ModelFramework.PYTORCH,
                 ModelFramework.TABICL,

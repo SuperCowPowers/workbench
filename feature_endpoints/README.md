@@ -1,6 +1,7 @@
 # Feature Endpoints
 
-SMILES-based molecular descriptor endpoints deployed on AWS SageMaker via Workbench.
+SMILES-based molecular feature endpoints (descriptors, fingerprints, embeddings) deployed
+on AWS SageMaker via Workbench.
 
 ## Endpoints
 
@@ -10,6 +11,7 @@ SMILES-based molecular descriptor endpoints deployed on AWS SageMaker via Workbe
 | `smiles_to_2d_salt_v1.py` | `smiles-to-2d-salt-v1` | RDKit + Mordred 2D descriptors (salts kept) |
 | `smiles_to_fingerprints_v1.py` | `smiles-to-fingerprints-v1` | Morgan count fingerprints (4096-dim, radius 2 / ECFP4) |
 | `smiles_to_3d_v2.py` | `smiles-to-3d-v2` | Curated GFN2-xTB 3D descriptors, async (26 features) |
+| `smiles_to_monroe_v1.py` | `smiles-to-monroe-v1` | Monroe pretrained molecular embedding (720 features, salts removed) |
 
 MetaEndpoints fan out to both children and concatenate in one call:
 
@@ -54,6 +56,9 @@ python smiles_to_3d_v2.py
 # MetaEndpoint, 2D + curated 3D --> endpoint: smiles-to-2d-3d-v2
 python smiles_to_2d_3d_v2.py
 
+# Monroe embedding --> endpoint: smiles-to-monroe-v1
+python smiles_to_monroe_v1.py
+
 # 2D endpoints support serverless or dedicated instance:
 SERVERLESS=false python smiles_to_2d_v1.py
 ```
@@ -63,6 +68,21 @@ Each script will:
 2. Build the model with its custom script
 3. Deploy the SageMaker endpoint
 4. Run a small test inference
+
+## Monroe embedding
+
+`smiles-to-monroe-v1` runs the frozen [Monroe](https://github.com/blazejba/monroe)
+encoder (MIT) and returns `monroe_000`..`monroe_719`. Each molecule is standardized,
+given one seeded RDKit conformer, and embedded; a molecule that cannot be featurized
+keeps its row with NaN in all 720 columns.
+
+- The encoder and featurizer are vendored in `model_scripts/monroe/` and kept verbatim
+  apart from the lines marked `Workbench:` (the directory is excluded from lint).
+- The weights are a registered foundation checkpoint that the model's training step
+  copies into the model artifact. Stage them once per account before deploying:
+  `python scripts/admin/push_foundation_models.py --model monroe --file weights.pt`
+- The model is `ModelType.TRANSFORMER` + `ModelFramework.PYTORCH`, which selects the
+  `pytorch_chem` images (the encoder needs torch and `torch-geometric`).
 
 ## Autoscaling
 

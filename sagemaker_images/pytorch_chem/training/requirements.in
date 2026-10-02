@@ -23,6 +23,9 @@ chemprop
 tabicl[shap]
 shap
 
+# Graph batching for the Monroe encoder: its model script is imported by the training job too
+torch-geometric
+
 # Hyperparameter search (workbench.training.hpo_harness). Training-image only —
 # never in endpoint images. Mirrors the pyproject `training` extra.
 ray[tune]

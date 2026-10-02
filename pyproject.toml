@@ -179,6 +179,8 @@ target-version = ["py311", "py312", "py313"]
 # Also format the model-script .template files (valid Python; jinja placeholders
 # live inside string literals). Default include is (\.pyi?)$.
 include = '(\.pyi?|\.template)$'
+# Vendored third-party code is kept verbatim
+extend-exclude = 'feature_endpoints/model_scripts/monroe/'
 
 [tool.pytest.ini_options]
 addopts = "-v --cov=workbench --cov-report term-missing"
