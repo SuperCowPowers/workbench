@@ -615,32 +615,32 @@ class FeaturesToModel(Transform):
         self.log.info("Post-Transform: Calling onboard() on the Model...")
         time.sleep(3)  # Give AWS time to complete Model register
 
-        # Store the model metadata information
+        # Store the model metadata in one write: each upsert is its own AWS call.
+        # onboard_with_args() below writes the type, target, and features.
         output_model = ModelCore(self.output_name)
-        output_model._set_model_type(self.model_type)
-        output_model._set_model_framework(self.model_framework)
-        output_model.upsert_workbench_meta({"workbench_model_features": self.model_feature_list})
-        output_model.upsert_workbench_meta({"workbench_model_target": self.target_column})
-        output_model.upsert_workbench_meta({"workbench_training_view": self.model_training_view_name})
+        output_model.model_type = self.model_type
+        output_model.model_framework = self.model_framework
+        model_meta = {
+            "workbench_model_framework": self.model_framework.value,
+            "workbench_training_view": self.model_training_view_name,
+        }
 
-        # Persist hyperparameters to meta. Template frameworks write the resolved set
-        # (defaults + overrides) to S3 during training; custom scripts don't, so fall
-        # back to the passed kwarg. Prefer S3 so the stored set is complete.
+        # Template frameworks write the resolved hyperparameters (defaults + overrides) to S3
+        # during training, and onboarding loads them from there. Custom scripts don't, so
+        # the passed kwarg is stored for those.
         training_hp = read_s3_json(
             f"{output_model.model_training_path}/hyperparameters.json", output_model.boto3_session
         )
-        hyperparameters = training_hp if training_hp is not None else kwargs.get("hyperparameters")
-        if hyperparameters:
-            output_model.upsert_workbench_meta({"workbench_hyperparameters": hyperparameters})
+        if training_hp is None and kwargs.get("hyperparameters"):
+            model_meta["workbench_hyperparameters"] = kwargs["hyperparameters"]
 
         # Serving memory measured by the training job (TabICL), read by to_endpoint()
         inference_profile = read_s3_json(
             f"{output_model.model_training_path}/inference_profile.json", output_model.boto3_session
         )
         if inference_profile:
-            output_model.upsert_workbench_meta(
-                {"workbench_inference_memory_gb": inference_profile["inference_memory_gb"]}
-            )
+            model_meta["workbench_inference_memory_gb"] = inference_profile["inference_memory_gb"]
+        output_model.upsert_workbench_meta(model_meta)
 
         # Store the class labels (if they exist)
         if self.class_labels:

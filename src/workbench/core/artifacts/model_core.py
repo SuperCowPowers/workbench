@@ -882,20 +882,19 @@ class ModelCore(AWSArtifact):
         Returns:
             bool: True if the Model is successfully onboarded, False otherwise
         """
-        # Set the status to onboarding
-        self.set_status("onboarding")
-
-        # Set All the Details
-        self._set_model_type(model_type)
+        # Set the status and all the details in one write (each upsert is its own AWS call)
+        self.model_type = model_type
+        details = {"workbench_status": "onboarding", "workbench_model_type": model_type.value}
         if target_column:
-            self.set_target(target_column)
+            details["workbench_model_target"] = target_column
         if feature_list:
-            self.set_features(feature_list)
+            details["workbench_model_features"] = feature_list
+        if owner:
+            details["workbench_owner"] = owner
+        self.upsert_workbench_meta(details)
         if endpoints:
             for endpoint in endpoints:
                 self.register_endpoint(endpoint)
-        if owner:
-            self.set_owner(owner)
 
         # Load the training metrics
         self._load_training_metrics()
@@ -903,9 +902,12 @@ class ModelCore(AWSArtifact):
         # Load the hyperparameters
         self._load_hyperparameters()
 
-        # Remove the needs_onboard tag
-        self.remove_health_tag("needs_onboard")
-        self.set_status("ready")
+        # Clear the onboarding health tags and mark ready in one write
+        onboarding_tags = {"needs_onboard", "model_type_unknown"}
+        health_tags = [tag for tag in self.get_health_tags() if tag not in onboarding_tags]
+        self.upsert_workbench_meta(
+            {"workbench_health_tags": self.tag_delimiter.join(health_tags), "workbench_status": "ready"}
+        )
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
