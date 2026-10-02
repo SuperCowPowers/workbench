@@ -2,5 +2,8 @@
 
 # SageMaker expect a 'serve' script to be found in the container which starts the model server.
 
-# Start the FastAPI server using Uvicorn
-exec uvicorn main:app --host 0.0.0.0 --port 8080
+# Start the FastAPI server using Uvicorn. SageMaker's proxy is the only client and it
+# reuses its connection, so the keep-alive outlasts any idle gap: with uvicorn's 5 s
+# default the connection can close under the first request after an idle period
+# ("could not get a response from the endpoint").
+exec uvicorn main:app --host 0.0.0.0 --port 8080 --timeout-keep-alive 3600
