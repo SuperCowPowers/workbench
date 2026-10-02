@@ -8,6 +8,7 @@ Workbench PyTorch models train feedforward neural networks on RDKit molecular de
 from workbench.api import FeatureSet, ModelType, ModelFramework
 
 fs = FeatureSet("aqsol_features")
+features = ["molwt", "mollogp", "molmr", "heavyatomcount", "numhacceptors", "numhdonors", "tpsa"]
 
 # Regression with uncertainty quantification
 model = fs.to_model(
@@ -15,7 +16,7 @@ model = fs.to_model(
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.PYTORCH,
     target_column="solubility",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     description="PyTorch regression for solubility",
     tags=["pytorch", "solubility"],
 )
@@ -33,7 +34,7 @@ model = fs.to_model(
     model_type=ModelType.CLASSIFIER,
     model_framework=ModelFramework.PYTORCH,
     target_column="solubility_class",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     description="PyTorch classifier for solubility",
     tags=["pytorch", "classification"],
 )
@@ -50,7 +51,7 @@ model = fs.to_model(
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.PYTORCH,
     target_column="solubility",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     hyperparameters={
         "layers": "256-128-64",
         "max_epochs": 200,

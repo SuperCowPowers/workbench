@@ -19,13 +19,14 @@ An otherwise normal `to_model()` call plus an `hpo` block:
 from workbench.api import FeatureSet, ModelType, ModelFramework
 
 fs = FeatureSet("aqsol_features")
+features = ["molwt", "mollogp", "molmr", "heavyatomcount", "numhacceptors", "numhdonors", "tpsa"]
 
 model = fs.to_model(
     name="sol-xgb-hpo",
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.XGBOOST,
     target_column="solubility",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     description="Solubility regression (hyperparameter-searched)",
     tags=["solubility", "hpo"],
     hyperparameters={"uq_version": "v1", "hpo": {"n_trials": 250}},

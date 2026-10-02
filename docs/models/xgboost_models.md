@@ -8,13 +8,14 @@ XGBoost is the default model framework in Workbench. It trains gradient boosted 
 from workbench.api import FeatureSet, ModelType
 
 fs = FeatureSet("aqsol_features")
+features = ["molwt", "mollogp", "molmr", "heavyatomcount", "numhacceptors", "numhdonors", "tpsa"]
 
 # Regression with uncertainty quantification
 model = fs.to_model(
     name="sol-xgb-reg",
     model_type=ModelType.UQ_REGRESSOR,
     target_column="solubility",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     description="XGBoost regression for solubility",
     tags=["xgboost", "solubility"],
 )
@@ -31,7 +32,7 @@ model = fs.to_model(
     name="sol-xgb-class",
     model_type=ModelType.CLASSIFIER,
     target_column="solubility_class",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     description="XGBoost classifier for solubility",
     tags=["xgboost", "classification"],
 )
@@ -47,7 +48,7 @@ model = fs.to_model(
     name="sol-xgb-tuned",
     model_type=ModelType.UQ_REGRESSOR,
     target_column="solubility",
-    feature_list=fs.feature_columns,
+    feature_list=features,
     hyperparameters={
         "n_estimators": 200,
         "max_depth": 6,

@@ -20,6 +20,7 @@ Workbench supports multiple model frameworks — all using the same API. Just ch
 from workbench.api import FeatureSet, ModelType, ModelFramework
 
 fs = FeatureSet("my_features")
+features = ["feature_1", "feature_2", "feature_3"]
 
 # XGBoost (default framework)
 xgb_model = fs.to_model(
@@ -27,7 +28,7 @@ xgb_model = fs.to_model(
     model_type=ModelType.REGRESSOR,
     model_framework=ModelFramework.XGBOOST,
     target_column="target",
-    feature_list=fs.feature_columns,
+    feature_list=features,
 )
 
 # PyTorch (same API, different framework)
@@ -36,7 +37,7 @@ pytorch_model = fs.to_model(
     model_type=ModelType.REGRESSOR,
     model_framework=ModelFramework.PYTORCH,
     target_column="target",
-    feature_list=fs.feature_columns,
+    feature_list=features,
 )
 
 # Deploy Endpoints
