@@ -123,8 +123,10 @@ features = [f"monroe_{i:03d}" for i in range(720)]
 ```
 
 - It is a sync serverless endpoint: run it the way the 2D endpoint is run.
-- Salts are removed, and each molecule gets one seeded conformer, so a SMILES always
-  returns the same embedding.
+- Salts are removed, and each molecule gets one seeded 3D conformer, so a SMILES
+  returns the same embedding on every call.
+- When conformer generation fails or times out, the embedding comes from a flat 2D
+  layout instead. Nothing in the output marks those rows.
 - A molecule that cannot be featurized keeps its row with NaN in all 720 columns.
 - The columns are not individually interpretable. Any reduction (PCA, a column subset)
   is fit on training rows, so it belongs to the model, not the FeatureSet.
