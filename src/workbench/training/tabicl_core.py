@@ -65,11 +65,21 @@ def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, kv_cache) -> tuple:
 
 
 def save_tabicl(model, reducer, model_dir: str) -> None:
-    """Save the served model self-contained: pretrained weights travel in the artifact,
-    so an endpoint never reaches for Hugging Face."""
+    """Save the served model as a portable, self-contained artifact.
+
+    Pretrained weights travel in the artifact, so an endpoint never reaches for Hugging
+    Face. TabICL restores the estimator's ``device`` parameter while unpickling, so the
+    artifact records "cpu": it then loads on any host, and ``load_tabicl`` moves it to
+    the device that host has.
+    """
     import joblib
 
-    model.save(os.path.join(model_dir, MODEL_FILE), save_model_weights=True)
+    fit_device = model.device
+    model.set_params(device="cpu")
+    try:
+        model.save(os.path.join(model_dir, MODEL_FILE), save_model_weights=True)
+    finally:
+        model.set_params(device=fit_device)
     if reducer is not None:
         joblib.dump(reducer, os.path.join(model_dir, REDUCER_FILE))
 
@@ -131,8 +141,9 @@ def probe_inference_memory(model_dir: str, X_sample: pd.DataFrame) -> float:
             env={**os.environ, "CUDA_VISIBLE_DEVICES": ""},
             capture_output=True,
             text=True,
-            check=True,
         )
+    if result.returncode:
+        raise RuntimeError(f"The saved model failed to load and predict on CPU:\n{result.stderr[-3000:]}")
     # ru_maxrss is bytes on macOS, kilobytes on Linux
     peak = int(result.stdout.strip().splitlines()[-1])
     return peak / 1e9 if sys.platform == "darwin" else peak * 1024 / 1e9
