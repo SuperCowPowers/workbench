@@ -4,7 +4,9 @@ The deployed version of pxr_monroe_spike_phase1.py's best arm: TabICL on the Mon
 embedding (the compressed feature `monroe`, which the template expands) plus the two
 predicted log2FC readouts (openadmet_pxr_readout_monroe). TabICL keeps the 100
 highest-variance embedding columns (top_variance_features): in
-pxr_monroe_ablation_phase1.py, 100 scored RAE 0.537, 360 scored 0.540, and all 720 0.550.
+pxr_monroe_ablation_phase1.py, 100 scored RAE 0.537, 360 scored 0.540, and all 720 0.550,
+differences within the noise of 253 compounds; 100 sits inside TabICL's pretraining range
+and needs the least serving memory.
 Holds phase1_test out via validation_ids and captures 'pxr_phase1_test' on exactly
 those rows, for comparison against pxr-reg-chemprop-phase1 and
 pxr-reg-chemprop-readout-phase1.

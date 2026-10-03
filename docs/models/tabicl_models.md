@@ -84,7 +84,7 @@ TabICL is pretrained on tables of up to 100 columns. More features work, and the
     )
     ```
 
-    On PXR, TabICL on the Monroe embedding plus two readouts scored RAE 0.537 with the top 100 columns, 0.540 with 360, and 0.550 with all 720 (three seeds each, 253 held-out compounds).
+    On PXR, TabICL on the Monroe embedding plus two readouts scored RAE 0.537 with the top 100 columns, 0.540 with 360, and 0.550 with all 720 (three seeds each, 253 held-out compounds). Those differences are within that test set's noise; fewer columns also means less serving memory.
 
 - `pca_components` standardizes every feature and projects them all onto this many components. PCA needs numeric features, so it can't be combined with categorical columns.
 

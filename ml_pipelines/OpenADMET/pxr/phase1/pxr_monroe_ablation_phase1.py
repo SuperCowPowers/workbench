@@ -12,10 +12,14 @@ rows and scored on the 253 `phase1_test` rows:
   top100, top360, all720   the highest-variance Monroe columns (variance on train rows)
   pca100                   StandardScaler + PCA on the Monroe columns only (fit on train
                            rows); the readouts stay raw
+  pca100_raw               PCA on the unscaled Monroe columns, so high-variance
+                           dimensions weigh more; the readouts stay raw
 
 Each arm is fit with SEEDS and scored two ways: the seed-averaged prediction, and the
 mean single-seed RAE (the deployed model is a single seed). If top360 averaged lands near
-0.542, the deployed embedding is cleared and the gap is columns and/or seeds.
+0.542, the deployed embedding is cleared and the gap is columns and/or seeds. PAIRS are
+then compared head to head (paired RAE on the same 253 compounds), which says whether a
+gap between two arms is more than the noise of a 253-compound test set.
 
 Results (phase1_test, 3 seeds, paired RAE delta with 95% CI):
 
@@ -23,14 +27,25 @@ Results (phase1_test, 3 seeds, paired RAE delta with 95% CI):
     chemprop          0.591  0.472
     chemprop_readout  0.569  0.454
     deployed all720   0.559  0.446  (seed 42)
-    top100            0.537  0.429  0.538 ± 0.005   -0.053 [-0.088, -0.017]   -0.032 [-0.062, -0.002]
-    pca100            0.554  0.442  0.554 ± 0.005   -0.037 [-0.072, -0.004]   -0.015 [-0.052, +0.021]
-    top360            0.540  0.431  0.541 ± 0.001   -0.050 [-0.084, -0.018]   -0.029 [-0.056, -0.003]
-    all720            0.550  0.439  0.551 ± 0.001   -0.041 [-0.075, -0.007]   -0.019 [-0.046, +0.007]
+    top100            0.537  0.429  0.538 ± 0.005   -0.053 [-0.089, -0.017]   -0.032 [-0.061, -0.002]
+    pca100            0.554  0.442  0.554 ± 0.005   -0.037 [-0.073, -0.002]   -0.015 [-0.051, +0.018]
+    pca100_raw        0.544  0.435  0.545 ± 0.003   -0.046 [-0.083, -0.010]   -0.024 [-0.059, +0.011]
+    top360            0.540  0.431  0.541 ± 0.001   -0.050 [-0.083, -0.017]   -0.029 [-0.055, -0.004]
+    all720            0.550  0.439  0.551 ± 0.001   -0.041 [-0.074, -0.006]   -0.019 [-0.044, +0.005]
 
-top360 reproduces the spike (0.540 vs 0.542), so the deployed embedding is not the gap.
-Seed averaging is worth ~0.001. Column count is the gap: all720 trails top360 by 0.010.
-The deployed model (0.559) also trails this all720 fit (0.551) by 0.008, unexplained.
+Head to head (paired RAE, first minus second):
+
+    top100      vs pca100       -0.017 [-0.041, +0.009]
+    top100      vs pca100_raw   -0.007 [-0.030, +0.016]
+    pca100_raw  vs pca100       -0.009 [-0.024, +0.006]
+    top100      vs top360       -0.003 [-0.020, +0.016]
+    top100      vs all720       -0.013 [-0.035, +0.011]
+
+top360 reproduces the spike (0.540 vs 0.542), so the deployed embedding is not the gap,
+and seed averaging is worth ~0.001. The reductions all point the same way (fewer columns,
+and variance-weighted over standardized PCA), but no head-to-head interval excludes zero:
+253 compounds cannot separate them. The deployed model (0.559) also trails this all720
+fit (0.551) by 0.008, unexplained.
 
 Arms run smallest first and print as they finish (all720 is the most memory on CPU).
 Runs locally (not via ml_pipeline_launcher):  python pxr_monroe_ablation_phase1.py
@@ -92,9 +107,13 @@ def top_variance(k: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     return train[keep + READOUTS], test[keep + READOUTS]
 
 
-def pca(n: int) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """n principal components of the Monroe columns only (fit on train rows) plus the raw readouts."""
-    reducer = make_pipeline(StandardScaler(), PCA(n_components=n, random_state=0)).fit(train[monroe_cols])
+def pca(n: int, scaled: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """n principal components of the Monroe columns only (fit on train rows) plus the raw readouts.
+
+    scaled standardizes each Monroe column first, giving every dimension equal weight.
+    """
+    steps = [StandardScaler()] if scaled else []
+    reducer = make_pipeline(*steps, PCA(n_components=n, random_state=0)).fit(train[monroe_cols])
     names = [f"pc_{i}" for i in range(n)]
 
     def project(rows: pd.DataFrame) -> pd.DataFrame:
@@ -105,33 +124,44 @@ def pca(n: int) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 ARMS = {
     "top100": lambda: top_variance(100),
-    "pca100": lambda: pca(100),
+    "pca100": lambda: pca(100, scaled=True),
+    "pca100_raw": lambda: pca(100, scaled=False),
     "top360": lambda: top_variance(360),
     "all720": lambda: top_variance(720),
 }
+
+# Head-to-head comparisons between arms (first minus second; negative = first is better)
+PAIRS = [
+    ("top100", "pca100"),
+    ("top100", "pca100_raw"),
+    ("pca100_raw", "pca100"),
+    ("top100", "top360"),
+    ("top100", "all720"),
+]
 
 baselines = {name: captured(model_name) for name, model_name in BASELINES.items()}
 deployed = captured("pxr-reg-tabicl-monroe-readout-phase1")
 rows = [{"arm": name, "rae": rae(f), "mae": mae(f), "seeds": "deployed"} for name, f in baselines.items()]
 rows.append({"arm": "deployed all720", "rae": rae(deployed), "mae": mae(deployed), "seeds": "1 (seed 42)"})
 
+averaged = {}  # arm -> seed-averaged prediction frame, for the head-to-head comparisons
 for arm, build in ARMS.items():
     X_train, X_test = build()
     per_seed = []
     for seed in SEEDS:
         model, _ = fit_tabicl({**HYPERPARAMETERS, "seed": seed}, X_train, train[target], cache=False)
         per_seed.append(predict_with_std(model, X_test)[0])
-    averaged = frame(np.mean(per_seed, axis=0))
+    averaged[arm] = frame(np.mean(per_seed, axis=0))
     single = [rae(frame(p)) for p in per_seed]
     row = {
         "arm": arm,
-        "rae": rae(averaged),
-        "mae": mae(averaged),
+        "rae": rae(averaged[arm]),
+        "mae": mae(averaged[arm]),
         "seeds": f"{len(SEEDS)} averaged",
         "single-seed rae": f"{np.mean(single):.3f} ± {np.std(single):.3f}",
     }
     for base, base_frame in baselines.items():
-        cmp = bootstrap_compare(averaged, base_frame, rae)
+        cmp = bootstrap_compare(averaged[arm], base_frame, rae)
         row[f"vs {base}"] = f"{cmp['delta']:+.3f} [{cmp['ci_lower']:+.3f}, {cmp['ci_upper']:+.3f}]"
     rows.append(row)
     summary = f"RAE {row['rae']:.3f} averaged, {row['single-seed rae']} single seed"
@@ -139,3 +169,18 @@ for arm, build in ARMS.items():
 
 print(f"\nphase1_test, {len(test)} compounds (RAE: lower is better; deltas are paired RAE, 95% bootstrap)")
 print(pd.DataFrame(rows).fillna("").to_string(index=False, float_format="%.3f"))
+
+head_to_head = []
+for a, b in PAIRS:
+    cmp = bootstrap_compare(averaged[a], averaged[b], rae)
+    head_to_head.append(
+        {
+            "arm": a,
+            "vs": b,
+            "delta": f"{cmp['delta']:+.3f}",
+            "95% CI": f"[{cmp['ci_lower']:+.3f}, {cmp['ci_upper']:+.3f}]",
+            "p(first better)": f"{cmp['p_a_better']:.2f}",
+        }
+    )
+print("\nhead to head, paired RAE (first minus second; negative = first is better)")
+print(pd.DataFrame(head_to_head).to_string(index=False))
