@@ -4,6 +4,11 @@ The Space reads its boards from a private S3 bucket server-side, so the CSVs in 
 repo are placeholders. Its own download endpoints hand back the real thing with no AWS
 credentials involved.
 
+Two sets of boards. The **live** one scores half the test set and updates continuously;
+the **interim** one scores all 750 and is how the final standings are computed, so
+`--interim` is the number that counts. They can disagree by a lot -- the test set is
+split by chemisimilar series precisely so the halves differ.
+
 Every download button is wired through `functools.partial` with its arguments bound, so
 Gradio exposes them as zero-argument endpoints named `/partial_N` in tab order rather
 than by function name. The mapping below was derived by matching our own scores back to
@@ -11,12 +16,14 @@ each board. If OpenADMET reorder or add tabs it will shift -- re-derive with:
 
     from gradio_client import Client
     c = Client("openadmet/cyp-challenge", verbose=False)
-    [c.predict(api_name=f"/partial_{i}") for i in range(9)]
+    c.view_api(all_endpoints=True)       # the `download_csv` ones are the boards
+    [c.predict(api_name=f"/partial_{i}") for i in range(26)]
 
 Needs `gradio_client` (not a Workbench dependency):  uv pip install gradio_client
 
 Usage:
-    python cyp_leaderboard.py                      # regression boards, our row + top 5
+    python cyp_leaderboard.py                      # live regression boards, our row + top 5
+    python cyp_leaderboard.py --interim            # full test set -- the scored metric
     python cyp_leaderboard.py --user NAME --top 10
     python cyp_leaderboard.py --tdi --save outputs/leaderboards
 """
@@ -26,6 +33,7 @@ from pathlib import Path
 
 import pandas as pd
 
+# Live boards: half the test set, continuously updated.
 REGRESSION = {
     "macro": "/partial",
     "CYP1A2": "/partial_1",
@@ -34,6 +42,16 @@ REGRESSION = {
     "CYP3A4": "/partial_4",
 }
 TDI = {"macro": "/partial_5", "CYP2D6": "/partial_6", "CYP3A4": "/partial_7"}
+
+# Interim boards: all 750 compounds, the same scoring the final standings use.
+INTERIM_REGRESSION = {
+    "macro": "/partial_18",
+    "CYP1A2": "/partial_19",
+    "CYP2C9": "/partial_20",
+    "CYP2D6": "/partial_21",
+    "CYP3A4": "/partial_22",
+}
+INTERIM_TDI = {"macro": "/partial_23", "CYP2D6": "/partial_24", "CYP3A4": "/partial_25"}
 
 
 def fetch(boards: dict) -> dict:
@@ -117,11 +135,24 @@ if __name__ == "__main__":
     parser.add_argument("--user", default="briford", help="Username to locate on each board")
     parser.add_argument("--top", type=int, default=5, help="Rows to show per board")
     parser.add_argument("--tdi", action="store_true", help="Pull the TDI boards instead")
+    parser.add_argument(
+        "--interim", action="store_true", help="Pull the interim boards (all 750 compounds) rather than the live half"
+    )
     parser.add_argument("--sd", action="store_true", help="Recover blind-set label sd per isoform from the field")
     parser.add_argument("--save", type=Path, help="Directory to write each board as CSV")
     args = parser.parse_args()
 
-    fetched = fetch(TDI if args.tdi else REGRESSION)
+    boards = {
+        (False, False): REGRESSION,
+        (False, True): TDI,
+        (True, False): INTERIM_REGRESSION,
+        (True, True): INTERIM_TDI,
+    }[(args.interim, args.tdi)]
+    print(
+        f"{'Interim' if args.interim else 'Live'} boards "
+        f"({'all 750 compounds' if args.interim else 'half the test set'})"
+    )
+    fetched = fetch(boards)
     summarize(fetched, args.user, args.top)
     if not args.tdi:
         calibration_check(fetched, args.user)
@@ -134,6 +165,7 @@ if __name__ == "__main__":
         args.save.mkdir(parents=True, exist_ok=True)
         stamp = pd.Timestamp.utcnow().strftime("%Y%m%d_%H%M")
         for name, df in fetched.items():
-            path = args.save / f"{'tdi' if args.tdi else 'reg'}_{name}_{stamp}.csv"
+            prefix = f"{'interim' if args.interim else 'live'}_{'tdi' if args.tdi else 'reg'}"
+            path = args.save / f"{prefix}_{name}_{stamp}.csv"
             df.to_csv(path, index=False)
         print(f"\nWrote {len(fetched)} CSVs to {args.save}")
