@@ -17,7 +17,7 @@ from workbench.model_scripts.script_generation import generate_model_script
 FEATURES = [f"f{i}" for i in range(8)]
 
 
-def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR):
+def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR, features=FEATURES, compressed=(), hyperparameters=None):
     metrics = tmp_path / "metrics"
     metrics.mkdir(exist_ok=True)
     return generate_model_script(
@@ -27,11 +27,11 @@ def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR):
             "model_class": None,
             "model_imports": None,
             "target_column": "target",
-            "feature_list": FEATURES,
-            "compressed_features": [],
+            "feature_list": list(features),
+            "compressed_features": list(compressed),
             "model_metrics_path": str(metrics),
             "id_column": "id",
-            "hyperparameters": {"n_estimators": 2, "n_folds": 2, "shap_sample_size": 3},
+            "hyperparameters": {"n_estimators": 2, "n_folds": 2, "shap_sample_size": 3, **(hyperparameters or {})},
         }
     )
 
@@ -107,3 +107,40 @@ def test_generated_script_trains_and_serves(tmp_path, monkeypatch):
     assert len(out) == 10
     assert {"prediction", "prediction_std", "confidence", "q_025", "q_975"} <= set(out.columns)
     assert (out["prediction_std"] > 0).all()
+
+
+def test_top_variance_features_on_a_compressed_embedding(tmp_path, monkeypatch):
+    """A compressed float embedding is expanded, reduced to its top-variance columns, and served from raw input"""
+    rng = np.random.default_rng(0)
+    emb = rng.normal(size=(240, 6)) * np.array([0.01, 3.0, 0.01, 2.0, 0.01, 1.0])  # columns 1, 3, 5 vary most
+    df = pd.DataFrame({"id": [f"m{i}" for i in range(240)], "f0": rng.normal(size=240)})
+    df["emb"] = [",".join(f"{v:.7g}" for v in row) for row in emb]
+    df["target"] = df["f0"] + emb[:, 1] + rng.normal(scale=0.3, size=240)
+    df["validation"] = [i >= 200 for i in range(240)]
+    train_dir = tmp_path / "train"
+    train_dir.mkdir()
+    df.to_csv(train_dir / "train.csv", index=False)
+
+    script = _generate(
+        tmp_path, features=["emb", "f0"], compressed=["emb"], hyperparameters={"top_variance_features": 3}
+    )
+    result, model_dir = _train(script, tmp_path, train_dir)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert len(pd.read_csv(tmp_path / "metrics" / "val_predictions.csv")) == 40
+    assert not (tmp_path / "metrics" / "shap_importance.json").exists()  # SHAP is skipped behind a reducer
+
+    monkeypatch.setenv("SM_MODEL_DIR", str(model_dir))
+    spec = importlib.util.spec_from_file_location("generated_tabicl_embedding_script", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    model_dict = module.model_fn(str(model_dir))
+    assert model_dict["model"].n_features_in_ == 4  # f0 + the 3 highest-variance embedding columns
+    out = module.predict_fn(df[["id", "emb", "f0"]].tail(10).reset_index(drop=True), model_dict)
+    assert len(out) == 10 and out["prediction"].notna().all()
+
+
+def test_top_variance_features_needs_a_compressed_feature(tmp_path):
+    _, train_dir = _training_csv(tmp_path)
+    script = _generate(tmp_path, hyperparameters={"top_variance_features": 3})
+    result, _ = _train(script, tmp_path, train_dir)
+    assert result.returncode != 0 and "compressed-feature columns" in result.stderr

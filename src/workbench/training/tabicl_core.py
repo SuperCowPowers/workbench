@@ -21,7 +21,26 @@ from workbench.endpoints.tabicl_utils import MODEL_FILE, REDUCER_FILE, tabicl_de
 PROBE_ROWS = 10
 
 
-def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, cache: bool) -> tuple:
+def top_variance_selector(X: pd.DataFrame, expanded_columns: list, n: int):
+    """A fitted column selector: the n highest-variance expanded columns, plus every other column.
+
+    Args:
+        X: training features; the variance is measured on these rows.
+        expanded_columns: the columns decompressed from compressed features, the only ones ranked.
+        n: how many expanded columns to keep (all of them when n is at least their count).
+
+    Returns:
+        ColumnTransformer: passes the kept columns through, in X's column order.
+    """
+    from sklearn.compose import ColumnTransformer
+
+    expanded = set(expanded_columns)
+    top = set(X[expanded_columns].var().nlargest(n).index)
+    keep = [c for c in X.columns if c not in expanded or c in top]
+    return ColumnTransformer([("keep", "passthrough", keep)]).fit(X)
+
+
+def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, cache: bool, expanded_columns: list = None) -> tuple:
     """Fit a TabICL regressor, with the optional feature reducer in front.
 
     Args:
@@ -31,16 +50,22 @@ def fit_tabicl(hyperparameters: dict, X: pd.DataFrame, y, *, cache: bool) -> tup
         cache: cache the training rows' transformer projections. True for a model that
             answers many requests (each then costs only its own rows); False for a
             throwaway model that predicts once, such as a fold model.
+        expanded_columns: the columns decompressed from compressed features, which
+            ``top_variance_features`` selects among.
 
     Returns:
-        tuple: (model, reducer) — reducer is None unless ``pca_components`` is set.
+        tuple: (model, reducer) — reducer is None unless ``pca_components`` or
+            ``top_variance_features`` is set.
     """
     from tabicl import TabICLRegressor
 
     from workbench.training.foundation_models import resolve_foundation_checkpoint
 
     reducer = None
-    if hyperparameters.get("pca_components"):
+    if hyperparameters.get("top_variance_features"):
+        reducer = top_variance_selector(X, expanded_columns, hyperparameters["top_variance_features"])
+        X = reducer.transform(X)
+    elif hyperparameters.get("pca_components"):
         from sklearn.decomposition import PCA
         from sklearn.impute import SimpleImputer
         from sklearn.pipeline import make_pipeline

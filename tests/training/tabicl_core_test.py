@@ -14,7 +14,12 @@ pytest.importorskip("tabicl")
 
 # Workbench Imports
 from workbench.endpoints.tabicl_utils import MODEL_FILE, REDUCER_FILE, load_tabicl, predict_with_std  # noqa: E402
-from workbench.training.tabicl_core import fit_tabicl, probe_inference_memory, save_tabicl  # noqa: E402
+from workbench.training.tabicl_core import (  # noqa: E402
+    fit_tabicl,
+    probe_inference_memory,
+    save_tabicl,
+    top_variance_selector,
+)
 
 pytestmark = pytest.mark.medium
 
@@ -61,6 +66,34 @@ def test_pca_components_puts_a_reducer_in_front(data, tmp_path):
 
     save_tabicl(model, reducer, str(tmp_path))
     assert (tmp_path / REDUCER_FILE).exists()
+    loaded_model, loaded_reducer = load_tabicl(str(tmp_path), device="cpu")
+    np.testing.assert_allclose(
+        predict_with_std(loaded_model, X.iloc[160:], loaded_reducer)[0],
+        predict_with_std(model, X.iloc[160:], reducer)[0],
+        atol=1e-4,
+    )
+
+
+def test_top_variance_selector_ranks_only_expanded_columns():
+    """The n highest-variance expanded columns are kept, every other column passes through, in order"""
+    rng = np.random.default_rng(0)
+    scales = {"emb_0": 0.1, "emb_1": 5.0, "emb_2": 1.0, "emb_3": 3.0}
+    X = pd.DataFrame({name: rng.normal(scale=s, size=100) for name, s in scales.items()})
+    X.insert(1, "readout", rng.normal(scale=0.01, size=100))  # lowest variance, but not ranked
+
+    selector = top_variance_selector(X, list(scales), 2)
+    np.testing.assert_array_equal(selector.transform(X), X[["readout", "emb_1", "emb_3"]].to_numpy())
+    assert top_variance_selector(X, list(scales), 10).transform(X).shape == X.shape  # n past the count keeps all
+
+
+def test_top_variance_features_puts_a_selector_in_front(data, tmp_path):
+    X, y = data
+    hyperparameters = {**HYPERPARAMETERS, "top_variance_features": 2}
+    expanded = ["f2", "f3", "f4", "f5"]
+    model, reducer = fit_tabicl(hyperparameters, X.iloc[:160], y.iloc[:160], cache=True, expanded_columns=expanded)
+    assert model.n_features_in_ == 4  # f0, f1 kept + 2 of the 4 expanded columns
+
+    save_tabicl(model, reducer, str(tmp_path))
     loaded_model, loaded_reducer = load_tabicl(str(tmp_path), device="cpu")
     np.testing.assert_allclose(
         predict_with_std(loaded_model, X.iloc[160:], loaded_reducer)[0],

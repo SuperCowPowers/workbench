@@ -61,6 +61,7 @@ model = fs.to_model(
 | `n_estimators` | `8` | TabICL's internal ensemble: members see different column orders and scalings |
 | `batch_size` | `1` | Ensemble members per forward pass. 1 gives the lowest peak memory; predictions are the same at any value |
 | `pca_components` | `None` | Standardize and reduce the features to this many PCA components before TabICL |
+| `top_variance_features` | `None` | Keep this many of the columns expanded from compressed features (highest variance on the training rows); other features are kept |
 | `shap_sample_size` | `100` | Rows explained for SHAP feature importance (0 disables) |
 | `split_strategy` | `"scaffold"` | `"scaffold"`, `"butina"`, or `"random"` (scaffold and butina need a `smiles` column) |
 | `butina_cutoff` | `0.4` | Tanimoto distance cutoff for Butina clustering |
@@ -69,7 +70,23 @@ model = fs.to_model(
 
 ### Feature Count
 
-TabICL is pretrained on tables of up to 100 columns. More features work, and the training log notes when a model is past that range. If accuracy suffers, `pca_components` reduces them. PCA needs numeric features, so it can't be combined with categorical columns.
+TabICL is pretrained on tables of up to 100 columns. More features work, and the training log notes when a model is past that range. If accuracy suffers, two hyperparameters reduce them; set one, not both.
+
+- `top_variance_features` is for a compressed feature such as an embedding or a fingerprint, which expands into hundreds of columns. It keeps the expanded columns with the highest variance on the training rows and leaves every other feature in place, so extra descriptors next to an embedding are untouched:
+
+    ```python
+    fs.set_compressed_features(["monroe"])
+    model = fs.to_model(
+        ...,
+        model_framework=ModelFramework.TABICL,
+        feature_list=["monroe", "lfc_8um_readout", "lfc_33um_readout"],
+        hyperparameters={"top_variance_features": 100},  # 720 embedding columns -> 100
+    )
+    ```
+
+    On PXR, TabICL on the Monroe embedding plus two readouts scored RAE 0.537 with the top 100 columns, 0.540 with 360, and 0.550 with all 720 (three seeds each, 253 held-out compounds).
+
+- `pca_components` standardizes every feature and projects them all onto this many components. PCA needs numeric features, so it can't be combined with categorical columns.
 
 ## Endpoints: Serverless or Real-Time
 
@@ -108,7 +125,7 @@ See [Model Confidence](../confidence/index.md) for how the confidence model work
 
 ## Feature Importance
 
-SHAP values come from TabICL's own explainer and are stored with the model like any other framework's. The explainer works on raw numeric features, so SHAP is skipped when the model uses `pca_components` or has categorical columns.
+SHAP values come from TabICL's own explainer and are stored with the model like any other framework's. The explainer works on raw numeric features, so SHAP is skipped when the model uses `pca_components` or `top_variance_features`, or has categorical columns.
 
 ## Limits
 

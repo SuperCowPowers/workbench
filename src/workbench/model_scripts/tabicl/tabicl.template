@@ -9,7 +9,8 @@
 #   request costs only its own rows. The cache grows with the training set, so past a
 #   few thousand rows the model serves from a real-time endpoint rather than serverless
 # - prediction_std comes from TabICL's own predictive quantiles and feeds the UQModel
-# - Optional StandardScaler + PCA feature reduction (pca_components)
+# - Optional feature reduction: StandardScaler + PCA (pca_components), or the
+#   highest-variance columns of the compressed features (top_variance_features)
 # - SHAP feature importance from tabicl.shap
 # - An inference memory probe: to_endpoint() uses it to decide whether serverless fits
 #   and to size a real-time instance
@@ -47,6 +48,10 @@ DEFAULT_HYPERPARAMETERS = {
     # StandardScaler + PCA to this many components before TabICL (None = raw features).
     # TabICL is pretrained on tables of up to 100 columns.
     "pca_components": None,
+    # Keep this many of the columns expanded from compressed features (an embedding, a
+    # fingerprint), the ones with the highest variance on the training rows; every other
+    # feature is kept (None = all). Not combined with pca_components.
+    "top_variance_features": None,
     # Rows explained for SHAP feature importance (0 disables)
     "shap_sample_size": 100,
     # Split strategy: "scaffold" (default), "butina", or "random"
@@ -217,14 +222,20 @@ if __name__ == "__main__":
     if compressed_features:
         print(f"Decompressing features: {compressed_features}")
         all_df, features = decompress_features(all_df, features, compressed_features)
+    expanded_columns = [f for f in features if f not in orig_features]
 
     pca_components = hyperparameters["pca_components"]
+    top_variance_features = hyperparameters["top_variance_features"]
     if pca_components and category_mappings:
         raise ValueError(f"pca_components needs numeric features; categorical: {list(category_mappings)}")
-    if len(features) > PRETRAINED_MAX_FEATURES and not pca_components:
+    if top_variance_features and pca_components:
+        raise ValueError("Set top_variance_features or pca_components, not both")
+    if top_variance_features and not expanded_columns:
+        raise ValueError("top_variance_features selects among compressed-feature columns; this model has none")
+    if len(features) > PRETRAINED_MAX_FEATURES and not (pca_components or top_variance_features):
         print(
             f"NOTE: {len(features)} features exceeds TabICL's pretraining range ({PRETRAINED_MAX_FEATURES} columns); "
-            "set pca_components to reduce them if accuracy suffers."
+            "set top_variance_features (compressed features) or pca_components to reduce them if accuracy suffers."
         )
 
     # -------------------------------------------------------------------------
@@ -251,7 +262,9 @@ if __name__ == "__main__":
 
         # A fold model predicts once, so it carries no cache
         fold_df = all_df.iloc[train_idx]
-        fold_model, fold_reducer = fit_tabicl(hyperparameters, fold_df[features], fold_df[target], cache=False)
+        fold_model, fold_reducer = fit_tabicl(
+            hyperparameters, fold_df[features], fold_df[target], cache=False, expanded_columns=expanded_columns
+        )
         oof_predictions[val_idx], oof_std[val_idx] = predict_with_std(
             fold_model, all_df.iloc[val_idx][features], fold_reducer
         )
@@ -274,7 +287,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print(f"Fitting served model on {len(all_df)} rows")
     print("=" * 50)
-    model, reducer = fit_tabicl(hyperparameters, all_df[features], all_df[target], cache=True)
+    model, reducer = fit_tabicl(
+        hyperparameters, all_df[features], all_df[target], cache=True, expanded_columns=expanded_columns
+    )
 
     # -------------------------------------------------------------------------
     # Fit UQ models on the out-of-fold predictions
@@ -311,10 +326,10 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance
     # -------------------------------------------------------------------------
-    # TabICL's explainer masks raw numeric features, so it is skipped when the model
-    # reads PCA components or carries categorical columns.
+    # TabICL's explainer masks the model's raw numeric features, so it is skipped when a
+    # reducer sits in front (PCA components, a column selection) or there are categorical columns.
     shap_sample_size = min(hyperparameters["shap_sample_size"], len(df_oof))
-    if shap_sample_size and not pca_components and not category_mappings:
+    if shap_sample_size and not pca_components and not top_variance_features and not category_mappings:
         print("\n" + "=" * 50)
         print("Computing SHAP Values")
         print("=" * 50)
