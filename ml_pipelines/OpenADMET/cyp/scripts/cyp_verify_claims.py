@@ -246,6 +246,18 @@ check(
     0.29 <= min(modal.values()) and max(modal.values()) <= 0.35,
 )
 
+print("\n== Blind-set isolation ==")
+# Public sources key on their own accessions, so a held-out compound can appear under a name
+# that looks nothing like its challenge identifier. The match has to be on structure.
+# `cyp_union_features.py` drops whatever turns up here; these counts say what it has to drop.
+for name, keys, expected in (
+    ("ChEMBL", set(chembl["key"]), 0),
+    ("Veith qHTS", set(skeletons(veith["smiles"].drop_duplicates())), 1),
+    ("Tox21", set(skeletons(tox_all["smiles"].drop_duplicates())), 0),
+):
+    n = len(keys & blind_keys)
+    check(f"{name} blind-set overlap", expected, n, n == expected)
+
 print("\n== Leaderboard snapshot ==")
 board = open("../../../../docs/planning/cyp_leaderboard_2026_09_01.md").read()
 ours = {}

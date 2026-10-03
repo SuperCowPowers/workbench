@@ -121,6 +121,7 @@ VEITH_LT = [f"{t}_lt" for t in VEITH_PIC50_TARGETS] if args.censored else []
 # at 4.0 and the challenge set is hit-enriched -- and it reaches ~5.6k compounds neither
 # other source covers.
 TOX21 = f"comp_chem/tox21/cyp_inhibition/{_CEN}"
+BLINDED = "comp_chem/openadmet/cyp/testing/blinded"
 TOX21_TARGETS = [f"{iso}_pic50_tox21" for iso in PUBLIC_ISOFORMS]
 TOX21_LT = [f"{t}_lt" for t in TOX21_TARGETS] if args.censored else []
 VEITH = f"comp_chem/pubchem/cyp_inhibition/{_CEN}"
@@ -303,6 +304,23 @@ ALL_TARGETS = (
     + TOX21_TARGETS
     + POOLED_TARGETS
 )
+# A public source can carry a blind-set compound under its own accession, so the match is on
+# structure rather than on name. Dropping it keeps the union free of measured CYP values for
+# anything we are scored on.
+blind_keys = set(skeletons(PublicData().get(BLINDED)["smiles"]).dropna())
+out["key"] = skeletons(out["smiles"])
+leaked = out["key"].isin(blind_keys)
+if leaked.any():
+    scored_leak = out.loc[leaked, TARGETS].notna().any(axis=1)
+    if scored_leak.any():
+        raise ValueError(
+            f"{int(scored_leak.sum())} blind-set structures carry a scored challenge label; "
+            "that is the organizers' own data and not ours to drop -- investigate before building"
+        )
+    print(f"blind-set overlap: dropping {int(leaked.sum())} public row(s) {list(out.loc[leaked, 'molecule_name'])}")
+    out = out[~leaked]
+out = out.drop(columns=["key"])
+
 if out["molecule_name"].duplicated().any():
     raise ValueError("duplicate molecule_name after the union")
 if out["smiles"].isna().any():
