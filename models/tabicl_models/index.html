@@ -5596,6 +5596,11 @@
 <td>Standardize and reduce the features to this many PCA components before TabICL</td>
 </tr>
 <tr>
+<td><code>top_variance_features</code></td>
+<td><code>None</code></td>
+<td>Keep this many of the columns expanded from compressed features (highest variance on the training rows); other features are kept</td>
+</tr>
+<tr>
 <td><code>shap_sample_size</code></td>
 <td><code>100</code></td>
 <td>Rows explained for SHAP feature importance (0 disables)</td>
@@ -5623,16 +5628,33 @@
 </tbody>
 </table>
 <h3 id="feature-count">Feature Count</h3>
-<p>TabICL is pretrained on tables of up to 100 columns. More features work, and the training log notes when a model is past that range. If accuracy suffers, <code>pca_components</code> reduces them. PCA needs numeric features, so it can't be combined with categorical columns.</p>
+<p>TabICL is pretrained on tables of up to 100 columns. More features work, and the training log notes when a model is past that range. If accuracy suffers, two hyperparameters reduce them; set one, not both.</p>
+<ul>
+<li>
+<p><code>top_variance_features</code> is for a compressed feature such as an embedding or a fingerprint, which expands into hundreds of columns. It keeps the expanded columns with the highest variance on the training rows and leaves every other feature in place, so extra descriptors next to an embedding are untouched:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">fs</span><span class="o">.</span><span class="n">set_compressed_features</span><span class="p">([</span><span class="s2">"monroe"</span><span class="p">])</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="o">...</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">TABICL</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">"monroe"</span><span class="p">,</span> <span class="s2">"lfc_8um_readout"</span><span class="p">,</span> <span class="s2">"lfc_33um_readout"</span><span class="p">],</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"top_variance_features"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>  <span class="c1"># 720 embedding columns -&gt; 100</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>On PXR, TabICL on the Monroe embedding plus two readouts scored RAE 0.537 with the top 100 columns, 0.540 with 360, and 0.550 with all 720 (three seeds each, 253 held-out compounds). Those differences are within that test set's noise; fewer columns also means less serving memory.</p>
+</li>
+<li>
+<p><code>pca_components</code> standardizes every feature and projects them all onto this many components. PCA needs numeric features, so it can't be combined with categorical columns.</p>
+</li>
+</ul>
 <h2 id="endpoints-serverless-or-real-time">Endpoints: Serverless or Real-Time</h2>
 <p>A TabICL model carries its training rows, so its memory grows with the training set. The training job measures the memory the model needs to serve, and <code>to_endpoint()</code> uses that measurement.</p>
 <p><strong>Serverless (the default)</strong> works for smaller training sets. When the measured memory is over what a serverless endpoint can give a model, <code>to_endpoint()</code> raises and tells you so, rather than deploying an endpoint that fails to load:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ValueError: sol-tabicl-reg needs 9.17 GB to serve, over the 5.5 GB a serverless
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>endpoint can give a model. Deploy a real-time endpoint with to_endpoint(serverless=False);
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>its instance is sized from the measured memory.
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ValueError: sol-tabicl-reg needs 9.17 GB to serve, over the 5.5 GB a serverless
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>endpoint can give a model. Deploy a real-time endpoint with to_endpoint(serverless=False);
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>its instance is sized from the measured memory.
 </span></code></pre></div>
 <p><strong>Real-time</strong> endpoints size their instance from the same measurement:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">serverless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">serverless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div>
 <p>A real-time instance runs, and bills, around the clock, which is why the switch is yours to make. Pass <code>instance="ml.r7i.xlarge"</code> (or any instance type) to choose one yourself.</p>
 <p>As a guide, with 17 features:</p>
@@ -5665,7 +5687,7 @@
 <p>TabICL predicts a full distribution for each row. Workbench takes the width of that distribution as the model's <code>prediction_std</code> and feeds it to the same confidence model the other frameworks use, so a TabICL endpoint returns the same columns: <code>prediction</code>, <code>prediction_std</code>, <code>confidence</code>, and the calibrated intervals (<code>q_025</code> … <code>q_975</code>).</p>
 <p>See <a href="../../confidence/">Model Confidence</a> for how the confidence model works.</p>
 <h2 id="feature-importance">Feature Importance</h2>
-<p>SHAP values come from TabICL's own explainer and are stored with the model like any other framework's. The explainer works on raw numeric features, so SHAP is skipped when the model uses <code>pca_components</code> or has categorical columns.</p>
+<p>SHAP values come from TabICL's own explainer and are stored with the model like any other framework's. The explainer works on raw numeric features, so SHAP is skipped when the model uses <code>pca_components</code> or <code>top_variance_features</code>, or has categorical columns.</p>
 <h2 id="limits">Limits</h2>
 <ul>
 <li><strong>Regression only.</strong> <code>ModelType.REGRESSOR</code> and <code>ModelType.UQ_REGRESSOR</code>.</li>
@@ -5680,12 +5702,12 @@
 <li><strong>Public origin</strong> (Hugging Face) — last resort, logs a warning</li>
 </ol>
 <p>Stage the checkpoint in your bucket so training jobs don't depend on the public internet:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--model<span class="w"> </span>tabicl<span class="w"> </span>--file<span class="w"> </span>tabicl-regressor-v2-20260212.ckpt
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--model<span class="w"> </span>tabicl<span class="w"> </span>--file<span class="w"> </span>tabicl-regressor-v2-20260212.ckpt
 </span></code></pre></div>
 <p>The served model includes the weights, so an endpoint never downloads anything.</p>
 <h2 id="running-locally">Running Locally</h2>
 <p>TabICL is part of the <code>modeling</code> extra, so a local model needs no AWS account and no SageMaker images:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"workbench[modeling]"</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"workbench[modeling]"</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Examples</p>
