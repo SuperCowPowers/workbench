@@ -11,8 +11,9 @@ Holds phase1_test out via validation_ids and captures 'pxr_phase1_test' on exact
 those rows, for comparison against pxr-reg-chemprop-phase1 and
 pxr-reg-chemprop-readout-phase1.
 
-The endpoint is real-time: TabICL holds its training rows in memory, and the instance
-is sized from the serving memory the training job measures.
+The endpoint is serverless: TabICL holds its training rows in memory, and with 100
+embedding columns the training job measures 5.11 GB to serve, under the 5.5 GB serverless
+limit. to_endpoint() raises if a retrain measures over it.
 
 Build the FeatureSet first:  ml_pipeline_launcher pxr_readout_monroe_feature_sets
 """
@@ -42,7 +43,7 @@ m = fs.to_model(
 m.set_owner("open_admet_pxr")
 print(f"Measured serving memory: {(m.workbench_meta() or {}).get('workbench_inference_memory_gb')} GB")
 
-end = m.to_endpoint(serverless=False, tags=tags)
+end = m.to_endpoint(tags=tags)
 end.set_owner("open_admet_pxr")
 end.test_inference()
 end.cross_fold_inference()
