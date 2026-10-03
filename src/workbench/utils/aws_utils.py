@@ -251,9 +251,11 @@ def dict_to_aws_tags(meta_data: dict) -> list:
     """AWS Tags are in an odd format, so we need to convert, encode, and chunk the data
     Args:
         meta_data (dict): Dictionary of metadata to convert to AWS Tags
+
+    Raises:
+        ValueError: If a value is too large to store in AWS Tags.
     """
     chunked_data = {}  # Store any chunked data here
-    chunked_keys = []  # Store any keys to remove here
 
     # AWS Tag Storage has the following constraints:
     # - 256 char maximum per tag
@@ -282,7 +284,6 @@ def dict_to_aws_tags(meta_data: dict) -> list:
         # If the value is longer than 256 but we have room to split it into chunks
         elif len(value) < (char_limit * (max_tags - current_tags)):
             log.important(f"Chunking metadata for key {key} with length {len(value)}...")
-            chunked_keys.append(key)
             chunks = _chunk_data(key, value)
             for chunk in chunks:
                 chunked_data[chunk] = chunks[chunk]
@@ -290,7 +291,10 @@ def dict_to_aws_tags(meta_data: dict) -> list:
 
         # Too long to store in AWS Tags
         else:
-            log.error(f"Metadata for key '{key}' is large {len(value)} and cannot be stored in AWS Tags!")
+            raise ValueError(
+                f"Metadata for key '{key}' is {len(value)} characters and cannot be stored in AWS Tags "
+                f"({max_tags} tags of {char_limit} characters per artifact)"
+            )
 
     # Now add the chunked data to the output data
     output_data.update(chunked_data)

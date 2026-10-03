@@ -147,6 +147,19 @@ def test_chunked_marked_value():
     assert aws_tags_to_dict(tags)["blob"] == long_unsafe
 
 
+def test_oversized_value_raises():
+    """A value too large for an artifact's tags raises instead of being dropped (onboarding 722 features)"""
+    features = [f"monroe_{i:03d}" for i in range(720)] + ["lfc_8um_readout", "lfc_33um_readout"]
+    onboarding = {
+        "workbench_status": "onboarding",
+        "workbench_model_type": "uq_regressor",
+        "workbench_model_target": "pec50",
+        "workbench_model_features": features,
+    }
+    with pytest.raises(ValueError, match="cannot be stored in AWS Tags"):
+        dict_to_aws_tags(onboarding)
+
+
 def test_legacy_chunked_b64_decoded_transitional():
     """TRANSITIONAL: old markerless-base64 values that were chunked still stitch + decode.
 

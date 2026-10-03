@@ -31,7 +31,7 @@ predictions = Endpoint("my-admet-model").inference(df_features)
 | `smiles-to-fingerprints-v1` | 4096-dim Morgan counts | Similarity, substructure, fingerprint models |
 | `smiles-to-3d-v2` | 26 3D descriptors | Curated GFN2-xTB set, orthogonal to 2D — async |
 | `smiles-to-2d-salt-v1` | ~315 2D descriptors | Solubility only — see below |
-| `smiles-to-monroe-v1` | 720-dim Monroe embedding | Pretrained molecular embedding — see below |
+| `smiles-to-monroe-v1` | 720-dim Monroe embedding (one compressed column) | Pretrained molecular embedding — see below |
 
 Combined **MetaEndpoints** fan out to both children and concatenate in one call:
 
@@ -115,11 +115,14 @@ its own hyperparameters.
 ## Monroe embeddings
 
 `smiles-to-monroe-v1` returns the 720-d embedding of the frozen Monroe encoder (a
-graph transformer pretrained on quantum-chemical and bioassay data) as columns
-`monroe_000`..`monroe_719`:
+graph transformer pretrained on quantum-chemical and bioassay data) as one compressed
+feature column, `monroe`: the 720 values as comma-separated floats, the same pattern as
+the fingerprint endpoint's `fingerprint`. Mark it on the FeatureSet, and the model
+templates (XGBoost, PyTorch, TabICL) expand it into 720 columns:
 
 ```python
-features = [f"monroe_{i:03d}" for i in range(720)]
+fs.set_compressed_features(["monroe"])
+features = ["monroe"]   # plus any other features
 ```
 
 - It is a sync serverless endpoint: run it the way the 2D endpoint is run.
@@ -127,8 +130,9 @@ features = [f"monroe_{i:03d}" for i in range(720)]
   returns the same embedding on every call.
 - When conformer generation fails or times out, the embedding comes from a flat 2D
   layout instead. Nothing in the output marks those rows.
-- A molecule that cannot be featurized keeps its row with NaN in all 720 columns.
-- The columns are not individually interpretable. Any reduction (PCA, a column subset)
+- A molecule that cannot be featurized keeps its row with NaN in `monroe`.
+- Chemprop's template does not expand compressed features.
+- The 720 values are not individually interpretable. Any reduction (PCA, a column subset)
   is fit on training rows, so it belongs to the model, not the FeatureSet.
 
 ## Versioning

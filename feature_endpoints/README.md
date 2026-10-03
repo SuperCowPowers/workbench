@@ -72,11 +72,15 @@ Each script will:
 ## Monroe embedding
 
 `smiles-to-monroe-v1` runs the frozen [Monroe](https://github.com/blazejba/monroe)
-encoder (MIT) and returns `monroe_000`..`monroe_719`. Each molecule is standardized,
-given one seeded RDKit conformer, and embedded; a molecule that cannot be featurized
-keeps its row with NaN in all 720 columns. When conformer generation fails or passes
-its 10 s limit, the molecule is embedded from a flat 2D layout instead, and nothing in
-the output marks that row.
+encoder (MIT) and returns the 720-d embedding as one compressed feature column,
+`monroe` (comma-separated floats, like the fingerprint endpoint's `fingerprint`). Each
+molecule is standardized, given one seeded RDKit conformer, and embedded; a molecule that
+cannot be featurized keeps its row with NaN in `monroe`. When conformer generation fails
+or passes its 10 s limit, the molecule is embedded from a flat 2D layout instead, and
+nothing in the output marks that row.
+
+- A FeatureSet built from it marks the column with `set_compressed_features(["monroe"])`;
+  the model templates (XGBoost, PyTorch, TabICL) then expand it into 720 float columns.
 
 - The encoder and featurizer are vendored in `model_scripts/monroe/` and kept verbatim
   apart from the lines marked `Workbench:` (the directory is excluded from lint).

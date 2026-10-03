@@ -48,6 +48,8 @@
       {"script": "pxr_readout_monroe_feature_sets.py",
        "inputs": ["fs:openadmet_pxr_readout", "endpoint:smiles-to-monroe-v1"],
        "outputs": ["fs:openadmet_pxr_readout_monroe"]},
+      {"script": "phase1/pxr_tabicl_monroe_readout_phase1.py", "inputs": ["fs:openadmet_pxr_readout_monroe"],
+       "outputs": ["model:pxr-reg-tabicl-monroe-readout-phase1", "endpoint:pxr-reg-tabicl-monroe-readout-phase1"]},
       {"script": "pxr_pytorch_3dv2.py", "inputs": ["fs:openadmet_pxr_f2"],
        "outputs": ["model:pxr-2d-3dv2-reg-xgb", "endpoint:pxr-2d-3dv2-reg-xgb",
                    "model:pxr-2d-3dv2-reg-pytorch-339", "endpoint:pxr-2d-3dv2-reg-pytorch-339",

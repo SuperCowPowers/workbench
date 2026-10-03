@@ -188,11 +188,13 @@ def convert_categorical_types(
 def decompress_features(
     df: pd.DataFrame, features: list[str], compressed_features: list[str]
 ) -> tuple[pd.DataFrame, list[str]]:
-    """Decompress compressed features (bitstrings or count vectors) into individual columns.
+    """Decompress compressed features (bitstrings, count vectors, float vectors) into individual columns.
 
-    Supports two formats (auto-detected):
+    Supports three formats (auto-detected):
         - Bitstrings: "10110010..." → individual uint8 columns (0 or 1)
         - Count vectors: "0,3,0,1,5,..." → individual uint8 columns (0-255)
+        - Float vectors: "0.0123,-1.5,..." → individual float32 columns (embeddings);
+          a missing value becomes a row of NaN
 
     Args:
         df: The features DataFrame
@@ -213,13 +215,19 @@ def decompress_features(
         # Remove the feature from the list to avoid duplication
         decompressed_features.remove(feature)
 
-        # Auto-detect format and parse: comma-separated counts or bitstring
+        # Auto-detect format and parse: bitstring, comma-separated counts, or comma-separated floats
         non_null = df[feature].dropna()
         if non_null.empty:
             raise ValueError(f"All values for '{feature}' are NaN — cannot decompress.")
         sample = str(non_null.iloc[0])
-        parse_fn = (lambda s: list(map(int, s.split(",")))) if "," in sample else list
-        feature_matrix = np.array([parse_fn(str(s)) for s in df[feature]], dtype=np.uint8)
+        if "," not in sample:
+            feature_matrix = np.array([list(str(s)) for s in df[feature]], dtype=np.uint8)
+        elif any(c in sample for c in ".eE"):
+            width = sample.count(",") + 1
+            rows = [s.split(",") if isinstance(s, str) else [np.nan] * width for s in df[feature]]
+            feature_matrix = np.array(rows, dtype=np.float32)
+        else:
+            feature_matrix = np.array([list(map(int, str(s).split(","))) for s in df[feature]], dtype=np.uint8)
 
         # Create new columns with prefix from feature name
         prefix = feature[:3]

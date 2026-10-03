@@ -6,15 +6,15 @@
 #     Each molecule gets one RDKit conformer (ETKDGv3 + MMFF94s, flat 2D layout when
 #     embedding fails) and one pass through the frozen encoder.
 #
-#     Output columns are monroe_000..monroe_719; a molecule that cannot be featurized
-#     keeps its row with NaN in all of them.
+#     Output is one compressed feature column, `monroe`: the 720 values as comma-separated
+#     floats (the model templates expand it, as they do the fingerprint endpoint's
+#     `fingerprint`). A molecule that cannot be featurized keeps its row with NaN there.
 #
 import argparse
 import os
 from io import StringIO
 import logging
 import pandas as pd
-import numpy as np
 import json
 import torch
 from rdkit import Chem
@@ -41,7 +41,7 @@ ENCODER_CONFIG = {
     "zero_vn_edge_rbf": False,
 }
 ENCODER_FILE = "monroe_encoder.pt"
-EMBEDDING_COLUMNS = [f"monroe_{i:03d}" for i in range(ENCODER_CONFIG["hidden_dim"])]
+EMBEDDING_COLUMN = "monroe"
 
 
 def build_encoder() -> GritTransformer:
@@ -158,11 +158,13 @@ def predict_fn(df, model):
     # Featurize, then embed the molecules that produced a graph in one batch
     graphs = [build_graph(smiles) if isinstance(smiles, str) else None for smiles in df["smiles"]]
     rows = [i for i, graph in enumerate(graphs) if graph is not None]
-    embeddings = np.full((len(df), len(EMBEDDING_COLUMNS)), np.nan, dtype=np.float32)
+    embeddings = [None] * len(df)
     if rows:
         with torch.no_grad():
-            embeddings[rows] = model(Batch.from_data_list([to_pyg(graphs[i]) for i in rows]))[0].numpy()
+            vectors = model(Batch.from_data_list([to_pyg(graphs[i]) for i in rows]))[0].numpy()
+        for i, vector in zip(rows, vectors):
+            embeddings[i] = ",".join(f"{v:.7g}" for v in vector)  # float32 carries ~7 significant digits
     if len(rows) < len(df):
         logger.warning(f"{len(df) - len(rows)} of {len(df)} molecules could not be featurized (NaN embedding)")
 
-    return pd.concat([df, pd.DataFrame(embeddings, columns=EMBEDDING_COLUMNS, index=df.index)], axis=1)
+    return df.assign(**{EMBEDDING_COLUMN: embeddings})
