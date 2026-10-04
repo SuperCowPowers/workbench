@@ -944,7 +944,7 @@ umap-learn==0.5.12
     # via
     #   -c ci/.uv-constraints.txt
     #   workbench (pyproject.toml)
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   -c ci/.uv-constraints.txt
     #   botocore
