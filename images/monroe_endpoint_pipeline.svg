@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400">
+  <defs>
+    <linearGradient id="mpInput" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#607D8B"/>
+      <stop offset="100%" stop-color="#455A64"/>
+    </linearGradient>
+    <linearGradient id="mpPrep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <linearGradient id="mpModel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9b59b6"/>
+      <stop offset="100%" stop-color="#7d3f96"/>
+    </linearGradient>
+    <marker id="mpArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="34" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">smiles-to-monroe-v1</text>
+  <text x="450" y="58" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="15">SMILES in, the 720-d Monroe embedding out as one compressed column</text>
+
+  <!-- Row 1: preparing the molecule -->
+  <rect x="45" y="86" width="230" height="86" rx="8" fill="url(#mpInput)"/>
+  <text x="160" y="114" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">SMILES</text>
+  <text x="160" y="137" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">a DataFrame with a</text>
+  <text x="160" y="156" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">smiles column</text>
+
+  <rect x="335" y="86" width="230" height="86" rx="8" fill="url(#mpPrep)"/>
+  <text x="450" y="114" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Standardize</text>
+  <text x="450" y="137" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">salts stripped, charges</text>
+  <text x="450" y="156" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">neutralized, one tautomer</text>
+
+  <rect x="625" y="86" width="230" height="86" rx="8" fill="url(#mpPrep)"/>
+  <text x="740" y="114" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">One 3D Conformer</text>
+  <text x="740" y="137" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">ETKDGv3 + MMFF94s, fixed seed</text>
+  <text x="740" y="156" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">flat 2D layout if it fails</text>
+
+  <line x1="275" y1="129" x2="329" y2="129" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#mpArrow)"/>
+  <line x1="565" y1="129" x2="619" y2="129" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#mpArrow)"/>
+
+  <!-- Snake down to row 2 -->
+  <path d="M740 172 L740 202 L160 202 L160 226" fill="none" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#mpArrow)"/>
+
+  <!-- Row 2: the frozen encoder -->
+  <rect x="45" y="232" width="230" height="86" rx="8" fill="url(#mpModel)"/>
+  <text x="160" y="260" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Molecular Graph</text>
+  <text x="160" y="283" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">atoms, bonds, and stereo</text>
+  <text x="160" y="302" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">edges for E/Z and R/S</text>
+
+  <rect x="335" y="232" width="230" height="86" rx="8" fill="url(#mpModel)"/>
+  <text x="450" y="260" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Monroe Encoder</text>
+  <text x="450" y="283" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">graph transformer, 58.7M</text>
+  <text x="450" y="302" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">parameters, frozen</text>
+
+  <rect x="625" y="232" width="230" height="86" rx="8" fill="#00d4aa" fill-opacity="0.14" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="740" y="260" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">monroe column</text>
+  <text x="740" y="283" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">720 floats, comma-separated</text>
+  <text x="740" y="302" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">a compressed feature</text>
+
+  <line x1="275" y1="275" x2="329" y2="275" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#mpArrow)"/>
+  <line x1="565" y1="275" x2="619" y2="275" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#mpArrow)"/>
+
+  <!-- Notes -->
+  <text x="450" y="352" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">The encoder was pretrained on ~81M PM6 molecules and 1.56M PubChem BioAssay compounds.</text>
+  <text x="450" y="374" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">A molecule that cannot be featurized keeps its row, with NaN in the monroe column.</text>
+</svg>

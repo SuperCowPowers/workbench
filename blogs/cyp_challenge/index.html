@@ -2399,10 +2399,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#calibration" class="md-nav__link">
+  <a href="#affine-recalibration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Calibration
+        Affine Recalibration
       
     </span>
   </a>
@@ -2477,6 +2477,34 @@
     
   
     Feature Endpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../monroe_tabicl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pretrained Embeddings + TabICL
   
 
     
@@ -5328,10 +5356,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#calibration" class="md-nav__link">
+  <a href="#affine-recalibration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Calibration
+        Affine Recalibration
       
     </span>
   </a>
@@ -5474,9 +5502,9 @@ explains why they go in as separate heads rather than as extra rows.</p>
 <p>The blind set is not a random draw. OpenADMET built it by hit expansion: the top 25 hits for CYP1A2, CYP2C9 and CYP3A4, then the top 10 catalog chemisimilars purchased for each, giving 750 compounds in dense structural clusters around potent molecules.</p>
 <p>Clustered around hits is not the same as active: analogs of a potent compound are mostly not potent, and CYP2D6 was not among the isoforms hits were selected on, so it got no enrichment at all. Every training label meanwhile survived two filters: a compound was screened because someone thought it might be active, and labelled only if its dose-response curve fit. Compounds that did nothing produce no curve and no label.</p>
 <p>The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. Solved against the blind half afterwards, the true centre is 3.107. The blind population is also <em>wider</em> on all four isoforms. Squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.</p>
-<h2 id="calibration">Calibration</h2>
-<p>Calibration here is the affine kind — shift and scale — not interval coverage.</p>
-<p>Predictions carry two independent things. Their <strong>order</strong>, which is the model, and their <strong>placement</strong> on the axis, which is not. R² decomposes exactly:</p>
+<h2 id="affine-recalibration">Affine Recalibration</h2>
+<p>Shift and scale only, not interval coverage.</p>
+<p>Predictions carry two independent things. Their <strong>order</strong>, which is the model, and their <strong>location and scale</strong> on the axis, which is not. R² decomposes exactly:</p>
 <div class="arithmatex">\[R^2 = 2\rho k - k^2 - b^2\]</div>
 <p>with ρ the Pearson correlation, <code>k = sd(pred)/sd(true)</code> the spread ratio, and <code>b</code> the mean offset in sd(true) units. Only ρ depends on the ordering; <code>k</code> and <code>b</code> come from an affine transform that touches no compound's rank. So <strong>R² ≤ ρ²</strong> is a hard ceiling, and a model far below its own ρ² is <em>mis-calibrated, not weak</em>. The decomposition is Murphy's (1988): the <code>k ≠ ρ</code> term is conditional bias, the <code>b</code> term unconditional bias.</p>
 <p>The optimum is <strong><code>k = ρ</code>, not <code>k = 1</code></strong>. Matching the spread of the truth is wrong: a model with ρ = 0.7 should be 70% as wide as reality, because shrinking toward the mean is the correct response to uncertainty. Raw predictions are narrower still.</p>

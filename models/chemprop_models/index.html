@@ -2629,6 +2629,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blogs/monroe_tabicl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pretrained Embeddings + TabICL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -5895,16 +5923,17 @@
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="foundation-weight-storage">Foundation Weight Storage</h3>
-<p>Registered foundation names (<code>"CheMeleon"</code>) resolve through three rungs, in order:</p>
+<p>Workbench publishes the registered foundation checkpoints (<code>"CheMeleon"</code>, plus the TabICL and Monroe weights) in its public bucket, so they work in any account with no setup. A name resolves through three rungs, in order:</p>
 <ol>
 <li><strong>Local cache</strong> — <code>~/.workbench/foundation/</code></li>
-<li><strong>Workbench bucket</strong> — <code>s3://$WORKBENCH_BUCKET/foundation-models/&lt;model&gt;/&lt;release&gt;/&lt;file&gt;.pt</code></li>
-<li><strong>Public origin URL</strong> — last resort, logs a warning</li>
+<li><strong>Account mirror</strong> (optional) — <code>s3://$WORKBENCH_BUCKET/foundation-models/&lt;model&gt;/&lt;release&gt;/&lt;file&gt;</code></li>
+<li><strong>Public bucket</strong> — <code>s3://workbench-public-data/foundation-models/&lt;model&gt;/&lt;release&gt;/&lt;file&gt;</code>, read anonymously</li>
 </ol>
-<p>Training jobs receive <code>WORKBENCH_BUCKET</code> from the container environment, so rung 2 works out of the box once the weights are staged. Stage them with:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--model<span class="w"> </span>chemeleon<span class="w"> </span>--file<span class="w"> </span>chemeleon_mp.pt
+<p>Every download is checked against the checksum in the registry (<code>src/workbench/training/foundation_models.py</code>). A key carries its release and is never overwritten, so new weights arrive as a new key and a new registry entry in a Workbench release.</p>
+<p>The mirror is for an account whose training jobs can't reach public S3. Training jobs receive <code>WORKBENCH_BUCKET</code> from the container environment, so a mirror is used as soon as it's staged:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--model<span class="w"> </span>chemeleon<span class="w"> </span>--file<span class="w"> </span>chemeleon_mp.pt<span class="w"> </span>--bucket<span class="w"> </span>my-workbench-bucket
 </span></code></pre></div>
-<p>The script verifies size and checksum against the registry in <code>src/workbench/training/foundation_models.py</code>, confirms the file loads as the expected checkpoint, then uploads the <code>.pt</code> plus a <code>SOURCE.json</code> provenance sidecar. Run with <code>--dry-run</code> to preview and <code>--force</code> to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.</p>
+<p>The script verifies size and checksum against the registry, confirms the file loads as the expected checkpoint, then uploads it plus a <code>SOURCE.json</code> provenance sidecar. Run with <code>--dry-run</code> to preview and <code>--force</code> to replace an existing object.</p>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <p>All ChemProp model types share a common set of tunable hyperparameters:</p>
 <table style="width: 100%;">

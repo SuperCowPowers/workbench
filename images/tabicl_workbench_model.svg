@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 690" width="900" height="690">
+  <defs>
+    <linearGradient id="wmInput" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#607D8B"/>
+      <stop offset="100%" stop-color="#455A64"/>
+    </linearGradient>
+    <linearGradient id="wmReduce" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9b59b6"/>
+      <stop offset="100%" stop-color="#7d3f96"/>
+    </linearGradient>
+    <linearGradient id="wmFit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <linearGradient id="wmUse" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff9f43"/>
+      <stop offset="100%" stop-color="#cc7a30"/>
+    </linearGradient>
+    <marker id="wmArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="34" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">A TabICL Model in Workbench</text>
+  <text x="450" y="58" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="15">what to_model() builds, and how to_endpoint() picks the endpoint</text>
+
+  <!-- Inputs and optional reducer -->
+  <rect x="250" y="82" width="400" height="62" rx="8" fill="url(#wmInput)"/>
+  <text x="450" y="108" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Training Rows</text>
+  <text x="450" y="130" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">compressed features expanded into columns</text>
+
+  <line x1="450" y1="144" x2="450" y2="166" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+
+  <rect x="250" y="172" width="400" height="62" rx="8" fill="url(#wmReduce)"/>
+  <text x="450" y="198" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Feature Reducer (optional)</text>
+  <text x="450" y="220" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">top_variance_features or pca_components, fit with each model</text>
+
+  <line x1="450" y1="234" x2="450" y2="252" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="240" y1="252" x2="660" y2="252" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="240" y1="252" x2="240" y2="270" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+  <line x1="660" y1="252" x2="660" y2="270" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+
+  <!-- Two fits -->
+  <rect x="60" y="276" width="360" height="86" rx="8" fill="url(#wmFit)"/>
+  <text x="240" y="304" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">5-Fold Cross-Validation</text>
+  <text x="240" y="327" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">fold models, no cache</text>
+  <text x="240" y="346" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">an out-of-fold prediction for every row</text>
+
+  <rect x="480" y="276" width="360" height="86" rx="8" fill="url(#wmFit)"/>
+  <text x="660" y="304" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Served Model</text>
+  <text x="660" y="327" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">one fit on every training row</text>
+  <text x="660" y="346" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">context cached, so a request costs only its rows</text>
+
+  <line x1="240" y1="362" x2="240" y2="392" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+  <line x1="660" y1="362" x2="660" y2="392" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+
+  <rect x="60" y="398" width="360" height="86" rx="8" fill="url(#wmUse)"/>
+  <text x="240" y="426" text-anchor="middle" fill="#3a2a12" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Metrics + UQ Calibration</text>
+  <text x="240" y="449" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">cross-fold metrics, and the confidence</text>
+  <text x="240" y="468" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">model every framework uses</text>
+
+  <rect x="480" y="398" width="360" height="86" rx="8" fill="url(#wmUse)"/>
+  <text x="660" y="426" text-anchor="middle" fill="#3a2a12" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Memory Probe</text>
+  <text x="660" y="449" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">a fresh process loads the model and</text>
+  <text x="660" y="468" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">predicts: peak memory to serve it</text>
+
+  <line x1="240" y1="484" x2="240" y2="506" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+  <line x1="660" y1="484" x2="660" y2="506" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+
+  <!-- Bundle -->
+  <rect x="60" y="512" width="780" height="62" rx="8" fill="#00d4aa" fill-opacity="0.10" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="450" y="538" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Model Bundle</text>
+  <text x="450" y="560" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">TabICL with its pretrained weights  ·  reducer  ·  UQ model  ·  measured serving memory</text>
+
+  <!-- Endpoint choice -->
+  <line x1="450" y1="574" x2="450" y2="592" stroke="#8b95a3" stroke-width="1.8"/>
+  <text x="462" y="589" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">to_endpoint()</text>
+  <line x1="240" y1="600" x2="660" y2="600" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="450" y1="592" x2="450" y2="600" stroke="#8b95a3" stroke-width="1.8"/>
+  <line x1="240" y1="600" x2="240" y2="614" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+  <line x1="660" y1="600" x2="660" y2="614" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#wmArrow)"/>
+
+  <rect x="60" y="620" width="360" height="58" rx="8" fill="#3a3f4a" stroke="#00d4aa" stroke-width="1.2"/>
+  <text x="240" y="644" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="bold">5.5 GB or less: Serverless</text>
+  <text x="240" y="665" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">6144 MB, scales to zero when idle</text>
+
+  <rect x="480" y="620" width="360" height="58" rx="8" fill="#3a3f4a" stroke="#ff9f43" stroke-width="1.2"/>
+  <text x="660" y="644" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="bold">Over 5.5 GB: Real-Time</text>
+  <text x="660" y="665" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">serverless=False, instance sized from the probe</text>
+</svg>
