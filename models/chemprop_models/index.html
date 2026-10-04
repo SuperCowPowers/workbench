@@ -5931,9 +5931,9 @@
 </ol>
 <p>Every download is checked against the checksum in the registry (<code>src/workbench/training/foundation_models.py</code>). A key carries its release and is never overwritten, so new weights arrive as a new key and a new registry entry in a Workbench release.</p>
 <p>The mirror is for an account whose training jobs can't reach public S3. Training jobs receive <code>WORKBENCH_BUCKET</code> from the container environment, so a mirror is used as soon as it's staged:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--model<span class="w"> </span>chemeleon<span class="w"> </span>--file<span class="w"> </span>chemeleon_mp.pt<span class="w"> </span>--bucket<span class="w"> </span>my-workbench-bucket
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python<span class="w"> </span>scripts/admin/push_foundation_models.py<span class="w"> </span>--bucket<span class="w"> </span>my-workbench-bucket
 </span></code></pre></div>
-<p>The script verifies size and checksum against the registry, confirms the file loads as the expected checkpoint, then uploads it plus a <code>SOURCE.json</code> provenance sidecar. Run with <code>--dry-run</code> to preview and <code>--force</code> to replace an existing object.</p>
+<p>For each registered checkpoint the script skips one the bucket already has, copies the rest from the public bucket, verifies size, checksum, and that the file loads as the expected checkpoint, then uploads it plus a <code>SOURCE.json</code> provenance sidecar. <code>--model</code> limits it to one checkpoint, <code>--dry-run</code> previews, and rerunning it is harmless.</p>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <p>All ChemProp model types share a common set of tunable hyperparameters:</p>
 <table style="width: 100%;">
