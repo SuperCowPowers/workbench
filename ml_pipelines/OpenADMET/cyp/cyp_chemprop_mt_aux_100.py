@@ -24,6 +24,8 @@ rather than spending a submission to rediscover it.
 Build the FeatureSet first: python cyp_aux_features.py
 """
 
+import argparse
+
 import numpy as np
 from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.utils.multi_task import compute_inverse_count_task_weights
@@ -39,6 +41,16 @@ ALL_TARGETS = TARGETS + AUX_TARGETS
 
 AUX_WEIGHT = 0.3
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--name-suffix",
+    default=None,
+    help="Append to the model name, so a rebuild lands beside the existing model rather than replacing it. "
+    "A retrain redraws the fold split, so its out-of-fold numbers move within seed noise",
+)
+args = parser.parse_args()
+model_name = MODEL_NAME + (f"-{args.name_suffix.strip('-')}" if args.name_suffix else "")
+
 fs = FeatureSet(FS_NAME)
 df = fs.pull_dataframe()
 
@@ -50,7 +62,7 @@ print(f"log2fc weight: {aux_weight:.3f} each ({AUX_WEIGHT} x mean pIC50 weight)"
 print(f"Training on all {len(df)} rows — no holdout")
 
 model = fs.to_model(
-    name=MODEL_NAME,
+    name=model_name,
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],

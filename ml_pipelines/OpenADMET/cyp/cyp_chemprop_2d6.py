@@ -141,6 +141,12 @@ parser.add_argument(
     "'tdi' trains on the TDI arm instead, to be scored against the direct labels",
 )
 parser.add_argument(
+    "--name-suffix",
+    default=None,
+    help="Append to the model name, so a rebuild lands beside the existing model rather than replacing it. "
+    "A retrain redraws the fold split, so its out-of-fold numbers move within seed noise",
+)
+parser.add_argument(
     "--foundation",
     action="store_true",
     help="Start from the CheMeleon pretrained encoder instead of training one from scratch",
@@ -183,6 +189,8 @@ deep_weight = args.low_weight if args.deep_weight is None else args.deep_weight
 weighted = args.low_weight != 1.0 or deep_weight != 1.0
 
 model_name = f"cyp-reg-chemprop-2d6-{args.scope}"
+if args.name_suffix:
+    model_name += f"-{args.name_suffix.strip('-')}"
 if args.foundation:
     model_name += f"-chemeleon-fz{args.freeze_epochs}"
 if args.scope == "pooled" and args.public_weight != 1.0:
