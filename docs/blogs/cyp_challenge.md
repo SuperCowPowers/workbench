@@ -63,11 +63,9 @@ The blind set is not a random draw. OpenADMET built it by hit expansion: the top
 
 Clustered around hits is not the same as active: analogs of a potent compound are mostly not potent, and CYP2D6 was not among the isoforms hits were selected on, so it got no enrichment at all. Every training label meanwhile survived two filters: a compound was screened because someone thought it might be active, and labelled only if its dose-response curve fit. Compounds that did nothing produce no curve and no label.
 
-The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. Solved against the blind half afterwards, the true centre is 3.107. The blind population is also *wider* on all four isoforms. Squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.
+The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. The blind population should also be *wider*: squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.
 
 ## Affine Recalibration
-
-Shift and scale only, not interval coverage.
 
 Predictions carry two independent things. Their **order**, which is the model, and their **location and scale** on the axis, which is not. R² decomposes exactly:
 
@@ -75,17 +73,17 @@ $$R^2 = 2\rho k - k^2 - b^2$$
 
 with ρ the Pearson correlation, `k = sd(pred)/sd(true)` the spread ratio, and `b` the mean offset in sd(true) units. Only ρ depends on the ordering; `k` and `b` come from an affine transform that touches no compound's rank. So **R² ≤ ρ²** is a hard ceiling, and a model far below its own ρ² is *mis-calibrated, not weak*. The decomposition is Murphy's (1988): the `k ≠ ρ` term is conditional bias, the `b` term unconditional bias.
 
-The optimum is **`k = ρ`, not `k = 1`**. Matching the spread of the truth is wrong: a model with ρ = 0.7 should be 70% as wide as reality, because shrinking toward the mean is the correct response to uncertainty. Raw predictions are narrower still.
+The optimum is **`k = ρ`, not `k = 1`**. Matching the spread of the truth is wrong: a model with correlation ρ should be ρ times as wide as reality, because shrinking toward the mean is the correct response to uncertainty. Raw predictions are narrower still.
 
 So: estimate the target population's centre and spread, then calibrate each isoform onto it with spread `ρ·sd`.
 
-<img src="../../images/cyp_calibration_applied.svg" alt="Four panels, one per isoform, each overlaying raw blind-set predictions, the same predictions after calibration, and the blind population curve. CYP1A2, CYP2C9 and CYP3A4 shift and widen onto their population curves. CYP2D6 also moves down and widens but deliberately stops short, sitting above the population centre and narrower than it, because that is where the scored metric is optimised rather than R-squared." style="width: 100%; height: auto; display: block;">
+<img src="../../images/cyp_affine_recalibration.svg" alt="Conceptual diagram of affine recalibration. Left panel: raw predictions form a narrow distribution centred to the right of a wider target population. Right panel: after the map y-prime = mu_t + rho times sigma_t times (y-hat minus mu_p) over sigma_p, the predictions are centred on the target mean with spread rho times sigma_t, still narrower than the target. Below, a rank strip connects each raw prediction to its recalibrated value; no lines cross, so Spearman and Kendall are unchanged while R-squared and the error metrics are not." style="width: 100%; height: auto; display: block;">
 
-CYP2D6 shows the effect at full scale: raw predictions spike at 4.5 with sd 0.49 against a population centred at 3.1 with sd 1.60. It never calls a compound a non-inhibitor, and predicts into under a third of the actual range.
+CYP2D6 shows the effect at full scale: raw predictions sit in a narrow band well above the centre the qHTS prior implies, and the model never calls a compound a non-inhibitor.
 
 Calibration changes the score on identical weights and an identical ordering. Spearman and Kendall come back bit-identical under an affine transform, which doubles as the integrity check: if they move, the bug is in the submission pipeline.
 
-**The catch.** The calibration that maximises R² does not minimise the scored metric. Soft-threshold RAE is zero anywhere inside a compound's credible interval, and low-activity compounds carry wide intervals, so predicting high is nearly free while predicting low is punished by the actives. Calibrating CYP2D6 onto its true centre raises R² and *worsens* ST-RAE; there the two objectives point in opposite directions.
+**The catch.** The calibration that maximises R² does not minimise the scored metric. Soft-threshold RAE is zero anywhere inside a compound's credible interval, and low-activity compounds carry wide intervals, so predicting high is nearly free while predicting low is punished by the actives. The ST-RAE optimum therefore sits above the population centre, and on CYP2D6, the lowest-centred isoform, the two objectives point in opposite directions.
 
 ## Open Problems
 
@@ -93,7 +91,7 @@ Calibration changes the score on identical weights and an identical ordering. Sp
 
 **Both rulers are underpowered.** Repeated training runs of one configuration at different seeds disagree by more than candidate models do, so out-of-fold cross-validation cannot resolve the differences now being chased. The leaderboard is not much better: a Spearman's standard error is largest where the correlation is weakest, making CYP2D6 the worst-resolved isoform on both. Anything below the noise floor is treated as unmeasured rather than as a result.
 
-**Where the ST-RAE optimum sits.** Known by sampling calibrations against the board, not derived. A credible-interval width model would give it directly.
+**Where the ST-RAE optimum sits.** The argument above gives its direction, not its distance. A credible-interval width model would give it directly.
 
 ## Reproducing This
 
@@ -113,9 +111,8 @@ python ml_pipelines/OpenADMET/cyp/cyp_chemprop_union.py --public-weight 0.30  # 
 python ml_pipelines/OpenADMET/cyp/cyp_chemprop_2d6.py --scope isoform
 python ml_pipelines/OpenADMET/cyp/cyp_chemprop_2d6.py --scope single
 
-# Average their predictions over the 750 blinded compounds, then calibrate them
+# Average their predictions over the 750 blinded compounds
 python ml_pipelines/OpenADMET/cyp/scripts/cyp_ensemble_submit.py
-python ml_pipelines/OpenADMET/cyp/scripts/cyp_recalibrate.py --source outputs/<file> --strae
 ```
 
 Submission files are checked with OpenADMET's own validator, vendored from their tutorial repository, so the gate before uploading is the same code the platform runs.

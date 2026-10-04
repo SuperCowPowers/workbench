@@ -249,10 +249,10 @@ Every download is checked against the checksum in the registry (`src/workbench/t
 The mirror is for an account whose training jobs can't reach public S3. Training jobs receive `WORKBENCH_BUCKET` from the container environment, so a mirror is used as soon as it's staged:
 
 ```bash
-python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt --bucket my-workbench-bucket
+python scripts/admin/push_foundation_models.py --bucket my-workbench-bucket
 ```
 
-The script verifies size and checksum against the registry, confirms the file loads as the expected checkpoint, then uploads it plus a `SOURCE.json` provenance sidecar. Run with `--dry-run` to preview and `--force` to replace an existing object.
+For each registered checkpoint the script skips one the bucket already has, copies the rest from the public bucket, verifies size, checksum, and that the file loads as the expected checkpoint, then uploads it plus a `SOURCE.json` provenance sidecar. `--model` limits it to one checkpoint, `--dry-run` previews, and rerunning it is harmless.
 
 ## Hyperparameters
 
