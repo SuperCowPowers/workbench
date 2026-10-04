@@ -65,11 +65,11 @@ Clustered around hits is not the same as active: analogs of a potent compound ar
 
 The gap is estimable before submitting anything. The PubChem qHTS panel puts CYP2D6 inactivity near 65%; a set that inactive centres around pIC50 3.7, against the 4.69 a model trained on fitted curves predicts. Solved against the blind half afterwards, the true centre is 3.107. The blind population is also *wider* on all four isoforms. Squared-error models shrink toward the mean, and a label set built from successful fits is already narrower than the population it came from.
 
-## Calibration
+## Affine Recalibration
 
-Calibration here is the affine kind — shift and scale — not interval coverage.
+Shift and scale only, not interval coverage.
 
-Predictions carry two independent things. Their **order**, which is the model, and their **placement** on the axis, which is not. R² decomposes exactly:
+Predictions carry two independent things. Their **order**, which is the model, and their **location and scale** on the axis, which is not. R² decomposes exactly:
 
 $$R^2 = 2\rho k - k^2 - b^2$$
 
