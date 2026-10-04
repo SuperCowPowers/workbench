@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 490" width="900" height="490">
+  <defs>
+    <linearGradient id="icContext" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <linearGradient id="icQuery" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff9f43"/>
+      <stop offset="100%" stop-color="#cc7a30"/>
+    </linearGradient>
+    <linearGradient id="icStage" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9b59b6"/>
+      <stop offset="100%" stop-color="#7d3f96"/>
+    </linearGradient>
+    <marker id="icArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#8b95a3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <text x="450" y="34" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">How TabICL Predicts</text>
+  <text x="450" y="58" text-anchor="middle" fill="#999" font-family="Helvetica, Arial" font-size="15">your training rows are the context; nothing is trained on your data</text>
+
+  <!-- Inputs -->
+  <rect x="90" y="86" width="330" height="88" rx="8" fill="url(#icContext)"/>
+  <text x="255" y="114" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Context: Training Rows</text>
+  <text x="255" y="137" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">features X and target y</text>
+  <text x="255" y="157" text-anchor="middle" fill="#e4ecf7" font-family="Helvetica, Arial" font-size="13">held by the model after fit()</text>
+
+  <rect x="480" y="86" width="330" height="88" rx="8" fill="url(#icQuery)"/>
+  <text x="645" y="114" text-anchor="middle" fill="#3a2a12" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Query Rows</text>
+  <text x="645" y="137" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">features X only</text>
+  <text x="645" y="157" text-anchor="middle" fill="#4a3618" font-family="Helvetica, Arial" font-size="13">the compounds to predict</text>
+
+  <line x1="255" y1="174" x2="255" y2="208" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#icArrow)"/>
+  <line x1="645" y1="174" x2="645" y2="208" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#icArrow)"/>
+
+  <!-- The pretrained network -->
+  <rect x="70" y="214" width="760" height="160" rx="10" fill="#3a3f4a" stroke="#8b95a3" stroke-width="1.2"/>
+  <text x="450" y="242" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Pretrained TabICL Network (frozen)</text>
+
+  <rect x="95" y="262" width="210" height="88" rx="8" fill="url(#icStage)"/>
+  <text x="200" y="290" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="15" font-weight="bold">Column Embedding</text>
+  <text x="200" y="313" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">each value, read against</text>
+  <text x="200" y="332" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">its column's distribution</text>
+
+  <rect x="345" y="262" width="210" height="88" rx="8" fill="url(#icStage)"/>
+  <text x="450" y="290" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="15" font-weight="bold">Row Interaction</text>
+  <text x="450" y="313" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">features within a row</text>
+  <text x="450" y="332" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">become one row vector</text>
+
+  <rect x="595" y="262" width="210" height="88" rx="8" fill="url(#icStage)"/>
+  <text x="700" y="290" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="15" font-weight="bold">In-Context Learning</text>
+  <text x="700" y="313" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">query rows attend to the</text>
+  <text x="700" y="332" text-anchor="middle" fill="#eee" font-family="Helvetica, Arial" font-size="13">labeled context rows</text>
+
+  <line x1="305" y1="306" x2="339" y2="306" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#icArrow)"/>
+  <line x1="555" y1="306" x2="589" y2="306" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#icArrow)"/>
+
+  <line x1="450" y1="374" x2="450" y2="400" stroke="#8b95a3" stroke-width="1.8" marker-end="url(#icArrow)"/>
+
+  <!-- Output -->
+  <rect x="200" y="406" width="500" height="64" rx="8" fill="#00d4aa" fill-opacity="0.14" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="450" y="432" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="16" font-weight="bold">Prediction + Predictive Quantiles</text>
+  <text x="450" y="454" text-anchor="middle" fill="#9aa5b1" font-family="Helvetica, Arial" font-size="13">one forward pass per request, averaged over 8 ensemble members</text>
+</svg>

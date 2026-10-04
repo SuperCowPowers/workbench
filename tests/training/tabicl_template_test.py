@@ -109,8 +109,10 @@ def test_generated_script_trains_and_serves(tmp_path, monkeypatch):
     assert (out["prediction_std"] > 0).all()
 
 
+@pytest.mark.medium
 def test_top_variance_features_on_a_compressed_embedding(tmp_path, monkeypatch):
     """A compressed float embedding is expanded, reduced to its top-variance columns, and served from raw input"""
+    pytest.importorskip("tabicl")
     rng = np.random.default_rng(0)
     emb = rng.normal(size=(240, 6)) * np.array([0.01, 3.0, 0.01, 2.0, 0.01, 1.0])  # columns 1, 3, 5 vary most
     df = pd.DataFrame({"id": [f"m{i}" for i in range(240)], "f0": rng.normal(size=240)})
@@ -139,7 +141,9 @@ def test_top_variance_features_on_a_compressed_embedding(tmp_path, monkeypatch):
     assert len(out) == 10 and out["prediction"].notna().all()
 
 
+@pytest.mark.medium
 def test_top_variance_features_needs_a_compressed_feature(tmp_path):
+    pytest.importorskip("tabicl")
     _, train_dir = _training_csv(tmp_path)
     script = _generate(tmp_path, hyperparameters={"top_variance_features": 3})
     result, _ = _train(script, tmp_path, train_dir)

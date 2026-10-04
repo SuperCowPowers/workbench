@@ -84,9 +84,8 @@ nothing in the output marks that row.
 
 - The encoder and featurizer are vendored in `model_scripts/monroe/` and kept verbatim
   apart from the lines marked `Workbench:` (the directory is excluded from lint).
-- The weights are a registered foundation checkpoint that the model's training step
-  copies into the model artifact. Stage them once per account before deploying:
-  `python scripts/admin/push_foundation_models.py --model monroe --file weights.pt`
+- The weights are a registered foundation checkpoint, read from Workbench's public bucket,
+  that the model's training step copies into the model artifact. No setup per account.
 - The model is `ModelType.TRANSFORMER` + `ModelFramework.PYTORCH`, which selects the
   `pytorch_chem` images (the encoder needs torch and `torch-geometric`).
 

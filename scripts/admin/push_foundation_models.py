@@ -1,8 +1,10 @@
-"""Stage foundation-model checkpoints in the Workbench bucket.
+"""Publish foundation-model checkpoints to Workbench's public bucket, or stage an account mirror.
 
 :func:`workbench.training.foundation_models.resolve_foundation_checkpoint` walks
-local cache -> Workbench S3 -> public origin URL. This script populates the S3 rung,
-so training jobs never depend on the public internet.
+local cache -> account mirror -> public bucket. By default this script publishes to the
+public bucket (``workbench-public-data``, which needs SuperCowPowers write access);
+``--bucket`` stages a mirror in an account bucket instead, for an account that can't
+reach public S3.
 
 The download is **not** done here — fetch the checkpoint yourself (the registry entry's
 ``origin_url``), then point this script at the local file::
@@ -10,15 +12,16 @@ The download is **not** done here — fetch the checkpoint yourself (the registr
     curl -O https://zenodo.org/records/15460715/files/chemeleon_mp.pt
     python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt
 
-    python scripts/admin/push_foundation_models.py --model tabicl --file tabicl-regressor-v2-20260212.ckpt
+    # an account mirror
+    python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt --bucket my-workbench-bucket
 
     # inspect + hash, no upload
     python scripts/admin/push_foundation_models.py --model tabicl --file tabicl-regressor-v2-20260212.ckpt --dry-run
 
 Two objects are written per checkpoint, at the registry entry's ``s3_key``::
 
-    s3://$WORKBENCH_BUCKET/foundation-models/chemeleon/15460715/chemeleon_mp.pt
-    s3://$WORKBENCH_BUCKET/foundation-models/chemeleon/15460715/SOURCE.json
+    s3://workbench-public-data/foundation-models/chemeleon/15460715/chemeleon_mp.pt
+    s3://workbench-public-data/foundation-models/chemeleon/15460715/SOURCE.json
 
 The upload refuses to clobber an existing object unless ``--force`` is given. The
 file's md5 and byte size are checked against the registry's expected values, and its
@@ -28,7 +31,6 @@ structural check is skipped with a warning (the md5/size check still runs).
 """
 
 import argparse
-import hashlib
 import json
 import logging
 import sys
@@ -39,30 +41,14 @@ import boto3
 from botocore.exceptions import ClientError
 
 from workbench.training.foundation_models import (
+    PUBLIC_BUCKET,
+    file_hash,
     foundation_entry,
     known_foundation_models,
-    workbench_bucket,
 )
 
 log = logging.getLogger("workbench")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-
-def hash_of(path: Path, algorithm: str = "sha256") -> str:
-    """Streaming hash of a file (these checkpoints are tens of MB).
-
-    Args:
-        path (Path): File to hash.
-        algorithm (str, optional): Any :mod:`hashlib` name. Defaults to "sha256".
-
-    Returns:
-        str: Hex digest.
-    """
-    digest = hashlib.new(algorithm)
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def check_integrity(path: Path, entry: dict) -> dict:
@@ -83,7 +69,7 @@ def check_integrity(path: Path, entry: dict) -> dict:
         ValueError: If size or md5 disagrees with the registry.
     """
     size = path.stat().st_size
-    md5 = hash_of(path, "md5")
+    md5 = file_hash(path, "md5")
     expected_size = entry.get("expected_size_bytes")
     expected_md5 = entry.get("expected_md5")
 
@@ -171,7 +157,7 @@ def push(model: str, local_file: Path, bucket: str, dry_run: bool, force: bool) 
 
     integrity = check_integrity(local_file, entry)
     details = verify_checkpoint(local_file, entry)
-    checksum = hash_of(local_file, "sha256")
+    checksum = file_hash(local_file, "sha256")
     print(f"  sha256: {checksum}")
 
     sidecar = {
@@ -206,7 +192,7 @@ def push(model: str, local_file: Path, bucket: str, dry_run: bool, force: bool) 
         ContentType="application/json",
     )
     print(f"  uploaded {sidecar_key}")
-    print(f"\n  Training jobs will now resolve '{model}' from S3 instead of {entry['origin_url']}")
+    print(f"\n  Training jobs can now resolve '{model}' from s3://{bucket}/{key}")
     return 0
 
 
@@ -216,18 +202,15 @@ def main() -> int:
     parser.add_argument(
         "--model", required=True, choices=known_foundation_models(), help="Registered foundation model name"
     )
-    parser.add_argument("--bucket", default=None, help="Override the Workbench bucket")
+    parser.add_argument(
+        "--bucket", default=PUBLIC_BUCKET, help=f"An account bucket to stage a mirror in (default: {PUBLIC_BUCKET})"
+    )
     parser.add_argument("--dry-run", action="store_true", help="Verify and hash, but do not upload")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing S3 object")
     args = parser.parse_args()
 
-    bucket = args.bucket or workbench_bucket()
-    if not bucket:
-        log.error("No WORKBENCH_BUCKET in the environment or Workbench config — pass --bucket")
-        return 1
-
     try:
-        return push(args.model, args.file, bucket, args.dry_run, args.force)
+        return push(args.model, args.file, args.bucket, args.dry_run, args.force)
     except ValueError as e:
         log.error(f"\n  REFUSING TO STAGE: {e}")
         return 1

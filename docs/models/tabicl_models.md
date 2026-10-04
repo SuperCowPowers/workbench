@@ -1,6 +1,6 @@
 # TabICL Models
 
-[TabICL](https://github.com/soda-inria/tabicl) is a tabular foundation model: a transformer pretrained on millions of synthetic tables. Workbench supports it as a regression framework, with the same training, deployment, inference, and confidence scoring as every other framework.
+[TabICL](https://github.com/soda-inria/tabicl) is a tabular foundation model: a transformer pretrained on synthetic tables. Workbench supports it as a regression framework, with the same training, deployment, inference, and confidence scoring as every other framework.
 
 TabICL learns *in context*. Nothing is trained on your data; the model reads your training rows at prediction time and predicts from them in one forward pass. That makes it quick to build and strong on small and medium datasets, and it changes how the model is served (see [Endpoints](#endpoints-serverless-or-real-time)).
 
@@ -79,14 +79,16 @@ TabICL is pretrained on tables of up to 100 columns. More features work, and the
     model = fs.to_model(
         ...,
         model_framework=ModelFramework.TABICL,
-        feature_list=["monroe", "lfc_8um_readout", "lfc_33um_readout"],
+        feature_list=["monroe", "logp"],
         hyperparameters={"top_variance_features": 100},  # 720 embedding columns -> 100
     )
     ```
 
-    On PXR, TabICL on the Monroe embedding plus two readouts scored RAE 0.537 with the top 100 columns, 0.540 with 360, and 0.550 with all 720 (three seeds each, 253 held-out compounds). Those differences are within that test set's noise; fewer columns also means less serving memory.
+    In our tests, 100 columns did as well as 360 or all 720, within test-set noise, and needs the least serving memory.
 
 - `pca_components` standardizes every feature and projects them all onto this many components. PCA needs numeric features, so it can't be combined with categorical columns.
+
+The [Pretrained Embeddings + Tabular Foundation Models](../blogs/monroe_tabicl.md) blog walks through the Monroe embedding endpoint and pairing it with TabICL.
 
 ## Endpoints: Serverless or Real-Time
 
@@ -135,19 +137,13 @@ SHAP values come from TabICL's own explainer and are stored with the model like 
 
 ## Pretrained Weights
 
-Training resolves the TabICL checkpoint the same way as other foundation weights:
+Training resolves the TabICL checkpoint the same way as other foundation weights, with no setup:
 
 1. **Local cache** — `~/.workbench/foundation/`
-2. **Workbench bucket** — `s3://$WORKBENCH_BUCKET/foundation-models/tabicl/...`
-3. **Public origin** (Hugging Face) — last resort, logs a warning
+2. **Account mirror** (optional) — `s3://$WORKBENCH_BUCKET/foundation-models/tabicl/...`
+3. **Public bucket** — `s3://workbench-public-data/foundation-models/tabicl/...`, read anonymously
 
-Stage the checkpoint in your bucket so training jobs don't depend on the public internet:
-
-```bash
-python scripts/admin/push_foundation_models.py --model tabicl --file tabicl-regressor-v2-20260212.ckpt
-```
-
-The served model includes the weights, so an endpoint never downloads anything.
+A mirror is only for an account whose training jobs can't reach public S3; see [Foundation Weight Storage](chemprop_models.md#foundation-weight-storage). The served model includes the weights, so an endpoint never downloads anything.
 
 ## Running Locally
 

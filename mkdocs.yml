@@ -68,6 +68,7 @@ nav:
     - A Weekend on the PXR Challenge: blogs/pxr_weekend_experiments.md
     - The CYP Challenge: blogs/cyp_challenge.md
     - Feature Endpoints: blogs/feature_endpoints.md
+    - Pretrained Embeddings + TabICL: blogs/monroe_tabicl.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 

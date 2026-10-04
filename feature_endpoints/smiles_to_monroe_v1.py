@@ -3,8 +3,8 @@
 Salts are removed. Takes a SMILES string and computes the 720-d embedding of the
 frozen Monroe encoder, returned as one compressed feature column ``monroe``
 (comma-separated floats; mark it with ``set_compressed_features``). The pretrained weights
-come from the foundation checkpoint registry and travel in the model artifact, so stage
-them first with ``scripts/admin/push_foundation_models.py --model monroe``.
+come from the foundation checkpoint registry (Workbench's public bucket) and travel in the
+model artifact.
 
 Created artifacts:  Model/Endpoint ``smiles-to-monroe-v1``
 """

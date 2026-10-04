@@ -80,6 +80,7 @@ Most clients use variants similar to those listed below but we have the flexibil
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-v1</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;"><em>Deprecated</em> — first-gen 3D set, still deployed for existing models and ablation</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-v2</td><td style="padding: 8px 16px;">26 3D descriptors</td><td style="padding: 8px 16px;">Curated GFN2-xTB set (electronic, surface, shape, pharmacophore) chosen orthogonal to 2D — recommended, async</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints-v1</td><td style="padding: 8px 16px;">4096-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-monroe-v1</td><td style="padding: 8px 16px;">720-dim Monroe embedding (one compressed column)</td><td style="padding: 8px 16px;">Pretrained molecular embedding, paired with a tabular model such as TabICL</td></tr>
   </tbody>
 </table>
 
@@ -96,6 +97,10 @@ The fingerprint endpoint computes **count fingerprints** rather than binary — 
 - **Count values** — stored as compressed uint8 arrays for efficient storage and transfer
 
 Fingerprint endpoints follow the same create-once, reuse-everywhere pattern as descriptor endpoints. See the [Fingerprint Models](../models/fingerprint_models.md) guide for full usage examples including creating the endpoint, computing fingerprints, and training models on them.
+
+### Embedding Endpoints
+
+**`smiles-to-monroe-v1`** returns the 720-dimensional embedding of the pretrained Monroe encoder, packed into one compressed column the same way the fingerprint endpoint packs its counts. See [Pretrained Embeddings + Tabular Foundation Models](monroe_tabicl.md) for the pipeline and for pairing it with TabICL.
 
 ## Why a Deployed Endpoint?
 

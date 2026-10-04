@@ -238,19 +238,21 @@ hyperparameters={
 
 ### Foundation Weight Storage
 
-Registered foundation names (`"CheMeleon"`) resolve through three rungs, in order:
+Workbench publishes the registered foundation checkpoints (`"CheMeleon"`, plus the TabICL and Monroe weights) in its public bucket, so they work in any account with no setup. A name resolves through three rungs, in order:
 
 1. **Local cache** — `~/.workbench/foundation/`
-2. **Workbench bucket** — `s3://$WORKBENCH_BUCKET/foundation-models/<model>/<release>/<file>.pt`
-3. **Public origin URL** — last resort, logs a warning
+2. **Account mirror** (optional) — `s3://$WORKBENCH_BUCKET/foundation-models/<model>/<release>/<file>`
+3. **Public bucket** — `s3://workbench-public-data/foundation-models/<model>/<release>/<file>`, read anonymously
 
-Training jobs receive `WORKBENCH_BUCKET` from the container environment, so rung 2 works out of the box once the weights are staged. Stage them with:
+Every download is checked against the checksum in the registry (`src/workbench/training/foundation_models.py`). A key carries its release and is never overwritten, so new weights arrive as a new key and a new registry entry in a Workbench release.
+
+The mirror is for an account whose training jobs can't reach public S3. Training jobs receive `WORKBENCH_BUCKET` from the container environment, so a mirror is used as soon as it's staged:
 
 ```bash
-python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt
+python scripts/admin/push_foundation_models.py --model chemeleon --file chemeleon_mp.pt --bucket my-workbench-bucket
 ```
 
-The script verifies size and checksum against the registry in `src/workbench/training/foundation_models.py`, confirms the file loads as the expected checkpoint, then uploads the `.pt` plus a `SOURCE.json` provenance sidecar. Run with `--dry-run` to preview and `--force` to replace an existing object. Until an install stages the weights, jobs fall back to the public origin — which is exactly the dependency staging removes.
+The script verifies size and checksum against the registry, confirms the file loads as the expected checkpoint, then uploads it plus a `SOURCE.json` provenance sidecar. Run with `--dry-run` to preview and `--force` to replace an existing object.
 
 ## Hyperparameters
 

@@ -1,19 +1,25 @@
 """Foundation-model checkpoint registry and resolver (deliberately dep-free).
 
-Pretrained checkpoints (CheMeleon, TabICL, Monroe) are published on the public internet,
-but a training job must never *depend* on that, so checkpoints are staged in the
-Workbench bucket and resolution walks three rungs:
+Pretrained checkpoints (CheMeleon, TabICL, Monroe) are published in Workbench's public
+bucket, so every account resolves the same bytes with no staging. Resolution walks three
+rungs:
 
-1. **local cache** — ``~/.workbench/foundation/<filename>``; the only rung that
-   survives *within* a container, and it is cold in every fresh training job.
-2. **Workbench S3** — ``s3://$WORKBENCH_BUCKET/foundation-models/...``; the
-   durable copy, inside the account, no public dependency.
-3. **origin URL** — the public internet, last resort, warns loudly. Pass
-   ``allow_origin=False`` to make a missing S3 copy a hard error instead.
+1. **local cache** — ``~/.workbench/foundation/<filename>``; the only rung that survives
+   *within* a container, and it is cold in every fresh training job.
+2. **account mirror** — ``s3://$WORKBENCH_BUCKET/foundation-models/...``; optional, for an
+   account that can't reach public S3 (a locked-down VPC).
+3. **public bucket** — ``s3://workbench-public-data/foundation-models/...``; anonymous
+   read, no AWS credentials needed.
 
-Populate rung 2 with ``scripts/admin/push_foundation_models.py``. A SageMaker training
-job has no site config, so it gets ``WORKBENCH_BUCKET`` from the ``ModelTrainer``
-environment set in ``features_to_model.py``.
+A key carries its release (``foundation-models/<model>/<version>/<file>``) and is never
+overwritten: new weights get a new key and a new registry entry in a Workbench release,
+so a mirror holds the same bytes as the public copy. Every download is checked against
+the entry's md5 before it enters the cache.
+
+Publish to the public bucket, or stage a mirror, with
+``scripts/admin/push_foundation_models.py``. A SageMaker training job has no site config,
+so it gets ``WORKBENCH_BUCKET`` from the ``ModelTrainer`` environment set in
+``features_to_model.py``.
 
 No ``torch``/``chemprop``/``tabicl`` imports here on purpose: the training cores
 (:mod:`workbench.training.chemprop_core`, :mod:`workbench.training.tabicl_core`) consume
@@ -23,6 +29,7 @@ from a laptop that has none of the training deps installed.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import shutil
@@ -33,18 +40,20 @@ log = logging.getLogger("workbench")
 
 FOUNDATION_PREFIX = "foundation-models"
 
-# name -> checkpoint metadata. `s3_key` pins the provenance id (Zenodo record) in
-# the path so a re-release lands beside the old copy instead of overwriting it.
+# Workbench's public bucket: anonymous read, the source of every registered checkpoint
+PUBLIC_BUCKET = "workbench-public-data"
+PUBLIC_BUCKET_REGION = "us-west-2"
+
+# name -> checkpoint metadata. `s3_key` (and `filename`, the local cache name) carry the
+# release, so new weights land beside the old copy instead of overwriting it. `origin_url`
+# records where the file was published, for the staging sidecar.
 FOUNDATION_MODELS = {
     "chemeleon": {
-        "filename": "chemeleon_mp.pt",
+        "filename": "chemeleon_mp-15460715.pt",
         "s3_key": f"{FOUNDATION_PREFIX}/chemeleon/15460715/chemeleon_mp.pt",
         "origin_url": "https://zenodo.org/records/15460715/files/chemeleon_mp.pt",
         "provenance_id": "zenodo-15460715",
         "description": "CheMeleon MPNN foundation weights (Zenodo record 15460715)",
-        # Expected integrity of the origin file, checked at staging time only (see
-        # scripts/admin/push_foundation_models.py). Reported by an operator, not
-        # verified in-account -- treat a mismatch as "investigate", not "impossible".
         "expected_md5": "6a80b54fdb7de37ef0374d302f01e8ce",
         "expected_size_bytes": 34859448,
         # Top-level keys a valid checkpoint carries, checked at staging time
@@ -111,7 +120,7 @@ def workbench_bucket() -> str:
     """
     # Placeholders from the bootstrap config (config_manager._load_bootstrap_config) are
     # NOT a bucket -- a container with no Workbench config yields "change_me", and trying
-    # to read s3://change_me/... just wastes a round trip before the origin fallback.
+    # to read s3://change_me/... just wastes a round trip before the public bucket.
     placeholders = {"change_me", "env-will-overwrite", ""}
 
     bucket = os.environ.get("WORKBENCH_BUCKET")
@@ -121,29 +130,13 @@ def workbench_bucket() -> str:
         from workbench.utils.config_manager import ConfigManager
 
         bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
-    except Exception as e:  # no config file, unreadable, etc. — S3 rung just gets skipped
-        log.warning(f"Could not resolve WORKBENCH_BUCKET from config: {e}")
+    except Exception as e:  # no config file, unreadable, etc. — the mirror rung just gets skipped
+        log.info(f"No WORKBENCH_BUCKET from config ({e}); skipping the account mirror")
         return None
     if bucket in placeholders:
-        log.warning(f"WORKBENCH_BUCKET is unset/placeholder ({bucket!r}) — skipping the staged S3 copy")
+        log.info(f"WORKBENCH_BUCKET is unset/placeholder ({bucket!r}); skipping the account mirror")
         return None
     return bucket
-
-
-def foundation_s3_uri(name: str, bucket: str = None) -> str:
-    """Full ``s3://`` URI of the staged checkpoint.
-
-    Args:
-        name (str): Foundation model name.
-        bucket (str, optional): Override the Workbench bucket.
-
-    Returns:
-        str: The S3 URI, or None if no bucket could be resolved.
-    """
-    bucket = bucket or workbench_bucket()
-    if not bucket:
-        return None
-    return f"s3://{bucket}/{foundation_entry(name)['s3_key']}"
 
 
 def foundation_cache_dir() -> Path:
@@ -153,16 +146,59 @@ def foundation_cache_dir() -> Path:
     return cache_dir
 
 
-def _download_s3(bucket: str, key: str, dest: Path) -> bool:
-    """Download s3://bucket/key to dest atomically. True on success."""
-    import boto3
+def file_hash(path: Path, algorithm: str = "md5") -> str:
+    """Streaming hash of a file (checkpoints are hundreds of MB).
 
+    Args:
+        path (Path): File to hash.
+        algorithm (str, optional): Any :mod:`hashlib` name. Defaults to "md5".
+
+    Returns:
+        str: Hex digest.
+    """
+    digest = hashlib.new(algorithm)
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _download_s3(bucket: str, key: str, dest: Path, expected_md5: str = None, unsigned: bool = False) -> bool:
+    """Download s3://bucket/key to dest atomically, checking its md5 when one is expected.
+
+    Args:
+        bucket (str): Bucket to read.
+        key (str): Object key.
+        dest (Path): Local destination; written only once the download is complete and verified.
+        expected_md5 (str, optional): md5 the object must match.
+        unsigned (bool, optional): Anonymous request (the public bucket). Defaults to False.
+
+    Returns:
+        bool: True when dest holds the verified object.
+    """
+    import boto3
+    from botocore import UNSIGNED
+    from botocore.config import Config
+    from botocore.exceptions import ClientError
+
+    client = (
+        boto3.client("s3", region_name=PUBLIC_BUCKET_REGION, config=Config(signature_version=UNSIGNED))
+        if unsigned
+        else boto3.client("s3")
+    )
     with tempfile.NamedTemporaryFile(dir=dest.parent, delete=False) as tmp:
         tmp_path = Path(tmp.name)
     try:
-        boto3.client("s3").download_file(bucket, key, str(tmp_path))
+        client.download_file(bucket, key, str(tmp_path))
+        if expected_md5 and file_hash(tmp_path) != expected_md5:
+            log.warning(f"s3://{bucket}/{key} does not match the registry's md5 ({expected_md5}); not using it")
+            return False
         shutil.move(str(tmp_path), dest)  # atomic within the same filesystem
         return True
+    except ClientError as e:
+        missing = e.response.get("Error", {}).get("Code") in ("404", "NoSuchKey")
+        (log.info if missing else log.warning)(f"Foundation checkpoint not available at s3://{bucket}/{key}: {e}")
+        return False
     except Exception as e:
         log.warning(f"Foundation checkpoint not available at s3://{bucket}/{key}: {e}")
         return False
@@ -170,27 +206,10 @@ def _download_s3(bucket: str, key: str, dest: Path) -> bool:
         tmp_path.unlink(missing_ok=True)  # no half-downloads left in the cache dir
 
 
-def _download_origin(url: str, dest: Path) -> bool:
-    """Download the public origin URL to dest atomically. True on success."""
-    import urllib.request
-
-    with tempfile.NamedTemporaryFile(dir=dest.parent, delete=False) as tmp:
-        tmp_path = Path(tmp.name)
-    try:
-        urllib.request.urlretrieve(url, tmp_path)
-        shutil.move(str(tmp_path), dest)
-        return True
-    except Exception as e:
-        log.warning(f"Origin download failed for {url}: {e}")
-        return False
-    finally:
-        tmp_path.unlink(missing_ok=True)
-
-
 def fetch_s3_checkpoint(s3_uri: str) -> Path:
     """Download an explicit ``s3://`` checkpoint into the local cache.
 
-    No origin rung and no registry entry: an explicit URI is the caller saying
+    No registry entry and no other rungs: an explicit URI is the caller saying
     exactly which artifact they want, so a miss is a hard error. The cache
     filename is prefixed with a hash of the URI, so two different staged
     checkpoints that share a basename cannot shadow each other.
@@ -205,8 +224,6 @@ def fetch_s3_checkpoint(s3_uri: str) -> Path:
         ValueError: If the URI is malformed.
         RuntimeError: If the object could not be downloaded.
     """
-    import hashlib
-
     bucket, _, key = s3_uri[len("s3://") :].partition("/")
     if not bucket or not key:
         raise ValueError(f"Malformed S3 URI: {s3_uri}")
@@ -224,51 +241,35 @@ def fetch_s3_checkpoint(s3_uri: str) -> Path:
     return local_path
 
 
-def resolve_foundation_checkpoint(name: str, allow_origin: bool = True) -> Path:
+def resolve_foundation_checkpoint(name: str) -> Path:
     """Local path to a foundation checkpoint, fetching it if needed.
 
-    Walks local cache -> Workbench S3 -> origin URL (see the module docstring).
+    Walks local cache -> account mirror -> public bucket (see the module docstring).
 
     Args:
         name (str): Foundation model name, e.g. "CheMeleon".
-        allow_origin (bool, optional): Allow the public-internet fallback.
-            Defaults to True. Set False to require the staged S3 copy.
 
     Returns:
         pathlib.Path: Path to the local checkpoint file.
 
     Raises:
-        RuntimeError: If every rung fails.
+        RuntimeError: If neither the mirror nor the public bucket has it.
     """
     entry = foundation_entry(name)
+    key, expected_md5 = entry["s3_key"], entry.get("expected_md5")
     local_path = foundation_cache_dir() / entry["filename"]
 
     if local_path.exists():
         print(f"  Using cached checkpoint: {local_path}")
         return local_path
 
-    bucket = workbench_bucket()
-    if bucket:
-        key = entry["s3_key"]
+    # The account mirror first (an account that stages one may not reach public S3), then the public copy
+    mirror = workbench_bucket()
+    sources = ([(mirror, False)] if mirror else []) + [(PUBLIC_BUCKET, True)]
+    for bucket, unsigned in sources:
         print(f"  Fetching checkpoint from s3://{bucket}/{key} ...")
-        if _download_s3(bucket, key, local_path):
+        if _download_s3(bucket, key, local_path, expected_md5=expected_md5, unsigned=unsigned):
             print(f"  Downloaded to {local_path}")
             return local_path
-    else:
-        log.warning("No WORKBENCH_BUCKET resolved — skipping the staged S3 copy")
 
-    if not allow_origin:
-        raise RuntimeError(
-            f"Foundation checkpoint '{name}' not staged in S3 ({foundation_s3_uri(name)}) and "
-            f"allow_origin=False. Stage it with scripts/admin/push_foundation_models.py"
-        )
-
-    url = entry["origin_url"]
-    log.warning(f"Falling back to public origin for '{name}': {url} — stage it in S3 to avoid this")
-    if _download_origin(url, local_path):
-        print(f"  Downloaded to {local_path}")
-        return local_path
-
-    raise RuntimeError(
-        f"Could not obtain foundation checkpoint '{name}' from cache, " f"{foundation_s3_uri(name)}, or {url}"
-    )
+    raise RuntimeError(f"Could not obtain foundation checkpoint '{name}' from s3://{PUBLIC_BUCKET}/{key}")

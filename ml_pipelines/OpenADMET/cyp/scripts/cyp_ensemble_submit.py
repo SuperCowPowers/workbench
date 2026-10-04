@@ -35,7 +35,8 @@ import numpy as np
 import pandas as pd
 from cyp_recalibrate import VALUE_COLUMNS
 from openadmet_validation import validate_activity_submission
-from workbench.api import Endpoint, PublicData
+from workbench.api import Endpoint, Model, PublicData
+from workbench.api.inference_cache import InferenceCache
 
 OUT = Path(__file__).parent / "outputs"
 N_TEST = 750
@@ -58,9 +59,18 @@ MEMBERS = {
 }
 
 
-def predict(model: str, blind: pd.DataFrame) -> pd.DataFrame:
-    """Blind-set predictions from one endpoint, indexed by compound."""
-    out = Endpoint(model).inference(blind[["molecule_name", "smiles"]].copy())
+MONROE_ENDPOINT = "smiles-to-monroe-v1"
+
+
+def predict(model: str, blind: pd.DataFrame, embedded: pd.DataFrame) -> pd.DataFrame:
+    """Blind-set predictions from one endpoint, indexed by compound.
+
+    Chemprop featurizes from SMILES inside the endpoint. A model over a molecular embedding
+    needs that embedding as a column, so it is handed the pre-embedded frame instead.
+    """
+    features = Model(model).features() or []
+    source = embedded if "monroe" in features else blind
+    out = Endpoint(model).inference(source[["molecule_name", "smiles"] + [f for f in features if f == "monroe"]].copy())
     return out.set_index("molecule_name")
 
 
@@ -87,9 +97,20 @@ if __name__ == "__main__":
     if len(blind) != N_TEST:
         raise ValueError(f"blinded set is {len(blind)} rows, expected {N_TEST}")
 
+    # SMILES-keyed cache (S3-persisted), so this only embeds compounds it has not seen.
+    embedded = InferenceCache(Endpoint(MONROE_ENDPOINT), auto_invalidate_cache=True).inference(
+        blind[["molecule_name", "smiles"]].copy()
+    )
+    missing = embedded["monroe"].isna()
+    if missing.any():
+        raise ValueError(
+            f"{int(missing.sum())} of {N_TEST} blinded compounds have no Monroe embedding "
+            f"({list(embedded.loc[missing, 'molecule_name'])[:5]}); every member must score every row"
+        )
+
     every = sorted({m for members in MEMBERS.values() for m in members})
     print(f"Predicting {N_TEST} blinded compounds with {len(every)} models")
-    preds = {m: predict(m, blind) for m in every}
+    preds = {m: predict(m, blind, embedded) for m in every}
 
     sub = pd.DataFrame({"SMILES": blind["smiles"].values, "Molecule_Name": blind["molecule_name"].values})
     print(f"\n{'isoform':<8}{'members':>9}{'mean':>8}{'sd':>7}   spread across members")

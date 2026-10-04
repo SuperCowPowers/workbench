@@ -31,9 +31,8 @@ def load_foundation_weights(from_foundation: str) -> tuple:
     """Load pretrained MPNN weights from a foundation model.
 
     Registered names (see :mod:`workbench.training.foundation_models`) resolve
-    through the local cache, then the staged copy in the Workbench bucket, then
-    the public origin URL as a last resort — so a fresh training container does
-    not depend on a public host being up.
+    through the local cache, then an optional account mirror, then Workbench's
+    public bucket.
 
     Args:
         from_foundation: A registered foundation name ("CheMeleon"), an ``s3://``
