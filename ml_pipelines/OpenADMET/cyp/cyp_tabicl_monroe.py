@@ -1,0 +1,83 @@
+"""CYP TabICL on the Monroe embedding — one model per isoform.
+
+A different representation, which is the class of change the CYP2D6 record had not yet
+tried: TabICL over a 720-d molecular embedding rather than a D-MPNN over the graph.
+Everything before it changed the target, the loss, or the data, and came back null.
+
+Measured on CYP2D6, out of fold on its 1,493 labelled rows:
+
+    model                      rho     AUC <4.0 vs >=4.5   corr with the 4-model pool
+    tabicl-2d6-monroe        0.448                 0.799                        0.769
+    chemprop-2d6-isoform     0.445                 0.763                        0.867
+    chemprop-2d6-single      0.388                 0.706                        0.775
+
+The AUC is the number that matters. CYP2D6's failure is telling a sub-4.0 compound from a
+>=4.5 one -- a 3.5-log distinction carrying no label-noise excuse, where CYP3A4 reaches
+0.939 -- and this is the first change to move it. The decorrelation is real too: the four
+chemprops sit at 0.861-0.871 with each other.
+
+`top_variance_features` keeps the 100 highest-variance embedding columns. On PXR 100 / 360 /
+720 scored within the noise, and 100 needs the least serving memory.
+
+TabICL is single-target, so each isoform gets its own model. Multi-task is cheap to lose
+here: `mt-aux-100` against `union-p30-h26` is -0.002 mean across four isoforms.
+
+Nothing drops NaN-target rows on the way into a training view, and coverage is sparse --
+1,285 to 2,335 labels in a 4,905-row set -- so the unlabelled rows go to `exclude_ids`.
+Chemprop gets away without this because its multi-task loss masks missing targets.
+
+Read with `scripts/cyp_compare.py --bands` against the per-isoform thresholds it prints.
+
+    ml_pipeline_launcher cyp_tabicl_monroe
+    ml_pipeline_launcher cyp_tabicl_monroe -- --isoforms cyp1a2 cyp2c9 cyp3a4
+
+Build the FeatureSet first:  ml_pipeline_launcher cyp_monroe_feature_sets
+"""
+
+import argparse
+
+from workbench.api import FeatureSet, ModelFramework, ModelType
+
+FS_NAME = "openadmet_cyp_monroe_f1"
+ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
+BASE_TAGS = ["openadmet_cyp", "tabicl", "monroe", "activity"]
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--isoforms",
+    nargs="+",
+    default=ISOFORMS,
+    choices=ISOFORMS,
+    help="Isoforms to build; defaults to all four",
+)
+args = parser.parse_args()
+
+fs = FeatureSet(FS_NAME)
+df = fs.pull_dataframe()
+
+for iso in args.isoforms:
+    target = f"{iso}_pic50_direct_inhibition"
+    name = f"cyp-reg-tabicl-{iso.removeprefix('cyp')}-monroe"
+    tags = BASE_TAGS + [iso]
+
+    exclude_ids = list(df.loc[df[target].isna(), "molecule_name"])
+    print(f"{iso}: {len(df) - len(exclude_ids):,} labelled rows, excluding {len(exclude_ids):,} unlabelled")
+
+    model = fs.to_model(
+        name=name,
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.TABICL,
+        feature_list=["monroe"],
+        target_column=target,
+        description=f"CYP {iso.upper()} pIC50, TabICL over the Monroe embedding",
+        tags=tags,
+        hyperparameters={"top_variance_features": 100},
+        exclude_ids=exclude_ids,
+    )
+    model.set_owner("open_admet_cyp")
+    print(f"  serving memory: {(model.workbench_meta() or {}).get('workbench_inference_memory_gb')} GB")
+
+    end = model.to_endpoint(tags=tags)
+    end.set_owner("open_admet_cyp")
+    end.test_inference()
+    end.cross_fold_inference()

@@ -1,15 +1,25 @@
 """Build a submission by averaging several models' blind-set predictions.
 
-Averaging diverse models is the only thing that has repeatedly improved CYP2D6. Measured
-out-of-fold twice on different pools, it is worth roughly +0.046 Spearman over the best
-single model there, and it clears the ensemble-vs-member threshold where nothing else has.
-Three architectural hypotheses -- task weighting, cross-isoform representation sharing,
-descriptor features -- each came back null on that isoform; this did not.
+Averaging diverse models is the only thing that has repeatedly improved CYP2D6. Three
+architectural hypotheses -- task weighting, cross-isoform representation sharing, descriptor
+features -- each came back null on that isoform; this did not.
 
-Membership is per isoform because the CYP2D6 specialists have no other heads. The gain also
-saturates: a fourth member adds almost nothing and a fifth makes it worse, so this is not a
-pool to keep growing. Members are chosen by architecture rather than by score -- picking the
-best-scoring subset out of many overfits the ruler used to pick it.
+Membership is per isoform because the CYP2D6 specialists have no other heads. Members are
+chosen by architecture rather than by score, since picking the best-scoring subset out of many
+overfits the ruler used to pick it. What earns a slot is decorrelation: the two multi-isoform
+chemprops agree with each other at rho 0.93-0.97, while TabICL over the Monroe embedding sits
+at 0.73-0.89 against them.
+
+Out of fold, against the two chemprops alone (four for CYP2D6):
+
+    isoform   chemprops   + tox + tabicl     AUC <4.0 vs >=4.5
+    CYP1A2       0.5864            0.6154     0.858 -> 0.876
+    CYP2C9       0.7115            0.7342     0.925 -> 0.934
+    CYP2D6       0.4975            0.5137     0.797 -> 0.815
+    CYP3A4       0.8255            0.8398     0.949 -> 0.953
+
+No single delta clears its isoform's resolution threshold (0.043 / 0.031 / 0.056 / 0.018), so
+read the pattern rather than any row: both additions are positive on all four isoforms.
 
 Predictions are averaged, not the placements. Placement happens afterwards against the
 ensemble's own out-of-fold correlation:
@@ -32,13 +42,19 @@ N_TEST = 750
 
 MT = "cyp-reg-chemprop-union-p30"
 AUX = "cyp-reg-chemprop-mt-aux-100"
-# Four architecture-and-data combinations for CYP2D6; the other three isoforms only exist in
-# the two multi-isoform models.
+TOX = "cyp-reg-chemprop-union-p30-tox"
+
+
+def tabicl(iso: str) -> str:
+    """TabICL over the Monroe embedding, one model per isoform."""
+    return f"cyp-reg-tabicl-{iso.lower().removeprefix('cyp')}-monroe"
+
+
 MEMBERS = {
-    "CYP1A2": [MT, AUX],
-    "CYP2C9": [MT, AUX],
-    "CYP2D6": [MT, AUX, "cyp-reg-chemprop-2d6-isoform", "cyp-reg-chemprop-2d6-single"],
-    "CYP3A4": [MT, AUX],
+    "CYP1A2": [MT, AUX, TOX, tabicl("CYP1A2")],
+    "CYP2C9": [MT, AUX, TOX, tabicl("CYP2C9")],
+    "CYP2D6": [MT, AUX, TOX, tabicl("CYP2D6"), "cyp-reg-chemprop-2d6-isoform", "cyp-reg-chemprop-2d6-single"],
+    "CYP3A4": [MT, AUX, TOX, tabicl("CYP3A4")],
 }
 
 
