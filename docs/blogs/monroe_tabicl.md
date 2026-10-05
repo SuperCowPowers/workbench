@@ -29,7 +29,8 @@ Building a FeatureSet from it:
 from workbench.api import Endpoint, FeatureSet
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
-df = Endpoint("smiles-to-monroe-v1").inference(my_df)  # appends `monroe` (plus orig_smiles, salt, ...)
+# Feature Endpoint (adds a 'monroe' column)
+df = Endpoint("smiles-to-monroe-v1").inference(my_df)
 
 to_features = PandasToFeatures("my_assay_monroe")
 to_features.set_input(df, id_column="compound_id")
@@ -111,7 +112,20 @@ endpoint = model.to_endpoint()
 
 ### `pca_components`
 
-`pca_components=N` standardizes every feature and projects them onto N principal components. Two things work against it for an embedding. Standardizing first gives every dimension the same weight, including near-flat ones that carry little signal. And it projects *all* the features, so any extra descriptors next to the embedding get folded into the components too.
+`pca_components=N` standardizes every feature and projects them onto N principal components. Like the column selection, it's fit on the rows each model is fit on and saved with the model.
+
+```python
+model = fs.to_model(
+    name="my-assay-reg-tabicl-pca",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.TABICL,
+    feature_list=["monroe"],
+    target_column="pic50",
+    hyperparameters={"pca_components": 100},  # standardize, then project onto 100 components
+)
+```
+
+Two things work against it for an embedding. Standardizing first gives every dimension the same weight, including near-flat ones that carry little signal. And it projects *all* the features, so any extra descriptors next to the embedding get folded into the components too.
 
 ### What We've Seen
 
