@@ -36,6 +36,12 @@ width loses ~0.015 on CYP2D6 and gains nothing on CYP3A4; the template supports 
 More columns cost serving memory, which TabICL measures at training time: `to_endpoint()`
 raises above the 5.5 GB serverless limit, and a model over it deploys with `serverless=False`.
 
+`--readouts` trains on `openadmet_cyp_readout_monroe_f1` instead, adding the screen model's
+four predicted log2FC columns as features. Measured out of fold, paired over compounds against
+the same Monroe columns alone: CYP1A2 +0.0337, CYP3A4 +0.0267, CYP2C9 +0.0225, CYP2D6 +0.0194,
+every interval excluding zero and CYP3A4 clearing its 0.018 threshold. A readout is a feature
+rather than a head, which is what lets it carry information the auxiliary heads never could.
+
 TabICL is single-target, so each isoform gets its own model. Multi-task is cheap to lose
 here: `mt-aux-100` against `union-p30-h26` is -0.002 mean across four isoforms.
 
@@ -48,6 +54,7 @@ Read with `scripts/cyp_compare.py --bands` against the per-isoform thresholds it
     ml_pipeline_launcher cyp_tabicl_monroe
     ml_pipeline_launcher cyp_tabicl_monroe -- --isoforms cyp1a2 cyp2c9 cyp3a4
     ml_pipeline_launcher cyp_tabicl_monroe -- --top-variance 720 --name-suffix t720
+    ml_pipeline_launcher cyp_tabicl_monroe -- --readouts
 
 Build the FeatureSet first:  ml_pipeline_launcher cyp_monroe_feature_sets
 """
@@ -57,10 +64,16 @@ import argparse
 from workbench.api import FeatureSet, ModelFramework, ModelType
 
 FS_NAME = "openadmet_cyp_monroe_f1"
+READOUT_FS = "openadmet_cyp_readout_monroe_f1"
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 BASE_TAGS = ["openadmet_cyp", "tabicl", "monroe", "activity"]
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--readouts",
+    action="store_true",
+    help="Train on the readout FeatureSet, adding the four predicted log2FC columns as features",
+)
 parser.add_argument(
     "--top-variance",
     type=int,
@@ -82,12 +95,15 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-fs = FeatureSet(FS_NAME)
+fs = FeatureSet(READOUT_FS if args.readouts else FS_NAME)
 df = fs.pull_dataframe()
+readouts = [f"{iso}_log2fc_readout" for iso in ISOFORMS] if args.readouts else []
 
 for iso in args.isoforms:
     target = f"{iso}_pic50_direct_inhibition"
     name = f"cyp-reg-tabicl-{iso.removeprefix('cyp')}-monroe"
+    if args.readouts:
+        name += "-readout"
     if args.name_suffix:
         name += f"-{args.name_suffix.strip('-')}"
     tags = BASE_TAGS + [iso]
@@ -99,7 +115,7 @@ for iso in args.isoforms:
         name=name,
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.TABICL,
-        feature_list=["monroe"],
+        feature_list=["monroe"] + readouts,
         target_column=target,
         description=f"CYP {iso.upper()} pIC50, TabICL over the Monroe embedding",
         tags=tags,

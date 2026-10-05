@@ -34,19 +34,11 @@
       {"script": "cyp_chemprop_2d6.py", "inputs": ["fs:openadmet_cyp_aux_f1"],
        "outputs": ["model:cyp-reg-chemprop-2d6-isoform", "endpoint:cyp-reg-chemprop-2d6-isoform",
                    "model:cyp-reg-chemprop-2d6-single", "endpoint:cyp-reg-chemprop-2d6-single"]},
-      {"script": "cyp_xgb_3dv2.py",
-       "inputs": ["fs:openadmet_cyp_f2"],
-       "outputs": ["model:cyp-2d-3dv2-reg-xgb-3a4", "endpoint:cyp-2d-3dv2-reg-xgb-3a4",
-                   "model:cyp-2d-3dv2-reg-xgb-2c9", "endpoint:cyp-2d-3dv2-reg-xgb-2c9",
-                   "model:cyp-2d-3dv2-reg-xgb-2d6", "endpoint:cyp-2d-3dv2-reg-xgb-2d6",
-                   "model:cyp-2d-3dv2-reg-xgb-1a2", "endpoint:cyp-2d-3dv2-reg-xgb-1a2"]},
       {"script": "workbench:models/model_promotion.py",
        "inputs": ["model:cyp-reg-chemprop-mt-aux-100", "model:cyp-reg-chemprop-mt-aux-100-s43",
                   "model:cyp-reg-chemprop-mt-aux-100-s44",
                   "model:cyp-reg-chemprop-union-p30",
-                  "model:cyp-reg-chemprop-2d6-isoform", "model:cyp-reg-chemprop-2d6-single",
-                  "model:cyp-2d-3dv2-reg-xgb-3a4", "model:cyp-2d-3dv2-reg-xgb-2c9",
-                  "model:cyp-2d-3dv2-reg-xgb-2d6", "model:cyp-2d-3dv2-reg-xgb-1a2"],
+                  "model:cyp-reg-chemprop-2d6-isoform", "model:cyp-reg-chemprop-2d6-single"],
        "outputs": ["endpoint:cyp-reg-v1"]}
     ]
   }
