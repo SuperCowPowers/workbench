@@ -100,7 +100,7 @@ Fingerprint endpoints follow the same create-once, reuse-everywhere pattern as d
 
 ### Embedding Endpoints
 
-**`smiles-to-monroe-v1`** returns the 720-dimensional embedding of the pretrained Monroe encoder, packed into one compressed column the same way the fingerprint endpoint packs its counts. See [Pretrained Embeddings + Tabular Foundation Models](monroe_tabicl.md) for the pipeline and for pairing it with TabICL.
+**`smiles-to-monroe-v1`** returns the 720-dimensional embedding of the pretrained Monroe encoder, packed into one compressed column the same way the fingerprint endpoint packs its counts. See [Monroe Embeddings + Tabular Foundation Models](monroe_tabicl.md) for the pipeline and for pairing it with TabICL.
 
 ## Why a Deployed Endpoint?
 

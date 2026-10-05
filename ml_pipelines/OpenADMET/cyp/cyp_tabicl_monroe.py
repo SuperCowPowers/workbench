@@ -16,8 +16,25 @@ The AUC is the number that matters. CYP2D6's failure is telling a sub-4.0 compou
 0.939 -- and this is the first change to move it. The decorrelation is real too: the four
 chemprops sit at 0.861-0.871 with each other.
 
-`top_variance_features` keeps the 100 highest-variance embedding columns. On PXR 100 / 360 /
-720 scored within the noise, and 100 needs the least serving memory.
+`--top-variance` keeps that many of the 720 embedding columns, ranked by variance on the
+training rows. 360 is the default because it is best or tied-best everywhere measured
+(`scripts/cyp_monroe_ablation.py`, out of fold over shared scaffold folds):
+
+    arm        CYP3A4 rho   CYP2D6 rho
+    top100         0.7958       0.4516
+    top200         0.8010       0.4523
+    top360         0.8028       0.4536
+    all720         0.8042       0.4521
+    pca100         0.8000       0.4371
+
+Paired against top100, CYP3A4 resolves at top360 (+0.0068, CI excluding zero) while CYP2D6 is
+flat across every width. The gain tracks row count -- CYP3A4 carries 2,335 labelled rows
+against CYP2D6's 1,493 -- so expect CYP1A2 and CYP2C9 to be flat as well. PCA at the same
+width loses ~0.015 on CYP2D6 and gains nothing on CYP3A4; the template supports it via
+`pca_components` and it is not worth reaching for.
+
+More columns cost serving memory, which TabICL measures at training time: `to_endpoint()`
+raises above the 5.5 GB serverless limit, and a model over it deploys with `serverless=False`.
 
 TabICL is single-target, so each isoform gets its own model. Multi-task is cheap to lose
 here: `mt-aux-100` against `union-p30-h26` is -0.002 mean across four isoforms.
@@ -30,6 +47,7 @@ Read with `scripts/cyp_compare.py --bands` against the per-isoform thresholds it
 
     ml_pipeline_launcher cyp_tabicl_monroe
     ml_pipeline_launcher cyp_tabicl_monroe -- --isoforms cyp1a2 cyp2c9 cyp3a4
+    ml_pipeline_launcher cyp_tabicl_monroe -- --top-variance 720 --name-suffix t720
 
 Build the FeatureSet first:  ml_pipeline_launcher cyp_monroe_feature_sets
 """
@@ -43,6 +61,18 @@ ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 BASE_TAGS = ["openadmet_cyp", "tabicl", "monroe", "activity"]
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--top-variance",
+    type=int,
+    default=360,
+    help="Keep this many of the 720 Monroe columns, ranked by variance on the training rows",
+)
+parser.add_argument(
+    "--name-suffix",
+    default=None,
+    help="Append to the model name, so a rebuild lands beside the existing model rather than replacing it. "
+    "A retrain redraws the fold split, so its out-of-fold numbers move within seed noise",
+)
 parser.add_argument(
     "--isoforms",
     nargs="+",
@@ -58,6 +88,8 @@ df = fs.pull_dataframe()
 for iso in args.isoforms:
     target = f"{iso}_pic50_direct_inhibition"
     name = f"cyp-reg-tabicl-{iso.removeprefix('cyp')}-monroe"
+    if args.name_suffix:
+        name += f"-{args.name_suffix.strip('-')}"
     tags = BASE_TAGS + [iso]
 
     exclude_ids = list(df.loc[df[target].isna(), "molecule_name"])
@@ -71,7 +103,7 @@ for iso in args.isoforms:
         target_column=target,
         description=f"CYP {iso.upper()} pIC50, TabICL over the Monroe embedding",
         tags=tags,
-        hyperparameters={"top_variance_features": 100},
+        hyperparameters={"top_variance_features": args.top_variance},
         exclude_ids=exclude_ids,
     )
     model.set_owner("open_admet_cyp")

@@ -1,4 +1,4 @@
-# Pretrained Embeddings + Tabular Foundation Models
+# Monroe Embeddings + Tabular Foundation Models
 !!! tip inline end "Where This Fits"
     The Monroe embedding is a [feature endpoint](feature_endpoints.md), like the 2D and 3D descriptor endpoints. TabICL is a model framework next to XGBoost, PyTorch, and ChemProp; its reference page is [TabICL Models](../models/tabicl_models.md).
 
@@ -26,14 +26,14 @@ A few details matter for using it well:
 Building a FeatureSet from it:
 
 ```python
-from workbench.api import DataSource, Endpoint, FeatureSet
-from workbench.api.inference_cache import InferenceCache
+from workbench.api import Endpoint, FeatureSet
+from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
-# SMILES-keyed cache: a repeat run only embeds molecules it hasn't seen
-monroe = InferenceCache(Endpoint("smiles-to-monroe-v1"), auto_invalidate_cache=True)
-df = monroe.inference(my_df)  # appends `monroe` (plus orig_smiles, salt, ...)
+df = Endpoint("smiles-to-monroe-v1").inference(my_df)  # appends `monroe` (plus orig_smiles, salt, ...)
 
-DataSource(df, name="my_assay_monroe_ds").to_features("my_assay_monroe", id_column="compound_id")
+to_features = PandasToFeatures("my_assay_monroe")
+to_features.set_input(df, id_column="compound_id")
+to_features.transform()
 FeatureSet("my_assay_monroe").set_compressed_features(["monroe"])
 ```
 

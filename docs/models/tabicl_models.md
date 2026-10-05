@@ -88,7 +88,7 @@ TabICL is pretrained on tables of up to 100 columns. More features work, and the
 
 - `pca_components` standardizes every feature and projects them all onto this many components. PCA needs numeric features, so it can't be combined with categorical columns.
 
-The [Pretrained Embeddings + Tabular Foundation Models](../blogs/monroe_tabicl.md) blog walks through the Monroe embedding endpoint and pairing it with TabICL.
+The [Monroe Embeddings + Tabular Foundation Models](../blogs/monroe_tabicl.md) blog walks through the Monroe embedding endpoint and pairing it with TabICL.
 
 ## Endpoints: Serverless or Real-Time
 
