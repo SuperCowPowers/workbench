@@ -2621,7 +2621,7 @@
   <span class="md-ellipsis">
     
   
-    Pretrained Embeddings + TabICL
+    Monroe Embeddings + TabICL
   
 
     
@@ -5743,7 +5743,7 @@
 </ul>
 <p>Fingerprint endpoints follow the same create-once, reuse-everywhere pattern as descriptor endpoints. See the <a href="../../models/fingerprint_models/">Fingerprint Models</a> guide for full usage examples including creating the endpoint, computing fingerprints, and training models on them.</p>
 <h3 id="embedding-endpoints">Embedding Endpoints</h3>
-<p><strong><code>smiles-to-monroe-v1</code></strong> returns the 720-dimensional embedding of the pretrained Monroe encoder, packed into one compressed column the same way the fingerprint endpoint packs its counts. See <a href="../monroe_tabicl/">Pretrained Embeddings + Tabular Foundation Models</a> for the pipeline and for pairing it with TabICL.</p>
+<p><strong><code>smiles-to-monroe-v1</code></strong> returns the 720-dimensional embedding of the pretrained Monroe encoder, packed into one compressed column the same way the fingerprint endpoint packs its counts. See <a href="../monroe_tabicl/">Monroe Embeddings + Tabular Foundation Models</a> for the pipeline and for pairing it with TabICL.</p>
 <h2 id="why-a-deployed-endpoint">Why a Deployed Endpoint?</h2>
 <p>You might ask: why not just share a Python function? Or package the code into a library? The endpoint architecture gives you several things that shared code doesn't:</p>
 <figure style="margin: 20px auto; text-align: center;">

@@ -23,7 +23,7 @@
     
     
       
-        <title>Pretrained Embeddings + TabICL - ADMET Workbench</title>
+        <title>Monroe Embeddings + TabICL - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pretrained-embeddings-tabular-foundation-models" class="md-skip">
+        <a href="#monroe-embeddings-tabular-foundation-models" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Pretrained Embeddings + TabICL
+              Monroe Embeddings + TabICL
             
           </span>
         </div>
@@ -2378,7 +2378,7 @@
   <span class="md-ellipsis">
     
   
-    Pretrained Embeddings + TabICL
+    Monroe Embeddings + TabICL
   
 
     
@@ -2396,7 +2396,7 @@
   <span class="md-ellipsis">
     
   
-    Pretrained Embeddings + TabICL
+    Monroe Embeddings + TabICL
   
 
     
@@ -5273,7 +5273,7 @@
 
 
 
-<h1 id="pretrained-embeddings-tabular-foundation-models">Pretrained Embeddings + Tabular Foundation Models</h1>
+<h1 id="monroe-embeddings-tabular-foundation-models">Monroe Embeddings + Tabular Foundation Models</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Where This Fits</p>
 <p>The Monroe embedding is a <a href="../feature_endpoints/">feature endpoint</a>, like the 2D and 3D descriptor endpoints. TabICL is a model framework next to XGBoost, PyTorch, and ChemProp; its reference page is <a href="../../models/tabicl_models/">TabICL Models</a>.</p>
@@ -5294,15 +5294,16 @@
 <li><strong>Self-contained.</strong> The pretrained weights come from Workbench's public bucket, with no setup in your account, and are copied into the model artifact, so the endpoint loads them from its own artifact and fetches nothing at startup.</li>
 </ul>
 <p>Building a FeatureSet from it:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">Endpoint</span><span class="p">,</span> <span class="n">FeatureSet</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api.inference_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceCache</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span><span class="p">,</span> <span class="n">FeatureSet</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.transforms.pandas_transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">PandasToFeatures</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># SMILES-keyed cache: a repeat run only embeds molecules it hasn't seen</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">monroe</span> <span class="o">=</span> <span class="n">InferenceCache</span><span class="p">(</span><span class="n">Endpoint</span><span class="p">(</span><span class="s2">"smiles-to-monroe-v1"</span><span class="p">),</span> <span class="n">auto_invalidate_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">monroe</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">my_df</span><span class="p">)</span>  <span class="c1"># appends `monroe` (plus orig_smiles, salt, ...)</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">DataSource</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"my_assay_monroe_ds"</span><span class="p">)</span><span class="o">.</span><span class="n">to_features</span><span class="p">(</span><span class="s2">"my_assay_monroe"</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"compound_id"</span><span class="p">)</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">FeatureSet</span><span class="p">(</span><span class="s2">"my_assay_monroe"</span><span class="p">)</span><span class="o">.</span><span class="n">set_compressed_features</span><span class="p">([</span><span class="s2">"monroe"</span><span class="p">])</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Feature Endpoint (adds a 'monroe' column)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">df</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">"smiles-to-monroe-v1"</span><span class="p">)</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">my_df</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">to_features</span> <span class="o">=</span> <span class="n">PandasToFeatures</span><span class="p">(</span><span class="s2">"my_assay_monroe"</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">to_features</span><span class="o">.</span><span class="n">set_input</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"compound_id"</span><span class="p">)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">to_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">FeatureSet</span><span class="p">(</span><span class="s2">"my_assay_monroe"</span><span class="p">)</span><span class="o">.</span><span class="n">set_compressed_features</span><span class="p">([</span><span class="s2">"monroe"</span><span class="p">])</span>
 </span></code></pre></div>
 <p><code>set_compressed_features</code> is the step that tells the model templates to expand <code>monroe</code> into columns.</p>
 <h1 id="tabicl">TabICL</h1>
@@ -5382,7 +5383,17 @@
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">()</span>
 </span></code></pre></div>
 <h3 id="pca_components"><code>pca_components</code></h3>
-<p><code>pca_components=N</code> standardizes every feature and projects them onto N principal components. Two things work against it for an embedding. Standardizing first gives every dimension the same weight, including near-flat ones that carry little signal. And it projects <em>all</em> the features, so any extra descriptors next to the embedding get folded into the components too.</p>
+<p><code>pca_components=N</code> standardizes every feature and projects them onto N principal components. Like the column selection, it's fit on the rows each model is fit on and saved with the model.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"my-assay-reg-tabicl-pca"</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">TABICL</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">"monroe"</span><span class="p">],</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">"pic50"</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"pca_components"</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>  <span class="c1"># standardize, then project onto 100 components</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>Two things work against it for an embedding. Standardizing first gives every dimension the same weight, including near-flat ones that carry little signal. And it projects <em>all</em> the features, so any extra descriptors next to the embedding get folded into the components too.</p>
 <h3 id="what-weve-seen">What We've Seen</h3>
 <p>In our tests, keeping the top 100 columns by variance did at least as well as all 720 columns, as 360, and as PCA to 100 components. The differences between them were within the noise of the test set, so treat this as a sensible default rather than a measured optimum: 100 columns sits inside TabICL's pretraining range and needs the least serving memory. Running PCA without standardizing did better than PCA with it, which fits the reasoning above.</p>
 <h1 id="adding-other-features">Adding Other Features</h1>

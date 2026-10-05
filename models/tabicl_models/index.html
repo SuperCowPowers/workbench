@@ -2554,7 +2554,7 @@
   <span class="md-ellipsis">
     
   
-    Pretrained Embeddings + TabICL
+    Monroe Embeddings + TabICL
   
 
     
@@ -5674,7 +5674,7 @@
 <p><code>pca_components</code> standardizes every feature and projects them all onto this many components. PCA needs numeric features, so it can't be combined with categorical columns.</p>
 </li>
 </ul>
-<p>The <a href="../../blogs/monroe_tabicl/">Pretrained Embeddings + Tabular Foundation Models</a> blog walks through the Monroe embedding endpoint and pairing it with TabICL.</p>
+<p>The <a href="../../blogs/monroe_tabicl/">Monroe Embeddings + Tabular Foundation Models</a> blog walks through the Monroe embedding endpoint and pairing it with TabICL.</p>
 <h2 id="endpoints-serverless-or-real-time">Endpoints: Serverless or Real-Time</h2>
 <p>A TabICL model carries its training rows, so its memory grows with the training set. The training job measures the memory the model needs to serve, and <code>to_endpoint()</code> uses that measurement.</p>
 <p><strong>Serverless (the default)</strong> works for smaller training sets. When the measured memory is over what a serverless endpoint can give a model, <code>to_endpoint()</code> raises and tells you so, rather than deploying an endpoint that fails to load:</p>
