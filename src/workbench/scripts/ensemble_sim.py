@@ -3,9 +3,10 @@
 Evaluates whether an ensemble of models outperforms the individual
 children by analyzing their captured cross-fold inference predictions.
 
-Used standalone for offline what-if analysis. The same simulator is also
-called automatically by ``MetaEndpoint.create()`` when a DAG contains a
-tunable aggregation node.
+Used standalone for offline what-if analysis. ``--select-by`` chooses the metric
+the winning strategy is picked on: MAE scores placement, which a downstream
+recalibration can re-derive, while Spearman and Pearson score ordering, which it
+cannot.
 """
 
 import argparse
@@ -43,6 +44,12 @@ def main() -> None:
         help="Target column to analyze. Required for multi-target models, which capture one target each.",
     )
     parser.add_argument(
+        "--select-by",
+        default="mae",
+        choices=list(EnsembleSimulator.METRICS),
+        help="Metric deciding the winning strategy (default: mae)",
+    )
+    parser.add_argument(
         "--output",
         default=None,
         help="Optional CSV file path to save best ensemble predictions.",
@@ -58,10 +65,10 @@ def main() -> None:
             id_column = fs_id_column
 
     sim = EnsembleSimulator(model_names, id_column=id_column, capture_name=args.capture_name, target=args.target)
-    sim.report()
+    sim.report(select_by=args.select_by)
 
     if args.output:
-        df = sim.best_ensemble_predictions()
+        df = sim.best_ensemble_predictions(select_by=args.select_by)
         df.to_csv(args.output, index=False)
         print(f"\nEnsemble predictions saved to {args.output}")
 

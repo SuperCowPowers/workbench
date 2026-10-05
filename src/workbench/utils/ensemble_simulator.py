@@ -70,6 +70,65 @@ class EnsembleSimulator:
         self._target_column: str | None = None
         self._load_predictions()
 
+    #: Score columns and whether a larger value is better. MAE answers placement; the two
+    #: correlations answer ordering, which is what survives a downstream recalibration.
+    METRICS = {"mae": False, "spearman": True, "pearson": True}
+
+    @classmethod
+    def _score_strategies(cls, strategies: dict[str, np.ndarray], target: np.ndarray) -> pd.DataFrame:
+        """Score each strategy's prediction vector on every metric in `METRICS`.
+
+        Returns a frame indexed by strategy name with one column per metric.
+        """
+        target = np.asarray(target, dtype=float)
+        rows = {}
+        for name, preds in strategies.items():
+            preds = np.asarray(preds, dtype=float)
+            both = np.isfinite(preds) & np.isfinite(target)
+            rows[name] = {
+                "mae": float(np.abs(preds[both] - target[both]).mean()),
+                "spearman": cls._rank_corr(preds, target, f"{name} vs target"),
+                "pearson": float(stats.pearsonr(preds[both], target[both])[0]),
+            }
+        return pd.DataFrame(rows).T[list(cls.METRICS)]
+
+    @classmethod
+    def _best_strategy(cls, scores: pd.DataFrame, select_by: str) -> str:
+        """The winning strategy name under `select_by`."""
+        if select_by not in cls.METRICS:
+            raise ValueError(f"select_by must be one of {list(cls.METRICS)}, got {select_by!r}")
+        column = scores[select_by]
+        return str(column.idxmax() if cls.METRICS[select_by] else column.idxmin())
+
+    @staticmethod
+    def _rank_corr(x, y, label: str, min_pairs: int = 30, warn: bool = True) -> float:
+        """Spearman correlation over the rows where both inputs are finite.
+
+        A member whose confidence is missing on some rows still carries honest confidence
+        on the rest, and SciPy's default policy would propagate a single NaN into the
+        correlation. That NaN reaches `corr_scale`, where it makes every calibrated weight
+        fall back to static and is written into a deployed aggregation node — whose
+        `ensemble_confidence` has no NaN guard and would serve NaN confidence.
+
+        Returns 0.0 below `min_pairs` finite pairs, which disables calibration for that
+        member rather than scaling it by a number estimated from almost nothing.
+
+        Args:
+            warn: Log the dropped-row count. False inside a sweep, where every step drops
+                the same rows and the caller reports the coverage once.
+        """
+        x = np.asarray(x, dtype=float)
+        y = np.asarray(y, dtype=float)
+        both = np.isfinite(x) & np.isfinite(y)
+        n = int(both.sum())
+        if warn and n < len(x):
+            log.warning(f"{label}: correlation over {n:,} of {len(x):,} rows; the rest are missing a value")
+        if n < min_pairs:
+            log.warning(f"{label}: only {n:,} finite pairs (min {min_pairs}), reporting 0.0")
+            return 0.0
+        corr = stats.spearmanr(x[both], y[both])[0]
+        return 0.0 if not np.isfinite(corr) else float(corr)
+
     @staticmethod
     def _declared_targets(model: Model) -> list[str]:
         """A model's targets as a list, however it declares them.
@@ -130,7 +189,9 @@ class EnsembleSimulator:
         # Compute confidence-to-error correlation on aligned data
         for name, df in self._dfs.items():
             if "confidence" in df.columns:
-                self._conf_error_corr[name] = stats.spearmanr(df["confidence"], df["abs_residual"])[0]
+                self._conf_error_corr[name] = self._rank_corr(
+                    df["confidence"], df["abs_residual"], f"{name} conf-to-error"
+                )
             else:
                 self._conf_error_corr[name] = 0.0
 
@@ -223,17 +284,18 @@ class EnsembleSimulator:
             }
         )
 
-    def report(self, details: bool = False):
+    def report(self, details: bool = False, select_by: str = "mae"):
         """Print a comprehensive analysis report
 
         Args:
             details: Whether to include detailed sections (default: False)
+            select_by: Metric deciding which strategy wins -- "mae", "spearman" or "pearson"
         """
         self.model_performance()
         self.residual_correlations()
-        self.strategy_comparison()
+        self.strategy_comparison(select_by=select_by)
         self.ensemble_confidence_analysis()
-        self.ensemble_failure_analysis()
+        self.ensemble_failure_analysis(select_by=select_by)
         if details:
             self.confidence_analysis()
             self.model_agreement()
@@ -256,15 +318,18 @@ class EnsembleSimulator:
             print("-" * 50)
 
             conf = df["confidence"]
+            n_missing = int(conf.isna().sum())
             print(
                 f"  Confidence: mean={conf.mean():.3f}, std={conf.std():.3f}, "
-                f"min={conf.min():.3f}, max={conf.max():.3f}"
+                f"min={conf.min():.3f}, max={conf.max():.3f}, missing={n_missing:,}/{len(conf):,}"
             )
 
-            corr_pearson, p_pearson = stats.pearsonr(df["confidence"], df["abs_residual"])
-            corr_spearman, p_spearman = stats.spearmanr(df["confidence"], df["abs_residual"])
+            # Correlations over the rows carrying both values; a single NaN would propagate.
+            both = conf.notna() & df["abs_residual"].notna()
+            corr_pearson, p_pearson = stats.pearsonr(conf[both], df["abs_residual"][both])
+            corr_spearman, p_spearman = stats.spearmanr(conf[both], df["abs_residual"][both])
 
-            print("  Confidence vs |residual|:")
+            print(f"  Confidence vs |residual| over {int(both.sum()):,} rows:")
             print(f"    Pearson r={corr_pearson:.3f} (p={p_pearson:.2e})")
             print(f"    Spearman r={corr_spearman:.3f} (p={p_spearman:.2e})")
 
@@ -416,95 +481,82 @@ class EnsembleSimulator:
 
         return weights
 
-    def strategy_comparison(self) -> pd.DataFrame:
-        """Compare different ensemble strategies.
+    def _build_strategies(self, model_names: list[str]) -> tuple[dict[str, np.ndarray], np.ndarray, dict]:
+        """Every candidate strategy's prediction vector, over `model_names`.
 
-        Returns:
-            DataFrame with MAE for each strategy, sorted best to worst
+        Returns `(strategies, target, context)`, where context carries the per-model
+        arrays the caller needs to describe the winner: `inv_mae_weights`, `corr_scale`,
+        `pred_arr`, `conf_arr`, `mae_scores` and `worst_model`.
         """
-        print("\n" + "=" * 60)
-        print("ENSEMBLE STRATEGY COMPARISON")
-        print("=" * 60)
+        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
+        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
+        target = self._dfs[model_names[0]][self._target_column].values
 
-        combined = pd.DataFrame()
-        model_names = list(self._dfs.keys())
-
-        for name, df in self._dfs.items():
-            if combined.empty:
-                combined[self.id_column] = df[self.id_column]
-                combined["target"] = df[self._target_column]
-            combined[f"{name}_pred"] = df["prediction"].values
-            combined[f"{name}_conf"] = df["confidence"].values
-
-        pred_cols = [f"{name}_pred" for name in model_names]
-        conf_cols = [f"{name}_conf" for name in model_names]
-
-        results = []
-
-        # Strategy 1: Simple mean
-        combined["simple_mean"] = combined[pred_cols].mean(axis=1)
-        mae = (combined["simple_mean"] - combined["target"]).abs().mean()
-        results.append({"strategy": "Simple Mean", "mae": mae})
-
-        # Strategy 2: Confidence-weighted
-        conf_arr = combined[conf_cols].values
-        pred_arr = combined[pred_cols].values
         mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
         inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
         inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
-
-        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
-        combined["conf_weighted"] = (pred_arr * weights).sum(axis=1)
-        mae = (combined["conf_weighted"] - combined["target"]).abs().mean()
-        results.append({"strategy": "Confidence-Weighted", "mae": mae})
-
-        # Strategy 3: Inverse-MAE weighted
-        combined["inv_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
-        mae = (combined["inv_mae_weighted"] - combined["target"]).abs().mean()
-        results.append({"strategy": "Inverse-MAE Weighted", "mae": mae})
-
-        # Strategy 4: Best model only
-        best_model = min(mae_scores, key=mae_scores.get)
-        combined["best_only"] = combined[f"{best_model}_pred"]
-        mae = (combined["best_only"] - combined["target"]).abs().mean()
-        results.append({"strategy": f"Best Model Only ({best_model})", "mae": mae})
-
-        # Strategy 5: Scaled confidence-weighted (confidence * model_weights)
-        scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
-        combined["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
-        mae = (combined["scaled_conf_weighted"] - combined["target"]).abs().mean()
-        results.append({"strategy": "Scaled Conf-Weighted", "mae": mae})
-
-        # Strategy 6: Calibrated confidence (confidence scaled by |confidence_to_error_corr|)
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
-        cal_conf = conf_arr * corr_scale
-        cal_weights = conf_weights_with_fallback(cal_conf, inv_mae_weights)
-        combined["cal_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
-        mae = (combined["cal_conf_weighted"] - combined["target"]).abs().mean()
-        results.append({"strategy": "Calibrated Conf-Weighted", "mae": mae})
 
-        # Strategy 7: Drop worst model (use simple mean of remaining, or raw prediction if only 1 left)
+        strategies = {"simple_mean": pred_arr.mean(axis=1), "inverse_mae_weighted": pred_arr @ inv_mae_weights}
+        for key, conf in (
+            ("confidence_weighted", conf_arr),
+            ("scaled_conf_weighted", conf_arr * inv_mae_weights),
+            ("calibrated_conf_weighted", conf_arr * corr_scale),
+        ):
+            weights = conf_weights_with_fallback(conf, inv_mae_weights)
+            strategies[key] = (pred_arr * weights).sum(axis=1)
+
         worst_model = max(mae_scores, key=mae_scores.get)
-        remaining = [n for n in model_names if n != worst_model]
-        remaining_pred_cols = [f"{n}_pred" for n in remaining]
-        if len(remaining) == 1:
-            # Single model remaining - use raw prediction (same as "Best Model Only")
-            combined["drop_worst"] = combined[remaining_pred_cols[0]]
-        else:
-            # Multiple models remaining - use simple mean
-            combined["drop_worst"] = combined[remaining_pred_cols].mean(axis=1)
-        mae = (combined["drop_worst"] - combined["target"]).abs().mean()
-        results.append({"strategy": f"Drop Worst ({worst_model})", "mae": mae})
+        best_model = min(mae_scores, key=mae_scores.get)
+        strategies["best_model_only"] = pred_arr[:, model_names.index(best_model)]
+        if len(model_names) > 2:
+            remaining = [i for i, n in enumerate(model_names) if n != worst_model]
+            strategies["drop_worst"] = pred_arr[:, remaining].mean(axis=1)
 
-        results_df = pd.DataFrame(results).sort_values("mae")
-        print("\n" + results_df.to_string(index=False))
+        context = {
+            "pred_arr": pred_arr,
+            "conf_arr": conf_arr,
+            "inv_mae_weights": inv_mae_weights,
+            "corr_scale": corr_scale,
+            "mae_scores": mae_scores,
+            "worst_model": worst_model,
+            "best_model": best_model,
+        }
+        return strategies, target, context
 
-        print("\nIndividual model MAEs for reference:")
-        for name, mae in sorted(mae_scores.items(), key=lambda x: x[1]):
-            print(f"  {name}: {mae:.4f}")
+    def strategy_comparison(self, select_by: str = "mae") -> pd.DataFrame:
+        """Compare ensemble strategies on placement and on ordering.
 
-        return results_df
+        MAE scores placement, which a downstream recalibration can re-derive; Spearman and
+        Pearson score ordering, which it cannot. Read all three before picking: a strategy
+        that averages toward the mean wins MAE while packing near-ties that cost rank.
+
+        Args:
+            select_by: Metric to sort by and mark as the winner -- "mae", "spearman" or "pearson"
+
+        Returns:
+            DataFrame indexed by strategy with an mae, spearman and pearson column, best first
+        """
+        print("\n" + "=" * 60)
+        print(f"ENSEMBLE STRATEGY COMPARISON (by {select_by})")
+        print("=" * 60)
+
+        model_names = list(self._dfs.keys())
+        strategies, target, context = self._build_strategies(model_names)
+        scores = self._score_strategies(strategies, target)
+        scores = scores.sort_values(select_by, ascending=not self.METRICS[select_by])
+
+        print("\n" + scores.to_string(float_format=lambda v: f"{v:.4f}"))
+        print(f"\nWinner by {select_by}: {self._best_strategy(scores, select_by)}")
+        print(f"  best member: {context['best_model']}, worst: {context['worst_model']}")
+
+        print("\nIndividual models for reference:")
+        members = self._score_strategies(
+            {name: self._dfs[name]["prediction"].values for name in model_names}, target
+        ).sort_values(select_by, ascending=not self.METRICS[select_by])
+        print(members.to_string(float_format=lambda v: f"{v:.4f}"))
+
+        return scores
 
     def confidence_weight_distribution(self) -> pd.DataFrame:
         """Analyze how confidence weights are distributed across models.
@@ -581,8 +633,8 @@ class EnsembleSimulator:
         # Report agreement-only and calibrated-conf-only
         agreement_only = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 1.0)
         cal_conf_only = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0)
-        corr_agreement = stats.spearmanr(agreement_only, ensemble_abs_err)[0]
-        corr_cal_conf = stats.spearmanr(cal_conf_only, ensemble_abs_err)[0]
+        corr_agreement = self._rank_corr(agreement_only, ensemble_abs_err, "agreement-only confidence")
+        corr_cal_conf = self._rank_corr(cal_conf_only, ensemble_abs_err, "calibrated-conf-only confidence")
         print(f"\nAgreement-only          (alpha=1.0): conf_error_corr = {corr_agreement:.3f}")
         print(f"Calibrated-conf-only    (alpha=0.0): conf_error_corr = {corr_cal_conf:.3f}")
 
@@ -592,7 +644,7 @@ class EnsembleSimulator:
         alpha_results = []
         for alpha in np.arange(0.0, 1.05, 0.05):
             blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
-            corr = stats.spearmanr(blended, ensemble_abs_err)[0]
+            corr = self._rank_corr(blended, ensemble_abs_err, "ensemble confidence", warn=False)
             alpha_results.append({"alpha": alpha, "conf_error_corr": corr})
             if corr < best_corr:  # More negative = better
                 best_corr = corr
@@ -614,8 +666,8 @@ class EnsembleSimulator:
             "alpha_sweep": alpha_results,
         }
 
-    def best_ensemble_predictions(self) -> pd.DataFrame:
-        """Generate predictions DataFrame for the best ensemble strategy with blended confidence.
+    def best_ensemble_predictions(self, select_by: str = "mae") -> pd.DataFrame:
+        """Predictions for the winning ensemble strategy, with blended confidence.
 
         Uses the same confidence formula as the deployed template:
           confidence = alpha * agreement + (1 - alpha) * cal_conf
@@ -623,74 +675,26 @@ class EnsembleSimulator:
           - agreement = 1 / (1 + pred_std)
           - cal_conf = (conf * corr_scale * model_weights).sum(axis=1)
 
-        Returns a DataFrame matching the format of individual model predictions:
-        id_column, target, prediction, confidence, residual, abs_residual.
+        Args:
+            select_by: Metric deciding the winner -- "mae", "spearman" or "pearson"
 
         Returns:
-            pd.DataFrame with ensemble predictions and confidence
+            DataFrame matching the individual-model format: id_column, target, prediction,
+            confidence, residual, abs_residual
         """
         model_names = list(self._dfs.keys())
-
-        # Build combined arrays
-        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
-        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
-        target = self._dfs[model_names[0]][self._target_column].values
+        strategies, target, ctx = self._build_strategies(model_names)
         ids = self._dfs[model_names[0]][self.id_column].values
 
-        # Find best strategy (replicate logic from strategy_comparison)
-        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
-        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
-        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
-        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
-
-        strategies = {
-            "Simple Mean": pred_arr.mean(axis=1),
-            "Inverse-MAE Weighted": (pred_arr * inv_mae_weights).sum(axis=1),
-        }
-
-        # Confidence-weighted (fallback to inv_mae_weights when all confs are 0)
-        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
-        strategies["Confidence-Weighted"] = (pred_arr * weights).sum(axis=1)
-
-        # Scaled conf-weighted
-        scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
-        strategies["Scaled Conf-Weighted"] = (pred_arr * scaled_weights).sum(axis=1)
-
-        # Calibrated conf-weighted
-        cal_conf_weights = conf_arr * corr_scale
-        cal_weights = conf_weights_with_fallback(cal_conf_weights, inv_mae_weights)
-        strategies["Calibrated Conf-Weighted"] = (pred_arr * cal_weights).sum(axis=1)
-
-        # Drop worst
-        worst_model = max(mae_scores, key=mae_scores.get)
-        remaining_idx = [i for i, n in enumerate(model_names) if n != worst_model]
-        if len(remaining_idx) > 1:
-            strategies[f"Drop Worst ({worst_model})"] = pred_arr[:, remaining_idx].mean(axis=1)
-
-        # Select best strategy by MAE
-        strategy_maes = {name: np.abs(preds - target).mean() for name, preds in strategies.items()}
-        best_strategy = min(strategy_maes, key=strategy_maes.get)
+        scores = self._score_strategies(strategies, target)
+        best_strategy = self._best_strategy(scores, select_by)
         best_pred = strategies[best_strategy]
 
-        # Find optimal alpha for ensemble confidence
-        ensemble_abs_err = np.abs(best_pred - target)
-        best_alpha, best_corr = (
-            0.0,
-            stats.spearmanr(
-                ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
-            )[0],
+        best_alpha, best_corr = self._optimal_alpha(ctx, np.abs(best_pred - target))
+        confidence = ensemble_confidence(
+            ctx["pred_arr"], ctx["conf_arr"], ctx["corr_scale"], ctx["inv_mae_weights"], best_alpha
         )
-        for alpha in np.arange(0.0, 1.05, 0.05):
-            blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
-            corr = stats.spearmanr(blended, ensemble_abs_err)[0]
-            if corr < best_corr:
-                best_corr = corr
-                best_alpha = alpha
 
-        confidence = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, best_alpha)
-
-        # Build output DataFrame
         result = pd.DataFrame(
             {
                 self.id_column: ids,
@@ -702,118 +706,91 @@ class EnsembleSimulator:
             }
         )
 
-        print(f"\nBest ensemble: {best_strategy} (MAE={strategy_maes[best_strategy]:.4f})")
+        print(f"\nBest ensemble by {select_by}: {best_strategy}")
+        print("  " + "  ".join(f"{m}={scores.loc[best_strategy, m]:.4f}" for m in self.METRICS))
         print(f"Ensemble confidence: alpha={best_alpha:.2f}, conf_error_corr={best_corr:.3f}")
 
         return result
 
-    def get_best_strategy_config(self) -> dict:
-        """Get the best ensemble strategy configuration.
+    def _optimal_alpha(self, ctx: dict, ensemble_abs_err: np.ndarray) -> tuple[float, float]:
+        """The agreement/calibrated-confidence blend whose confidence best tracks error.
 
-        Evaluates all strategies, picks the best one by MAE, and returns the
-        parameters needed to construct the corresponding aggregation node.
+        More negative is better: confidence should fall as error rises.
+        """
+        best_alpha, best_corr = 0.0, np.inf
+        for alpha in np.arange(0.0, 1.05, 0.05):
+            blended = ensemble_confidence(
+                ctx["pred_arr"], ctx["conf_arr"], ctx["corr_scale"], ctx["inv_mae_weights"], alpha
+            )
+            corr = self._rank_corr(blended, ensemble_abs_err, "ensemble confidence", warn=False)
+            if corr < best_corr:
+                best_corr = corr
+                best_alpha = float(alpha)
+        return best_alpha, best_corr
 
-        If "Drop Worst" wins, the worst model is excluded from endpoints
-        and the remaining strategies are re-evaluated on the reduced set.
+    def get_best_strategy_config(self, select_by: str = "mae") -> dict:
+        """The winning strategy and the parameters an aggregation node needs to build it.
+
+        If "drop_worst" wins, the worst member is excluded from endpoints and the remaining
+        strategies are re-evaluated on the reduced set.
+
+        Args:
+            select_by: Metric deciding the winner -- "mae", "spearman" or "pearson".
+                Ordering metrics are the ones to use when a recalibration follows.
 
         Returns:
-            Dict with keys: aggregation_strategy, model_weights, corr_scale,
-            endpoints, target_column
+            Dict with keys: aggregation_strategy, model_weights, corr_scale, optimal_alpha,
+            endpoints, target_column, scores
         """
         model_names = list(self._dfs.keys())
-        config = self._compute_strategy_config(model_names)
+        config = self._compute_strategy_config(model_names, select_by)
 
-        # If drop_worst won, re-evaluate with reduced model set
         if config["aggregation_strategy"] == "drop_worst":
             mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
             worst_model = max(mae_scores, key=mae_scores.get)
             remaining = [n for n in model_names if n != worst_model]
             log.info(f"Drop Worst won: excluding '{worst_model}', re-evaluating with {remaining}")
-            config = self._compute_strategy_config(remaining)
+            config = self._compute_strategy_config(remaining, select_by)
 
-        log.info(f"Best strategy config: {config['aggregation_strategy']}")
+        log.info(f"Best strategy config by {select_by}: {config['aggregation_strategy']}")
         return config
 
-    def _compute_strategy_config(self, model_names: list[str]) -> dict:
-        """Compute the best strategy and its config for a given set of models.
+    def _compute_strategy_config(self, model_names: list[str], select_by: str = "mae") -> dict:
+        """Compute the winning strategy and its config for a given set of models.
 
         Args:
-            model_names: List of model names to evaluate
+            model_names: Models to evaluate
+            select_by: Metric deciding the winner
 
         Returns:
-            Dict with strategy configuration
+            Dict with the strategy configuration, carrying every metric's score so a caller
+            can see what the choice cost on the metrics it did not select by
         """
-        # Build combined arrays
-        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
-        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
-        target = self._dfs[model_names[0]][self._target_column].values
+        strategies, target, ctx = self._build_strategies(model_names)
+        scores = self._score_strategies(strategies, target)
+        best_strategy = self._best_strategy(scores, select_by)
 
-        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
-        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
-        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
-        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
-
-        # Evaluate all strategies (confidence strategies use fallback to inv_mae_weights when all confs are 0)
-        strategies = {}
-        strategies["simple_mean"] = pred_arr.mean(axis=1)
-
-        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
-        strategies["confidence_weighted"] = (pred_arr * weights).sum(axis=1)
-
-        strategies["inverse_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
-
-        scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
-        strategies["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
-
-        cal_conf = conf_arr * corr_scale
-        cal_weights = conf_weights_with_fallback(cal_conf, inv_mae_weights)
-        strategies["calibrated_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
-
-        # Drop worst (only if > 2 models)
-        if len(model_names) > 2:
-            worst_model = max(mae_scores, key=mae_scores.get)
-            remaining_idx = [i for i, n in enumerate(model_names) if n != worst_model]
-            strategies["drop_worst"] = pred_arr[:, remaining_idx].mean(axis=1)
-
-        # Find best by MAE
-        strategy_maes = {name: np.abs(preds - target).mean() for name, preds in strategies.items()}
-        best_strategy = min(strategy_maes, key=strategy_maes.get)
-
-        # Compute optimal_alpha for ensemble confidence blending
-        best_pred = strategies[best_strategy]
-        ensemble_abs_err = np.abs(best_pred - target)
-
-        best_alpha, best_corr = (
-            0.0,
-            stats.spearmanr(
-                ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
-            )[0],
-        )
-        for alpha in np.arange(0.0, 1.05, 0.05):
-            blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
-            corr = stats.spearmanr(blended, ensemble_abs_err)[0]
-            if corr < best_corr:  # More negative = better
-                best_corr = corr
-                best_alpha = alpha
-
+        best_alpha, best_corr = self._optimal_alpha(ctx, np.abs(strategies[best_strategy] - target))
         log.info(f"Optimal alpha for ensemble confidence: {best_alpha:.2f} (conf_error_corr={best_corr:.3f})")
-
-        # Build config dict
-        model_weights_dict = {name: float(w) for name, w in zip(model_names, inv_mae_weights)}
-        corr_scale_dict = {name: float(c) for name, c in zip(model_names, corr_scale)}
 
         return {
             "aggregation_strategy": best_strategy,
-            "model_weights": model_weights_dict,
-            "corr_scale": corr_scale_dict,
-            "optimal_alpha": float(best_alpha),
+            "model_weights": {n: float(w) for n, w in zip(model_names, ctx["inv_mae_weights"])},
+            "corr_scale": {n: float(c) for n, c in zip(model_names, ctx["corr_scale"])},
+            "optimal_alpha": best_alpha,
             "endpoints": model_names,
             "target_column": self._target_column,
+            "scores": scores.loc[best_strategy].to_dict(),
         }
 
-    def ensemble_failure_analysis(self) -> dict:
-        """Compare best ensemble strategy vs best individual model.
+    def ensemble_failure_analysis(self, select_by: str = "mae") -> dict:
+        """Compare the winning ensemble against the best individual member.
+
+        Scores only strategies that actually combine members, so "best model only" is not
+        a candidate -- the comparison would otherwise be against itself.
+
+        Args:
+            select_by: Metric deciding the winning ensemble
 
         Returns:
             Dict with comparison statistics
@@ -823,88 +800,42 @@ class EnsembleSimulator:
         print("=" * 60)
 
         model_names = list(self._dfs.keys())
+        strategies, target, ctx = self._build_strategies(model_names)
+        strategies.pop("best_model_only")
 
-        combined = pd.DataFrame()
-        for name, df in self._dfs.items():
-            if combined.empty:
-                combined[self.id_column] = df[self.id_column]
-                combined["target"] = df[self._target_column]
-            combined[f"{name}_pred"] = df["prediction"].values
-            combined[f"{name}_conf"] = df["confidence"].values
-            combined[f"{name}_abs_err"] = df["abs_residual"].values
+        scores = self._score_strategies(strategies, target)
+        best_strategy = self._best_strategy(scores, select_by)
+        ensemble_pred = strategies[best_strategy]
+        ensemble_abs_err = np.abs(ensemble_pred - target)
 
-        pred_cols = [f"{name}_pred" for name in model_names]
-        conf_cols = [f"{name}_conf" for name in model_names]
-        pred_arr = combined[pred_cols].values
-        conf_arr = combined[conf_cols].values
+        best_model = ctx["best_model"]
+        best_model_abs_err = self._dfs[best_model]["abs_residual"].values
+        best_model_mae = float(ctx["mae_scores"][best_model])
+        ensemble_mae = float(scores.loc[best_strategy, "mae"])
 
-        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
-        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
-        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
-
-        # Compute all ensemble strategies (true ensembles that combine multiple models)
-        ensemble_strategies = {}
-        ensemble_strategies["Simple Mean"] = combined[pred_cols].mean(axis=1)
-        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
-        ensemble_strategies["Confidence-Weighted"] = (pred_arr * weights).sum(axis=1)
-        ensemble_strategies["Inverse-MAE Weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
-        scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
-        ensemble_strategies["Scaled Conf-Weighted"] = (pred_arr * scaled_weights).sum(axis=1)
-        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
-        cal_conf = conf_arr * corr_scale
-        cal_weights = conf_weights_with_fallback(cal_conf, inv_mae_weights)
-        ensemble_strategies["Calibrated Conf-Weighted"] = (pred_arr * cal_weights).sum(axis=1)
-        worst_model = max(mae_scores, key=mae_scores.get)
-        remaining = [n for n in model_names if n != worst_model]
-        remaining_cols = [f"{n}_pred" for n in remaining]
-        # Only add Drop Worst if it still combines multiple models
-        if len(remaining) > 1:
-            ensemble_strategies[f"Drop Worst ({worst_model})"] = combined[remaining_cols].mean(axis=1)
-
-        # Find best individual model
-        best_model = min(mae_scores, key=mae_scores.get)
-        combined["best_model_abs_err"] = combined[f"{best_model}_abs_err"]
-        best_model_mae = mae_scores[best_model]
-
-        # Find best true ensemble strategy
-        strategy_maes = {name: (preds - combined["target"]).abs().mean() for name, preds in ensemble_strategies.items()}
-        best_strategy = min(strategy_maes, key=strategy_maes.get)
-        combined["ensemble_pred"] = ensemble_strategies[best_strategy]
-        combined["ensemble_abs_err"] = (combined["ensemble_pred"] - combined["target"]).abs()
-        ensemble_mae = strategy_maes[best_strategy]
-
-        # Compare
-        combined["ensemble_better"] = combined["ensemble_abs_err"] < combined["best_model_abs_err"]
-        n_better = combined["ensemble_better"].sum()
-        n_total = len(combined)
+        ensemble_better = ensemble_abs_err < best_model_abs_err
+        n_better = int(ensemble_better.sum())
+        n_total = len(ensemble_abs_err)
 
         print(f"\nBest individual model: {best_model} (MAE={best_model_mae:.4f})")
-        print(f"Best ensemble strategy: {best_strategy} (MAE={ensemble_mae:.4f})")
+        print(f"Best ensemble strategy: {best_strategy}, selected by {select_by}")
+        print("  " + "  ".join(f"{m}={scores.loc[best_strategy, m]:.4f}" for m in self.METRICS))
         if ensemble_mae < best_model_mae:
             improvement = (best_model_mae - ensemble_mae) / best_model_mae * 100
-            print(f"Ensemble improves over best model by {improvement:.1f}%")
+            print(f"Ensemble improves over best model by {improvement:.1f}% on MAE")
         else:
             degradation = (ensemble_mae - best_model_mae) / best_model_mae * 100
-            print(f"No ensemble benefit: best single model outperforms all ensemble strategies by {degradation:.1f}%")
+            print(f"No ensemble benefit on MAE: the best single model is {degradation:.1f}% better")
 
         print("\nPer-row comparison:")
         print(f"  Ensemble wins: {n_better}/{n_total} ({100*n_better/n_total:.1f}%)")
         print(f"  Best model wins: {n_total - n_better}/{n_total} ({100*(n_total - n_better)/n_total:.1f}%)")
 
-        # When ensemble wins
-        ensemble_wins = combined[combined["ensemble_better"]]
-        if len(ensemble_wins) > 0:
-            print("\nWhen ensemble wins:")
-            print(f"  Mean ensemble error: {ensemble_wins['ensemble_abs_err'].mean():.3f}")
-            print(f"  Mean best model error: {ensemble_wins['best_model_abs_err'].mean():.3f}")
-
-        # When best model wins
-        best_wins = combined[~combined["ensemble_better"]]
-        if len(best_wins) > 0:
-            print("\nWhen best model wins:")
-            print(f"  Mean ensemble error: {best_wins['ensemble_abs_err'].mean():.3f}")
-            print(f"  Mean best model error: {best_wins['best_model_abs_err'].mean():.3f}")
+        for label, mask in (("When ensemble wins", ensemble_better), ("When best model wins", ~ensemble_better)):
+            if mask.any():
+                print(f"\n{label}:")
+                print(f"  Mean ensemble error: {ensemble_abs_err[mask].mean():.3f}")
+                print(f"  Mean best model error: {best_model_abs_err[mask].mean():.3f}")
 
         return {
             "ensemble_mae": ensemble_mae,
@@ -912,6 +843,7 @@ class EnsembleSimulator:
             "best_model": best_model,
             "best_model_mae": best_model_mae,
             "ensemble_win_rate": n_better / n_total,
+            "scores": scores.loc[best_strategy].to_dict(),
         }
 
 
