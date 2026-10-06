@@ -1,8 +1,25 @@
-"""Build a submission by averaging several models' blind-set predictions.
+"""Build a submission by combining several models' blind-set predictions.
 
-Averaging diverse models is the only thing that has repeatedly improved CYP2D6. Three
+Combining diverse models is the only thing that has repeatedly improved CYP2D6. Three
 architectural hypotheses -- task weighting, cross-isoform representation sharing, descriptor
 features -- each came back null on that isoform; this did not.
+
+**Members are weighted per compound by calibrated confidence, not averaged flat.** Each
+member's confidence is scaled by its own |conf-to-error correlation|, so a member whose
+confidence has been shown to track its error gets more say on the rows where it is confident.
+Out of fold that beats the flat mean on every isoform by more than the isoform resolves:
+
+    isoform   flat mean   calibrated conf   delta    resolves at
+    CYP1A2       0.6074            0.6569  +0.0495          0.043
+    CYP2C9       0.7307            0.7832  +0.0525          0.031
+    CYP2D6       0.4949            0.5583  +0.0634          0.056
+    CYP3A4       0.8321            0.8574  +0.0253          0.018
+
+Both the correlations and the fallback weights come from `EnsembleSimulator` at run time,
+read off each member's out-of-fold capture, so a rebuilt member re-weights itself rather
+than leaving a stale constant behind. Confidence is live on all 750 blinded compounds --
+no member returns NaN there -- but `conf_weights_with_fallback` still guards the row,
+since a compound the proximity backend cannot resolve would otherwise poison the average.
 
 Membership is per isoform because the CYP2D6 specialists have no other heads. Members are
 chosen by architecture rather than by score, since picking the best-scoring subset out of many
@@ -21,7 +38,7 @@ Out of fold, against the two chemprops alone (four for CYP2D6):
 No single delta clears its isoform's resolution threshold (0.043 / 0.031 / 0.056 / 0.018), so
 read the pattern rather than any row: both additions are positive on all four isoforms.
 
-Predictions are averaged, not the placements. Placement happens afterwards against the
+Predictions are combined, not the placements. Placement happens afterwards against the
 ensemble's own out-of-fold correlation:
 
     python cyp_ensemble_submit.py
@@ -37,6 +54,8 @@ from cyp_recalibrate import VALUE_COLUMNS
 from openadmet_validation import validate_activity_submission
 from workbench.api import Endpoint, Model, PublicData
 from workbench.api.inference_cache import InferenceCache
+from workbench.utils.ensemble_simulator import EnsembleSimulator
+from workbench.utils.ensemble_utils import conf_weights_with_fallback
 
 OUT = Path(__file__).parent / "outputs"
 N_TEST = 750
@@ -88,6 +107,36 @@ def column_for(preds: pd.DataFrame, iso: str) -> pd.Series:
     raise ValueError(f"no {iso} prediction column — found {list(preds.columns)[:8]}")
 
 
+def confidence_for(preds: pd.DataFrame, iso: str) -> pd.Series:
+    """The isoform's confidence column, named the same way `column_for` describes."""
+    named = f"{iso.lower()}_pic50_direct_inhibition_confidence"
+    if named in preds.columns:
+        return preds[named]
+    if "confidence" in preds.columns:
+        return preds["confidence"]
+    raise ValueError(f"no {iso} confidence column — found {list(preds.columns)[:8]}")
+
+
+def member_scaling(iso: str, members: list[str]) -> tuple[np.ndarray, np.ndarray]:
+    """Per-member `corr_scale` and fallback weights, read off the out-of-fold captures.
+
+    Returns both arrays in `members` order. `corr_scale` is each member's
+    |conf-to-error correlation|; the fallback weights are inverse-MAE, used on any row
+    whose confidences carry no usable signal.
+    """
+    sim = EnsembleSimulator(members, id_column="molecule_name", target=f"{iso.lower()}_pic50_direct_inhibition")
+    config = sim.get_best_strategy_config(select_by="spearman")
+    if config["aggregation_strategy"] != "calibrated_conf_weighted":
+        print(
+            f"  WARNING {iso}: out-of-fold now prefers '{config['aggregation_strategy']}' "
+            f"over calibrated_conf_weighted; this script still applies the latter"
+        )
+    return (
+        np.array([config["corr_scale"][m] for m in members]),
+        np.array([config["model_weights"][m] for m in members]),
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", default="ensemble", help="Output filename suffix")
@@ -113,13 +162,22 @@ if __name__ == "__main__":
     preds = {m: predict(m, blind, embedded) for m in every}
 
     sub = pd.DataFrame({"SMILES": blind["smiles"].values, "Molecule_Name": blind["molecule_name"].values})
-    print(f"\n{'isoform':<8}{'members':>9}{'mean':>8}{'sd':>7}   spread across members")
+    print(f"\n{'isoform':<8}{'members':>9}{'mean':>8}{'sd':>7}{'spread':>8}{'fallback':>10}")
     for iso, members in MEMBERS.items():
-        cols = [column_for(preds[m], iso).reindex(sub["Molecule_Name"]).to_numpy() for m in members]
-        stack = np.column_stack(cols)
-        sub[VALUE_COLUMNS[iso]] = stack.mean(axis=1)
-        disagreement = stack.std(axis=1).mean()
-        print(f"{iso:<8}{len(members):>9}{stack.mean():>8.2f}{stack.mean(axis=1).std():>7.2f}   {disagreement:.3f}")
+        stack = np.column_stack([column_for(preds[m], iso).reindex(sub["Molecule_Name"]).to_numpy() for m in members])
+        conf = np.column_stack(
+            [confidence_for(preds[m], iso).reindex(sub["Molecule_Name"]).to_numpy() for m in members]
+        )
+
+        corr_scale, fallback_w = member_scaling(iso, members)
+        weights = conf_weights_with_fallback(conf * corr_scale, fallback_w)
+        sub[VALUE_COLUMNS[iso]] = (stack * weights).sum(axis=1)
+
+        n_fallback = int((~np.isfinite(conf).all(axis=1)).sum())
+        print(
+            f"{iso:<8}{len(members):>9}{stack.mean():>8.2f}{sub[VALUE_COLUMNS[iso]].std():>7.2f}"
+            f"{stack.std(axis=1).mean():>8.3f}{n_fallback:>10}"
+        )
 
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"cyp-ensemble_activity_submission_{args.tag}.csv"
