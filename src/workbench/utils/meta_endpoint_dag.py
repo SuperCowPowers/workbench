@@ -29,8 +29,14 @@ contributes only those columns::
 
 A multi-task child then contributes one head's worth of columns instead of all
 of them. Omit ``targets`` to take the endpoint's whole output. Two nodes
-claiming the same target is an error rather than a silent first-branch-wins,
-and :meth:`MetaEndpointDAG.output_columns` gives the resulting column contract
+claiming the same target is an error rather than a silent first-branch-wins;
+when two children's models share a generic target name, ``rename`` gives each
+head its downstream name::
+
+    dag.add_endpoint("logd-value-reg-1", rename={"udm_asy_res_value": "logd"})
+    dag.add_endpoint("pka-a1-value-reg-1", rename={"udm_asy_res_value": "pka_a1"})
+
+:meth:`MetaEndpointDAG.output_columns` gives the resulting column contract
 without deploying anything.
 
 Row-alignment across parallel branches: the walker injects a synthetic
@@ -72,6 +78,18 @@ def select_target_columns(columns: List[str], targets: List[str], context: str) 
     return kept
 
 
+def rename_target_columns(columns: List[str], rename: Dict[str, str]) -> List[str]:
+    """Map ``<head>`` / ``<head>_*`` to ``<new_head>`` / ``<new_head>_*`` per ``rename``."""
+
+    def _renamed(c: str) -> str:
+        for src, dst in rename.items():
+            if c == src or c.startswith(f"{src}_"):
+                return dst + c[len(src) :]
+        return c
+
+    return [_renamed(c) for c in columns]
+
+
 class MetaEndpointDAG:
     """A typed DAG of endpoints + aggregation nodes.
 
@@ -83,6 +101,7 @@ class MetaEndpointDAG:
     def __init__(self):
         self._endpoints: Dict[str, str] = {}  # node_name → endpoint_name
         self._declared_targets: Dict[str, List[str]] = {}  # node_name → head(s) this node owns
+        self._renames: Dict[str, Dict[str, str]] = {}  # node_name → {head: downstream head name}
         self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_child_metadata()
         self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._endpoint_max_instances: Dict[str, int] = {}  # populated by populate_child_metadata()
@@ -96,7 +115,11 @@ class MetaEndpointDAG:
     # ------------------------------------------------------------------
 
     def add_endpoint(
-        self, endpoint_name: str, targets: Optional[List[str]] = None, node_name: Optional[str] = None
+        self,
+        endpoint_name: str,
+        targets: Optional[List[str]] = None,
+        rename: Optional[Dict[str, str]] = None,
+        node_name: Optional[str] = None,
     ) -> str:
         """Add an endpoint reference to the DAG.
 
@@ -104,11 +127,18 @@ class MetaEndpointDAG:
             endpoint_name: Name of a deployed Workbench endpoint.
             targets: The prediction head(s) this node contributes. Only those
                 heads' columns (``<target>_pred``, ``<target>_confidence``,
-                quantiles, ...) flow downstream; every other head and the
+                quantiles, ...) flow downstream; every other head, the
                 unprefixed generic aliases (``prediction``, ``confidence``,
-                ``q_*``) are dropped. Omit to take the endpoint's whole output
+                ``q_*``) and any upstream feature-endpoint columns are
+                dropped. Omit to take the endpoint's whole output
                 — right for feature endpoints and for a single-task child whose
                 heads can't collide with anything else in the DAG.
+            rename: ``{head: new_head}`` — the name each declared head carries
+                downstream. Every ``<head>`` / ``<head>_*`` column becomes
+                ``<new_head>`` / ``<new_head>_*``, so two children whose models
+                share a generic target name (``udm_asy_res_value``) can sit in
+                one panel. Keys are implicitly declared targets when ``targets``
+                is omitted, and must be a subset of ``targets`` otherwise.
             node_name: Optional unique node name (defaults to ``endpoint_name``).
 
         Returns:
@@ -117,10 +147,21 @@ class MetaEndpointDAG:
         node = node_name or endpoint_name
         if node in self._endpoints or node in self._aggregations:
             raise ValueError(f"Node '{node}' already exists in this DAG")
+        if rename and not targets:
+            targets = list(rename)
+        if rename and (unknown := set(rename) - set(targets)):
+            raise ValueError(f"Node '{node}': rename keys {sorted(unknown)} are not declared targets {targets}")
         self._endpoints[node] = endpoint_name
         if targets:
             self._declared_targets[node] = list(targets)
+        if rename:
+            self._renames[node] = dict(rename)
         return node
+
+    def _effective_targets(self, node: str) -> List[str]:
+        """Declared heads as they appear downstream (``rename`` applied)."""
+        rename = self._renames.get(node, {})
+        return [rename.get(t, t) for t in self._declared_targets.get(node, [])]
 
     def add_aggregation(self, node: AggregationNode) -> str:
         """Add an :class:`AggregationNode` to the DAG.
@@ -177,6 +218,11 @@ class MetaEndpointDAG:
     def declared_targets(self) -> Dict[str, List[str]]:
         """Mapping of node_name → declared target head(s) (read-only view)."""
         return self._declared_targets
+
+    @property
+    def renames(self) -> Dict[str, Dict[str, str]]:
+        """Mapping of node_name → ``{head: downstream head name}`` (read-only view)."""
+        return self._renames
 
     @property
     def aggregations(self) -> Dict[str, AggregationNode]:
@@ -287,11 +333,14 @@ class MetaEndpointDAG:
                 endpoint_name = self._endpoints[node]
                 cols = list(Endpoint(endpoint_name).output_columns())
                 targets = self._declared_targets.get(node)
-                if targets:
-                    cols = select_target_columns(cols, targets, f"Node '{node}' (endpoint '{endpoint_name}')")
                 parents = self._parents_of(node)
                 upstream = node_columns[parents[0]] if parents else []
-                node_columns[node] = upstream + [c for c in cols if c not in upstream]
+                if targets:
+                    # A declared node contributes only its heads; upstream feature columns stop here.
+                    cols = select_target_columns(cols, targets, f"Node '{node}' (endpoint '{endpoint_name}')")
+                    node_columns[node] = rename_target_columns(cols, self._renames.get(node, {}))
+                else:
+                    node_columns[node] = upstream + [c for c in cols if c not in upstream]
             else:
                 agg = self._aggregations[node]
                 node_columns[node] = agg.output_columns([node_columns[p] for p in self._parents_of(node)])
@@ -344,8 +393,8 @@ class MetaEndpointDAG:
                 raise ValueError(f"Aggregation node '{name}' has no upstream parents")
 
         owner: Dict[str, str] = {}
-        for node, targets in self._declared_targets.items():
-            for target in targets:
+        for node in self._declared_targets:
+            for target in self._effective_targets(node):
                 if target in owner:
                     raise ValueError(
                         f"Nodes '{owner[target]}' and '{node}' both declare target '{target}' — "
@@ -460,10 +509,11 @@ class MetaEndpointDAG:
         will fail loudly — better than misaligned rows.
 
         A node with declared ``targets`` is trimmed to those heads: every
-        column the endpoint added that isn't ``<target>`` or ``<target>_*``
-        is dropped, so a multi-task child contributes one head's worth of
-        columns instead of all of them. Passthrough columns are never
-        touched.
+        column that isn't ``<target>`` or ``<target>_*`` is dropped — the
+        endpoint's other heads and any feature columns an upstream endpoint
+        added — so a multi-task child contributes one head's worth of
+        columns instead of all of them. The caller's own input columns are
+        never touched.
         """
         endpoint_name = self._endpoints[node]
         parents = self._parents_of(node)
@@ -486,23 +536,28 @@ class MetaEndpointDAG:
 
         declared = self._declared_targets.get(node)
         if declared:
-            result = self._trim_to_targets(node, endpoint_name, source_df, result, declared)
+            passthrough = set(input_df.columns) | {DAG_ROW_ID}
+            result = self._trim_to_targets(
+                node, endpoint_name, passthrough, result, declared, self._renames.get(node, {})
+            )
         return result
 
     @staticmethod
     def _trim_to_targets(
         node: str,
         endpoint_name: str,
-        source_df: pd.DataFrame,
+        passthrough: set,
         result: pd.DataFrame,
         targets: List[str],
+        rename: Dict[str, str],
     ) -> pd.DataFrame:
-        """Drop every column the endpoint added except the declared heads'."""
-        passthrough = set(source_df.columns) | {DAG_ROW_ID}
+        """Keep the caller's ``passthrough`` columns plus the declared heads', renamed per ``rename``."""
         added = [c for c in result.columns if c not in passthrough]
         kept = select_target_columns(added, targets, f"Node '{node}' (endpoint '{endpoint_name}')")
         keep = passthrough | set(kept)
-        return result[[c for c in result.columns if c in keep]]
+        result = result[[c for c in result.columns if c in keep]]
+        result.columns = [c if c in passthrough else rename_target_columns([c], rename)[0] for c in result.columns]
+        return result
 
     def _run_aggregation(self, node: str, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single aggregation node."""
@@ -529,6 +584,7 @@ class MetaEndpointDAG:
         return {
             "endpoints": dict(self._endpoints),
             "endpoint_targets": {node: list(t) for node, t in self._declared_targets.items()},
+            "endpoint_renames": {node: dict(r) for node, r in self._renames.items()},
             "endpoint_async": dict(self._endpoint_async_flags),
             "endpoint_batch_size": dict(self._endpoint_batch_sizes),
             "aggregations": [_serialize_aggregation(a) for a in self._aggregations.values()],
@@ -605,9 +661,8 @@ class MetaEndpointDAG:
         from workbench.api import Endpoint, Model
 
         def _targets_of(node: str) -> List[str]:
-            declared = self._declared_targets.get(node)
-            if declared:
-                return declared
+            if node in self._declared_targets:
+                return self._effective_targets(node)
             ep = Endpoint(self._endpoints[node])
             if not ep.exists():
                 return []
@@ -653,8 +708,9 @@ class MetaEndpointDAG:
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
         dag = cls()
         declared = data.get("endpoint_targets", {})
+        renames = data.get("endpoint_renames", {})
         for node_name, endpoint_name in data.get("endpoints", {}).items():
-            dag.add_endpoint(endpoint_name, declared.get(node_name), node_name=node_name)
+            dag.add_endpoint(endpoint_name, declared.get(node_name), rename=renames.get(node_name), node_name=node_name)
         dag._endpoint_async_flags = dict(data.get("endpoint_async", {}))
         dag._endpoint_batch_sizes = {k: int(v) for k, v in data.get("endpoint_batch_size", {}).items()}
         for agg_data in data.get("aggregations", []):

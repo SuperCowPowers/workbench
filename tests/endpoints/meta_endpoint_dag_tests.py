@@ -662,6 +662,130 @@ def test_validate_rejects_duplicate_declared_targets():
         dag.validate()
 
 
+# ---------------------------------------------------------------------------
+# Renamed heads
+# ---------------------------------------------------------------------------
+
+
+def _generic_target_dag():
+    """Two single-task children whose models both call their target ``value``."""
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("logd-ep", rename={"value": "logd"})
+    dag.add_endpoint("pka-ep", rename={"value": "pka"})
+    dag.add_aggregation(Concat(name="panel"))
+    dag.add_edge("logd-ep", "panel")
+    dag.add_edge("pka-ep", "panel")
+    dag.set_input_node("logd-ep", "pka-ep")
+    dag.set_output_node("panel")
+    return dag
+
+
+def _generic_target_invoker(endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+    out = df.reset_index(drop=True).copy()
+    scale = 1.0 if endpoint_name == "logd-ep" else 2.0
+    out["value_pred"] = [scale] * len(out)
+    out["value_q_50"] = [scale] * len(out)
+    out["prediction"] = out["value_pred"]
+    return out
+
+
+_GENERIC_COLS = ["value_pred", "value_q_50", "prediction"]
+
+
+def test_rename_implies_declared_targets():
+    dag = _generic_target_dag().validate()
+    assert dag.declared_targets == {"logd-ep": ["value"], "pka-ep": ["value"]}
+    assert dag.renames == {"logd-ep": {"value": "logd"}, "pka-ep": {"value": "pka"}}
+
+
+def test_rename_key_must_be_declared_target():
+    dag = MetaEndpointDAG()
+    with pytest.raises(ValueError, match="rename keys \\['typo'\\]"):
+        dag.add_endpoint("ep", targets=["value"], rename={"typo": "logd"})
+
+
+def test_rename_resolves_shared_generic_target():
+    dag = _generic_target_dag().validate()
+    out = dag.run(pd.DataFrame({"smiles": ["CCO", "CCN"]}), endpoint_invoker=_generic_target_invoker)
+
+    assert list(out["logd_pred"]) == [1.0, 1.0]
+    assert list(out["pka_pred"]) == [2.0, 2.0]
+    assert {"logd_q_50", "pka_q_50"}.issubset(out.columns)
+    assert not any(c.startswith("value") for c in out.columns)
+    assert "prediction" not in out.columns
+    assert "smiles" in out.columns
+
+
+def test_rename_leaves_passthrough_alone():
+    """A caller column that happens to share the head's prefix is not renamed."""
+    dag = _generic_target_dag().validate()
+    out = dag.run(pd.DataFrame({"smiles": ["CCO"], "value_measured": [3.0]}), endpoint_invoker=_generic_target_invoker)
+    assert list(out["value_measured"]) == [3.0]
+
+
+def _features_then_trimmed_predictor_dag():
+    """[monroe features] -> trimmed predictor: the feature column stays inside the branch."""
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("features-ep")
+    dag.add_endpoint("ppb-ep", rename={"value": "ppb_mouse"})
+    dag.add_edge("features-ep", "ppb-ep")
+    dag.set_input_node("features-ep")
+    dag.set_output_node("ppb-ep")
+    return dag.validate()
+
+
+def _features_then_predictor_invoker(endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+    out = df.reset_index(drop=True).copy()
+    if endpoint_name == "features-ep":
+        out["monroe"] = [[0.1, 0.2]] * len(out)
+    else:
+        out["value_pred"] = [5.0] * len(out)
+        out["prediction"] = out["value_pred"]
+    return out
+
+
+def test_declared_targets_drop_upstream_feature_columns():
+    dag = _features_then_trimmed_predictor_dag()
+    out = dag.run(pd.DataFrame({"smiles": ["CCO", "CCN"]}), endpoint_invoker=_features_then_predictor_invoker)
+    assert list(out.columns) == ["smiles", "ppb_mouse_pred"]
+
+
+def test_output_columns_drops_upstream_feature_columns(monkeypatch):
+    dag = _features_then_trimmed_predictor_dag()
+    _patch_output_columns(monkeypatch, {"features-ep": ["monroe"], "ppb-ep": ["value_pred", "prediction"]})
+    assert dag.output_columns() == ["ppb_mouse_pred"]
+
+
+def test_validate_rejects_renamed_heads_that_collide():
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("ep-a", rename={"value": "logd"})
+    dag.add_endpoint("ep-b", rename={"other": "logd"})
+    dag.add_aggregation(Concat(name="panel"))
+    dag.add_edge("ep-a", "panel")
+    dag.add_edge("ep-b", "panel")
+    dag.set_input_node("ep-a", "ep-b")
+    dag.set_output_node("panel")
+    with pytest.raises(ValueError, match="both declare target 'logd'"):
+        dag.validate()
+
+
+def test_output_columns_applies_rename(monkeypatch):
+    dag = _generic_target_dag().validate()
+    _patch_output_columns(monkeypatch, {"logd-ep": _GENERIC_COLS, "pka-ep": _GENERIC_COLS})
+    assert dag.output_columns() == ["logd_pred", "logd_q_50", "pka_pred", "pka_q_50"]
+
+
+def test_terminal_target_uses_renamed_heads():
+    assert _generic_target_dag().validate().terminal_target() == ["logd", "pka"]
+
+
+def test_json_roundtrip_preserves_renames():
+    dag = _generic_target_dag().validate()
+    clone = MetaEndpointDAG.from_json(dag.to_json())
+    assert clone.renames == dag.renames
+    assert clone.declared_targets == dag.declared_targets
+
+
 def _single_predictor_dag(targets=None):
     dag = MetaEndpointDAG()
     dag.add_endpoint("vd-ep", targets=targets)
