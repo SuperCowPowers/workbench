@@ -56,6 +56,8 @@ INSTANCE_LADDERS = {
     # wall-clock even though the search itself is serial.
     "cpu_hpo": ["ml.c7i.4xlarge"],  # 16 vCPUs
     "cpu": ["ml.m5.xlarge"],
+    # TabICL only runs forward passes, which CPU handles fine
+    "tabicl": ["ml.m6i.2xlarge"],  # 8 vCPUs, 32GB RAM
 }
 # How long a non-final rung queues for an instance. Enforced by our own poll loop, which
 # stops the job and moves down the ladder. MAX_PENDING_SECONDS hands SageMaker the same job
@@ -376,13 +378,15 @@ class FeaturesToModel(Transform):
             instance_ladder = [train_instance_type]
             self.log.important(f"Using user-specified instance {train_instance_type}")
         else:
-            # A TRANSFORMER model computes features and trains nothing, so it never needs a GPU
-            gpu_framework = self.model_type != ModelType.TRANSFORMER and self.model_framework in [
-                ModelFramework.CHEMPROP,
-                ModelFramework.PYTORCH,
-                ModelFramework.TABICL,
-            ]
-            workload = training_workload(kwargs.get("hyperparameters"), gpu_framework=gpu_framework)
+            if self.model_framework == ModelFramework.TABICL:
+                workload = "tabicl"
+            else:
+                # A TRANSFORMER model computes features and trains nothing, so it never needs a GPU
+                gpu_framework = self.model_type != ModelType.TRANSFORMER and self.model_framework in [
+                    ModelFramework.CHEMPROP,
+                    ModelFramework.PYTORCH,
+                ]
+                workload = training_workload(kwargs.get("hyperparameters"), gpu_framework=gpu_framework)
             instance_ladder = INSTANCE_LADDERS[workload]
             self.log.important(f"Using {workload} instances {instance_ladder} for {self.model_framework.value}")
 
