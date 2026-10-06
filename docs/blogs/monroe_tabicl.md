@@ -125,6 +125,12 @@ model = fs.to_model(
 )
 ```
 
+A fraction between 0 and 1 sets an explained-variance target instead of a count: `0.95` keeps the fewest components that explain 95% of the variance. Each fold, and the served model, picks its own count, and on an embedding that count can run well past TabICL's 100-column pretraining range.
+
+```python
+hyperparameters={"pca_components": 0.95}  # fewest components explaining 95% of the variance
+```
+
 Two things work against it for an embedding. Standardizing first gives every dimension the same weight, including near-flat ones that carry little signal. And it projects *all* the features, so any extra descriptors next to the embedding get folded into the components too.
 
 ### What We've Seen

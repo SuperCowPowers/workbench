@@ -60,7 +60,7 @@ model = fs.to_model(
 | `n_folds` | `5` | Cross-validation folds for out-of-fold metrics (1 = a single train/validation split) |
 | `n_estimators` | `8` | TabICL's internal ensemble: members see different column orders and scalings |
 | `batch_size` | `1` | Ensemble members per forward pass. 1 gives the lowest peak memory; predictions are the same at any value |
-| `pca_components` | `None` | Standardize and reduce the features to this many PCA components before TabICL |
+| `pca_components` | `None` | Standardize the features and reduce them with PCA before TabICL: an integer is a component count, a fraction between 0 and 1 is an explained-variance target (`0.95` keeps the fewest components explaining 95%) |
 | `top_variance_features` | `None` | Keep this many of the columns expanded from compressed features (highest variance on the training rows); other features are kept |
 | `shap_sample_size` | `100` | Rows explained for SHAP feature importance (0 disables) |
 | `split_strategy` | `"scaffold"` | `"scaffold"`, `"butina"`, or `"random"` (scaffold and butina need a `smiles` column) |

@@ -45,8 +45,9 @@ DEFAULT_HYPERPARAMETERS = {
     # Ensemble members per forward pass. 1 gives the lowest peak memory; predictions
     # are identical at any value.
     "batch_size": 1,
-    # StandardScaler + PCA to this many components before TabICL (None = raw features).
-    # TabICL is pretrained on tables of up to 100 columns.
+    # StandardScaler + PCA before TabICL (None = raw features): an int is a component count,
+    # a float in (0, 1) an explained-variance target. TabICL is pretrained on tables of up
+    # to 100 columns.
     "pca_components": None,
     # Keep this many of the columns expanded from compressed features (an embedding, a
     # fingerprint), the ones with the highest variance on the training rows; every other
