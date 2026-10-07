@@ -702,17 +702,14 @@ def test_primary_is_exclusive_with_targets():
         MetaEndpointDAG().add_endpoint("ep", targets=["value"], primary="logd")
 
 
-def test_primary_renames_alias_family_and_drops_heads():
+def test_primary_keeps_pred_and_conf_only():
     dag = _primary_panel_dag().validate()
     out = dag.run(pd.DataFrame({"smiles": ["CCO", "CCN"]}), endpoint_invoker=_primary_panel_invoker)
 
+    assert list(out.columns) == ["smiles", "logd_pred", "logd_conf", "pka_pred", "pka_conf"]
     assert list(out["logd_pred"]) == [1.0, 1.0]
     assert list(out["pka_pred"]) == [2.0, 2.0]
-    expected = {"pred", "pred_std", "confidence", "expected_residual", "q_50", "q_975"}
-    for name in ("logd", "pka"):
-        assert {f"{name}_{s}" for s in expected}.issubset(out.columns)
-    assert not any(c.startswith(("value", "prediction", "q_")) or c == "confidence" for c in out.columns)
-    assert "smiles" in out.columns
+    assert list(out["pka_conf"]) == [0.5, 0.5]
 
 
 def test_primary_leaves_passthrough_alone():
@@ -782,8 +779,7 @@ def test_validate_rejects_primary_colliding_with_declared_target():
 def test_output_columns_applies_primary(monkeypatch):
     dag = _primary_panel_dag().validate()
     _patch_output_columns(monkeypatch, {"logd-ep": _PRIMARY_COLS, "pka-ep": _PRIMARY_COLS})
-    family = ["pred", "pred_std", "confidence", "q_50"]
-    assert dag.output_columns() == [f"logd_{s}" for s in family] + [f"pka_{s}" for s in family]
+    assert dag.output_columns() == ["logd_pred", "logd_conf", "pka_pred", "pka_conf"]
 
 
 def test_terminal_target_uses_primary_names():

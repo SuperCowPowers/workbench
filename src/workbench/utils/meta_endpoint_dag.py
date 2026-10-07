@@ -32,12 +32,12 @@ of them. Omit ``targets`` to take the endpoint's whole output. Two nodes
 claiming the same target is an error rather than a silent first-branch-wins.
 
 Every endpoint also exposes its primary head unprefixed (``prediction``,
-``confidence``, ``q_*``, ...). ``primary`` takes that family and gives it a
-panel name, so a champion panel never depends on what each model called its
-target::
+``confidence``, ...). ``primary`` takes just those two under a panel name, so
+a champion panel stays compact and never depends on what each model called
+its target::
 
-    dag.add_endpoint("logd-value-reg-1", primary="logd")      # -> logd_pred, logd_confidence, ...
-    dag.add_endpoint("pka-a1-value-reg-1", primary="pka_a1")  # -> pka_a1_pred, ...
+    dag.add_endpoint("logd-value-reg-1", primary="logd")      # -> logd_pred, logd_conf
+    dag.add_endpoint("pka-a1-value-reg-1", primary="pka_a1")  # -> pka_a1_pred, pka_a1_conf
 
 :meth:`MetaEndpointDAG.output_columns` gives the resulting column contract
 without deploying anything.
@@ -82,22 +82,18 @@ def select_target_columns(columns: List[str], targets: List[str], context: str) 
 
 
 def select_primary_columns(columns: List[str], name: str, context: str) -> Dict[str, str]:
-    """Map the unprefixed primary-head family to ``<name>_*`` panel columns.
+    """Map the unprefixed primary head to its two panel columns.
 
-    ``prediction`` -> ``<name>_pred``, ``prediction_std`` -> ``<name>_pred_std``,
-    and ``confidence`` / ``expected_residual`` / ``q_*`` -> ``<name>_<alias>``.
-    Returns ``{source_column: panel_column}`` in ``columns`` order.
+    ``prediction`` -> ``<name>_pred`` and ``confidence`` -> ``<name>_conf``; the
+    rest of the unprefixed family (``prediction_std``, ``expected_residual``,
+    ``q_*``) is dropped. Returns ``{source_column: panel_column}``, pred first.
 
     Raises:
         ValueError: ``columns`` is non-empty but has no ``prediction`` — the
             endpoint doesn't expose a primary head.
     """
-    stems = {"prediction": "pred", "prediction_std": "pred_std"}
-    mapping = {
-        c: f"{name}_{stems.get(c, c)}"
-        for c in columns
-        if c in stems or c in ("confidence", "expected_residual") or c.startswith("q_")
-    }
+    stems = {"prediction": "pred", "confidence": "conf"}
+    mapping = {c: f"{name}_{stem}" for c, stem in stems.items() if c in columns}
     if columns and "prediction" not in mapping:
         raise ValueError(f"{context}: no 'prediction' column among {columns}")
     return mapping
@@ -147,12 +143,10 @@ class MetaEndpointDAG:
                 — right for feature endpoints and for a single-task child whose
                 heads can't collide with anything else in the DAG.
             primary: Panel name for the endpoint's primary head. Only the
-                unprefixed family (``prediction``, ``prediction_std``,
-                ``confidence``, ``expected_residual``, ``q_*``) flows
-                downstream, renamed to ``<primary>_pred``, ``<primary>_pred_std``,
-                ``<primary>_confidence``, ... — so the panel is independent of
-                what the model called its target. Mutually exclusive with
-                ``targets``.
+                unprefixed ``prediction`` and ``confidence`` flow downstream,
+                as ``<primary>_pred`` and ``<primary>_conf`` — so the panel is
+                compact and independent of what the model called its target.
+                Mutually exclusive with ``targets``.
             node_name: Optional unique node name (defaults to ``endpoint_name``).
 
         Returns:
@@ -563,9 +557,8 @@ class MetaEndpointDAG:
             mapping = select_primary_columns(added, self._primary[node], context)
         else:
             mapping = {c: c for c in select_target_columns(added, self._declared_targets[node], context)}
-        keep = passthrough | set(mapping)
-        result = result[[c for c in result.columns if c in keep]]
-        return result.rename(columns=mapping)
+        kept = [c for c in result.columns if c in passthrough] + list(mapping)
+        return result[kept].rename(columns=mapping)
 
     def _run_aggregation(self, node: str, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single aggregation node."""
