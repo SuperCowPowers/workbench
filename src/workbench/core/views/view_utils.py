@@ -12,6 +12,7 @@ from botocore.exceptions import ClientError
 # Workbench Imports
 from workbench.api import DataSource
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.utils.aws_utils import aws_throttle
 
 log = logging.getLogger("workbench")
 
@@ -140,6 +141,7 @@ def list_supplemental_data_tables(base_table_name: str, database: str, boto3_ses
     return related_tables(tables, base_table_name)[1]
 
 
+@aws_throttle
 def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: str):
     """Store a DataFrame as a Glue Catalog Table
 
