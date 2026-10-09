@@ -25,16 +25,14 @@ rdBase.DisableLog("rdApp.warning")
 ptable = Chem.GetPeriodicTable()
 
 
-def encode_code(
-    val: Any,
-    classes: Iterable[Any]
-) -> np.uint8:
+def encode_code(val: Any, classes: Iterable[Any]) -> np.uint8:
     cl = list(classes)
     try:
         idx = cl.index(val)
     except ValueError:
         idx = len(cl)
     return np.uint8(idx)
+
 
 def get_node_features_codes(mol: Chem.Mol):
     atoms = mol.GetAtoms()
@@ -82,7 +80,7 @@ def get_node_features_codes(mol: Chem.Mol):
         for j, k in enumerate(NODE_FEAT_LIST_ONE_HOT):
             feat_codes[i, j] = encode_code(vals[k], NODE_FEAT_LIST_ONE_HOT[k])
 
-    mol_name = mol.GetProp('_Name') if mol.HasProp('_Name') else 'unknown'
+    mol_name = mol.GetProp("_Name") if mol.HasProp("_Name") else "unknown"
     assert not np.isnan(feat_float).any(), f"NaN found in feat_float for {mol_name}"
     return feat_float, feat_codes  # [N,8] float32, [N,10] uint8
 
@@ -102,16 +100,16 @@ def get_edge_features_codes(mol: Chem.Mol):
             stereo=bond.GetStereo(),
         )
         for j, k in enumerate(EDGE_FEAT_LIST_ONE_HOT):
-            edge_codes[bi, j] = encode_code(vals[k], EDGE_FEAT_LIST_ONE_HOT[k])    
+            edge_codes[bi, j] = encode_code(vals[k], EDGE_FEAT_LIST_ONE_HOT[k])
     return edge_codes, edge_index  # [E,4] uint8, [2,E] int32
 
 
 def _encode_edge_row_for_virtual(stereo_val: Any) -> np.ndarray:
     vals = dict(
-        conjugation=0,     # falls into "other" bucket via encode_code
-        is_in_ring=0,      # falls into "other"
-        bond_type=None,    # falls into "other"
-        stereo=stereo_val, # use RDKit BondStereo value
+        conjugation=0,  # falls into "other" bucket via encode_code
+        is_in_ring=0,  # falls into "other"
+        bond_type=None,  # falls into "other"
+        stereo=stereo_val,  # use RDKit BondStereo value
     )
     row = np.empty((len(EDGE_FEAT_LIST_ONE_HOT),), dtype=np.uint8)
     for j, k in enumerate(EDGE_FEAT_LIST_ONE_HOT):
@@ -132,7 +130,7 @@ def get_stereo_virtual_edges(mol: Chem.Mol) -> Tuple[np.ndarray, np.ndarray]:
         real_pairs.add((i, j))
         real_pairs.add((j, i))
 
-    result_pairs: List[Tuple[int,int]] = []
+    result_pairs: List[Tuple[int, int]] = []
     result_codes: List[np.ndarray] = []
     seen = set()  # avoid duplicates inside the virtual set
 
@@ -211,8 +209,7 @@ def get_stereo_virtual_edges(mol: Chem.Mol) -> Tuple[np.ndarray, np.ndarray]:
         add_edge(a, c, "chi_circle", bidirectional=False)
 
     if not result_pairs:
-        return (np.empty((2, 0), dtype=np.int32),
-                np.empty((0, len(EDGE_FEAT_LIST_ONE_HOT)), dtype=np.uint8))
+        return (np.empty((2, 0), dtype=np.int32), np.empty((0, len(EDGE_FEAT_LIST_ONE_HOT)), dtype=np.uint8))
 
     edge_index_extra = np.asarray(result_pairs, dtype=np.int32).T
     edge_codes_extra = np.asarray(result_codes, dtype=np.uint8)
@@ -270,11 +267,11 @@ def _two_orb_cap(Zs):
     for z in Zs:
         z = int(z)
         if z <= 2:
-            cap += 1      # 1s
+            cap += 1  # 1s
         elif z <= 18:
-            cap += 4      # 2s2p
+            cap += 4  # 2s2p
         else:
-            cap += 9      # 3s3p3d
+            cap += 9  # 3s3p3d
     return 2 * cap
 
 
@@ -310,7 +307,7 @@ def _align_conformers(
 
 def determine_mol_from_coords(
     inchi: str,
-    atomic_numbers: List[int], 
+    atomic_numbers: List[int],
     coords: List[float],
     charge: int,
 ) -> Chem.Mol:
@@ -323,7 +320,7 @@ def determine_mol_from_coords(
 
     conf = rdchem.Conformer(N)
     for i in range(N):
-        x, y, z = coords[3*i:3*i+3]
+        x, y, z = coords[3 * i : 3 * i + 3]
         conf.SetAtomPosition(i, Point3D(float(x), float(y), float(z)))
     mol.AddConformer(conf, assignId=True)
 
@@ -339,7 +336,7 @@ def determine_mol_from_coords(
             rdmolops.SanitizeMol(mol)
             Chem.AssignStereochemistryFrom3D(mol, replaceExistingTags=True)
             return mol
-        except Exception as e:
+        except Exception:
             mol.RemoveAllConformers()
             mol = rw.GetMol()
             mol.AddConformer(conf, assignId=True)
@@ -366,12 +363,12 @@ def build_from_mol_and_coords(
         edge_index, edge_codes = symmetrize_edges(edge_index, edge_codes)
 
     return dict(
-        node_float=node_float.astype(np.float32),                # [N,8]
-        node_codes=node_codes.astype(np.uint8),                  # [N,10]
-        pos_rdkit=pos_rdkit.astype(np.float32),                  # [N,3]
-        pos=pos.astype(np.float32) if pos is not None else None, # [N,3]
-        edge_index=edge_index.astype(np.int32),                  # [2,E]
-        edge_codes=edge_codes.astype(np.uint8),                  # [E,4]
+        node_float=node_float.astype(np.float32),  # [N,8]
+        node_codes=node_codes.astype(np.uint8),  # [N,10]
+        pos_rdkit=pos_rdkit.astype(np.float32),  # [N,3]
+        pos=pos.astype(np.float32) if pos is not None else None,  # [N,3]
+        edge_index=edge_index.astype(np.int32),  # [2,E]
+        edge_codes=edge_codes.astype(np.uint8),  # [E,4]
     )
 
 
@@ -397,13 +394,9 @@ def predict_structure(mol: Chem.Mol, n_confs: int = 1) -> Chem.Conformer:
     mp = rdForceFieldHelpers.MMFFGetMoleculeProperties(mol, "MMFF94s")
     if mp is not None:
         ff = rdForceFieldHelpers.MMFFGetMoleculeForceField(mol, mp)
-        results = rdForceFieldHelpers.OptimizeMoleculeConfs(
-            mol, ff, maxIters=200, numThreads=1
-        )
+        results = rdForceFieldHelpers.OptimizeMoleculeConfs(mol, ff, maxIters=200, numThreads=1)
     elif rdForceFieldHelpers.UFFHasAllMoleculeParams(mol):
-        results = rdForceFieldHelpers.UFFOptimizeMoleculeConfs(
-            mol, maxIters=200, numThreads=1
-        )
+        results = rdForceFieldHelpers.UFFOptimizeMoleculeConfs(mol, maxIters=200, numThreads=1)
     else:
         raise ValueError("MMFF and UFF parameters not available.")
 
@@ -424,9 +417,7 @@ def build_single_graph(
 ) -> Dict[str, np.ndarray]:
 
     # inference time: build from InChi
-    if (atomic_numbers is None and 
-        coords is None and 
-        charge is None):
+    if atomic_numbers is None and coords is None and charge is None:
         mol = Chem.MolFromInchi(inchi, sanitize=False)
         if mol is None:
             raise ValueError(f"Skipping - failed to rebuild molecule from InChI for {inchi}")
@@ -434,7 +425,7 @@ def build_single_graph(
         mol = Chem.AddHs(mol, addCoords=False)
         Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
         pos = None
-    else: # training time: build from existing coords
+    else:  # training time: build from existing coords
         try:
             mol = determine_mol_from_coords(inchi, atomic_numbers, coords, charge)
             conf = mol.GetConformer(0)
@@ -442,16 +433,13 @@ def build_single_graph(
         except Exception:
             raise ValueError(f"Skipping - failed to determine bonds for {inchi}")
 
-    try: # use ETKDG + MMFF94
+    try:  # use ETKDG + MMFF94
         conf = predict_structure(mol)
         pos_rdkit = np.asarray(conf.GetPositions(), dtype=np.float32)
     except Exception as exc:
         if isinstance(exc, TimeoutError) and not allow_2d_fallback_on_timeout:
             raise
-        print(
-            f"Failed to predict structure for {inchi}: {exc}. "
-             "Falling back to 2D conformation."
-        )
+        print(f"Failed to predict structure for {inchi}: {exc}. " "Falling back to 2D conformation.")
         try:
             AllChem.Compute2DCoords(mol)
             conf = mol.GetConformer(0)

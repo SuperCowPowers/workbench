@@ -33,16 +33,56 @@ PERIOD = list(PERIODIC_TABLE["Period"].values)
 PERIOD_SET = list(set(PERIOD))
 
 ATOM_LIST = [
-    "C", "N", "O", "S", "F", "Si", "P", "Cl", "Br", "Mg", "Na", "Ca", "Fe", "As", "Al", "I",
-    "B", "V", "K", "Tl", "Yb", "Sb", "Sn", "Ag", "Pd", "Co", "Se", "Ti", "Zn", "H", "Li", "Ge",
-    "Cu", "Au", "Ni", "Cd", "In", "Mn", "Zr", "Cr", "Pt", "Hg", "Pb"
+    "C",
+    "N",
+    "O",
+    "S",
+    "F",
+    "Si",
+    "P",
+    "Cl",
+    "Br",
+    "Mg",
+    "Na",
+    "Ca",
+    "Fe",
+    "As",
+    "Al",
+    "I",
+    "B",
+    "V",
+    "K",
+    "Tl",
+    "Yb",
+    "Sb",
+    "Sn",
+    "Ag",
+    "Pd",
+    "Co",
+    "Se",
+    "Ti",
+    "Zn",
+    "H",
+    "Li",
+    "Ge",
+    "Cu",
+    "Au",
+    "Ni",
+    "Cd",
+    "In",
+    "Mn",
+    "Zr",
+    "Cr",
+    "Pt",
+    "Hg",
+    "Pb",
 ]
 
-ATOM_NUM_H       = list(range(0, 9))
+ATOM_NUM_H = list(range(0, 9))
 ATOM_DEGREE_LIST = list(range(0, 13))
-VALENCE          = list(range(0, 13))
-CHARGE_LIST      = list(range(-8, 9))
-RADICAL_E_LIST   = list(range(0, 9))     
+VALENCE = list(range(0, 13))
+CHARGE_LIST = list(range(-8, 9))
+RADICAL_E_LIST = list(range(0, 9))
 
 HYBRIDIZATION_LIST = [
     Chem.rdchem.HybridizationType.names[k]
@@ -67,7 +107,7 @@ BOND_STEREO = [
     Chem.rdchem.BondStereo.STEREOCIS,
     Chem.rdchem.BondStereo.STEREOTRANS,
     "chi_star",
-    "chi_circle"
+    "chi_circle",
 ]
 
 NODE_FEAT_LIST_ONE_HOT: Dict[str, List[Union[int, str]]] = {

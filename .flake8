@@ -6,7 +6,6 @@ max-line-length = 120
 # templates intentionally run startup prints before their (deferred) imports.
 filename = *.py,*.template
 per-file-ignores = *.template:E402
-# Skip the in-repo virtualenv, generated/build dirs, and vendored third-party code
-# (kept verbatim). extend-exclude is additive, so it applies even when --exclude is
-# passed on the command line.
-extend-exclude = .venv,venv,*generated*,.tox,build,dist,feature_endpoints/model_scripts/monroe
+# Skip the in-repo virtualenv and generated/build dirs. extend-exclude is additive,
+# so it applies even when --exclude is passed on the command line.
+extend-exclude = .venv,venv,*generated*,.tox,build,dist

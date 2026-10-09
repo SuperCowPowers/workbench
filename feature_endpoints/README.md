@@ -82,8 +82,8 @@ nothing in the output marks that row.
 - A FeatureSet built from it marks the column with `set_compressed_features(["monroe"])`;
   the model templates (XGBoost, PyTorch, TabICL) then expand it into 720 float columns.
 
-- The encoder and featurizer are vendored in `model_scripts/monroe/` and kept verbatim
-  apart from the lines marked `Workbench:` (the directory is excluded from lint).
+- The encoder and featurizer are vendored in `model_scripts/monroe/` and formatted to the
+  repo's lint rules; the functional changes from upstream are the lines marked `Workbench:`.
 - The weights are a registered foundation checkpoint, read from Workbench's public bucket,
   that the model's training step copies into the model artifact. No setup per account.
 - The model is `ModelType.TRANSFORMER` + `ModelFramework.PYTORCH`, which selects the

@@ -41,7 +41,7 @@ class MultiHeadAttentionLayerGritSparse(nn.Module):
 
         self.VeRow = nn.Parameter(torch.zeros(self.out_dim, self.num_heads, self.out_dim), requires_grad=True)
         nn.init.xavier_normal_(self.VeRow)
-        self.scale = self.out_dim ** -0.5
+        self.scale = self.out_dim**-0.5
 
     def propagate_attention(self, batch: Data, attn_bias: torch.Tensor) -> Data:
         src = batch.K_h[batch.edge_index[0]]  # [E,H,D]
@@ -100,6 +100,7 @@ class MultiHeadAttentionPooling(nn.Module):
       - concatenate heads -> in_dim (when per_head_values=True)
       - or head-averaged output (keeps dim = in_dim, when per_head_values=False)
     """
+
     def __init__(
         self,
         in_dim: int,
@@ -117,11 +118,10 @@ class MultiHeadAttentionPooling(nn.Module):
         self.value_proj = nn.Linear(in_dim, in_dim, bias=False)
         nn.init.xavier_uniform_(self.value_proj.weight)
 
-
     def forward(self, batch):
-        x = batch.x                    # [N, d]
-        b = batch.batch                # [N]
-        num_nodes = batch.num_nodes    # total N 
+        x = batch.x  # [N, d]
+        b = batch.batch  # [N]
+        num_nodes = batch.num_nodes  # total N
 
         # scores: [N, H]
         scores = self.gate_dropout(self.gate(x))
@@ -138,7 +138,7 @@ class MultiHeadAttentionPooling(nn.Module):
 
 
 class GritTransformerLayer(nn.Module):
-    
+
     def __init__(
         self,
         in_dim: int,
@@ -147,7 +147,8 @@ class GritTransformerLayer(nn.Module):
         dropout: float = 0.0,
         attn_dropout: float = 0.0,
         clamp: float = 5.0,
-        bn_momentum: float = 0.1):
+        bn_momentum: float = 0.1,
+    ):
         super().__init__()
 
         self.in_dim = in_dim
@@ -241,18 +242,18 @@ class RBF(nn.Module):
         self.register_buffer("gamma", torch.tensor(gamma))
 
     def forward(self, dist: torch.Tensor) -> torch.Tensor:  # (E,1) -> (E,rbf_dim)
-        return torch.exp(-self.gamma * (dist.unsqueeze(-1) - self.centers)**2)
+        return torch.exp(-self.gamma * (dist.unsqueeze(-1) - self.centers) ** 2)
 
 
 NODE_FLOAT_RBF_RANGES = [
-    (0.0, 8.0),       # num_radical_electrons
-    (0.5, 4.0),       # electronegativity
-    (3.0, 25.0),      # first_ionization (eV)
-    (0.2, 2.7),       # covalent_radius (A)
-    (0.0, 4000.0),    # melting_point (K)
-    (-8.0, 8.0),      # formal_charge
-    (1.0, 3.0),       # vdw_radius (A)
-    (0.0, 300.0),     # atomic_mass
+    (0.0, 8.0),  # num_radical_electrons
+    (0.5, 4.0),  # electronegativity
+    (3.0, 25.0),  # first_ionization (eV)
+    (0.2, 2.7),  # covalent_radius (A)
+    (0.0, 4000.0),  # melting_point (K)
+    (-8.0, 8.0),  # formal_charge
+    (1.0, 3.0),  # vdw_radius (A)
+    (0.0, 300.0),  # atomic_mass
 ]
 
 
@@ -267,10 +268,10 @@ class PerFeatureRBF(nn.Module):
             delta = (d_max - d_min) / max(rbf_dim - 1, 1)
             all_gammas.append(0.5 / (delta * delta))
         self.register_buffer("centers", torch.stack(all_centers))  # [F, R]
-        self.register_buffer("gammas", torch.tensor(all_gammas))   # [F]
+        self.register_buffer("gammas", torch.tensor(all_gammas))  # [F]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # [N, F] -> [N, F*R]
-        diff = x.unsqueeze(-1) - self.centers.unsqueeze(0)         # [N, F, R]
+        diff = x.unsqueeze(-1) - self.centers.unsqueeze(0)  # [N, F, R]
         return torch.exp(-self.gammas[None, :, None] * diff * diff).flatten(1)
 
 
@@ -317,14 +318,12 @@ class GritTransformer(nn.Module):
         self.node_feat_keys = list(node_feature_vocab.keys())
         self.edge_feat_keys = list(edge_feature_vocab.keys())
 
-        self.node_oh = nn.ModuleDict({
-            k: nn.Embedding(len(option_list) + 1, emb_dim)
-            for k, option_list in node_feature_vocab.items()
-        })
-        self.edge_oh = nn.ModuleDict({
-            k: nn.Embedding(len(option_list) + 1, emb_dim)
-            for k, option_list in edge_feature_vocab.items()
-        })
+        self.node_oh = nn.ModuleDict(
+            {k: nn.Embedding(len(option_list) + 1, emb_dim) for k, option_list in node_feature_vocab.items()}
+        )
+        self.edge_oh = nn.ModuleDict(
+            {k: nn.Embedding(len(option_list) + 1, emb_dim) for k, option_list in edge_feature_vocab.items()}
+        )
 
         for emb in list(self.node_oh.values()) + list(self.edge_oh.values()):
             nn.init.xavier_uniform_(emb.weight)
@@ -340,17 +339,20 @@ class GritTransformer(nn.Module):
 
         self.rwpe_attn_bias = nn.Linear(self.walk_len, num_heads, bias=False)
 
-        self.grit_layers = nn.ModuleList([
-            GritTransformerLayer(
-                in_dim=hidden_dim,
-                out_dim=hidden_dim,
-                num_heads=num_heads,
-                dropout=dropout,
-                attn_dropout=attn_dropout,
-                clamp=clamp,
-                bn_momentum=bn_momentum,
-            ) for _ in range(num_layers)
-        ])
+        self.grit_layers = nn.ModuleList(
+            [
+                GritTransformerLayer(
+                    in_dim=hidden_dim,
+                    out_dim=hidden_dim,
+                    num_heads=num_heads,
+                    dropout=dropout,
+                    attn_dropout=attn_dropout,
+                    clamp=clamp,
+                    bn_momentum=bn_momentum,
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
         self.pooling = MultiHeadAttentionPooling(
             in_dim=hidden_dim,
@@ -371,57 +373,78 @@ class GritTransformer(nn.Module):
         n_nodes = batch.num_nodes
         vn_idx = torch.arange(n_graphs, device=device) + n_nodes
 
-        node_codes_vn = torch.stack([
-            torch.full(
-                (n_graphs,),
-                self.node_oh[k].num_embeddings - 1,
-                device=batch.node_codes.device,
-                dtype=batch.node_codes.dtype,
-            )
-            for k in self.node_feat_keys
-        ], dim=1)
+        node_codes_vn = torch.stack(
+            [
+                torch.full(
+                    (n_graphs,),
+                    self.node_oh[k].num_embeddings - 1,
+                    device=batch.node_codes.device,
+                    dtype=batch.node_codes.dtype,
+                )
+                for k in self.node_feat_keys
+            ],
+            dim=1,
+        )
 
         batch.node_codes = torch.cat([batch.node_codes, node_codes_vn], dim=0)
-        batch.x = torch.cat([
-            batch.x,
-            torch.zeros(n_graphs, self.node_float_dim, device=batch.x.device, dtype=batch.x.dtype),
-        ], dim=0)
-        batch.pos_in = torch.cat([
-            batch.pos_in,
-            torch.zeros(n_graphs, batch.pos_in.size(1), device=batch.pos_in.device, dtype=batch.pos_in.dtype),
-        ], dim=0)
-        batch.batch = torch.cat([
-            node_batch,
-            torch.arange(n_graphs, device=node_batch.device, dtype=node_batch.dtype),
-        ], dim=0)
+        batch.x = torch.cat(
+            [
+                batch.x,
+                torch.zeros(n_graphs, self.node_float_dim, device=batch.x.device, dtype=batch.x.dtype),
+            ],
+            dim=0,
+        )
+        batch.pos_in = torch.cat(
+            [
+                batch.pos_in,
+                torch.zeros(n_graphs, batch.pos_in.size(1), device=batch.pos_in.device, dtype=batch.pos_in.dtype),
+            ],
+            dim=0,
+        )
+        batch.batch = torch.cat(
+            [
+                node_batch,
+                torch.arange(n_graphs, device=node_batch.device, dtype=node_batch.dtype),
+            ],
+            dim=0,
+        )
 
         nodes = torch.arange(n_nodes, device=device)
         vn_targets = n_nodes + node_batch
         edge_vn_fwd = torch.stack([nodes, vn_targets], dim=0)
         edge_vn_rev = edge_vn_fwd.flip(0)
         edge_vn = torch.cat([edge_vn_fwd, edge_vn_rev], dim=1)
-        edge_codes_vn = torch.stack([
-            torch.full(
-                (n_nodes,),
-                self.edge_oh[k].num_embeddings - 1,
-                device=batch.edge_codes.device,
-                dtype=batch.edge_codes.dtype,
-            )
-            for k in self.edge_feat_keys
-        ], dim=1)
+        edge_codes_vn = torch.stack(
+            [
+                torch.full(
+                    (n_nodes,),
+                    self.edge_oh[k].num_embeddings - 1,
+                    device=batch.edge_codes.device,
+                    dtype=batch.edge_codes.dtype,
+                )
+                for k in self.edge_feat_keys
+            ],
+            dim=1,
+        )
         edge_codes_vn = edge_codes_vn.repeat(2, 1)  # both directions
 
         batch.edge_index = torch.cat([batch.edge_index, edge_vn], dim=1)
         batch.edge_codes = torch.cat([batch.edge_codes, edge_codes_vn], dim=0)
 
-        rrwp_node = torch.cat([
-            rrwp_node,
-            rrwp_node.new_zeros((n_graphs, self.walk_len)),
-        ], dim=0)
-        rrwp_edge = torch.cat([
-            rrwp_edge,
-            rrwp_edge.new_zeros((edge_vn.size(1), self.walk_len)),
-        ], dim=0)
+        rrwp_node = torch.cat(
+            [
+                rrwp_node,
+                rrwp_node.new_zeros((n_graphs, self.walk_len)),
+            ],
+            dim=0,
+        )
+        rrwp_edge = torch.cat(
+            [
+                rrwp_edge,
+                rrwp_edge.new_zeros((edge_vn.size(1), self.walk_len)),
+            ],
+            dim=0,
+        )
         vn_log_deg = torch.zeros(
             (n_graphs,) + log_deg.shape[1:],
             device=log_deg.device,
@@ -472,9 +495,7 @@ class GritTransformer(nn.Module):
         return rrwp_node_val, rrwp_edge_index, rrwp_edge_val, log_deg
 
     def forward(
-        self, 
-        batch: Data, 
-        node_idxs: Optional[torch.Tensor] = None
+        self, batch: Data, node_idxs: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
 
         edge_index = batch.edge_index
@@ -506,15 +527,13 @@ class GritTransformer(nn.Module):
                     f"precomputation with --walk-len {self.walk_len} (training data), "
                     f"or delete the stale eval RRWP cache so it recomputes."
                 )
-        else: # compute on the fly
+        else:  # compute on the fly
             # this is slow but it's ok because precomputed for pretraining
             # and only used for downstream inference
             E = edge_index.size(1)
             if E == 0 or edge_codes.dim() < 2:
                 # No edges: RRWP is just self-loop random walks
-                rrwp_node, _, rrwp_edge, log_deg = self._get_rrwp(
-                    N, edge_index.new_empty(2, 0)
-                )
+                rrwp_node, _, rrwp_edge, log_deg = self._get_rrwp(N, edge_index.new_empty(2, 0))
             else:
                 # Build transition matrix from real bonds only (exclude stereo edges),
                 # matching precompute_rrwp.py. Then index ALL edges (including stereo)
@@ -572,7 +591,7 @@ class GritTransformer(nn.Module):
             # out so the model relies on the VN's OOV edge code embedding
             # and zero RRWP instead of arbitrary geometric distances.
             edge_rbf[n_real_edges:] = 0.0
-        e_cat = torch.cat([emb_edge, edge_rbf, rrwp_edge], dim=-1)      # [E, emb+R_e+W]
+        e_cat = torch.cat([emb_edge, edge_rbf, rrwp_edge], dim=-1)  # [E, emb+R_e+W]
 
         # Replace 0.0 missing-value sentinels with learned fill values
         node_float = node_float.clone()
@@ -590,8 +609,8 @@ class GritTransformer(nn.Module):
         node_float_enc[batch.virtual_node_index] = 0.0
         x_cat = torch.cat([emb_node, node_float_enc, rrwp_node], dim=-1)
 
-        x = self.node_proj(x_cat)                                       # [N, H]
-        e = self.edge_proj(e_cat)                                       # [E, H]
+        x = self.node_proj(x_cat)  # [N, H]
+        e = self.edge_proj(e_cat)  # [E, H]
 
         batch.x = x
         batch.edge_attr = e
