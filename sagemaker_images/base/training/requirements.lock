@@ -50,7 +50,7 @@ joblib==1.5.3
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in
     #   scikit-learn
-mako==1.3.12
+mako==1.4.3
     # via
     #   -c ci/.uv-constraints.txt
     #   alembic
