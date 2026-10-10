@@ -226,9 +226,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             df[f"{tc}_pred"] = np.nan
             df[f"{tc}_pred_std"] = np.nan
 
-    if sum(valid_mask) == 0:
-        return df
-
     # Prepare extra features (raw, unscaled - model handles scaling)
     extra_features = None
     if feature_metadata is not None:
@@ -245,14 +242,16 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             else:
                 extra_features[:, j] = col_means[j]
 
-    # Create datapoints and predict
+    # Create datapoints and predict. A batch with no parseable molecules runs the output
+    # code below on an empty stack, so it returns the same columns as any other batch.
     datapoints, rdkit_valid = create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
-    if len(datapoints) == 0:
-        return df
-
-    # The shared forward pass — training out-of-fold predictions and the HPO objective run
-    # this same function, so a model is scored on the code path it serves on.
-    all_preds = predict_ensemble(ensemble_models, datapoints)
+    if datapoints:
+        # The shared forward pass — training out-of-fold predictions and the HPO objective run
+        # this same function, so a model is scored on the code path it serves on.
+        all_preds = predict_ensemble(ensemble_models, datapoints)
+    else:
+        n_outputs = len(label_encoder.classes_) if label_encoder is not None else len(target_columns)
+        all_preds = np.empty((len(ensemble_models), 0, n_outputs))
 
     preds = np.mean(all_preds, axis=0)
     preds_std = compress_std_outliers(np.std(all_preds, axis=0))

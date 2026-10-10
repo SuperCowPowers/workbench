@@ -309,6 +309,8 @@ def compress_std_outliers(std_array: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: Array with outliers soft-capped via log compression
     """
+    if std_array.size == 0:
+        return std_array
     if std_array.ndim == 1:
         std_array = std_array.reshape(-1, 1)
         squeeze = True

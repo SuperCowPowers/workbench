@@ -51,3 +51,7 @@ if __name__ == "__main__":
     bad_df = df.copy()
     bad_df.loc[2, "smiles"] = "not_a_smiles"
     print(invoke_endpoint_csv(endpoint_name, bad_df))
+
+    print("\nSingle invalid SMILES...")
+    single_bad_df = pd.DataFrame({"id": ["bad"], "smiles": ["not_a_smiles"]})
+    print(invoke_endpoint_csv(endpoint_name, single_bad_df))

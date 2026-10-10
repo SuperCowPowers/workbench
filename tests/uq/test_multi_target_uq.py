@@ -191,6 +191,16 @@ def test_sparse_target_confidence_is_populated(fit_dict, multi_target_df):
     assert out["confidence"].notna().all()
 
 
+@pytest.mark.parametrize("version", ["v0", "v1", "v2"])
+def test_empty_batch_returns_the_full_column_set(fit_dict, multi_target_df, version):
+    """Zero query rows (e.g. every SMILES invalid) give zero rows with the same columns."""
+    uq = fit_dict[version]
+    full = uq.predict(multi_target_df[["smiles"]], np.zeros(len(multi_target_df)), np.ones(len(multi_target_df)))
+    empty = uq.predict(multi_target_df[["smiles"]].iloc[0:0], np.empty(0), np.empty(0))
+    assert len(empty) == 0
+    assert list(empty.columns) == list(full.columns)
+
+
 def test_predict_rejects_uncalibrated_target(fit_dict, multi_target_df):
     uq = fit_dict["v1"]
     with pytest.raises(RuntimeError, match="no fitted error model"):

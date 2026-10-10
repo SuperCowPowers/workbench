@@ -316,6 +316,10 @@ class UQModelV1:
         predictions = np.asarray(predictions, dtype=float).ravel()
         prediction_std = np.asarray(prediction_std, dtype=float).ravel()
 
+        # An empty batch (e.g. every SMILES invalid) returns zero rows with the full column set
+        if len(predictions) == 0:
+            return self._ordered(self._outputs_from_expected(predictions, predictions, target, pd.RangeIndex(0)))
+
         # Auto-dispatch
         features = self._features_for(target)
         if isinstance(query, pd.DataFrame):
@@ -352,7 +356,11 @@ class UQModelV1:
             interval_cols = [c for c in result.columns if c.startswith("q_") and c != "q_50"]
             result.loc[nan_mask, ["confidence", "expected_residual", *interval_cols]] = np.nan
 
-        # Reorder columns for readability
+        return self._ordered(result)
+
+    @staticmethod
+    def _ordered(result: pd.DataFrame) -> pd.DataFrame:
+        """Reorder UQ output columns for readability."""
         quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975"]
         existing_q = [c for c in quantile_cols if c in result.columns]
         return result[["expected_residual", "confidence"] + existing_q]

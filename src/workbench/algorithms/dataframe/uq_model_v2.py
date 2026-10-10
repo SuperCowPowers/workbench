@@ -317,6 +317,10 @@ class UQModelV2:
 
         target_col = self._resolve_target(target)
 
+        # An empty batch (e.g. every SMILES invalid) returns zero rows with the full column set
+        if len(query) == 0:
+            return pd.DataFrame(columns=self._result_columns(), dtype=float)
+
         # Auto-dispatch on query type (parallel to V1.predict). Cap n_neighbors
         # at the reference set size to avoid the proximity's broadcasting bug.
         # Capture the *expected* result identifiers so we can reindex the output
