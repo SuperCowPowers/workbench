@@ -253,8 +253,9 @@ class PandasToFeatures(Transform):
             self.log.info(f"FeatureSet {feature_group.get_name()} successfully created")
         else:
             failure_reason = getattr(feature_group, "failure_reason", "No failure reason provided")
-            self.log.critical(f"FeatureSet {feature_group.get_name()} creation failed with status: {status}")
-            self.log.critical(f"Failure reason: {failure_reason}")
+            msg = f"FeatureSet {feature_group.get_name()} creation failed with status: {status} ({failure_reason})"
+            self.log.critical(msg)
+            raise RuntimeError(msg)
 
     def wait_for_rows(self, expected_rows: int):
         """Wait for AWS Feature Group to fully populate the Offline Storage"""
