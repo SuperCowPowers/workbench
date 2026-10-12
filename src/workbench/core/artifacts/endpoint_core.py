@@ -1394,8 +1394,6 @@ class EndpointCore(AWSArtifact):
             cls.log.error("Error deleting endpoint.")
             raise e
 
-
-
     @classmethod
     def delete_endpoint_models(cls, endpoint_name: str):
         """Delete the underlying Model for an Endpoint
