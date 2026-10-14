@@ -562,6 +562,7 @@ class WorkbenchCoreStack(Stack):
                 "ec2:DescribeSecurityGroups",
                 "ec2:DescribeVpcEndpoints",
                 "ec2:DescribeRouteTables",
+                "ec2:DescribeNetworkInterfaces",
             ],
             resources=[
                 "*",  # EC2 describe operations require wildcard resources
@@ -570,13 +571,17 @@ class WorkbenchCoreStack(Stack):
 
     def vpc_network_interface_management(self) -> iam.PolicyStatement:
         """Create a policy statement for VPC network interface management.
+
+        Glue creates and deletes a VPC connection's ENIs with the job role; without
+        DeleteNetworkInterface they are left detached and keep their subnet IPs.
+
         Returns:
-            iam.PolicyStatement: The policy statement for ENI creation and discovery in VPC.
+            iam.PolicyStatement: The policy statement for ENI lifecycle in VPC.
         """
         return iam.PolicyStatement(
             actions=[
                 "ec2:CreateNetworkInterface",
-                "ec2:DescribeNetworkInterfaces",
+                "ec2:DeleteNetworkInterface",
                 "ec2:CreateTags",
             ],
             resources=[
