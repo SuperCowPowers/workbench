@@ -48,11 +48,11 @@ def test_retrieval_with_capture_name(model_class):
 
 def test_oof_predictions(model_reg, model_class):
     print("\n\n*** Out of Fold Predictions ***")
-    # "model_training" routes to the out-of-fold predictions through the public API
-    reg_oof_preds = model_reg.get_inference_predictions("model_training")
+    # "training" routes to the out-of-fold predictions through the public API
+    reg_oof_preds = model_reg.get_inference_predictions("training")
     assert reg_oof_preds is not None, f"{model_reg.name} has no out-of-fold predictions"
     pprint(reg_oof_preds.head())
-    class_oof_preds = model_class.get_inference_predictions("model_training")
+    class_oof_preds = model_class.get_inference_predictions("training")
     assert class_oof_preds is not None, f"{model_class.name} has no out-of-fold predictions"
     pprint(class_oof_preds.head())
 

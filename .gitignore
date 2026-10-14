@@ -138,6 +138,7 @@ dmypy.json
 generated_*.py
 # Auto-copied training harness (features_to_model.py copies this into custom script dirs)
 feature_endpoints/model_scripts/training_harness.py
+spikes/**/training_harness.py
 
 # CDK context files (they are account specific, so we don't want them getting checked int)
 cdk.context.json

@@ -1,0 +1,244 @@
+# vim: set ft=python:
+
+# Atom-JEPA Fine-Tuning Template (spike):
+#
+# Single-target regression by fine-tuning the pretrained Atom-JEPA encoder (EquiformerV3 on
+# 3D conformers) with the ADMET recipe in atomjepa_core.py.
+# - K-fold ensemble: each fold model gives out-of-fold predictions and metrics; the served
+#   prediction is the fold models' mean, prediction_std their spread
+# - Features: a 'smiles' column, plus any other numeric features fed to the readout
+# - Each molecule gets n_conformers conformers; predictions average over them
+# - No UQ model or SHAP
+
+import json
+import os
+
+import numpy as np
+import pandas as pd
+
+from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
+
+# =============================================================================
+# Default Hyperparameters
+# =============================================================================
+DEFAULT_HYPERPARAMETERS = {
+    # Fold models in the ensemble (1 = one train/val split)
+    "n_folds": 5,
+    # Training schedule, stepped per epoch: linear warmup, then cosine down to min_lr. The
+    # encoder is frozen for its first epochs and re-warms over the warmup length after.
+    "epochs": 50,
+    "batch_size": 32,
+    "encoder_lr": 5e-5,
+    "head_lr": 5e-4,
+    "head_weight_decay": 0.1,
+    "min_lr": 1e-7,
+    "warmup_epochs": 10,
+    "freeze_encoder_epochs": 10,
+    # EMA of the whole model; validation, the checkpoint pick and prediction all use it
+    "ema_decay": 0.99,
+    "grad_clip": 10.0,
+    "dropout": 0.1,
+    # Conformers per molecule: training draws one at random each epoch, prediction averages all
+    "n_conformers": 10,
+    # Split strategy: "scaffold" (default), "butina", or "random"
+    "split_strategy": "scaffold",
+    "butina_cutoff": 0.4,
+    "seed": 42,
+}
+
+# Template parameters (filled in by Workbench)
+TEMPLATE_PARAMS = {
+    "model_type": "{{model_type}}",
+    "target": "{{target_column}}",
+    "features": "{{feature_list}}",
+    "id_column": "{{id_column}}",
+    "compressed_features": "{{compressed_features}}",
+    "model_metrics_path": "{{model_metrics_path}}",
+    "hyperparameters": json.loads("{{hyperparameters}}"),
+}
+
+
+def split_features(features: list[str]) -> tuple[str, list[str]]:
+    """The SMILES column, and the extra features the readout takes."""
+    smiles_column = next((f for f in features if f.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Atom-JEPA models need a 'smiles' feature")
+    return smiles_column, [f for f in features if f != smiles_column]
+
+
+# =============================================================================
+# Model Loading (for SageMaker inference)
+# =============================================================================
+def model_fn(model_dir: str) -> dict:
+    """Load the fold models."""
+    from atomjepa_core import FoldModel
+
+    with open(os.path.join(model_dir, "hyperparameters.json")) as f:
+        hyperparameters = json.load(f)
+    fold_dirs = sorted(d for d in os.listdir(model_dir) if d.startswith("fold_"))
+    return {
+        "folds": [FoldModel.load(os.path.join(model_dir, d)) for d in fold_dirs],
+        "hyperparameters": hyperparameters,
+    }
+
+
+# =============================================================================
+# Inference (for SageMaker inference)
+# =============================================================================
+def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
+    """Predict with the fold ensemble; molecules without conformers get NaN."""
+    from atomjepa_core import build_conformers
+
+    from workbench.endpoints.inference import match_features_case_insensitive
+
+    smiles_column, extra_features = split_features(TEMPLATE_PARAMS["features"])
+    matched = match_features_case_insensitive(df, TEMPLATE_PARAMS["features"])
+    conformers = build_conformers(
+        matched[smiles_column].astype(str).tolist(), model_dict["hyperparameters"]["n_conformers"]
+    )
+    ok = np.array([c is not None for c in conformers])
+    print(f"Conformers for {ok.sum()} of {len(df)} molecules")
+
+    df["prediction"], df["prediction_std"] = np.nan, np.nan
+    if ok.any():
+        extra = matched.loc[ok, extra_features].to_numpy(np.float64) if extra_features else None
+        valid = [c for c in conformers if c is not None]
+        preds = np.stack([fold.predict(valid, extra) for fold in model_dict["folds"]])
+        df.loc[ok, "prediction"], df.loc[ok, "prediction_std"] = preds.mean(axis=0), preds.std(axis=0)
+    return df
+
+
+# =============================================================================
+# Training
+# =============================================================================
+if __name__ == "__main__":
+    import argparse
+
+    from atomjepa_core import build_conformers, train_fold
+
+    from workbench.endpoints.inference import (
+        check_dataframe,
+        compute_regression_metrics,
+        print_regression_metrics,
+        save_output,
+    )
+    from workbench.training.splits import get_split_indices
+    from workbench.training.validation import split_validation_set
+
+    # -------------------------------------------------------------------------
+    # Setup: Parse arguments and load data
+    # -------------------------------------------------------------------------
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    args = parser.parse_args()
+
+    target = TEMPLATE_PARAMS["target"]
+    features = TEMPLATE_PARAMS["features"]
+    id_column = TEMPLATE_PARAMS["id_column"]
+    model_metrics_path = TEMPLATE_PARAMS["model_metrics_path"]
+    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
+    if TEMPLATE_PARAMS["model_type"] == "classifier":
+        raise ValueError("The Atom-JEPA spike supports regression only")
+    smiles_column, extra_features = split_features(features)
+
+    training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
+    print(f"Training Files: {training_files}")
+    all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
+    check_dataframe(all_df, "training_df")
+    all_df = all_df.dropna(subset=[target])
+
+    # Held-out validation rows stay out of every fold; they're scored by the ensemble below
+    all_df, holdout_df = split_validation_set(all_df)
+    print(f"Target: {target}")
+    print(f"SMILES: {smiles_column}, extra features: {extra_features}")
+    print(f"Hyperparameters: {hyperparameters}")
+    print(f"Training rows: {len(all_df)}, held-out validation rows: {len(holdout_df)}")
+
+    # -------------------------------------------------------------------------
+    # Conformers (training rows without one are dropped)
+    # -------------------------------------------------------------------------
+    n_conformers = hyperparameters["n_conformers"]
+    conformers = build_conformers(all_df[smiles_column].astype(str).tolist(), n_conformers)
+    ok = np.array([c is not None for c in conformers])
+    print(f"Conformers ({n_conformers} each) for {ok.sum()} of {len(all_df)} training molecules")
+    all_df = all_df[ok].reset_index(drop=True)
+    conformers = [c for c in conformers if c is not None]
+    y = all_df[target].to_numpy(np.float64)
+    extra = all_df[extra_features].to_numpy(np.float64) if extra_features else None
+
+    # -------------------------------------------------------------------------
+    # Cross-validation: each fold model is part of the served ensemble
+    # -------------------------------------------------------------------------
+    folds = get_split_indices(
+        all_df,
+        n_splits=hyperparameters["n_folds"],
+        strategy=hyperparameters["split_strategy"],
+        target_column=None,
+        test_size=0.2,
+        random_state=hyperparameters["seed"],
+        butina_cutoff=hyperparameters["butina_cutoff"],
+    )
+    print(f"Split strategy: {hyperparameters['split_strategy']}")
+
+    oof_predictions = np.full(len(all_df), np.nan)
+    fold_models = []
+    for fold_idx, (train_idx, val_idx) in enumerate(folds):
+        print(
+            f"\n{'=' * 50}\nFold {fold_idx + 1}/{len(folds)} - Train: {len(train_idx)}, Val: {len(val_idx)}\n{'=' * 50}"
+        )
+        fold_model, oof_predictions[val_idx] = train_fold(
+            hyperparameters,
+            [conformers[i] for i in train_idx],
+            y[train_idx],
+            [conformers[i] for i in val_idx],
+            y[val_idx],
+            train_extra=None if extra is None else extra[train_idx],
+            val_extra=None if extra is None else extra[val_idx],
+            seed=hyperparameters["seed"] + fold_idx,
+        )
+        fold_models.append(fold_model)
+
+    # K-fold: every row has an out-of-fold prediction. Single split: only the validation rows.
+    oof_mask = ~np.isnan(oof_predictions)
+    df_oof = all_df.loc[oof_mask, [id_column, target]].copy()
+    df_oof["prediction"] = oof_predictions[oof_mask]
+    print_regression_metrics(compute_regression_metrics(df_oof[target].values, df_oof["prediction"].values))
+
+    # -------------------------------------------------------------------------
+    # Score the held-out validation set with the ensemble
+    # -------------------------------------------------------------------------
+    df_val = pd.DataFrame(columns=[id_column, target, "prediction", "prediction_std"])
+    if len(holdout_df):
+        h_conformers = build_conformers(holdout_df[smiles_column].astype(str).tolist(), n_conformers)
+        h_ok = np.array([c is not None for c in h_conformers])
+        h_extra = holdout_df.loc[h_ok, extra_features].to_numpy(np.float64) if extra_features else None
+        h_valid = [c for c in h_conformers if c is not None]
+        h_preds = np.stack([fold.predict(h_valid, h_extra) for fold in fold_models])
+        df_val = holdout_df[[id_column, target]].copy()
+        df_val["prediction"], df_val["prediction_std"] = np.nan, np.nan
+        df_val.loc[h_ok, "prediction"], df_val.loc[h_ok, "prediction_std"] = h_preds.mean(axis=0), h_preds.std(axis=0)
+        scored = df_val.dropna(subset=["prediction"])
+        print(f"\nHeld-out validation ({len(scored)} of {len(df_val)} rows with conformers):")
+        metrics = compute_regression_metrics(scored[target].values, scored["prediction"].values)
+        print_regression_metrics(metrics)
+        print(f"holdout_mae: {metrics['mae']:.3f}")
+
+    save_output(df_oof, f"{model_metrics_path}/oof_predictions.csv")
+    save_output(df_val, f"{model_metrics_path}/val_predictions.csv")
+
+    # -------------------------------------------------------------------------
+    # Save model artifacts
+    # -------------------------------------------------------------------------
+    for fold_idx, fold_model in enumerate(fold_models):
+        fold_model.save(os.path.join(args.model_dir, f"fold_{fold_idx}"))
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as f:
+        json.dump(features, f)
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+        json.dump(hyperparameters, f, indent=2)
+    save_output(hyperparameters, f"{model_metrics_path}/hyperparameters.json")
+
+    print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

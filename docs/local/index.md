@@ -104,7 +104,7 @@ model.to_endpoint().inference(eval_df, capture_name="holdout")
 model.get_inference_metrics("holdout")
 ```
 
-The `model_training` run an AWS Model carries has no local equivalent — those
+The `training` run an AWS Model carries has no local equivalent — those
 metrics come from SageMaker scraping the training job's output.
 
 ## Neighbors and uncertainty

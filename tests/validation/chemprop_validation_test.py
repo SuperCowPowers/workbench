@@ -29,7 +29,7 @@ def _assert_holdout(model: Model, id_column: str, validation_ids: list):
     assert not val_flag.loc[non_val].any(), "non-validation rows incorrectly marked"
 
     # 2) The held-out rows were scored (present + non-null) in val_predictions.csv
-    held = model._get_val_predictions()
+    held = model.get_inference_predictions("validation")
     assert held is not None and len(held) > 0, "no held-out rows in val_predictions"
     assert held["prediction"].notna().all(), "held-out rows were not scored"
 

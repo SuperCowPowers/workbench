@@ -23,7 +23,7 @@ df = FeatureSet("openadmet_pxr_f1").pull_dataframe()[["molecule_name", "smiles",
 # Endpoint predictions for every row, then OOF over the rows the screen model trained on
 preds = Endpoint(readout_model).inference(df[["molecule_name", "smiles"]])
 readout = preds.set_index("molecule_name")[list(READOUTS)]
-oof = Model(readout_model).get_inference_predictions("model_training")
+oof = Model(readout_model).get_inference_predictions("training")
 screen_smiles = FeatureSet("openadmet_pxr_lfc").pull_dataframe().set_index("ocnt_id")["smiles"]
 oof = oof.assign(smiles=oof["ocnt_id"].map(screen_smiles)).set_index("smiles")[list(READOUTS)]
 in_screen = df["smiles"].isin(oof.index)

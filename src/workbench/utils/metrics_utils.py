@@ -441,7 +441,7 @@ def default_inference_run(inference_runs: List[str]) -> Optional[str]:
     """Pick the inference run to report when the caller didn't name one.
 
     Priority: full_cross_fold -> test_inference -> first available. The
-    model_training capture is excluded, since it reports the training job's own
+    training capture is excluded, since it reports the training job's own
     metrics rather than an inference pass.
 
     Args:
@@ -450,7 +450,7 @@ def default_inference_run(inference_runs: List[str]) -> Optional[str]:
     Returns:
         The run name, or None if there are none to pick from
     """
-    runs = [run for run in inference_runs if run != "model_training"]
+    runs = [run for run in inference_runs if run != "training"]
     for preferred in ("full_cross_fold", "test_inference"):
         if preferred in runs:
             return preferred
