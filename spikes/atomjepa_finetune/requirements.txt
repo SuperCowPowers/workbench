@@ -1,0 +1,3 @@
+# Installed by the training harness at job start. The pytorch_chem training image carries
+# torch (CUDA 13), torch-geometric and rdkit; cu13 adds the cuEquivariance kernels.
+atom-jepa[cu13]==0.3.0
