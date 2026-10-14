@@ -11,8 +11,11 @@ FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
 # (chemprop/featurizers/molgraph/molecule.py) — its native extension links against the X11
 # client libs, which no CUDA base image carries. Without them `import chemprop` dies with
 # "libXrender.so.1: cannot open shared object file" before any model script runs.
+# python3-dev carries Python.h, which Triton compiles its CUDA launcher against the first
+# time any Triton kernel runs (torch's built-in Triton ops, torch.compile).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
+    python3-dev \
     build-essential \
     libxrender1 \
     libxext6 \
