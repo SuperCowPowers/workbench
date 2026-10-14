@@ -19,7 +19,7 @@ model = CachedModel("abalone-regression")
 
 # List the inference runs
 model.list_inference_runs()
-['test_inference', 'model_training']
+['test_inference', 'training']
 
 # Grab specific inference results
 model.get_inference_predictions("test_inference")

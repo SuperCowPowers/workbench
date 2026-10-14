@@ -224,7 +224,7 @@ class ModelCore(AWSArtifact):
             return []
 
         # Check if we have model training metrics in our metadata
-        have_model_training = True if self.workbench_meta().get("workbench_training_metrics") else False
+        have_training = True if self.workbench_meta().get("workbench_training_metrics") else False
 
         # Now grab the list of directories from our inference path
         inference_runs = []
@@ -232,16 +232,16 @@ class ModelCore(AWSArtifact):
             directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
             inference_runs = [urlparse(directory).path.split("/")[-2] for directory in directories]
 
-        # We're going to add the model training to the end of the list
-        if have_model_training:
-            inference_runs.append("model_training")
+        # We're going to add the training capture to the end of the list
+        if have_training:
+            inference_runs.append("training")
         return inference_runs
 
     def default_inference_run(self) -> Union[str, None]:
         """Resolve the default inference capture name for this model.
 
         Priority: full_cross_fold -> test_inference -> first available inference run.
-        The model_training capture is excluded from this resolution.
+        The training capture is excluded from this resolution.
 
         Returns:
             str | None: The capture name, or None if no inference runs exist.
@@ -254,7 +254,7 @@ class ModelCore(AWSArtifact):
         Args:
             inference_run_name (str): Name of the inference run
         """
-        if inference_run_name == "model_training":
+        if inference_run_name in ("training", "validation"):
             self.log.warning("Cannot delete model training data!")
             return
 
@@ -291,7 +291,7 @@ class ModelCore(AWSArtifact):
                 return None
 
         # Grab the metrics captured during model training (could return None)
-        if capture_name == "model_training":
+        if capture_name == "training":
             # Sanity check the workbench metadata
             if self.workbench_meta() is None:
                 error_msg = f"Model {self.name} has no workbench_meta(). Either onboard() or delete this model!"
@@ -314,7 +314,7 @@ class ModelCore(AWSArtifact):
         """Retrieve the confusion_matrix for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name or "model_training" (default: "default")
+            capture_name (str, optional): Specific capture_name or "training" (default: "default")
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
@@ -331,7 +331,7 @@ class ModelCore(AWSArtifact):
             return self.confusion_matrix(run) if run else None
 
         # Grab the confusion matrix captured during model training (could return None)
-        if capture_name == "model_training":
+        if capture_name == "training":
             cm = self.workbench_meta().get("workbench_training_cm")
             return pd.DataFrame.from_dict(cm) if cm else None
 
@@ -1309,8 +1309,8 @@ class ModelCore(AWSArtifact):
             if capture_name is None:
                 return None
 
-        # Check for model_training capture_name
-        if capture_name == "model_training":
+        # Check for the training capture_name
+        if capture_name == "training":
             # Create a DataFrame with the training metadata
             meta_df = pd.DataFrame(
                 [
@@ -1336,8 +1336,9 @@ class ModelCore(AWSArtifact):
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): A specific capture_name, or "default" to
-                resolve via default_inference_run() (default: "default")
+            capture_name (str, optional): A specific capture_name, "training" (out-of-fold
+                predictions), "validation" (held-out validation_ids rows, scored by the full
+                model), or "default" to resolve via default_inference_run() (default: "default")
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
@@ -1361,9 +1362,11 @@ class ModelCore(AWSArtifact):
                 return None
         self.log.important(f"Grabbing {capture_name} predictions for {self.name}...")
 
-        # Special case for model_training
-        if capture_name == "model_training":
+        # Training-job captures live with the model's training artifacts
+        if capture_name == "training":
             return self._get_oof_predictions()
+        if capture_name == "validation":
+            return self._get_val_predictions()
 
         # Construct the S3 path for the Inference Predictions
         s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_predictions.csv"
