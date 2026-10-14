@@ -7151,7 +7151,7 @@ them runs against either. Metrics are computed from the run's predictions.</p>
 </span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">()</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">eval_df</span><span class="p">,</span> <span class="n">capture_name</span><span class="o">=</span><span class="s2">"holdout"</span><span class="p">)</span>
 </span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">model</span><span class="o">.</span><span class="n">get_inference_metrics</span><span class="p">(</span><span class="s2">"holdout"</span><span class="p">)</span>
 </span></code></pre></div>
-<p>The <code>model_training</code> run an AWS Model carries has no local equivalent — those
+<p>The <code>training</code> run an AWS Model carries has no local equivalent — those
 metrics come from SageMaker scraping the training job's output.</p>
 <h2 id="neighbors-and-uncertainty">Neighbors and uncertainty</h2>
 <p>A local model carries the same proximity and UQ artifacts an AWS one does, because
