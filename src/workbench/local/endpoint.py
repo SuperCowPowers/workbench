@@ -166,7 +166,13 @@ class Endpoint(LocalArtifact):
         with open(metadata_path) as fp:
             script = json.load(fp)["inference_script"]
 
-        spec = importlib.util.spec_from_file_location("workbench_local_inference", os.path.join(self.model_dir, script))
+        # Model scripts import modules shipped beside them; the container serves with the
+        # model directory on the import path, so local serving does too
+        model_dir = self.model_dir
+        if model_dir not in sys.path:
+            sys.path.insert(0, model_dir)
+
+        spec = importlib.util.spec_from_file_location("workbench_local_inference", os.path.join(model_dir, script))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self._inference_module = module

@@ -63,6 +63,60 @@ class TestInferenceBundle:
         assert "generated_model_script.py" in artifacts
 
 
+SIDECAR_MODULE = "local_endpoint_sidecar"
+SIDECAR_SCRIPT = f"""
+import argparse
+import json
+import os
+
+import pandas as pd
+
+
+def model_fn(model_dir):
+    from {SIDECAR_MODULE} import OFFSET
+
+    with open(os.path.join(model_dir, "mean.json")) as f:
+        return json.load(f)["mean"] + OFFSET
+
+
+def predict_fn(df, model):
+    df["prediction"] = model
+    return df
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    for arg in ("--model-dir", "--train", "--output-data-dir"):
+        parser.add_argument(arg)
+    args = parser.parse_args()
+    train = pd.read_csv(os.path.join(args.train, "train.csv"))
+    with open(os.path.join(args.model_dir, "mean.json"), "w") as f:
+        json.dump({{"mean": float(train["y"].mean())}}, f)
+"""
+
+
+@pytest.fixture
+def sidecar_model(tmp_path, monkeypatch):
+    """A model whose script imports a module shipped beside it, at call time"""
+    monkeypatch.setattr(sys, "path", list(sys.path))  # serving adds the model dir; undone after the test
+    script_dir = tmp_path / "sidecar_script"
+    script_dir.mkdir()
+    (script_dir / "model.template").write_text(SIDECAR_SCRIPT)
+    (script_dir / f"{SIDECAR_MODULE}.py").write_text("OFFSET = 1000.0\n")
+
+    df = pd.DataFrame({"id": range(20), "x": range(20), "y": [1.0] * 10 + [3.0] * 10})
+    fs = DataSource(df, name="s_data").to_features("s_features", id_column="id")
+    yield fs.to_model(
+        "s-model",
+        model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.SKLEARN,
+        target_column="y",
+        feature_list=["x"],
+        custom_script=str(script_dir / "model.template"),
+    )
+    sys.modules.pop(SIDECAR_MODULE, None)
+
+
 class TestEndpoint:
     def test_inference_returns_predictions(self, trained_model):
         endpoint = trained_model.to_endpoint()
@@ -95,6 +149,11 @@ class TestEndpoint:
         first = endpoint._model_bundle
         endpoint.inference(eval_df)
         assert endpoint._model_bundle is first
+
+    def test_script_imports_a_module_shipped_beside_it(self, sidecar_model):
+        """The model dir is importable while serving, as in the container"""
+        predictions = sidecar_model.to_endpoint().inference(pd.DataFrame({"id": [0, 1], "x": [0, 1]}))
+        assert (predictions["prediction"] == 1002.0).all()
 
     def test_untrained_model_cannot_be_served(self, trained_model):
         """A model that never trained has nothing to load"""
