@@ -29,6 +29,10 @@ Common usage::
 If any child endpoint in the DAG is async (e.g. ``smiles-to-3d-v2``),
 the MetaEndpoint is automatically deployed as async too — its invocation
 budget needs to accommodate the slowest child.
+
+``create(serverless=False)`` deploys the meta on a realtime instance and
+requires every child to be realtime as well — a serverless child's cold
+start would defeat the point of a warm meta.
 """
 
 from __future__ import annotations
@@ -64,6 +68,7 @@ class MetaEndpoint(Endpoint):
         dag: MetaEndpointDAG,
         description: str | None = None,
         tags: list[str] | None = None,
+        serverless: bool = True,
         min_instances: int = 0,
         max_instances: int = 1,
     ) -> "MetaEndpoint":
@@ -84,13 +89,15 @@ class MetaEndpoint(Endpoint):
             dag: A :class:`MetaEndpointDAG` describing the data flow.
             description: Optional description for the registered model.
             tags: Optional list of Workbench tags.
-            min_instances: Autoscaler floor for async deployments (default: 0 —
-                scale to zero when idle). Set to 1 in production to keep the
-                meta warm. Ignored for sync deployments.
-            max_instances: Autoscaler ceiling for async deployments (default: 1).
-                The meta is a thin orchestrator that fans out to children, so
-                it rarely needs more than one instance. Ignored for sync
-                deployments.
+            serverless: Deploy a sync meta as serverless (default: True). False
+                deploys it on a realtime instance and raises if any child
+                endpoint is serverless. Async metas are always instance-backed.
+            min_instances: Autoscaler floor (default: 0 — scale to zero when
+                idle; realtime deployments floor at 1). Set to 1 in production
+                to keep an async meta warm. Ignored for serverless deployments.
+            max_instances: Autoscaler ceiling (default: 1). The meta is a thin
+                orchestrator that fans out to children, so it rarely needs more
+                than one instance. Ignored for serverless deployments.
 
         Returns:
             The deployed MetaEndpoint, ready for ``.inference()``.
@@ -106,6 +113,15 @@ class MetaEndpoint(Endpoint):
             f"DAG: {len(dag.endpoints)} endpoints, {len(dag.aggregations)} aggregation nodes "
             f"({'async' if is_async else 'sync'} deployment)"
         )
+
+        # A realtime meta stays warm only if its children do; reject serverless children.
+        if not serverless:
+            serverless_children = sorted(ep for ep in set(dag.endpoints.values()) if Endpoint(ep).is_serverless())
+            if serverless_children:
+                raise ValueError(
+                    f"MetaEndpoint '{name}': realtime deployment requested, but child endpoint(s) "
+                    f"{serverless_children} are serverless. Redeploy them realtime first."
+                )
 
         # An async meta sizes its batch from the child fleet (see the batch
         # computation below), which requires every async child to have advertised
@@ -158,13 +174,16 @@ class MetaEndpoint(Endpoint):
         # MetaEndpoint containers are thin orchestrators — they receive the
         # full input as one invocation and let each child's own async_inference
         # do the row-level fan-out against the child fleet.
-        log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
+        mode = "async" if is_async else "serverless" if serverless else "realtime"
+        log.important(f"Deploying MetaEndpoint '{name}' ({mode})...")
         model = Model(name)
+        uses_autoscaler = is_async or not serverless
         endpoint = model.to_endpoint(
             tags=tags or [name],
+            serverless=serverless and not is_async,
             async_endpoint=is_async,
-            min_instances=min_instances if is_async else 0,
-            max_instances=max_instances if is_async else None,
+            min_instances=min_instances if uses_autoscaler else 0,
+            max_instances=max_instances if uses_autoscaler else None,
         )
 
         # The meta delegates row-level batching to its children, who saturate
