@@ -40,6 +40,9 @@ DEFAULT_HYPERPARAMETERS = {
     "dropout": 0.1,
     # Conformers per molecule: training draws one at random each epoch, prediction averages all
     "n_conformers": 10,
+    # Conformers per molecule behind each epoch's validation MAE, which picks the best epoch;
+    # validation is most of an epoch's cost at 10
+    "selection_conformers": 2,
     # Split strategy: "scaffold" (default), "butina", or "random"
     "split_strategy": "scaffold",
     "butina_cutoff": 0.4,

@@ -233,6 +233,9 @@ def train_fold(
 ) -> tuple[FoldModel, np.ndarray]:
     """Fine-tune one fold model; the EMA weights from the epoch with the lowest validation MAE win.
 
+    Each epoch's validation MAE averages over the first `selection_conformers` conformers per
+    molecule; the returned validation predictions average over all of them.
+
     Returns the fold model and its predictions for the validation rows (target units).
     """
     torch.manual_seed(seed)
@@ -263,7 +266,8 @@ def train_fold(
     ema = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(hp["ema_decay"]))
     ema_fold = FoldModel(ema.module, target_mean, target_std, extra_mean, extra_std)
 
-    best_mae, best_state, best_pred = math.inf, None, None
+    selection_conformers = [confs[: hp["selection_conformers"]] for confs in val_conformers]
+    best_mae, best_state = math.inf, None
     for epoch in range(hp["epochs"]):
         frozen = epoch < hp["freeze_encoder_epochs"]
         for group, base_lr, is_encoder in zip(optimizer.param_groups, base_lrs, (True, False)):
@@ -285,11 +289,10 @@ def train_fold(
             ema.update_parameters(model)
             losses.append(loss.item())
 
-        val_pred = ema_fold.predict(val_conformers, val_extra)
-        val_mae = float(np.abs(val_pred - val_y).mean())
+        val_mae = float(np.abs(ema_fold.predict(selection_conformers, val_extra) - val_y).mean())
         improved = val_mae < best_mae
         if improved:
-            best_mae, best_pred = val_mae, val_pred
+            best_mae = val_mae
             best_state = {k: v.detach().clone() for k, v in ema.module.state_dict().items()}
         print(
             f"  epoch {epoch + 1}/{hp['epochs']}  train_loss {np.mean(losses):.4f}  val_mae {val_mae:.4f}"
@@ -298,4 +301,4 @@ def train_fold(
         )
 
     ema.module.load_state_dict(best_state)
-    return ema_fold, best_pred
+    return ema_fold, ema_fold.predict(val_conformers, val_extra)

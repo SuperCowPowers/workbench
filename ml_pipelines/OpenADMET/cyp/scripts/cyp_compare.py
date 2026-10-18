@@ -13,7 +13,8 @@ Credible intervals are label metadata rather than features, so `output_columns()
 them and they never reach a capture -- they are joined back from the FeatureSet by id.
 
 Scores whichever capture a model has: the analog holdout where one was written, otherwise
-the out-of-fold predictions, which the ruler table rates the better instrument anyway. The
+the out-of-fold predictions (an endpoint's full_cross_fold capture, or the training job's
+own for a model with no endpoint), which the ruler table rates the better instrument anyway. The
 holdout was retired, so nothing built since carries it.
 
 `--bands` splits each isoform by activity, which is where CYP2D6's problem lives. Out of
@@ -49,7 +50,7 @@ RESOLUTION = {"cyp1a2": 0.043, "cyp2c9": 0.031, "cyp2d6": 0.056, "cyp3a4": 0.018
 
 def resolve_capture(runs: list, target: str) -> str | None:
     """The capture holding this target's scored rows, newest convention first."""
-    for candidate in (f"{CAPTURE}_{target}", CAPTURE, f"cv_{target}", "full_cross_fold"):
+    for candidate in (f"{CAPTURE}_{target}", CAPTURE, f"cv_{target}", "full_cross_fold", "training"):
         if candidate in runs:
             return candidate
     return None
