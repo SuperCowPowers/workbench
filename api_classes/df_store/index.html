@@ -722,6 +722,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/atomjepa_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atom-JEPA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/cleanlab_models/" class="md-nav__link">
         
   
@@ -5533,85 +5561,85 @@ discovers <code>s3_bucket</code> and <code>boto3_session</code> from the contain
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/workbench/api/df_store.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-12">12</a></span>
-<span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="k">class</span><span class="w"> </span><span class="nc">DFStore</span><span class="p">(</span><span class="n">DFStoreCore</span><span class="p">):</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="w">    </span><span class="sd">"""DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    Orchestration-side wrapper around the endpoint-safe :class:`DFStoreCore`.</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    Pulls the workbench bucket from :class:`ConfigManager` and a refreshable</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    boto3 session from :class:`AWSAccountClamp` — what you almost always want</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    for interactive / long-running workbench code. Endpoint-side code should</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    use :class:`workbench.endpoints.df_store.DFStore` instead, which auto-</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    discovers ``s3_bucket`` and ``boto3_session`` from the container env.</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">        Common Usage:</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">    ```python</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">            df_store = DFStore()</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">            # List Data</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">            df_store.list()</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">            # Add DataFrame</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">            df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">            df_store.upsert("/test/my_data", df)</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">            # Retrieve DataFrame</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">            df = df_store.get("/test/my_data")</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">            print(df)</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">            # Delete Data</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">            df_store.delete("/test/my_data")</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">    ```</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    """</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_prefix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="w">        </span><span class="sd">"""DFStore Init Method</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">            path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        """</span>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>        <span class="n">bucket</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">"WORKBENCH_BUCKET"</span><span class="p">)</span>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>        <span class="n">session</span> <span class="o">=</span> <span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_prefix</span><span class="o">=</span><span class="n">path_prefix</span><span class="p">,</span> <span class="n">s3_bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"workbench"</span><span class="p">)</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore--source--__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="workbench.api.df_store.DFStore--source--__span-0-12"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-12" name="workbench.api.df_store.DFStore--source--__codelineno-0-12"></a><span class="k">class</span><span class="w"> </span><span class="nc">DFStore</span><span class="p">(</span><span class="n">DFStoreCore</span><span class="p">):</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-13"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-13" name="workbench.api.df_store.DFStore--source--__codelineno-0-13"></a><span class="w">    </span><span class="sd">"""DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-14"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-14" name="workbench.api.df_store.DFStore--source--__codelineno-0-14"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-15"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-15" name="workbench.api.df_store.DFStore--source--__codelineno-0-15"></a><span class="sd">    Orchestration-side wrapper around the endpoint-safe :class:`DFStoreCore`.</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-16"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-16" name="workbench.api.df_store.DFStore--source--__codelineno-0-16"></a><span class="sd">    Pulls the workbench bucket from :class:`ConfigManager` and a refreshable</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-17"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-17" name="workbench.api.df_store.DFStore--source--__codelineno-0-17"></a><span class="sd">    boto3 session from :class:`AWSAccountClamp` — what you almost always want</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-18"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-18" name="workbench.api.df_store.DFStore--source--__codelineno-0-18"></a><span class="sd">    for interactive / long-running workbench code. Endpoint-side code should</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-19"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-19" name="workbench.api.df_store.DFStore--source--__codelineno-0-19"></a><span class="sd">    use :class:`workbench.endpoints.df_store.DFStore` instead, which auto-</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-20"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-20" name="workbench.api.df_store.DFStore--source--__codelineno-0-20"></a><span class="sd">    discovers ``s3_bucket`` and ``boto3_session`` from the container env.</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-21"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-21" name="workbench.api.df_store.DFStore--source--__codelineno-0-21"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-22"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-22" name="workbench.api.df_store.DFStore--source--__codelineno-0-22"></a><span class="sd">        Common Usage:</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-23"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-23" name="workbench.api.df_store.DFStore--source--__codelineno-0-23"></a><span class="sd">    ```python</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-24"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-24" name="workbench.api.df_store.DFStore--source--__codelineno-0-24"></a><span class="sd">            df_store = DFStore()</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-25"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-25" name="workbench.api.df_store.DFStore--source--__codelineno-0-25"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-26"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-26" name="workbench.api.df_store.DFStore--source--__codelineno-0-26"></a><span class="sd">            # List Data</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-27"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-27" name="workbench.api.df_store.DFStore--source--__codelineno-0-27"></a><span class="sd">            df_store.list()</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-28"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-28" name="workbench.api.df_store.DFStore--source--__codelineno-0-28"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-29"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-29" name="workbench.api.df_store.DFStore--source--__codelineno-0-29"></a><span class="sd">            # Add DataFrame</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-30"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-30" name="workbench.api.df_store.DFStore--source--__codelineno-0-30"></a><span class="sd">            df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-31"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-31" name="workbench.api.df_store.DFStore--source--__codelineno-0-31"></a><span class="sd">            df_store.upsert("/test/my_data", df)</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-32"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-32" name="workbench.api.df_store.DFStore--source--__codelineno-0-32"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-33"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-33" name="workbench.api.df_store.DFStore--source--__codelineno-0-33"></a><span class="sd">            # Retrieve DataFrame</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-34"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-34" name="workbench.api.df_store.DFStore--source--__codelineno-0-34"></a><span class="sd">            df = df_store.get("/test/my_data")</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-35"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-35" name="workbench.api.df_store.DFStore--source--__codelineno-0-35"></a><span class="sd">            print(df)</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-36"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-36" name="workbench.api.df_store.DFStore--source--__codelineno-0-36"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-37"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-37" name="workbench.api.df_store.DFStore--source--__codelineno-0-37"></a><span class="sd">            # Delete Data</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-38"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-38" name="workbench.api.df_store.DFStore--source--__codelineno-0-38"></a><span class="sd">            df_store.delete("/test/my_data")</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-39"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-39" name="workbench.api.df_store.DFStore--source--__codelineno-0-39"></a><span class="sd">    ```</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-40"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-40" name="workbench.api.df_store.DFStore--source--__codelineno-0-40"></a><span class="sd">    """</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-41"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-41" name="workbench.api.df_store.DFStore--source--__codelineno-0-41"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-42"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-42" name="workbench.api.df_store.DFStore--source--__codelineno-0-42"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_prefix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-43"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-43" name="workbench.api.df_store.DFStore--source--__codelineno-0-43"></a><span class="w">        </span><span class="sd">"""DFStore Init Method</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-44"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-44" name="workbench.api.df_store.DFStore--source--__codelineno-0-44"></a>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-45"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-45" name="workbench.api.df_store.DFStore--source--__codelineno-0-45"></a><span class="sd">        Args:</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-46"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-46" name="workbench.api.df_store.DFStore--source--__codelineno-0-46"></a><span class="sd">            path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-47"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-47" name="workbench.api.df_store.DFStore--source--__codelineno-0-47"></a><span class="sd">        """</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-48"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-48" name="workbench.api.df_store.DFStore--source--__codelineno-0-48"></a>        <span class="n">bucket</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">"WORKBENCH_BUCKET"</span><span class="p">)</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-49"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-49" name="workbench.api.df_store.DFStore--source--__codelineno-0-49"></a>        <span class="n">session</span> <span class="o">=</span> <span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-50"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-50" name="workbench.api.df_store.DFStore--source--__codelineno-0-50"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_prefix</span><span class="o">=</span><span class="n">path_prefix</span><span class="p">,</span> <span class="n">s3_bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</span><span id="workbench.api.df_store.DFStore--source--__span-0-51"><a id="workbench.api.df_store.DFStore--source--__codelineno-0-51" name="workbench.api.df_store.DFStore--source--__codelineno-0-51"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"workbench"</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -5675,25 +5703,25 @@ discovers <code>s3_bucket</code> and <code>boto3_session</code> from the contain
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/workbench/api/df_store.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_prefix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="w">    </span><span class="sd">"""DFStore Init Method</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    """</span>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">bucket</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">"WORKBENCH_BUCKET"</span><span class="p">)</span>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="n">session</span> <span class="o">=</span> <span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_prefix</span><span class="o">=</span><span class="n">path_prefix</span><span class="p">,</span> <span class="n">s3_bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"workbench"</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-46">46</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-47">47</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#workbench.api.df_store.DFStore.__init__--source--__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-42"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-42" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_prefix</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-43"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-43" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-43"></a><span class="w">    </span><span class="sd">"""DFStore Init Method</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-44"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-44" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-44"></a>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-45"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-45" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-45"></a><span class="sd">    Args:</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-46"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-46" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-46"></a><span class="sd">        path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-47"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-47" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-47"></a><span class="sd">    """</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-48"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-48" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-48"></a>    <span class="n">bucket</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">"WORKBENCH_BUCKET"</span><span class="p">)</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-49"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-49" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-49"></a>    <span class="n">session</span> <span class="o">=</span> <span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-50"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-50" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-50"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_prefix</span><span class="o">=</span><span class="n">path_prefix</span><span class="p">,</span> <span class="n">s3_bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span> <span class="n">boto3_session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+</span><span id="workbench.api.df_store.DFStore.__init__--source--__span-0-51"><a id="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-51" name="workbench.api.df_store.DFStore.__init__--source--__codelineno-0-51"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"workbench"</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>

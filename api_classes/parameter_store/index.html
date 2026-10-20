@@ -722,6 +722,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../models/atomjepa_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Atom-JEPA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../models/cleanlab_models/" class="md-nav__link">
         
   
@@ -5471,32 +5499,32 @@
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
-  <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">params</span> <span class="o">=</span> <span class="n">ParameterStore</span><span class="p">()</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># List Parameters</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">params</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">[</span><span class="s1">'/workbench/abalone_info'</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a> <span class="s1">'/workbench/my_data'</span><span class="p">,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a> <span class="s1">'/workbench/test'</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">]</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># Add Key</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">params</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="s2">"key"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">)</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">value</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"key"</span><span class="p">)</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># Add any data (lists, dictionaries, etc..)</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">my_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="s2">"value"</span><span class="p">,</span> <span class="s2">"number"</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]}</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">params</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="s2">"my_data"</span><span class="p">,</span> <span class="n">my_data</span><span class="p">)</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># Retrieve data</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">return_value</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"my_data"</span><span class="p">)</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">pprint</span><span class="p">(</span><span class="n">return_value</span><span class="p">)</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">{</span><span class="s1">'key'</span><span class="p">:</span> <span class="s1">'value'</span><span class="p">,</span> <span class="s1">'list'</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">'number'</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">}</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="c1"># Delete parameters</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="n">param_store</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">"my_data"</span><span class="p">)</span>
+  <div class="language-python highlight"><pre><span></span><code><span id="workbench.api.parameter_store.ParameterStore--__span-0-1"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-1" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-1" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-1"></a><span class="n">params</span> <span class="o">=</span> <span class="n">ParameterStore</span><span class="p">()</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-2"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-2" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-2" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-2"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-3"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-3" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-3" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-3"></a><span class="c1"># List Parameters</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-4"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-4" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-4" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-4"></a><span class="n">params</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-5"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-5" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-5" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-5"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-6"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-6" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-6" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-6"></a><span class="p">[</span><span class="s1">'/workbench/abalone_info'</span><span class="p">,</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-7"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-7" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-7" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-7"></a> <span class="s1">'/workbench/my_data'</span><span class="p">,</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-8"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-8" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-8" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-8"></a> <span class="s1">'/workbench/test'</span><span class="p">,</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-9"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-9" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-9" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-9"></a><span class="p">]</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-10"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-10" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-10" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-10"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-11"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-11" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-11" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-11"></a><span class="c1"># Add Key</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-12"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-12" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-12" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-12"></a><span class="n">params</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="s2">"key"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-13"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-13" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-13" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-13"></a><span class="n">value</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"key"</span><span class="p">)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-14"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-14" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-14" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-14"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-15"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-15" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-15" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-15"></a><span class="c1"># Add any data (lists, dictionaries, etc..)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-16"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-16" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-16" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-16"></a><span class="n">my_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"key"</span><span class="p">:</span> <span class="s2">"value"</span><span class="p">,</span> <span class="s2">"number"</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]}</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-17"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-17" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-17" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-17"></a><span class="n">params</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="s2">"my_data"</span><span class="p">,</span> <span class="n">my_data</span><span class="p">)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-18"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-18" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-18" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-18"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-19"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-19" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-19" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-19"></a><span class="c1"># Retrieve data</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-20"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-20" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-20" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-20"></a><span class="n">return_value</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"my_data"</span><span class="p">)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-21"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-21" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-21" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-21"></a><span class="n">pprint</span><span class="p">(</span><span class="n">return_value</span><span class="p">)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-22"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-22" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-22" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-22"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-23"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-23" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-23" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-23"></a><span class="p">{</span><span class="s1">'key'</span><span class="p">:</span> <span class="s1">'value'</span><span class="p">,</span> <span class="s1">'list'</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s1">'number'</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">}</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-24"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-24" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-24" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-24"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-25"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-25" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-25" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-25"></a><span class="c1"># Delete parameters</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--__span-0-26"><a id="workbench.api.parameter_store.ParameterStore--__codelineno-0-26" name="workbench.api.parameter_store.ParameterStore--__codelineno-0-26" href="#workbench.api.parameter_store.ParameterStore--__codelineno-0-26"></a><span class="n">param_store</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="s2">"my_data"</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
 
@@ -5508,79 +5536,79 @@
 
               <details class="mkdocstrings-source">
                 <summary>Source code in <code>src/workbench/api/parameter_store.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
-<span class="normal"><a href="#__codelineno-0-11">11</a></span>
-<span class="normal"><a href="#__codelineno-0-12">12</a></span>
-<span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">class</span><span class="w"> </span><span class="nc">ParameterStore</span><span class="p">(</span><span class="n">ParameterStoreCore</span><span class="p">):</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">"""ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store.</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    Common Usage:</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">        ```python</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">        params = ParameterStore()</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">        # List Parameters</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        params.list()</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">        ['/workbench/abalone_info',</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">         '/workbench/my_data',</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">         '/workbench/test',</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">        ]</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">        # Add Key</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">        params.upsert("key", "value")</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">        value = params.get("key")</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">        # Add any data (lists, dictionaries, etc..)</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        my_data = {"key": "value", "number": 4.2, "list": [1,2,3]}</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        params.upsert("my_data", my_data)</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        # Retrieve data</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        return_value = params.get("my_data")</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">        pprint(return_value)</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        {'key': 'value', 'list': [1, 2, 3], 'number': 4.2}</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">        # Delete parameters</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">        param_store.delete("my_data")</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">        ```</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">    """</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">        </span><span class="sd">"""ParameterStore Init Method"""</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">boto3_session</span><span class="o">=</span><span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-10">10</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-11">11</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-12">12</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-13">13</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-14">14</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-15">15</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-16">16</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-17">17</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-19">19</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-20">20</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-21">21</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-22">22</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-23">23</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-26">26</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-27">27</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-28">28</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-29">29</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-30">30</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-32">32</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-33">33</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-34">34</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-35">35</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-36">36</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-37">37</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-38">38</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-39">39</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-40">40</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-41">41</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-42">42</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-43">43</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore--source--__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-10"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-10" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-10"></a><span class="k">class</span><span class="w"> </span><span class="nc">ParameterStore</span><span class="p">(</span><span class="n">ParameterStoreCore</span><span class="p">):</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-11"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-11" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-11"></a><span class="w">    </span><span class="sd">"""ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store.</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-12"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-12" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-12"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-13"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-13" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-13"></a><span class="sd">    Common Usage:</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-14"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-14" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-14"></a><span class="sd">        ```python</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-15"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-15" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-15"></a><span class="sd">        params = ParameterStore()</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-16"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-16" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-16"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-17"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-17" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-17"></a><span class="sd">        # List Parameters</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-18"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-18" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-18"></a><span class="sd">        params.list()</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-19"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-19" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-19"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-20"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-20" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-20"></a><span class="sd">        ['/workbench/abalone_info',</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-21"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-21" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-21"></a><span class="sd">         '/workbench/my_data',</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-22"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-22" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-22"></a><span class="sd">         '/workbench/test',</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-23"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-23" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-23"></a><span class="sd">        ]</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-24"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-24" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-24"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-25"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-25" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-25"></a><span class="sd">        # Add Key</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-26"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-26" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-26"></a><span class="sd">        params.upsert("key", "value")</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-27"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-27" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-27"></a><span class="sd">        value = params.get("key")</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-28"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-28" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-28"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-29"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-29" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-29"></a><span class="sd">        # Add any data (lists, dictionaries, etc..)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-30"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-30" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-30"></a><span class="sd">        my_data = {"key": "value", "number": 4.2, "list": [1,2,3]}</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-31"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-31" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-31"></a><span class="sd">        params.upsert("my_data", my_data)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-32"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-32" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-32"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-33"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-33" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-33"></a><span class="sd">        # Retrieve data</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-34"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-34" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-34"></a><span class="sd">        return_value = params.get("my_data")</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-35"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-35" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-35"></a><span class="sd">        pprint(return_value)</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-36"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-36" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-36"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-37"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-37" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-37"></a><span class="sd">        {'key': 'value', 'list': [1, 2, 3], 'number': 4.2}</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-38"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-38" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-38"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-39"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-39" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-39"></a><span class="sd">        # Delete parameters</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-40"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-40" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-40"></a><span class="sd">        param_store.delete("my_data")</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-41"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-41" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-41"></a><span class="sd">        ```</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-42"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-42" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-42"></a><span class="sd">    """</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-43"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-43" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-43"></a>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-44"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-44" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-44"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-45"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-45" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-45"></a><span class="w">        </span><span class="sd">"""ParameterStore Init Method"""</span>
+</span><span id="workbench.api.parameter_store.ParameterStore--source--__span-0-46"><a id="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-46" name="workbench.api.parameter_store.ParameterStore--source--__codelineno-0-46"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">boto3_session</span><span class="o">=</span><span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -5613,11 +5641,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/workbench/api/parameter_store.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">    </span><span class="sd">"""ParameterStore Init Method"""</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">boto3_session</span><span class="o">=</span><span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-44">44</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-45">45</a></span>
+<span class="normal"><a href="#workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="workbench.api.parameter_store.ParameterStore.__init__--source--__span-0-44"><a id="workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-44" name="workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-44"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="workbench.api.parameter_store.ParameterStore.__init__--source--__span-0-45"><a id="workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-45" name="workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-45"></a><span class="w">    </span><span class="sd">"""ParameterStore Init Method"""</span>
+</span><span id="workbench.api.parameter_store.ParameterStore.__init__--source--__span-0-46"><a id="workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-46" name="workbench.api.parameter_store.ParameterStore.__init__--source--__codelineno-0-46"></a>    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">boto3_session</span><span class="o">=</span><span class="n">AWSAccountClamp</span><span class="p">()</span><span class="o">.</span><span class="n">boto3_session</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
