@@ -65,6 +65,8 @@ INSTANCE_LADDERS = {
 # when the stop call can't be made.
 CAPACITY_WAIT_SECONDS = 30 * 60
 MAX_PENDING_SECONDS = 7200
+# Stops a hung training job; matches the Batch job-def ceiling a launcher run waits under.
+MAX_RUNTIME_SECONDS = 24 * 3600
 
 
 def training_workload(hyperparameters: Union[dict, None], *, gpu_framework: bool) -> str:
@@ -372,7 +374,6 @@ class FeaturesToModel(Transform):
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
 
         # Use user-specified instance or pick a ladder from the workload.
-        hpo_requested = (kwargs.get("hyperparameters") or {}).get("hpo") is not None
         train_instance_type = kwargs.get("training_instance")
         if train_instance_type:
             instance_ladder = [train_instance_type]
@@ -404,7 +405,7 @@ class FeaturesToModel(Transform):
 
             # The final rung queues for capacity as long as it takes; the rungs above it
             # give up so the ladder can move on.
-            stopping_condition = StoppingCondition(max_runtime_in_seconds=(24 if hpo_requested else 6) * 3600)
+            stopping_condition = StoppingCondition(max_runtime_in_seconds=MAX_RUNTIME_SECONDS)
             if not last_rung:
                 stopping_condition.max_pending_time_in_seconds = MAX_PENDING_SECONDS
 
