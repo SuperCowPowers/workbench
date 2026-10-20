@@ -96,6 +96,7 @@ modeling = [
     "torch",
     "chemprop >= 2.3.0",
     "tabicl[shap] >= 2.2.0",
+    "atom-jepa >= 0.3.0",
 ]
 # Dev tooling only — no runtime deps. Skipped when deriving the endpoint-import-smoke
 # forbidden list (see ci/endpoint_import_smoke.py), so nothing here constrains the

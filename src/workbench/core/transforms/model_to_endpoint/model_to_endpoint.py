@@ -273,7 +273,11 @@ class ModelToEndpoint(Transform):
         from workbench.api import ModelFramework
 
         self.log.info(f"Model Framework: {workbench_model.model_framework}")
-        needs_more_resources = workbench_model.model_framework in [ModelFramework.PYTORCH, ModelFramework.CHEMPROP]
+        needs_more_resources = workbench_model.model_framework in [
+            ModelFramework.PYTORCH,
+            ModelFramework.CHEMPROP,
+            ModelFramework.ATOMJEPA,
+        ]
 
         # Determine serverless config and instance type
         serverless_config = None

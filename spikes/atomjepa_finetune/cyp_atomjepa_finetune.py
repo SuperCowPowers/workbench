@@ -2,9 +2,8 @@
 
 The fine-tuned counterpart of ml_pipelines/OpenADMET/cyp/cyp_tabicl_monroe.py: same
 FeatureSets, one single-target model per isoform (multi-task is worth -0.002 mean on CYP,
-per that script), unlabelled rows excluded. Trains through the spike template on a GPU
-training job; model_framework=PYTORCH selects the pytorch_chem images and the GPU instance
-ladder. No endpoint: scripts/cyp_compare.py scores the model's "training" capture, the fold
+per that script), unlabelled rows excluded. Trains with the Atom-JEPA framework on a GPU
+training job. No endpoint: scripts/cyp_compare.py scores the model's "training" capture, the fold
 models' out-of-fold predictions.
 
 `--readouts` trains on the readout FeatureSet, adding the screen model's four predicted
@@ -17,11 +16,9 @@ Each isoform is its own training job, so isoforms launched separately run in par
 """
 
 import argparse
-from pathlib import Path
 
 from workbench.api import FeatureSet, ModelFramework, ModelType
 
-TEMPLATE = Path(__file__).parent / "atomjepa.template"
 FS_NAME = "openadmet_cyp_monroe_f1"
 READOUT_FS = "openadmet_cyp_readout_monroe_f1"
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
@@ -54,9 +51,8 @@ for iso in args.isoforms:
 
     model = fs.to_model(
         name=name,
-        model_type=ModelType.REGRESSOR,
-        model_framework=ModelFramework.PYTORCH,
-        custom_script=TEMPLATE,
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.ATOMJEPA,
         feature_list=["smiles"] + readouts,
         target_column=target,
         description=f"CYP {iso.upper()} pIC50, fine-tuned Atom-JEPA (spike)",

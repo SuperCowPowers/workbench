@@ -393,8 +393,10 @@ torch==2.13.0+cpu
     #   pytorch-lightning
     #   tabicl
     #   torchmetrics
-torch-geometric==2.8.0.post1
-    # via -r sagemaker_images/pytorch_chem/inference/requirements.in
+torch-geometric==2.8.1
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   -r sagemaker_images/pytorch_chem/inference/requirements.in
 torchmetrics==1.9.0
     # via
     #   -c ci/.uv-constraints.txt
@@ -454,8 +456,10 @@ xarray==2026.7.0
     # via
     #   -c ci/.uv-constraints.txt
     #   pandas-flavor
-xxhash==4.0.1
-    # via torch-geometric
+xxhash==4.0.2
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   torch-geometric
 yarl==1.24.2
     # via
     #   -c ci/.uv-constraints.txt

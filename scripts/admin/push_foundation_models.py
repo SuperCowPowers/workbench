@@ -15,8 +15,8 @@ otherwise gets the file (the local cache, then the public bucket, then the entry
 ``origin_url``), checks its md5 and size against the registry and that it loads as the
 expected checkpoint, and uploads it plus a ``SOURCE.json`` provenance sidecar beside it.
 Rerunning it is harmless. An object at the key with a different size is refused rather
-than replaced (``--force`` replaces it). Torch is optional here: without it the structural
-check is skipped with a warning (the md5/size check still runs).
+than replaced (``--force`` replaces it). Torch and safetensors are optional here: without the one a
+checkpoint needs, the structural check is skipped with a warning (the md5/size check still runs).
 """
 
 import argparse
@@ -80,8 +80,33 @@ def check_integrity(path: Path, entry: dict) -> dict:
     return {"md5": md5, "size_bytes": size, "integrity": "verified"}
 
 
+def load_checkpoint(path: Path) -> dict:
+    """The file's top-level keys mapped to their values: JSON, safetensors (names only), or torch.
+
+    Args:
+        path (Path): Local checkpoint file.
+
+    Returns:
+        dict: The checkpoint's contents (safetensors values are None).
+
+    Raises:
+        ImportError: If the loader for this format isn't installed.
+    """
+    if path.suffix == ".json":
+        with open(path) as f:
+            return json.load(f)
+    if path.suffix == ".safetensors":
+        from safetensors import safe_open
+
+        with safe_open(str(path), "pt") as f:
+            return dict.fromkeys(f.keys())
+    import torch
+
+    return torch.load(path, weights_only=True, map_location="cpu")
+
+
 def verify_checkpoint(path: Path, entry: dict) -> dict:
-    """Confirm the file loads as a torch checkpoint with the registry entry's keys.
+    """Confirm the file loads as a checkpoint with the registry entry's keys.
 
     Args:
         path (Path): Local checkpoint file.
@@ -91,16 +116,13 @@ def verify_checkpoint(path: Path, entry: dict) -> dict:
         dict: Details for the sidecar — the scalar settings under each non-weight key.
     """
     try:
-        import torch
-    except ImportError:
-        log.warning("torch not installed — skipping the structural check (hash + upload only)")
+        ckpt = load_checkpoint(path)
+    except ImportError as e:
+        log.warning(f"{e.name} not installed — skipping the structural check (hash + upload only)")
         return {}
-
-    try:
-        ckpt = torch.load(path, weights_only=True, map_location="cpu")
     except Exception as e:
         raise ValueError(
-            f"{path} does not load as a torch checkpoint ({type(e).__name__}: {e}). "
+            f"{path} does not load as a checkpoint ({type(e).__name__}: {e}). "
             "A truncated download or an HTML error page will look like this."
         ) from None
     missing = [k for k in entry["checkpoint_keys"] if k not in ckpt]
@@ -144,6 +166,7 @@ def obtain(name: str, entry: dict) -> Path:
         pass
 
     dest = foundation_cache_dir() / entry["filename"]
+    dest.parent.mkdir(parents=True, exist_ok=True)
     print(f"  downloading {entry['origin_url']} ...")
     with tempfile.NamedTemporaryFile(dir=dest.parent, delete=False) as tmp:
         tmp_path = Path(tmp.name)

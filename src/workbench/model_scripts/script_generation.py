@@ -106,6 +106,9 @@ def generate_model_script(template_params: dict) -> str:
     elif template_params["model_framework"] == ModelFramework.TABICL:
         template_name = "tabicl.template"
         model_script_dir_name = "tabicl"
+    elif template_params["model_framework"] == ModelFramework.ATOMJEPA:
+        template_name = "atomjepa.template"
+        model_script_dir_name = "atomjepa"
     elif template_params["model_framework"] == ModelFramework.META:
         template_name = "meta_endpoint.template"
         model_script_dir_name = "meta_endpoint"

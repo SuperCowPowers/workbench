@@ -1,14 +1,13 @@
 # vim: set ft=python:
 
-# Atom-JEPA Fine-Tuning Template (spike):
+# Atom-JEPA Model Template for Workbench:
 #
 # Single-target regression by fine-tuning the pretrained Atom-JEPA encoder (EquiformerV3 on
-# 3D conformers) with the ADMET recipe in atomjepa_core.py.
+# 3D conformers) with the authors' ADMET recipe (workbench.training.atomjepa_core).
 # - K-fold ensemble: each fold model gives out-of-fold predictions and metrics; the served
-#   prediction is the fold models' mean, prediction_std their spread
+#   prediction is the fold models' mean and prediction_std their spread, which feeds the UQModel
 # - Features: a 'smiles' column, plus any other numeric features fed to the readout
 # - Each molecule gets n_conformers conformers; predictions average over them
-# - No UQ model or SHAP
 
 import json
 import os
@@ -17,12 +16,13 @@ import numpy as np
 import pandas as pd
 
 from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
+from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 # =============================================================================
 # Default Hyperparameters
 # =============================================================================
 DEFAULT_HYPERPARAMETERS = {
-    # Fold models in the ensemble (1 = one train/val split)
+    # Fold models in the ensemble (1 = one train/val split, with no ensemble spread for UQ)
     "n_folds": 5,
     # Training schedule, stepped per epoch: linear warmup, then cosine down to min_lr. The
     # encoder is frozen for its first epochs and re-warms over the warmup length after.
@@ -47,6 +47,11 @@ DEFAULT_HYPERPARAMETERS = {
     "split_strategy": "scaffold",
     "butina_cutoff": 0.4,
     "seed": 42,
+    # UQ version to use as the primary confidence source at inference:
+    #   "v0": isotonic on (prediction, std), no neighborhood required
+    #   "v1" (default): proximity-augmented RandomForest error model
+    #   "v2": pure applicability-domain confidence from neighbors
+    "uq_version": "v1",
 }
 
 # Template parameters (filled in by Workbench)
@@ -73,8 +78,8 @@ def split_features(features: list[str]) -> tuple[str, list[str]]:
 # Model Loading (for SageMaker inference)
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
-    """Load the fold models."""
-    from atomjepa_core import FoldModel
+    """Load the fold models and the UQ model."""
+    from workbench.training.atomjepa_core import FoldModel
 
     with open(os.path.join(model_dir, "hyperparameters.json")) as f:
         hyperparameters = json.load(f)
@@ -82,6 +87,7 @@ def model_fn(model_dir: str) -> dict:
     return {
         "folds": [FoldModel.load(os.path.join(model_dir, d)) for d in fold_dirs],
         "hyperparameters": hyperparameters,
+        "uq_model": load_regression_uq(model_dir),
     }
 
 
@@ -90,9 +96,8 @@ def model_fn(model_dir: str) -> dict:
 # =============================================================================
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     """Predict with the fold ensemble; molecules without conformers get NaN."""
-    from atomjepa_core import build_conformers
-
     from workbench.endpoints.inference import match_features_case_insensitive
+    from workbench.training.atomjepa_core import build_conformers
 
     smiles_column, extra_features = split_features(TEMPLATE_PARAMS["features"])
     matched = match_features_case_insensitive(df, TEMPLATE_PARAMS["features"])
@@ -103,11 +108,28 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     print(f"Conformers for {ok.sum()} of {len(df)} molecules")
 
     df["prediction"], df["prediction_std"] = np.nan, np.nan
-    if ok.any():
-        extra = matched.loc[ok, extra_features].to_numpy(np.float64) if extra_features else None
-        valid = [c for c in conformers if c is not None]
-        preds = np.stack([fold.predict(valid, extra) for fold in model_dict["folds"]])
-        df.loc[ok, "prediction"], df.loc[ok, "prediction_std"] = preds.mean(axis=0), preds.std(axis=0)
+    if not ok.any():
+        return df
+    extra = matched.loc[ok, extra_features].to_numpy(np.float64) if extra_features else None
+    valid = [c for c in conformers if c is not None]
+    preds = np.stack([fold.predict(valid, extra) for fold in model_dict["folds"]])
+    df.loc[ok, "prediction"], df.loc[ok, "prediction_std"] = preds.mean(axis=0), preds.std(axis=0)
+
+    # UQModel UQ: expected_residual, confidence, and conformal intervals, for the molecules
+    # that have a prediction. V1/V2 need a neighbor-lookup payload; V0 scores from
+    # prediction + std alone.
+    uq_model = model_dict.get("uq_model")
+    if uq_model is not None:
+        scored = df[ok]
+        query = uq_query_df(uq_model, matched[ok])
+        if query is not None or uq_model.UQ_VERSION == "v0":
+            uq_out = uq_model.predict(query, scored["prediction"].values, scored["prediction_std"].values)
+            for col in uq_out.columns:
+                df.loc[ok, col] = uq_out[col].values
+        else:
+            print("[uq] Skipping UQModel inference: batch can't satisfy the proximity backend.")
+
+    print(f"Inference complete: {len(df)} predictions")
     return df
 
 
@@ -115,9 +137,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 # Training
 # =============================================================================
 if __name__ == "__main__":
+    # -------------------------------------------------------------------------
+    # Training-only imports
+    # -------------------------------------------------------------------------
     import argparse
-
-    from atomjepa_core import build_conformers, train_fold
 
     from workbench.endpoints.inference import (
         check_dataframe,
@@ -125,6 +148,8 @@ if __name__ == "__main__":
         print_regression_metrics,
         save_output,
     )
+    from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
+    from workbench.training.atomjepa_core import build_conformers, train_fold
     from workbench.training.splits import get_split_indices
     from workbench.training.validation import split_validation_set
 
@@ -145,7 +170,7 @@ if __name__ == "__main__":
     model_metrics_path = TEMPLATE_PARAMS["model_metrics_path"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
     if TEMPLATE_PARAMS["model_type"] == "classifier":
-        raise ValueError("The Atom-JEPA spike supports regression only")
+        raise ValueError("The Atom-JEPA framework supports regression only (REGRESSOR, UQ_REGRESSOR)")
     smiles_column, extra_features = split_features(features)
 
     training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
@@ -212,9 +237,39 @@ if __name__ == "__main__":
     print_regression_metrics(compute_regression_metrics(df_oof[target].values, df_oof["prediction"].values))
 
     # -------------------------------------------------------------------------
+    # Ensemble spread on the out-of-fold rows, and the UQ models fit on it
+    # -------------------------------------------------------------------------
+    uq_dict = None
+    df_oof["prediction_std"] = 0.0
+    if len(fold_models) > 1:
+        print(f"\nComputing prediction_std from {len(fold_models)} fold models...", flush=True)
+        all_preds = np.stack([fold.predict(conformers, extra) for fold in fold_models])
+        df_oof["prediction_std"] = all_preds.std(axis=0)[oof_mask]
+
+        # Fingerprint proximity over every training row (each trained at least one fold model)
+        prox_df = all_df[[id_column, target]].assign(smiles=all_df[smiles_column], in_model=True)
+        uq_dict = fit_regression_uq(
+            per_target={
+                target: {
+                    "ids": df_oof[id_column].tolist(),
+                    "y_true": df_oof[target].values,
+                    "y_pred": df_oof["prediction"].values,
+                    "y_std": df_oof["prediction_std"].values,
+                }
+            },
+            prox_df=prox_df,
+            id_column=id_column,
+            features=features,
+            active_version=hyperparameters["uq_version"],
+        )
+        uq_out = uq_dict["oof_outputs"][target]
+        for col in uq_out.columns:
+            df_oof[col] = uq_out[col].values
+
+    # -------------------------------------------------------------------------
     # Score the held-out validation set with the ensemble
     # -------------------------------------------------------------------------
-    df_val = pd.DataFrame(columns=[id_column, target, "prediction", "prediction_std"])
+    df_val = df_oof.iloc[:0].copy()
     if len(holdout_df):
         h_conformers = build_conformers(holdout_df[smiles_column].astype(str).tolist(), n_conformers)
         h_ok = np.array([c is not None for c in h_conformers])
@@ -224,14 +279,29 @@ if __name__ == "__main__":
         df_val = holdout_df[[id_column, target]].copy()
         df_val["prediction"], df_val["prediction_std"] = np.nan, np.nan
         df_val.loc[h_ok, "prediction"], df_val.loc[h_ok, "prediction_std"] = h_preds.mean(axis=0), h_preds.std(axis=0)
-        scored = df_val.dropna(subset=["prediction"])
+        scored = df_val[h_ok]
         print(f"\nHeld-out validation ({len(scored)} of {len(df_val)} rows with conformers):")
         metrics = compute_regression_metrics(scored[target].values, scored["prediction"].values)
         print_regression_metrics(metrics)
         print(f"holdout_mae: {metrics['mae']:.3f}")
 
-    save_output(df_oof, f"{model_metrics_path}/oof_predictions.csv")
-    save_output(df_val, f"{model_metrics_path}/val_predictions.csv")
+        # Held-out rows are novel to the UQ proximity reference, so score them the way
+        # inference scores a new molecule
+        if uq_dict is not None:
+            uq_active = uq_dict["uq_model"]
+            query = uq_query_df(uq_active, holdout_df[h_ok].assign(smiles=holdout_df.loc[h_ok, smiles_column]))
+            if query is not None or uq_active.UQ_VERSION == "v0":
+                val_uq = uq_active.predict(query, scored["prediction"].values, scored["prediction_std"].values)
+                for col in val_uq.columns:
+                    df_val.loc[h_ok, col] = val_uq[col].values
+
+    # -------------------------------------------------------------------------
+    # Save out-of-fold and held-out validation predictions to S3
+    # -------------------------------------------------------------------------
+    output_columns = [id_column, target, "prediction", "prediction_std"]
+    output_columns += [c for c in df_oof.columns if c.startswith("q_") or c == "confidence"]
+    save_output(df_oof[output_columns], f"{model_metrics_path}/oof_predictions.csv")
+    save_output(df_val.reindex(columns=output_columns), f"{model_metrics_path}/val_predictions.csv")
 
     # -------------------------------------------------------------------------
     # Save model artifacts
@@ -243,5 +313,6 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)
     save_output(hyperparameters, f"{model_metrics_path}/hyperparameters.json")
+    save_regression_uq(uq_dict, args.model_dir)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

@@ -29,6 +29,7 @@ class ModelFramework(Enum):
     PYTORCH = "pytorch"
     CHEMPROP = "chemprop"
     TABICL = "tabicl"
+    ATOMJEPA = "atomjepa"
     TRANSFORMER = "transformer"
     META = "meta"
     UNKNOWN = "unknown"

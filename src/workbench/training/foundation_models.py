@@ -1,6 +1,6 @@
 """Foundation-model checkpoint registry and resolver (deliberately dep-free).
 
-Pretrained checkpoints (CheMeleon, TabICL, Monroe) are published in Workbench's public
+Pretrained checkpoints (CheMeleon, TabICL, Monroe, Atom-JEPA) are published in Workbench's public
 bucket, so every account resolves the same bytes with no staging. Resolution walks three
 rungs:
 
@@ -84,6 +84,37 @@ FOUNDATION_MODELS = {
         "expected_size_bytes": 300057823,
         # A flat state dict (CUDA tensors): these are tensor names, not sections
         "checkpoint_keys": ["encoder.missing_fill", "encoder.pooling.value_proj.weight"],
+    },
+    # Atom-JEPA's released encoder is a folder (config + weights); both files cache into one
+    # subfolder, which AtomJEPA.from_pretrained loads as is
+    "atomjepa_config": {
+        "filename": "atomjepa-8f7514f/config.json",
+        "s3_key": f"{FOUNDATION_PREFIX}/atomjepa_config/8f7514f/config.json",
+        "origin_url": (
+            "https://huggingface.co/atom-jepa/atom-jepa/resolve/"
+            "8f7514f49693d836ca26dfe0bbae10880f75690b/molecules/config.json"
+        ),
+        "provenance_id": "hf-atom-jepa-8f7514f",
+        "description": "Atom-JEPA molecules encoder config (Hugging Face atom-jepa/atom-jepa, revision 8f7514f)",
+        "expected_md5": "ec7685fa455a9f73c0b662f925928866",
+        "expected_size_bytes": 1017,
+        "checkpoint_keys": ["eqv3_cfg"],
+    },
+    "atomjepa": {
+        "filename": "atomjepa-8f7514f/model.safetensors",
+        "s3_key": f"{FOUNDATION_PREFIX}/atomjepa/8f7514f/model.safetensors",
+        "origin_url": (
+            "https://huggingface.co/atom-jepa/atom-jepa/resolve/"
+            "8f7514f49693d836ca26dfe0bbae10880f75690b/molecules/model.safetensors"
+        ),
+        "provenance_id": "hf-atom-jepa-8f7514f",
+        "description": "Atom-JEPA molecules encoder weights (Hugging Face atom-jepa/atom-jepa, revision 8f7514f)",
+        "expected_md5": "017889cd95b8d6810b6c35fc944dbd3c",
+        "expected_size_bytes": 156380852,
+        "checkpoint_keys": [
+            "body.blocks.0.ffn.grid_mlp.gating_linear.weight",
+            "body.blocks.0.ffn.grid_mlp.grid_linear_1.weight",
+        ],
     },
 }
 
@@ -258,6 +289,7 @@ def resolve_foundation_checkpoint(name: str) -> Path:
     entry = foundation_entry(name)
     key, expected_md5 = entry["s3_key"], entry.get("expected_md5")
     local_path = foundation_cache_dir() / entry["filename"]
+    local_path.parent.mkdir(parents=True, exist_ok=True)
 
     if local_path.exists():
         print(f"  Using cached checkpoint: {local_path}")

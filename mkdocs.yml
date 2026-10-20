@@ -16,6 +16,7 @@ nav:
     - Fingerprint: models/fingerprint_models.md
     - ChemProp: models/chemprop_models.md
     - TabICL: models/tabicl_models.md
+    - Atom-JEPA: models/atomjepa_models.md
     - Cleanlab: models/cleanlab_models.md
     - Meta Endpoints: models/meta_endpoints.md
     - Hyperparameter Optimization: models/hpo.md

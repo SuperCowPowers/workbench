@@ -614,7 +614,7 @@ class EndpointCore(AWSArtifact):
         model = ModelCore(self.model_name)
 
         # Compute CrossFold (Metrics and Prediction Dataframe)
-        # For PyTorch and ChemProp, pull pre-computed CV results from training
+        # For PyTorch, ChemProp and Atom-JEPA, pull pre-computed CV results from training
         if model.model_framework in [
             ModelFramework.UNKNOWN,
             ModelFramework.SKLEARN,
@@ -624,7 +624,7 @@ class EndpointCore(AWSArtifact):
             cross_fold_metrics, out_of_fold_df = xgboost_pull_cv(model)
         elif model.model_framework == ModelFramework.PYTORCH:
             cross_fold_metrics, out_of_fold_df = pytorch_pull_cv(model)
-        elif model.model_framework == ModelFramework.CHEMPROP:
+        elif model.model_framework in [ModelFramework.CHEMPROP, ModelFramework.ATOMJEPA]:
             cross_fold_metrics, out_of_fold_df = chemprop_pull_cv(model)
         else:
             self.log.error(f"Cross-Fold Inference not supported for Model Framework: {model.model_framework}.")

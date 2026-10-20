@@ -1,4 +1,4 @@
-"""Atom-JEPA fine-tuning for single-target regression: the fold trainer behind atomjepa.template.
+"""Atom-JEPA fine-tuning for single-target regression: the fold trainer behind the atomjepa template.
 
 Ports the ADMET recipe from github.com/khelverskovp/atom-jepa (finetuning/admet): a readout
 on the encoder's per-atom irreps, Huber loss on standardized targets, AdamW with separate
@@ -25,7 +25,15 @@ from torch import nn
 from torch.nn import functional as F
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
+from workbench.training.foundation_models import resolve_foundation_checkpoint
+
 PREDICT_BATCH_SIZE = 64
+
+
+def pretrained_encoder_dir() -> str:
+    """The released molecules encoder, from the foundation registry, as the folder from_pretrained loads."""
+    resolve_foundation_checkpoint("atomjepa_config")
+    return str(resolve_foundation_checkpoint("atomjepa").parent)
 
 
 def default_device() -> torch.device:
@@ -248,7 +256,7 @@ def train_fold(
         extra_std = np.where(np.nanstd(train_extra, axis=0) > 0, np.nanstd(train_extra, axis=0), 1.0)
     target_mean, target_std = float(train_y.mean()), float(train_y.std())
 
-    encoder = AtomJEPA.from_pretrained("molecules", device=device, verbose=seed == 0)
+    encoder = AtomJEPA.from_pretrained(pretrained_encoder_dir(), device=device, verbose=seed == 0)
     model = FineTuned(encoder, 0 if train_extra is None else train_extra.shape[1], hp["dropout"]).to(device)
     fold = FoldModel(model, target_mean, target_std, extra_mean, extra_std)
     y_scaled = ((train_y - target_mean) / target_std).astype(np.float32)

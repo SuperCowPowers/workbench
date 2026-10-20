@@ -386,6 +386,7 @@ class FeaturesToModel(Transform):
                 gpu_framework = self.model_type != ModelType.TRANSFORMER and self.model_framework in [
                     ModelFramework.CHEMPROP,
                     ModelFramework.PYTORCH,
+                    ModelFramework.ATOMJEPA,
                 ]
                 workload = training_workload(kwargs.get("hyperparameters"), gpu_framework=gpu_framework)
             instance_ladder = INSTANCE_LADDERS[workload]

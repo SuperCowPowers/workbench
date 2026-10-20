@@ -29,6 +29,7 @@ FRAMEWORK_MODULES = {
     ModelFramework.CHEMPROP: "chemprop",
     ModelFramework.PYTORCH: "torch",
     ModelFramework.TABICL: "tabicl",
+    ModelFramework.ATOMJEPA: "atom_jepa",
 }
 
 
