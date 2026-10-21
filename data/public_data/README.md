@@ -33,6 +33,7 @@ comp_chem/
     aqsol_public_data
     alignment/                       base, low/medium/high_overlap
   chembl/cyp_inhibition/             all_isoforms + 5 per-isoform files
+  chembl/mouse_pk/                   mouse_pk_reference (CL, Vdss, F, fu)
   logp/                              logp_all + per-source files
   logd/                              logd_all + per-source files
   logp_logd/                         overlap_00_03, overlap_03_07, overlap_07_10
@@ -63,7 +64,7 @@ file.
 | `CC-BY-4.0` | 27 | OpenADMET ExpansionRx, SangsterLogP, the merged LogP/overlap files, UCI fixtures |
 | `MIT` | 22 | OPERA/PHYSPROP, GraphormerLogP, AstraZeneca LogD (MoleculeNet mirror), OpenADMET ASAP, Workbench-authored fixtures |
 | `Apache-2.0` | 16 | OpenADMET PXR, CYP, Octant CYP |
-| `CC-BY-SA-3.0` | 6 | ChEMBL CYP inhibition |
+| `CC-BY-SA-3.0` | 13 | ChEMBL CYP inhibition, ChEMBL mouse PK |
 | `public-domain` | 6 | PubChem BioAssay (US Government work) |
 | `CC0-1.0` | 5 | AqSolDB (Harvard Dataverse) |
 

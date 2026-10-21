@@ -2200,6 +2200,37 @@
       "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
     ]
   },
+  "comp_chem/chembl/mouse_pk/mouse_pk_reference.csv": {
+    "description": "Mouse in-vivo PK reference compounds from ChEMBL 37: clearance, steady-state volume, oral bioavailability and plasma free fraction for 551 compounds, one row per standardized structure. Only compounds with all four parameters are included, so each row defines a one-compartment plasma curve (CL and Vdss for the IV curve, F for the oral dose, fu for the unbound concentration). Intended as a reference set for comparing predicted PK curves against measured ones; it is not a holdout set and is not checked for overlap with any training data. Records come from assays ChEMBL annotates as mouse (tax id 10090). CL, Vdss and F are in-vivo only (BAO organism-based format), F is restricted to oral dosing by the assay description, and fu comes from plasma or serum Fu records (fraction, converted to percent) and PPB records (% bound, converted as 100 - PPB). Where one paper reports all three of CL, Vdss and F, those values come from that paper (pk_same_paper = True, 544 rows) so the row describes one study's curve; otherwise each is a cross-paper median. Rows with a suspect value are dropped: fu of 0 (below quantitation) or >= 95% (percent bound recorded as free), and CL outside 0.1-180 mL/min/kg (180 is twice mouse hepatic blood flow). Filters applied upstream: standard_relation '=', no data_validity_comment, potential_duplicate 0. Most compounds are med-chem series from PK papers; 19 are approved drugs (max_phase 4).",
+    "columns": {
+      "id": "Row index, assigned after filtering",
+      "inchi_key": "InChIKey of the standardized structure -- the deduplication key",
+      "smiles": "Standardized structure (salt-stripped, charge-neutralized, canonical SMILES) -- use this for modeling and joining",
+      "orig_smiles": "ChEMBL's canonical_smiles for this compound, before standardization",
+      "chembl_id": "ChEMBL molecule identifier, preserved as the ChEMBL license requests",
+      "pref_name": "ChEMBL's preferred compound name where one exists; null for most compounds",
+      "max_phase": "Highest clinical phase ChEMBL records for the compound (4 = approved); null when unrecorded",
+      "cl_ml_min_kg": "Total plasma clearance after IV dosing, mL/min/kg; median when the value pools several records, or the one record from the chosen paper",
+      "vdss_l_kg": "Volume of distribution at steady state, L/kg; median when the value pools several records, or the one record from the chosen paper",
+      "f_percent": "Oral bioavailability, percent of the oral dose reaching systemic circulation; median when the value pools several records, or the one record from the chosen paper",
+      "fu_percent": "Fraction unbound in plasma, percent free; median across every qualifying Fu and PPB record",
+      "cl_ml_min_kg_n": "Records behind cl_ml_min_kg",
+      "vdss_l_kg_n": "Records behind vdss_l_kg",
+      "f_percent_n": "Records behind f_percent",
+      "fu_percent_n": "Records behind fu_percent",
+      "pk_same_paper": "True when CL, Vdss and F all come from one paper (the one with the most records, ties to the lower ChEMBL doc_id)",
+      "pk_documents": "ChEMBL document ID the CL/Vdss/F values come from; pipe-joined list when pk_same_paper is False",
+      "fu_documents": "Pipe-joined ChEMBL document IDs behind fu_percent"
+    },
+    "num_compounds": 551,
+    "license": "CC-BY-SA-3.0",
+    "license_note": "Derived from ChEMBL, which is licensed CC BY-SA 3.0; this adaptation is distributed under the same license. ChEMBL data is from http://www.ebi.ac.uk/chembl - the version of ChEMBL is chembl_37. ChEMBL IDs are preserved in the chembl_id column.",
+    "references": [
+      "https://www.ebi.ac.uk/chembl/ (ChEMBL 37, CC BY-SA 3.0)",
+      "https://doi.org/10.1093/nar/gky1075 (Mendez et al., Nucleic Acids Res 2019 -- the citation ChEMBL asks for)",
+      "https://github.com/Scigantic/scigantic-chembl (parquet mirror the pull reads over DuckDB)"
+    ]
+  },
   "comp_chem/pubchem/cyp_inhibition/censored/all_isoforms.csv": {
     "description": "The 42,355 rows the screen calls inactive carry a bound instead of a null: pic50 holds the pIC50 implied by the highest concentration that row was actually read at (median 4.24, 90% of them between 4.24 and 4.94; a few plates ran further, so the full range is 4.24 to 6.34) and pic50_lt marks it, so the true value is at or below the label. A bound that sits unusually low is simply a weaker claim, never a wrong one. TRAIN THESE WITH BOUNDED LOSS. A bound is not a measurement: chemprop's bounded_loss=True penalizes a censored row only when the prediction rises above the bound, while with bounded loss off the bound reads as an exact label and this file is worse than the uncensored one. Rows are identical to the uncensored Veith CYP inhibition qHTS panel (PubChem AID 1851) file -- inactives were always present with a null pic50; only the label differs. Inconclusive rows stay null, since the assay did not decide and there is no bound to give them. Veith CYP inhibition qHTS panel (PubChem AID 1851): ~17k compounds screened in 15-point dose-response against five human CYP isoforms. Unlike the binarized derivatives of this screen (TDC, MoleculeNet), the fitted AC50 is kept as a pIC50 alongside the qHTS curve-quality columns, so it can be used as a regression target. Filter on curve_class and fit_r2 before training. Long format: one row per compound-isoform pair, with the isoform in its own column.",
     "columns": {
