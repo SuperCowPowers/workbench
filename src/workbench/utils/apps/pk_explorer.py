@@ -7,12 +7,10 @@ import pandas as pd
 
 from workbench.utils.apps._serve import serve
 from workbench.utils.chem_utils.vis import svg_from_smiles
-from workbench.utils.plots.pk import _concentration, _tmax
+from workbench.utils.pk_utils import CL_TO_L_PER_H, bateman_concentration, bateman_tmax
 
 log = logging.getLogger("workbench")
 
-# mL/min/kg -> L/h/kg. CL and Vd are reported in units that do not agree.
-CL_TO_L_PER_H = 0.06
 
 BACKGROUND = "rgba(24, 24, 24, 1)"
 TEXT_COLOR = "#e0e0e0"
@@ -73,9 +71,9 @@ def _curves(df: pd.DataFrame, vd_col: str, dose: float, f_percent: float, ka: fl
     curves, peaks = [], []
     for row in df.itertuples():
         ke, vd = row.ke, getattr(row, vd_col)
-        curves.append(_concentration(t, f_dose, vd, ke, ka))
-        tmax = _tmax(ke, ka)
-        peaks.append((tmax, float(_concentration(np.array([tmax]), f_dose, vd, ke, ka)[0])))
+        curves.append(bateman_concentration(t, f_dose, vd, ke, ka))
+        tmax = bateman_tmax(ke, ka)
+        peaks.append((tmax, float(bateman_concentration(np.array([tmax]), f_dose, vd, ke, ka)[0])))
     return t, curves, peaks
 
 

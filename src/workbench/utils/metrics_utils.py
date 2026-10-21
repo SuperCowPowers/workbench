@@ -256,6 +256,55 @@ def print_regression_metrics(metrics: Dict[str, float]) -> None:
         print(f"{name}: {value}" if isinstance(value, int) else f"{name}: {value:.3f}")
 
 
+def _log_fold(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
+    """log10(pred / true) per row. Fold errors are only defined for positive quantities."""
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    if (y_true <= 0).any() or (y_pred <= 0).any():
+        raise ValueError("Fold-error metrics need strictly positive truth and predictions")
+    return np.log10(y_pred / y_true)
+
+
+def gmfe(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Geometric mean fold error, 10^mean|log10(pred/true)|: the typical fold miss, >= 1.
+
+    Args:
+        y_true: Measured values, > 0
+        y_pred: Predicted values, > 0
+
+    Returns:
+        The geometric mean fold error (1.0 is perfect, 2.0 is a typical 2x miss)
+    """
+    return float(10 ** np.mean(np.abs(_log_fold(y_true, y_pred))))
+
+
+def afe(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Average fold error, 10^mean(log10(pred/true)): the bias GMFE hides.
+
+    Args:
+        y_true: Measured values, > 0
+        y_pred: Predicted values, > 0
+
+    Returns:
+        The average fold error (> 1 over-predicts, < 1 under-predicts)
+    """
+    return float(10 ** np.mean(_log_fold(y_true, y_pred)))
+
+
+def within_fold(y_true: np.ndarray, y_pred: np.ndarray, fold: float = 2.0) -> float:
+    """Fraction of predictions within `fold` of the truth in either direction.
+
+    Args:
+        y_true: Measured values, > 0
+        y_pred: Predicted values, > 0
+        fold: Fold band, e.g. 2.0 for pred/true in [0.5, 2.0]
+
+    Returns:
+        Fraction of rows inside the band
+    """
+    return float(np.mean(np.abs(_log_fold(y_true, y_pred)) <= np.log10(fold)))
+
+
 def soft_threshold_error(
     y_pred: np.ndarray,
     ci_lower: np.ndarray,

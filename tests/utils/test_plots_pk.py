@@ -3,7 +3,8 @@
 import numpy as np
 import pytest
 
-from workbench.utils.plots.pk import bateman, _concentration, _tmax
+from workbench.utils.plots.pk import bateman
+from workbench.utils.pk_utils import bateman_concentration, bateman_tmax
 
 V, CL, F_PCT, DOSE = 50.0, 10.0, 40.0, 100.0
 KE = CL / V
@@ -14,16 +15,16 @@ def test_auc_matches_f_dose_over_clearance():
     """The integrated curve must equal F*D/CL -- the identity the annotation claims."""
     t = np.linspace(0, 40 * np.log(2) / KE, 200_000)
     for ka in (0.15, 0.5, 2.0, 5.0):
-        auc = np.trapezoid(_concentration(t, F_DOSE, V, KE, ka), t)
+        auc = np.trapezoid(bateman_concentration(t, F_DOSE, V, KE, ka), t)
         assert auc == pytest.approx(F_DOSE / CL, rel=1e-4)
 
 
 def test_tmax_is_the_curve_peak():
     """Closed-form Tmax must agree with where the sampled curve actually peaks."""
     for ka in (0.15, 0.5, 2.0, 5.0):
-        peak = _tmax(KE, ka)
+        peak = bateman_tmax(KE, ka)
         t = np.linspace(0, 4 * peak, 400_001)
-        assert t[np.argmax(_concentration(t, F_DOSE, V, KE, ka))] == pytest.approx(peak, rel=1e-3)
+        assert t[np.argmax(bateman_concentration(t, F_DOSE, V, KE, ka))] == pytest.approx(peak, rel=1e-3)
 
 
 def test_ka_equals_ke_limit_is_continuous():
@@ -33,23 +34,23 @@ def test_ka_equals_ke_limit_is_continuous():
     assert that scaling rather than picking an epsilon out of the air.
     """
     t = np.linspace(0, 30, 200)
-    at_limit = _concentration(t, F_DOSE, V, KE, KE)
+    at_limit = bateman_concentration(t, F_DOSE, V, KE, KE)
     assert np.all(np.isfinite(at_limit))
 
-    gaps = [np.max(np.abs(_concentration(t, F_DOSE, V, KE, KE + off) - at_limit)) for off in (1e-4, 1e-5, 1e-6)]
+    gaps = [np.max(np.abs(bateman_concentration(t, F_DOSE, V, KE, KE + off) - at_limit)) for off in (1e-4, 1e-5, 1e-6)]
     assert gaps[0] == pytest.approx(10 * gaps[1], rel=1e-2)
     assert gaps[1] == pytest.approx(10 * gaps[2], rel=1e-2)
     assert gaps[-1] < 1e-5
 
     # Approaching from below must land on the same limit.
-    assert _concentration(t, F_DOSE, V, KE, KE - 1e-6) == pytest.approx(at_limit, abs=1e-5)
-    assert _tmax(KE, KE) == pytest.approx(_tmax(KE, KE + 1e-6), rel=1e-4)
+    assert bateman_concentration(t, F_DOSE, V, KE, KE - 1e-6) == pytest.approx(at_limit, abs=1e-5)
+    assert bateman_tmax(KE, KE) == pytest.approx(bateman_tmax(KE, KE + 1e-6), rel=1e-4)
 
 
 def test_concentration_starts_at_zero_and_decays():
     """An oral profile rises from nothing and comes back down."""
     t = np.linspace(0, 60, 1000)
-    conc = _concentration(t, F_DOSE, V, KE, 1.0)
+    conc = bateman_concentration(t, F_DOSE, V, KE, 1.0)
     assert conc[0] == pytest.approx(0.0)
     assert np.all(conc >= 0)
     assert conc[-1] < conc.max() / 100
@@ -57,8 +58,8 @@ def test_concentration_starts_at_zero_and_decays():
 
 def test_flip_flop_absorption_lowers_the_peak():
     """Slower absorption than elimination flattens the curve without changing exposure."""
-    fast = _concentration(np.linspace(0, 60, 5000), F_DOSE, V, KE, 5.0).max()
-    slow = _concentration(np.linspace(0, 60, 5000), F_DOSE, V, KE, 0.05).max()
+    fast = bateman_concentration(np.linspace(0, 60, 5000), F_DOSE, V, KE, 5.0).max()
+    slow = bateman_concentration(np.linspace(0, 60, 5000), F_DOSE, V, KE, 0.05).max()
     assert slow < fast
 
 
@@ -102,5 +103,5 @@ def test_default_window_covers_the_slowest_slider_position():
     window = fig.data[0].x[-1]
     t = np.linspace(0, window, 50_000)
     for ka in (0.1, 0.2, 1.0, 5.0):
-        captured = np.trapezoid(_concentration(t, F_DOSE, V, KE, ka), t)
+        captured = np.trapezoid(bateman_concentration(t, F_DOSE, V, KE, ka), t)
         assert captured / (F_DOSE / CL) > 0.9

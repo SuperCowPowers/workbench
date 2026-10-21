@@ -2,25 +2,12 @@
 
 import numpy as np
 
+from workbench.utils.pk_utils import bateman_concentration, bateman_tmax
+
 # Absorption rate constants to put on the slider, in 1/h. Spans flip-flop kinetics
 # (ka below ke, absorption rate-limiting) through fast absorption.
 KA_RANGE = (0.1, 5.0)
 KA_STEPS = 25
-
-
-def _concentration(t, f_dose, volume, ke, ka):
-    """Bateman one-compartment oral profile, mass units per volume unit."""
-    # ka == ke is a removable singularity; the limit is the t*exp(-ke*t) form.
-    if abs(ka - ke) < 1e-9:
-        return (f_dose * ke / volume) * t * np.exp(-ke * t)
-    return (f_dose * ka) / (volume * (ka - ke)) * (np.exp(-ke * t) - np.exp(-ka * t))
-
-
-def _tmax(ke, ka):
-    """Time of peak concentration."""
-    if abs(ka - ke) < 1e-9:
-        return 1.0 / ke
-    return np.log(ka / ke) / (ka - ke)
 
 
 def bateman(
@@ -94,9 +81,9 @@ def bateman(
     # Two traces per slider position: the curve, and a marker at its peak.
     fig = go.Figure()
     for i, ka in enumerate(ka_values):
-        conc = _concentration(t, f_dose, volume, ke, ka)
-        peak_t = _tmax(ke, ka)
-        peak_c = float(_concentration(np.array([peak_t]), f_dose, volume, ke, ka)[0])
+        conc = bateman_concentration(t, f_dose, volume, ke, ka)
+        peak_t = bateman_tmax(ke, ka)
+        peak_c = float(bateman_concentration(np.array([peak_t]), f_dose, volume, ke, ka)[0])
         fig.add_trace(
             go.Scatter(
                 x=t,
@@ -123,7 +110,7 @@ def bateman(
         )
 
     def _readout(ka):
-        peak_t = _tmax(ke, ka)
+        peak_t = bateman_tmax(ke, ka)
         regime = "absorption-limited (flip-flop)" if ka < ke else "elimination-limited"
         return (
             f"<b>ka</b> {ka:.2f} /h &nbsp; <b>ke</b> {ke:.3f} /h &nbsp; <b>t½</b> {half_life:.2f} h<br>"
