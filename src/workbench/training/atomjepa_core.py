@@ -75,6 +75,9 @@ def train_fold(
 
     encoder = AtomJEPA.from_pretrained(pretrained_encoder_dir(), device=device, verbose=seed == 0)
     model = FineTuned(encoder, 0 if train_extra is None else train_extra.shape[1], hp["dropout"]).to(device)
+    # Recompute each encoder block's activations in the backward pass rather than storing them:
+    # a batch of 32 drug-sized molecules otherwise outgrows a 24 GB GPU
+    model.encoder.set_grad_checkpointing(True)
     fold = FoldModel(model, target_mean, target_std, extra_mean, extra_std)
     y_scaled = ((train_y - target_mean) / target_std).astype(np.float32)
     x_scaled = fold.scale_extra(train_extra)

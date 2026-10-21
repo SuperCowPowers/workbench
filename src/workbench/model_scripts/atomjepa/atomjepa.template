@@ -135,6 +135,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 # Training
 # =============================================================================
 if __name__ == "__main__":
+    # Growable CUDA allocator segments: batches of differently sized graphs otherwise fragment GPU memory
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
     # -------------------------------------------------------------------------
     # Training-only imports
     # -------------------------------------------------------------------------
