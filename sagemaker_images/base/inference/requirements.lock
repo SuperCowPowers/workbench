@@ -28,7 +28,7 @@ botocore==1.43.0
     #   awswrangler
     #   boto3
     #   s3transfer
-certifi==2026.5.20
+certifi==2026.10.19
     # via
     #   -c ci/.uv-constraints.txt
     #   requests
@@ -100,7 +100,7 @@ pandas==2.3.3
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/inference/requirements.in
     #   awswrangler
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   -c ci/.uv-constraints.txt
     #   rdkit

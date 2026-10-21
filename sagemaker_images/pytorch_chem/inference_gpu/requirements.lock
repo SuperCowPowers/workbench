@@ -4,7 +4,7 @@ aiohappyeyeballs==2.6.2
     # via
     #   -c ci/.uv-constraints.txt
     #   aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.5
     # via
     #   -c ci/.uv-constraints.txt
     #   torch-geometric
@@ -53,7 +53,7 @@ botocore==1.43.0
     #   awswrangler
     #   boto3
     #   s3transfer
-certifi==2026.5.20
+certifi==2026.10.19
     # via
     #   -c ci/.uv-constraints.txt
     #   requests
@@ -278,7 +278,7 @@ pandas==2.3.3
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in
     #   awswrangler
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   -c ci/.uv-constraints.txt
     #   matplotlib
@@ -443,7 +443,7 @@ xxhash==4.0.2
     # via
     #   -c ci/.uv-constraints.txt
     #   torch-geometric
-yarl==1.24.2
+yarl==1.25.1
     # via
     #   -c ci/.uv-constraints.txt
     #   aiohttp

@@ -9,7 +9,7 @@ aiohappyeyeballs==2.6.2
     # via
     #   -c ci/.uv-constraints.txt
     #   aiohttp
-aiohttp==3.14.3
+aiohttp==3.14.5
     # via
     #   -c ci/.uv-constraints.txt
     #   aiobotocore
@@ -112,7 +112,7 @@ cachetools==6.2.6
     #   mlflow-skinny
     #   mlflow-tracing
     #   pyiceberg
-certifi==2026.5.20
+certifi==2026.10.19
     # via
     #   -c ci/.uv-constraints.txt
     #   geventhttpclient
@@ -568,7 +568,7 @@ pexpect==4.9.0
     # via
     #   -c ci/.uv-constraints.txt
     #   ipython
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   -c ci/.uv-constraints.txt
     #   matplotlib
@@ -976,7 +976,7 @@ xgboost==3.2.0
     # via
     #   -c ci/.uv-constraints.txt
     #   workbench (pyproject.toml)
-yarl==1.24.2
+yarl==1.25.1
     # via
     #   -c ci/.uv-constraints.txt
     #   aiohttp
