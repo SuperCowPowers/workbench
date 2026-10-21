@@ -33,8 +33,8 @@ Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a
 
 | Assay | Data | Metric | Atom-JEPA | Comparison |
 |-------|------|--------|-----------|------------|
-| MPPB (ExpansionRx) | 1,302 compounds, 5-fold scaffold out-of-fold | MAE | **0.164** | Chemprop 0.175 (Δ −0.011, 95% CI [−0.019, −0.004]) |
-| LogD (ExpansionRx) | 5,039 compounds, 5-fold scaffold out-of-fold | MAE | pending | |
+| MPPB (ExpansionRx) | 1,302 compounds, 5-fold scaffold out-of-fold | MAE | **0.165** | Chemprop 0.175 (Δ −0.010, 95% CI [−0.018, −0.002]) |
+| LogD (ExpansionRx) | 5,039 compounds, 5-fold scaffold out-of-fold | MAE | **0.216** | Chemprop 0.239 (Δ −0.024, 95% CI [−0.030, −0.017]); HPO-tuned Chemprop 0.223 |
 | PXR (OpenADMET) | 253 held-out compounds, one fold model, + assay readouts | RAE | 0.582 | Chemprop + readouts 0.569, **TabICL + Monroe + readouts 0.535** |
 | CYP3A4 (OpenADMET) | 2,335 compounds, 5-fold out-of-fold, + assay readouts | Spearman | 0.800 | **TabICL + Monroe + readouts 0.821** |
 
@@ -58,7 +58,7 @@ In practice:
 | **Ensemble** | The fold models are the served model: the prediction is their mean, `prediction_std` their spread. |
 | **Uncertainty** | The out-of-fold spread feeds Workbench's confidence model, with neighbors found by structure (fingerprint proximity). |
 
-Training runs on a single GPU. A fold of about 1,000 molecules takes roughly 15–20 minutes, so a 5-fold model on a few thousand molecules takes a few hours.
+Training runs on a single GPU. A fold of about 1,000 molecules takes roughly 20–30 minutes, so a 5-fold model on a few thousand molecules takes a few hours.
 
 ## Hyperparameters
 
