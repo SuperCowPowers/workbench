@@ -27,6 +27,28 @@ model.get_inference_predictions("training")
 
 Any other numeric features in `feature_list` (an assay readout, a descriptor) enter the readout alongside the encoder's output.
 
+## When to Use Atom-JEPA
+
+Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a universal upgrade. Measured in Workbench:
+
+| Assay | Data | Metric | Atom-JEPA | Comparison |
+|-------|------|--------|-----------|------------|
+| MPPB (ExpansionRx) | 1,302 compounds, 5-fold scaffold out-of-fold | MAE | **0.164** | Chemprop 0.175 (Δ −0.011, 95% CI [−0.019, −0.004]) |
+| LogD (ExpansionRx) | 5,039 compounds, 5-fold scaffold out-of-fold | MAE | pending | |
+| PXR (OpenADMET) | 253 held-out compounds, one fold model, + assay readouts | RAE | 0.582 | Chemprop + readouts 0.569, **TabICL + Monroe + readouts 0.535** |
+| CYP3A4 (OpenADMET) | 2,335 compounds, 5-fold out-of-fold, + assay readouts | Spearman | 0.800 | **TabICL + Monroe + readouts 0.821** |
+
+An independent evaluation of the authors' own code ([Model Validation Central](https://patwalters.github.io/model-validation-central/reports/atom-jepa.html), multi-task, 5×5 cross-validation on ExpansionRx and Biogen ADME) finds the same profile:
+- Fine-tuned Atom-JEPA beats fine-tuned CheMeleon on 38 of 45 endpoint–metric combinations.
+- Against Monroe + TabPFN 3 it leads on ExpansionRx and trails on Biogen.
+- Its best endpoints are LogD, LogS, HLM clearance, and plasma and brain protein binding; its weakest are Caco-2 permeability and MLM clearance.
+
+In practice:
+- **Try Atom-JEPA** for lipophilicity, solubility, microsomal clearance, and protein or tissue binding.
+- **Prefer [TabICL](tabicl_models.md) over the [Monroe embedding](../blogs/monroe_tabicl.md)** for permeability and for target-activity assays like PXR and CYP inhibition.
+- **Fine-tune it.** The frozen encoder used as an embedding is weak in both evaluations.
+- **Budget GPU hours.** A Chemprop model trains in minutes; an Atom-JEPA model takes hours.
+
 ## How an Atom-JEPA Model Is Built
 
 | Step | What happens |
@@ -73,7 +95,19 @@ Local training works through `workbench.local` with the `modeling` extra. It run
 - Regression only, one target per model.
 - 3D conformers come from RDKit; a molecule it cannot embed is dropped from training and predicts `NaN`.
 
+## Questions?
+
+<img align="right" src="../../images/scp.png" width="180">
+
+The SuperCowPowers team is happy to answer any questions you may have about AWS® and Workbench.
+
+- **Support:** [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com)
+- **Discord:** [Join us on Discord](https://discord.gg/WHAJuz8sw8)
+- **Website:** [supercowpowers.com](https://www.supercowpowers.com)
+
 ## References
 
-- Atom-JEPA: [arXiv 2610.08400](https://arxiv.org/abs/2610.08400), [github.com/khelverskovp/atom-jepa](https://github.com/khelverskovp/atom-jepa) (MIT)
-- Independent evaluation: [Model Validation Central, Atom-JEPA report](https://patwalters.github.io/model-validation-central/reports/atom-jepa.html)
+- **Paper:** [Atom-JEPA: Joint-Embedding Predictive Architecture for 3D Atomistic Systems](https://arxiv.org/abs/2610.08400) (arXiv 2610.08400)
+- **Code:** [github.com/khelverskovp/atom-jepa](https://github.com/khelverskovp/atom-jepa) (MIT); `pip install atom-jepa`
+- **Weights:** [huggingface.co/atom-jepa/atom-jepa](https://huggingface.co/atom-jepa/atom-jepa) (CC BY 4.0)
+- **Independent evaluation:** Pat Walters, [Model Validation Central: Fine-tuning in 3D (Atom-JEPA)](https://patwalters.github.io/model-validation-central/reports/atom-jepa.html), with the study code in [model-validation-central/studies/atom-jepa](https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa)
