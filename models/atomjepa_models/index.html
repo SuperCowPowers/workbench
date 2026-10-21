@@ -795,6 +795,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#when-to-use-atom-jepa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Atom-JEPA
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-an-atom-jepa-model-is-built" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -854,6 +865,17 @@
     <span class="md-ellipsis">
       
         Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
       
     </span>
   </a>
@@ -5362,6 +5384,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#when-to-use-atom-jepa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Atom-JEPA
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-an-atom-jepa-model-is-built" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5428,6 +5461,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#references" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5477,6 +5521,58 @@
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">model</span><span class="o">.</span><span class="n">get_inference_predictions</span><span class="p">(</span><span class="s2">"training"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>Any other numeric features in <code>feature_list</code> (an assay readout, a descriptor) enter the readout alongside the encoder's output.</p>
+<h2 id="when-to-use-atom-jepa">When to Use Atom-JEPA</h2>
+<p>Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a universal upgrade. Measured in Workbench:</p>
+<table>
+<thead>
+<tr>
+<th>Assay</th>
+<th>Data</th>
+<th>Metric</th>
+<th>Atom-JEPA</th>
+<th>Comparison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MPPB (ExpansionRx)</td>
+<td>1,302 compounds, 5-fold scaffold out-of-fold</td>
+<td>MAE</td>
+<td><strong>0.165</strong></td>
+<td>Chemprop 0.175 (Δ −0.010, 95% CI [−0.018, −0.002])</td>
+</tr>
+<tr>
+<td>LogD (ExpansionRx)</td>
+<td>5,039 compounds, 5-fold scaffold out-of-fold</td>
+<td>MAE</td>
+<td><strong>0.216</strong></td>
+<td>Chemprop 0.239 (Δ −0.024, 95% CI [−0.030, −0.017]); HPO-tuned Chemprop 0.223</td>
+</tr>
+<tr>
+<td>PXR (OpenADMET)</td>
+<td>253 held-out compounds, one fold model, + assay readouts</td>
+<td>RAE</td>
+<td>0.582</td>
+<td>Chemprop + readouts 0.569, <strong>TabICL + Monroe + readouts 0.535</strong></td>
+</tr>
+<tr>
+<td>CYP3A4 (OpenADMET)</td>
+<td>2,335 compounds, 5-fold out-of-fold, + assay readouts</td>
+<td>Spearman</td>
+<td>0.800</td>
+<td><strong>TabICL + Monroe + readouts 0.821</strong></td>
+</tr>
+</tbody>
+</table>
+<p>An independent evaluation of the authors' own code (<a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa.html">Model Validation Central</a>, multi-task, 5×5 cross-validation on ExpansionRx and Biogen ADME) finds the same profile:
+- Fine-tuned Atom-JEPA beats fine-tuned CheMeleon on 38 of 45 endpoint–metric combinations.
+- Against Monroe + TabPFN 3 it leads on ExpansionRx and trails on Biogen.
+- Its best endpoints are LogD, LogS, HLM clearance, and plasma and brain protein binding; its weakest are Caco-2 permeability and MLM clearance.</p>
+<p>In practice:
+- <strong>Try Atom-JEPA</strong> for lipophilicity, solubility, microsomal clearance, and protein or tissue binding.
+- <strong>Prefer <a href="../tabicl_models/">TabICL</a> over the <a href="../../blogs/monroe_tabicl/">Monroe embedding</a></strong> for permeability and for target-activity assays like PXR and CYP inhibition.
+- <strong>Fine-tune it.</strong> The frozen encoder used as an embedding is weak in both evaluations.
+- <strong>Budget GPU hours.</strong> A Chemprop model trains in minutes; an Atom-JEPA model takes hours.</p>
 <h2 id="how-an-atom-jepa-model-is-built">How an Atom-JEPA Model Is Built</h2>
 <table>
 <thead>
@@ -5504,7 +5600,7 @@
 </tr>
 </tbody>
 </table>
-<p>Training runs on a single GPU. A fold of about 1,000 molecules takes roughly 15–20 minutes, so a 5-fold model on a few thousand molecules takes a few hours.</p>
+<p>Training runs on a single GPU. A fold of about 1,000 molecules takes roughly 20–30 minutes, so a 5-fold model on a few thousand molecules takes a few hours.</p>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <table>
 <thead>
@@ -5574,7 +5670,16 @@
 </table>
 <p>The defaults are the authors' ADMET recipe.</p>
 <h2 id="endpoints">Endpoints</h2>
-<p>Serving is not yet supported: the inference images don't carry the Atom-JEPA dependencies. Score a model from its training captures: <code>get_inference_predictions("training")</code> for the out-of-fold rows and <code>get_inference_predictions("validation")</code> for rows held out with <code>validation_ids</code>.</p>
+<p>Atom-JEPA endpoints run on a GPU. A prediction is the fold ensemble over every conformer of every molecule, which is past what a serverless endpoint can hold or answer within its 60-second limit, so <code>to_endpoint()</code> refuses serverless for these models.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Async: scales to zero when idle, so an idle endpoint costs nothing</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">async_endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Real-time: always on, for low-latency scoring</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">serverless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Both default to an <code>ml.g6.xlarge</code> (one NVIDIA L4) running Workbench's GPU inference image; pass <code>instance=</code> to choose another. An async endpoint stays on one instance unless you pass <code>max_instances=</code>.</p>
+<p>GPU endpoint instances are quota-limited per instance type and region, often to one <code>ml.g6.xlarge</code> or none; check "ml.g6.xlarge for endpoint usage" for your account in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.</p>
+<p>A model's training captures need no endpoint: <code>get_inference_predictions("training")</code> gives the out-of-fold rows and <code>get_inference_predictions("validation")</code> the rows held out with <code>validation_ids</code>.</p>
 <h2 id="pretrained-weights">Pretrained Weights</h2>
 <p>The encoder weights (Hugging Face <code>atom-jepa/atom-jepa</code>, revision <code>8f7514f</code>, CC BY 4.0) are published in Workbench's foundation-model registry, so training jobs fetch them from S3 and never depend on Hugging Face.</p>
 <h2 id="running-locally">Running Locally</h2>
@@ -5584,10 +5689,20 @@
 <li>Regression only, one target per model.</li>
 <li>3D conformers come from RDKit; a molecule it cannot embed is dropped from training and predicts <code>NaN</code>.</li>
 </ul>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS® and Workbench.</p>
+<ul>
+<li><strong>Support:</strong> <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a></li>
+<li><strong>Discord:</strong> <a href="https://discord.gg/WHAJuz8sw8">Join us on Discord</a></li>
+<li><strong>Website:</strong> <a href="https://www.supercowpowers.com">supercowpowers.com</a></li>
+</ul>
 <h2 id="references">References</h2>
 <ul>
-<li>Atom-JEPA: <a href="https://arxiv.org/abs/2610.08400">arXiv 2610.08400</a>, <a href="https://github.com/khelverskovp/atom-jepa">github.com/khelverskovp/atom-jepa</a> (MIT)</li>
-<li>Independent evaluation: <a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa.html">Model Validation Central, Atom-JEPA report</a></li>
+<li><strong>Paper:</strong> <a href="https://arxiv.org/abs/2610.08400">Atom-JEPA: Joint-Embedding Predictive Architecture for 3D Atomistic Systems</a> (arXiv 2610.08400)</li>
+<li><strong>Code:</strong> <a href="https://github.com/khelverskovp/atom-jepa">github.com/khelverskovp/atom-jepa</a> (MIT); <code>pip install atom-jepa</code></li>
+<li><strong>Weights:</strong> <a href="https://huggingface.co/atom-jepa/atom-jepa">huggingface.co/atom-jepa/atom-jepa</a> (CC BY 4.0)</li>
+<li><strong>Independent evaluation:</strong> Pat Walters, <a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa.html">Model Validation Central: Fine-tuning in 3D (Atom-JEPA)</a>, with the study code in <a href="https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa">model-validation-central/studies/atom-jepa</a></li>
 </ul>
 
 
