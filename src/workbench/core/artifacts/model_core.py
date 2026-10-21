@@ -49,6 +49,7 @@ class ModelImages:
         "base_inference": "py312-base-inference",
         "pytorch_chem_training": "py312-pytorch-chem-training",
         "pytorch_chem_inference": "py312-pytorch-chem-inference",
+        "pytorch_chem_gpu_inference": "py312-pytorch-chem-gpu-inference",
     }
 
     @classmethod

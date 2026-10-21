@@ -14,6 +14,7 @@ declare -A REPO_MAP=(
   ["base/inference"]="aws-ml-images/py312-base-inference"
   ["pytorch_chem/training"]="aws-ml-images/py312-pytorch-chem-training"
   ["pytorch_chem/inference"]="aws-ml-images/py312-pytorch-chem-inference"
+  ["pytorch_chem/inference_gpu"]="aws-ml-images/py312-pytorch-chem-gpu-inference"
   ["ml_pipelines"]="aws-ml-images/py312-ml-pipelines"
 )
 

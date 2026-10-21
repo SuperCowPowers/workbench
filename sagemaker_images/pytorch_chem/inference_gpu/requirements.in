@@ -1,0 +1,24 @@
+# Deps for the GPU inference image. Smoke-contract subset + atom-jepa overlay + CUDA torch
+# (lockfile pins torch==X.Y.Z+cu130 via the PyTorch CUDA index, passed in ci/lock.sh).
+# Serves models whose encoder needs a GPU to answer in reasonable time (Atom-JEPA: an
+# Equiformer over several conformers per molecule, per fold model).
+#
+# Version floors mirror pyproject.toml where applicable.
+
+boto3 >= 1.42.2
+botocore >= 1.42.2
+awswrangler >= 3.4.0
+requests >= 2.26.0
+pandas >= 2.2.1, < 3.0
+scikit-learn >= 1.5.2
+joblib >= 1.3.2
+rdkit >= 2026.3.1
+
+# Endpoint server
+fastapi
+uvicorn
+
+# Image-specific (CUDA torch + atom-jepa; cu13 adds the cuEquivariance kernels)
+torch
+torch-geometric
+atom-jepa[cu13]

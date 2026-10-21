@@ -45,7 +45,7 @@ HYPERPARAMETERS = {
 }
 
 
-def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR, features=("smiles", "x")):
+def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR, features=("smiles", "x"), compressed=()):
     metrics = tmp_path / "metrics"
     metrics.mkdir(exist_ok=True)
     return generate_model_script(
@@ -56,7 +56,7 @@ def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR, features=("smiles", "
             "model_imports": None,
             "target_column": "target",
             "feature_list": list(features),
-            "compressed_features": [],
+            "compressed_features": list(compressed),
             "model_metrics_path": str(metrics),
             "id_column": "id",
             "hyperparameters": HYPERPARAMETERS,
@@ -64,12 +64,14 @@ def _generate(tmp_path, model_type=ModelType.UQ_REGRESSOR, features=("smiles", "
     )
 
 
-def _training_csv(tmp_path):
+def _training_csv(tmp_path, sample_weight=None):
     rng = np.random.default_rng(0)
     df = pd.DataFrame({"id": [f"m{i}" for i in range(len(SMILES))], "smiles": SMILES})
     df["x"] = rng.normal(size=len(df))
     df["target"] = df["x"] + rng.normal(scale=0.3, size=len(df))
     df["validation"] = [i >= 12 for i in range(len(df))]
+    if sample_weight is not None:
+        df["sample_weight"] = sample_weight
     train_dir = tmp_path / "train"
     train_dir.mkdir()
     df.to_csv(train_dir / "train.csv", index=False)
@@ -100,9 +102,25 @@ def test_classification_is_refused(tmp_path):
 
 
 @pytest.mark.medium
+def test_non_uniform_sample_weights_are_refused(tmp_path):
+    pytest.importorskip("atom_jepa")
+    _, train_dir = _training_csv(tmp_path, sample_weight=[1.0] * 15 + [0.5])
+    result, _ = _train(_generate(tmp_path), tmp_path, train_dir)
+    assert result.returncode != 0 and "does not support sample weights" in result.stderr
+
+
+@pytest.mark.medium
+def test_compressed_features_are_refused(tmp_path):
+    pytest.importorskip("atom_jepa")
+    _, train_dir = _training_csv(tmp_path)
+    result, _ = _train(_generate(tmp_path, features=("smiles", "emb"), compressed=("emb",)), tmp_path, train_dir)
+    assert result.returncode != 0 and "not compressed features" in result.stderr
+
+
+@pytest.mark.medium
 def test_generated_script_trains_and_serves(tmp_path, monkeypatch):
     pytest.importorskip("atom_jepa")
-    df, train_dir = _training_csv(tmp_path)
+    df, train_dir = _training_csv(tmp_path, sample_weight=1.0)
     script = _generate(tmp_path)
     result, model_dir = _train(script, tmp_path, train_dir)
     assert result.returncode == 0, result.stderr[-2000:]

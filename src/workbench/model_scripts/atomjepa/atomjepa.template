@@ -15,6 +15,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers
 from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
@@ -79,8 +80,6 @@ def split_features(features: list[str]) -> tuple[str, list[str]]:
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
     """Load the fold models and the UQ model."""
-    from workbench.training.atomjepa_core import FoldModel
-
     with open(os.path.join(model_dir, "hyperparameters.json")) as f:
         hyperparameters = json.load(f)
     fold_dirs = sorted(d for d in os.listdir(model_dir) if d.startswith("fold_"))
@@ -97,7 +96,6 @@ def model_fn(model_dir: str) -> dict:
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     """Predict with the fold ensemble; molecules without conformers get NaN."""
     from workbench.endpoints.inference import match_features_case_insensitive
-    from workbench.training.atomjepa_core import build_conformers
 
     smiles_column, extra_features = split_features(TEMPLATE_PARAMS["features"])
     matched = match_features_case_insensitive(df, TEMPLATE_PARAMS["features"])
@@ -149,7 +147,7 @@ if __name__ == "__main__":
         save_output,
     )
     from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
-    from workbench.training.atomjepa_core import build_conformers, train_fold
+    from workbench.training.atomjepa_core import train_fold
     from workbench.training.splits import get_split_indices
     from workbench.training.validation import split_validation_set
 
@@ -171,6 +169,8 @@ if __name__ == "__main__":
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
     if TEMPLATE_PARAMS["model_type"] == "classifier":
         raise ValueError("The Atom-JEPA framework supports regression only (REGRESSOR, UQ_REGRESSOR)")
+    if TEMPLATE_PARAMS["compressed_features"]:
+        raise ValueError("Atom-JEPA models take a SMILES column plus numeric features, not compressed features")
     smiles_column, extra_features = split_features(features)
 
     training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
@@ -178,6 +178,10 @@ if __name__ == "__main__":
     all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
     check_dataframe(all_df, "training_df")
     all_df = all_df.dropna(subset=[target])
+
+    # The fine-tuning loss takes no per-row weights, so non-uniform weights cannot be honored
+    if "sample_weight" in all_df.columns and (all_df["sample_weight"] != 1.0).any():
+        raise ValueError("Atom-JEPA does not support sample weights; use validation_ids to hold rows out of training")
 
     # Held-out validation rows stay out of every fold; they're scored by the ensemble below
     all_df, holdout_df = split_validation_set(all_df)

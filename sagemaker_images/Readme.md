@@ -10,6 +10,7 @@ Custom Docker images for SageMaker training and inference endpoints.
 | Base Inference | `base/inference/` | `aws-ml-images/py312-base-inference` | Same as base training + FastAPI/uvicorn inference server |
 | PyTorch/Chem Training | `pytorch_chem/training/` | `aws-ml-images/py312-pytorch-chem-training` | PyTorch, chemprop, rdkit (GPU training via CUDA base image) |
 | PyTorch/Chem Inference | `pytorch_chem/inference/` | `aws-ml-images/py312-pytorch-chem-inference` | Same stack as pytorch_chem training + FastAPI/uvicorn (runs on CPU instances) |
+| PyTorch/Chem GPU Inference | `pytorch_chem/inference_gpu/` | `aws-ml-images/py312-pytorch-chem-gpu-inference` | CUDA torch + atom-jepa + FastAPI/uvicorn (Atom-JEPA endpoints; GPU or CPU instances) |
 | ML Pipelines | `ml_pipelines/` | `aws-ml-images/py312-ml-pipelines` | AWS Batch Pipeline runner for SageMaker ML pipelines |
 
 ### Directory Structure
@@ -23,6 +24,7 @@ sagemaker_images/
   pytorch_chem/
     training/              # Dockerfile + requirements.txt (CUDA base image)
     inference/             # Dockerfile + requirements.txt
+    inference_gpu/         # Dockerfile + requirements.txt (CUDA base image)
   ml_pipelines/            # Dockerfile + requirements.txt + runner script
   shared/                  # Files shared across images
     main.py                # FastAPI inference server
@@ -58,6 +60,7 @@ sagemaker_images/
 ./build_deploy.sh base/inference 0.1 --deploy
 ./build_deploy.sh pytorch_chem/training 0.1 --deploy
 ./build_deploy.sh pytorch_chem/inference 0.1 --deploy
+./build_deploy.sh pytorch_chem/inference_gpu 0.1 --deploy
 ./build_deploy.sh ml_pipelines 0.1 --deploy
 ```
 

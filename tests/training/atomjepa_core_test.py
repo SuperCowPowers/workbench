@@ -10,7 +10,8 @@ import pytest
 pytest.importorskip("atom_jepa")
 
 # Workbench Imports
-from workbench.training.atomjepa_core import FoldModel, build_conformers, lr_scale, train_fold  # noqa: E402
+from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers  # noqa: E402
+from workbench.training.atomjepa_core import lr_scale, train_fold  # noqa: E402
 
 pytestmark = pytest.mark.medium
 

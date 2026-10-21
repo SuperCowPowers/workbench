@@ -80,7 +80,21 @@ The defaults are the authors' ADMET recipe.
 
 ## Endpoints
 
-Serving is not yet supported: the inference images don't carry the Atom-JEPA dependencies. Score a model from its training captures: `get_inference_predictions("training")` for the out-of-fold rows and `get_inference_predictions("validation")` for rows held out with `validation_ids`.
+Atom-JEPA endpoints run on a GPU. A prediction is the fold ensemble over every conformer of every molecule, which is past what a serverless endpoint can hold or answer within its 60-second limit, so `to_endpoint()` refuses serverless for these models.
+
+```python
+# Async: scales to zero when idle, so an idle endpoint costs nothing
+endpoint = model.to_endpoint(async_endpoint=True)
+
+# Real-time: always on, for low-latency scoring
+endpoint = model.to_endpoint(serverless=False)
+```
+
+Both default to an `ml.g6.xlarge` (one NVIDIA L4) running Workbench's GPU inference image; pass `instance=` to choose another. An async endpoint stays on one instance unless you pass `max_instances=`.
+
+GPU endpoint instances are quota-limited per instance type and region, often to one `ml.g6.xlarge` or none; check "ml.g6.xlarge for endpoint usage" for your account in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.
+
+A model's training captures need no endpoint: `get_inference_predictions("training")` gives the out-of-fold rows and `get_inference_predictions("validation")` the rows held out with `validation_ids`.
 
 ## Pretrained Weights
 

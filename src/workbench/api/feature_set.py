@@ -124,7 +124,10 @@ class FeatureSet(FeatureSetCore):
             ModelFramework.ATOMJEPA,
         ):
             training_image = "pytorch_chem_training"
-            inference_image = "pytorch_chem_inference"
+            # Atom-JEPA serves from the CUDA image: an Equiformer over several conformers per molecule
+            inference_image = (
+                "pytorch_chem_gpu_inference" if model_framework == ModelFramework.ATOMJEPA else "pytorch_chem_inference"
+            )
             inference_arch = "x86_64"
         else:
             training_image = "base_training"

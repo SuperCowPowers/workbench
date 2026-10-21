@@ -116,6 +116,16 @@ uv pip compile sagemaker_images/pytorch_chem/inference/requirements.in \
 
 # pytorch_chem/training: smoke-contract subset + chemprop + shap, CUDA torch,
 # no fastapi/uvicorn (training doesn't serve).
+echo "==> sagemaker_images/pytorch_chem/inference_gpu/requirements.lock"
+uv pip compile sagemaker_images/pytorch_chem/inference_gpu/requirements.in \
+    --python-version "$PYTHON_VERSION" \
+    --python-platform "$PYTHON_PLATFORM" \
+    --extra-index-url "$PYTORCH_CUDA" \
+    --index-strategy unsafe-best-match \
+    -c "$CONSTRAINTS" \
+    $FRESH \
+    -o sagemaker_images/pytorch_chem/inference_gpu/requirements.lock
+
 echo "==> sagemaker_images/pytorch_chem/training/requirements.lock"
 uv pip compile sagemaker_images/pytorch_chem/training/requirements.in \
     --python-version "$PYTHON_VERSION" \

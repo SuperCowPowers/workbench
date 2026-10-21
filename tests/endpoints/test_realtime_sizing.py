@@ -4,7 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
+from workbench.api import ModelFramework
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import (
+    GPU_ASYNC_MAX_INSTANCES,
     SERVERLESS_MODEL_MEMORY_LIMIT_GB,
     ModelToEndpoint,
     realtime_instance,
@@ -60,3 +62,41 @@ def test_serverless_allowed_at_or_under_the_limit(memory_gb):
 
 def test_realtime_is_never_refused():
     ModelToEndpoint._check_serverless_memory(SimpleNamespace(serverless=False), _model(50.0))
+
+
+@pytest.mark.parametrize("framework", [ModelFramework.ATOMJEPA])
+def test_gpu_frameworks_refuse_serverless(framework):
+    model = SimpleNamespace(name="test-model", model_framework=framework)
+    with pytest.raises(ValueError, match="async_endpoint=True"):
+        ModelToEndpoint._check_serverless_framework(SimpleNamespace(serverless=True), model)
+    ModelToEndpoint._check_serverless_framework(SimpleNamespace(serverless=False), model)
+
+
+@pytest.mark.parametrize("framework", [ModelFramework.CHEMPROP, ModelFramework.TABICL, ModelFramework.XGBOOST])
+def test_other_frameworks_may_serve_serverless(framework):
+    model = SimpleNamespace(name="test-model", model_framework=framework)
+    ModelToEndpoint._check_serverless_framework(SimpleNamespace(serverless=True), model)
+
+
+def _transform(async_endpoint, max_instances, max_instances_given):
+    return SimpleNamespace(
+        async_endpoint=async_endpoint, max_instances=max_instances, max_instances_given=max_instances_given
+    )
+
+
+def test_gpu_async_defaults_to_one_instance():
+    transform = _transform(async_endpoint=True, max_instances=8, max_instances_given=False)
+    ModelToEndpoint._apply_gpu_defaults(transform, SimpleNamespace(model_framework=ModelFramework.ATOMJEPA))
+    assert transform.max_instances == GPU_ASYNC_MAX_INSTANCES
+
+
+def test_gpu_async_keeps_a_caller_bound():
+    transform = _transform(async_endpoint=True, max_instances=4, max_instances_given=True)
+    ModelToEndpoint._apply_gpu_defaults(transform, SimpleNamespace(model_framework=ModelFramework.ATOMJEPA))
+    assert transform.max_instances == 4
+
+
+def test_cpu_async_keeps_its_default():
+    transform = _transform(async_endpoint=True, max_instances=8, max_instances_given=False)
+    ModelToEndpoint._apply_gpu_defaults(transform, SimpleNamespace(model_framework=ModelFramework.CHEMPROP))
+    assert transform.max_instances == 8

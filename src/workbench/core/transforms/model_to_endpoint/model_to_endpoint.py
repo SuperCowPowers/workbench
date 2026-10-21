@@ -70,6 +70,12 @@ REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
 # Async endpoints run long compute work (RDKit conformer generation, etc.), so their
 # default has more CPU.
 ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
+# Models that serve from the CUDA image (Atom-JEPA) get one L4; an async endpoint scales it to
+# zero when idle.
+GPU_DEFAULT_INSTANCE = "ml.g6.xlarge"
+# GPU endpoint instances are quota-limited (one ml.g6.xlarge in a default account), so their
+# async endpoints stay on one instance unless the caller asks for more
+GPU_ASYNC_MAX_INSTANCES = 1
 
 # A model that records its serving memory and outgrows the default instance gets the
 # first of these (cheapest first) it fills to no more than REALTIME_MEMORY_FILL.
@@ -153,6 +159,9 @@ class ModelToEndpoint(Transform):
         # Call superclass init
         super().__init__(model_name, endpoint_name)
 
+        # Whether the caller chose the autoscaler bound (a GPU model's default is set at deploy)
+        self.max_instances_given = max_instances is not None
+
         # Async endpoints are always realtime (not serverless)
         if async_endpoint and serverless:
             self.log.warning("Async endpoints are not compatible with serverless. Forcing serverless=False.")
@@ -202,7 +211,9 @@ class ModelToEndpoint(Transform):
         workbench_model = ModelCore(self.input_name)
 
         # Refuse before touching any existing endpoint
+        self._check_serverless_framework(workbench_model)
         self._check_serverless_memory(workbench_model)
+        self._apply_gpu_defaults(workbench_model)
 
         # Delete endpoint (if it already exists)
         EndpointCore.managed_delete(self.output_name)
@@ -217,6 +228,36 @@ class ModelToEndpoint(Transform):
         time.sleep(5)  # We wait for AWS Lag
         end = EndpointCore(self.output_name)
         self.log.important(f"Endpoint {end.name} is ready for use")
+
+    def _check_serverless_framework(self, workbench_model: ModelCore):
+        """Raise when a model's framework can't serve from a serverless endpoint.
+
+        Atom-JEPA serves from the CUDA image: a fold ensemble of Equiformer encoders over
+        several conformers per molecule, past serverless memory and its 60 s request limit.
+
+        Args:
+            workbench_model(ModelCore): The model about to be deployed
+        """
+        from workbench.api import ModelFramework
+
+        if self.serverless and workbench_model.model_framework == ModelFramework.ATOMJEPA:
+            raise ValueError(
+                f"{workbench_model.name} is an Atom-JEPA model, which serves from a GPU instance. Deploy an "
+                "async endpoint with to_endpoint(async_endpoint=True) (scales to zero when idle), or a "
+                "real-time one with to_endpoint(serverless=False)."
+            )
+
+    def _apply_gpu_defaults(self, workbench_model: ModelCore):
+        """Keep a GPU model's async endpoint on one instance unless the caller set max_instances.
+
+        Args:
+            workbench_model(ModelCore): The model about to be deployed
+        """
+        from workbench.api import ModelFramework
+
+        gpu_model = workbench_model.model_framework == ModelFramework.ATOMJEPA
+        if gpu_model and self.async_endpoint and not self.max_instances_given:
+            self.max_instances = GPU_ASYNC_MAX_INSTANCES
 
     def _check_serverless_memory(self, workbench_model: ModelCore):
         """Raise when a model's measured serving memory won't fit a serverless endpoint.
@@ -273,11 +314,7 @@ class ModelToEndpoint(Transform):
         from workbench.api import ModelFramework
 
         self.log.info(f"Model Framework: {workbench_model.model_framework}")
-        needs_more_resources = workbench_model.model_framework in [
-            ModelFramework.PYTORCH,
-            ModelFramework.CHEMPROP,
-            ModelFramework.ATOMJEPA,
-        ]
+        needs_more_resources = workbench_model.model_framework in [ModelFramework.PYTORCH, ModelFramework.CHEMPROP]
 
         # Determine serverless config and instance type
         serverless_config = None
@@ -301,6 +338,9 @@ class ModelToEndpoint(Transform):
             if self.instance:
                 instance_type = self.instance
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
+            elif workbench_model.model_framework == ModelFramework.ATOMJEPA:
+                instance_type = GPU_DEFAULT_INSTANCE
+                self.log.important(f"Endpoint: Instance Type={instance_type} (GPU for Atom-JEPA)")
             else:
                 memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
                 instance_type = realtime_instance(memory_gb, self.async_endpoint)

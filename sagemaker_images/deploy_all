@@ -19,4 +19,5 @@ ML_PIPELINES_VERSION="$2"
 "$SCRIPT_DIR/build_deploy.sh" base/inference "$GENERAL_VERSION" --deploy --overwrite
 "$SCRIPT_DIR/build_deploy.sh" pytorch_chem/training "$GENERAL_VERSION" --deploy --overwrite
 "$SCRIPT_DIR/build_deploy.sh" pytorch_chem/inference "$GENERAL_VERSION" --deploy --overwrite
+"$SCRIPT_DIR/build_deploy.sh" pytorch_chem/inference_gpu "$GENERAL_VERSION" --deploy --overwrite
 "$SCRIPT_DIR/build_deploy.sh" ml_pipelines "$ML_PIPELINES_VERSION" --deploy --overwrite
