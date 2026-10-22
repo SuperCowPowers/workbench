@@ -32,9 +32,11 @@
      3:1 contrast ratio against both a white and a #222 background. */
   --mc-f-chemprop: #429960;
   --mc-f-desc: #769638;
-  --mc-f-mt: #b84d8f;
+  --mc-f-mt: #a8842b;
   --mc-f-pytorch: #c2703c;
-  --mc-f-xgb: #a8842b;
+  --mc-f-xgb: var(--mc-f-sklearn);
+  --mc-f-tabicl: #b33f8a;
+  --mc-f-atomjepa: #6070c8;
   --mc-f-transformer: #8a68b8;
   --mc-f-sklearn: #7a8fa3;
   --mc-f-meta: #35a3ad;

@@ -29,7 +29,8 @@
   // and is still labeled with its own name.
   const FW_COLOR = {
     chemprop: "chemprop", "chemprop-desc": "desc", "multi-task": "mt", xgboost: "xgb",
-    pytorch: "pytorch", transformer: "transformer", sklearn: "sklearn", meta: "meta",
+    pytorch: "pytorch", tabicl: "tabicl", atomjepa: "atomjepa", transformer: "transformer",
+    sklearn: "sklearn", meta: "meta",
   };
   const colorOf = (framework) => FW_COLOR[framework] || "other";
   const dot = (framework) => `<span class="mc-dot" style="background:var(--mc-f-${colorOf(framework)})"></span>`;

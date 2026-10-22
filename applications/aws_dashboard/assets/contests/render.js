@@ -32,13 +32,16 @@
     chemprop: "chemprop",
     xgboost: "xgb",
     pytorch: "pytorch",
+    tabicl: "tabicl",
+    atomjepa: "atomjepa",
     transformer: "transformer",
     sklearn: "sklearn",
     meta: "meta",
   };
   const FRAMEWORK_LABEL = {
     mt: "multi-task", desc: "chemprop-desc", chemprop: "chemprop", xgb: "xgboost", pytorch: "pytorch",
-    transformer: "transformer", sklearn: "sklearn", meta: "meta", other: "other",
+    tabicl: "tabicl", atomjepa: "atomjepa", transformer: "transformer", sklearn: "sklearn", meta: "meta",
+    other: "other",
   };
   const frameworkOf = (row) => FW_KEY[row.framework] || "other";
 
@@ -230,9 +233,9 @@
   function legendEl(contests) {
     const present = new Set();
     contests.forEach((c) => c.rows.forEach((r) => present.add(frameworkOf(r))));
-    const order = ["chemprop", "desc", "mt", "xgb", "pytorch", "transformer", "sklearn", "meta", "other"].filter((fw) =>
-      present.has(fw)
-    );
+    const order = [
+      "chemprop", "desc", "mt", "xgb", "pytorch", "tabicl", "atomjepa", "transformer", "sklearn", "meta", "other",
+    ].filter((fw) => present.has(fw));
     const legend = document.createElement("div");
     legend.className = "ct-legend";
     legend.innerHTML = order

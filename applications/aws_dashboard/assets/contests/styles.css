@@ -19,9 +19,11 @@
   --ct-good-glow: rgba(87, 201, 107, 0.09);
   --ct-f-chemprop: #6bd08a;
   --ct-f-desc: #a8d06b;
-  --ct-f-mt: #d06ba8;
+  --ct-f-mt: #d4b158;
   --ct-f-pytorch: #d98a5c;
-  --ct-f-xgb: #d4b158;
+  --ct-f-xgb: var(--ct-f-sklearn);
+  --ct-f-tabicl: #b83a8e;
+  --ct-f-atomjepa: #8a98ea;
   --ct-f-transformer: #ab8ad6;
   --ct-f-sklearn: #9fb4c7;
   --ct-f-meta: #5bc8d0;
@@ -53,9 +55,11 @@
   --ct-good-glow: rgba(47, 157, 71, 0.10);
   --ct-f-chemprop: #3a9d5c;
   --ct-f-desc: #6b9d3a;
-  --ct-f-mt: #b04585;
+  --ct-f-mt: #b8942f;
   --ct-f-pytorch: #c26a3a;
-  --ct-f-xgb: #b8942f;
+  --ct-f-xgb: var(--ct-f-sklearn);
+  --ct-f-tabicl: #8f2470;
+  --ct-f-atomjepa: #5262c0;
   --ct-f-transformer: #7c5cc4;
   --ct-f-sklearn: #6b8199;
   --ct-f-meta: #2e9aa6;
