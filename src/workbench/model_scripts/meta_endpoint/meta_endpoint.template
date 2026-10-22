@@ -57,6 +57,7 @@ def model_fn(model_dir: str) -> dict:
         "s3_bucket": config["s3_bucket"],
         "async_flags": dag.endpoint_async_flags,
         "batch_sizes": dag.endpoint_batch_sizes,
+        "max_concurrency": dag.endpoint_max_concurrency,
     }
 
 
@@ -94,6 +95,7 @@ def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
     s3_bucket: str = loaded["s3_bucket"]
     async_flags: dict = loaded["async_flags"]
     batch_sizes: dict = loaded["batch_sizes"]
+    max_concurrency: dict = loaded["max_concurrency"]
 
     def server_invoker(endpoint_name: str, eval_df: pd.DataFrame) -> pd.DataFrame:
         if async_flags.get(endpoint_name):
@@ -108,7 +110,11 @@ def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
             if endpoint_name in batch_sizes:
                 kwargs["batch_size"] = batch_sizes[endpoint_name]
             return async_inference(endpoint_name, eval_df, **kwargs)
-        return fast_inference(endpoint_name, eval_df)
+        # Cap threads at a serverless child's MaxConcurrency; calls beyond it are throttled
+        kwargs = {}
+        if endpoint_name in max_concurrency:
+            kwargs["threads"] = max_concurrency[endpoint_name]
+        return fast_inference(endpoint_name, eval_df, **kwargs)
 
     return dag.run(df, endpoint_invoker=server_invoker)
 

@@ -114,6 +114,7 @@ class MetaEndpointDAG:
         self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_child_metadata()
         self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._endpoint_max_instances: Dict[str, int] = {}  # populated by populate_child_metadata()
+        self._endpoint_max_concurrency: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._aggregations: Dict[str, AggregationNode] = {}
         self._edges: List[tuple[str, str]] = []  # (from_node, to_node)
         self._input_nodes: List[str] = []
@@ -260,6 +261,11 @@ class MetaEndpointDAG:
     def endpoint_max_instances(self) -> Dict[str, int]:
         """Mapping of endpoint_name → max_instances fleet ceiling (populated by :meth:`populate_child_metadata`)."""
         return self._endpoint_max_instances
+
+    @property
+    def endpoint_max_concurrency(self) -> Dict[str, int]:
+        """Mapping of endpoint_name → serverless MaxConcurrency (populated by :meth:`populate_child_metadata`)."""
+        return self._endpoint_max_concurrency
 
     def _all_nodes(self) -> List[str]:
         return list(self._endpoints.keys()) + list(self._aggregations.keys())
@@ -588,6 +594,7 @@ class MetaEndpointDAG:
             "endpoint_primary": dict(self._primary),
             "endpoint_async": dict(self._endpoint_async_flags),
             "endpoint_batch_size": dict(self._endpoint_batch_sizes),
+            "endpoint_max_concurrency": dict(self._endpoint_max_concurrency),
             "aggregations": [_serialize_aggregation(a) for a in self._aggregations.values()],
             "edges": [list(e) for e in self._edges],
             "input_nodes": list(self._input_nodes),
@@ -598,22 +605,29 @@ class MetaEndpointDAG:
         return json.dumps(self.to_dict(), indent=2)
 
     def populate_child_metadata(self) -> None:
-        """Look up each child's async flag and ``inference_batch_size`` and store both.
+        """Look up each child's async flag, ``inference_batch_size`` and serverless concurrency.
 
         Keyed by endpoint name (not node name) so the deployed invoker can both
         dispatch (``async_inference`` vs ``fast_inference``) and size each child's
         batch to what that child is configured for — a slow GFN2-xTB child wants a
         small batch so one chunk doesn't exceed the per-invocation timeout. A child
         with no/invalid ``inference_batch_size`` is omitted, leaving the invoker on
-        ``async_inference``'s default.
+        ``async_inference``'s default. A serverless child's ``MaxConcurrency`` caps
+        the invoker's ``fast_inference`` threads; more concurrent calls than that
+        are throttled.
 
-        One AWS round-trip per unique endpoint name (reads the meta once for both
+        One AWS round-trip per unique endpoint name (reads the meta once for all
         values); called by :meth:`MetaEndpoint.create` before serializing the DAG.
         """
         from workbench.api import Endpoint
 
         for endpoint_name in set(self._endpoints.values()):
-            meta = Endpoint(endpoint_name).workbench_meta() or {}
+            endpoint = Endpoint(endpoint_name)
+            variant = (endpoint.endpoint_meta or {}).get("ProductionVariants", [{}])[0]
+            max_concurrency = variant.get("CurrentServerlessConfig", {}).get("MaxConcurrency")
+            if max_concurrency:
+                self._endpoint_max_concurrency[endpoint_name] = int(max_concurrency)
+            meta = endpoint.workbench_meta() or {}
             self._endpoint_async_flags[endpoint_name] = bool(meta.get("async_endpoint"))
             batch_size = meta.get("inference_batch_size")
             try:
@@ -716,6 +730,7 @@ class MetaEndpointDAG:
             )
         dag._endpoint_async_flags = dict(data.get("endpoint_async", {}))
         dag._endpoint_batch_sizes = {k: int(v) for k, v in data.get("endpoint_batch_size", {}).items()}
+        dag._endpoint_max_concurrency = {k: int(v) for k, v in data.get("endpoint_max_concurrency", {}).items()}
         for agg_data in data.get("aggregations", []):
             dag.add_aggregation(_deserialize_aggregation(agg_data))
         for src, dst in data.get("edges", []):

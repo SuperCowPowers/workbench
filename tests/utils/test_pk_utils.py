@@ -60,21 +60,31 @@ def test_curve_fold_error_is_one_for_identical_curves():
     assert curve_fold_error(PARAMS, PARAMS).to_numpy() == pytest.approx(1.0)
 
 
-def test_curve_fold_error_reads_an_amplitude_shift_exactly():
-    """Doubling F scales the whole curve, so the log gap is log10(2) everywhere."""
+def test_curve_fold_error_reads_an_amplitude_shift():
+    """Doubling F scales the curve, so the gap is 2x wherever both curves clear the floor.
+
+    Only the sliver where the doubled curve is above the floor and the measured one is not
+    reads less, so the score lands just under 2.
+    """
     doubled = PARAMS.assign(f_percent=PARAMS["f_percent"] * 2)
-    assert curve_fold_error(PARAMS, doubled).to_numpy() == pytest.approx(2.0)
+    assert curve_fold_error(PARAMS, doubled).to_numpy() == pytest.approx(2.0, rel=0.05)
+    assert (curve_fold_error(PARAMS, doubled) <= 2.0).all()
 
 
-def test_curve_fold_error_max_hours_bounds_a_long_tail():
-    """A week-long measured half-life against a sub-hour prediction underflows uncapped."""
+def test_curve_fold_error_caps_a_vanishing_prediction_at_the_floor():
+    """A week-long measured half-life against a sub-hour prediction costs at most 1/floor."""
     slow = pd.DataFrame({"cl_ml_min_kg": [0.2], "vd_l_kg": [3.0], "f_percent": [40.0], "fu_percent": [10.0]})
     fast = slow.assign(cl_ml_min_kg=[40.0])
-    assert np.isinf(curve_fold_error(slow, fast).iloc[0])
-    capped = curve_fold_error(slow, fast, max_hours=24)
-    assert np.isfinite(capped.iloc[0]) and capped.iloc[0] > 1
-    doubled = PARAMS.assign(f_percent=PARAMS["f_percent"] * 2)
-    assert curve_fold_error(PARAMS, doubled, max_hours=6).to_numpy() == pytest.approx(2.0)
+    for max_hours in (None, 24):
+        score = curve_fold_error(slow, fast, max_hours=max_hours).iloc[0]
+        assert 5 < score <= 100
+
+
+def test_curve_fold_error_is_symmetric_in_a_rescaled_curve():
+    """Over- and under-predicting by the same factor score the same."""
+    assert curve_fold_error(PARAMS, PARAMS.assign(f_percent=PARAMS["f_percent"] * 3)).to_numpy() == pytest.approx(
+        curve_fold_error(PARAMS.assign(f_percent=PARAMS["f_percent"] * 3), PARAMS).to_numpy(), rel=0.05
+    )
 
 
 def test_curve_fold_error_is_nan_for_a_nonpositive_prediction():

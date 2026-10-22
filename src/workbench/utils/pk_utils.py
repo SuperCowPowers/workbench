@@ -112,38 +112,45 @@ def curve_fold_error(
 ) -> pd.Series:
     """Whole-curve agreement per compound: 10^mean|log10 Cu_pred(t) − log10 Cu_obs(t)|.
 
-    Reads as an average fold error over the unbound curve. It is averaged only where the
-    measured curve is at least `floor` of its own peak: past that both curves are
-    negligible, but their log gap keeps growing and would dominate the score. `max_hours`
-    also ends the window at a study's last sampling time; without it, a slowly cleared
-    compound's window runs for weeks and a fast-clearing prediction underflows to zero.
+    Reads as an average fold error over the unbound curve. Both curves are clipped at a
+    quantitation floor, `floor` × measured Cmax, the way an assay reports anything below
+    its limit as not measurable, and the gap is averaged where either curve is above it.
+    A predicted curve that vanishes while the measured one persists therefore costs at
+    most 1/`floor`, rather than a log gap that grows without bound down the tail.
 
     Args:
         measured (pd.DataFrame): Measured PK parameter frame.
         predicted (pd.DataFrame): Predicted PK parameter frame, same index as `measured`.
         ka (float): Absorption rate constant shared by both curves, 1/h. Defaults to DEFAULT_KA.
-        floor (float): Window cutoff as a fraction of measured Cmax. Defaults to 0.01.
-        max_hours (float, optional): Last time point in the window, h. Defaults to no cap.
+        floor (float): Quantitation floor as a fraction of measured Cmax. Defaults to 0.01.
+        max_hours (float, optional): Last time point, e.g. a study's last sample, h. Defaults to no cap.
         n_points (int): Time samples per compound. Defaults to 500.
 
     Returns:
-        pd.Series: Fold error per compound (1.0 is a perfect overlay), indexed like `measured`.
+        pd.Series: Fold error per compound (1.0 is a perfect overlay), indexed like `measured`;
+            NaN where a predicted parameter is not positive.
     """
-    # Ten half-lives of the slower process past the measured peak puts the floor well inside the grid
-    ke = elimination_rate(measured)
-    tmax = bateman_tmax(ke, ka)
-    horizon = tmax + 10 * np.log(2) / np.minimum(ke, ka)
+    valid = (predicted[PK_PARAMS] > 0).all(axis=1).to_numpy()
+
+    # Ten half-lives of the slower process past each curve's peak puts both floors inside the grid
+    with np.errstate(divide="ignore", invalid="ignore"):
+        horizon = np.fmax(
+            *(
+                bateman_tmax(ke, ka) + 10 * np.log(2) / np.minimum(ke, ka)
+                for ke in (elimination_rate(measured), elimination_rate(predicted))
+            )
+        )
     if max_hours is not None:
         horizon = np.minimum(horizon, max_hours)
     t = horizon[:, None] * np.linspace(0.0, 1.0, n_points)[None, :]
 
     obs = unbound_concentration(measured, t, ka=ka)
     pred = unbound_concentration(predicted, t, ka=ka)
-    peak = unbound_concentration(measured, tmax[:, None], ka=ka)
-    in_window = obs >= floor * peak
-    with np.errstate(divide="ignore", invalid="ignore"):
-        gap = np.abs(np.log10(pred) - np.log10(obs))
-    return pd.Series(10 ** np.mean(gap, axis=1, where=in_window), index=measured.index)
+    lloq = floor * unbound_concentration(measured, bateman_tmax(elimination_rate(measured), ka)[:, None], ka=ka)
+    in_window = (obs >= lloq) | (pred >= lloq)
+    gap = np.abs(np.log10(np.maximum(pred, lloq)) - np.log10(np.maximum(obs, lloq)))
+    fold = 10 ** np.mean(gap, axis=1, where=in_window)
+    return pd.Series(np.where(valid, fold, np.nan), index=measured.index)
 
 
 def auc_u_error_terms(measured: pd.DataFrame, predicted: pd.DataFrame) -> pd.DataFrame:
