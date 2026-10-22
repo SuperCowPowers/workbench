@@ -20,6 +20,11 @@ describes one study's curve; ties go to the paper with the most measurements.
 Compounds with no such paper fall back to the cross-paper median and carry
 pk_same_paper = False. fu is the median over every qualifying record.
 
+CL uses only the records from the best dosing route each structure has, in the
+order iv, iv+po (one assay names both; CL conventionally comes from the IV arm),
+unstated, po. cl_route names the route used. CL from oral dosing alone is likely
+apparent clearance, CL/F, so po rows are kept but flagged.
+
 Rows with a suspect value are dropped: fu of 0 (below quantitation) or >= 95%
 (percent bound recorded as free), and CL outside 0.1-180 mL/min/kg (180 is twice
 mouse hepatic blood flow; beyond it the records are unit errors).
@@ -38,6 +43,7 @@ import logging
 from pathlib import Path
 
 import duckdb
+import numpy as np
 import pandas as pd
 from rdkit import Chem, RDLogger
 
@@ -55,6 +61,10 @@ MIRROR = f"s3://scigantic-chembl/{RELEASE}/parquet"
 MOUSE_TAX_ID = 10090
 IN_VIVO = "BAO_0000218"  # BAO "organism-based format"
 ORAL = r"oral|\bp\.?o\b|gavage"
+IV = r"\bi\.?v\b|intravenous"
+
+# CL dosing routes, best first (see module docstring)
+ROUTE_PRIORITY = ["iv", "iv+po", "unstated", "po"]
 
 # Suspect-value bounds (see module docstring)
 CL_RANGE = (0.1, 180.0)
@@ -147,7 +157,7 @@ def standardize(df: pd.DataFrame) -> pd.DataFrame:
 
 def pk_values(df: pd.DataFrame) -> pd.DataFrame:
     """CL, Vdss and F per structure: one paper's values where a paper reports all three."""
-    pk = df[df["param"].isin(PK_PARAMS)]
+    pk = best_route_cl(df[df["param"].isin(PK_PARAMS)])
 
     per_doc = summarize(pk, ["inchi_key", "doc_id"]).dropna(subset=PK_PARAMS)
     per_doc["total"] = per_doc[[f"{p}_n" for p in PK_PARAMS]].sum(axis=1)
@@ -162,7 +172,19 @@ def pk_values(df: pd.DataFrame) -> pd.DataFrame:
 
     rest = pk[~pk["inchi_key"].isin(same.index)]
     cross = summarize(rest, ["inchi_key"]).assign(pk_same_paper=False, pk_documents=documents(rest))
-    return pd.concat([same.drop(columns="doc_id"), cross])
+    routes = pk[pk["param"] == "cl_ml_min_kg"].groupby("inchi_key")["cl_route"].first()
+    return pd.concat([same.drop(columns="doc_id"), cross]).assign(cl_route=routes)
+
+
+def best_route_cl(pk: pd.DataFrame) -> pd.DataFrame:
+    """Keep each structure's CL records from its best dosing route only, labelled in `cl_route`."""
+    iv = pk["description"].str.contains(IV)
+    po = pk["description"].str.contains(ORAL)
+    route = pd.Series(np.select([iv & po, iv, po], ["iv+po", "iv", "po"], "unstated"), index=pk.index)
+    is_cl = pk["param"] == "cl_ml_min_kg"
+    rank = route.map(ROUTE_PRIORITY.index).where(is_cl)
+    best = rank.groupby(pk["inchi_key"]).transform("min")
+    return pk.assign(cl_route=route)[~is_cl | (rank == best)]
 
 
 def summarize(df: pd.DataFrame, keys: list) -> pd.DataFrame:
@@ -222,8 +244,9 @@ def pull_mouse_pk() -> pd.DataFrame:
     for p in PARAMS:
         out[f"{p}_n"] = out[f"{p}_n"].astype(int)
     ordered = ["inchi_key", "smiles", "orig_smiles", "chembl_id", "pref_name", "max_phase"]
-    ordered += PARAMS + [f"{p}_n" for p in PARAMS] + ["pk_same_paper", "pk_documents", "fu_documents"]
+    ordered += PARAMS + [f"{p}_n" for p in PARAMS] + ["pk_same_paper", "cl_route", "pk_documents", "fu_documents"]
     out = out.reset_index()[ordered].sort_values("chembl_id").reset_index(drop=True)
+    log.info("  cl_route: " + ", ".join(f"{route}={n}" for route, n in out["cl_route"].value_counts().items()))
     out.insert(0, "id", range(len(out)))
     return out
 
