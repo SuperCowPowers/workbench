@@ -76,6 +76,9 @@ GPU_DEFAULT_INSTANCE = "ml.g6.xlarge"
 # GPU endpoint instances are quota-limited (one ml.g6.xlarge in a default account), so their
 # async endpoints stay on one instance unless the caller asks for more
 GPU_ASYNC_MAX_INSTANCES = 1
+# SageMaker host image for GPU endpoints: NVIDIA driver 580 / CUDA 13.0, matching the GPU
+# inference image. The unpinned default host image varies by instance family.
+GPU_INFERENCE_AMI = "al2023-ami-sagemaker-inference-gpu-4-1"
 
 # A model that records its serving memory and outgrows the default instance gets the
 # first of these (cheapest first) it fills to no more than REALTIME_MEMORY_FILL.
@@ -375,6 +378,12 @@ class ModelToEndpoint(Transform):
         if self.async_endpoint:
             self.log.important(f"Async MaxConcurrentInvocationsPerInstance={self.async_max_concurrent}")
 
+        # GPU-image models pin the host image whose driver matches the image's CUDA
+        inference_ami_version = None
+        if not self.serverless and workbench_model.model_framework == ModelFramework.ATOMJEPA:
+            inference_ami_version = GPU_INFERENCE_AMI
+            self.log.important(f"Endpoint: Inference AMI={inference_ami_version}")
+
         # Deploy the Endpoint using V3 Resource Classes
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
         try:
@@ -384,6 +393,7 @@ class ModelToEndpoint(Transform):
                 instance_type=instance_type,
                 data_capture_config=data_capture_config,
                 tags=sagemaker_tags,
+                inference_ami_version=inference_ami_version,
             )
         except ClientError as e:
             # Check if this is the "endpoint config already exists" error
@@ -397,6 +407,7 @@ class ModelToEndpoint(Transform):
                     instance_type=instance_type,
                     data_capture_config=data_capture_config,
                     tags=sagemaker_tags,
+                    inference_ami_version=inference_ami_version,
                 )
             else:
                 raise
@@ -408,6 +419,7 @@ class ModelToEndpoint(Transform):
         instance_type: str = None,
         data_capture_config=None,
         tags=None,
+        inference_ami_version: str = None,
     ):
         """Internal: Create the SageMaker Model, EndpointConfig, and Endpoint resources.
 
@@ -417,6 +429,7 @@ class ModelToEndpoint(Transform):
             instance_type (str): Instance type for realtime deployments
             data_capture_config: Data capture configuration
             tags: List of Tag objects
+            inference_ami_version (str): SageMaker host image for the instances (None = SageMaker's default)
         """
         model_name = self.output_name
         config_name = self.output_name
@@ -457,6 +470,8 @@ class ModelToEndpoint(Transform):
             production_variant.initial_instance_count = 1
             production_variant.instance_type = instance_type
             production_variant.container_startup_health_check_timeout_in_seconds = 300
+            if inference_ami_version:
+                production_variant.inference_ami_version = inference_ami_version
 
         # Build async inference config if requested
         async_inference_config = None
