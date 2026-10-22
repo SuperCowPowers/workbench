@@ -152,10 +152,14 @@ class AsyncEndpointCore(EndpointCore):
                 return
             time.sleep(WARM_UP_POLL_S)
 
+        # SageMaker says why a scale-up is stuck (e.g. InsufficientInstanceCapacity) in the
+        # endpoint's FailureReason, which the refresh above just read
         counts = self._live_instance_counts()
+        reason = (self.endpoint_meta or {}).get("FailureReason")
         raise EndpointWarmingError(
             f"Endpoint '{self.name}' still warming after {WARM_UP_CAP_S // 60}m "
-            f"(instances {counts.get('current', '?')}/{counts.get('desired', '?')} up) — retry shortly."
+            f"(instances {counts.get('current', '?')}/{counts.get('desired', '?')} up) — "
+            + (f"SageMaker reports: {reason}" if reason else "retry shortly.")
         )
 
     def _live_instance_counts(self) -> dict:

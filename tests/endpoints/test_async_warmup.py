@@ -87,9 +87,25 @@ def test_warm_self_raises_when_never_warms(monkeypatch):
     c._current_instances = lambda: 0  # scaling, never serves
     c._fire_warmer = lambda: None
     c._live_instance_counts = lambda: {"current": 0, "desired": 1}
+    c.endpoint_meta = {}
     raised = None
     try:
         c._warm_self()
     except EndpointWarmingError as e:
         raised = str(e)
     assert raised is not None and "retry shortly" in raised
+
+
+def test_warm_self_reports_why_scale_up_is_stuck(monkeypatch):
+    monkeypatch.setattr(mod, "time", _Clock())
+    c = _bare_core()
+    c._current_instances = lambda: 0
+    c._fire_warmer = lambda: None
+    c._live_instance_counts = lambda: {"current": 0, "desired": 1}
+    c.endpoint_meta = {"FailureReason": "Unable to provision ... due to InsufficientInstanceCapacity error."}
+    raised = None
+    try:
+        c._warm_self()
+    except EndpointWarmingError as e:
+        raised = str(e)
+    assert raised is not None and "InsufficientInstanceCapacity" in raised
