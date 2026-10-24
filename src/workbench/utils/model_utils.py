@@ -502,7 +502,7 @@ def _load_json_from_artifact(artifact_uri: str, filename: str) -> Optional[dict]
         if not os.path.exists(path):
             return None
         try:
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             log.debug(f"Loaded {filename} from {artifact_uri}")
             return data

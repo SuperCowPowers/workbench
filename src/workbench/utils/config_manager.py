@@ -205,7 +205,7 @@ class ConfigManager:
         self.site_config_path = self.get_platform_specific_path()
 
         # Save updated config to platform-specific path
-        with open(self.site_config_path, "w") as file:
+        with open(self.site_config_path, "w", encoding="utf-8") as file:
             json.dump(site_config, file, indent=4)
 
     def config_okay(self) -> bool:
@@ -299,7 +299,7 @@ class ConfigManager:
             # Normalize the path
             self.site_config_path = os.path.normpath(self.site_config_path)
             self.log.info(f"Loading site configuration from {self.site_config_path}...")
-            with open(self.site_config_path, "r") as file:
+            with open(self.site_config_path, "r", encoding="utf-8") as file:
                 return json.load(file)
         except FileNotFoundError:
             self.log.error(f"Config file not found at {self.site_config_path}. Loading default config.")

@@ -113,7 +113,7 @@ class ExtractModelArtifact:
             return None
 
         for model_file in model_files:
-            with open(model_file, "r") as f:
+            with open(model_file, "r", encoding="utf-8") as f:
                 model_json = json.load(f)
             model_type = json.loads(model_json.get("learner", {}).get("attributes", {}).get("scikit_learn", "{}")).get(
                 "_estimator_type"

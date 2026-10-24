@@ -76,7 +76,7 @@ class FeatureEndpointJob:
         """
         if not os.path.isfile(self.status_path):
             return {"state": "unknown"}
-        with open(self.status_path, "r") as fp:
+        with open(self.status_path, "r", encoding="utf-8") as fp:
             status = json.load(fp)
 
         # A watcher still polling owes this job an outcome, so a dead child means the
@@ -108,7 +108,7 @@ class FeatureEndpointJob:
         """
         if not os.path.isfile(self.log_path):
             return ""
-        with open(self.log_path, "r") as fp:
+        with open(self.log_path, "r", encoding="utf-8") as fp:
             content = fp.readlines()
         return "".join(content[-lines:] if lines else content)
 
@@ -126,7 +126,7 @@ class FeatureEndpointJob:
         """Internal: Merge fields into the status file"""
         status = {}
         if os.path.isfile(self.status_path):
-            with open(self.status_path, "r") as fp:
+            with open(self.status_path, "r", encoding="utf-8") as fp:
                 status = json.load(fp)
         status.update(fields)
         write_json_atomic(self.status_path, status)
@@ -198,7 +198,7 @@ def run_feature_endpoint(
 
     if not wait:
         # The child dups the descriptor, so ours is closed as soon as it's launched
-        with open(job.log_path, "w") as log_file:
+        with open(job.log_path, "w", encoding="utf-8") as log_file:
             proc = subprocess.Popen(command, stdout=log_file, stderr=subprocess.STDOUT, text=True)
         job._write_status(pid=proc.pid)
         job_tracker.watch_subprocess(
@@ -214,7 +214,7 @@ def run_feature_endpoint(
     job._write_status(pid=proc.pid)
 
     # Stream the child's output so a long pass isn't a silent block
-    with open(job.log_path, "w") as log_file:
+    with open(job.log_path, "w", encoding="utf-8") as log_file:
         for line in proc.stdout:
             print(line, end="")
             log_file.write(line)

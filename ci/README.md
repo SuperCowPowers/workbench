@@ -8,6 +8,7 @@ pushing.
 | --- | --- | --- |
 | [`lock.sh`](lock.sh) | Regenerates every image's `requirements.lock` from its inputs | [`lockfile-drift.yml`](../.github/workflows/lockfile-drift.yml) |
 | [`endpoint_import_smoke.py`](endpoint_import_smoke.py) | Checks every `workbench.endpoints` module imports under the lean endpoint dep surface | [`endpoint-import-smoke.yml`](../.github/workflows/endpoint-import-smoke.yml) |
+| [`encoding_check.py`](encoding_check.py) | Fails on text I/O (`open()`, `.read_text()`, `.write_text()`) in `src/workbench` without an explicit `encoding=` | [`python-lint.yml`](../.github/workflows/python-lint.yml) |
 | [`endpoint_smoke_requirements.txt`](endpoint_smoke_requirements.txt) | The lean dep manifest the smoke test installs against (intersection of every deployed endpoint container's requirements) | — |
 
 ## `lock.sh` — lockfile regeneration

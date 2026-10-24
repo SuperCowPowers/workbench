@@ -126,7 +126,7 @@ class ParameterStore:
                 self.log.warning(f"Parameter '{self._normalize(name)}' not found")
             return None
         try:
-            with open(path, "r") as fp:
+            with open(path, "r", encoding="utf-8") as fp:
                 value = fp.read()
         except OSError as e:
             self.log.error(f"Failed to get parameter '{name}': {e}")
@@ -148,7 +148,7 @@ class ParameterStore:
         path = self._path(name)
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, "w") as fp:
+            with open(path, "w", encoding="utf-8") as fp:
                 fp.write(json.dumps(value, cls=CustomEncoder, precision=precision))
         except (OSError, TypeError) as e:
             self.log.critical(f"Failed to add/update parameter '{name}': {e}")

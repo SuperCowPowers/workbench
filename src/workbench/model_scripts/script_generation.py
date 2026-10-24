@@ -37,7 +37,7 @@ def fill_template(template_path: str, params: dict, output_script: str, output_d
     """
 
     # Read the template file
-    with open(template_path, "r") as fp:
+    with open(template_path, "r", encoding="utf-8") as fp:
         template = fp.read()
 
     # Perform the replacements
@@ -66,7 +66,7 @@ def fill_template(template_path: str, params: dict, output_script: str, output_d
     if output_dir is None:
         output_dir = os.path.dirname(template_path)
     output_path = os.path.join(output_dir, output_script)
-    with open(output_path, "w") as fp:
+    with open(output_path, "w", encoding="utf-8") as fp:
         fp.write(template)
 
     return output_path

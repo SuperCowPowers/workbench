@@ -31,3 +31,7 @@ jobs:
     - name: Template import invariant (no top-level workbench.training imports)
       run: |
         python ci/template_import_check.py
+
+    - name: Explicit text encoding (Windows defaults to cp1252)
+      run: |
+        python ci/encoding_check.py

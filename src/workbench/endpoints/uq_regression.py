@@ -284,7 +284,7 @@ def load_regression_uq(model_dir: str) -> Optional[Union[UQModelV0, UQModelV1, U
     bundle_hp_path = os.path.join(model_dir, "hyperparameters.json")
     bundle_hp = {}
     if os.path.exists(bundle_hp_path):
-        with open(bundle_hp_path) as fp:
+        with open(bundle_hp_path, encoding="utf-8") as fp:
             bundle_hp = json.load(fp)
     active_version = _bundle_version(bundle_hp.get("uq_version"))
 

@@ -31,7 +31,7 @@ cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 # End Workbench GlueLaunch Header
 """
-    with open(local_file_path, "r") as file:
+    with open(local_file_path, "r", encoding="utf-8") as file:
         script_content = file.read()
     return f"{glue_header}\n\n{script_content}"
 

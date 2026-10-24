@@ -28,7 +28,7 @@ class ECSInfo:
     def _fetch_ecs_metadata(self):
         metadata_file_path = os.environ.get("ECS_CONTAINER_METADATA_FILE", "/etc/ecs_container_metadata.json")
         try:
-            with open(metadata_file_path, "r") as f:
+            with open(metadata_file_path, "r", encoding="utf-8") as f:
                 metadata = json.load(f)
             return metadata
         except FileNotFoundError:

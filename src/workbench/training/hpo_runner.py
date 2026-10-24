@@ -280,7 +280,7 @@ def run_hpo(
 
     if output_dir:
         record = best_config_record(result, counts=counts, baseline=baseline)
-        with open(os.path.join(output_dir, "best_config.json"), "w") as fp:
+        with open(os.path.join(output_dir, "best_config.json"), "w", encoding="utf-8") as fp:
             json.dump(record, fp, indent=2, default=str)
         _write_records(rows, os.path.join(output_dir, "hpo_trials.csv"))
 

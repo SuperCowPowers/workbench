@@ -39,7 +39,7 @@ CONFIG_FILENAME = "meta_endpoint_config.json"
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
     """Load the serialized DAG + runtime config and reconstruct the walker."""
-    with open(os.path.join(model_dir, CONFIG_FILENAME)) as f:
+    with open(os.path.join(model_dir, CONFIG_FILENAME), encoding="utf-8") as f:
         config = json.load(f)
 
     if config.get("aws_region"):
@@ -143,6 +143,6 @@ if __name__ == "__main__":
     print(f"Aggregations: {[type(a).__name__ for a in dag_preview.aggregations.values()]}")
     print(f"Async children: {[n for n, f in dag_preview.endpoint_async_flags.items() if f]}")
 
-    with open(os.path.join(args.model_dir, CONFIG_FILENAME), "w") as f:
+    with open(os.path.join(args.model_dir, CONFIG_FILENAME), "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
     print(f"\nMetaEndpoint config saved to {args.model_dir}/{CONFIG_FILENAME}")

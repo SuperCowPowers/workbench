@@ -145,7 +145,7 @@ class FoldModel:
             k: v.detach().clone(memory_format=torch.contiguous_format) for k, v in encoder.encoder.state_dict().items()
         }
         save_file(state, f"{path}/model.safetensors")
-        with open(f"{path}/config.json", "w") as f:
+        with open(f"{path}/config.json", "w", encoding="utf-8") as f:
             json.dump({"eqv3_cfg": asdict(encoder.config)}, f)
         readout = {
             "state": self.model.readout.state_dict(),

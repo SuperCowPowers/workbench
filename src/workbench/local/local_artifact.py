@@ -48,7 +48,7 @@ class LocalArtifact(Artifact):
         """
         if self._meta_cache is None:
             try:
-                with open(self.meta_path, "r") as fp:
+                with open(self.meta_path, "r", encoding="utf-8") as fp:
                     self._meta_cache = json.load(fp)
             except (FileNotFoundError, json.JSONDecodeError):
                 self._meta_cache = {}
@@ -62,7 +62,7 @@ class LocalArtifact(Artifact):
         """
         meta = {**self.workbench_meta(), **new_meta}
         os.makedirs(self.path, exist_ok=True)
-        with open(self.meta_path, "w") as fp:
+        with open(self.meta_path, "w", encoding="utf-8") as fp:
             json.dump(meta, fp, indent=4, default=str)
         self._meta_cache = meta
 
@@ -80,7 +80,7 @@ class LocalArtifact(Artifact):
         if meta.pop(key_to_delete, None) is None:
             self.log.info(f"No Metadata found: {key_to_delete}...")
             return
-        with open(self.meta_path, "w") as fp:
+        with open(self.meta_path, "w", encoding="utf-8") as fp:
             json.dump(meta, fp, indent=4, default=str)
         self._meta_cache = meta
 

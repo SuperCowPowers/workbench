@@ -38,7 +38,7 @@ def guide_names() -> List[str]:
 
 def _description(path: Path) -> str:
     """The `> one-liner` under a guide's H1, or empty when it has none."""
-    head = path.read_text().splitlines()[:5]
+    head = path.read_text(encoding="utf-8").splitlines()[:5]
     return next((line.lstrip("> ").strip() for line in head if line.startswith(">")), "")
 
 
@@ -68,13 +68,13 @@ def guide_index() -> str:
 def general_guide() -> str:
     """The always-loaded general instructions, injected into the system prompt."""
     path = GUIDES_DIR / "general.md"
-    return path.read_text() if path.exists() else ""
+    return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
 def _sections(path: Path) -> dict:
     """Map each `## name` header in a markdown file to its body text."""
     sections, current = {}, None
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith("## "):
             current = line[3:].strip()
             sections[current] = []
@@ -162,7 +162,7 @@ def read_guide(name: str) -> str:
     """
     stem = Path(name).stem
     for path in GUIDES_DIR.rglob(f"{stem}.md"):
-        return path.read_text()
+        return path.read_text(encoding="utf-8")
     return f"No guide named '{name}'. Available: {', '.join(guide_names())}"
 
 

@@ -1037,7 +1037,7 @@ if __name__ == "__main__":
     if classification_uq is not None:
         save_classification_uq(classification_uq, args.model_dir)
 
-    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w", encoding="utf-8") as f:
         json.dump(hyperparameters, f, indent=2)
 
     # Also write to the metrics path so the Model loads hyperparameters from meta

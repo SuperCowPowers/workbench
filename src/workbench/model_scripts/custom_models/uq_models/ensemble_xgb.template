@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     # Save calibration parameters
     cal_params = {"a": float(cal_a), "b": float(cal_b)}
-    with open(os.path.join(args.model_dir, "calibration_params.json"), "w") as fp:
+    with open(os.path.join(args.model_dir, "calibration_params.json"), "w", encoding="utf-8") as fp:
         json.dump(cal_params, fp)
 
     # Save out-of-fold predictions to S3, calibrating their uncertainty the same way
@@ -209,7 +209,7 @@ if __name__ == "__main__":
         model.save_model(model_path)
 
     # Also save the features (this will validate input during predictions)
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w", encoding="utf-8") as fp:
         json.dump(features, fp)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
@@ -284,12 +284,12 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Grab our feature columns (from training)
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+    with open(os.path.join(model_dir, "feature_columns.json"), encoding="utf-8") as fp:
         model_features = json.load(fp)
     print(f"Model Features: {model_features}")
 
     # Load calibration parameters
-    with open(os.path.join(model_dir, "calibration_params.json")) as fp:
+    with open(os.path.join(model_dir, "calibration_params.json"), encoding="utf-8") as fp:
         cal_params = json.load(fp)
     cal_a, cal_b = cal_params["a"], cal_params["b"]
     print(f"Calibration parameters: a={cal_a:.4f}, b={cal_b:.4f}")

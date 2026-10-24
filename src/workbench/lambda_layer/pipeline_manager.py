@@ -313,7 +313,7 @@ class PipelineManager:
         root = Path(path)
         jobs: list[Job] = []
         for cfg in sorted(root.rglob("pipelines.json")):
-            spec = json.loads(cfg.read_text())
+            spec = json.loads(cfg.read_text(encoding="utf-8"))
             d = cfg.parent
             rel = d.relative_to(root).as_posix()  # "." at the root -> ""
             jobs += parse_spec(

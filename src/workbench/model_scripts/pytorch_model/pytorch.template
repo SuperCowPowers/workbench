@@ -162,11 +162,11 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     uq_model = model_dict.get("uq_model")
     classification_uq = model_dict.get("classification_uq")
 
-    with open(os.path.join(model_dir, "feature_columns.json")) as f:
+    with open(os.path.join(model_dir, "feature_columns.json"), encoding="utf-8") as f:
         features = json.load(f)
-    with open(os.path.join(model_dir, "category_mappings.json")) as f:
+    with open(os.path.join(model_dir, "category_mappings.json"), encoding="utf-8") as f:
         category_mappings = json.load(f)
-    with open(os.path.join(model_dir, "feature_metadata.json")) as f:
+    with open(os.path.join(model_dir, "feature_metadata.json"), encoding="utf-8") as f:
         feature_metadata = json.load(f)
 
     continuous_cols = feature_metadata["continuous_cols"]
@@ -200,7 +200,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         # Load categorical imputation values if available
         impute_path = os.path.join(model_dir, "categorical_impute.json")
         if os.path.exists(impute_path):
-            with open(impute_path) as f:
+            with open(impute_path, encoding="utf-8") as f:
                 cat_impute_values = json.load(f)
             for col in categorical_cols:
                 if col in cat_impute_values and matched_df[col].isna().any():
@@ -842,19 +842,19 @@ if __name__ == "__main__":
         os.path.join(args.model_dir, "ensemble_metadata.joblib"),
     )
 
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w", encoding="utf-8") as f:
         json.dump(orig_features, f)
 
-    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "category_mappings.json"), "w", encoding="utf-8") as f:
         json.dump(category_mappings, f)
 
-    with open(os.path.join(args.model_dir, "feature_metadata.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "feature_metadata.json"), "w", encoding="utf-8") as f:
         json.dump({"continuous_cols": continuous_cols, "categorical_cols": categorical_cols}, f)
 
-    with open(os.path.join(args.model_dir, "categorical_impute.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "categorical_impute.json"), "w", encoding="utf-8") as f:
         json.dump(cat_impute_values, f)
 
-    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w", encoding="utf-8") as f:
         json.dump(hyperparameters, f, indent=2)
 
     # Also write to the metrics path so the Model loads hyperparameters from meta

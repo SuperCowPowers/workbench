@@ -124,7 +124,7 @@ class Meta:
             dict: The metadata, or None if unreadable
         """
         try:
-            with open(os.path.join(path, "meta.json"), "r") as fp:
+            with open(os.path.join(path, "meta.json"), "r", encoding="utf-8") as fp:
                 return json.load(fp)
         except (FileNotFoundError, json.JSONDecodeError):
             return None

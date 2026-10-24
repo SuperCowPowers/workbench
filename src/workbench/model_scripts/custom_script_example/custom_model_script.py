@@ -100,7 +100,7 @@ if __name__ == "__main__":
     joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     # Save the feature list
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w", encoding="utf-8") as fp:
         json.dump(feature_list, fp)
 
     # Save validation predictions locally to the output directory
@@ -143,7 +143,7 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+    with open(os.path.join(model_dir, "feature_columns.json"), encoding="utf-8") as fp:
         model_features = json.load(fp)
 
     label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))

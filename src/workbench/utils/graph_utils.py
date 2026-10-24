@@ -132,7 +132,7 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
         Optional[nx.Graph]: The NetworkX graph loaded from the file
     """
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             graph_json = json.load(file)
         return nx.readwrite.json_graph.node_link_graph(graph_json, edges="edges")
     except FileNotFoundError:

@@ -30,7 +30,7 @@ def include_code_and_meta_for_inference(model_dir, code_dir, entry_point):
     # Write inference metadata (tells the inference container which script to run)
     metadata = {"inference_script": entry_point}
     metadata_path = os.path.join(model_dir, "inference-metadata.json")
-    with open(metadata_path, "w") as fp:
+    with open(metadata_path, "w", encoding="utf-8") as fp:
         json.dump(metadata, fp)
     print(f"[Harness] Wrote inference metadata: {metadata}")
 

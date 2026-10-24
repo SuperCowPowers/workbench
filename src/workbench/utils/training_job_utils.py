@@ -53,7 +53,7 @@ def get_hpo_results(workbench_model: Any) -> Optional[dict]:
         best_config_path = os.path.join(artifact_dir, "best_config.json")
         if not os.path.exists(best_config_path):
             return None
-        with open(best_config_path, "r") as f:
+        with open(best_config_path, "r", encoding="utf-8") as f:
             results = json.load(f)
         csv_path = os.path.join(artifact_dir, "hpo_trials.csv")
         results["trials"] = pd.read_csv(csv_path) if os.path.exists(csv_path) else None

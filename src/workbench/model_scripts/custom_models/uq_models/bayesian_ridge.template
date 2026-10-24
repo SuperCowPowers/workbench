@@ -111,7 +111,7 @@ if __name__ == "__main__":
     joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
 
     # Save the feature list to validate input during predictions
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w", encoding="utf-8") as fp:
         json.dump(features, fp)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
@@ -158,7 +158,7 @@ def predict_fn(df, model):
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
 
     # Load feature columns from the saved file
-    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+    with open(os.path.join(model_dir, "feature_columns.json"), encoding="utf-8") as fp:
         model_features = json.load(fp)
 
     # Match features in a case-insensitive manner

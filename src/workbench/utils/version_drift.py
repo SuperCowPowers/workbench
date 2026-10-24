@@ -66,7 +66,7 @@ def parse_lock(lock_path: Union[Path, None]) -> dict:
     if lock_path is None:
         return {}
     try:
-        lines = lock_path.read_text().splitlines()
+        lines = lock_path.read_text(encoding="utf-8").splitlines()
     except OSError:
         log.warning(f"Could not read image lock file: {lock_path}")
         return {}
@@ -110,7 +110,7 @@ def image_workbench_version(model_framework: str, stage: str = "training") -> st
         return ""
     dockerfile = lock_path.parent / "Dockerfile"
     try:
-        text = dockerfile.read_text()
+        text = dockerfile.read_text(encoding="utf-8")
     except OSError:
         return ""
     match = re.search(r"^ARG WORKBENCH_VERSION=(\S+)", text, re.MULTILINE)

@@ -98,7 +98,7 @@ def main():
         # Load environment variables from env.json if it exists
         if os.path.exists("testing/env.json"):
             print("Loading environment variables from testing/env.json")
-            with open("testing/env.json") as f:
+            with open("testing/env.json", encoding="utf-8") as f:
                 env_vars = json.load(f)
                 for key, value in env_vars.items():
                     os.environ[key] = value

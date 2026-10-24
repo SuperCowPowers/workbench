@@ -96,7 +96,7 @@ def launch_batch(
 
     # Fresh temp dir so the S3 key / job label is exactly `name` without collisions
     script_path = os.path.join(tempfile.mkdtemp(prefix="bosco_batch_"), name)
-    with open(script_path, "w") as f:
+    with open(script_path, "w", encoding="utf-8") as f:
         f.write(code)
 
     submit_to_sqs(script_path, size=size, realtime=realtime, script_args=script_args)

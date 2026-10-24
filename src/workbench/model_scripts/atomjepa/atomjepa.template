@@ -80,7 +80,7 @@ def split_features(features: list[str]) -> tuple[str, list[str]]:
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
     """Load the fold models and the UQ model."""
-    with open(os.path.join(model_dir, "hyperparameters.json")) as f:
+    with open(os.path.join(model_dir, "hyperparameters.json"), encoding="utf-8") as f:
         hyperparameters = json.load(f)
     fold_dirs = sorted(d for d in os.listdir(model_dir) if d.startswith("fold_"))
     return {
@@ -315,9 +315,9 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     for fold_idx, fold_model in enumerate(fold_models):
         fold_model.save(os.path.join(args.model_dir, f"fold_{fold_idx}"))
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w", encoding="utf-8") as f:
         json.dump(features, f)
-    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w", encoding="utf-8") as f:
         json.dump(hyperparameters, f, indent=2)
     save_output(hyperparameters, f"{model_metrics_path}/hyperparameters.json")
     save_regression_uq(uq_dict, args.model_dir)

@@ -163,7 +163,7 @@ class Endpoint(LocalArtifact):
                 f"No model artifacts for '{self.model_name}' at {self.model_dir}. "
                 "The model was deleted or never finished training."
             )
-        with open(metadata_path) as fp:
+        with open(metadata_path, encoding="utf-8") as fp:
             script = json.load(fp)["inference_script"]
 
         # Model scripts import modules shipped beside them; the container serves with the

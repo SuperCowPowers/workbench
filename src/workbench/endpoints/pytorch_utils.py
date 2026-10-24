@@ -393,13 +393,13 @@ def save_model(model: TabularMLP, path: str, model_config: dict) -> None:
     """Save model weights and configuration."""
     os.makedirs(path, exist_ok=True)
     torch.save(model.state_dict(), os.path.join(path, "model.pt"))
-    with open(os.path.join(path, "config.json"), "w") as f:
+    with open(os.path.join(path, "config.json"), "w", encoding="utf-8") as f:
         json.dump(model_config, f, indent=2)
 
 
 def load_model(path: str, device: str = "cpu") -> TabularMLP:
     """Load model from saved weights and configuration."""
-    with open(os.path.join(path, "config.json")) as f:
+    with open(os.path.join(path, "config.json"), encoding="utf-8") as f:
         config = json.load(f)
 
     model = create_model(

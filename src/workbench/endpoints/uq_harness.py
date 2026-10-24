@@ -180,7 +180,7 @@ def apply_classification_confidence(
 
 def save_classification_uq(uq_metadata: dict, model_dir: str) -> None:
     """Save classification UQ metadata to disk."""
-    with open(os.path.join(model_dir, "classification_uq.json"), "w") as fp:
+    with open(os.path.join(model_dir, "classification_uq.json"), "w", encoding="utf-8") as fp:
         json.dump(uq_metadata, fp, indent=2)
     print(f"Saved classification UQ metadata to {model_dir}")
 
@@ -188,5 +188,5 @@ def save_classification_uq(uq_metadata: dict, model_dir: str) -> None:
 def load_classification_uq(model_dir: str) -> dict:
     """Load classification UQ metadata from disk."""
     path = os.path.join(model_dir, "classification_uq.json")
-    with open(path) as fp:
+    with open(path, encoding="utf-8") as fp:
         return json.load(fp)

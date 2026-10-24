@@ -25,7 +25,7 @@ def write_json_atomic(path: str, data: dict):
         data (dict): The data to write
     """
     temp_path = f"{path}.tmp"
-    with open(temp_path, "w") as fp:
+    with open(temp_path, "w", encoding="utf-8") as fp:
         json.dump(data, fp, indent=4, default=str)
     os.replace(temp_path, path)
 

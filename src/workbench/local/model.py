@@ -293,7 +293,7 @@ class Model(LocalArtifact):
 
         if not wait:
             # The child dups the descriptor, so ours is closed as soon as it's launched
-            with open(self.log_path, "w") as log_file:
+            with open(self.log_path, "w", encoding="utf-8") as log_file:
                 proc = subprocess.Popen(
                     command, cwd=self.script_dir, stdout=log_file, stderr=subprocess.STDOUT, text=True
                 )
@@ -318,7 +318,7 @@ class Model(LocalArtifact):
         self._write_status(state="training", pid=proc.pid)
 
         # Stream the child's output so a long training run isn't a silent block
-        with open(self.log_path, "w") as log_file:
+        with open(self.log_path, "w", encoding="utf-8") as log_file:
             for line in proc.stdout:
                 print(line, end="")
                 log_file.write(line)
@@ -411,7 +411,7 @@ class Model(LocalArtifact):
             dict: {state, pid, started, updated, returncode, finished}, empty before any run
         """
         try:
-            with open(self.status_path, "r") as fp:
+            with open(self.status_path, "r", encoding="utf-8") as fp:
                 status = json.load(fp)
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
@@ -449,7 +449,7 @@ class Model(LocalArtifact):
             str: The log contents ("" if the model hasn't trained)
         """
         try:
-            with open(self.log_path, "r") as fp:
+            with open(self.log_path, "r", encoding="utf-8") as fp:
                 content = fp.readlines()
         except OSError:
             return ""
@@ -571,7 +571,7 @@ class Model(LocalArtifact):
         path = os.path.join(self.model_dir, "hyperparameters.json")
         if not os.path.exists(path):
             return {}
-        with open(path, "r") as fp:
+        with open(path, "r", encoding="utf-8") as fp:
             return json.load(fp)
 
     def uq_model(

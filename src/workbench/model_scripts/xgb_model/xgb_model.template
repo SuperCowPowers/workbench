@@ -105,7 +105,7 @@ def model_fn(model_dir: str) -> dict:
     # Load ensemble metadata
     metadata_path = os.path.join(model_dir, "ensemble_metadata.json")
     if os.path.exists(metadata_path):
-        with open(metadata_path) as f:
+        with open(metadata_path, encoding="utf-8") as f:
             metadata = json.load(f)
         n_ensemble = metadata["n_ensemble"]
     else:
@@ -131,7 +131,7 @@ def model_fn(model_dir: str) -> dict:
     category_mappings = {}
     category_path = os.path.join(model_dir, "category_mappings.json")
     if os.path.exists(category_path):
-        with open(category_path) as f:
+        with open(category_path, encoding="utf-8") as f:
             category_mappings = json.load(f)
 
     # Regression UQ — load the active version per hyperparameters.json.
@@ -157,7 +157,7 @@ def model_fn(model_dir: str) -> dict:
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     """Make predictions with XGBoost ensemble."""
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    with open(os.path.join(model_dir, "feature_columns.json")) as f:
+    with open(os.path.join(model_dir, "feature_columns.json"), encoding="utf-8") as f:
         features = json.load(f)
     print(f"Model Features: {features}")
 
@@ -664,16 +664,16 @@ if __name__ == "__main__":
         joblib.dump(m, os.path.join(args.model_dir, f"xgb_model_{idx}.joblib"))
     print(f"Saved {len(ensemble_models)} model(s)")
 
-    with open(os.path.join(args.model_dir, "ensemble_metadata.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "ensemble_metadata.json"), "w", encoding="utf-8") as f:
         json.dump({"n_ensemble": len(ensemble_models), "n_folds": n_folds}, f)
 
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w", encoding="utf-8") as f:
         json.dump(orig_features, f)
 
-    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "category_mappings.json"), "w", encoding="utf-8") as f:
         json.dump(category_mappings, f)
 
-    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w", encoding="utf-8") as f:
         json.dump(hyperparameters, f, indent=2)
 
     # Also write to the metrics path so the Model loads hyperparameters from meta

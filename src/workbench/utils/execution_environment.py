@@ -61,7 +61,7 @@ def running_on_docker() -> bool:
 
     # Check cgroup for docker
     try:
-        with open("/proc/self/cgroup") as f:
+        with open("/proc/self/cgroup", encoding="utf-8") as f:
             if any("docker" in line for line in f):
                 return True
     except (FileNotFoundError, PermissionError):

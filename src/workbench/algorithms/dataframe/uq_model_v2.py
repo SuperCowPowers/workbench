@@ -438,7 +438,7 @@ class UQModelV2:
             "distance_percentiles": list(self.distance_percentiles),
             "variance_percentiles": {t: list(p) for t, p in self.variance_percentiles.items()},
         }
-        with open(os.path.join(model_dir, self.METADATA_FILENAME), "w") as fp:
+        with open(os.path.join(model_dir, self.METADATA_FILENAME), "w", encoding="utf-8") as fp:
             json.dump(metadata, fp, indent=2)
 
         log.info(f"Saved UQModelV2 to {model_dir}")
@@ -456,7 +456,7 @@ class UQModelV2:
             A UQModelV2 ready to .predict(...).
         """
         metadata_path = os.path.join(model_dir, cls.METADATA_FILENAME)
-        with open(metadata_path) as fp:
+        with open(metadata_path, encoding="utf-8") as fp:
             metadata = json.load(fp)
 
         if prox is None:

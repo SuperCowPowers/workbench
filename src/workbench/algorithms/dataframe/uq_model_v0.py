@@ -393,7 +393,7 @@ class UQModelV0:
             model_dir: Directory to save the metadata file.
         """
         path = os.path.join(model_dir, self.METADATA_FILENAME)
-        with open(path, "w") as fp:
+        with open(path, "w", encoding="utf-8") as fp:
             json.dump(self.to_dict(), fp, indent=2)
         log.info(f"Saved UQModelV0 metadata to {path}")
 
@@ -411,5 +411,5 @@ class UQModelV0:
     def load(cls, model_dir: str, filename: Optional[str] = None) -> "UQModelV0":
         """Load from JSON (defaults to ``uq_metadata_v0.json``)."""
         path = os.path.join(model_dir, filename or cls.METADATA_FILENAME)
-        with open(path) as fp:
+        with open(path, encoding="utf-8") as fp:
             return cls.from_dict(json.load(fp))

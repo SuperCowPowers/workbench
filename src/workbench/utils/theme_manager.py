@@ -414,7 +414,7 @@ class ThemeManager:
         """
         base_css_file = theme_dir / "base_css.url"
         if base_css_file.exists():
-            with open(base_css_file, "r") as f:
+            with open(base_css_file, "r", encoding="utf-8") as f:
                 content = f.read().strip()
                 # Check if the content is a Dash Bootstrap theme name
                 if content.startswith("dbc.themes."):
@@ -468,14 +468,14 @@ class ThemeManager:
                 # The template is kept both ways: as JSON for the color lookups below, and as a
                 # Plotly object for figures. Handing figure() the raw dict makes Plotly
                 # revalidate all 20KB of it per figure, which costs ~20x the object form.
-                template = json.loads(plotly_template.read_text())
+                template = json.loads(plotly_template.read_text(encoding="utf-8"))
 
                 cls.available_themes[theme_name] = {
                     "base_css": base_css_url,
                     "template": template,
                     "plotly_template": go.layout.Template(template),
                     "custom_css": custom_css if custom_css.exists() else None,
-                    "branding": json.loads(branding.read_text()) if branding.exists() else {},
+                    "branding": json.loads(branding.read_text(encoding="utf-8")) if branding.exists() else {},
                     "dark": cls._is_dark_theme(theme_name, base_css_url),
                 }
 

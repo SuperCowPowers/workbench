@@ -124,7 +124,7 @@ def save_output(data, path: str, content_type: str = "application/json"):
         if directory:
             os.makedirs(directory, exist_ok=True)
         body = data.to_csv(index=False) if isinstance(data, pd.DataFrame) else json.dumps(data)
-        with open(path, "w") as fp:
+        with open(path, "w", encoding="utf-8") as fp:
             fp.write(body)
         return
 

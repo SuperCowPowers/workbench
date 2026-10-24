@@ -218,7 +218,7 @@ def _failure_reason(returncode: int, log_path: str) -> str:
     if not log_path:
         return reason
     try:
-        with open(log_path, "r") as fp:
+        with open(log_path, "r", encoding="utf-8") as fp:
             # A long training run's log can be very large; keep a rolling tail rather
             # than reading the whole thing into memory to report three lines
             tail = deque((line.strip() for line in fp if line.strip()), maxlen=3)

@@ -192,7 +192,7 @@ def load_pipelines_config(directory: Path, root: Path | None = None) -> dict[str
     if not json_path.exists():
         return None
     root = root or directory
-    with open(json_path) as f:
+    with open(json_path, encoding="utf-8") as f:
         config = json.load(f)
     # Resolve each node's script: bare refs against this config's directory, plugin:
     # against the discovery root's plugins/ dir, other schemed refs (workbench:/s3:)
