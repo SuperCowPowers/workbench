@@ -3,6 +3,8 @@
 Picks the best challenger for a champion endpoint and, if it beats the incumbent,
 freezes it to a dated copy and deploys it onto the endpoint. The challengers (the
 ``-dt`` models) and the champion ``endpoint_name`` come from PipelineMeta.
+A model with ``deprecated`` set in its workbench_meta never takes the endpoint, and a
+deprecated incumbent forfeits it to the best challenger.
 Every run ends by publishing the contest results to Reports() at /contests/<endpoint>.
 
 This is a deliberately simple reference: no thresholds, notifications, or config --
@@ -60,17 +62,20 @@ def main():
     pm = PipelineMeta()
     endpoint_name = pm.endpoint_name
 
-    # Score each challenger; drop any without full_cross_fold metrics
+    # Score each challenger; drop deprecated ones and any without full_cross_fold metrics
     scored = []
     for name in pm.challengers:
         model = Model(name)
+        if model.workbench_meta().get("deprecated"):
+            log.warning(f"{name} is deprecated, skipping")
+            continue
         metrics = primary_metrics(model)
         if metrics is None:
             log.warning(f"No full_cross_fold metrics for {name}, skipping")
             continue
         scored.append((model, metrics))
     if not scored:
-        log.error("No challengers with metrics; nothing to promote")
+        log.error("No eligible challengers with metrics; nothing to promote")
         return
 
     # Rank challengers (classifier: highest f1; regressor: lowest rmse) and take the best
@@ -79,12 +84,16 @@ def main():
     winner, winner_metrics = scored[0]
     log.important(f"Best challenger for {endpoint_name}: {winner.name} {winner_metrics}")
 
-    # Compare against the model currently serving the champion endpoint
+    # Compare against the model currently serving the champion endpoint (a deprecated
+    # incumbent has no metrics, so the best challenger takes the endpoint)
     end = Endpoint(endpoint_name)
     dethroned = end.get_input() if end.exists() else None
     incumbent_metrics = None
     if dethroned and dethroned != "unknown" and Model(dethroned).exists():
-        incumbent_metrics = primary_metrics(Model(dethroned))
+        if Model(dethroned).workbench_meta().get("deprecated"):
+            log.important(f"Incumbent {dethroned} is deprecated; it forfeits {endpoint_name}")
+        else:
+            incumbent_metrics = primary_metrics(Model(dethroned))
 
     challengers = [model for model, _ in scored]
     if not beats(winner_metrics, incumbent_metrics, is_classifier):

@@ -137,6 +137,18 @@ def test_contest_report(regression_contest):
     assert chall_rmse == sorted(chall_rmse)
 
 
+def test_contest_report_without_champion():
+    """No champion (an empty endpoint, or a deprecated champion that forfeited): a
+    challenger-only report with no Δ columns, never contested"""
+    better = {**_StubModel.METRICS, "f1": 0.9}
+    challengers = [_StubModel(None, name="a"), _StubModel(None, name="b", metrics=better)]
+    report = contest_report(None, challengers, "stub-endpoint")
+    assert set(report["role"]) == {"challenger"}
+    assert list(report["model"]) == ["b", "a"]  # classifier: f1 high to low
+    assert not any(col.startswith("Δ") for col in report.columns)
+    assert not report["contested"].any()
+
+
 def test_contested_skips_the_champions_twin():
     """The champion is a frozen copy of a challenger, so its twin sits at Δ=0 and must not
     make the contest contested by itself (otherwise every promoted contest is contested)"""
@@ -154,8 +166,8 @@ def test_contested_skips_the_champions_twin():
 
 
 class _StubModel:
-    """Just enough model to rank: a name, a metrics row, and a confusion matrix
-    (None for a regressor, which has no matrix to collapse)."""
+    """Just enough model to rank and report: a name, a metrics row, a creation time, and a
+    confusion matrix (None for a regressor, which has no matrix to collapse)."""
 
     METRICS = {"precision": 0.8, "recall": 0.79, "f1": 0.795, "roc_auc": 0.9, "support": 116}
 
@@ -169,6 +181,9 @@ class _StubModel:
 
     def confusion_matrix(self, inference_run):
         return self._conf_matrix
+
+    def created(self):
+        return pd.Timestamp("2026-01-01", tz="UTC")
 
 
 def _conf_matrix():

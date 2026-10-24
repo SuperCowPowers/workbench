@@ -136,12 +136,12 @@ def rank_models(models: list, inference_run: str = "default", positive_classes: 
 
 
 def contest_ranking(
-    champion: Model, challengers: list, inference_run: str = "default", positive_classes: list | None = None
+    champion: Model | None, challengers: list, inference_run: str = "default", positive_classes: list | None = None
 ) -> Optional[pd.DataFrame]:
     """Rank the challengers of a contest, with metrics-aware deltas against the champion.
 
     Args:
-        champion (Model): The champion model (the delta reference)
+        champion (Model | None): The champion model (the delta reference), None if there is none
         challengers (list[Model]): The challenger models to rank
         inference_run (str, optional): The inference run to compare. Defaults to "default".
         positive_classes (list[str], optional): The desired classes, for the ``binary_acc``
@@ -150,10 +150,12 @@ def contest_ranking(
     Returns:
         pd.DataFrame: rank_models() of the challengers with a Δ column after each metric
             (positive = challenger better than champion, see LOWER_IS_BETTER; support has
-            no Δ). If the champion has no metrics for the inference run, the ranking is
-            returned without Δ columns.
+            no Δ). With no champion, or a champion without metrics for the inference run,
+            the ranking is returned without Δ columns.
     """
     ranked = rank_models(challengers, inference_run, positive_classes)
+    if champion is None:
+        return ranked
 
     champ_df = champion.get_inference_metrics(inference_run)
     if champ_df is None or champ_df.empty:
@@ -174,7 +176,7 @@ def contest_ranking(
 
 
 def contest_report(
-    champion: Model,
+    champion: Model | None,
     challengers: list,
     endpoint_name: str,
     inference_run: str = "full_cross_fold",
@@ -184,7 +186,8 @@ def contest_report(
     """The publishable contest report: champion + ranked challengers in one table.
 
     Args:
-        champion (Model): The model currently serving the contested endpoint
+        champion (Model | None): The model currently serving the contested endpoint, None if
+            there is none (a challenger-only report)
         challengers (list[Model]): The challenger models
         endpoint_name (str): The contested endpoint (recorded in the report)
         inference_run (str, optional): The inference run to compare. Defaults to "full_cross_fold".
@@ -204,7 +207,8 @@ def contest_report(
             contested is the contest-level flag (see CONTESTED_PCT), repeated on every row.
             Models without metrics are skipped; None if no model has metrics.
     """
-    champ_row = rank_models([champion], inference_run, positive_classes)
+    champions = [champion] if champion is not None else []
+    champ_row = rank_models(champions, inference_run, positive_classes)
     chall_rows = contest_ranking(champion, challengers, inference_run, positive_classes)
     if champ_row.empty and chall_rows.empty:
         log.warning(f"No metrics for any model in the '{endpoint_name}' contest: no report")
@@ -221,7 +225,7 @@ def contest_report(
     # Only the models that made the report: challengers without metrics were dropped above,
     # and framework/created both cost metadata reads we'd otherwise throw away.
     in_report = set(report["model"])
-    models = {m.name: m for m in [champion, *challengers] if m.name in in_report}
+    models = {m.name: m for m in [*champions, *challengers] if m.name in in_report}
     report.insert(3, "framework", report["model"].map({name: _framework(m) for name, m in models.items()}))
     report.insert(4, "endpoint", endpoint_name)
     created = report["model"].map({name: m.created() for name, m in models.items()})
