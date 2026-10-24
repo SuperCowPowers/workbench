@@ -1,0 +1,44 @@
+name: Windows Install Smoke Test
+
+# A plain `pip install` on Windows, then the import, Bosco, and REPL paths a new
+# user hits first. No AWS account or API key: the REPL starts in public mode.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-smoke:
+    runs-on: windows-latest
+    env:
+      # Steps pipe stdout, which Python encodes with the locale codepage (cp1252);
+      # a real console takes UTF-16 via the console API. File I/O defaults are unaffected.
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: pip install workbench
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Import + Bosco smoke
+        run: |
+          python ci/windows_smoke.py
+
+      - name: REPL smoke
+        shell: bash
+        # The concatenation means a match comes from execution, not an input echo.
+        run: |
+          out=$(echo "print('REPL_SMOKE_' + 'OK')" | workbench 2>&1)
+          echo "$out"
+          grep -q REPL_SMOKE_OK <<< "$out"
