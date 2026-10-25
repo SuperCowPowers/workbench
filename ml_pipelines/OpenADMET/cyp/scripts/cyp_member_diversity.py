@@ -15,7 +15,7 @@ from itertools import combinations
 
 import numpy as np
 import pandas as pd
-from cyp_ensemble_submit import MEMBERS
+from cyp_ensemble import MEMBERS
 from scipy.stats import pearsonr
 from workbench.api import Model
 

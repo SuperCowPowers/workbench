@@ -19,7 +19,7 @@ intervals being unusual.
 """
 
 import numpy as np
-from cyp_ensemble_submit import MEMBERS
+from cyp_ensemble import MEMBERS
 from cyp_error_decomposition import CI_SOURCE, oof_average
 from rdkit import Chem, RDLogger
 from rdkit.Chem import Descriptors

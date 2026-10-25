@@ -36,6 +36,7 @@ import numpy as np
 import pandas as pd
 from openadmet_validation import validate_activity_submission
 from scipy.stats import pearsonr
+from cyp_ensemble import combine, fit_lambda, member_scaling, oof_arrays
 from workbench.api import Model, PublicData
 
 # Safety net only. Clamping creates ties, and Spearman and Kendall are both scored, so a
@@ -165,10 +166,12 @@ def oof_pearson(model_names: str) -> dict:
     """Estimate blind Pearson from the out-of-fold captures of one or more models.
 
     The stand-in for SOLVED_PEARSON before a model has board history. Pass several
-    comma-separated names to describe an ensemble: their out-of-fold predictions are
-    averaged per isoform on the rows they share, which is the same quantity the submission
-    averages. A model without an isoform's capture is skipped for that isoform, so a CYP2D6
-    specialist contributes where it can and nowhere else.
+    comma-separated names to describe an ensemble: they are combined per isoform exactly as
+    `cyp_ensemble.combine` does, so this measures the vector the submission actually writes
+    rather than a flat average of its members. One name degenerates correctly -- the weights
+    normalise to one and the extrapolation term vanishes. A model without an isoform's
+    capture is skipped for that isoform, so a CYP2D6 specialist contributes where it can and
+    nowhere else.
 
     Scaffold-OOF understates the blind half, so each isoform is scaled by OOF_TO_BLIND;
     without that correction the placement under-spreads, badly on CYP2D6.
@@ -177,27 +180,22 @@ def oof_pearson(model_names: str) -> dict:
     pearson = {}
     for iso in BLIND_MOMENTS:
         target = f"{iso.lower()}_pic50_direct_inhibition"
-        frames = []
+        present = []
         for name in models:
-            model = Model(name)
-            runs = model.list_inference_runs()
+            runs = Model(name).list_inference_runs()
             # Single-target models report under `full_cross_fold`; multi-target under `cv_<target>`.
-            run = f"cv_{target}" if f"cv_{target}" in runs else "full_cross_fold"
-            if run not in runs:
-                continue
-            d = model.get_inference_predictions(run)
-            if d is None or target not in d.columns:
-                continue
-            frames.append(d[["molecule_name", target, "prediction"]].dropna().set_index("molecule_name"))
-        if not frames:
+            if f"cv_{target}" in runs or "full_cross_fold" in runs:
+                present.append(name)
+        if not present:
             raise ValueError(f"no model supplied an out-of-fold capture for {iso}")
-        common = sorted(set.intersection(*[set(f.index) for f in frames]))
-        truth = frames[0].loc[common, target]
-        averaged = np.column_stack([f.loc[common, "prediction"] for f in frames]).mean(axis=1)
-        raw = pearsonr(truth, averaged).statistic
+
+        y, _, _, pred, conf = oof_arrays(iso, present)
+        corr_scale, fallback_w = member_scaling(iso, present)
+        lam = fit_lambda(iso, present, corr_scale, fallback_w, verbose=False)
+        raw = pearsonr(y, combine(pred, conf, corr_scale, fallback_w, lam)).statistic
         pearson[iso] = raw * OOF_TO_BLIND[iso]
         print(
-            f"{iso:<8} {len(frames)} member(s), n={len(common):,} | OOF pearson {raw:.3f} "
+            f"{iso:<8} {len(present)} member(s), n={len(y):,}, lambda {lam:g} | OOF pearson {raw:.3f} "
             f"-> blind estimate {pearson[iso]:.3f}"
         )
     return pearson

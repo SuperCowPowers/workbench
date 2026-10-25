@@ -21,6 +21,22 @@ than leaving a stale constant behind. Confidence is live on all 750 blinded comp
 no member returns NaN there -- but `conf_weights_with_fallback` still guards the row,
 since a compound the proximity backend cannot resolve would otherwise poison the average.
 
+**The confidence correction is then extrapolated**, `(1 + lam) * base - lam * flat`, with
+`lam` chosen per isoform on held-out hinge. `base - flat` is the correction itself, and out
+of fold it is under-applied by a factor of 2.5 to 3.5. Because this combines two different
+vectors rather than rescaling one, it reorders; an affine rescale could not move Spearman
+at all. Out of fold, with each isoform's row-sampling bar:
+
+    isoform   calibrated conf   + extrapolation   delta    resolves at   lam
+    CYP1A2             0.6569            0.6937  +0.0368         0.033   2.0
+    CYP2C9             0.7832            0.8118  +0.0286         0.028   1.5
+    CYP2D6             0.5583            0.6200  +0.0617         0.037   2.5
+    CYP3A4             0.8574            0.8722  +0.0148         0.012   1.5
+
+All four clear their bar and `lam` holds across folds, so this is one effect rather than
+four fits. Read the gains against how far each isoform transfers, though: CYP3A4 gains
+least and transfers best, CYP2D6 gains most and transfers worst.
+
 Membership is per isoform because the CYP2D6 specialists have no other heads. Members are
 chosen by architecture rather than by score, since picking the best-scoring subset out of many
 overfits the ruler used to pick it. What earns a slot is decorrelation: the two multi-isoform
@@ -50,32 +66,14 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from cyp_ensemble import MEMBERS, combine, fit_lambda, member_scaling
 from cyp_recalibrate import VALUE_COLUMNS
 from openadmet_validation import validate_activity_submission
 from workbench.api import Endpoint, Model, PublicData
 from workbench.api.inference_cache import InferenceCache
-from workbench.utils.ensemble_simulator import EnsembleSimulator
-from workbench.utils.ensemble_utils import conf_weights_with_fallback
 
 OUT = Path(__file__).parent / "outputs"
 N_TEST = 750
-
-MT = "cyp-reg-chemprop-union-p30"
-AUX = "cyp-reg-chemprop-mt-aux-100"
-TOX = "cyp-reg-chemprop-union-p30-tox"
-
-
-def tabicl(iso: str) -> str:
-    """TabICL over the Monroe embedding, one model per isoform."""
-    return f"cyp-reg-tabicl-{iso.lower().removeprefix('cyp')}-monroe"
-
-
-MEMBERS = {
-    "CYP1A2": [MT, AUX, TOX, tabicl("CYP1A2")],
-    "CYP2C9": [MT, AUX, TOX, tabicl("CYP2C9")],
-    "CYP2D6": [MT, AUX, TOX, tabicl("CYP2D6"), "cyp-reg-chemprop-2d6-isoform", "cyp-reg-chemprop-2d6-single"],
-    "CYP3A4": [MT, AUX, TOX, tabicl("CYP3A4")],
-}
 
 
 MONROE_ENDPOINT = "smiles-to-monroe-v1"
@@ -117,26 +115,6 @@ def confidence_for(preds: pd.DataFrame, iso: str) -> pd.Series:
     raise ValueError(f"no {iso} confidence column — found {list(preds.columns)[:8]}")
 
 
-def member_scaling(iso: str, members: list[str]) -> tuple[np.ndarray, np.ndarray]:
-    """Per-member `corr_scale` and fallback weights, read off the out-of-fold captures.
-
-    Returns both arrays in `members` order. `corr_scale` is each member's
-    |conf-to-error correlation|; the fallback weights are inverse-MAE, used on any row
-    whose confidences carry no usable signal.
-    """
-    sim = EnsembleSimulator(members, id_column="molecule_name", target=f"{iso.lower()}_pic50_direct_inhibition")
-    config = sim.get_best_strategy_config(select_by="spearman")
-    if config["aggregation_strategy"] != "calibrated_conf_weighted":
-        print(
-            f"  WARNING {iso}: out-of-fold now prefers '{config['aggregation_strategy']}' "
-            f"over calibrated_conf_weighted; this script still applies the latter"
-        )
-    return (
-        np.array([config["corr_scale"][m] for m in members]),
-        np.array([config["model_weights"][m] for m in members]),
-    )
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", default="ensemble", help="Output filename suffix")
@@ -162,7 +140,7 @@ if __name__ == "__main__":
     preds = {m: predict(m, blind, embedded) for m in every}
 
     sub = pd.DataFrame({"SMILES": blind["smiles"].values, "Molecule_Name": blind["molecule_name"].values})
-    print(f"\n{'isoform':<8}{'members':>9}{'mean':>8}{'sd':>7}{'spread':>8}{'fallback':>10}")
+    print(f"\n{'isoform':<8}{'lambda':>9}{'mean':>8}{'sd':>7}{'spread':>8}{'fallback':>10}")
     for iso, members in MEMBERS.items():
         stack = np.column_stack([column_for(preds[m], iso).reindex(sub["Molecule_Name"]).to_numpy() for m in members])
         conf = np.column_stack(
@@ -170,12 +148,12 @@ if __name__ == "__main__":
         )
 
         corr_scale, fallback_w = member_scaling(iso, members)
-        weights = conf_weights_with_fallback(conf * corr_scale, fallback_w)
-        sub[VALUE_COLUMNS[iso]] = (stack * weights).sum(axis=1)
+        lam = fit_lambda(iso, members, corr_scale, fallback_w)
+        sub[VALUE_COLUMNS[iso]] = combine(stack, conf, corr_scale, fallback_w, lam)
 
         n_fallback = int((~np.isfinite(conf).all(axis=1)).sum())
         print(
-            f"{iso:<8}{len(members):>9}{stack.mean():>8.2f}{sub[VALUE_COLUMNS[iso]].std():>7.2f}"
+            f"{iso:<8}{lam:>9.2f}{stack.mean():>8.2f}{sub[VALUE_COLUMNS[iso]].std():>7.2f}"
             f"{stack.std(axis=1).mean():>8.3f}{n_fallback:>10}"
         )
 
