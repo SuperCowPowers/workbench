@@ -95,7 +95,7 @@ fastapi==0.136.3
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference/requirements.in
-filelock==3.29.3
+filelock==4.2.4
     # via
     #   -c ci/.uv-constraints.txt
     #   huggingface-hub
@@ -231,7 +231,7 @@ numpy==2.4.6
     #   torch-geometric
     #   torchmetrics
     #   xarray
-packaging==26.2
+packaging==26.3
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler
@@ -354,7 +354,7 @@ scipy==1.17.1
     #   descriptastorus
     #   scikit-learn
     #   tabicl
-setuptools==83.0.0
+setuptools==84.2.1
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler

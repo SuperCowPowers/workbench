@@ -98,7 +98,7 @@ botocore==1.43.0
     #   s3transfer
     #   sagemaker-mlops
     #   sagemaker-serve
-brotli==1.2.0
+brotli==1.2.1
     # via
     #   -c ci/.uv-constraints.txt
     #   geventhttpclient
@@ -207,7 +207,7 @@ fastapi==0.136.3
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
-filelock==3.29.3
+filelock==4.2.4
     # via
     #   -c ci/.uv-constraints.txt
     #   torch
@@ -252,7 +252,7 @@ gitdb==4.0.12
     # via
     #   -c ci/.uv-constraints.txt
     #   gitpython
-gitpython==3.1.62
+gitpython==3.2.1
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
@@ -265,7 +265,7 @@ graphene==3.4.3
     #   -c ci/.uv-constraints.txt
     #   mlflow
     #   sagemaker-train
-graphql-core==3.2.11
+graphql-core==3.2.13
     # via
     #   -c ci/.uv-constraints.txt
     #   graphene
@@ -417,17 +417,17 @@ ml-dtypes==0.5.4
     # via
     #   -c ci/.uv-constraints.txt
     #   onnx
-mlflow==3.16.0
+mlflow==3.17.2
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
     #   sagemaker-train
-mlflow-skinny==3.16.0
+mlflow-skinny==3.17.2
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
     #   sagemaker-mlflow
-mlflow-tracing==3.16.0
+mlflow-tracing==3.17.2
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow
@@ -509,7 +509,7 @@ onnxruntime==1.26.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-serve
-opentelemetry-api==1.42.1
+opentelemetry-api==1.45.1
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
@@ -521,12 +521,12 @@ opentelemetry-proto==1.42.1
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
     #   mlflow-tracing
-opentelemetry-sdk==1.42.1
+opentelemetry-sdk==1.45.1
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
     #   mlflow-tracing
-opentelemetry-semantic-conventions==0.63b1
+opentelemetry-semantic-conventions==0.66b1
     # via
     #   -c ci/.uv-constraints.txt
     #   opentelemetry-sdk
@@ -534,7 +534,7 @@ orderly-set==5.5.0
     # via
     #   -c ci/.uv-constraints.txt
     #   deepdiff
-packaging==26.2
+packaging==26.3
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler
@@ -821,7 +821,7 @@ scipy==1.17.1
     #   skops
     #   umap-learn
     #   xgboost
-setuptools==83.0.0
+setuptools==84.2.1
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler

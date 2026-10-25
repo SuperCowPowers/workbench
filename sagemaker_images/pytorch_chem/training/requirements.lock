@@ -148,7 +148,7 @@ einops==0.8.2
     # via
     #   -c ci/.uv-constraints.txt
     #   tabicl
-filelock==3.29.3
+filelock==4.2.4
     # via
     #   -c ci/.uv-constraints.txt
     #   huggingface-hub
@@ -401,7 +401,7 @@ optuna==4.9.0
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/training/requirements.in
-packaging==26.2
+packaging==26.3
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler
@@ -577,7 +577,7 @@ scipy==1.17.1
     #   shap
     #   shapiq
     #   tabicl
-setuptools==83.0.0
+setuptools==84.2.1
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler

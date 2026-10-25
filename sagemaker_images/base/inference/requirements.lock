@@ -90,7 +90,7 @@ numpy==2.4.6
     #   scipy
     #   tblite
     #   xgboost-cpu
-packaging==26.2
+packaging==26.3
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler
@@ -151,7 +151,7 @@ scipy==1.17.1
     #   -c ci/.uv-constraints.txt
     #   scikit-learn
     #   xgboost-cpu
-setuptools==83.0.0
+setuptools==84.2.1
     # via
     #   -c ci/.uv-constraints.txt
     #   awswrangler
