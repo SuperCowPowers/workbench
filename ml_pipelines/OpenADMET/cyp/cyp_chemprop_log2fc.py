@@ -29,13 +29,31 @@ from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
 FS_NAME = "openadmet_cyp_aux_f1"
+UNION_FS = "openadmet_cyp_union_f1"
 MODEL_NAME = "cyp-reg-chemprop-log2fc"
 TAGS = ["openadmet_cyp", "chemprop", "multi_task", "screen", "readout"]
 
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
-TARGETS = [f"{iso}_log2fc" for iso in ISOFORMS]
+PUBLIC_ISOFORMS = ISOFORMS + ["cyp2c19"]
+
+# Auxiliary families this can predict. Every one is read out as a *feature* by a pIC50 model,
+# so no direct-inhibition head may ever appear here: the readout would be in-sample for the
+# target it feeds. `log2fc` lives in the aux FeatureSet, the rest in the union.
+FAMILIES = {
+    "log2fc": [f"{iso}_log2fc" for iso in ISOFORMS],
+    "veith": [f"{iso}_pic50_veith" for iso in PUBLIC_ISOFORMS],
+    "chembl": [f"{iso}_pic50_chembl" for iso in PUBLIC_ISOFORMS],
+    "max_response": [f"{iso}_max_response" for iso in PUBLIC_ISOFORMS],
+}
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--families",
+    nargs="+",
+    default=["log2fc"],
+    choices=list(FAMILIES),
+    help="Auxiliary families to predict. Anything beyond log2fc trains on the union FeatureSet",
+)
 parser.add_argument(
     "--name-suffix",
     default=None,
@@ -43,9 +61,16 @@ parser.add_argument(
     "A retrain redraws the fold split, so its out-of-fold numbers move within seed noise",
 )
 args = parser.parse_args()
-model_name = MODEL_NAME + (f"-{args.name_suffix.strip('-')}" if args.name_suffix else "")
+families = sorted(set(args.families))
+TARGETS = [t for fam in families for t in FAMILIES[fam]]
+# Model names take no underscores, so a family like max_response is hyphenated here.
+model_name = (
+    MODEL_NAME if families == ["log2fc"] else "cyp-reg-chemprop-" + "-".join(f.replace("_", "-") for f in families)
+)
+if args.name_suffix:
+    model_name += f"-{args.name_suffix.strip('-')}"
 
-fs = FeatureSet(FS_NAME)
+fs = FeatureSet(FS_NAME if families == ["log2fc"] else UNION_FS)
 df = fs.pull_dataframe()
 
 # All four arms are end products here, so unequal coverage is corrected symmetrically.
