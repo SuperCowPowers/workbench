@@ -22,7 +22,7 @@ so it produced two failures:
 
 ## Interim compatibility (the transitional fallback)
 
-`_decode_legacy_b64` in `aws_utils.py` lets **new code read old un-migrated tags** during rollout:
+`decode_legacy_b64` in `aws_utils.py` lets **new code read old un-migrated tags** during rollout:
 
 | Reader | Old markerless-b64 tag | New `b64:` / plain tag |
 |--------|------------------------|------------------------|
@@ -33,8 +33,9 @@ Key asymmetry: the fallback makes **new code tolerant of old data**, but **canno
 of new data. So updated readers "just work" against any format — but a not-yet-updated reader that hits a
 new-format write still breaks. **Update readers before the migration creates new-format tags.**
 
-Transitional cost: the fallback re-introduces the base64 guess for *old* data, so a plain value that looks
-like valid base64 (`TWFu`→`Man`) can be mis-decoded during the window. It now logs
+Transitional cost: the fallback re-introduces the base64 guess for *old* data. It only accepts values that
+decode to printable text, so `MBEC` (→ control bytes) stays plain, but a plain value that decodes to readable
+text (`TWFu`→`Man`) can be mis-decoded during the window. The migration script uses the same check. It logs
 `Found legacy encoded tag` so it's visible, and it goes away with the strict cleanup below.
 
 ## Rollout checklist
@@ -59,7 +60,7 @@ Readers must understand the new format **before** the migration flips anything.
 Trigger: migration has run on **all** accounts and the `Found legacy encoded tag` warning is quiet.
 `grep remove-legacy-tag-fallback` for the spots.
 
-1. [ ] `aws_utils.py` — delete `_decode_legacy_b64()` and the `else:` branch in `decode_value()`
+1. [ ] `aws_utils.py` — delete `decode_legacy_b64()` and the `else:` branch in `decode_value()`
 2. [ ] `tag_tests.py` — delete the two `*_transitional` tests; re-add the strict `TWFu`→`TWFu`
        assertion to `test_plain_non_base64_pass_through`
 3. [ ] Delete `migrate_legacy_tags.py` (one-time, done)

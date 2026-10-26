@@ -215,9 +215,10 @@ def decode_value(value):
             log.warning(f"Marked tag value failed to decode: {str(value)[:50]}")
             return value
     else:
-        # TODO(remove-legacy-tag-fallback): drop this branch once migration is complete (see _decode_legacy_b64)
-        legacy = _decode_legacy_b64(value)
+        # TODO(remove-legacy-tag-fallback): drop this branch once migration is complete (see decode_legacy_b64)
+        legacy = decode_legacy_b64(value)
         if legacy is not None:
+            log.warning(f"Found legacy encoded tag (run migrate_legacy_tags.py): {str(value)[:50]}")
             value = legacy
 
     # JSON-decode so non-string values (numbers, lists, dicts) round-trip back to their type
@@ -231,11 +232,14 @@ def decode_value(value):
     return value
 
 
-def _decode_legacy_b64(value):
+def decode_legacy_b64(value):
     """TRANSITIONAL: decode a markerless-base64 tag value, or return None if it's plain.
 
-    Lets new code read un-migrated artifacts. Remove once migrate_legacy_tags.py has run
-    everywhere and the warning below has gone quiet (grep: remove-legacy-tag-fallback).
+    Old-format values were base64 of JSON or readable text, so the decoded result must be
+    printable. That rejects plain values that merely parse as base64 ("MBEC" -> "0\\x11\\x02").
+    Shared with migrate_legacy_tags.py so read and migration agree on what's legacy.
+    Remove once migrate_legacy_tags.py has run everywhere and the decode_value() warning
+    has gone quiet (grep: remove-legacy-tag-fallback).
     """
     if not isinstance(value, str) or not value:
         return None
@@ -243,7 +247,8 @@ def _decode_legacy_b64(value):
         decoded = base64.b64decode(value, validate=True).decode("utf-8")
     except Exception:
         return None  # genuinely plain (or foreign) — not old-format encoded
-    log.warning(f"Found legacy encoded tag (run migrate_legacy_tags.py): {str(value)[:50]}")
+    if not all(c.isprintable() or c in "\n\t" for c in decoded):
+        return None  # plain value that happens to be valid base64
     return decoded
 
 

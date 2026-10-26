@@ -11,10 +11,11 @@ format and rewrites them via upsert_workbench_meta(), which re-encodes in the ne
 format. Values that are already plain (truly-legacy raw, or foreign aws:/human tags)
 or already b64:-marked are left alone.
 
-Detection assumption: a non-aws:, markerless value that cleanly base64-decodes to
-UTF-8 was written by the prior all-base64 code. This holds for everything Workbench
-wrote; a human-added plain tag that happens to be valid base64 is the only false
-positive, and aws:-prefixed tags (which can't be modified anyway) are skipped.
+Detection (decode_legacy_b64, shared with the read path): a non-aws:, markerless value
+that cleanly base64-decodes to printable UTF-8 was written by the prior all-base64 code.
+Plain tags that parse as base64 but decode to control bytes ("MBEC") are left alone; a
+plain tag that decodes to printable text ("TWFu" -> "Man") is the residual false positive.
+aws:-prefixed tags (which can't be modified anyway) are skipped.
 
 Covers FeatureSets, Models, and Endpoints (DataSources/Graphs store their metadata
 in the Glue catalog, not AWS tags).
@@ -22,7 +23,7 @@ in the Glue catalog, not AWS tags).
 Cleanup (strict-decode release) -- once this has run on ALL accounts and CloudWatch
 shows no more "Found legacy encoded tag" warnings, remove the transitional fallback
 (grep: remove-legacy-tag-fallback):
-  1. aws_utils.py        -- delete _decode_legacy_b64() and the else: branch in decode_value()
+  1. aws_utils.py        -- delete decode_legacy_b64() and the else: branch in decode_value()
   2. tag_tests.py        -- delete the two *_transitional tests; re-add the strict
                             "TWFu stays TWFu" assertion to test_plain_non_base64_pass_through
   3. this script         -- delete it (one-time, done)
@@ -33,7 +34,6 @@ Usage:
 """
 
 import argparse
-import base64
 import json
 
 from sagemaker.core.common_utils import list_tags
@@ -42,7 +42,7 @@ from workbench.api.meta import Meta
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench.utils.aws_utils import B64_MARKER, aws_throttle
+from workbench.utils.aws_utils import B64_MARKER, aws_throttle, decode_legacy_b64
 
 
 def needs_migration(key: str, value: str) -> bool:
@@ -53,17 +53,13 @@ def needs_migration(key: str, value: str) -> bool:
         return False
     if value.startswith(B64_MARKER):  # already new format
         return False
-    # Old format: markerless base64 of valid UTF-8 (anything else is already plain-compatible)
-    try:
-        base64.b64decode(value, validate=True).decode("utf-8")
-        return True
-    except Exception:
-        return False
+    # Old format: markerless base64 of printable UTF-8 (anything else is already plain-compatible)
+    return decode_legacy_b64(value) is not None
 
 
 def recover_value(value: str):
     """Decode an old markerless-base64 value back to the Python value upsert should re-store"""
-    decoded = base64.b64decode(value, validate=True).decode("utf-8")
+    decoded = decode_legacy_b64(value)
     try:
         return json.loads(decoded)
     except Exception:

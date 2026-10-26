@@ -115,10 +115,16 @@ def test_plain_non_base64_pass_through():
 def test_legacy_markerless_b64_decoded_transitional():
     """TRANSITIONAL: markerless-base64 tags are still decoded by the fallback.
 
-    When _decode_legacy_b64 is removed, invert this: "TWFu" stays "TWFu" instead of decoding to "Man".
+    When decode_legacy_b64 is removed, invert this: "TWFu" stays "TWFu" instead of decoding to "Man".
     """
     aws_tags = [{"key": "perm", "value": "TWFu"}]  # markerless base64 of "Man"
     assert aws_tags_to_dict(aws_tags) == {"perm": "Man"}
+
+
+def test_plain_valid_b64_non_printable_pass_through():
+    """A plain value that parses as base64 but decodes to control bytes is not treated as legacy"""
+    aws_tags = [{"key": "project", "value": "MBEC"}]  # b64-decodes to "0\x11\x02"
+    assert aws_tags_to_dict(aws_tags) == {"project": "MBEC"}
 
 
 def test_marked_values_decode():
@@ -163,7 +169,7 @@ def test_oversized_value_raises():
 def test_legacy_chunked_b64_decoded_transitional():
     """TRANSITIONAL: old markerless-base64 values that were chunked still stitch + decode.
 
-    Remove alongside the _decode_legacy_b64 fallback once migration is complete.
+    Remove alongside the decode_legacy_b64 fallback once migration is complete.
     """
     items = [{"i": i} for i in range(60)]
     # Old storage: a single key's value (here the list) base64-encoded, markerless, then chunked
