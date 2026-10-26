@@ -118,6 +118,15 @@ def test_compressed_features_are_refused(tmp_path):
 
 
 @pytest.mark.medium
+def test_unused_compressed_features_are_ignored(tmp_path):
+    """A FeatureSet's compressed features reach the template even when the model doesn't use them"""
+    pytest.importorskip("atom_jepa")
+    _, train_dir = _training_csv(tmp_path)
+    result, _ = _train(_generate(tmp_path, compressed=("emb",)), tmp_path, train_dir)
+    assert result.returncode == 0, result.stderr[-2000:]
+
+
+@pytest.mark.medium
 def test_generated_script_trains_and_serves(tmp_path, monkeypatch):
     pytest.importorskip("atom_jepa")
     df, train_dir = _training_csv(tmp_path, sample_weight=1.0)

@@ -172,7 +172,8 @@ if __name__ == "__main__":
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
     if TEMPLATE_PARAMS["model_type"] == "classifier":
         raise ValueError("The Atom-JEPA framework supports regression only (REGRESSOR, UQ_REGRESSOR)")
-    if TEMPLATE_PARAMS["compressed_features"]:
+    # Every compressed feature the FeatureSet registers arrives here; only the model's own matter
+    if set(TEMPLATE_PARAMS["compressed_features"] or []) & set(features):
         raise ValueError("Atom-JEPA models take a SMILES column plus numeric features, not compressed features")
     smiles_column, extra_features = split_features(features)
 
