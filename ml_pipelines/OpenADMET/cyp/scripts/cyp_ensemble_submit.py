@@ -118,6 +118,7 @@ def confidence_for(preds: pd.DataFrame, iso: str) -> pd.Series:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", default="ensemble", help="Output filename suffix")
+    parser.add_argument("--flat", action="store_true", help="Unweighted member mean, ignoring confidence and lambda")
     args = parser.parse_args()
 
     blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
@@ -147,9 +148,13 @@ if __name__ == "__main__":
             [confidence_for(preds[m], iso).reindex(sub["Molecule_Name"]).to_numpy() for m in members]
         )
 
-        corr_scale, fallback_w = member_scaling(iso, members)
-        lam = fit_lambda(iso, members, corr_scale, fallback_w)
-        sub[VALUE_COLUMNS[iso]] = combine(stack, conf, corr_scale, fallback_w, lam)
+        if args.flat:
+            corr_scale = fallback_w = np.ones(len(members))
+            lam = 0.0
+        else:
+            corr_scale, fallback_w = member_scaling(iso, members)
+            lam = fit_lambda(iso, members, corr_scale, fallback_w)
+        sub[VALUE_COLUMNS[iso]] = combine(stack, conf, corr_scale, fallback_w, lam, flat=args.flat)
 
         n_fallback = int((~np.isfinite(conf).all(axis=1)).sum())
         print(

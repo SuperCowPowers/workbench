@@ -35,8 +35,11 @@ TOX = "cyp-reg-chemprop-union-p30-tox"
 
 
 def tabicl(iso: str) -> str:
-    """TabICL over the Monroe embedding, one model per isoform."""
-    return f"cyp-reg-tabicl-{iso.lower().removeprefix('cyp')}-monroe"
+    """TabICL over the Monroe embedding plus the screen readouts, one model per isoform.
+
+    The readout arm is the best single model on all four isoforms out of fold.
+    """
+    return f"cyp-reg-tabicl-{iso.lower().removeprefix('cyp')}-monroe-readout"
 
 
 MEMBERS = {
@@ -47,8 +50,16 @@ MEMBERS = {
 }
 
 
-def combine(pred: np.ndarray, conf: np.ndarray, corr_scale: np.ndarray, fallback_w: np.ndarray, lam: float):
-    """The ensemble's prediction for rows laid out as (n_rows, n_members)."""
+def combine(
+    pred: np.ndarray, conf: np.ndarray, corr_scale: np.ndarray, fallback_w: np.ndarray, lam: float, flat: bool = False
+):
+    """The ensemble's prediction for rows laid out as (n_rows, n_members).
+
+    `flat` takes the unweighted mean instead, ignoring confidence and `lam`. It is the
+    control arm: the same members and models, combined the simplest way there is.
+    """
+    if flat:
+        return pred.mean(axis=1)
     base = (pred * conf_weights_with_fallback(conf * corr_scale, fallback_w)).sum(axis=1)
     return base + lam * (base - pred.mean(axis=1))
 

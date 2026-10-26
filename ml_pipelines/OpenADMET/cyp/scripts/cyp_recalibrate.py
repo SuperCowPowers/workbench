@@ -81,9 +81,15 @@ STRAE_MOMENTS = {"CYP2D6": {"mean": 3.57, "sd": 0.90}}
 # Scaffold-OOF Pearson understates blind Pearson -- the split is harder than the blind half,
 # and an OOF prediction comes from one fold model where the endpoint averages five.
 # Measured on `cyp-reg-chemprop-mt-aux-100`: OOF 0.570 / 0.681 / 0.408 / 0.795 against the
-# solved 0.753 / 0.838 / 0.678 / 0.851. One model's ratio, so read it as what lets a new
+# solved 0.753 / 0.838 / 0.678 / 0.851. One model's gap, so read it as what lets a new
 # model be placed without spending a submission, not as a constant.
-OOF_TO_BLIND = {"CYP1A2": 1.32, "CYP2C9": 1.23, "CYP2D6": 1.66, "CYP3A4": 1.07}
+#
+# Held in Fisher z (arctanh), where the correction is additive and a corrected correlation
+# cannot leave (-1, 1) however strong the estimator it is applied to. A stronger estimator
+# has less headroom, which z-space spends automatically. The three label-poor isoforms agree
+# at 0.33-0.39 while CYP3A4, with 2,335 rows and the closest OOF-to-board agreement, sits at
+# 0.17 -- one structural gap rather than four independent numbers.
+OOF_TO_BLIND_Z = {"CYP1A2": 0.3317, "CYP2C9": 0.3829, "CYP2D6": 0.3917, "CYP3A4": 0.1740}
 
 # Three scored entries of `cyp-reg-chemprop-mt-aux-100`, all affine transforms of one
 # prediction vector. Two share a centre and differ in spread; the third shifts the centre.
@@ -162,7 +168,7 @@ def solve_blind_moments() -> dict:
     return solved
 
 
-def oof_pearson(model_names: str) -> dict:
+def oof_pearson(model_names: str, flat: bool = False) -> dict:
     """Estimate blind Pearson from the out-of-fold captures of one or more models.
 
     The stand-in for SOLVED_PEARSON before a model has board history. Pass several
@@ -173,8 +179,8 @@ def oof_pearson(model_names: str) -> dict:
     capture is skipped for that isoform, so a CYP2D6 specialist contributes where it can and
     nowhere else.
 
-    Scaffold-OOF understates the blind half, so each isoform is scaled by OOF_TO_BLIND;
-    without that correction the placement under-spreads, badly on CYP2D6.
+    Scaffold-OOF understates the blind half, so each isoform is shifted by OOF_TO_BLIND_Z
+    in Fisher z; without that correction the placement under-spreads, badly on CYP2D6.
     """
     models = [m.strip() for m in model_names.split(",") if m.strip()]
     pearson = {}
@@ -182,18 +188,28 @@ def oof_pearson(model_names: str) -> dict:
         target = f"{iso.lower()}_pic50_direct_inhibition"
         present = []
         for name in models:
-            runs = Model(name).list_inference_runs()
+            model = Model(name)
+            runs = model.list_inference_runs()
             # Single-target models report under `full_cross_fold`; multi-target under `cv_<target>`.
-            if f"cv_{target}" in runs or "full_cross_fold" in runs:
+            run = f"cv_{target}" if f"cv_{target}" in runs else "full_cross_fold"
+            if run not in runs:
+                continue
+            # A single-target model for a different isoform has the run but not this column.
+            d = model.get_inference_predictions(run)
+            if d is not None and target in d.columns:
                 present.append(name)
         if not present:
             raise ValueError(f"no model supplied an out-of-fold capture for {iso}")
 
         y, _, _, pred, conf = oof_arrays(iso, present)
-        corr_scale, fallback_w = member_scaling(iso, present)
-        lam = fit_lambda(iso, present, corr_scale, fallback_w, verbose=False)
-        raw = pearsonr(y, combine(pred, conf, corr_scale, fallback_w, lam)).statistic
-        pearson[iso] = raw * OOF_TO_BLIND[iso]
+        if flat:
+            corr_scale = fallback_w = np.ones(len(present))
+            lam = 0.0
+        else:
+            corr_scale, fallback_w = member_scaling(iso, present)
+            lam = fit_lambda(iso, present, corr_scale, fallback_w, verbose=False)
+        raw = pearsonr(y, combine(pred, conf, corr_scale, fallback_w, lam, flat=flat)).statistic
+        pearson[iso] = float(np.tanh(np.arctanh(raw) + OOF_TO_BLIND_Z[iso]))
         print(
             f"{iso:<8} {len(present)} member(s), n={len(y):,}, lambda {lam:g} | OOF pearson {raw:.3f} "
             f"-> blind estimate {pearson[iso]:.3f}"
@@ -290,6 +306,7 @@ if __name__ == "__main__":
         help="Estimate Pearson from out-of-fold captures instead of SOLVED_PEARSON; "
         "comma-separate several names to describe an ensemble",
     )
+    parser.add_argument("--flat", action="store_true", help="Estimate Pearson from an unweighted member mean")
     parser.add_argument("--solve", action="store_true", help="Re-derive BLIND_MOMENTS and SOLVED_PEARSON")
     parser.add_argument(
         "--strae", action="store_true", help="Use STRAE_MOMENTS where measured, trading R2 for the scored metric"
@@ -299,7 +316,7 @@ if __name__ == "__main__":
     if args.solve:
         solve_blind_moments()
     if args.source:
-        pearson = oof_pearson(args.oof) if args.oof else SOLVED_PEARSON
+        pearson = oof_pearson(args.oof, flat=args.flat) if args.oof else SOLVED_PEARSON
         calibration = place(pd.read_csv(args.source), pearson, strae=args.strae)
         recalibrate(args.source, args.out, args.tag, calibration)
     elif not args.solve:
