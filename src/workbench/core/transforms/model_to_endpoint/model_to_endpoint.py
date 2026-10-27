@@ -70,11 +70,13 @@ REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
 # Async endpoints run long compute work (RDKit conformer generation, etc.), so their
 # default has more CPU.
 ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
-# Models that serve from the CUDA image (Atom-JEPA) get one L4; an async endpoint scales it to
-# zero when idle.
-GPU_DEFAULT_INSTANCE = "ml.g6.xlarge"
-# GPU endpoint instances are quota-limited (one ml.g6.xlarge in a default account), so their
-# async endpoints stay on one instance unless the caller asks for more
+# Models that serve from the CUDA image (Atom-JEPA) get one GPU; an async endpoint scales it to
+# zero when idle. The L4 is the faster card; us-west-2 serves it from a pool that frequently
+# has no capacity, so the A10G is the default.
+GPU_DEFAULT_INSTANCE = "ml.g5.xlarge"
+GPU_PREFERRED_INSTANCE = "ml.g6.xlarge"
+# An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
+# the caller asks for more
 GPU_ASYNC_MAX_INSTANCES = 1
 # SageMaker host image for GPU endpoints: NVIDIA driver 580 / CUDA 13.0, matching the GPU
 # inference image. The unpinned default host image varies by instance family.
@@ -344,6 +346,7 @@ class ModelToEndpoint(Transform):
             elif workbench_model.model_framework == ModelFramework.ATOMJEPA:
                 instance_type = GPU_DEFAULT_INSTANCE
                 self.log.important(f"Endpoint: Instance Type={instance_type} (GPU for Atom-JEPA)")
+                self.log.important(f"Switch the default to {GPU_PREFERRED_INSTANCE} once its capacity is reliable")
             else:
                 memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
                 instance_type = realtime_instance(memory_gb, self.async_endpoint)

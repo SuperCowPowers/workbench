@@ -20,7 +20,9 @@ columns to the readout head alongside the conformers. Those features put TabICL 
 four isoforms, so this is the arm to build first.
 
 Serves from a GPU image: `async_endpoint=True` scales to zero when idle, where serverless is
-rejected outright.
+rejected outright. Every isoform trains before any endpoint is deployed, so a GPU capacity
+miss costs an endpoint rather than the remaining isoforms' training; `cyp_atomjepa_deploy.py`
+picks up whatever it stranded.
 
     ml_pipeline_launcher cyp_atomjepa.py -- --readouts
     ml_pipeline_launcher cyp_atomjepa.py -- --isoforms cyp2d6
@@ -60,6 +62,7 @@ fs = FeatureSet(READOUT_FS if args.readouts else FS_NAME)
 df = fs.pull_dataframe()
 readouts = [f"{iso}_log2fc_readout" for iso in ISOFORMS] if args.readouts else []
 
+trained = []
 for iso in args.isoforms:
     target = f"{iso}_pic50_direct_inhibition"
     name = f"cyp-reg-atomjepa-{iso.removeprefix('cyp')}"
@@ -86,8 +89,11 @@ for iso in args.isoforms:
         exclude_ids=exclude_ids,
     )
     model.set_owner("open_admet_cyp")
+    trained.append((model, tags))
 
-    end = model.to_endpoint(tags=tags, async_endpoint=True)
+for model, tags in trained:
+    # An A10G (ml.g5.xlarge): the default ml.g6.xlarge often lacks capacity in us-west-2
+    end = model.to_endpoint(tags=tags, async_endpoint=True, instance="ml.g5.xlarge")
     end.set_owner("open_admet_cyp")
     end.test_inference()
     end.cross_fold_inference()
