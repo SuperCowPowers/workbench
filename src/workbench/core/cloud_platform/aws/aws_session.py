@@ -3,7 +3,7 @@ import sys
 
 import boto3
 import re
-from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError
+from botocore.exceptions import ClientError
 from botocore.credentials import RefreshableCredentials
 from botocore.session import get_session
 import logging
@@ -11,6 +11,7 @@ import logging
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.execution_environment import running_as_service
+from workbench.utils.sso_utils import SSO_TOKEN_ERRORS, sso_login_hint, with_sso_renewal
 
 from workbench.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
 
@@ -39,14 +40,14 @@ class AWSSession:
             if profile is not None:
                 os.environ["AWS_PROFILE"] = profile
 
-            # Grab our AWS Account Info
+            # Grab our AWS Account Info (offering an SSO renewal if the token has expired)
             try:
-                self.account_id = boto3.client("sts").get_caller_identity()["Account"]
+                self.account_id = with_sso_renewal(
+                    lambda: boto3.client("sts").get_caller_identity()["Account"], profile
+                )
                 self.region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION"))
                 self.region = boto3.Session().region_name if self.region is None else self.region
-            except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
-                from workbench.utils.aws_utils import sso_login_hint
-
+            except (ClientError, *SSO_TOKEN_ERRORS):
                 msg = f"AWS SSO Token Failure: renew with '{sso_login_hint(profile)}' (or check AWS_PROFILE)"
                 self.log.critical(msg)
                 if is_running_in_ipython():
@@ -144,6 +145,8 @@ class AWSSession:
             self.c_print(f"AWS Credentials Refreshed: Expires at {response['Expiration'].astimezone()}")
             return credentials
 
+        except SSO_TOKEN_ERRORS:
+            raise  # unwrapped, so the REPL and Bosco can offer a renewal
         except Exception as e:
             self.c_print(f"Error during Refresh Credentials: {e}", critical=True)
             raise RuntimeError("Failed to refresh Workbench role session credentials")

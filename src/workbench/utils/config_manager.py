@@ -113,6 +113,25 @@ class ConfigManager:
         """
         self.config[key] = value
 
+    def save_config(self, key: str, value: Any):
+        """Set a configuration value and write it to the site config file.
+
+        Only that key is written; the rest of the file stays as it is on disk. With no
+        site config (local mode) the value is set for this session only.
+
+        Args:
+            key (str): The configuration key to set.
+            value (Any): The value for the configuration key (must be JSON serializable).
+        """
+        self.set_config(key, value)
+        if self.using_default_config or not self.site_config_path:
+            return
+        with open(self.site_config_path, "r", encoding="utf-8") as file:
+            site_config = json.load(file)
+        site_config[key] = value
+        with open(self.site_config_path, "w", encoding="utf-8") as file:
+            json.dump(site_config, file, indent=4)
+
     def overwrite_config_with_env(self):
         """Overwrite the configuration with environment variables."""
         overwrites = [

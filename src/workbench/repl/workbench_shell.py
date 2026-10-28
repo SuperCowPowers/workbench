@@ -56,7 +56,7 @@ from workbench.utils.contest_utils import contest_summary
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.utils.log_utils import silence_logs
-from workbench.utils.aws_utils import sso_login_hint
+from workbench.utils.sso_utils import SSO_TOKEN_ERRORS, sso_login_hint, with_sso_renewal
 from workbench.utils.web_utils import EGRESS_MODE
 from workbench.utils.chem_utils import vis
 
@@ -293,9 +293,12 @@ class WorkbenchShell:
         config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
         config.TerminalInteractiveShell.banner1 = ""
 
-        # Wire up the shell once it exists: job lights on the right prompt, and
-        # the `bosco <text>` line router when Bosco is enabled.
+        # Wire up the shell once it exists: job lights on the right prompt, an SSO
+        # renewal offer on expired tokens, and the `bosco <text>` line router when
+        # Bosco is enabled.
         exec_lines = ["from workbench.utils.job_tracker import install_job_lights; install_job_lights()"]
+        if not self.local_only:
+            exec_lines.append("from workbench.utils.sso_utils import install_sso_handler; install_sso_handler()")
         if self.bosco_status:
             exec_lines.append("from workbench.agent.bosco import register; register()")
         config.InteractiveShellApp.exec_lines = exec_lines
@@ -335,9 +338,9 @@ class WorkbenchShell:
                 aws_clamp = importlib.import_module(
                     "workbench.core.cloud_platform.aws.aws_account_clamp"
                 ).AWSAccountClamp()
-                aws_clamp.check_aws_identity()
+                with_sso_renewal(aws_clamp.check_aws_identity, aws_profile)
                 cprint("lightgreen", "AWS Account Check AOK!")
-            except RuntimeError:
+            except (RuntimeError, *SSO_TOKEN_ERRORS):
                 cprint("red", f"AWS Account Check Failed: renew with '{sso_login_hint(aws_profile)}'")
                 return False
         except botocore.exceptions.ProfileNotFound:

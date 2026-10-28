@@ -20,6 +20,7 @@ from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
 from workbench.utils.llm_utils import message_stream, default_model, model_id, CLAUDE_MODELS, FAST_MODEL
 from workbench.utils.job_tracker import job_updates
+from workbench.utils.sso_utils import with_sso_renewal
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
     dispatch,
@@ -308,14 +309,21 @@ def _close_pending_tools(note: str) -> None:
         )
 
 
+def _resume_turn() -> None:
+    """Run the turn, first answering any tool call a failed attempt left pending."""
+    _close_pending_tools("Failed: AWS SSO token expired (since renewed); run it again if still needed.")
+    _run_turn(_namespace())
+
+
 def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
     _history.append({"role": "user", "content": job_updates(prompt)})
     _trim_history()
     try:
-        # Quiet routine INFO chatter from the code Bosco runs; restored afterwards
+        # Quiet routine INFO chatter from the code Bosco runs; restored afterwards.
+        # An expired SSO token offers a renewal, then the turn picks up where it stopped.
         with log_level():
-            _run_turn(_namespace())
+            with_sso_renewal(_resume_turn)
     except KeyboardInterrupt:
         _close_pending_tools("Interrupted by the user before this finished.")
         cprint("darkyellow", "Interrupted. (Ctrl-C again at the prompt to exit.)")
