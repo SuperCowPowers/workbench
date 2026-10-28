@@ -44,8 +44,8 @@ def test_each_turn_saves(monkeypatch, isolated_session_store):
 
     record = stored(isolated_session_store)
     assert record["exchanges"] == [
-        {"prompt": "what models do we have", "reply": "You have 3 models."},
-        {"prompt": "which is best", "reply": "aqsol-v2 has the best MAE."},
+        {"prompt": "what models do we have", "reply": "You have 3 models.", "worked": False},
+        {"prompt": "which is best", "reply": "aqsol-v2 has the best MAE.", "worked": False},
     ]
 
 
@@ -53,7 +53,7 @@ def test_tool_calls_are_left_out(monkeypatch, isolated_session_store):
     answer_with(monkeypatch)
 
     def run_turn(namespace):
-        tool = SimpleNamespace(type="tool_use", id="toolu_1")
+        tool = SimpleNamespace(type="tool_use", id="toolu_1", name="run_python")
         bosco_mod._history.append({"role": "assistant", "content": [text("Checking."), tool]})
         bosco_mod._history.append({"role": "user", "content": [{"type": "tool_result", "content": "big output"}]})
         bosco_mod._history.append({"role": "assistant", "content": [text("Found 3.")]})
@@ -83,7 +83,7 @@ def test_failed_turn_is_still_recorded(monkeypatch, isolated_session_store, caps
 
     monkeypatch.setattr(bosco_mod, "_run_turn", run_turn)
     bosco_mod._ask("deploy it")
-    assert stored(isolated_session_store)["exchanges"] == [{"prompt": "deploy it", "reply": ""}]
+    assert stored(isolated_session_store)["exchanges"] == [{"prompt": "deploy it", "reply": "", "worked": False}]
 
 
 def test_failed_write_stays_quiet(monkeypatch, isolated_session_store, capsys):
@@ -130,3 +130,47 @@ def test_startup_teaser(isolated_session_store):
     assert teaser.startswith('Last time (just now): "compare aqsol-v1 and aqsol-v2 on the analog set, scaffold..."')
     assert teaser.endswith('type "last session" to pick up')
     assert teaser in WorkbenchShell.bosco_greeting()
+
+
+def recall_turn(monkeypatch, reply: str):
+    """A turn where Bosco reads the previous session and answers from it."""
+
+    def run_turn(namespace):
+        tool = SimpleNamespace(type="tool_use", id="toolu_r", name="read_last_session")
+        bosco_mod._history.append({"role": "assistant", "content": [tool]})
+        bosco_mod._history.append({"role": "user", "content": [{"type": "tool_result", "tool_use_id": "toolu_r"}]})
+        bosco_mod._history.append({"role": "assistant", "content": [text(reply)]})
+
+    monkeypatch.setattr(bosco_mod, "_run_turn", run_turn)
+
+
+def test_teaser_names_the_last_real_request(isolated_session_store):
+    bosco_utils.save_last_session(
+        [
+            bosco_utils.exchange("retrain logd with scaffold split", "Done.", worked=True),
+            bosco_utils.exchange("lets continue", "We were retraining logd."),
+            bosco_utils.exchange("thanks", "Anytime!"),
+        ]
+    )
+    assert '"retrain logd with scaffold split"' in bosco_utils.last_session_teaser()
+
+
+def test_recall_carries_the_thread(monkeypatch, isolated_session_store):
+    bosco_utils.save_last_session([bosco_utils.exchange("retrain logd with scaffold split", "Done.", worked=True)])
+
+    answer_with(monkeypatch)
+    recall_turn(monkeypatch, "Last time you retrained logd.")
+    bosco_mod._ask("lets continue")
+    bosco_mod._ask("last session")  # a second recall doesn't carry the thread in twice
+
+    record = stored(isolated_session_store)
+    assert [ex["prompt"] for ex in record["exchanges"]] == [
+        "retrain logd with scaffold split",
+        "lets continue",
+        "last session",
+    ]
+    assert [ex["worked"] for ex in record["exchanges"]] == [True, False, False]
+
+    # Restart: the next REPL still names the real work
+    bosco_utils.previous_session.cache_clear()
+    assert '"retrain logd with scaffold split"' in bosco_utils.last_session_teaser()

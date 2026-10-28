@@ -18,6 +18,7 @@ def isolated_session_store(tmp_path, monkeypatch):
     store.root = str(tmp_path / "parameter_store")
     monkeypatch.setattr(bosco_utils, "param_store", lambda: store)
     monkeypatch.setattr(bosco_mod, "_exchanges", [])
+    monkeypatch.setattr(bosco_mod, "_continued", False)
     bosco_utils.previous_session.cache_clear()
     yield store
     bosco_utils.previous_session.cache_clear()

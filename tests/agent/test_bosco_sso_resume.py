@@ -24,7 +24,9 @@ def test_turn_resumes_after_renewal(monkeypatch):
     def run_turn(namespace):
         seen.append(list(history))
         if len(seen) == 1:
-            history.append({"role": "assistant", "content": [SimpleNamespace(type="tool_use", id="toolu_1")]})
+            history.append(
+                {"role": "assistant", "content": [SimpleNamespace(type="tool_use", id="toolu_1", name="save_session")]}
+            )
             raise TokenRetrievalError(provider="sso", error_msg="Token has expired and refresh failed")
         history.append({"role": "assistant", "content": []})
 
@@ -45,7 +47,9 @@ def test_declined_renewal_reports_and_closes(monkeypatch, capsys):
     monkeypatch.setattr(sso_utils, "sso_renew", lambda profile=None: False)
 
     def run_turn(namespace):
-        history.append({"role": "assistant", "content": [SimpleNamespace(type="tool_use", id="toolu_1")]})
+        history.append(
+            {"role": "assistant", "content": [SimpleNamespace(type="tool_use", id="toolu_1", name="save_session")]}
+        )
         raise TokenRetrievalError(provider="sso", error_msg="Token has expired and refresh failed")
 
     monkeypatch.setattr(bosco_mod, "_run_turn", run_turn)

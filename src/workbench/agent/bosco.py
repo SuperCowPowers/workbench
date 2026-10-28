@@ -89,8 +89,10 @@ _TOOL_PHASES = {"run_python": "writing code", "read_guide": "checking a guide"}
 # One conversation for the whole REPL session, shared by one-shot and chat
 _history = []
 
-# This REPL's prompt/reply pairs, saved after every turn as the user's last session
+# This REPL's prompt/reply pairs, saved after every turn as the user's last session,
+# and whether they continue the previous session's (set once its exchanges are carried in)
 _exchanges = []
+_continued = False
 
 # The runtime frame lives here; tunable behavior lives in guides/general.md,
 # injected below so a human can edit it without touching code.
@@ -337,8 +339,26 @@ def _ask(prompt: str) -> None:
         _close_pending_tools(f"Failed: {type(e).__name__}")
         cprint("red", f"{type(e).__name__}: {e}")
     finally:
-        _exchanges.append(bosco_utils.exchange(prompt, _reply_text(_history[turn_start:])))
-        bosco_utils.save_last_session(_exchanges)
+        _record_turn(prompt, _history[turn_start:])
+
+
+def _record_turn(prompt: str, turn: list) -> None:
+    """Add this turn to the last-session record and save it.
+
+    A turn that read the previous session continues it: the first such turn carries the
+    previous exchanges into this record, so the thread survives any number of restarts.
+    """
+    global _continued
+    tools = {
+        b.name for m in turn if m["role"] == "assistant" for b in m["content"] if getattr(b, "type", None) == "tool_use"
+    }
+    if "read_last_session" in tools and not _continued:
+        previous = bosco_utils.previous_session() or {}
+        _exchanges[:0] = previous.get("exchanges", [])
+        _continued = True
+    worked = bool(tools - {"read_last_session"})
+    _exchanges.append(bosco_utils.exchange(prompt, _reply_text(turn), worked))
+    bosco_utils.save_last_session(_exchanges)
 
 
 def _reply_text(messages: list) -> str:

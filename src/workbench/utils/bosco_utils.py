@@ -202,9 +202,16 @@ def last_session_path(user: str = None) -> str:
     return f"{LAST_SESSION_ROOT}/{slugify(user or current_user())}"
 
 
-def exchange(prompt: str, reply: str) -> dict:
-    """One prompt/reply pair, each clipped so a single long one can't crowd out the rest."""
-    return {"prompt": prompt[:PROMPT_CHARS], "reply": reply[:REPLY_CHARS]}
+def exchange(prompt: str, reply: str, worked: bool = False) -> dict:
+    """One prompt/reply pair, each clipped so a single long one can't crowd out the rest.
+
+    Args:
+        prompt (str): What the user asked.
+        reply (str): The text Bosco showed them.
+        worked (bool): Bosco did work this turn (called a tool other than read_last_session),
+            so the prompt names what the session was about rather than "thanks" or "let's continue".
+    """
+    return {"prompt": prompt[:PROMPT_CHARS], "reply": reply[:REPLY_CHARS], "worked": worked}
 
 
 def save_last_session(exchanges: list) -> None:
@@ -267,11 +274,16 @@ def read_last_session() -> str:
 
 
 def last_session_teaser() -> str:
-    """One startup line naming the previous session's last prompt, or None without one."""
+    """One startup line naming the previous session's last real request, or None without one.
+
+    That is the last prompt where Bosco did work, falling back to the last prompt.
+    """
     record = previous_session()
     if not record or not record.get("exchanges"):
         return None
-    last = " ".join(record["exchanges"][-1]["prompt"].split())
+    exchanges = record["exchanges"]
+    named = next((ex for ex in reversed(exchanges) if ex.get("worked")), exchanges[-1])
+    last = " ".join(named["prompt"].split())
     if len(last) > 60:
         last = last[:57] + "..."
     return f'Last time ({previous_session_age()}): "{last}" -- type "last session" to pick up'
