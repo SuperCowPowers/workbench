@@ -72,12 +72,6 @@ reporting it as a lookup failure.
 
 ## The previous session
 
-Separate from saved reports, every turn rewrites a rolling record of the user's
-recent prompts and your replies (clipped, newest kept). `read_last_session` returns
-the one the previous REPL left; the system prompt says when one exists. Read it when
-the user refers to earlier work ("where were we", "that model from yesterday"), not
-by default.
-
-It is raw, not distilled: prompts and the start of your replies, no tool calls, no
-variables. Treat it like a report -- a record of what was true then. Re-fetch any
-artifact it names before working with it.
+`read_last_session` returns the previous REPL's recent prompts and your replies
+(clipped, no tool calls, no variables) -- raw, not distilled, and separate from saved
+reports. Re-fetch any artifact it names before working with it.

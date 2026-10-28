@@ -109,11 +109,24 @@ def test_previous_session_survives_this_repls_saves(monkeypatch, isolated_sessio
     assert "hi" not in previous.split("\n")
 
 
-def test_hint_only_with_a_previous_session(isolated_session_store):
-    assert bosco_mod._previous_hint() == ""
+def test_no_previous_session(isolated_session_store):
     assert dispatch("read_last_session", {}, {}) == "No previous session recorded."
 
-    bosco_utils.save_last_session([bosco_utils.exchange("train a logd model", "Started.")])
+
+def test_startup_teaser(isolated_session_store):
+    from workbench.repl.workbench_shell import BOSCO_INVITE, WorkbenchShell
+
+    assert bosco_utils.last_session_teaser() is None
+    assert WorkbenchShell.bosco_greeting() == BOSCO_INVITE
+
+    bosco_utils.save_last_session(
+        [
+            bosco_utils.exchange("train a logd model", "Started."),
+            bosco_utils.exchange("compare aqsol-v1 and aqsol-v2 on the analog set, scaffold split", "v2 wins."),
+        ]
+    )
     bosco_utils.previous_session.cache_clear()
-    bosco_mod._previous_hint.cache_clear()
-    assert "read_last_session" in bosco_mod._previous_hint()
+    teaser = bosco_utils.last_session_teaser()
+    assert teaser.startswith('Last time (just now): "compare aqsol-v1 and aqsol-v2 on the analog set, scaffold..."')
+    assert teaser.endswith('type "last session" to pick up')
+    assert teaser in WorkbenchShell.bosco_greeting()

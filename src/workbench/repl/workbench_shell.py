@@ -271,7 +271,7 @@ class WorkbenchShell:
                 f"For secured usage, run aws_setup() to connect an AWS account. Need help? {hyperlink(SCP_URL)}",
             )
             if self.bosco_status:
-                cprint("lightpurple", BOSCO_INVITE)
+                cprint("lightpurple", self.bosco_greeting())
             else:
                 cprint("lightpurple", BOSCO_NO_KEY)
         elif not self.aws_status:
@@ -284,7 +284,7 @@ class WorkbenchShell:
             self.summary()
             self.contests()
             if self.bosco_status:
-                cprint("lightpurple", BOSCO_INVITE)
+                cprint("lightpurple", self.bosco_greeting())
 
         # Load the default IPython configuration
         config = load_default_config()
@@ -352,6 +352,16 @@ class WorkbenchShell:
 
         # Okay assume everything is good
         return True
+
+    @staticmethod
+    def bosco_greeting() -> str:
+        """Bosco's startup line: the previous session to pick up, or the new-user invite.
+
+        Reading the previous session here also snapshots it before Bosco's first turn
+        rewrites the record.
+        """
+        teaser = importlib.import_module("workbench.utils.bosco_utils").last_session_teaser()
+        return f"\n🐶  {teaser}" if teaser else BOSCO_INVITE
 
     def show_config(self):
         """Show the current Workbench Config"""

@@ -14,7 +14,6 @@ import codeop
 import builtins
 import logging
 from contextlib import contextmanager
-from functools import lru_cache
 
 # Workbench Imports
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
@@ -123,7 +122,7 @@ Guides available via read_guide:
 
 Read the relevant guide before building anything non-trivial, and whenever one
 covers what the user is asking about. They are authoritative -- prefer them over
-your own assumptions rather than answering from general knowledge.{previous}"""
+your own assumptions rather than answering from general knowledge."""
 
 
 def _system_prompt() -> str:
@@ -134,19 +133,6 @@ def _system_prompt() -> str:
         provider_egress=provider_egress_text(),
         personality=personality_text(getattr(bosco, "personality", DEFAULT_PERSONALITY)).strip(),
         guides=guide_index() or "  (none)",
-        previous=_previous_hint(),
-    )
-
-
-@lru_cache(maxsize=1)
-def _previous_hint() -> str:
-    """One line pointing at the previous session, fixed for the REPL so the prompt cache holds."""
-    age = bosco_utils.previous_session_age()
-    if age is None:
-        return ""
-    return (
-        f"\n\nThe user's previous Bosco session was saved {age}; read_last_session has its "
-        "prompts and your replies. Read it when they refer to earlier work, not otherwise."
     )
 
 

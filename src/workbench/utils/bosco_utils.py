@@ -264,3 +264,14 @@ def read_last_session() -> str:
     for ex in record["exchanges"]:
         lines += ["", f"**User:** {ex['prompt']}", f"**Bosco:** {ex['reply'] or '(no reply)'}"]
     return "\n".join(lines)
+
+
+def last_session_teaser() -> str:
+    """One startup line naming the previous session's last prompt, or None without one."""
+    record = previous_session()
+    if not record or not record.get("exchanges"):
+        return None
+    last = " ".join(record["exchanges"][-1]["prompt"].split())
+    if len(last) > 60:
+        last = last[:57] + "..."
+    return f'Last time ({previous_session_age()}): "{last}" -- type "last session" to pick up'
