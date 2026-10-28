@@ -4,12 +4,6 @@ import pandas as pd
 import time
 from sagemaker.core.resources import FeatureGroup
 from sagemaker.core.shapes.shapes import OnlineStoreConfig, OfflineStoreConfig, S3StorageConfig
-from sagemaker.mlops.feature_store import (
-    TableFormatEnum,
-    IngestionError,
-    load_feature_definitions_from_dataframe,
-    ingest_dataframe,
-)
 
 # Local imports
 from workbench.utils.datetime_utils import datetime_to_iso8601
@@ -52,7 +46,7 @@ class PandasToFeatures(Transform):
         self.one_hot_columns = []
         self.categorical_dtypes = {}  # Used for streaming/chunking
         self.output_df = None
-        self.table_format = TableFormatEnum.ICEBERG
+        self.table_format = "Iceberg"
 
         # These will be set in the transform method
         self.output_feature_group = None
@@ -147,6 +141,8 @@ class PandasToFeatures(Transform):
 
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
+        # sagemaker.mlops creates boto3 clients at import (needs an AWS region), so import on use
+        from sagemaker.mlops.feature_store import load_feature_definitions_from_dataframe
 
         # Load Feature Definitions from the DataFrame
         feature_definitions = load_feature_definitions_from_dataframe(self.output_df)
@@ -199,6 +195,8 @@ class PandasToFeatures(Transform):
 
     def transform_impl(self):
         """Transform Implementation: Ingest the data into the Feature Group"""
+        # sagemaker.mlops creates boto3 clients at import (needs an AWS region), so import on use
+        from sagemaker.mlops.feature_store import IngestionError, ingest_dataframe
 
         max_workers, max_processes = self._ingest_settings()
         self.log.important(f"Ingesting rows into Feature Group {self.output_name}...")

@@ -9,7 +9,7 @@ import botocore.exceptions
 import pandas as pd
 import awswrangler as wr
 
-from sagemaker.mlops.feature_store import FeatureGroup, create_athena_query
+from sagemaker.core.resources import FeatureGroup
 
 # Workbench Imports
 from workbench.core.artifacts.aws_artifact import AWSArtifact
@@ -355,6 +355,9 @@ class FeatureSetCore(AWSArtifact):
         # deleted after training. See AWSArtifact.temp_s3_path.
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
         s3_output_path = self.temp_s3_path + f"/training_data/{self.name}/all_{date_time}"
+
+        # sagemaker.mlops creates boto3 clients at import (needs an AWS region), so import on use
+        from sagemaker.mlops.feature_store import create_athena_query
 
         # Make the query
         query = f'SELECT * FROM "{source_table}"'
