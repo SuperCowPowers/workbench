@@ -163,3 +163,78 @@ def test_missing_smiles_column_falls_back_to_random():
 def test_unknown_strategy_raises(molecule_df):
     with pytest.raises(ValueError, match="Unknown strategy"):
         get_split_indices(molecule_df, n_splits=N_SPLITS, strategy="nope")
+
+
+# A chemically varied pool with real analogue series, so clustering at a given cutoff
+# produces a mix of multi-member clusters and singletons rather than all of one.
+CLUSTER_SMILES = [
+    "CCOc1ccc(cc1)S(=O)(=O)N", "CCOc1ccc(cc1)S(=O)(=O)NC", "CCOc1ccc(cc1)S(=O)(=O)NCC",
+    "CCOc1ccc(cc1)S(=O)(=O)NCCC", "COc1ccc(cc1)S(=O)(=O)N", "COc1ccc(cc1)S(=O)(=O)NC",
+    "c1ccc2c(c1)cccc2C(=O)O", "c1ccc2c(c1)cccc2C(=O)OC", "c1ccc2c(c1)cccc2C(=O)OCC",
+    "CC(=O)Nc1ccccc1", "CC(=O)Nc1ccccc1C", "CC(=O)Nc1ccccc1Cl", "CC(=O)Nc1ccccc1Br",
+    "C1CCNCC1", "C1CCOCC1", "C1CCSCC1", "CCO", "CCCO", "CCCCO", "CCCCCO",
+    "c1ccncc1", "c1cnccn1", "c1ccsc1", "c1cc[nH]c1", "CN1CCN(CC1)c1ccccc1",
+    "CN1CCN(CC1)c1ccccc1C", "CN1CCN(CC1)c1ccccc1F", "OC(=O)c1ccc(cc1)N",
+    "OC(=O)c1ccc(cc1)NC", "C1=CC2=CC=CC3=C2C(=C1)C=C3",
+]
+
+
+def rdkit_butina_labels(smiles_list, cutoff):
+    """Cluster labels straight from ``rdkit.ML.Cluster.Butina`` over a dense matrix."""
+    from rdkit import DataStructs
+    from rdkit.ML.Cluster import Butina
+
+    from workbench.utils.chem_utils.fingerprints import similarity_fingerprints
+
+    fps, valid_indices = similarity_fingerprints(smiles_list)
+    dists = []
+    for i in range(1, len(fps)):
+        dists.extend([1 - s for s in DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])])
+
+    labels = np.zeros(len(smiles_list), dtype=int)
+    clusters = Butina.ClusterData(dists, len(fps), cutoff, isDistData=True)
+    for cluster_idx, cluster in enumerate(clusters):
+        for mol_idx in cluster:
+            labels[valid_indices[mol_idx]] = cluster_idx
+
+    valid_set = set(valid_indices)
+    next_cluster = len(clusters)
+    for i in range(len(smiles_list)):
+        if i not in valid_set:
+            labels[i] = next_cluster
+            next_cluster += 1
+    return labels
+
+
+@pytest.mark.parametrize("cutoff", [0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+def test_sparse_butina_matches_rdkit_label_for_label(cutoff):
+    """The sparse neighbour list reproduces RDKit's dense-matrix clustering exactly.
+
+    Labels, not just membership: ``group_folds`` orders groups by label value before
+    seeding, so a relabelling would move rows between folds.
+    """
+    from workbench.training.splits import get_butina_clusters
+
+    ours = get_butina_clusters(CLUSTER_SMILES, cutoff=cutoff)
+    theirs = rdkit_butina_labels(CLUSTER_SMILES, cutoff=cutoff)
+    assert np.array_equal(ours, theirs), f"cutoff={cutoff}: {ours} != {theirs}"
+
+
+def test_butina_produces_both_clusters_and_singletons():
+    """The equivalence fixture exercises the branch that claims neighbours, not only
+    the singleton tail — otherwise the comparison above would pass vacuously."""
+    from workbench.training.splits import get_butina_clusters
+
+    _, counts = np.unique(get_butina_clusters(CLUSTER_SMILES, cutoff=0.6), return_counts=True)
+    assert counts.max() > 1
+    assert (counts == 1).any()
+
+
+def test_butina_handles_unparseable_smiles():
+    """Invalid SMILES get their own cluster each, after the valid ones."""
+    from workbench.training.splits import get_butina_clusters
+
+    mixed = CLUSTER_SMILES[:6] + ["not_a_molecule", "also)bad("]
+    labels = get_butina_clusters(mixed, cutoff=0.6)
+    assert len(set(labels[-2:])) == 2
+    assert set(labels[-2:]).isdisjoint(labels[:6])

@@ -56,13 +56,13 @@ DEFAULT_HYPERPARAMETERS = {
     # Rows explained for SHAP feature importance (0 disables)
     "shap_sample_size": 100,
     # Split strategy: "scaffold" (default), "butina", or "random"
-    # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data).
-    #     Falls back to random with a warning if no SMILES column is present.
-    # - butina: Morgan fingerprint clustering (requires 'smiles', more stringent than scaffold,
-    #     O(n^2) compute — prefer for smaller datasets)
+    # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles')
+    # - butina: Morgan fingerprint clustering (requires 'smiles'). Groups analogue series
+    #     that share no Murcko scaffold. O(n^2) compute and memory — see butina_cutoff.
     # - random: Standard random split (use only for non-molecular data or quick baselines)
+    # Both SMILES strategies fall back to random with a warning if no SMILES column.
     "split_strategy": "scaffold",
-    "butina_cutoff": 0.4,  # Tanimoto distance cutoff for Butina clustering
+    "butina_cutoff": 0.6,  # Tanimoto DISTANCE cutoff: cluster at similarity >= 0.4
     # Random seed
     "seed": 42,
     # UQ version to use as the primary confidence source at inference:

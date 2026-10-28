@@ -12,9 +12,9 @@ Spearman supports.
 
 It cannot be scored on the analog holdout, having trained on those rows. Read
 `cyp-reg-chemprop-mt-aux` for that. Its `cv_*` captures are still honest: chemprop's
-k-fold leaves every row out of the fold that predicts it, so those are out-of-fold on a
-scaffold split, reading roughly 1.5x optimistic on CYP1A2/CYP2C9, 1.9x on CYP3A4 and 2.5x
-on CYP2D6 against the board.
+k-fold leaves every row out of the fold that predicts it, so those are out-of-fold on
+whatever `--split-strategy` grouped them. On scaffold folds they read roughly 1.5x
+optimistic on CYP1A2/CYP2C9, 1.9x on CYP3A4 and 2.5x on CYP2D6 against the board.
 
 Predictions from this model need their own calibration. The offsets fitted for
 `cyp-reg-chemprop-mt-100` do not transfer -- different spread means different bias.
@@ -48,6 +48,18 @@ parser.add_argument(
     help="Append to the model name, so a rebuild lands beside the existing model rather than replacing it. "
     "A retrain redraws the fold split, so its out-of-fold numbers move within seed noise",
 )
+parser.add_argument(
+    "--split-strategy",
+    default="scaffold",
+    choices=["scaffold", "butina", "random"],
+    help="Fold grouping. Butina clusters Morgan fingerprints, holding analogue series whole",
+)
+parser.add_argument(
+    "--butina-cutoff",
+    type=float,
+    default=0.6,
+    help="Tanimoto DISTANCE cutoff for butina folds: 0.6 clusters at similarity >= 0.4",
+)
 args = parser.parse_args()
 model_name = MODEL_NAME + (f"-{args.name_suffix.strip('-')}" if args.name_suffix else "")
 
@@ -69,7 +81,12 @@ model = fs.to_model(
     target_column=ALL_TARGETS,
     description="Multi-task Chemprop with log2fc auxiliary targets, trained on 100% for submission",
     tags=TAGS,
-    hyperparameters={"task_weights": task_weights, "uq_version": "v1"},
+    hyperparameters={
+        "task_weights": task_weights,
+        "uq_version": "v1",
+        "split_strategy": args.split_strategy,
+        "butina_cutoff": args.butina_cutoff,
+    },
 )
 model.set_owner("openadmet_cyp")
 
@@ -77,5 +94,5 @@ end = model.to_endpoint(tags=TAGS)
 end.set_owner("openadmet_cyp")
 end.test_inference()
 
-# Out-of-fold over every row, on chemprop's scaffold split rather than the analog holdout.
+# Out-of-fold over every row, on chemprop's k-fold split rather than the analog holdout.
 end.cross_fold_inference()

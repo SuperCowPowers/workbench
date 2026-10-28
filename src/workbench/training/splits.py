@@ -65,22 +65,25 @@ def get_scaffold_groups(smiles_list: list[str]) -> np.ndarray:
     return np.array(groups)
 
 
-def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarray:
-    """Cluster molecules using Butina algorithm on Morgan fingerprints.
+def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.6) -> np.ndarray:
+    """Cluster molecules using Butina sphere exclusion on Morgan fingerprints.
 
-    Uses RDKit's Butina clustering with Tanimoto distance on Morgan fingerprints.
-    This is Pat Walters' recommended approach for creating diverse train/test splits.
+    Pat Walters' recommended approach for creating diverse train/test splits. Reproduces
+    `rdkit.ML.Cluster.Butina.ClusterData` label for label, over a sparse neighbour list
+    rather than a dense distance matrix: at drug-like diversity well over 99% of pairs sit
+    outside the cutoff and are never read, and materializing them is what makes the stock
+    implementation O(n^2) in memory as well as compute.
 
     Args:
         smiles_list: List of SMILES strings
-        cutoff: Tanimoto distance cutoff for clustering (default 0.4)
-               Lower values = more clusters = more similar molecules per cluster
+        cutoff: Tanimoto DISTANCE cutoff for clustering (default 0.6, i.e. cluster
+               molecules at similarity >= 0.4). Lower values cluster less, leaving more
+               molecules as singletons; a singleton constrains no fold boundary.
 
     Returns:
         Array of cluster indices
     """
     from rdkit import DataStructs
-    from rdkit.ML.Cluster import Butina
 
     from workbench.utils.chem_utils.fingerprints import similarity_fingerprints
 
@@ -88,26 +91,36 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
     if len(fps) == 0:
         raise ValueError("No valid molecules found for clustering")
 
-    # Compute distance matrix (upper triangle only for efficiency)
+    # Neighbours within the cutoff. A molecule is its own first neighbour, matching the
+    # zero diagonal of the dense matrix, so a lone molecule has a neighbour count of 1.
     n = len(fps)
-    dists = []
+    neighbors = [[i] for i in range(n)]
     for i in range(1, n):
-        sims = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
-        dists.extend([1 - s for s in sims])
+        for j, sim in enumerate(DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])):
+            if 1 - sim <= cutoff:
+                neighbors[i].append(j)
+                neighbors[j].append(i)
 
-    # Butina clustering
-    clusters = Butina.ClusterData(dists, n, cutoff, isDistData=True)
-
-    # Map back to original indices
+    # Centroids in order of neighbour count, ties to the higher index. Each claims every
+    # neighbour not already taken, so membership is "within the cutoff of the centroid"
+    # rather than of each other, and a molecule between two centroids goes to the first.
+    order = sorted(((len(nbrs), i) for i, nbrs in enumerate(neighbors)), reverse=True)
     cluster_labels = np.zeros(len(smiles_list), dtype=int)
-    for cluster_idx, cluster in enumerate(clusters):
-        for mol_idx in cluster:
-            original_idx = valid_indices[mol_idx]
-            cluster_labels[original_idx] = cluster_idx
+    seen = np.zeros(n, dtype=bool)
+    next_cluster = 0
+    for _, idx in order:
+        if seen[idx]:
+            continue
+        seen[idx] = True
+        cluster_labels[valid_indices[idx]] = next_cluster
+        for nbr in sorted(neighbors[idx]):
+            if not seen[nbr]:
+                seen[nbr] = True
+                cluster_labels[valid_indices[nbr]] = next_cluster
+        next_cluster += 1
 
     # Assign invalid molecules to their own clusters
     valid_set = set(valid_indices)
-    next_cluster = len(clusters)
     for i in range(len(smiles_list)):
         if i not in valid_set:
             cluster_labels[i] = next_cluster
@@ -236,7 +249,7 @@ def get_split_indices(
     target_column: str | None = None,
     test_size: float = 0.2,
     random_state: int = 42,
-    butina_cutoff: float = 0.4,
+    butina_cutoff: float = 0.6,
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     """Get train/validation split indices using various strategies.
 
