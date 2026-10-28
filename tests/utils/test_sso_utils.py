@@ -7,7 +7,6 @@ sso-session profile.
 """
 
 import json
-import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -105,18 +104,39 @@ def test_migrate_leaves_other_profiles_alone(tmp_path, text):
     assert not (tmp_path / "config.bak").exists()
 
 
+class FakeLogin:
+    """Stands in for the `aws sso login` process, as the world says it should behave."""
+
+    def __init__(self, world, command, **kwargs):
+        world.logins.append(command)
+        self.world = world
+        self.returncode = None
+
+    def communicate(self):
+        if self.world.interrupt:
+            self.world.interrupt = False
+            raise KeyboardInterrupt
+        if self.returncode is None:
+            self.returncode = self.world.returncode
+        return CLI_OUTPUT, None
+
+    def kill(self):
+        self.returncode = -9
+
+
+CLI_OUTPUT = "If the browser does not open, open the following URL: https://oidc.example/authorize"
+
+
 @pytest.fixture
 def renew_world(monkeypatch):
     """A terminal with the AWS CLI on PATH, where `aws sso login` is recorded rather than run."""
-    world = SimpleNamespace(answers=[], logins=[], saved={}, auto=False)
+    world = SimpleNamespace(answers=[], logins=[], saved={}, auto=False, returncode=0, interrupt=False)
     monkeypatch.setattr(sso_utils.shutil, "which", lambda name: "/usr/local/bin/aws")
     monkeypatch.setattr(sso_utils, "running_as_service", lambda: False)
     monkeypatch.setattr(sso_utils.sys.stdin, "isatty", lambda: True, raising=False)
     monkeypatch.setattr("builtins.input", lambda prompt: world.answers.pop(0))
     monkeypatch.setattr(sso_utils, "migrate_legacy_sso_profile", lambda profile: False)
-    monkeypatch.setattr(
-        sso_utils.subprocess, "run", lambda cmd: world.logins.append(cmd) or subprocess.CompletedProcess(cmd, 0)
-    )
+    monkeypatch.setattr(sso_utils.subprocess, "Popen", lambda command, **kwargs: FakeLogin(world, command))
     monkeypatch.setattr(sso_utils.boto3, "setup_default_session", lambda: None)
     monkeypatch.setattr(
         ConfigManager,
@@ -128,11 +148,20 @@ def renew_world(monkeypatch):
 
 
 @pytest.mark.parametrize("answer", ["", "y", "YES"])
-def test_renew_yes(renew_world, answer):
+def test_renew_yes(renew_world, answer, capsys):
     renew_world.answers = [answer]
     assert sso_utils.sso_renew("idb-dev")
     assert renew_world.logins == [["/usr/local/bin/aws", "sso", "login", "--profile", "idb-dev"]]
     assert renew_world.saved == {}
+    assert CLI_OUTPUT not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("returncode, interrupt", [(1, False), (0, True)])
+def test_renew_failure_shows_cli_output(renew_world, returncode, interrupt, capsys):
+    renew_world.answers = ["y"]
+    renew_world.returncode, renew_world.interrupt = returncode, interrupt
+    assert not sso_utils.sso_renew("idb-dev")
+    assert CLI_OUTPUT in capsys.readouterr().out
 
 
 def test_renew_no(renew_world):

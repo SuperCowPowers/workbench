@@ -61,22 +61,33 @@ def sso_renew(profile: str = None) -> bool:
     cm = ConfigManager()
     auto = str(cm.get_config("AUTO_SSO_RENEW", False)).strip().lower() in ("true", "1", "yes")
     if auto:
-        cprint("lightpurple", f"AWS SSO token expired for '{profile}': renewing (AUTO_SSO_RENEW)")
+        cprint("lightpurple", f"AWS SSO session expired for '{profile}'")
     else:
-        answer = input(f"AWS SSO token expired for '{profile}'. Renew now? [Y]es/[n]o/[a]lways: ").strip().lower()
+        answer = input(f"AWS SSO session expired for '{profile}'. Renew now? [Y]es/[n]o/[a]lways: ").strip().lower()
         if answer in ("a", "always"):
             cm.save_config("AUTO_SSO_RENEW", True)
-            cprint("lightpurple", f"Saved AUTO_SSO_RENEW to {cm.site_config_path}")
         elif answer not in ("", "y", "yes"):
             return False
 
     migrate_legacy_sso_profile(profile or "default")
+
+    # The CLI's own output (fallback URL, device-code advice) is shown only if the login
+    # fails or is interrupted
+    cprint("lightpurple", "Opening your browser to sign in...")
     command = [aws_cli, "sso", "login"] + (["--profile", profile] if profile else [])
-    if subprocess.run(command).returncode != 0:
+    login = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    try:
+        output, _ = login.communicate()
+    except KeyboardInterrupt:
+        login.kill()
+        output, _ = login.communicate()
+    if login.returncode != 0:
+        print(output)
         return False
 
     # A fresh default session re-reads ~/.aws/config, so a just-migrated profile is seen
     boto3.setup_default_session()
+    cprint("lightgreen", "AWS SSO renewed")
     return True
 
 
@@ -106,12 +117,11 @@ def install_sso_handler() -> None:
 
 
 def _sso_exception_handler(shell, etype, value, tb, tb_offset=None):
-    """IPython custom exception handler: a one-line report plus a renewal in place of the traceback."""
-    cprint("red", f"AWS SSO token expired ({etype.__name__})")
+    """IPython custom exception handler: a renewal offer in place of the traceback."""
     if sso_renew():
-        cprint("lightgreen", "AWS SSO renewed: re-run the last command")
+        cprint("lightgreen", "Re-run the last command")
     else:
-        cprint("darkyellow", f"Renew with '{sso_login_hint()}', then re-run the last command")
+        cprint("darkyellow", f"AWS SSO session expired: renew with '{sso_login_hint()}', then re-run the last command")
 
 
 def migrate_legacy_sso_profile(profile: str, config_path: Optional[str] = None) -> bool:
