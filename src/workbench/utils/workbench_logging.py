@@ -19,6 +19,11 @@ from importlib.metadata import version
 # New botocore version barfs a bunch of checksum logs
 logging.getLogger("botocore.httpchecksum").setLevel(logging.WARNING)
 
+# botocore logs each failed SSO/credential refresh with a full traceback; the raised
+# error (and the REPL's SSO renewal) already reports it
+logging.getLogger("botocore.tokens").setLevel(logging.ERROR)
+logging.getLogger("botocore.credentials").setLevel(logging.ERROR)
+
 # sagemaker.core builds a client on first use and narrates it -- an INFO naming the
 # stage and region, and a "No region provided" warning that fires even though the
 # region is set on the session it was handed. Levels set here survive the
