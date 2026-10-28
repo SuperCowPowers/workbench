@@ -93,7 +93,7 @@ class AWSAccountClamp:
         try:
             self.aws_session.assumed_role_info()
             return True
-        except (ClientError, UnauthorizedSSOTokenError):
+        except ClientError:  # SSO token errors pass through so callers can offer a renewal
             msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             self.log.critical(msg)
             raise RuntimeError(msg)

@@ -45,7 +45,7 @@ def sso_renew(profile: str = None) -> bool:
     """Renew an expired SSO token with `aws sso login`, asking first unless AUTO_SSO_RENEW is set.
 
     Needs an interactive terminal and the AWS CLI; without either it returns False and
-    the caller reports the failure as before.
+    the caller reports the expired token.
 
     Args:
         profile (str, optional): Profile to renew; falls back to the AWS_PROFILE env var.
@@ -55,7 +55,7 @@ def sso_renew(profile: str = None) -> bool:
     """
     profile = profile or os.environ.get("AWS_PROFILE")
     aws_cli = shutil.which("aws")
-    if aws_cli is None or running_as_service() or not sys.stdin.isatty():
+    if aws_cli is None or running_as_service() or not (sys.stdin and sys.stdin.isatty()):
         return False
 
     cm = ConfigManager()
@@ -69,13 +69,17 @@ def sso_renew(profile: str = None) -> bool:
         elif answer not in ("", "y", "yes"):
             return False
 
-    migrate_legacy_sso_profile(profile or "default")
+    # Best effort: a config file we can't read or replace still leaves the login to run
+    try:
+        migrate_legacy_sso_profile(profile or "default")
+    except (OSError, UnicodeError) as e:
+        cprint("darkyellow", f"Could not update the AWS config for silent refresh: {e}")
 
     # The CLI's own output (fallback URL, device-code advice) is shown only if the login
     # fails or is interrupted
     cprint("lightpurple", "Opening your browser to sign in...")
     command = [aws_cli, "sso", "login"] + (["--profile", profile] if profile else [])
-    login = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    login = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace")
     try:
         output, _ = login.communicate()
     except KeyboardInterrupt:

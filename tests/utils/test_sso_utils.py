@@ -227,3 +227,32 @@ def test_save_config_writes_only_that_key(tmp_path, monkeypatch):
         "AWS_PROFILE": "idb-dev",
         "AUTO_SSO_RENEW": True,
     }
+
+
+def test_renew_without_stdin(renew_world, monkeypatch):
+    monkeypatch.setattr(sso_utils.sys, "stdin", None)
+    assert not sso_utils.sso_renew("idb-dev")
+
+
+def test_renew_survives_failed_migration(renew_world, monkeypatch):
+    def locked(profile):
+        raise PermissionError("config is open in another program")
+
+    monkeypatch.setattr(sso_utils, "migrate_legacy_sso_profile", locked)
+    renew_world.answers = ["y"]
+    assert sso_utils.sso_renew("idb-dev")
+    assert len(renew_world.logins) == 1
+
+
+def test_role_refresh_passes_sso_errors_through(monkeypatch):
+    """The refresh callback must not wrap SSO errors, or the REPL hook and Bosco never see them."""
+    from workbench.core.cloud_platform.aws import aws_session
+
+    class ExpiredSTS:
+        def assume_role(self, **kwargs):
+            raise TokenRetrievalError(provider="sso", error_msg="Token has expired and refresh failed")
+
+    monkeypatch.setattr(aws_session.boto3, "client", lambda service: ExpiredSTS())
+    fake_session = SimpleNamespace(get_workbench_execution_role_arn=lambda: "arn:aws:iam::111111111111:role/Workbench")
+    with pytest.raises(TokenRetrievalError):
+        aws_session.AWSSession._assume_workbench_role_session_credentials(fake_session)
