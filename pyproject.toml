@@ -25,25 +25,12 @@ authors = [{ name = "SuperCowPowers LLC", email = "support@supercowpowers.com" }
 
 dependencies = [
     # AWS clients & SDKs
-    # boto3/botocore floors come from sagemaker-core's transitive
-    # requirements (sagemaker → sagemaker-core → boto3>=1.42.2).
-    "boto3 >= 1.42.2",
-    "botocore >= 1.42.2",
+    "boto3",
+    "botocore",
     "awswrangler >= 3.4.0",
-    # sagemaker-core 2.13+ builds its main SageMaker client from the default
-    # credential chain, ignoring the passed boto3 session (pre-GA shim in
-    # sagemaker/core/utils/utils.py, marked "TODO: Remove post-launch").
-    # Breaks assumed-role runs: FeatureGroup offline stores get provisioned
-    # with the caller's SSO creds and fail on glue:GetDatabase. Cap both
-    # until fixed: https://github.com/aws/sagemaker-python-sdk/issues/5986
-    # The whole family is pinned (not just sagemaker-core): the sub-packages
-    # declare only floors on sagemaker-core, so without caps pip can mix
-    # generations (e.g. mlops 1.15 + core 2.12) and break at import time.
-    "sagemaker >= 3.6.0, < 3.13",
-    "sagemaker-core >= 2.12.0, < 2.13",
-    "sagemaker-mlops >= 1.12.0, < 1.13",
-    "sagemaker-serve >= 1.12.0, < 1.13",
-    "sagemaker-train >= 1.12.0, < 1.13",
+    # sagemaker 3.24+ SageMakerClient honors the passed boto3 session (assumed-role runs);
+    # the meta-package pins sagemaker-core/train/serve/mlops to its own generation
+    "sagemaker >= 3.27.0",
     "redis >= 5.0.1",
     "requests >= 2.26.0",
     # aiobotocore floor — each release pins botocore to a one-minor window,
@@ -165,12 +152,6 @@ endpoint_test = "workbench.scripts.endpoint_test:main"
 training_test = "workbench.scripts.training_test:main"
 redis_tunnel = "workbench.scripts.redis_tunnel:main"
 bedrock_verify = "workbench.scripts.bedrock_verify:main"
-
-[tool.uv]
-# torch arrives transitively via sagemaker-serve (unconstrained); this floor
-# stops uv's universal resolver from picking a py313-incompatible old build.
-# A constraint bounds the transitive version without declaring torch as our dep.
-constraint-dependencies = ["torch >= 2.13"]
 
 [tool.black]
 line-length = 120
