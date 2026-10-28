@@ -4,16 +4,16 @@ alembic==1.18.4
     # via
     #   -c ci/.uv-constraints.txt
     #   optuna
-awswrangler==3.16.1
+awswrangler==3.18.0
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in
-boto3==1.43.0
+boto3==1.43.117
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in
     #   awswrangler
-botocore==1.43.0
+botocore==1.43.117
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in
@@ -126,7 +126,7 @@ requests==2.34.2
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/base/training/requirements.in
-s3transfer==0.17.1
+s3transfer==0.19.3
     # via
     #   -c ci/.uv-constraints.txt
     #   boto3

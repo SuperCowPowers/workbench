@@ -37,16 +37,16 @@ attrs==26.1.0
     # via
     #   -c ci/.uv-constraints.txt
     #   aiohttp
-awswrangler==3.16.1
+awswrangler==3.18.0
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in
-boto3==1.43.0
+boto3==1.43.117
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in
     #   awswrangler
-botocore==1.43.0
+botocore==1.43.117
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in
@@ -336,7 +336,7 @@ requests==2.34.2
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in
     #   torch-geometric
-s3transfer==0.17.1
+s3transfer==0.19.3
     # via
     #   -c ci/.uv-constraints.txt
     #   boto3
@@ -381,7 +381,6 @@ threadpoolctl==3.6.0
     #   scikit-learn
 torch==2.13.0+cu130
     # via
-    #   -c (workspace)
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in
     #   atom-jepa
     #   cuequivariance-ops-torch-cu13
