@@ -316,6 +316,23 @@ TOOL_SCHEMAS = [
         ),
         "input_schema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "note_topic",
+        "description": (
+            "Name what the user is working on, for the session record and the next REPL's "
+            "greeting. Call it with new=true when they start a different piece of work, and "
+            "with new=false to sharpen the current title as the work moves on (e.g. 'PK curve "
+            "metrics: AUC done, Cmax open'). A few words; not every turn."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "A few words on the work, its state if useful"},
+                "new": {"type": "boolean", "description": "True when this is a different piece of work"},
+            },
+            "required": ["title", "new"],
+        },
+    },
 ]
 
 
@@ -329,6 +346,8 @@ def dispatch(name: str, tool_input: dict, namespace: dict) -> str:
         return bosco_utils.read_session(tool_input["name"])
     if name == "read_last_session":
         return bosco_utils.read_last_session()
+    if name == "note_topic":
+        return "Noted."  # filed with the turn's record once the turn ends
     if name == "save_session":
         try:
             return f"Saved to {bosco_utils.save_session(tool_input['name'], tool_input['report'])}"

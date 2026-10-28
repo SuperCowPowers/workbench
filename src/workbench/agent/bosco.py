@@ -89,10 +89,11 @@ _TOOL_PHASES = {"run_python": "writing code", "read_guide": "checking a guide"}
 # One conversation for the whole REPL session, shared by one-shot and chat
 _history = []
 
-# This REPL's prompt/reply pairs, saved after every turn as the user's last session,
-# and whether they continue the previous session's (set once its exchanges are carried in)
-_exchanges = []
-_continued = False
+# This REPL's record of topics and exchanges, saved after every turn as the user's last session
+_window = bosco_utils.SessionWindow()
+
+# Tools that keep the session record rather than do the user's work
+_BOOKKEEPING_TOOLS = {"read_last_session", "note_topic"}
 
 # The runtime frame lives here; tunable behavior lives in guides/general.md,
 # injected below so a human can edit it without touching code.
@@ -345,20 +346,20 @@ def _ask(prompt: str) -> None:
 def _record_turn(prompt: str, turn: list) -> None:
     """Add this turn to the last-session record and save it.
 
-    A turn that read the previous session continues it: the first such turn carries the
-    previous exchanges into this record, so the thread survives any number of restarts.
+    A turn that read the previous session continues it, so the thread survives any
+    number of restarts; topics Bosco noted this turn apply before the turn is filed.
     """
-    global _continued
-    tools = {
-        b.name for m in turn if m["role"] == "assistant" for b in m["content"] if getattr(b, "type", None) == "tool_use"
-    }
-    if "read_last_session" in tools and not _continued:
-        previous = bosco_utils.previous_session() or {}
-        _exchanges[:0] = previous.get("exchanges", [])
-        _continued = True
-    worked = bool(tools - {"read_last_session"})
-    _exchanges.append(bosco_utils.exchange(prompt, _reply_text(turn), worked))
-    bosco_utils.save_last_session(_exchanges)
+    calls = [
+        b for m in turn if m["role"] == "assistant" for b in m["content"] if getattr(b, "type", None) == "tool_use"
+    ]
+    names = {b.name for b in calls}
+    if "read_last_session" in names:
+        _window.continue_from(bosco_utils.previous_session())
+    for b in calls:
+        if b.name == "note_topic":
+            _window.note_topic(b.input["title"], b.input.get("new", False))
+    _window.add(prompt, _reply_text(turn), worked=bool(names - _BOOKKEEPING_TOOLS))
+    _window.save()
 
 
 def _reply_text(messages: list) -> str:

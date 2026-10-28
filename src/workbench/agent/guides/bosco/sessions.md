@@ -75,3 +75,8 @@ reporting it as a lookup failure.
 `read_last_session` returns the previous REPL's recent prompts and your replies
 (clipped, no tool calls, no variables) -- raw, not distilled, and separate from saved
 reports. Re-fetch any artifact it names before working with it.
+
+Keep that record legible with `note_topic`: name the work when the user starts
+something new (`new=true`), and sharpen the title as it moves (`new=false`, e.g.
+"PK curve metrics: AUC done, Cmax open"). The next REPL greets the user with those
+titles, so write them for a person skimming a one-line reminder.
