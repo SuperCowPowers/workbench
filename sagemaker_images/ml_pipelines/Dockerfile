@@ -18,14 +18,9 @@ RUN pip install uv
 COPY ml_pipelines/requirements.lock /tmp/
 
 # Layer 1: Install all locked dependencies (every transitive pinned —
-# no silent cascades on rebuild). torch comes from the PyTorch CPU index
-# (lockfile pins torch==2.12.0+cpu); --extra-index-url +
-# --index-strategy unsafe-best-match tell uv which index hosts the +cpu wheel.
+# no silent cascades on rebuild).
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system \
-        --extra-index-url https://download.pytorch.org/whl/cpu \
-        --index-strategy unsafe-best-match \
-        -r /tmp/requirements.lock
+    uv pip install --system -r /tmp/requirements.lock
 
 # Final runtime image
 FROM python:3.12-slim

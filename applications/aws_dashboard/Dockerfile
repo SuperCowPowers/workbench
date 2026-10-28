@@ -17,16 +17,10 @@ RUN apt-get update && apt-get upgrade -y openssl && \
 # Install uv (single static binary; used to install from the lockfile)
 RUN pip install uv
 
-# Layer 1: All locked dependencies (every transitive pinned; lockfile pins
-# torch==X.Y.Z+cpu directly so we don't need the old two-step torch dance).
-# --extra-index-url + --index-strategy unsafe-best-match tell uv which index
-# hosts the +cpu wheel.
+# Layer 1: All locked dependencies (every transitive pinned)
 COPY requirements.lock /tmp/
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system \
-        --extra-index-url https://download.pytorch.org/whl/cpu \
-        --index-strategy unsafe-best-match \
-        -r /tmp/requirements.lock
+    uv pip install --system -r /tmp/requirements.lock
 
 # Layer 2: Workbench only (changes often, ~20 MB)
 ARG WORKBENCH_VERSION=0.8.506

@@ -61,19 +61,14 @@ compile() {
         "$@"
 }
 
-# ml_pipelines: full workbench + [misc], CPU torch (pulled in transitively via sagemaker-serve).
-# No requirements.in needed — pyproject + [misc] covers everything; torch arrives transitively.
+# ml_pipelines: full workbench + [misc]. No requirements.in needed — pyproject + [misc] covers everything.
 compile sagemaker_images/ml_pipelines/requirements.lock \
-    --extra misc \
-    --extra-index-url "$PYTORCH_CPU" \
-    --index-strategy unsafe-best-match
+    --extra misc
 
-# aws_dashboard: full workbench + [misc] + [ui] + uvicorn/asgiref overlay, CPU torch
+# aws_dashboard: full workbench + [misc] + [ui] + uvicorn/asgiref overlay
 compile applications/aws_dashboard/requirements.lock \
     applications/aws_dashboard/requirements.in \
-    --extra misc --extra ui \
-    --extra-index-url "$PYTORCH_CPU" \
-    --index-strategy unsafe-best-match
+    --extra misc --extra ui
 
 # base/inference: endpoint runtime — strict subset of workbench main deps
 # (no sagemaker SDK, no orchestration). Lockfile generated from
