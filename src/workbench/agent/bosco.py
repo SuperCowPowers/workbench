@@ -14,6 +14,7 @@ import codeop
 import builtins
 import logging
 from contextlib import contextmanager
+from functools import lru_cache
 
 # Workbench Imports
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
@@ -21,6 +22,7 @@ from workbench.utils.log_utils import log_level
 from workbench.utils.llm_utils import message_stream, default_model, model_id, CLAUDE_MODELS, FAST_MODEL
 from workbench.utils.job_tracker import job_updates
 from workbench.utils.sso_utils import with_sso_renewal
+from workbench.utils import bosco_utils
 from workbench.agent.tools import (
     TOOL_SCHEMAS,
     dispatch,
@@ -88,6 +90,9 @@ _TOOL_PHASES = {"run_python": "writing code", "read_guide": "checking a guide"}
 # One conversation for the whole REPL session, shared by one-shot and chat
 _history = []
 
+# This REPL's prompt/reply pairs, saved after every turn as the user's last session
+_exchanges = []
+
 # The runtime frame lives here; tunable behavior lives in guides/general.md,
 # injected below so a human can edit it without touching code.
 SYSTEM_PROMPT = """You are Bosco, an ML engineering agent inside the Workbench REPL.
@@ -118,7 +123,7 @@ Guides available via read_guide:
 
 Read the relevant guide before building anything non-trivial, and whenever one
 covers what the user is asking about. They are authoritative -- prefer them over
-your own assumptions rather than answering from general knowledge."""
+your own assumptions rather than answering from general knowledge.{previous}"""
 
 
 def _system_prompt() -> str:
@@ -129,6 +134,19 @@ def _system_prompt() -> str:
         provider_egress=provider_egress_text(),
         personality=personality_text(getattr(bosco, "personality", DEFAULT_PERSONALITY)).strip(),
         guides=guide_index() or "  (none)",
+        previous=_previous_hint(),
+    )
+
+
+@lru_cache(maxsize=1)
+def _previous_hint() -> str:
+    """One line pointing at the previous session, fixed for the REPL so the prompt cache holds."""
+    age = bosco_utils.previous_session_age()
+    if age is None:
+        return ""
+    return (
+        f"\n\nThe user's previous Bosco session was saved {age}; read_last_session has its "
+        "prompts and your replies. Read it when they refer to earlier work, not otherwise."
     )
 
 
@@ -317,8 +335,10 @@ def _resume_turn() -> None:
 
 def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
+    bosco_utils.previous_session()  # snapshot before this turn's save replaces it
     _history.append({"role": "user", "content": job_updates(prompt)})
     _trim_history()
+    turn_start = len(_history)
     try:
         # Quiet routine INFO chatter from the code Bosco runs; restored afterwards.
         # An expired SSO token offers a renewal, then the turn picks up where it stopped.
@@ -330,6 +350,17 @@ def _ask(prompt: str) -> None:
     except Exception as e:
         _close_pending_tools(f"Failed: {type(e).__name__}")
         cprint("red", f"{type(e).__name__}: {e}")
+    finally:
+        _exchanges.append(bosco_utils.exchange(prompt, _reply_text(_history[turn_start:])))
+        bosco_utils.save_last_session(_exchanges)
+
+
+def _reply_text(messages: list) -> str:
+    """The text Bosco showed the user across a turn's assistant messages (tool calls left out)."""
+    texts = [
+        b.text for m in messages if m["role"] == "assistant" for b in m["content"] if getattr(b, "type", None) == "text"
+    ]
+    return "\n\n".join(t.strip() for t in texts if t.strip())
 
 
 def bosco(prompt: str = None):

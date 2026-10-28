@@ -307,6 +307,15 @@ TOOL_SCHEMAS = [
             "required": ["name"],
         },
     },
+    {
+        "name": "read_last_session",
+        "description": (
+            "The user's previous Bosco session: their recent prompts and your replies, oldest "
+            "first, replies clipped. Read it when they refer to earlier work or want to pick up "
+            "where they left off."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
 ]
 
 
@@ -318,6 +327,8 @@ def dispatch(name: str, tool_input: dict, namespace: dict) -> str:
         return read_guide(tool_input["name"])
     if name == "read_session":
         return bosco_utils.read_session(tool_input["name"])
+    if name == "read_last_session":
+        return bosco_utils.read_last_session()
     if name == "save_session":
         try:
             return f"Saved to {bosco_utils.save_session(tool_input['name'], tool_input['report'])}"

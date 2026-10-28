@@ -1,6 +1,6 @@
 # Sessions
 
-> saving a report on where a session ended up, and recalling one later
+> saving a report on where a session ended up, recalling one later, and the previous REPL's record
 
 Conversations meander. A saved session is **not** a transcript of that — it is a
 short report on where things landed, written so a future session (yours or a
@@ -69,3 +69,15 @@ a real timestamp column, for comparing or filtering in code.
 
 Empty is a real answer: no sessions have been saved yet. Say so rather than
 reporting it as a lookup failure.
+
+## The previous session
+
+Separate from saved reports, every turn rewrites a rolling record of the user's
+recent prompts and your replies (clipped, newest kept). `read_last_session` returns
+the one the previous REPL left; the system prompt says when one exists. Read it when
+the user refers to earlier work ("where were we", "that model from yesterday"), not
+by default.
+
+It is raw, not distilled: prompts and the start of your replies, no tool calls, no
+variables. Treat it like a report -- a record of what was true then. Re-fetch any
+artifact it names before working with it.
