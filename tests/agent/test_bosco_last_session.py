@@ -2,7 +2,7 @@
 topics Bosco names, and the next REPL greets the user with them.
 
 The invariants: the record stays under the store's size budget however long the REPL
-runs, a failed write never reaches the user, earlier topics shrink to their titles,
+runs, a failed write never reaches the user, a detour keeps the topic before it,
 and once this REPL starts rewriting the record, the previous session is still what
 Bosco reads.
 """
@@ -51,36 +51,64 @@ def restart():
     bosco_utils.previous_session.cache_clear()
 
 
+def titles(record) -> list:
+    return [t["title"] for t in record["topics"]]
+
+
+def prompts(topic) -> list:
+    return [ex["prompt"] for ex in topic["exchanges"]]
+
+
 def test_each_turn_saves(monkeypatch, isolated_session_store):
     scripted(monkeypatch, [text("You have 3 models.")], [call("run_python"), text("aqsol-v2 wins.")])
     bosco_mod._ask("what models do we have")
     bosco_mod._ask("which is best")
 
-    assert stored(isolated_session_store)["exchanges"] == [
-        {"prompt": "what models do we have", "reply": "You have 3 models.", "worked": False},
-        {"prompt": "which is best", "reply": "aqsol-v2 wins.", "worked": True},
+    assert stored(isolated_session_store)["topics"] == [
+        {
+            "title": None,
+            "exchanges": [
+                {"prompt": "what models do we have", "reply": "You have 3 models.", "worked": False},
+                {"prompt": "which is best", "reply": "aqsol-v2 wins.", "worked": True},
+            ],
+        }
     ]
 
 
-def test_new_topic_shrinks_the_old_one(monkeypatch, isolated_session_store):
+def test_detour_keeps_the_earlier_topic(monkeypatch, isolated_session_store):
     scripted(
         monkeypatch,
-        [call("note_topic", title="logd retrain", new=True), call("run_python"), text("Started.")],
-        [call("note_topic", title="logd retrain: done, MAE 0.41", new=False), text("Finished.")],
         [call("note_topic", title="PK curve metrics", new=True), call("run_python"), text("AUC added.")],
+        [call("note_topic", title="PK curve metrics: scorecard", new=False), text("Two comparisons.")],
+        [call("note_topic", title="JEPA GPU endpoints", new=True), call("run_python"), text("Two are down.")],
     )
-    bosco_mod._ask("retrain logd with a scaffold split")
-    bosco_mod._ask("how did it do")
     bosco_mod._ask("let's work on the PK curve metrics")
+    bosco_mod._ask("which metrics compare models")
+    bosco_mod._ask("let's table this, can you check the JEPA endpoints")
 
     record = stored(isolated_session_store)
-    assert record["earlier"] == ["logd retrain: done, MAE 0.41"]
-    assert record["topic"] == "PK curve metrics"
-    assert [ex["prompt"] for ex in record["exchanges"]] == ["let's work on the PK curve metrics"]
+    assert titles(record) == ["PK curve metrics: scorecard", "JEPA GPU endpoints"]
+    assert prompts(record["topics"][0]) == ["let's work on the PK curve metrics", "which metrics compare models"]
+    assert prompts(record["topics"][1]) == ["let's table this, can you check the JEPA endpoints"]
 
     restart()
     assert bosco_utils.last_session_teaser() == (
-        'Last time (just now): PK curve metrics (also: logd retrain: done, MAE 0.41) -- type "last session" to pick up'
+        'Last time (just now): JEPA GPU endpoints (also: PK curve metrics: scorecard) -- type "last session" to pick up'
+    )
+    previous = dispatch("read_last_session", {}, {})
+    assert "## PK curve metrics: scorecard\n" in previous and "## JEPA GPU endpoints (latest)" in previous
+
+
+def test_unnamed_detour_still_shows(monkeypatch, isolated_session_store):
+    """If Bosco misses the switch, the greeting still names the detour by its prompt."""
+    window = bosco_utils.SessionWindow()
+    window.note_topic("PK curve metrics", new=True)
+    window.add("let's work on the PK curve metrics", "AUC added.", worked=True)
+    window.topics.append({"title": None, "exchanges": []})
+    window.add("can you check the JEPA endpoints", "Two are down.", worked=True)
+    window.save()
+    assert bosco_utils.last_session_teaser().startswith(
+        'Last time (just now): "can you check the JEPA endpoints" (also: PK curve metrics)'
     )
 
 
@@ -96,12 +124,8 @@ def test_recall_continues_the_thread(monkeypatch, isolated_session_store):
         bosco_mod._ask("lets continue")
 
     record = stored(isolated_session_store)
-    assert record["topic"] == "PK curve metrics"
-    assert [ex["prompt"] for ex in record["exchanges"]] == [
-        "let's work on the PK curve metrics",
-        "lets continue",
-        "lets continue",
-    ]
+    assert titles(record) == ["PK curve metrics"]
+    assert prompts(record["topics"][0]) == ["let's work on the PK curve metrics", "lets continue", "lets continue"]
     restart()
     assert bosco_utils.last_session_teaser().startswith("Last time (just now): PK curve metrics --")
 
@@ -109,9 +133,10 @@ def test_recall_continues_the_thread(monkeypatch, isolated_session_store):
 def test_recall_after_starting_something_else(isolated_session_store):
     window = bosco_utils.SessionWindow()
     window.note_topic("aqsol comparison", new=True)
-    window.continue_from({"earlier": ["logd retrain"], "topic": "PK curve metrics", "exchanges": []})
-    assert window.earlier == ["logd retrain", "PK curve metrics"]
-    assert window.topic == "aqsol comparison"
+    window.continue_from(
+        {"topics": [{"title": "logd retrain", "exchanges": []}, {"title": "PK curve metrics", "exchanges": []}]}
+    )
+    assert [t["title"] for t in window.topics] == ["logd retrain", "PK curve metrics", "aqsol comparison"]
 
 
 def test_record_stays_bounded(monkeypatch, isolated_session_store):
@@ -125,9 +150,8 @@ def test_record_stays_bounded(monkeypatch, isolated_session_store):
 
     record = stored(isolated_session_store)
     assert len(json.dumps(record)) <= bosco_utils.LAST_SESSION_CHARS
-    assert len(record["earlier"]) == bosco_utils.MAX_EARLIER
-    assert record["topic"] == "topic 99"
-    assert record["exchanges"][-1]["prompt"].startswith("question 99 ")
+    assert titles(record) == [f"topic {i}" for i in range(90, 100)]
+    assert prompts(record["topics"][-1])[0].startswith("question 99 ")
 
 
 def test_failed_turn_is_still_recorded(monkeypatch, isolated_session_store):
@@ -138,7 +162,8 @@ def test_failed_turn_is_still_recorded(monkeypatch, isolated_session_store):
 
     monkeypatch.setattr(bosco_mod, "_run_turn", run_turn)
     bosco_mod._ask("deploy it")
-    assert stored(isolated_session_store)["exchanges"] == [{"prompt": "deploy it", "reply": "", "worked": False}]
+    exchanges = stored(isolated_session_store)["topics"][0]["exchanges"]
+    assert exchanges == [{"prompt": "deploy it", "reply": "", "worked": False}]
 
 
 def test_failed_write_stays_quiet(monkeypatch, isolated_session_store, capsys):
@@ -160,9 +185,9 @@ def test_previous_session_survives_this_repls_saves(monkeypatch, isolated_sessio
     scripted(monkeypatch, [text("Hello again.")])
     bosco_mod._ask("hi")
 
-    assert stored(isolated_session_store)["exchanges"][-1]["prompt"] == "hi"
+    assert prompts(stored(isolated_session_store)["topics"][-1]) == ["hi"]
     previous = dispatch("read_last_session", {}, {})
-    assert "Latest topic: logd retrain" in previous
+    assert "## logd retrain (latest)" in previous
     assert "train a logd model" in previous and "Started logd-xgb-v1." in previous
     assert "**User:** hi" not in previous
 

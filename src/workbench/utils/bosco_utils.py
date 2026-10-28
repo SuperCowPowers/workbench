@@ -37,7 +37,7 @@ LAST_SESSION_CHARS = 5000
 PROMPT_CHARS = 500
 REPLY_CHARS = 800
 TITLE_CHARS = 100
-MAX_EARLIER = 10  # titles of earlier topics kept
+MAX_TOPICS = 10  # topics kept, by title even once their exchanges are dropped
 
 # What a failed read or write of the record can raise: AWS (including an expired SSO
 # token), the local store's disk, or a value the store can't fit
@@ -219,31 +219,35 @@ def exchange(prompt: str, reply: str, worked: bool = False) -> dict:
 class SessionWindow:
     """This REPL's last-session record, rewritten after every turn.
 
-    Bosco names topics as the work moves (``note_topic``). The current topic keeps its
-    exchanges in full; earlier topics shrink to their titles. Reading the previous
-    session continues it: its topics and exchanges become the start of this window.
+    Exchanges are grouped under the topics Bosco names as the work moves
+    (``note_topic``), oldest first. A detour keeps the topic before it: only the size
+    budget drops exchanges, oldest first, so an old topic shrinks to its title. Reading
+    the previous session continues it: its topics become the start of this window.
     """
 
     def __init__(self):
-        self.earlier = []  # titles of finished topics, oldest first
-        self.topic = None
-        self.exchanges = []
+        self.topics = [{"title": None, "exchanges": []}]
         self.continued = False
 
+    @property
+    def current(self) -> dict:
+        return self.topics[-1]
+
     def note_topic(self, title: str, new: bool) -> None:
-        """Name the current topic, or start a new one (the old one shrinks to its title).
+        """Name the current topic, or start a new one.
 
         Args:
             title (str): A few words on what the user is working on.
             new (bool): The user moved on to a different piece of work.
         """
-        if new and self.topic is not None:
-            self.earlier.append(self.topic)
-            self.exchanges.clear()
-        self.topic = title[:TITLE_CHARS]
+        if new and self.current["title"] is not None:
+            self.topics.append({"title": None, "exchanges": []})
+        self.current["title"] = title[:TITLE_CHARS]
 
     def continue_from(self, previous: dict) -> None:
-        """Make the previous session's record the start of this window (once per REPL).
+        """Make the previous session's topics the start of this window (once per REPL).
+
+        Exchanges from before this REPL named a topic join the previous latest topic.
 
         Args:
             previous (dict): The previous record, or None when there is none.
@@ -251,31 +255,24 @@ class SessionWindow:
         if self.continued or not previous:
             return
         self.continued = True
-        if self.topic is None:
-            self.earlier[:0] = previous.get("earlier", [])
-            self.topic = previous.get("topic")
-            self.exchanges[:0] = previous.get("exchanges", [])
-        else:
-            self.earlier[:0] = previous.get("earlier", []) + [t for t in [previous.get("topic")] if t]
+        prior = [dict(t, exchanges=list(t["exchanges"])) for t in previous.get("topics", [])]
+        if prior and self.topics[0]["title"] is None:
+            prior[-1]["exchanges"] += self.topics.pop(0)["exchanges"]
+        self.topics[:0] = prior
 
     def add(self, prompt: str, reply: str, worked: bool) -> None:
         """Record one turn under the current topic."""
-        self.exchanges.append(exchange(prompt, reply, worked))
+        self.current["exchanges"].append(exchange(prompt, reply, worked))
 
     def record(self) -> dict:
-        """The record to store, trimmed to fit: oldest exchanges and titles go first.
+        """The record to store, trimmed to fit: the oldest topics and exchanges go first.
 
         Trims this window in place too, so it stays bounded however long the REPL runs.
         """
-        del self.earlier[:-MAX_EARLIER]
-        record = {
-            "saved": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "earlier": self.earlier,
-            "topic": self.topic,
-            "exchanges": self.exchanges,
-        }
-        while len(self.exchanges) > 1 and len(json.dumps(record)) > LAST_SESSION_CHARS:
-            self.exchanges.pop(0)
+        del self.topics[:-MAX_TOPICS]
+        record = {"saved": datetime.now(timezone.utc).isoformat(timespec="seconds"), "topics": self.topics}
+        while sum(len(t["exchanges"]) for t in self.topics) > 1 and len(json.dumps(record)) > LAST_SESSION_CHARS:
+            next(t for t in self.topics if t["exchanges"])["exchanges"].pop(0)
         return record
 
     def save(self) -> None:
@@ -296,7 +293,7 @@ def previous_session() -> dict:
     what comes back.
 
     Returns:
-        dict: {"saved", "earlier", "topic", "exchanges"}, or None when there is none.
+        dict: {"saved", "topics": [{"title", "exchanges"}]}, or None when there is none.
     """
     try:
         with silence_logs():
@@ -312,45 +309,51 @@ def previous_session_age() -> str:
     return _age(pd.Timestamp(record["saved"])) if record else None
 
 
+def _previous_topics() -> list:
+    """The previous session's topics that have a title or an exchange, oldest first."""
+    record = previous_session() or {}
+    return [t for t in record.get("topics", []) if t["title"] or t["exchanges"]]
+
+
 def read_last_session() -> str:
-    """The previous session for Bosco to read: its topics, then the current topic's exchanges.
+    """The previous session for Bosco to read: each topic and its exchanges, oldest first.
 
     Returns:
         str: Markdown, or a note that there is no previous session.
     """
-    record = previous_session()
-    if not record or not (record.get("topic") or record.get("exchanges")):
+    topics = _previous_topics()
+    if not topics:
         return "No previous session recorded."
-    lines = [f"Previous session, last saved {previous_session_age()} (replies clipped)."]
-    if record.get("earlier"):
-        lines.append(f"Earlier topics: {'; '.join(record['earlier'])}")
-    if record.get("topic"):
-        lines.append(f"Latest topic: {record['topic']}")
-    for ex in record.get("exchanges", []):
-        lines += ["", f"**User:** {ex['prompt']}", f"**Bosco:** {ex['reply'] or '(no reply)'}"]
+    lines = [f"Previous session, last saved {previous_session_age()} (oldest first, replies clipped)."]
+    for i, topic in enumerate(topics):
+        latest = " (latest)" if i == len(topics) - 1 else ""
+        lines += ["", f"## {topic['title'] or '(untitled)'}{latest}"]
+        if not topic["exchanges"]:
+            lines.append("(exchanges dropped for space; title only)")
+        for ex in topic["exchanges"]:
+            lines += [f"**User:** {ex['prompt']}", f"**Bosco:** {ex['reply'] or '(no reply)'}"]
     return "\n".join(lines)
 
 
 def last_session_teaser() -> str:
     """One startup line on what the previous session was about, or None without one.
 
-    The latest topic and the two before it; without topics, the last prompt where Bosco
-    did work (or the last prompt).
+    The latest topic's title (or, untitled, its last prompt where Bosco did work), then
+    the titles of the two topics before it.
     """
-    record = previous_session()
-    if not record:
+    topics = _previous_topics()
+    if not topics:
         return None
-    if record.get("topic"):
-        about = _clip(record["topic"])
-        also = [_clip(t, 30) for t in reversed(record.get("earlier", [])[-2:])]
-        if also:
-            about += f" (also: {', '.join(also)})"
-    elif record.get("exchanges"):
-        exchanges = record["exchanges"]
+    latest = topics[-1]
+    if latest["title"]:
+        about = _clip(latest["title"])
+    else:
+        exchanges = latest["exchanges"]
         named = next((ex for ex in reversed(exchanges) if ex.get("worked")), exchanges[-1])
         about = f'"{_clip(named["prompt"])}"'
-    else:
-        return None
+    also = [_clip(t["title"], 30) for t in reversed(topics[:-1]) if t["title"]][:2]
+    if also:
+        about += f" (also: {', '.join(also)})"
     return f'Last time ({previous_session_age()}): {about} -- type "last session" to pick up'
 
 

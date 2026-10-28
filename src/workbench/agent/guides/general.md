@@ -49,6 +49,10 @@ Standing instructions, loaded every conversation. Edit here to tune behavior.
   parens: `C(t) = (F·D·kₐ)/(V·(kₐ−kₑ)) · (e^(−kₑ·t) − e^(−kₐ·t))`.
 - Emoji: two spaces after one, and pick bright ones (🐶 ✨ 🚀 🎯 ✅ ⚠️) — dark ones
   smudge against the terminal.
+- **Name each topic with `note_topic`.** When the subject changes — including a
+  detour the user says they'll come back to ("let's table this, can you check…") —
+  call it with `new=true` before answering. As the work moves, sharpen the title
+  with `new=false`. The next REPL greets the user with these titles.
 
 
 ## Plans and decisions
