@@ -5681,8 +5681,46 @@
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Real-time: always on, for low-latency scoring</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">serverless</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div>
-<p>Both default to an <code>ml.g6.xlarge</code> (one NVIDIA L4) running Workbench's GPU inference image; pass <code>instance=</code> to choose another. An async endpoint stays on one instance unless you pass <code>max_instances=</code>.</p>
-<p>GPU endpoint instances are quota-limited per instance type and region, often to one <code>ml.g6.xlarge</code> or none; check "ml.g6.xlarge for endpoint usage" for your account in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.</p>
+<p>Both run Workbench's GPU inference image. GPU capacity is often short, so rather than one instance type they list instance pools, and SageMaker provisions from the first with capacity, at creation and on every scale-up:</p>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Instance</th>
+<th>Hardware</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>ml.g6.xlarge</code></td>
+<td>NVIDIA L4</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>ml.g5.xlarge</code></td>
+<td>NVIDIA A10G</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>ml.g6.2xlarge</code></td>
+<td>NVIDIA L4</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>ml.g5.2xlarge</code></td>
+<td>NVIDIA A10G</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>ml.c7i.4xlarge</code></td>
+<td>CPU, async endpoints only</td>
+</tr>
+</tbody>
+</table>
+<p>The CPU pool is a fallback: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU. Real-time endpoints stop at the GPU pools, since a real-time request must answer within 60 seconds. Pass <code>instance=</code> to deploy a single type instead. An async endpoint stays on one instance unless you pass <code>max_instances=</code>.</p>
+<p>When every pool is out, SageMaker keeps trying for up to an hour. If it still has no instance, <code>to_endpoint()</code> deletes the failed endpoint and raises <code>EndpointCapacityError</code> (from <code>workbench.core.artifacts.endpoint_core</code>); the model is intact, so deploy it again later. An async endpoint scaling up from zero raises the same error after the same hour.</p>
+<p>Endpoint instances are quota-limited per instance type and region; check <code>&lt;instance type&gt; for endpoint usage</code> for each pool type in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.</p>
 <p>A model's training captures need no endpoint: <code>get_inference_predictions("training")</code> gives the out-of-fold rows and <code>get_inference_predictions("validation")</code> the rows held out with <code>validation_ids</code>.</p>
 <h2 id="pretrained-weights">Pretrained Weights</h2>
 <p>The encoder weights (Hugging Face <code>atom-jepa/atom-jepa</code>, revision <code>8f7514f</code>, CC BY 4.0) are published in Workbench's foundation-model registry, so training jobs fetch them from S3 and never depend on Hugging Face.</p>
