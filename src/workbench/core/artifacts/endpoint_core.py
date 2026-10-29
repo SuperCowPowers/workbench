@@ -48,6 +48,21 @@ DataCaptureConfigSummary.model_fields["kms_key_id"].default = _Unassigned()
 DataCaptureConfigSummary.model_rebuild(force=True)
 SagemakerEndpoint.model_rebuild(force=True)
 
+# The error code SageMaker puts in an endpoint's FailureReason when it can't provision an instance
+CAPACITY_ERROR_CODE = "InsufficientInstanceCapacity"
+
+
+class EndpointCapacityError(RuntimeError):
+    """SageMaker could not provision an instance for an endpoint (every instance pool was out).
+
+    Retryable later: the model is intact, and a later deploy or invocation tries again.
+    """
+
+
+def is_capacity_failure(reason) -> bool:
+    """Whether an endpoint's FailureReason says SageMaker couldn't provision an instance"""
+    return CAPACITY_ERROR_CODE in str(reason or "")
+
 
 class WorkbenchDeserializer(PandasDeserializer):
     """PandasDeserializer that handles 'text/csv; charset=utf-8' content types.

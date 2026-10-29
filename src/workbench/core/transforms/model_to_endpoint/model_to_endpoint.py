@@ -14,11 +14,13 @@ from botocore.exceptions import ClientError
 
 # SageMaker V3 Resource Classes
 from sagemaker.core.resources import Model as SagemakerModel, EndpointConfig, Endpoint as SagemakerEndpoint
+from sagemaker.core.utils.exceptions import FailedStatusError
 from sagemaker.core.shapes.shapes import (
     AsyncInferenceClientConfig,
     AsyncInferenceConfig,
     AsyncInferenceOutputConfig,
     ContainerDefinition,
+    InstancePool,
     ProductionVariant,
     ProductionVariantServerlessConfig,
     DataCaptureConfig as DataCaptureConfigShape,
@@ -37,7 +39,11 @@ SPECIAL_SNAKE_TO_PASCAL_MAPPINGS["memory_size_in_mb"] = "MemorySizeInMB"
 # Local Imports (after monkey-patch above)
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput  # noqa: E402
 from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
-from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
+from workbench.core.artifacts.endpoint_core import (  # noqa: E402
+    EndpointCapacityError,
+    EndpointCore,
+    is_capacity_failure,
+)
 from workbench.core.artifact import Artifact  # noqa: E402
 
 from workbench.utils.endpoint_autoscaling import (  # noqa: E402
@@ -70,11 +76,13 @@ REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
 # Async endpoints run long compute work (RDKit conformer generation, etc.), so their
 # default has more CPU.
 ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
-# Models that serve from the CUDA image (Atom-JEPA) get one GPU; an async endpoint scales it to
-# zero when idle. The L4 is the faster card; us-west-2 serves it from a pool that frequently
-# has no capacity, so the A10G is the default.
-GPU_DEFAULT_INSTANCE = "ml.g5.xlarge"
-GPU_PREFERRED_INSTANCE = "ml.g6.xlarge"
+# Models that serve from the CUDA image (Atom-JEPA) get one GPU from the first of these pools
+# with capacity, at creation and on every scale-up; an async endpoint scales it to zero when idle.
+# The L4 and A10G xlarge come first, then their 2xlarge sizes, then the L40S. All are Ampere or
+# later, which bf16 and cuEquivariance need. SageMaker takes at most 5 pools.
+GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge", "ml.g6e.xlarge"]
+# How long SageMaker waits for capacity once every pool is out (valid: 300-3600)
+GPU_PROVISION_TIMEOUT_SECONDS = 3600
 # An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
 # the caller asks for more
 GPU_ASYNC_MAX_INSTANCES = 1
@@ -142,7 +150,8 @@ class ModelToEndpoint(Transform):
             model_name(str): The Name of the input Model
             endpoint_name(str): The Name of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
-            instance(str): The instance type for Realtime Endpoints (default: None = auto-select)
+            instance(str): The instance type for Realtime Endpoints (default: None = auto-select;
+                GPU models get GPU_INSTANCE_POOLS)
             async_endpoint(bool): Deploy as an async endpoint (default: False). Async
                 endpoints support up to 60-minute invocations and use S3 for I/O.
                 Incompatible with serverless — if both are True, serverless is forced off.
@@ -321,8 +330,9 @@ class ModelToEndpoint(Transform):
         self.log.info(f"Model Framework: {workbench_model.model_framework}")
         needs_more_resources = workbench_model.model_framework in [ModelFramework.PYTORCH, ModelFramework.CHEMPROP]
 
-        # Determine serverless config and instance type
+        # Determine serverless config and instance type (or pools)
         serverless_config = None
+        instance_pools = None
         if self.serverless:
             # For PyTorch or ChemProp we need at least 4GB of memory
             if needs_more_resources and mem_size < 4096:
@@ -344,9 +354,9 @@ class ModelToEndpoint(Transform):
                 instance_type = self.instance
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
             elif workbench_model.model_framework == ModelFramework.ATOMJEPA:
-                instance_type = GPU_DEFAULT_INSTANCE
-                self.log.important(f"Endpoint: Instance Type={instance_type} (GPU for Atom-JEPA)")
-                self.log.important(f"Switch the default to {GPU_PREFERRED_INSTANCE} once its capacity is reliable")
+                instance_type = None
+                instance_pools = GPU_INSTANCE_POOLS
+                self.log.important(f"Endpoint: Instance Pools={' > '.join(instance_pools)} (GPU for Atom-JEPA)")
             else:
                 memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
                 instance_type = realtime_instance(memory_gb, self.async_endpoint)
@@ -394,6 +404,7 @@ class ModelToEndpoint(Transform):
                 model_package_arn=model_package_arn,
                 serverless_config=serverless_config,
                 instance_type=instance_type,
+                instance_pools=instance_pools,
                 data_capture_config=data_capture_config,
                 tags=sagemaker_tags,
                 inference_ami_version=inference_ami_version,
@@ -408,6 +419,7 @@ class ModelToEndpoint(Transform):
                     model_package_arn=model_package_arn,
                     serverless_config=serverless_config,
                     instance_type=instance_type,
+                    instance_pools=instance_pools,
                     data_capture_config=data_capture_config,
                     tags=sagemaker_tags,
                     inference_ami_version=inference_ami_version,
@@ -420,6 +432,7 @@ class ModelToEndpoint(Transform):
         model_package_arn: str,
         serverless_config=None,
         instance_type: str = None,
+        instance_pools: list = None,
         data_capture_config=None,
         tags=None,
         inference_ami_version: str = None,
@@ -430,6 +443,7 @@ class ModelToEndpoint(Transform):
             model_package_arn (str): The model package ARN to deploy
             serverless_config: ServerlessConfig for serverless deployments
             instance_type (str): Instance type for realtime deployments
+            instance_pools (list): Instance types in priority order, in place of instance_type
             data_capture_config: Data capture configuration
             tags: List of Tag objects
             inference_ami_version (str): SageMaker host image for the instances (None = SageMaker's default)
@@ -471,7 +485,14 @@ class ModelToEndpoint(Transform):
             production_variant.serverless_config = serverless_config
         else:
             production_variant.initial_instance_count = 1
-            production_variant.instance_type = instance_type
+            if instance_pools:
+                production_variant.instance_pools = [
+                    InstancePool(instance_type=pool_type, priority=priority)
+                    for priority, pool_type in enumerate(instance_pools, start=1)
+                ]
+                production_variant.variant_instance_provision_timeout_in_seconds = GPU_PROVISION_TIMEOUT_SECONDS
+            else:
+                production_variant.instance_type = instance_type
             production_variant.container_startup_health_check_timeout_in_seconds = 300
             if inference_ami_version:
                 production_variant.inference_ami_version = inference_ami_version
@@ -507,7 +528,17 @@ class ModelToEndpoint(Transform):
             tags=tags,
             session=self.boto3_session,
         )
-        endpoint.wait_for_status("InService")
+        try:
+            endpoint.wait_for_status("InService")
+        except FailedStatusError:
+            if not is_capacity_failure(endpoint.failure_reason):
+                raise
+            # A failed endpoint never recovers, so clear it for a clean retry (the model is untouched)
+            EndpointCore.managed_delete(self.output_name)
+            raise EndpointCapacityError(
+                f"No instance capacity for endpoint {self.output_name}; deleted it so a later to_endpoint() "
+                f"starts clean. SageMaker reports: {endpoint.failure_reason}"
+            ) from None
 
         # Register the autoscaler for instance-based endpoints (async + realtime).
         # Must happen after the endpoint is InService — AWS doesn't allow managed

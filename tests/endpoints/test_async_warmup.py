@@ -8,6 +8,7 @@ the warmer can't be queued, and a clean retryable error when it never comes up.
 
 from workbench.core.artifacts import async_endpoint_core as mod
 from workbench.core.artifacts.async_endpoint_core import AsyncEndpointCore
+from workbench.core.artifacts.endpoint_core import EndpointCapacityError
 from workbench.utils.async_endpoint_utils import EndpointWarmingError
 
 
@@ -27,6 +28,7 @@ class _Clock:
 def _bare_core():
     c = object.__new__(AsyncEndpointCore)  # skip __init__ (no AWS)
     c.name = "ep"
+    c.endpoint_meta = {}
     c.is_serverless = lambda: False
     return c
 
@@ -96,8 +98,9 @@ def test_warm_self_raises_when_never_warms(monkeypatch):
     assert raised is not None and "retry shortly" in raised
 
 
-def test_warm_self_reports_why_scale_up_is_stuck(monkeypatch):
-    monkeypatch.setattr(mod, "time", _Clock())
+def test_warm_self_waits_longer_then_raises_when_out_of_capacity(monkeypatch):
+    clock = _Clock()
+    monkeypatch.setattr(mod, "time", clock)
     c = _bare_core()
     c._current_instances = lambda: 0
     c._fire_warmer = lambda: None
@@ -106,6 +109,7 @@ def test_warm_self_reports_why_scale_up_is_stuck(monkeypatch):
     raised = None
     try:
         c._warm_self()
-    except EndpointWarmingError as e:
+    except EndpointCapacityError as e:
         raised = str(e)
     assert raised is not None and "InsufficientInstanceCapacity" in raised
+    assert clock.t - 1000.0 >= mod.WARM_UP_CAPACITY_CAP_S  # waited out the capacity cap, not the 15-min one

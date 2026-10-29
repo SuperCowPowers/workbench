@@ -277,7 +277,7 @@ def _preflight_quota_check(boto3_session, endpoint_name: str, max_capacity: int)
         if not variants:
             return
         instance_type = variants[0].get("InstanceType")
-        if not instance_type:  # serverless
+        if not instance_type:  # serverless or pooled
             return
 
         target_name = f"{instance_type} for endpoint usage"

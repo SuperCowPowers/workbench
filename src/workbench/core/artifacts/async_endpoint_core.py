@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 
-from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.core.artifacts.endpoint_core import EndpointCapacityError, EndpointCore, is_capacity_failure
 from workbench.endpoints.async_inference import async_inference
 from workbench.utils.async_endpoint_utils import (
     EndpointWarmingError,
@@ -44,6 +44,8 @@ log = logging.getLogger("workbench")
 # deliberately coarse — scale-from-zero takes minutes, and each poll is a
 # DescribeEndpoint call (throttle-prone when several children warm in parallel).
 WARM_UP_CAP_S = 900  # 15 min — async fleet cold start plus headroom
+# A scale-up SageMaker reports is waiting on capacity keeps trying for the GPU pools' provision timeout
+WARM_UP_CAPACITY_CAP_S = 3600
 WARM_UP_POLL_S = 20
 
 # Pandas option applied once at import — avoid mutating global state per call.
@@ -111,7 +113,9 @@ class AsyncEndpointCore(EndpointCore):
         cold child, but that's harmless — readiness is judged by instance count, not
         by the throwaway warmer's result.)
 
-        Raises :class:`EndpointWarmingError` if warm-up exceeds ``WARM_UP_CAP_S``.
+        Raises :class:`EndpointWarmingError` if warm-up exceeds ``WARM_UP_CAP_S``, or
+        :class:`EndpointCapacityError` if SageMaker still has no instance capacity after
+        ``WARM_UP_CAPACITY_CAP_S``.
         """
         children = _async_children(self.workbench_meta() or {})
         warmers = [AsyncEndpointCore(c)._ensure_warm for c in children]
@@ -144,23 +148,29 @@ class AsyncEndpointCore(EndpointCore):
                 f"Endpoint '{self.name}' could not be warmed — failed to queue a warm-up request: {fire_error}"
             )
 
-        # Check before sleeping so an already-warm instance returns immediately.
-        deadline = time.time() + WARM_UP_CAP_S
-        while time.time() < deadline:
+        # Check before sleeping so an already-warm instance returns immediately. SageMaker says
+        # why a scale-up is stuck in the endpoint's FailureReason, which each poll refreshes;
+        # one waiting on capacity gets the longer cap.
+        start = time.time()
+        cap_s = WARM_UP_CAP_S
+        while time.time() - start < cap_s:
             if self._current_instances() >= 1:
                 log.important(f"Endpoint '{self.name}' is warm.")
                 return
+            if cap_s == WARM_UP_CAP_S and is_capacity_failure((self.endpoint_meta or {}).get("FailureReason")):
+                cap_s = WARM_UP_CAPACITY_CAP_S
+                log.important(f"Endpoint '{self.name}': no instance capacity yet, waiting up to {cap_s // 60}m...")
             time.sleep(WARM_UP_POLL_S)
 
-        # SageMaker says why a scale-up is stuck (e.g. InsufficientInstanceCapacity) in the
-        # endpoint's FailureReason, which the refresh above just read
         counts = self._live_instance_counts()
         reason = (self.endpoint_meta or {}).get("FailureReason")
-        raise EndpointWarmingError(
-            f"Endpoint '{self.name}' still warming after {WARM_UP_CAP_S // 60}m "
+        stuck = (
+            f"Endpoint '{self.name}' still warming after {cap_s // 60}m "
             f"(instances {counts.get('current', '?')}/{counts.get('desired', '?')} up) — "
-            + (f"SageMaker reports: {reason}" if reason else "retry shortly.")
         )
+        if is_capacity_failure(reason):
+            raise EndpointCapacityError(stuck + f"SageMaker reports: {reason}")
+        raise EndpointWarmingError(stuck + (f"SageMaker reports: {reason}" if reason else "retry shortly."))
 
     def _live_instance_counts(self) -> dict:
         """Fresh ``{'current', 'desired'}`` instance counts (refreshes meta first)."""

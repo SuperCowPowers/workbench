@@ -23,6 +23,30 @@ def to_utc(dt):
     return dt
 
 
+def variant_instance(config_variant: dict, endpoint_variant: dict = None) -> str:
+    """The instance a production variant serves from.
+
+    Args:
+        config_variant (dict): The variant from DescribeEndpointConfig
+        endpoint_variant (dict): The variant from DescribeEndpoint, which reports the pool serving
+
+    Returns:
+        str: "Serverless (<GB>GB/<concurrency>)", the instance type, or for a pooled variant the
+            type serving (its pools in priority order while scaled to zero)
+    """
+    if "ServerlessConfig" in config_variant:
+        serverless = config_variant["ServerlessConfig"]
+        return f"Serverless ({serverless['MemorySizeInMB'] // 1024}GB/{serverless['MaxConcurrency']})"
+    if "InstancePools" in config_variant:
+        pools = (endpoint_variant or {}).get("InstancePools", [])
+        serving = [pool["InstanceType"] for pool in pools if pool.get("CurrentInstanceCount")]
+        if serving:
+            return ", ".join(serving)
+        by_priority = sorted(config_variant["InstancePools"], key=lambda pool: pool["Priority"])
+        return " > ".join(pool["InstanceType"] for pool in by_priority)
+    return config_variant["InstanceType"]
+
+
 class AWSMeta:
     """AWSMeta: A class that provides Metadata for a broad set of AWS Platform Artifacts
 
@@ -368,7 +392,8 @@ class AWSMeta:
 
         endpoint_details = self.sm_client.describe_endpoint(EndpointName=name)
         aws_tags = self.get_aws_tags(endpoint_details["EndpointArn"])
-        config_info = self._endpoint_config_info(endpoint_details["EndpointConfigName"])
+        endpoint_variant = (endpoint_details.get("ProductionVariants") or [None])[0]
+        config_info = self._endpoint_config_info(endpoint_details["EndpointConfigName"], endpoint_variant)
 
         return {
             "Name": name,
@@ -405,11 +430,12 @@ class AWSMeta:
         input_model = self.get_aws_tags(endpoint_details["EndpointArn"]).get("workbench_input")
         return input_model if input_model and input_model != "unknown" else None
 
-    def _endpoint_config_info(self, endpoint_config_name: str) -> dict:
+    def _endpoint_config_info(self, endpoint_config_name: str, endpoint_variant: dict = None) -> dict:
         """Internal: Get the Endpoint Configuration information for the given endpoint config name.
 
         Args:
             endpoint_config_name (str): The name of the endpoint configuration.
+            endpoint_variant (dict): The endpoint's variant from DescribeEndpoint (default: None)
 
         Returns:
             dict: The endpoint configuration details.
@@ -419,17 +445,8 @@ class AWSMeta:
         try:
             endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
             production_variant = endpoint_config["ProductionVariants"][0]
-
-            # Determine instance type or serverless configuration
-            instance_type = production_variant.get("InstanceType")
-            if instance_type is None:
-                # If no instance type, it's a serverless configuration
-                mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
-                concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
-                instance_type = f"Serverless ({mem_size // 1024}GB/{concurrency})"
-
             return {
-                "instance": instance_type,
+                "instance": variant_instance(production_variant, endpoint_variant),
                 "variant": production_variant.get("VariantName", "-"),
                 "created": endpoint_config["CreationTime"],
             }
@@ -562,14 +579,8 @@ class AWSMeta:
         endpoint_config_name = endpoint_details.get("EndpointConfigName")
         endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
         production_variant = endpoint_config["ProductionVariants"][0]
-
-        instance_type = production_variant.get("InstanceType")
-        if instance_type is None:
-            # If no instance type, it's a serverless configuration
-            mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
-            concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
-            instance_type = f"Serverless ({mem_size//1024}GB/{concurrency})"
-        endpoint_details["InstanceType"] = instance_type
+        endpoint_variant = (endpoint_details.get("ProductionVariants") or [None])[0]
+        endpoint_details["InstanceType"] = variant_instance(production_variant, endpoint_variant)
 
         # Retrieve Workbench metadata from AWS tags
         endpoint_details["workbench_meta"] = self.get_aws_tags(endpoint_details["EndpointArn"])
