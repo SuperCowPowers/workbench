@@ -78,10 +78,12 @@ REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
 ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
 # Models that serve from the CUDA image (Atom-JEPA) get an instance from the first of these pools
 # with capacity, at creation and on every scale-up; an async endpoint scales it to zero when idle.
-# The L4 and A10G GPUs (Ampere or later, for bf16 and cuEquivariance) come first. The last is a
-# CPU fallback: the same image serves there under the GPU host image, at ~30 s/molecule vs ~0.6
-# on a GPU. SageMaker takes at most 5 pools.
-GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge", "ml.c7i.4xlarge"]
+# L4 and A10G GPUs: Ampere or later, for bf16 and cuEquivariance.
+GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge"]
+# Async endpoints add a last, CPU pool (SageMaker takes at most 5): the same image serves there
+# under the GPU host image, at ~30 s/molecule vs ~0.6 on a GPU. Real-time endpoints don't, since a
+# real-time invocation must answer within 60 s.
+CPU_FALLBACK_INSTANCE = "ml.c7i.4xlarge"
 # How long SageMaker waits for capacity once every pool is out (valid: 300-3600)
 GPU_PROVISION_TIMEOUT_SECONDS = 3600
 # An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
@@ -152,7 +154,7 @@ class ModelToEndpoint(Transform):
             endpoint_name(str): The Name of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
             instance(str): The instance type for Realtime Endpoints (default: None = auto-select;
-                GPU models get GPU_INSTANCE_POOLS)
+                Atom-JEPA models get GPU_INSTANCE_POOLS, plus CPU_FALLBACK_INSTANCE when async)
             async_endpoint(bool): Deploy as an async endpoint (default: False). Async
                 endpoints support up to 60-minute invocations and use S3 for I/O.
                 Incompatible with serverless — if both are True, serverless is forced off.
@@ -356,7 +358,7 @@ class ModelToEndpoint(Transform):
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
             elif workbench_model.model_framework == ModelFramework.ATOMJEPA:
                 instance_type = None
-                instance_pools = GPU_INSTANCE_POOLS
+                instance_pools = GPU_INSTANCE_POOLS + ([CPU_FALLBACK_INSTANCE] if self.async_endpoint else [])
                 self.log.important(f"Endpoint: Instance Pools={' > '.join(instance_pools)} (Atom-JEPA)")
             else:
                 memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")

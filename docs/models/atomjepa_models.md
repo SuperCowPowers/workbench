@@ -92,9 +92,21 @@ endpoint = model.to_endpoint(async_endpoint=True)
 endpoint = model.to_endpoint(serverless=False)
 ```
 
-Both default to an `ml.g6.xlarge` (one NVIDIA L4) running Workbench's GPU inference image; pass `instance=` to choose another. An async endpoint stays on one instance unless you pass `max_instances=`.
+Both run Workbench's GPU inference image. GPU capacity is often short, so rather than one instance type they list instance pools, and SageMaker provisions from the first with capacity, at creation and on every scale-up:
 
-GPU endpoint instances are quota-limited per instance type and region, often to one `ml.g6.xlarge` or none; check "ml.g6.xlarge for endpoint usage" for your account in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.
+| Priority | Instance | Hardware |
+|---|---|---|
+| 1 | `ml.g6.xlarge` | NVIDIA L4 |
+| 2 | `ml.g5.xlarge` | NVIDIA A10G |
+| 3 | `ml.g6.2xlarge` | NVIDIA L4 |
+| 4 | `ml.g5.2xlarge` | NVIDIA A10G |
+| 5 | `ml.c7i.4xlarge` | CPU, async endpoints only |
+
+The CPU pool is a fallback: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU. Real-time endpoints stop at the GPU pools, since a real-time request must answer within 60 seconds. Pass `instance=` to deploy a single type instead. An async endpoint stays on one instance unless you pass `max_instances=`.
+
+When every pool is out, SageMaker keeps trying for up to an hour. If it still has no instance, `to_endpoint()` deletes the failed endpoint and raises `EndpointCapacityError` (from `workbench.core.artifacts.endpoint_core`); the model is intact, so deploy it again later. An async endpoint scaling up from zero raises the same error after the same hour.
+
+Endpoint instances are quota-limited per instance type and region; check `<instance type> for endpoint usage` for each pool type in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.
 
 A model's training captures need no endpoint: `get_inference_predictions("training")` gives the out-of-fold rows and `get_inference_predictions("validation")` the rows held out with `validation_ids`.
 
