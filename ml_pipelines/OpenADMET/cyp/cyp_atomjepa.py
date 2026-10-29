@@ -92,8 +92,7 @@ for iso in args.isoforms:
     trained.append((model, tags))
 
 for model, tags in trained:
-    # An A10G (ml.g5.xlarge): the default ml.g6.xlarge often lacks capacity in us-west-2
-    end = model.to_endpoint(tags=tags, async_endpoint=True, instance="ml.g5.xlarge")
+    end = model.to_endpoint(tags=tags, async_endpoint=True)
     end.set_owner("open_admet_cyp")
     end.test_inference()
     end.cross_fold_inference()

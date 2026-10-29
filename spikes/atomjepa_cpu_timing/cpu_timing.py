@@ -5,7 +5,7 @@ counts: conformer generation (RDKit) and the fold ensemble's encoder passes (tor
 time scales linearly with conformers per molecule. Local cores aren't c7i vCPUs, so the
 numbers say which endpoint shapes are worth a real deploy, not what they will measure.
 
-    python spikes/atomjepa_cpu_timing/cpu_timing.py --model mppb-reg-atomjepa --molecules 50
+    python spikes/atomjepa_cpu_timing/cpu_timing.py --model cyp-reg-atomjepa-3a4-readout --molecules 50
 """
 
 import argparse
@@ -52,7 +52,7 @@ def peak_rss_gb() -> float:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--model", default="mppb-reg-atomjepa")
+    parser.add_argument("--model", default="cyp-reg-atomjepa-3a4-readout")
     parser.add_argument("--molecules", type=int, default=50)
     parser.add_argument("--threads", default="1,2,4,8", help="comma-separated thread counts")
     args = parser.parse_args()

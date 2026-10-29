@@ -304,8 +304,10 @@ def get_training_utilization_details(workbench_model: Any) -> Optional[pd.DataFr
 
     session = workbench_model.boto3_session
     job = session.client("sagemaker").describe_training_job(TrainingJobName=job_name)
+    # A job submitted with InstancePreferences reports the type SageMaker picked instead
     resources = job["ResourceConfig"]
-    instance_type, instance_count = resources["InstanceType"], resources["InstanceCount"]
+    instance_type = resources.get("InstanceType") or resources["SelectedInstanceType"]
+    instance_count = resources.get("InstanceCount") or resources["SelectedInstanceCount"]
 
     # The job's own window, so the query spans exactly the training run
     start, end = job["TrainingStartTime"], job.get("TrainingEndTime", datetime.now(timezone.utc))

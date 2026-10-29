@@ -1,9 +1,8 @@
 """Check (and raise) the SageMaker training quotas an account needs to run our training jobs.
 
-Every instance in INSTANCE_LADDERS needs quota behind it. A rung at zero is not a fallback,
-it is a guaranteed failure: the ladder waits out CAPACITY_WAIT_SECONDS on a rung the account
-can never launch, then drops to the next. The final rung of a ladder matters most, since a
-job that reaches it queues there for as long as it takes.
+Every instance in INSTANCE_LADDERS needs quota behind it. A training job lists a ladder's
+types as InstancePreferences and SageMaker launches it on the first with capacity, so a type
+at zero quota is never a fallback, and can get the whole job rejected.
 
 Targets are per ladder because the workloads fan out differently: model builds run many at
 once, while a parallel HPO search takes a whole multi-GPU box and rarely runs concurrently.

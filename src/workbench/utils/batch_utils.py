@@ -306,11 +306,15 @@ def _training_job_row(job: dict) -> dict:
     """Flatten a describe_training_job payload into the status fields we report."""
     transitions = job.get("SecondaryStatusTransitions") or []
     current = transitions[-1] if transitions else {}
+    # A job submitted with InstancePreferences reports the type SageMaker picked, or its
+    # preferences in order while it waits for capacity
+    resources = job["ResourceConfig"]
+    preferences = " > ".join(p["InstanceType"] for p in resources.get("InstancePreferences", []))
     return {
         "name": job["TrainingJobName"],
         "status": job["TrainingJobStatus"],
         "secondary_status": job["SecondaryStatus"],
-        "instance": job["ResourceConfig"]["InstanceType"],
+        "instance": resources.get("InstanceType") or resources.get("SelectedInstanceType") or preferences,
         "age": _elapsed(job["CreationTime"]),
         "in_status": _elapsed(current["StartTime"]) if current.get("StartTime") else "n/a",
         "message": current.get("StatusMessage", ""),

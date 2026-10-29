@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Union
 from sagemaker.core.resources import ModelPackageGroup
-from sagemaker.core.shapes.shapes import MetricDefinition, Tag
+from sagemaker.core.shapes.shapes import InstancePreference, MetricDefinition, Tag
 from sagemaker.train.model_trainer import ModelTrainer
 from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition, OutputDataConfig
 from botocore.exceptions import ClientError
@@ -15,7 +15,6 @@ import pandas as pd
 
 import time
 import uuid
-from datetime import datetime, timezone
 
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
@@ -32,11 +31,10 @@ from workbench.utils.metrics_utils import TRAINING_METRICS
 # retryable, so a single blip under concurrent Batch load would otherwise kill the pipeline.
 TRANSIENT_DESCRIBE_ERRORS = {"HttpTimeoutException", "ThrottlingException", "ThrottledException"}
 
-# Every training instance this class can pick, keyed by workload. A ladder's rungs are tried
-# in order: each gets CAPACITY_WAIT_SECONDS to land an instance before dropping to the next,
-# and the final rung queues for as long as it takes. Only the scarce multi-GPU workload needs
-# more than one rung; Ray sizes trial concurrency to the GPUs it actually finds, so a smaller
-# rung runs the same search with fewer trials in flight.
+# Every training instance this class can pick, keyed by workload, in preference order (at most
+# 5). SageMaker launches the job on the first type with capacity; when none has any, the job
+# queues and SageMaker retries the list until one does. Ray sizes trial concurrency to the GPUs
+# it actually finds, so a smaller rung runs the same search with fewer trials in flight.
 INSTANCE_LADDERS = {
     # Multi-GPU only. A single-card rung "succeeds" into a run that takes days and can
     # exhaust host RAM on a real dataset, hours after the point where it could have failed
@@ -59,12 +57,6 @@ INSTANCE_LADDERS = {
     # TabICL only runs forward passes, which CPU handles fine
     "tabicl": ["ml.m6i.2xlarge"],  # 8 vCPUs, 32GB RAM
 }
-# How long a non-final rung queues for an instance. Enforced by our own poll loop, which
-# stops the job and moves down the ladder. MAX_PENDING_SECONDS hands SageMaker the same job
-# at its own floor (2 hours, the lowest MaxPendingTimeInSeconds it accepts) as a backstop for
-# when the stop call can't be made.
-CAPACITY_WAIT_SECONDS = 30 * 60
-MAX_PENDING_SECONDS = 7200
 # Stops a hung training job; matches the Batch job-def ceiling a launcher run waits under.
 MAX_RUNTIME_SECONDS = 24 * 3600
 
@@ -91,10 +83,6 @@ def training_workload(hyperparameters: Union[dict, None], *, gpu_framework: bool
         return "cpu_hpo"
     serial = hpo.get("backend", "auto") == "optuna" or hpo.get("max_parallel") == 1
     return "gpu" if serial else "gpu_hpo"
-
-
-class CapacityTimeout(RuntimeError):
-    """A training job was stopped without ever getting the instance it asked for."""
 
 
 class FeaturesToModel(Transform):
@@ -401,62 +389,44 @@ class FeaturesToModel(Transform):
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
         _suppress_sagemaker_logging()
 
-        for rung, train_instance_type in enumerate(instance_ladder):
-            last_rung = rung == len(instance_ladder) - 1
+        # Create ModelTrainer (V3 replacement for Estimator)
+        # Use command= to run our entrypoint wrapper, which executes the model script
+        # and then bundles inference code/metadata into the model artifacts
+        self.model_trainer = ModelTrainer(
+            training_image=image,
+            # The image carries no site config, so hand the container the bucket it needs
+            # (chemprop foundation weights, df_store, ...) explicitly.
+            environment={"WORKBENCH_BUCKET": self.workbench_bucket},
+            source_code=SourceCode(
+                source_dir=source_dir,
+                command=f"python training_harness.py {entry_point}",
+            ),
+            # SageMaker launches on the first type with capacity, queueing until one has some
+            compute=Compute(
+                instance_preferences=[InstancePreference(instance_type=t) for t in instance_ladder],
+                instance_count=1,
+            ),
+            output_data_config=OutputDataConfig(s3_output_path=self.model_training_root, compression_type="GZIP"),
+            stopping_condition=StoppingCondition(max_runtime_in_seconds=MAX_RUNTIME_SECONDS),
+            base_job_name=self.output_name,
+            role=self.workbench_role_arn,
+            sagemaker_session=self.sm_session,
+            tags=[prm_tag],
+        )
+        self.model_trainer.with_metric_definitions(v3_metric_definitions)
+        input_data = self.model_trainer.create_input_data_channel("train", s3_training_path)
 
-            # The final rung queues for capacity as long as it takes; the rungs above it
-            # give up so the ladder can move on.
-            stopping_condition = StoppingCondition(max_runtime_in_seconds=MAX_RUNTIME_SECONDS)
-            if not last_rung:
-                stopping_condition.max_pending_time_in_seconds = MAX_PENDING_SECONDS
+        # Submit the job and own the poll loop ourselves. The SDK's wait=True polls via a
+        # global client singleton that bypasses our hardened session and never retries a
+        # transient HttpTimeoutException on DescribeTrainingJob (see _wait_for_training_job).
+        # Silence the SDK's stray "not displaying logs" warning that wait=False emits.
+        logging.getLogger("sagemaker.train.model_trainer").setLevel(logging.ERROR)
+        self.log.important(f"Submitting training job on the first of {instance_ladder} with capacity...")
+        self.model_trainer.train(input_data_config=[input_data], wait=False)
 
-            # Create ModelTrainer (V3 replacement for Estimator)
-            # Use command= to run our entrypoint wrapper, which executes the model script
-            # and then bundles inference code/metadata into the model artifacts
-            self.model_trainer = ModelTrainer(
-                training_image=image,
-                # The image carries no site config, so hand the container the bucket it needs
-                # (chemprop foundation weights, df_store, ...) explicitly.
-                environment={"WORKBENCH_BUCKET": self.workbench_bucket},
-                source_code=SourceCode(
-                    source_dir=source_dir,
-                    command=f"python training_harness.py {entry_point}",
-                ),
-                compute=Compute(instance_type=train_instance_type, instance_count=1),
-                output_data_config=OutputDataConfig(s3_output_path=self.model_training_root, compression_type="GZIP"),
-                stopping_condition=stopping_condition,
-                base_job_name=self.output_name,
-                role=self.workbench_role_arn,
-                sagemaker_session=self.sm_session,
-                tags=[prm_tag],
-            )
-            self.model_trainer.with_metric_definitions(v3_metric_definitions)
-            input_data = self.model_trainer.create_input_data_channel("train", s3_training_path)
-
-            # Submit the job and own the poll loop ourselves. The SDK's wait=True polls via a
-            # global client singleton that bypasses our hardened session and never retries a
-            # transient HttpTimeoutException on DescribeTrainingJob (see _wait_for_training_job).
-            # Silence the SDK's stray "not displaying logs" warning that wait=False emits.
-            logging.getLogger("sagemaker.train.model_trainer").setLevel(logging.ERROR)
-            self.log.important(f"Submitting training job on {train_instance_type}...")
-            try:
-                self.model_trainer.train(input_data_config=[input_data], wait=False)
-            except ClientError as e:
-                # The account's quota for this type is already fully in use by another job
-                if e.response.get("Error", {}).get("Code") == "ResourceLimitExceeded" and not last_rung:
-                    self.log.warning(f"{train_instance_type} quota exhausted, dropping to next instance...")
-                    continue
-                raise
-
-            # Capture the actual training job name (ModelTrainer appends a timestamp to base_job_name)
-            self.training_job_name = self.model_trainer._latest_training_job.training_job_name
-            try:
-                self._wait_for_training_job(capacity_timeout=None if last_rung else CAPACITY_WAIT_SECONDS)
-                break
-            except CapacityTimeout:
-                if last_rung:
-                    raise
-                self.log.warning(f"Dropping from {train_instance_type} to {instance_ladder[rung + 1]}...")
+        # Capture the actual training job name (ModelTrainer appends a timestamp to base_job_name)
+        self.training_job_name = self.model_trainer._latest_training_job.training_job_name
+        self._wait_for_training_job()
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
@@ -469,7 +439,7 @@ class FeaturesToModel(Transform):
         self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
 
-    def _wait_for_training_job(self, poll_interval: int = 30, capacity_timeout: int = None):
+    def _wait_for_training_job(self, poll_interval: int = 30):
         """Poll the training job to completion using our hardened SageMaker client.
 
         Retries transient DescribeTrainingJob control-plane errors (HttpTimeoutException,
@@ -477,17 +447,13 @@ class FeaturesToModel(Transform):
 
         Args:
             poll_interval (int): Seconds between DescribeTrainingJob polls (default 30)
-            capacity_timeout (int): Stop the job after this many seconds queued for an
-                instance. None (default) queues for as long as SageMaker will.
 
         Raises:
-            CapacityTimeout: If the job was stopped while still waiting for an instance
             RuntimeError: If the training job reaches a terminal status other than Completed
         """
         terminal = {"Completed", "Failed", "Stopped"}
-        # Any secondary status past the queue means SageMaker handed us the instance
-        got_capacity = {"LaunchingMLInstances", "PreparingTrainingStack", "Downloading", "Training"}
         last_status = None
+        selected = None
         while True:
             try:
                 desc = self.sm_client.describe_training_job(TrainingJobName=self.training_job_name)
@@ -503,36 +469,14 @@ class FeaturesToModel(Transform):
             if status != last_status:
                 self.log.info(f"Training job {self.training_job_name} status: {status}")
                 last_status = status
+            if not selected and desc["ResourceConfig"].get("SelectedInstanceType"):
+                selected = desc["ResourceConfig"]["SelectedInstanceType"]
+                self.log.important(f"Training job {self.training_job_name} got a {selected}")
             if status in terminal:
                 if status == "Completed":
                     return
-                # max_pending_time_in_seconds expiring stops the job without a FailureReason,
-                # so a stop with no transition past the queue is a capacity timeout.
-                reached = {t["Status"] for t in desc.get("SecondaryStatusTransitions", [])}
-                if status == "Stopped" and not (reached & got_capacity):
-                    raise CapacityTimeout(f"Training job {self.training_job_name} never got an instance")
                 reason = desc.get("FailureReason", "(no reason provided)")
                 raise RuntimeError(f"Training job {self.training_job_name} {status}: {reason}")
-
-            # Queued for an instance the account may not get: stop it so the caller can try
-            # elsewhere. SageMaker's own floor for this is 2 hours, hence our own clock.
-            if capacity_timeout and desc["SecondaryStatus"] == "Pending":
-                queued_since = desc["SecondaryStatusTransitions"][-1]["StartTime"]
-                queued_for = (datetime.now(timezone.utc) - queued_since).total_seconds()
-                if queued_for > capacity_timeout:
-                    self.log.warning(
-                        f"No {desc['ResourceConfig']['InstanceType']} capacity after "
-                        f"{queued_for / 60:.0f} minutes, stopping {self.training_job_name}..."
-                    )
-                    try:
-                        self.sm_client.stop_training_job(TrainingJobName=self.training_job_name)
-                    except ClientError as e:
-                        # Without StopTrainingJob permission the job's own max_pending_time
-                        # is the only way out, so keep polling and let it expire.
-                        self.log.error(f"Cannot stop {self.training_job_name} ({e}); waiting on max_pending_time")
-                        capacity_timeout = None
-                    else:
-                        raise CapacityTimeout(f"Training job {self.training_job_name} never got an instance")
             time.sleep(poll_interval)
 
     def _create_model_training_view(
