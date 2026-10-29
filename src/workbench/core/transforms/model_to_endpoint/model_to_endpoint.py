@@ -76,11 +76,12 @@ REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
 # Async endpoints run long compute work (RDKit conformer generation, etc.), so their
 # default has more CPU.
 ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
-# Models that serve from the CUDA image (Atom-JEPA) get one GPU from the first of these pools
+# Models that serve from the CUDA image (Atom-JEPA) get an instance from the first of these pools
 # with capacity, at creation and on every scale-up; an async endpoint scales it to zero when idle.
-# The L4 and A10G xlarge come first, then their 2xlarge sizes, then the L40S. All are Ampere or
-# later, which bf16 and cuEquivariance need. SageMaker takes at most 5 pools.
-GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge", "ml.g6e.xlarge"]
+# The L4 and A10G GPUs (Ampere or later, for bf16 and cuEquivariance) come first. The last is a
+# CPU fallback: the same image serves there under the GPU host image, at ~30 s/molecule vs ~0.6
+# on a GPU. SageMaker takes at most 5 pools.
+GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge", "ml.c7i.4xlarge"]
 # How long SageMaker waits for capacity once every pool is out (valid: 300-3600)
 GPU_PROVISION_TIMEOUT_SECONDS = 3600
 # An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
@@ -356,7 +357,7 @@ class ModelToEndpoint(Transform):
             elif workbench_model.model_framework == ModelFramework.ATOMJEPA:
                 instance_type = None
                 instance_pools = GPU_INSTANCE_POOLS
-                self.log.important(f"Endpoint: Instance Pools={' > '.join(instance_pools)} (GPU for Atom-JEPA)")
+                self.log.important(f"Endpoint: Instance Pools={' > '.join(instance_pools)} (Atom-JEPA)")
             else:
                 memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")
                 instance_type = realtime_instance(memory_gb, self.async_endpoint)
