@@ -43,7 +43,7 @@ log = logging.getLogger("workbench")
 # how often to re-check the live instance count while waiting. The poll is
 # deliberately coarse — scale-from-zero takes minutes, and each poll is a
 # DescribeEndpoint call (throttle-prone when several children warm in parallel).
-WARM_UP_CAP_S = 900  # 15 min — async fleet cold start plus headroom
+WARM_UP_CAP_S = 1800  # 30 min — async fleet cold start plus headroom
 # A scale-up SageMaker reports is waiting on capacity keeps trying for the GPU pools' provision timeout
 WARM_UP_CAPACITY_CAP_S = 3600
 WARM_UP_POLL_S = 20
@@ -136,7 +136,7 @@ class AsyncEndpointCore(EndpointCore):
         if self.is_serverless():
             return  # serverless scales per-request — no instances to warm, no count to poll
 
-        log.important(f"Endpoint '{self.name}': warm-up request (cold scale-up can take 10-15 minutes)...")
+        log.important(f"Endpoint '{self.name}': warm-up request (cold scale-up can take 10-20 minutes)...")
 
         # Queue a trivial job so SageMaker scales the fleet up. If we can't even
         # queue it (perms, bad payload, missing bucket), that's a hard, non-retryable
