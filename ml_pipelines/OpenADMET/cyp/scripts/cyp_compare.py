@@ -12,10 +12,12 @@ and lacks the inactives where better ordering there pays.
 Credible intervals are label metadata rather than features, so `output_columns()` trims
 them and they never reach a capture -- they are joined back from the FeatureSet by id.
 
-Scores the `full_cross_fold` out-of-fold capture and nothing else. A model missing it is
-reported as an error rather than scored from a different capture: capture types are derived
-differently, so mixing them across one table puts a difference in it that is not a model
-difference. A missing capture usually means a failed deploy.
+Scores one out-of-fold capture per target and nothing else: `cv_{target}` from a multi-target
+model, whose `full_cross_fold` covers its primary target alone, and `full_cross_fold` from a
+single-target one. A model covering the isoform with that capture missing is reported as an
+error rather than scored from another capture -- captures are derived differently, so mixing
+them across a table puts a difference in it that is not a model difference. A missing capture
+usually means a failed deploy.
 
 `--bands` splits each isoform by activity, which is where CYP2D6's problem lives. Out of
 fold the union model ranks the low band at 0.159 against 0.383 above it, and the blind
@@ -48,18 +50,37 @@ BANDS = [("<4.0", -np.inf, 4.0), ("4.0-4.5", 4.0, 4.5), (">=4.5", 4.5, np.inf)]
 RESOLUTION = {"cyp1a2": 0.043, "cyp2c9": 0.031, "cyp2d6": 0.056, "cyp3a4": 0.018}
 
 
-def require_capture(model) -> None:
-    """Raise unless the model carries the out-of-fold capture every score here reads."""
-    runs = model.list_inference_runs()
-    if CAPTURE not in runs:
-        raise ValueError(f"no {CAPTURE} capture (has {runs}) -- check whether its deploy succeeded")
-
-
 def model_isoforms(model) -> set:
     """The isoforms a model actually predicts, by the prefix of its target column(s)."""
     target = model.target()
     names = target if isinstance(target, list) else [target]
     return {str(n).split("_")[0] for n in names}
+
+
+def capture_for(model, target: str) -> str | None:
+    """The out-of-fold capture holding `target`, or None when the model does not cover it.
+
+    A multi-target model writes one capture per head as `cv_{target}` and reserves
+    `full_cross_fold` for its primary target alone, so reading `full_cross_fold` for a
+    secondary head scores that isoform against the primary one. A single-target model
+    writes `full_cross_fold` only. A capture missing on an isoform the model does cover
+    raises, which usually means a failed deploy.
+    """
+    targets = model.target()
+    if isinstance(targets, list) and len(targets) > 1:
+        # One capture per head, so a head for this exact column is what makes the target
+        # scoreable. An isoform the model reaches only through a log2fc or public head is not.
+        if target not in targets:
+            return None
+        want = f"cv_{target}"
+    else:
+        if target.split("_")[0] not in model_isoforms(model):
+            return None
+        want = CAPTURE
+    runs = model.list_inference_runs()
+    if want not in runs:
+        raise ValueError(f"{target}: no {want} capture (has {runs}) -- check whether its deploy succeeded")
+    return want
 
 
 def scored_frame(model, target: str):
@@ -69,13 +90,12 @@ def scored_frame(model, target: str):
     from the FeatureSet rather than from the capture. That holds every model to the same rows
     whatever it was fit on.
     """
-    df = model.get_inference_predictions(CAPTURE)
+    run = capture_for(model, target)
+    if run is None:
+        return None, None
+    df = model.get_inference_predictions(run)
     pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
     if pred_col not in df.columns:
-        return None, None
-    # A bare capture holds one unnamed prediction column, which belongs to the model's own
-    # target -- claiming it for the other three isoforms would score them against it.
-    if pred_col == "prediction" and target.split("_")[0] not in model_isoforms(model):
         return None, None
 
     fs = FeatureSet(model.get_input())
@@ -92,7 +112,6 @@ def scored_frame(model, target: str):
 def score(model_name: str) -> pd.DataFrame:
     """Per-isoform out-of-fold metrics for one model."""
     model = Model(model_name)
-    require_capture(model)
     rows = []
     for target in TARGETS:
         d, pred_col = scored_frame(model, target)
@@ -123,7 +142,6 @@ def score(model_name: str) -> pd.DataFrame:
 def score_bands(model_name: str) -> pd.DataFrame:
     """Spearman and prediction spread per activity band, for one model."""
     model = Model(model_name)
-    require_capture(model)
     rows = []
     for target in TARGETS:
         d, pred_col = scored_frame(model, target)
