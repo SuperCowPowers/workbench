@@ -12,10 +12,10 @@ and lacks the inactives where better ordering there pays.
 Credible intervals are label metadata rather than features, so `output_columns()` trims
 them and they never reach a capture -- they are joined back from the FeatureSet by id.
 
-Scores whichever capture a model has: the analog holdout where one was written, otherwise
-the out-of-fold predictions (an endpoint's full_cross_fold capture, or the training job's
-own for a model with no endpoint), which the ruler table rates the better instrument anyway. The
-holdout was retired, so nothing built since carries it.
+Scores the `full_cross_fold` out-of-fold capture and nothing else. A model missing it is
+reported as an error rather than scored from a different capture: capture types are derived
+differently, so mixing them across one table puts a difference in it that is not a model
+difference. A missing capture usually means a failed deploy.
 
 `--bands` splits each isoform by activity, which is where CYP2D6's problem lives. Out of
 fold the union model ranks the low band at 0.159 against 0.383 above it, and the blind
@@ -39,7 +39,7 @@ from workbench.utils.metrics_utils import soft_threshold_rae
 
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 TARGETS = [f"{iso}_pic50_direct_inhibition" for iso in ISOFORMS]
-CAPTURE = "cyp_analog_holdout"
+CAPTURE = "full_cross_fold"
 # Activity bands. 4.0 is where the labels stop carrying spread -- between 4.0 and 4.5 the
 # CYP2D6 labels have sd 0.11 against a median measurement std of 0.069, so they are very
 # nearly tied and nothing can order them.
@@ -48,12 +48,11 @@ BANDS = [("<4.0", -np.inf, 4.0), ("4.0-4.5", 4.0, 4.5), (">=4.5", 4.5, np.inf)]
 RESOLUTION = {"cyp1a2": 0.043, "cyp2c9": 0.031, "cyp2d6": 0.056, "cyp3a4": 0.018}
 
 
-def resolve_capture(runs: list, target: str) -> str | None:
-    """The capture holding this target's scored rows, newest convention first."""
-    for candidate in (f"{CAPTURE}_{target}", CAPTURE, f"cv_{target}", "full_cross_fold", "training"):
-        if candidate in runs:
-            return candidate
-    return None
+def require_capture(model) -> None:
+    """Raise unless the model carries the out-of-fold capture every score here reads."""
+    runs = model.list_inference_runs()
+    if CAPTURE not in runs:
+        raise ValueError(f"no {CAPTURE} capture (has {runs}) -- check whether its deploy succeeded")
 
 
 def model_isoforms(model) -> set:
@@ -70,10 +69,7 @@ def scored_frame(model, target: str):
     from the FeatureSet rather than from the capture. That holds every model to the same rows
     whatever it was fit on.
     """
-    run = resolve_capture(model.list_inference_runs(), target)
-    if run is None:
-        return None, None
-    df = model.get_inference_predictions(run)
+    df = model.get_inference_predictions(CAPTURE)
     pred_col = "prediction" if "prediction" in df.columns else f"{target}_pred"
     if pred_col not in df.columns:
         return None, None
@@ -94,8 +90,9 @@ def scored_frame(model, target: str):
 
 
 def score(model_name: str) -> pd.DataFrame:
-    """Per-isoform holdout metrics for one model."""
+    """Per-isoform out-of-fold metrics for one model."""
     model = Model(model_name)
+    require_capture(model)
     rows = []
     for target in TARGETS:
         d, pred_col = scored_frame(model, target)
@@ -126,6 +123,7 @@ def score(model_name: str) -> pd.DataFrame:
 def score_bands(model_name: str) -> pd.DataFrame:
     """Spearman and prediction spread per activity band, for one model."""
     model = Model(model_name)
+    require_capture(model)
     rows = []
     for target in TARGETS:
         d, pred_col = scored_frame(model, target)
