@@ -2,8 +2,8 @@
 
 Two modes:
   - "batch": step policies for async endpoints. ApproximateBacklogSize >= 1
-    jumps to max in one step; < 1 for N minutes drains to min. Pile of work
-    arrives, chew through it, go cold.
+    jumps to max in one step; N minutes of a running instance with an empty
+    queue drains to min. Pile of work arrives, chew through it, go cold.
   - "realtime": single target-tracking policy on CPUUtilization.
 
 Resources are named ``{endpoint_name}-{role}`` (e.g. ``ep-scale-out``).
@@ -54,8 +54,8 @@ def register_autoscaling(
         min_capacity: Autoscaler floor. Default 0 (scale-to-zero). Realtime
             should usually be >= 1.
         max_capacity: Autoscaler ceiling. Default 8.
-        scale_in_idle_minutes: Batch only. Minutes of empty queue before
-            scaling in. Default 5.
+        scale_in_idle_minutes: Batch only. Minutes a running instance sits
+            with an empty queue before scaling in. Default 60.
         realtime_target: Realtime only. Target variant-average CPU%. Default 60.
         raise_on_error: If True, re-raise after logging.
     """
@@ -151,9 +151,10 @@ def deregister_autoscaling(boto3_session, endpoint_name: str) -> None:
 def _install_batch(aas, cw, endpoint_name, resource_id, min_capacity, max_capacity, scale_in_idle_minutes):
     """Step policies for async/batch endpoints.
 
-    Both triggers key off ApproximateBacklogSize so they're symmetric and work
-    at any current instance count. (HasBacklogWithoutCapacity only fires when
-    instances=0, so it can't take us N→max once instances are running.)
+    Scale-out keys off ApproximateBacklogSize, which works at any current
+    instance count. (HasBacklogWithoutCapacity only fires when instances=0, so
+    it can't take us N→max once instances are running.) Scale-in keys off
+    _idle_metric, which counts only the minutes an instance is up.
     """
     _put_step_policy_with_alarm(
         aas,
@@ -164,6 +165,7 @@ def _install_batch(aas, cw, endpoint_name, resource_id, min_capacity, max_capaci
         adjustment=max_capacity,
         comparison="GreaterThanOrEqualToThreshold",
         evaluation_periods=1,
+        metric=_backlog_metric(endpoint_name),
     )
     _put_step_policy_with_alarm(
         aas,
@@ -174,11 +176,57 @@ def _install_batch(aas, cw, endpoint_name, resource_id, min_capacity, max_capaci
         adjustment=min_capacity,
         comparison="LessThanThreshold",
         evaluation_periods=scale_in_idle_minutes,
+        metric=_idle_metric(endpoint_name),
     )
 
 
-def _put_step_policy_with_alarm(aas, cw, endpoint_name, resource_id, role, adjustment, comparison, evaluation_periods):
-    """Install one ExactCapacity step policy + its CloudWatch alarm.
+def _backlog_metric(endpoint_name: str) -> dict:
+    """put_metric_alarm args for the endpoint's queue depth."""
+    return {
+        "MetricName": "ApproximateBacklogSize",
+        "Namespace": "AWS/SageMaker",
+        "Statistic": "Maximum",
+        "Dimensions": [{"Name": "EndpointName", "Value": endpoint_name}],
+        "Period": 60,
+    }
+
+
+def _idle_metric(endpoint_name: str) -> dict:
+    """put_metric_alarm args for queue depth while an instance is up, and 1 (not idle) otherwise.
+
+    ApproximateBacklogSize is keyed on the endpoint name alone and reads 0 with
+    no instances, so a redeployed endpoint would count the minutes of the one it
+    replaced and scale in at once. CPUUtilization exists only while an instance
+    runs, so the count starts with the instance.
+    """
+    backlog = _backlog_metric(endpoint_name)
+    cpu_dimensions = backlog["Dimensions"] + [{"Name": "VariantName", "Value": "AllTraffic"}]
+    return {
+        "Metrics": [
+            _metric_stat("backlog", backlog["Namespace"], backlog["MetricName"], backlog["Dimensions"]),
+            _metric_stat("cpu", "/aws/sagemaker/Endpoints", "CPUUtilization", cpu_dimensions),
+            {"Id": "idle", "Expression": "IF(FILL(cpu, -1) >= 0, FILL(backlog, 0), 1)", "ReturnData": True},
+        ]
+    }
+
+
+def _metric_stat(metric_id: str, namespace: str, metric_name: str, dimensions: list) -> dict:
+    """One input series of a metric-math alarm."""
+    return {
+        "Id": metric_id,
+        "MetricStat": {
+            "Metric": {"Namespace": namespace, "MetricName": metric_name, "Dimensions": dimensions},
+            "Period": 60,
+            "Stat": "Maximum",
+        },
+        "ReturnData": False,
+    }
+
+
+def _put_step_policy_with_alarm(
+    aas, cw, endpoint_name, resource_id, role, adjustment, comparison, evaluation_periods, metric
+):
+    """Install one ExactCapacity step policy + its CloudWatch alarm on ``metric``.
 
     Step bound is signed against the alarm threshold: GreaterThan* alarms use
     LowerBound=0 (positive breach), LessThan* alarms use UpperBound=0 (negative
@@ -204,11 +252,7 @@ def _put_step_policy_with_alarm(aas, cw, endpoint_name, resource_id, role, adjus
 
     cw.put_metric_alarm(
         AlarmName=name,
-        MetricName="ApproximateBacklogSize",
-        Namespace="AWS/SageMaker",
-        Statistic="Maximum",
-        Dimensions=[{"Name": "EndpointName", "Value": endpoint_name}],
-        Period=60,
+        **metric,
         EvaluationPeriods=evaluation_periods,
         DatapointsToAlarm=evaluation_periods,
         Threshold=1.0,
