@@ -267,7 +267,7 @@ def get_split_indices(
         target_column: Column containing target values (for stratification, optional)
         test_size: Fraction for validation set when n_splits=1 (default 0.2)
         random_state: Random seed for reproducibility
-        butina_cutoff: Tanimoto distance cutoff for Butina clustering (default 0.4)
+        butina_cutoff: Tanimoto distance cutoff for Butina clustering (default 0.6)
 
     Returns:
         List of (train_indices, val_indices) tuples
