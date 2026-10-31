@@ -7,28 +7,28 @@ Imported by ``workbench.core.artifacts.async_endpoint_core``.
 """
 
 import logging
-from typing import NamedTuple, Optional
+from typing import Optional
 
 from workbench.endpoints.async_inference import resolve_boto_session
 
 log = logging.getLogger("workbench")
 
-# Rows per invocation, per vCPU on the serving box. A batch is the unit of work one server
-# slot takes, and the host-side stages pool across the rows inside it (conformer generation,
-# featurization), so a batch narrower than the box leaves vCPUs idle. Two rows per vCPU gives
-# that pool a second task per worker to even out a straggler. A model forward on an
-# accelerator is chunked inside the container instead, so it does not widen with the batch:
-# past filling the vCPUs, batch width only amortizes per-invocation overhead (two S3 round
-# trips and the client poll interval). Going wider costs invocation length, which the
-# 60-minute timeout bounds. An endpoint whose per-row cost sits far from that balance wants a
-# measured workbench_meta["inference_batch_size"] rather than this.
+# Rows per invocation, per vCPU on the serving box, for an async endpoint that does not choose
+# its own batch size at deploy. A batch is the unit of work one server slot takes, and the
+# host-side stages pool across the rows inside it (conformer generation, featurization), so a
+# batch narrower than the box leaves vCPUs idle. Two rows per vCPU gives that pool a second
+# task per worker to even out a straggler. A model forward on an accelerator is chunked inside
+# the container instead, so it does not widen with the batch: past filling the vCPUs, batch
+# width only amortizes per-invocation overhead. Going wider costs invocation length, which the
+# 60-minute timeout bounds.
 TASKS_PER_VCPU = 2
 
-# Rows per invocation when the instance type carries no vCPU count to size against.
-DEFAULT_BATCH_SIZE = 10
+# Rows per invocation for an async endpoint with no stamped batch size, or no vCPU count to
+# size against at deploy.
+ASYNC_BATCH_SIZE = 10
 
 # Outstanding invocations per server-side slot, where a slot is one concurrent
-# invocation the endpoint accepts at full scale (see :func:`async_capacity`).
+# invocation the endpoint accepts at full scale (see :func:`async_max_in_flight`).
 # Two keeps exactly one chunk queued behind each running one, which is what both
 # halves of the system need:
 #
@@ -41,8 +41,7 @@ DEFAULT_BATCH_SIZE = 10
 # Queuing deeper than the fleet can drain is what makes a slow endpoint lose work.
 # The client's poll deadline starts at submission, so a chunk sitting N deep behind a
 # service time of S resolves at N*S and is abandoned once that exceeds the deadline,
-# however well the endpoint is working. Override via
-# workbench_meta["inference_max_in_flight"].
+# however well the endpoint is working.
 IN_FLIGHT_PER_SLOT = 2
 
 
@@ -99,78 +98,16 @@ def warn_on_fallback_pool(endpoint_name: str, endpoint: dict, config: dict) -> N
         )
 
 
-class AsyncCapacity(NamedTuple):
-    """What one async endpoint can bring to bear: invocation slots, and vCPUs per box."""
+def async_max_in_flight(meta: dict) -> int:
+    """Outstanding invocations for an async endpoint, from what it stamped at deploy.
 
-    concurrency: int
-    vcpus: int
-
-
-def async_capacity(endpoint_name: str, meta: dict, sm_session=None) -> AsyncCapacity:
-    """How many invocations the endpoint runs at full scale, and how big a box serves them.
-
-    The fleet ceiling (``max_instances``, stamped on the endpoint at deploy) times
-    ``MaxConcurrentInvocationsPerInstance`` -- the ceiling rather than the instances
-    currently up, because the client's queue is the demand signal the autoscaler
-    measures. Sizing against what is already running would hold a cold endpoint at
-    its floor, where the queue never grows enough to justify scaling it out.
-
-    Concurrency is the fleet ceiling (``max_instances``, stamped at deploy) times
-    ``MaxConcurrentInvocationsPerInstance`` -- the ceiling rather than the instances
-    currently up, because the client's queue is the demand signal the autoscaler
-    measures. Sizing against what is already running would hold a cold endpoint at its
-    floor, where the queue never grows enough to justify scaling it out.
-
-    ``vcpus`` comes from the largest instance type the variant can serve on. Largest,
-    because a batch wider than the box lengthens an invocation but never underfills it,
-    while one narrower starves the container's own thread pool.
-
-    Falls back to the current instance count when no ceiling is stamped, and to a
-    concurrency of 1 when nothing is readable, which costs throughput rather than
-    losing chunks. An endpoint leaving ``MaxConcurrentInvocationsPerInstance`` unset
-    also reads as 1: SageMaker picks its own value and does not report it back, so
-    there is nothing to size against -- deploy with it set.
+    Its slots at full scale, ``max_instances`` times ``async_max_concurrent``, times
+    :data:`IN_FLIGHT_PER_SLOT`. The fleet ceiling rather than the instances currently up,
+    because the client's queue is the demand signal the autoscaler measures: sizing against
+    what is running would hold a cold endpoint at its floor. An endpoint with neither stamp
+    reads as one slot, which costs throughput rather than losing chunks.
     """
-    sm_client = resolve_boto_session(sm_session).client("sagemaker")
-    try:
-        endpoint = sm_client.describe_endpoint(EndpointName=endpoint_name)
-        config = sm_client.describe_endpoint_config(EndpointConfigName=endpoint["EndpointConfigName"])
-        client_config = config.get("AsyncInferenceConfig", {}).get("ClientConfig", {})
-        per_instance = client_config.get("MaxConcurrentInvocationsPerInstance", 1)
-        fleet = meta.get("max_instances") or endpoint["ProductionVariants"][0]["CurrentInstanceCount"]
-
-        warn_on_fallback_pool(endpoint_name, endpoint, config)
-
-        variant = config["ProductionVariants"][0]
-        types = [pool["InstanceType"] for pool in variant.get("InstancePools") or []]
-        if variant.get("InstanceType"):
-            types.append(variant["InstanceType"])
-        vcpus = max((instance_vcpus(t) for t in types), default=0)
-
-        return AsyncCapacity(max(1, int(fleet)) * max(1, int(per_instance)), vcpus)
-    except Exception as e:
-        log.warning(f"{endpoint_name}: could not read async capacity ({e}); assuming one slot")
-        return AsyncCapacity(1, 0)
-
-
-def resolve_batch_sizing(meta: dict, n_rows: int, capacity: AsyncCapacity) -> tuple[int, int]:
-    """Resolve ``(batch_size, max_in_flight)`` for one async batch invoke.
-
-    ``batch_size`` fills the serving box: :data:`TASKS_PER_VCPU` rows per vCPU, falling
-    back to :data:`DEFAULT_BATCH_SIZE` when the instance type says nothing. Override via
-    ``inference_batch_size`` -- an endpoint whose per-row cost puts a full box past the
-    60-minute invocation timeout, or a sub-second one that wants far more rows per
-    round-trip, needs a measured value rather than this.
-
-    ``max_in_flight`` follows what the endpoint runs at once -- its slots times
-    :data:`IN_FLIGHT_PER_SLOT` -- and never exceeds the chunk count. Override via
-    ``inference_max_in_flight``.
-    """
-    derived = capacity.vcpus * TASKS_PER_VCPU
-    batch_size = int(meta.get("inference_batch_size") or derived or DEFAULT_BATCH_SIZE)
-    n_batches = max(1, (n_rows + batch_size - 1) // batch_size)
-    cap = int(meta.get("inference_max_in_flight", max(1, capacity.concurrency) * IN_FLIGHT_PER_SLOT))
-    return batch_size, min(n_batches, cap)
+    return int(meta.get("max_instances", 1)) * int(meta.get("async_max_concurrent", 1)) * IN_FLIGHT_PER_SLOT
 
 
 # ---------------------------------------------------------------------------

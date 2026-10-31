@@ -116,6 +116,7 @@ def main():
             df[[smiles_column, *extra_features]],
             sm_session=clamp.boto3_session,
             batch_size=args.molecules,
+            max_in_flight=1,
             s3_bucket=bucket,
         )
         print(result.head(args.molecules).to_string())

@@ -51,7 +51,9 @@ from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     _DEFAULT_SCALE_IN_IDLE_MINUTES,
     register_autoscaling,
 )
+from workbench.utils.async_endpoint_utils import ASYNC_BATCH_SIZE, TASKS_PER_VCPU, instance_vcpus  # noqa: E402
 from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE  # noqa: E402
+from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE  # noqa: E402
 from workbench.utils.monitor_utils import (  # noqa: E402
     CAPTURE_CSV_CONTENT_TYPES,
     CAPTURE_JSON_CONTENT_TYPES,
@@ -91,6 +93,9 @@ GPU_PROVISION_TIMEOUT_SECONDS = 3600
 # An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
 # the caller asks for more
 GPU_ASYNC_MAX_INSTANCES = 1
+# Rows per invocation on the GPU pools: each invocation costs about 0.6 s beyond its rows, 2% of a
+# row's cost at this size, and one runs about 30 s
+GPU_BATCH_SIZE = 64
 # SageMaker host image for GPU endpoints: NVIDIA driver 580 / CUDA 13.0, matching the GPU
 # inference image. The unpinned default host image varies by instance family.
 GPU_INFERENCE_AMI = "al2023-ami-sagemaker-inference-gpu-4-1"
@@ -99,6 +104,24 @@ GPU_INFERENCE_AMI = "al2023-ami-sagemaker-inference-gpu-4-1"
 # first of these (cheapest first) it fills to no more than REALTIME_MEMORY_FILL.
 REALTIME_MEMORY_LADDER = ["ml.c7i.large", "ml.m7i.large", "ml.r7i.large", "ml.r7i.xlarge", "ml.r7i.2xlarge"]
 REALTIME_MEMORY_FILL = 0.75
+
+
+def default_batch_size(instance_type: Union[str, None], instance_pools: Union[list, None], async_endpoint: bool) -> int:
+    """Rows per invocation for an endpoint that did not choose its own at deploy.
+
+    Args:
+        instance_type (str): The serving instance type (None for pools and serverless)
+        instance_pools (list): The GPU instance pools, if the endpoint serves from them
+        async_endpoint (bool): Whether this is an async endpoint
+
+    Returns:
+        int: Rows per invocation
+    """
+    if instance_pools:
+        return GPU_BATCH_SIZE
+    if not async_endpoint:
+        return SYNC_BATCH_SIZE
+    return instance_vcpus(instance_type) * TASKS_PER_VCPU or ASYNC_BATCH_SIZE
 
 
 def realtime_instance(memory_gb: Union[float, None], async_endpoint: bool = False) -> str:
@@ -149,6 +172,7 @@ class ModelToEndpoint(Transform):
         auto_scaling_mode: str = None,
         scale_in_idle_minutes: int = None,
         async_max_concurrent: int = 1,
+        inference_batch_size: int = None,
     ):
         """ModelToEndpoint Initialization
         Args:
@@ -171,6 +195,8 @@ class ModelToEndpoint(Transform):
             async_max_concurrent(int): MaxConcurrentInvocationsPerInstance for async
                 endpoints (default: 1). The default fits CPU-bound predict_fn workloads;
                 bump it for I/O-bound workloads that can share a single instance.
+            inference_batch_size(int): Rows per invocation, stamped on the endpoint for every
+                caller to read (default: None = :func:`default_batch_size`).
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
@@ -192,7 +218,7 @@ class ModelToEndpoint(Transform):
             auto_scaling_mode = "batch" if async_endpoint else "realtime"
 
         # Pin autoscaler defaults here so the effective values land in workbench_meta
-        # and stay visible to downstream consumers (e.g. _resolve_max_in_flight).
+        # and stay visible to downstream consumers (e.g. async_max_in_flight).
         # Non-serverless only — serverless self-manages capacity.
         #
         # Defaults by transport:
@@ -220,6 +246,7 @@ class ModelToEndpoint(Transform):
         self.auto_scaling_mode = auto_scaling_mode
         self.scale_in_idle_minutes = scale_in_idle_minutes
         self.async_max_concurrent = async_max_concurrent
+        self.inference_batch_size = inference_batch_size
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -246,7 +273,7 @@ class ModelToEndpoint(Transform):
         # This ensures that the endpoint is ready for use
         time.sleep(5)  # We wait for AWS Lag
         end = EndpointCore(self.output_name)
-        self.log.important(f"Endpoint {end.name} is ready for use")
+        self.log.important(f"Endpoint {end.name} is ready for use on {end.instance_type}")
 
     def _check_serverless_framework(self, workbench_model: ModelCore):
         """Raise when a model's framework can't serve from a serverless endpoint.
@@ -367,6 +394,10 @@ class ModelToEndpoint(Transform):
                 instance_type = realtime_instance(memory_gb, self.async_endpoint)
                 sized = f" (sized for {memory_gb} GB serving memory)" if memory_gb is not None else ""
                 self.log.important(f"Endpoint: Instance Type={instance_type}{sized}")
+
+        if self.inference_batch_size is None:
+            self.inference_batch_size = default_batch_size(instance_type, instance_pools, self.async_endpoint)
+        self.log.important(f"Endpoint: Inference Batch Size={self.inference_batch_size}")
 
         # Configure data capture if requested (and not serverless)
         data_capture_config = None
@@ -585,6 +616,7 @@ class ModelToEndpoint(Transform):
                 "async_endpoint": self.async_endpoint,
                 "async_max_concurrent": self.async_max_concurrent if self.async_endpoint else None,
                 "serverless": self.serverless,
+                "inference_batch_size": self.inference_batch_size,
             }.items()
             if v is not None
         }

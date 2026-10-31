@@ -48,15 +48,11 @@ if __name__ == "__main__":
     model.set_owner("BW")
 
     # ── Deploy as an async (batch) endpoint.
-    end = model.to_endpoint(
+    model.to_endpoint(
         tags=tags,
         async_endpoint=True,
         instance=INSTANCE,
         min_instances=MIN_INSTANCES,
         max_instances=MAX_INSTANCES,
+        inference_batch_size=BATCH_SIZE,
     )
-
-    # Per-invocation batch size (overrides the workbench default of 10). Also stamp
-    # the fleet ceiling so a MetaEndpoint wrapping this child can size its batch to
-    # the fleet (smallest async batch × max_instances × 4).
-    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE, "max_instances": MAX_INSTANCES})

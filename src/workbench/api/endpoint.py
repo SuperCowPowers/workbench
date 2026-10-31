@@ -190,17 +190,6 @@ class Endpoint(EndpointCore):
 
         return lookup_cached_columns(self, input_columns_key(self.name), register_input_columns, "input columns")
 
-    def inference_batch_size(self) -> int:
-        """Return the per-invocation batch size declared for this endpoint.
-
-        Reads ``workbench_meta["inference_batch_size"]`` if set; otherwise
-        returns the framework default — 10 for async endpoints, 100 for sync.
-        """
-        meta = self.workbench_meta() or {}
-        if "inference_batch_size" in meta:
-            return int(meta["inference_batch_size"])
-        return 10 if meta.get("async_endpoint") else 100
-
     def instance_counts(self) -> dict:
         """Return this endpoint's current and desired instance counts.
 

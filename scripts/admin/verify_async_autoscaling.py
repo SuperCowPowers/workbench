@@ -10,7 +10,7 @@ Usage:
 The load is a single ``endpoint.inference()`` call with ``chunks × batch_size``
 unique SMILES pulled from ``PublicData().get("comp_chem/aqsol/aqsol_public_data")``.
 ``AsyncEndpointCore`` splits the frame into chunks and submits them in parallel
-via its internal thread pool (up to ``inference_max_in_flight`` concurrent).
+via its internal thread pool (up to ``async_max_in_flight`` concurrent).
 Assumes the endpoint accepts a ``smiles`` column.
 
 Expected behavior on a correctly-configured scale-to-zero async endpoint,
@@ -38,6 +38,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from workbench.api import Endpoint, PublicData
+from workbench.utils.async_endpoint_utils import async_max_in_flight
 
 
 def _get_metric(cw, endpoint_name: str, metric: str, stat: str, start, end) -> float:
@@ -128,8 +129,7 @@ def main():
         sys.exit(1)
 
     # Size the load to the endpoint's configured batch size so chunk count matches --chunks.
-    meta = endpoint.workbench_meta() or {}
-    batch_size = int(meta.get("inference_batch_size", 50))
+    batch_size = endpoint.inference_batch_size()
     needed = args.chunks * batch_size
 
     aqsol = PublicData().get("comp_chem/aqsol/aqsol_public_data")
@@ -142,7 +142,7 @@ def main():
         sys.exit(1)
     smiles_df = aqsol[["smiles"]].iloc[:needed].reset_index(drop=True)
 
-    max_in_flight = int(meta.get("inference_max_in_flight", 16))
+    max_in_flight = async_max_in_flight(endpoint.workbench_meta() or {})
     print(
         f"Firing one inference() at '{args.endpoint_name}': "
         f"{needed} SMILES → {args.chunks} chunks of {batch_size}, "

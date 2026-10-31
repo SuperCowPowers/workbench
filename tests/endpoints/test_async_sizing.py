@@ -1,19 +1,26 @@
-"""Unit tests for sizing an async batch against the endpoint it is going to.
+"""Unit tests for how an endpoint sizes the calls made to it.
 
-Local + fast (no AWS). Two numbers come off the endpoint rather than a constant: the
-batch has to fill the serving box's thread pool, and the queue has to match what the
-fleet drains. Queue too deep and chunks die on a poll deadline they spent waiting
-rather than working; batch too narrow and the container idles on vCPUs it owns.
+Local + fast (no AWS). Each endpoint stamps its own batch size at deploy and every caller
+reads that stamp: a direct client, or a MetaEndpoint calling sync and async children. The
+queue has to match what the fleet drains: too deep and chunks die on a poll deadline they
+spent waiting rather than working.
 """
 
 import logging
+from io import BytesIO
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pandas as pd
 import pytest
 
+from workbench.core.artifacts import async_endpoint_core
+from workbench.core.artifacts.async_endpoint_core import AsyncEndpointCore
+from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.core.transforms.model_to_endpoint.model_to_endpoint import GPU_BATCH_SIZE, default_batch_size
+from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, fast_inference
 from workbench.utils import async_endpoint_utils as au
-
-CAP = au.AsyncCapacity
+from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
 
 
 @pytest.fixture
@@ -40,117 +47,145 @@ def test_instance_vcpus_reads_the_size_suffix(instance_type, vcpus):
     assert au.instance_vcpus(instance_type) == vcpus
 
 
-def test_batch_fills_the_serving_box():
-    """A 16-vCPU box takes two rows per vCPU."""
-    batch_size, _ = au.resolve_batch_sizing({}, n_rows=750, capacity=CAP(concurrency=1, vcpus=16))
-    assert batch_size == 32
+@pytest.mark.parametrize(
+    "instance_type, pools, async_endpoint, expected",
+    [
+        (None, ["ml.g6.xlarge", "ml.g5.xlarge"], True, GPU_BATCH_SIZE),
+        (None, ["ml.g6.xlarge", "ml.g5.xlarge"], False, GPU_BATCH_SIZE),
+        ("ml.c7i.4xlarge", None, True, 32),  # an explicit CPU instance fills its vCPUs
+        ("ml.c7i.metal-24xl", None, True, au.ASYNC_BATCH_SIZE),
+        ("ml.c7i.large", None, False, SYNC_BATCH_SIZE),
+        (None, None, False, SYNC_BATCH_SIZE),  # serverless
+    ],
+)
+def test_default_batch_size(instance_type, pools, async_endpoint, expected):
+    assert default_batch_size(instance_type, pools, async_endpoint) == expected
 
 
-def test_batch_falls_back_when_the_box_is_unknown():
-    """An instance type with no vCPU count leaves the default in place."""
-    batch_size, _ = au.resolve_batch_sizing({}, n_rows=750, capacity=CAP(concurrency=1, vcpus=0))
-    assert batch_size == au.DEFAULT_BATCH_SIZE
+@pytest.mark.parametrize(
+    "meta, expected",
+    [
+        ({"inference_batch_size": 4}, 4),
+        ({"async_endpoint": True, "inference_batch_size": 64}, 64),
+        ({"async_endpoint": True}, au.ASYNC_BATCH_SIZE),  # deployed before stamping
+        ({}, SYNC_BATCH_SIZE),
+    ],
+)
+def test_endpoint_reads_its_own_batch_size(meta, expected):
+    endpoint = SimpleNamespace(workbench_meta=lambda: meta)
+    assert EndpointCore.inference_batch_size(endpoint) == expected
 
 
-def test_batch_override_wins():
-    """A measured value beats the derived one, for an endpoint whose rows are too slow."""
-    batch_size, _ = au.resolve_batch_sizing(
-        {"inference_batch_size": 5}, n_rows=750, capacity=CAP(concurrency=1, vcpus=16)
-    )
-    assert batch_size == 5
-
-
-def test_in_flight_follows_endpoint_concurrency():
-    """A serial endpoint gets a shallow queue, not one worker per chunk."""
-    _, in_flight = au.resolve_batch_sizing({}, n_rows=750, capacity=CAP(concurrency=1, vcpus=16))
-    assert in_flight == au.IN_FLIGHT_PER_SLOT  # 24 chunks are available; we send 2
-
-
-def test_in_flight_scales_with_concurrency():
-    """Four slots earn four times the queue depth."""
-    _, serial = au.resolve_batch_sizing({}, n_rows=750, capacity=CAP(concurrency=1, vcpus=16))
-    _, parallel = au.resolve_batch_sizing({}, n_rows=750, capacity=CAP(concurrency=4, vcpus=16))
-    assert parallel == serial * 4
-
-
-def test_in_flight_never_exceeds_chunk_count():
-    """Plenty of slots and only two chunks still submits two."""
-    _, in_flight = au.resolve_batch_sizing({}, n_rows=64, capacity=CAP(concurrency=16, vcpus=16))
-    assert in_flight == 2
-
-
-def test_in_flight_override_wins():
-    _, in_flight = au.resolve_batch_sizing(
-        {"inference_max_in_flight": 7}, n_rows=750, capacity=CAP(concurrency=1, vcpus=16)
-    )
-    assert in_flight == 7
-
-
-def fake_session(current: int, per_instance: int, pools: list = None, instance_type: str = None) -> MagicMock:
-    """A boto session whose SageMaker client describes one async endpoint."""
-    variant = {"InstanceType": instance_type}
-    if pools is not None:
-        variant["InstancePools"] = [{"InstanceType": t, "Priority": i} for i, t in enumerate(pools, 1)]
-    sm = MagicMock()
-    sm.describe_endpoint.return_value = {
-        "ProductionVariants": [{"CurrentInstanceCount": current}],
-        "EndpointConfigName": "cfg",
-    }
-    sm.describe_endpoint_config.return_value = {
-        "ProductionVariants": [variant],
-        "AsyncInferenceConfig": {"ClientConfig": {"MaxConcurrentInvocationsPerInstance": per_instance}},
-    }
+def test_fast_inference_runs_at_the_batch_size():
+    """A slow sync endpoint gets the small chunks it stamped."""
+    runtime = MagicMock()
+    runtime.invoke_endpoint.side_effect = lambda **kwargs: {"Body": BytesIO(kwargs["Body"].encode())}
     session = MagicMock()
-    session.client.return_value = sm
-    return session
+    session.boto_session.client.return_value = runtime
+
+    result = fast_inference("ep", pd.DataFrame({"x": range(11)}), session, batch_size=5)
+
+    assert runtime.invoke_endpoint.call_count == 3
+    assert len(result) == 11
 
 
-def test_capacity_uses_the_fleet_ceiling(monkeypatch):
-    """A cold endpoint sizes on what it can scale to, not on the one instance up.
-
-    Sizing on the current count would leave the queue too shallow to read as demand,
-    so the endpoint would never be scaled out and would stay at that one instance.
-    """
-    monkeypatch.setattr(au, "resolve_boto_session", lambda s: fake_session(1, 1, instance_type="ml.c7i.xlarge"))
-
-    assert au.async_capacity("ep", {"max_instances": 8}).concurrency == 8
+def test_in_flight_follows_the_fleet_ceiling():
+    """A cold endpoint sizes on what it can scale to, so the queue reads as demand."""
+    assert au.async_max_in_flight({"max_instances": 8}) == 8 * au.IN_FLIGHT_PER_SLOT
 
 
-def test_capacity_multiplies_fleet_by_per_instance(monkeypatch):
-    monkeypatch.setattr(au, "resolve_boto_session", lambda s: fake_session(1, 4, instance_type="ml.c7i.xlarge"))
-
-    assert au.async_capacity("ep", {"max_instances": 3}).concurrency == 12
-
-
-def test_capacity_without_a_ceiling_uses_current_count(monkeypatch):
-    """An endpoint with no stamped ceiling falls back to what is actually running."""
-    monkeypatch.setattr(au, "resolve_boto_session", lambda s: fake_session(2, 1, instance_type="ml.c7i.xlarge"))
-
-    assert au.async_capacity("ep", {}).concurrency == 2
+def test_in_flight_multiplies_fleet_by_per_instance():
+    meta = {"max_instances": 3, "async_max_concurrent": 4}
+    assert au.async_max_in_flight(meta) == 12 * au.IN_FLIGHT_PER_SLOT
 
 
-def test_capacity_takes_the_largest_pool(monkeypatch):
-    """Instance pools mean the serving type is not known until one comes up.
-
-    The widest is the safe choice: a batch wider than the box only lengthens an
-    invocation, while a narrower one leaves the container's pool starved.
-    """
-    pools = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.c7i.4xlarge"]
-    monkeypatch.setattr(au, "resolve_boto_session", lambda s: fake_session(1, 1, pools=pools))
-
-    assert au.async_capacity("ep", {}).vcpus == 16
+def test_in_flight_without_stamps_is_one_slot():
+    """An endpoint with no stamps costs throughput, never correctness."""
+    assert au.async_max_in_flight({}) == au.IN_FLIGHT_PER_SLOT
 
 
-def test_capacity_treats_an_unset_container_cap_as_one(monkeypatch):
-    """SageMaker picks its own value when the cap is unset and never reports it back."""
-    session = fake_session(1, 1, instance_type="ml.c7i.xlarge")
-    session.client.return_value.describe_endpoint_config.return_value = {
-        "ProductionVariants": [{"InstanceType": "ml.c7i.xlarge"}],
-        "AsyncInferenceConfig": {"ClientConfig": {}},
-    }
-    monkeypatch.setattr(au, "resolve_boto_session", lambda s: session)
+def test_async_client_sends_what_the_endpoint_stamped(monkeypatch):
+    """The stamped batch and the fleet's queue depth both reach async_inference."""
+    sent = {}
+    monkeypatch.setattr(async_endpoint_core, "async_inference", lambda **kwargs: sent.update(kwargs))
+    meta = {"async_endpoint": True, "inference_batch_size": 64, "max_instances": 1}
+    endpoint = MagicMock(endpoint_meta={"EndpointConfigName": "cfg", "ProductionVariants": [{}]})
+    endpoint.boto3_session.client.return_value.describe_endpoint_config.return_value = {"ProductionVariants": [{}]}
+    endpoint.workbench_meta.return_value = meta
+    endpoint.inference_batch_size.return_value = 64
 
-    assert au.async_capacity("ep", {"max_instances": 4}).concurrency == 4
+    AsyncEndpointCore._async_batch_invoke(endpoint, pd.DataFrame({"x": [1]}))
+
+    assert sent["batch_size"] == 64
+    assert sent["max_in_flight"] == au.IN_FLIGHT_PER_SLOT
+
+
+def child_meta(monkeypatch, children: dict) -> MetaEndpointDAG:
+    """A DAG over children given as {endpoint_name: workbench_meta}, with their metadata read."""
+
+    class FakeEndpoint:
+        def __init__(self, name):
+            self.endpoint_meta = {}
+            self.workbench_meta = lambda: children[name]
+            self.inference_batch_size = lambda: EndpointCore.inference_batch_size(self)
+
+    monkeypatch.setattr("workbench.api.Endpoint", FakeEndpoint)
+    dag = MetaEndpointDAG()
+    for name in children:
+        dag.add_endpoint(name, ["target"])
+    dag.populate_child_metadata()
+    return dag
+
+
+def test_mixed_meta_calls_each_child_at_its_own_size(monkeypatch):
+    """An async meta over a sync and an async child reads each child's stamp."""
+    dag = child_meta(
+        monkeypatch,
+        {
+            "fast-2d": {"inference_batch_size": 200},
+            "slow-3d": {"async_endpoint": True, "inference_batch_size": 4, "max_instances": 8},
+        },
+    )
+
+    assert dag.endpoint_batch_sizes == {"fast-2d": 200, "slow-3d": 4}
+    assert dag.endpoint_max_in_flight == {"slow-3d": 16}
+
+
+def test_meta_reads_unstamped_children_at_their_defaults(monkeypatch):
+    """A child deployed before stamping can still sit under a meta."""
+    dag = child_meta(monkeypatch, {"sync": {}, "async": {"async_endpoint": True}})
+
+    assert dag.endpoint_batch_sizes == {"sync": SYNC_BATCH_SIZE, "async": au.ASYNC_BATCH_SIZE}
+
+
+def test_meta_sizing_survives_serialization(monkeypatch):
+    """The deployed container rebuilds the DAG from its dict."""
+    dag = child_meta(monkeypatch, {"child": {"async_endpoint": True, "inference_batch_size": 4, "max_instances": 8}})
+
+    rebuilt = MetaEndpointDAG.from_dict(dag.to_dict())
+
+    assert rebuilt.endpoint_batch_sizes == {"child": 4}
+    assert rebuilt.endpoint_max_in_flight == {"child": 16}
+
+
+def test_meta_batch_sizes_to_the_slowest_child(monkeypatch):
+    """Four rounds through the smallest-batch child's own slots, not another child's fleet."""
+    dag = child_meta(
+        monkeypatch,
+        {
+            "slow": {"async_endpoint": True, "inference_batch_size": 4, "max_instances": 2},
+            "fast": {"async_endpoint": True, "inference_batch_size": 64, "max_instances": 8},
+            "sync": {"inference_batch_size": 100},
+        },
+    )
+
+    assert dag.meta_batch_size() == 4 * 2 * 4
+
+
+def test_all_sync_meta_batch_stays_large(monkeypatch):
+    dag = child_meta(monkeypatch, {"a": {}, "b": {}})
+
+    assert dag.meta_batch_size() == 500
 
 
 def pool_pair(preferred: str, fallback: str, serving: str) -> tuple:
@@ -202,12 +237,3 @@ def test_single_pool_variant_is_quiet(workbench_logs):
     au.warn_on_fallback_pool("ep", endpoint, config)
 
     assert workbench_logs.text == ""
-
-
-def test_capacity_falls_back_to_one_slot(monkeypatch):
-    """An unreadable endpoint costs throughput, never correctness."""
-    session = MagicMock()
-    session.client.return_value.describe_endpoint.side_effect = RuntimeError("no such endpoint")
-    monkeypatch.setattr(au, "resolve_boto_session", lambda s: session)
-
-    assert au.async_capacity("ep", {}) == CAP(1, 0)

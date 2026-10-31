@@ -123,27 +123,6 @@ class MetaEndpoint(Endpoint):
                     f"{serverless_children} are serverless. Redeploy them realtime first."
                 )
 
-        # An async meta sizes its batch from the child fleet (see the batch
-        # computation below), which requires every async child to have advertised
-        # its `inference_batch_size` + `max_instances` — both stamped on the
-        # child's `workbench_meta` when its deploy script completes. Fail fast,
-        # before deploying anything, if a child isn't fully deployed yet: the
-        # children must come up first.
-        if is_async:
-            unstamped = [
-                ep
-                for ep, child_is_async in dag.endpoint_async_flags.items()
-                if child_is_async and (ep not in dag.endpoint_batch_sizes or ep not in dag.endpoint_max_instances)
-            ]
-            if unstamped:
-                raise RuntimeError(
-                    f"MetaEndpoint '{name}': async child endpoint(s) {unstamped} have not advertised "
-                    f"'inference_batch_size' / 'max_instances' — they aren't fully deployed yet. Deploy "
-                    f"the child endpoint(s) first (their deploy script stamps these on completion), then "
-                    f"create this meta. The meta sizes its async batch from the child fleet, so it cannot "
-                    f"be built before its children."
-                )
-
         # Backtrace lineage from a primary endpoint to satisfy Workbench Model
         # machinery (every Model needs a FeatureSet to hang off of).
         feature_list, feature_set_name, target_column = cls._derive_lineage(dag)
@@ -184,27 +163,9 @@ class MetaEndpoint(Endpoint):
             async_endpoint=is_async,
             min_instances=min_instances if uses_autoscaler else 0,
             max_instances=max_instances if uses_autoscaler else None,
+            inference_batch_size=dag.meta_batch_size(),
         )
-
-        # The meta delegates row-level batching to its children, who saturate
-        # their own fleets; size the async meta batch to the slowest child's
-        # fleet: smallest async-child batch × that fleet's max_instances × 4
-        # (≈4 rounds through the fleet). Smaller batches → shorter invocations
-        # (less likely to hit the 60-min async cap) and finer-grained failure/
-        # retry. All-sync metas stay large (rows are cheap). Child stamps are
-        # guaranteed present here — validated right after populate_child_metadata.
-        meta_batch = 500
-        if is_async:
-            async_children = [ep for ep, child_is_async in dag.endpoint_async_flags.items() if child_is_async]
-            async_batches = [dag.endpoint_batch_sizes[ep] for ep in async_children]
-            async_fleets = [dag.endpoint_max_instances[ep] for ep in async_children]
-            meta_batch = min(async_batches) * max(async_fleets) * 4
-        endpoint.upsert_workbench_meta(
-            {
-                "inference_batch_size": meta_batch,
-                "meta_endpoint_dag": dag.to_dict(),
-            }
-        )
+        endpoint.upsert_workbench_meta({"meta_endpoint_dag": dag.to_dict()})
 
         # The DAG already knows its column contract, so register it directly.
         # Auto-discovery would fan out a live inference across every child just

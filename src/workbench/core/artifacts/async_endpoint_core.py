@@ -31,11 +31,11 @@ from workbench.endpoints.async_inference import async_inference
 from workbench.utils.async_endpoint_utils import (
     EndpointWarmingError,
     _async_children,
+    async_max_in_flight,
     build_meta_instances_str_fn,
     build_meta_progress_str_fn,
-    async_capacity,
     purge_async_queue,
-    resolve_batch_sizing,
+    warn_on_fallback_pool,
 )
 
 log = logging.getLogger("workbench")
@@ -271,14 +271,10 @@ class AsyncEndpointCore(EndpointCore):
     def _async_batch_invoke(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Delegate batch invocation to ``workbench.endpoints.async_inference``.
 
-        Sizing (``batch_size``/``max_in_flight``) comes from
-        :func:`~workbench.utils.async_endpoint_utils.resolve_batch_sizing` via
-        the ``inference_batch_size`` / ``inference_max_in_flight`` meta knobs.
-        Without overrides both come from the endpoint itself: the batch fills the
-        serving instance's vCPUs, and how many go out at once follows its concurrency
-        at full scale -- so the client keeps the fleet fed and the autoscaler supplied
-        with demand without queuing work the endpoint cannot reach before the poll
-        deadline.
+        Sizing comes from what the endpoint stamped at deploy: its batch size, and how
+        many go out at once follows its concurrency at full scale -- so the client keeps
+        the fleet fed and the autoscaler supplied with demand without queuing work the
+        endpoint cannot reach before the poll deadline.
 
         For MetaEndpoints, two log-decoration callables are passed so the
         otherwise-opaque single meta invocation reports useful detail:
@@ -288,16 +284,18 @@ class AsyncEndpointCore(EndpointCore):
         """
         self._ensure_warm()
 
+        config_name = self.endpoint_meta["EndpointConfigName"]
+        config = self.boto3_session.client("sagemaker").describe_endpoint_config(EndpointConfigName=config_name)
+        warn_on_fallback_pool(self.name, self.endpoint_meta, config)
+
         meta = self.workbench_meta() or {}
-        capacity = async_capacity(self.name, meta, self.boto3_session)
-        batch_size, max_in_flight = resolve_batch_sizing(meta, len(eval_df), capacity)
 
         return async_inference(
             endpoint_name=self.name,
             eval_df=eval_df,
             sm_session=self.boto3_session,
-            batch_size=batch_size,
-            max_in_flight=max_in_flight,
+            batch_size=self.inference_batch_size(),
+            max_in_flight=async_max_in_flight(meta),
             s3_bucket=self.workbench_bucket,
             s3_input_prefix=f"endpoints/{self.name}/async-input",
             instances_str_fn=build_meta_instances_str_fn(meta),

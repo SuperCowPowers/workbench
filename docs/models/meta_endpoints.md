@@ -155,7 +155,7 @@ When you call `MetaEndpoint.create(name, dag, ...)`:
 2. **Resolve async flags** — looks up each child's `workbench_meta` to record per-endpoint async status.
 3. **Lineage anchor** — backtraces the first input endpoint to a FeatureSet/target/feature_list (Workbench Models need to point at a FeatureSet).
 4. **Build + register the Model** — runs the standard `FeatureSet.to_model()` flow, passing the DAG dict + region + bucket as `custom_args`. The `meta_endpoint.template` substitutes those placeholders, the SageMaker training job persists `meta_endpoint_config.json` as the model artifact, and the model package is registered with the standard inference image.
-5. **Deploy** — `model.to_endpoint(...)` deploys an Endpoint, async if any child is async (with `max_instances=1` and 5-minute idle drain). `inference_batch_size` is auto-set to the minimum across DAG children.
+5. **Deploy** — `model.to_endpoint(...)` deploys an Endpoint, async if any child is async (with `max_instances=1` and 5-minute idle drain). Each child call runs at the batch size that child stamped at deploy, read once at create, so a child that changes its sizing needs the meta recreated. The meta's own `inference_batch_size` is computed from its slowest async child, or 500 when all children are sync.
 
 ### Inference flow
 

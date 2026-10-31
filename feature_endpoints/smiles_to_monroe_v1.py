@@ -36,8 +36,13 @@ if __name__ == "__main__":
     model.set_owner("BW")
 
     # ── Deploy as a serverless endpoint.
-    end = model.to_endpoint(tags=tags, serverless=True, mem_size=MEM_SIZE, max_concurrency=MAX_CONCURRENCY)
-    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE})
+    end = model.to_endpoint(
+        tags=tags,
+        serverless=True,
+        mem_size=MEM_SIZE,
+        max_concurrency=MAX_CONCURRENCY,
+        inference_batch_size=BATCH_SIZE,
+    )
 
     # Smoke test with a few public compounds.
     df = PublicData().get("comp_chem/aqsol/aqsol_public_data")

@@ -75,6 +75,7 @@ class Model(ModelCore):
         auto_scaling_mode: str = None,
         scale_in_idle_minutes: int = None,
         async_max_concurrent: int = 1,
+        inference_batch_size: int = None,
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -102,6 +103,9 @@ class Model(ModelCore):
             async_max_concurrent (int): MaxConcurrentInvocationsPerInstance for async
                 endpoints (default: 1, suits CPU-bound predict_fn). Bump for I/O-bound
                 workloads where multiple invocations can share a single instance.
+            inference_batch_size (int): Rows per invocation for this endpoint. A slow model
+                wants a small batch, a fast one a large batch (default: None = chosen from
+                the transport and instance type).
 
         All deploy-time sizing/autoscaling args are persisted to the endpoint's
         workbench_meta so later reconstructions can see what it was deployed with.
@@ -134,6 +138,7 @@ class Model(ModelCore):
             auto_scaling_mode=auto_scaling_mode,
             scale_in_idle_minutes=scale_in_idle_minutes,
             async_max_concurrent=async_max_concurrent,
+            inference_batch_size=inference_batch_size,
         )
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform(

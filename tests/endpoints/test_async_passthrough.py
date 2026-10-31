@@ -27,7 +27,7 @@ def test_failed_chunk_rows_preserved_with_nan(monkeypatch):
     monkeypatch.setattr(ai, "resolve_boto_session", lambda s: MagicMock())
     monkeypatch.setattr(ai, "instance_count_str", lambda *a: "1")
 
-    out = ai.async_inference("ep", df, batch_size=5, s3_bucket="b")
+    out = ai.async_inference("ep", df, batch_size=5, max_in_flight=2, s3_bucket="b")
 
     assert len(out) == len(df)  # N in == N out
     assert sorted(out["id"]) == list(range(20))  # every row survives
@@ -45,7 +45,7 @@ def test_all_chunks_failed_still_raises(monkeypatch):
 
     raised = False
     try:
-        ai.async_inference("ep", df, batch_size=5, s3_bucket="b")
+        ai.async_inference("ep", df, batch_size=5, max_in_flight=2, s3_bucket="b")
     except RuntimeError:
         raised = True
     assert raised, "all-chunks-failed must raise, not return a frame of NaNs"

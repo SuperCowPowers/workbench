@@ -39,7 +39,8 @@ from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_cv
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
-from workbench.endpoints.fast_inference import fast_inference
+from workbench.utils.async_endpoint_utils import ASYNC_BATCH_SIZE
+from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, fast_inference
 
 # FIXME: sagemaker-core bug — DataCaptureConfigSummary.kms_key_id is required but should be
 # Optional, causing Endpoint.get() to fail on endpoints with data capture but no KMS key.
@@ -307,6 +308,12 @@ class EndpointCore(AWSArtifact):
     def instance_type(self) -> str:
         """Return the instance type for this endpoint"""
         return self.endpoint_meta["InstanceType"]
+
+    def inference_batch_size(self) -> int:
+        """Rows per invocation: what this endpoint stamped at deploy, else a default by transport"""
+        meta = self.workbench_meta() or {}
+        default = ASYNC_BATCH_SIZE if meta.get("async_endpoint") else SYNC_BATCH_SIZE
+        return int(meta.get("inference_batch_size", default))
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint.
@@ -829,7 +836,9 @@ class EndpointCore(AWSArtifact):
         Note:
             There's no sanity checks or error handling... just FAST Inference!
         """
-        return fast_inference(self.name, eval_df, self.sm_session, threads=threads)
+        return fast_inference(
+            self.name, eval_df, self.sm_session, threads=threads, batch_size=self.inference_batch_size()
+        )
 
     def _predict(self, eval_df: pd.DataFrame, features: list[str], drop_error_rows: bool = False) -> pd.DataFrame:
         """Internal: Run prediction on observations in the given DataFrame
@@ -859,9 +868,7 @@ class EndpointCore(AWSArtifact):
         sm_endpoint.serializer = CSVSerializer()
         sm_endpoint.deserializer = WorkbenchDeserializer()
 
-        # Get batch size from endpoint metadata (default 100)
-        # Some endpoints (e.g., 3D descriptor generation) need smaller batches due to processing time
-        batch_size = self.workbench_meta().get("inference_batch_size", 100)
+        batch_size = self.inference_batch_size()
 
         # Now split up the dataframe into chunks, send those chunks to our
         # endpoint (with error handling) and stitch all the chunks back together

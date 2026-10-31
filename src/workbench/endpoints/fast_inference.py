@@ -45,7 +45,13 @@ def get_or_create_sm_client():
     return _CACHED_SM_CLIENT
 
 
-def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, threads: int = 4) -> pd.DataFrame:
+# Rows per invocation for a sync endpoint that did not choose its own at deploy
+SYNC_BATCH_SIZE = 100
+
+
+def fast_inference(
+    endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, threads: int = 4, batch_size: int = SYNC_BATCH_SIZE
+) -> pd.DataFrame:
     """Run inference on the Endpoint using the provided DataFrame
 
     Args:
@@ -53,6 +59,7 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, t
         eval_df (pd.DataFrame): The DataFrame to run predictions on
         sm_session: A boto3 Session (or legacy SageMaker Session with .boto_session). If None, a cached client is used.
         threads (int): The number of threads to use (default: 4)
+        batch_size (int): Rows per invocation (default: SYNC_BATCH_SIZE)
 
     Returns:
         pd.DataFrame: The DataFrame with predictions
@@ -67,11 +74,8 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, t
 
     total_rows = len(eval_df)
 
-    # Fixed chunk size of 100 rows
-    chunk_size = 100
-
     def process_chunk(chunk_df: pd.DataFrame, start_index: int) -> pd.DataFrame:
-        log.info(f"Processing {start_index}:{min(start_index + chunk_size, total_rows)} out of {total_rows} rows...")
+        log.info(f"Processing {start_index}:{min(start_index + batch_size, total_rows)} out of {total_rows} rows...")
         csv_buffer = StringIO()
         chunk_df.to_csv(csv_buffer, index=False)
         try:
@@ -98,7 +102,7 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, t
         threads = 10
 
     # Split DataFrame into chunks and process them concurrently
-    chunks = [(eval_df[i : i + chunk_size], i) for i in range(0, total_rows, chunk_size)]  # noqa: E203
+    chunks = [(eval_df[i : i + batch_size], i) for i in range(0, total_rows, batch_size)]  # noqa: E203
 
     # Use min of threads or number of chunks to avoid creating unnecessary threads
     actual_threads = min(threads, len(chunks))
