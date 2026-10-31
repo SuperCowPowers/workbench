@@ -2,6 +2,7 @@
 import json
 import os
 import platform
+import shutil
 import logging
 from typing import Any, Dict
 
@@ -119,6 +120,8 @@ class ConfigManager:
         Only that key is written; the rest of the file stays as it is on disk. With no
         site config (local mode) the value is set for this session only.
 
+        The file is swapped in whole, so a failed write leaves the existing config intact.
+
         Args:
             key (str): The configuration key to set.
             value (Any): The value for the configuration key (must be JSON serializable).
@@ -126,11 +129,15 @@ class ConfigManager:
         self.set_config(key, value)
         if self.using_default_config or not self.site_config_path:
             return
-        with open(self.site_config_path, "r", encoding="utf-8") as file:
+        config_path = os.path.realpath(self.site_config_path)
+        with open(config_path, "r", encoding="utf-8") as file:
             site_config = json.load(file)
         site_config[key] = value
-        with open(self.site_config_path, "w", encoding="utf-8") as file:
+        temp_path = f"{config_path}.tmp"
+        with open(temp_path, "w", encoding="utf-8") as file:
             json.dump(site_config, file, indent=4)
+        shutil.copymode(config_path, temp_path)  # The config can hold a Redis password
+        os.replace(temp_path, config_path)
 
     def overwrite_config_with_env(self):
         """Overwrite the configuration with environment variables."""

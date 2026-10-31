@@ -1,8 +1,9 @@
 # Using Bosco
 
-> how to interact with Bosco: routing, multi-line, Shift+Enter, settings, interrupting
+> how to interact with Bosco: routing, multi-line, Shift+Enter, model and effort settings, interrupting
 
-Read this when the user asks how to interact with you.
+Read this when the user asks how to interact with you, or to change your model
+or effort.
 
 ## Two ways in
 
@@ -40,16 +41,29 @@ setting, and it then works in every terminal program, not just here.
 
 ## Settings
 
-Attributes on `bosco` — read its docstring for the current values and levels.
+`bosco()` prints the current values; its docstring lists the options.
 
 - **"show code"** / **"hide code"** — echo the code you run (`bosco.show_code`).
   The spoken toggle is the easier path to offer.
-- **`bosco.effort`** — thinking depth per turn, not reply length. No spoken
-  toggle; lower is faster, and it only shows on questions hard enough to think
-  about.
-- **`bosco.fast`** — demo mode: a faster model at low effort. Overrides
-  `bosco.effort` while set. Offer it when someone wants snappy turns over
-  careful ones.
+- **Model and effort** — the user's own settings, kept in their Workbench config.
+  When they ask for a change, save it. It applies on your next round and sticks
+  across sessions:
+
+  ```python
+  from workbench.utils.config_manager import ConfigManager
+
+  ConfigManager().save_config("BOSCO_MODEL", "claude-sonnet-5")  # or claude-opus-5 (default)
+  ConfigManager().save_config("BOSCO_EFFORT", "low")             # low, medium, high (default), xhigh, max
+  ```
+
+  In local mode there is no config file, so tell the user the change lasts only
+  for this session.
+
+  Effort is thinking depth per turn, not reply length. It's the main speed lever:
+  lower means faster turns and fewer tool calls, and less checking against live
+  data. At low effort Sonnet matches Opus's speed at about half the cost. Offer
+  Sonnet at low effort when someone wants snappy turns, and suggest raising effort
+  for build work or anything that should be verified against real data.
 
 ## Interrupting
 

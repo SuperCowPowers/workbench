@@ -229,6 +229,37 @@ def test_save_config_writes_only_that_key(tmp_path, monkeypatch):
     }
 
 
+def test_save_config_failure_leaves_the_file_intact(tmp_path, monkeypatch):
+    site = tmp_path / "site.json"
+    original = '{"WORKBENCH_BUCKET": "bucket"}'
+    site.write_text(original, encoding="utf-8")
+    cm = ConfigManager()
+    monkeypatch.setattr(cm, "config", {})
+    monkeypatch.setattr(cm, "site_config_path", str(site))
+    monkeypatch.setattr(cm, "using_default_config", False)
+
+    with pytest.raises(TypeError):
+        cm.save_config("NOT_JSON", object())
+    assert site.read_text(encoding="utf-8") == original
+
+
+def test_save_config_keeps_permissions_and_symlink(tmp_path, monkeypatch):
+    real = tmp_path / "real.json"
+    real.write_text('{"WORKBENCH_BUCKET": "bucket"}', encoding="utf-8")
+    real.chmod(0o600)
+    link = tmp_path / "link.json"
+    link.symlink_to(real)
+    cm = ConfigManager()
+    monkeypatch.setattr(cm, "config", {})
+    monkeypatch.setattr(cm, "site_config_path", str(link))
+    monkeypatch.setattr(cm, "using_default_config", False)
+
+    cm.save_config("AUTO_SSO_RENEW", True)
+    assert link.is_symlink()
+    assert real.stat().st_mode & 0o777 == 0o600
+    assert json.loads(real.read_text(encoding="utf-8"))["AUTO_SSO_RENEW"] is True
+
+
 def test_renew_without_stdin(renew_world, monkeypatch):
     monkeypatch.setattr(sso_utils.sys, "stdin", None)
     assert not sso_utils.sso_renew("idb-dev")

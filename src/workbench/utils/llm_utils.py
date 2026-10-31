@@ -37,9 +37,6 @@ CLAUDE_MODELS: List[str] = [
     "claude-opus-4-8",
 ]
 
-# Lower-latency model for bosco.fast (demos, rapid iteration).
-FAST_MODEL = "claude-sonnet-5"
-
 # Bedrock's inference profile prefix; the direct API takes the bare name above.
 BEDROCK_PREFIX = "us.anthropic."
 

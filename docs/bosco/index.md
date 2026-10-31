@@ -60,12 +60,31 @@ attributes directly:
 
 ```python
 bosco.show_code = True         # echo the code Bosco runs (default False)
-bosco.effort = "medium"        # low, medium, high (default), xhigh, max
 bosco.usage                    # session token counts and estimated cost_usd
 ```
 
-`effort` is thinking depth per turn, not reply length — lower is faster, and the
-difference only shows on questions hard enough to think about.
+Model and effort are per-user settings in your Workbench config, so they stick
+across sessions. Ask Bosco ("use Sonnet at low effort") and it saves the change
+for you, or set them yourself. Type `bosco` to see the current values.
+
+```json
+{
+    ...
+   "BOSCO_MODEL": "claude-sonnet-5",
+   "BOSCO_EFFORT": "low",
+    ...
+}
+```
+
+| Key | Values |
+|---|---|
+| `BOSCO_MODEL` | `claude-opus-5` (default), `claude-sonnet-5` |
+| `BOSCO_EFFORT` | `low`, `medium`, `high` (default), `xhigh`, `max` |
+
+Effort is thinking depth per turn, not reply length. It's the main speed lever:
+lower means faster turns and fewer tool calls, and less checking against live
+data. At low effort Sonnet matches Opus's speed at about half the cost. In local
+mode there is no config file, so a change Bosco makes lasts only for that session.
 
 **Ctrl-C** interrupts at any point, mid-thought or mid-query. The conversation
 stays usable, so the next question works normally.
