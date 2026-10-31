@@ -13,11 +13,18 @@ descriptors over 1M PubChem molecules, and `--freeze-epochs` holds it fixed befo
 it. At one to two thousand labelled rows per isoform, fine-tuning a large pretrained encoder
 end to end overfits, so the frozen-head warmup is the default.
 
+`--width-weights` weights each row by the inverse of its label's credible-interval width. The
+challenge scores a soft-threshold error that costs nothing for a prediction anywhere inside a
+compound's interval, so a wide interval is cheap to miss. Three quarters of CYP2D6 labels are
+tighter than 0.36 log units and a tenth span one to three; that tail currently trains the
+encoder toward point estimates the metric ignores.
+
 Chemprop serves from CPU, so these are serverless endpoints.
 
     ml_pipeline_launcher cyp_chemprop_st.py
     ml_pipeline_launcher cyp_chemprop_st.py -- --foundation
     ml_pipeline_launcher cyp_chemprop_st.py -- --isoforms cyp2d6
+    ml_pipeline_launcher cyp_chemprop_st.py -- --isoforms cyp2d6 --width-weights
 """
 
 import argparse
@@ -27,6 +34,11 @@ from workbench.api import FeatureSet, ModelFramework, ModelType
 FS_NAME = "openadmet_cyp_aux_f1"
 ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 BASE_TAGS = ["openadmet_cyp", "chemprop", "single_task", "activity"]
+
+# Bounds on an interval-width weight, so neither a near-zero interval nor a three-log-unit one
+# dominates the loss. A compound at twice the median width counts half, and the clip costs about
+# 12% of effective sample size on CYP2D6.
+WEIGHT_CLIP = (0.5, 2.0)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -52,6 +64,12 @@ parser.add_argument(
     type=int,
     default=10,
     help="Epochs to hold the pretrained encoder frozen before fine-tuning it (--foundation)",
+)
+parser.add_argument(
+    "--width-weights",
+    action="store_true",
+    help="Weight each row by the inverse of its label credible-interval width, clipped and "
+    "normalized to mean 1. Lands beside the unweighted model as -widthw",
 )
 parser.add_argument(
     "--split-strategy",
@@ -81,7 +99,11 @@ for iso in args.isoforms:
         name += f"-{args.name_suffix.strip('-')}"
     if args.foundation:
         name += f"-chemeleon-fz{args.freeze_epochs}"
+    if args.width_weights:
+        name += "-widthw"
     tags = BASE_TAGS + [iso] + (["chemeleon"] if args.foundation else [])
+    if args.width_weights:
+        tags.append("width_weights")
 
     hyperparameters = {
         "split_strategy": args.split_strategy,
@@ -93,6 +115,19 @@ for iso in args.isoforms:
 
     exclude_ids = list(df.loc[df[target].isna(), "molecule_name"])
     print(f"{iso}: {len(df) - len(exclude_ids):,} labelled rows, excluding {len(exclude_ids):,} unlabelled")
+
+    sample_weights = None
+    if args.width_weights:
+        lower, upper = f"{target}_ci_lower", f"{target}_ci_upper"
+        measured = df[target].notna() & df[lower].notna() & df[upper].notna()
+        width = (df.loc[measured, upper] - df.loc[measured, lower]).clip(lower=1e-3)
+        w = (width.median() / width).clip(*WEIGHT_CLIP)
+        w /= w.mean()
+        sample_weights = dict(zip(df.loc[measured, "molecule_name"], w))
+        print(
+            f"{iso}: interval widths median {width.median():.2f}, weights {w.min():.2f}-{w.max():.2f}, "
+            f"effective n {w.sum() ** 2 / (w**2).sum():.0f} of {len(w):,}"
+        )
 
     model = fs.to_model(
         name=name,
@@ -106,6 +141,7 @@ for iso in args.isoforms:
         ),
         tags=tags,
         exclude_ids=exclude_ids,
+        sample_weights=sample_weights,
         hyperparameters=hyperparameters,
     )
     model.set_owner("open_admet_cyp")
