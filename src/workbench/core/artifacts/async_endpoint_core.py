@@ -33,6 +33,7 @@ from workbench.utils.async_endpoint_utils import (
     _async_children,
     build_meta_instances_str_fn,
     build_meta_progress_str_fn,
+    async_capacity,
     purge_async_queue,
     resolve_batch_sizing,
 )
@@ -273,6 +274,11 @@ class AsyncEndpointCore(EndpointCore):
         Sizing (``batch_size``/``max_in_flight``) comes from
         :func:`~workbench.utils.async_endpoint_utils.resolve_batch_sizing` via
         the ``inference_batch_size`` / ``inference_max_in_flight`` meta knobs.
+        Without overrides both come from the endpoint itself: the batch fills the
+        serving instance's vCPUs, and how many go out at once follows its concurrency
+        at full scale -- so the client keeps the fleet fed and the autoscaler supplied
+        with demand without queuing work the endpoint cannot reach before the poll
+        deadline.
 
         For MetaEndpoints, two log-decoration callables are passed so the
         otherwise-opaque single meta invocation reports useful detail:
@@ -283,7 +289,8 @@ class AsyncEndpointCore(EndpointCore):
         self._ensure_warm()
 
         meta = self.workbench_meta() or {}
-        batch_size, max_in_flight = resolve_batch_sizing(meta, len(eval_df))
+        capacity = async_capacity(self.name, meta, self.boto3_session)
+        batch_size, max_in_flight = resolve_batch_sizing(meta, len(eval_df), capacity)
 
         return async_inference(
             endpoint_name=self.name,

@@ -164,13 +164,15 @@ class FoldModel:
         readout = torch.load(f"{path}/readout.pt", map_location=encoder.device)
         model = FineTuned(encoder, readout["n_extra"], readout["dropout"]).to(encoder.device)
         model.readout.load_state_dict(readout["state"])
+        # map_location puts these on the encoder's device; the normalization arrays are host-side
+        # numpy, applied to features before they reach a tensor
         extra_mean, extra_std = readout["extra_mean"], readout["extra_std"]
         return cls(
             model.eval(),
             readout["target_mean"],
             readout["target_std"],
-            None if extra_mean is None else extra_mean.numpy(),
-            None if extra_std is None else extra_std.numpy(),
+            None if extra_mean is None else extra_mean.cpu().numpy(),
+            None if extra_std is None else extra_std.cpu().numpy(),
         )
 
 

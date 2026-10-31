@@ -31,7 +31,6 @@ LAMBDA_GRID = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
 
 MT = "cyp-reg-chemprop-union-p30"
 AUX = "cyp-reg-chemprop-mt-aux-100"
-TOX = "cyp-reg-chemprop-union-p30-tox"
 
 
 def tabicl(iso: str) -> str:
@@ -42,12 +41,17 @@ def tabicl(iso: str) -> str:
     return f"cyp-reg-tabicl-{iso.lower().removeprefix('cyp')}-monroe-readout"
 
 
-MEMBERS = {
-    "CYP1A2": [MT, AUX, TOX, tabicl("CYP1A2")],
-    "CYP2C9": [MT, AUX, TOX, tabicl("CYP2C9")],
-    "CYP2D6": [MT, AUX, TOX, tabicl("CYP2D6"), "cyp-reg-chemprop-2d6-isoform", "cyp-reg-chemprop-2d6-single"],
-    "CYP3A4": [MT, AUX, TOX, tabicl("CYP3A4")],
-}
+def atomjepa(iso: str) -> str:
+    """Atom-JEPA over its frozen encoder plus the screen readouts, one model per isoform."""
+    return f"cyp-reg-atomjepa-{iso.lower().removeprefix('cyp')}-readout"
+
+
+# Two models per representation family: encoders trained on the task, and frozen pretrained
+# encoders read out by a light head. The chemprops land inside each other's resolution on
+# every isoform, so a third is another vote rather than more information, and the frozen pair
+# scores higher out of fold on all four. Their residuals correlate 0.88-0.96 with each other
+# against 0.78-0.91 among the chemprops, so this is two sources, not four.
+MEMBERS = {iso: [MT, AUX, tabicl(iso), atomjepa(iso)] for iso in ("CYP1A2", "CYP2C9", "CYP2D6", "CYP3A4")}
 
 
 def combine(

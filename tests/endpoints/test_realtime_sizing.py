@@ -7,6 +7,7 @@ import pytest
 from workbench.api import ModelFramework
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import (
     GPU_ASYNC_MAX_INSTANCES,
+    GPU_INSTANCE_POOLS,
     SERVERLESS_MODEL_MEMORY_LIMIT_GB,
     ModelToEndpoint,
     realtime_instance,
@@ -82,6 +83,18 @@ def _transform(async_endpoint, max_instances, max_instances_given):
     return SimpleNamespace(
         async_endpoint=async_endpoint, max_instances=max_instances, max_instances_given=max_instances_given
     )
+
+
+def test_every_instance_pool_is_a_gpu():
+    """A CPU pool here would be taken rather than waited out.
+
+    SageMaker serves from the highest-priority pool that has capacity, and a CPU instance
+    always has capacity, so one in this list resolves a GPU shortage in seconds at roughly
+    50x the per-row cost instead of spending GPU_PROVISION_TIMEOUT_SECONDS on a GPU.
+    """
+    assert GPU_INSTANCE_POOLS
+    families = [pool.split(".")[1] for pool in GPU_INSTANCE_POOLS]
+    assert all(family.startswith(("g", "p")) for family in families), families
 
 
 def test_gpu_async_defaults_to_one_instance():

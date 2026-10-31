@@ -21,17 +21,23 @@ each board. If OpenADMET reorder or add tabs it will shift -- re-derive with:
 
 Needs `gradio_client` (not a Workbench dependency):  uv pip install gradio_client
 
+Every pull is snapshotted to `outputs/leaderboards/`. The live board holds one row per
+user, so a submission overwrites the score of the one before it and the only record of
+that score is a snapshot taken while it stood.
+
 Usage:
     python cyp_leaderboard.py                      # live regression boards, our row + top 5
     python cyp_leaderboard.py --interim            # full test set -- the scored metric
     python cyp_leaderboard.py --user NAME --top 10
-    python cyp_leaderboard.py --tdi --save outputs/leaderboards
+    python cyp_leaderboard.py --tdi --save some/other/dir
 """
 
 import argparse
 from pathlib import Path
 
 import pandas as pd
+
+SNAPSHOT_DIR = Path(__file__).parent / "outputs" / "leaderboards"
 
 # Live boards: half the test set, continuously updated.
 REGRESSION = {
@@ -93,11 +99,22 @@ def field_sd(boards: dict, top: int = 10, ratio: float = 1.2533) -> dict:
     return out
 
 
+def report_columns(df: pd.DataFrame, metric: str) -> list:
+    """Identity, the scored metric and its companions, then the bootstrap stds.
+
+    The stds say which gaps on the board are real, and `Submitted` says which of our
+    submissions a row is scoring -- both are worth reading next to the score.
+    """
+    fixed = ["Rank", "Username", metric, "MAE", "R²", "Spearman's ρ", "Kendall's τ", "Submitted"]
+    cols = [c for c in fixed if c in df.columns]
+    return cols + [c for c in df.columns if "std" in c.lower() and c not in cols]
+
+
 def summarize(boards: dict, user: str, top: int) -> None:
     """Print the leader, our row, and the head of each board."""
     for name, df in boards.items():
         metric = next(c for c in df.columns if "ST-RAE" in c or "MCC" in c)
-        cols = [c for c in ("Rank", "Username", metric, "MAE", "R²", "Spearman's ρ", "Kendall's τ") if c in df.columns]
+        cols = report_columns(df, metric)
         print(f"\n=== {name} ({len(df)} entries, sorted by {metric}) ===")
         print(df[cols].head(top).to_string(index=False))
         mine = df[df["Username"] == user]
@@ -139,7 +156,8 @@ if __name__ == "__main__":
         "--interim", action="store_true", help="Pull the interim boards (all 750 compounds) rather than the live half"
     )
     parser.add_argument("--sd", action="store_true", help="Recover blind-set label sd per isoform from the field")
-    parser.add_argument("--save", type=Path, help="Directory to write each board as CSV")
+    parser.add_argument("--save", type=Path, default=SNAPSHOT_DIR, help="Directory to snapshot each board into")
+    parser.add_argument("--no-save", action="store_true", help="Skip the snapshot")
     args = parser.parse_args()
 
     boards = {
@@ -161,7 +179,7 @@ if __name__ == "__main__":
             for iso, sd in field_sd(fetched).items():
                 print(f"{iso:<8} {sd:.3f}")
 
-    if args.save:
+    if not args.no_save:
         args.save.mkdir(parents=True, exist_ok=True)
         stamp = pd.Timestamp.utcnow().strftime("%Y%m%d_%H%M")
         for name, df in fetched.items():

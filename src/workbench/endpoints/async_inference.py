@@ -44,10 +44,16 @@ _POLL_BACKOFF = 1.5
 # SageMaker async endpoints process each invocation for at most 60 minutes.
 # We claim the full ceiling explicitly: left unset, InvocationTimeoutSeconds
 # defaults well below 60 min, so a heavy (e.g. xTB) batch silently expires —
-# SageMaker discards the computed result to the failure path. Poll client-side
-# for the same window so we wait exactly as long as SageMaker will work.
+# SageMaker discards the computed result to the failure path.
 _INVOCATION_TIMEOUT_S = 3600
-_POLL_DEADLINE_S = _INVOCATION_TIMEOUT_S
+
+# Client-side poll deadline. SageMaker counts its own timeout from the moment it
+# starts a request, while this one runs from submission, so it has to cover queue
+# wait on top of compute. Callers size `max_in_flight` to keep about one chunk
+# queued per server slot, which holds that wait to roughly one service time, so
+# twice the invocation ceiling covers both. A request that dies without producing
+# output is caught by the failure-path check on every poll, not by this deadline.
+_POLL_DEADLINE_S = _INVOCATION_TIMEOUT_S * 2
 
 # Heartbeat cadence for the chunk-completion loop. When no chunk finishes
 # within this window, emit a liveness line so long quiet polls (e.g. a

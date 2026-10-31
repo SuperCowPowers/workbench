@@ -10,7 +10,8 @@ one that:
 
 1. Slices its input DataFrame into snapshots of ``self.snapshot`` rows.
 2. Calls the wrapped method on each snapshot.
-3. After each snapshot, calls ``self._update_cache(results)`` to persist.
+3. After each snapshot, calls ``self._update_cache(results)`` to persist the
+   rows the endpoint actually scored.
 4. Attempts every snapshot even after one fails, so a bad snapshot doesn't
    cost the rest of the batch its compute, then raises if any failed.
 5. Concatenates surviving snapshots and returns the merged DataFrame.
@@ -23,6 +24,19 @@ from typing import Callable
 import pandas as pd
 
 log = logging.getLogger("workbench")
+
+
+def _scored_rows(results: pd.DataFrame, feature_cols: list) -> pd.Series:
+    """Mask of the rows the endpoint actually produced output for.
+
+    A failed async chunk comes back as its own input rows with the endpoint's
+    columns NaN-filled, so the row count always matches and the failure shows up
+    only in the output columns. Such a row is not a result: cached, it would answer
+    every later lookup for that key and the row would never recompute.
+    """
+    if not feature_cols:
+        return pd.Series(True, index=results.index)
+    return results[feature_cols].notna().any(axis=1)
 
 
 def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[..., pd.DataFrame]:
@@ -40,9 +54,10 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
     Returns the concatenation of every snapshot's results.
 
     Raises:
-        RuntimeError: If any snapshot's inference failed. Every snapshot is
-            attempted first and successful ones are cached, so a retry resumes
-            from the cache rather than recomputing them.
+        RuntimeError: If any snapshot's inference failed, or came back with rows
+            the endpoint produced no output for. Every snapshot is attempted first
+            and scored rows are cached, so a retry resumes from the cache rather
+            than recomputing them.
     """
 
     @functools.wraps(method)
@@ -93,13 +108,23 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
 
             # Step 2: persist only the key + endpoint feature columns to the
             # cache (drop the caller's input columns so they don't leak to
-            # other callers who hit the cache with different input schemas).
+            # other callers who hit the cache with different input schemas),
+            # and only for the rows the endpoint actually scored.
             if not chunk_results.empty:
                 try:
                     input_cols = set(chunk.columns)
                     feature_cols = [c for c in chunk_results.columns if c not in input_cols]
                     cache_cols = [key_col] + feature_cols if key_col else list(chunk_results.columns)
-                    self._update_cache(chunk_results[cache_cols])
+                    scored = _scored_rows(chunk_results, feature_cols)
+                    unscored = int((~scored).sum())
+                    if unscored:
+                        self.log.error(
+                            f"{label}: chunk {i + 1}/{n_chunks} returned {unscored} rows with no "
+                            f"endpoint output; leaving them uncached so they recompute"
+                        )
+                        failures.append(f"chunk {i + 1}/{n_chunks}: {unscored} rows returned no endpoint output")
+                    if scored.any():
+                        self._update_cache(chunk_results.loc[scored, cache_cols])
                 except Exception as e:
                     self.log.error(
                         f"{label}: chunk {i + 1}/{n_chunks} cache write failed: {e}. "
