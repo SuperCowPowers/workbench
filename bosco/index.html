@@ -5538,11 +5538,40 @@ you the docstring.</p>
 <p>Say <strong>"show code"</strong> or <strong>"hide code"</strong> and Bosco flips it himself, or set the
 attributes directly:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">bosco</span><span class="o">.</span><span class="n">show_code</span> <span class="o">=</span> <span class="kc">True</span>         <span class="c1"># echo the code Bosco runs (default False)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">bosco</span><span class="o">.</span><span class="n">effort</span> <span class="o">=</span> <span class="s2">"medium"</span>        <span class="c1"># low, medium, high (default), xhigh, max</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">bosco</span><span class="o">.</span><span class="n">usage</span>                    <span class="c1"># session token counts and estimated cost_usd</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">bosco</span><span class="o">.</span><span class="n">usage</span>                    <span class="c1"># session token counts and estimated cost_usd</span>
 </span></code></pre></div>
-<p><code>effort</code> is thinking depth per turn, not reply length — lower is faster, and the
-difference only shows on questions hard enough to think about.</p>
+<p>Model and effort are per-user settings in your Workbench config, so they stick
+across sessions. Ask Bosco ("use Sonnet at low effort") and it saves the change
+for you, or set them yourself. Type <code>bosco</code> to see the current values.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">   </span><span class="nt">"BOSCO_MODEL"</span><span class="p">:</span><span class="w"> </span><span class="s2">"claude-sonnet-5"</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">   </span><span class="nt">"BOSCO_EFFORT"</span><span class="p">:</span><span class="w"> </span><span class="s2">"low"</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BOSCO_MODEL</code></td>
+<td><code>claude-opus-5</code> (default), <code>claude-sonnet-5</code></td>
+</tr>
+<tr>
+<td><code>BOSCO_EFFORT</code></td>
+<td><code>low</code>, <code>medium</code>, <code>high</code> (default), <code>xhigh</code>, <code>max</code></td>
+</tr>
+</tbody>
+</table>
+<p>Effort is thinking depth per turn, not reply length. It's the main speed lever:
+lower means faster turns and fewer tool calls, and less checking against live
+data. At low effort Sonnet matches Opus's speed at about half the cost. In local
+mode there is no config file, so a change Bosco makes lasts only for that session.</p>
 <p><strong>Ctrl-C</strong> interrupts at any point, mid-thought or mid-query. The conversation
 stays usable, so the next question works normally.</p>
 <h2 id="sessions">Sessions</h2>
@@ -5550,9 +5579,9 @@ stays usable, so the next question works normally.</p>
 concluded, what is still open — to the Parameter Store, so anyone on the account
 can pick the thread back up. In local mode they are files under
 <code>WORKBENCH_LOCAL_PATH</code> instead, private to that machine.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">recent_sessions</span><span class="p">()</span>          <span class="c1"># what's saved, most recent first</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"logd-cleanup"</span><span class="p">)</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">show_session</span><span class="p">()</span>             <span class="c1"># the most recently saved, any user</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">recent_sessions</span><span class="p">()</span>          <span class="c1"># what's saved, most recent first</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"logd-cleanup"</span><span class="p">)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">show_session</span><span class="p">()</span>             <span class="c1"># the most recently saved, any user</span>
 </span></code></pre></div>
 <p>Ask Bosco to "save a session" and it writes one. Reports are prose, not
 transcripts: they name artifacts rather than restating them.</p>
