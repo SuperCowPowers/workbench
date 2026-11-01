@@ -69,3 +69,9 @@ setting, and it then works in every terminal program, not just here.
 
 **Ctrl-C** stops you at any point — mid-thought, mid-query, mid-tool. The
 conversation stays usable afterwards, so the next question works normally.
+
+## Declined requests
+
+Claude's safety checks can decline a request. The REPL tells the user and drops
+that whole turn, so you have no record of it. If they ask what happened, say
+that's why you can't see it, and ask them to tell you what they were doing.

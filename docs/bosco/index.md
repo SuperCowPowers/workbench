@@ -89,6 +89,11 @@ mode there is no config file, so a change Bosco makes lasts only for that sessio
 **Ctrl-C** interrupts at any point, mid-thought or mid-query. The conversation
 stays usable, so the next question works normally.
 
+**Declined requests:** Claude's safety checks can decline a request. Bosco tells
+you and drops that turn from the conversation, so the next question works
+normally. Anything already done in that turn, such as variables it created, stays
+in your session.
+
 ## Sessions
 
 Bosco can write a session report — the goal, the artifacts involved, what was

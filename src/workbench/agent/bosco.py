@@ -263,6 +263,17 @@ def _show_phase(kind: str, tool_name: str) -> None:
         _active_spinner.message = f"🐶  Bosco is {_phase_label(kind, tool_name)}:"
 
 
+class _Refused(Exception):
+    """The model declined this turn."""
+
+
+def _refusal_note(details) -> str:
+    """What to tell the user about a declined request. The details can be None, and often lack an explanation."""
+    reason = details and (details.explanation or details.category)
+    declined = f"Claude declined this request ({reason})." if reason else "Claude declined this request."
+    return f"{declined} It was dropped from the conversation, so you can keep going."
+
+
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
     for _ in range(MAX_TOOL_ROUNDS):
@@ -278,6 +289,10 @@ def _run_turn(namespace: dict) -> None:
                 messages=_cached_messages(),
             )
         _track_usage(response.usage, model)
+
+        # Content is empty or partial here, so none of it is shown or kept.
+        if response.stop_reason == "refusal":
+            raise _Refused(_refusal_note(response.stop_details))
 
         text = _text_of(response)
         if text:
@@ -332,11 +347,17 @@ def _ask(prompt: str) -> None:
     _history.append({"role": "user", "content": job_updates(prompt)})
     _trim_history()
     turn_start = len(_history)
+    refused = False
     try:
         # Quiet routine INFO chatter from the code Bosco runs; restored afterwards.
         # An expired SSO token offers a renewal, then the turn picks up where it stopped.
         with log_level():
             with_sso_renewal(_resume_turn)
+    except _Refused as e:
+        # A declined prompt would only be declined again if resent, so the turn leaves no trace.
+        refused = True
+        del _history[turn_start - 1 :]
+        cprint("darkyellow", str(e))
     except KeyboardInterrupt:
         _close_pending_tools("Interrupted by the user before this finished.")
         cprint("darkyellow", "Interrupted. (Ctrl-C again at the prompt to exit.)")
@@ -344,7 +365,8 @@ def _ask(prompt: str) -> None:
         _close_pending_tools(f"Failed: {type(e).__name__}")
         cprint("red", f"{type(e).__name__}: {e}")
     finally:
-        _record_turn(prompt, _history[turn_start:])
+        if not refused:
+            _record_turn(prompt, _history[turn_start:])
 
 
 def _record_turn(prompt: str, turn: list) -> None:
