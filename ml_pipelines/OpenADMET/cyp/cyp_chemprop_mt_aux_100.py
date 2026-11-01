@@ -21,7 +21,13 @@ Predictions from this model need their own calibration. The offsets fitted for
 Use `scripts/cyp_recalibrate.py --moments` against the estimated blind-set distribution
 rather than spending a submission to rediscover it.
 
+`--censored` trains on `openadmet_cyp_censored_f1` instead, where CYP1A2, CYP2C9 and CYP3A4
+carry a pIC50 bound on rows the single-concentration arm shows are weak, and swaps the
+criterion for its bounded variant so a bound costs nothing until a prediction crosses it. It
+lands beside this model as `-censored`, and everything else about the two is identical.
+
 Build the FeatureSet first: python cyp_aux_features.py
+                            python cyp_censored_aux_features.py   # for --censored
 """
 
 import argparse
@@ -31,6 +37,7 @@ from workbench.api import FeatureSet, ModelFramework, ModelType
 from workbench.utils.multi_task import compute_inverse_count_task_weights
 
 FS_NAME = "openadmet_cyp_aux_f1"
+CENSORED_FS_NAME = "openadmet_cyp_censored_f1"
 MODEL_NAME = "cyp-reg-chemprop-mt-aux-100"
 TAGS = ["openadmet_cyp", "chemprop", "multi_task", "activity", "aux_log2fc", "submission"]
 
@@ -49,6 +56,12 @@ parser.add_argument(
     "A retrain redraws the fold split, so its out-of-fold numbers move within seed noise",
 )
 parser.add_argument(
+    "--censored",
+    action="store_true",
+    help="Train on the censored FeatureSet with bounded loss, so a weak-compound bound is "
+    "penalized only when a prediction crosses it. Lands beside the unbounded model as -censored",
+)
+parser.add_argument(
     "--split-strategy",
     default="scaffold",
     choices=["scaffold", "butina", "random"],
@@ -62,8 +75,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 model_name = MODEL_NAME + (f"-{args.name_suffix.strip('-')}" if args.name_suffix else "")
+if args.censored:
+    model_name += "-censored"
 
-fs = FeatureSet(FS_NAME)
+fs = FeatureSet(CENSORED_FS_NAME if args.censored else FS_NAME)
 df = fs.pull_dataframe()
 
 primary_weights = compute_inverse_count_task_weights(df, TARGETS)
@@ -73,24 +88,32 @@ print(f"pIC50 weights: {dict(zip(ISOFORMS, [round(float(w), 3) for w in primary_
 print(f"log2fc weight: {aux_weight:.3f} each ({AUX_WEIGHT} x mean pIC50 weight)")
 print(f"Training on all {len(df)} rows — no holdout")
 
+tags = TAGS + (["censored"] if args.censored else [])
+hyperparameters = {
+    "task_weights": task_weights,
+    "uq_version": "v1",
+    "split_strategy": args.split_strategy,
+    "butina_cutoff": args.butina_cutoff,
+}
+if args.censored:
+    hyperparameters["bounded_loss"] = True
+    for target in TARGETS:
+        print(f"  {target}: {int(df[f'{target}_lt'].sum()):,} bounded rows")
+
 model = fs.to_model(
     name=model_name,
     model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     feature_list=["smiles"],
     target_column=ALL_TARGETS,
-    description="Multi-task Chemprop with log2fc auxiliary targets, trained on 100% for submission",
-    tags=TAGS,
-    hyperparameters={
-        "task_weights": task_weights,
-        "uq_version": "v1",
-        "split_strategy": args.split_strategy,
-        "butina_cutoff": args.butina_cutoff,
-    },
+    description="Multi-task Chemprop with log2fc auxiliary targets, trained on 100% for submission"
+    + (", weak-compound pIC50 bounds under bounded loss" if args.censored else ""),
+    tags=tags,
+    hyperparameters=hyperparameters,
 )
 model.set_owner("openadmet_cyp")
 
-end = model.to_endpoint(tags=TAGS)
+end = model.to_endpoint(tags=tags)
 end.set_owner("openadmet_cyp")
 end.test_inference()
 
