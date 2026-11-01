@@ -5574,6 +5574,10 @@ data. At low effort Sonnet matches Opus's speed at about half the cost. In local
 mode there is no config file, so a change Bosco makes lasts only for that session.</p>
 <p><strong>Ctrl-C</strong> interrupts at any point, mid-thought or mid-query. The conversation
 stays usable, so the next question works normally.</p>
+<p><strong>Declined requests:</strong> Claude's safety checks can decline a request. Bosco tells
+you and drops that turn from the conversation, so the next question works
+normally. Anything already done in that turn, such as variables it created, stays
+in your session.</p>
 <h2 id="sessions">Sessions</h2>
 <p>Bosco can write a session report — the goal, the artifacts involved, what was
 concluded, what is still open — to the Parameter Store, so anyone on the account
