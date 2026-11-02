@@ -70,7 +70,10 @@ nav:
     - The CYP Challenge: blogs/cyp_challenge.md
     - Feature Endpoints: blogs/feature_endpoints.md
     - Monroe Embeddings + TabICL: blogs/monroe_tabicl.md
-  - Core Classes: 
+  - Spike Results:
+    - Overview: spikes/index.md
+    - Anchored-Delta Correction: spikes/anchored_delta.md
+  - Core Classes:
     - OverView: core_classes/overview.md
     - Artifacts: 
       - OverView: core_classes/artifacts/overview.md
