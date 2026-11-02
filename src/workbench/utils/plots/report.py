@@ -49,8 +49,7 @@ ASCII_FALLBACKS = {"\u2192": "->", "\u2190": "<-", "\u21d2": "=>", "\u2212": "-"
 # Equations worth having typeset rather than faked with carets and slashes. mathtext
 # parses all of these; add your own as raw strings wrapped in $...$.
 EQ = {
-    "bateman": r"$C(t)\;=\;\frac{F\cdot D\cdot k_a\,k_e}{CL\,(k_a-k_e)}\;"
-               r"\left(e^{-k_e t}-e^{-k_a t}\right)$",
+    "bateman": r"$C(t)\;=\;\frac{F\cdot D\cdot k_a\,k_e}{CL\,(k_a-k_e)}\;" r"\left(e^{-k_e t}-e^{-k_a t}\right)$",
     "tmax": r"$t_{max}\;=\;\dfrac{\ln(k_a/k_e)}{k_a-k_e}$",
     "auc": r"$AUC\;=\;\dfrac{F\cdot D}{CL}$",
     "gmfe": r"$GMFE\;=\;10^{\,\mathrm{median}\,\left|\log_{10}\left(C_{pred}/C_{obs}\right)\right|}$",
@@ -92,21 +91,23 @@ def theme(heading: Optional[str] = None, body: Optional[str] = None) -> dict:
     global HEADING_FONT, BODY_FONT
     HEADING_FONT = heading or pick_font(HEADING_PREFS)
     BODY_FONT = body or pick_font(BODY_PREFS)
-    plt.rcParams.update({
-        "font.family": BODY_FONT,
-        "mathtext.fontset": "stix",
-        "pdf.fonttype": 42,
-        "text.color": INK,
-        "axes.labelcolor": BODY,
-        "axes.edgecolor": "#C9CED6",
-        "axes.linewidth": 0.8,
-        "xtick.color": MUTED,
-        "ytick.color": MUTED,
-        "xtick.labelsize": 9,
-        "ytick.labelsize": 9,
-        "axes.labelsize": 9.5,
-        "figure.facecolor": "white",
-    })
+    plt.rcParams.update(
+        {
+            "font.family": BODY_FONT,
+            "mathtext.fontset": "stix",
+            "pdf.fonttype": 42,
+            "text.color": INK,
+            "axes.labelcolor": BODY,
+            "axes.edgecolor": "#C9CED6",
+            "axes.linewidth": 0.8,
+            "xtick.color": MUTED,
+            "ytick.color": MUTED,
+            "xtick.labelsize": 9,
+            "ytick.labelsize": 9,
+            "axes.labelsize": 9.5,
+            "figure.facecolor": "white",
+        }
+    )
     return {"heading": HEADING_FONT, "body": BODY_FONT, "math": "stix"}
 
 
@@ -124,8 +125,7 @@ def new_page(size: Tuple[float, float] = (8.5, 11)) -> plt.Figure:
     return plt.figure(figsize=size, facecolor="white")
 
 
-def rule(fig: plt.Figure, y: float, x0: float = L, x1: float = R,
-         c: str = RULE, lw: float = 0.9) -> None:
+def rule(fig: plt.Figure, y: float, x0: float = L, x1: float = R, c: str = RULE, lw: float = 0.9) -> None:
     """Hairline horizontal rule. A visible table border is a 1990s table border."""
     fig.add_artist(plt.Line2D([x0, x1], [y, y], color=c, lw=lw, transform=fig.transFigure))
 
@@ -135,8 +135,7 @@ def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) ->
 
     Returns the `y` to start the body at.
     """
-    fig.text(L, 0.962, "  ".join(_clean(kicker).upper()), fontname=HEADING_FONT,
-             fontsize=7.6, color=MUTED)
+    fig.text(L, 0.962, "  ".join(_clean(kicker).upper()), fontname=HEADING_FONT, fontsize=7.6, color=MUTED)
     fig.text(L, 0.936, _clean(title), fontname=HEADING_FONT, fontsize=25, color=INK, va="top")
     y = 0.906
     if sub:
@@ -149,13 +148,21 @@ def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) ->
 
 def sec(fig: plt.Figure, y: float, label: str, color: str = INK) -> float:
     """Small uppercase section label. Give every text block one of these."""
-    fig.text(L, y, _clean(label).upper(), fontname=HEADING_FONT, fontsize=9.2,
-             color=color, va="top")
+    fig.text(L, y, _clean(label).upper(), fontname=HEADING_FONT, fontsize=9.2, color=color, va="top")
     return y - 0.021
 
 
-def para(fig: plt.Figure, y: float, text: str, size: float = 9.5, width: int = 112,
-         color: str = BODY, x: float = L, lead: float = 0.0155, gap: float = 0.010) -> float:
+def para(
+    fig: plt.Figure,
+    y: float,
+    text: str,
+    size: float = 9.5,
+    width: int = 112,
+    color: str = BODY,
+    x: float = L,
+    lead: float = 0.0155,
+    gap: float = 0.010,
+) -> float:
     """Wrapped prose. Blank lines in `text` become paragraph breaks.
 
     Keep any one block to about four lines -- a full page of paragraphs is skipped by
@@ -172,9 +179,16 @@ def para(fig: plt.Figure, y: float, text: str, size: float = 9.5, width: int = 1
     return y
 
 
-def equation(fig: plt.Figure, y: float, tex: str, size: float = 15,
-             color: str = INK, x: float = 0.5, ha: str = "center",
-             lead: float = 2.8) -> float:
+def equation(
+    fig: plt.Figure,
+    y: float,
+    tex: str,
+    size: float = 15,
+    color: str = INK,
+    x: float = 0.5,
+    ha: str = "center",
+    lead: float = 2.8,
+) -> float:
     """Display equation, centred, set in STIX.
 
     `tex` is mathtext -- a raw string wrapped in `$...$`, e.g. `EQ["bateman"]`. Use
@@ -187,9 +201,17 @@ def equation(fig: plt.Figure, y: float, tex: str, size: float = 15,
     return y - lead * size / (72 * fig.get_figheight())
 
 
-def table(fig: plt.Figure, y: float, headers: Sequence[str], rows: Sequence[Sequence],
-          xs: Sequence[float], aligns: Optional[Sequence[str]] = None, size: float = 8.8,
-          hl_row: Optional[int] = None, lead: float = 0.0168) -> float:
+def table(
+    fig: plt.Figure,
+    y: float,
+    headers: Sequence[str],
+    rows: Sequence[Sequence],
+    xs: Sequence[float],
+    aligns: Optional[Sequence[str]] = None,
+    size: float = 8.8,
+    hl_row: Optional[int] = None,
+    lead: float = 0.0168,
+) -> float:
     """Positioned-text table with hairline rules. `xs` are column x positions.
 
     Drawn as text rather than as a monospace block on purpose: ASCII tables are the main
@@ -198,30 +220,36 @@ def table(fig: plt.Figure, y: float, headers: Sequence[str], rows: Sequence[Sequ
     """
     aligns = list(aligns or ["left"] * len(headers))
     for h, x, a in zip(headers, xs, aligns):
-        fig.text(x, y, _clean(h).upper(), fontsize=6.9, color=MUTED, va="top",
-                 fontname=HEADING_FONT, ha=a)
+        fig.text(x, y, _clean(h).upper(), fontsize=6.9, color=MUTED, va="top", fontname=HEADING_FONT, ha=a)
     y -= 0.014
     rule(fig, y + 0.004, c="#D6DADF")
     y -= 0.006
     for i, row in enumerate(rows):
         hot = hl_row is not None and i == hl_row
         for v, x, a in zip(row, xs, aligns):
-            fig.text(x, y, _clean(str(v)), fontsize=size, color=INK if hot or hl_row is None else BODY,
-                     va="top", ha=a, fontname=HEADING_FONT if hot else BODY_FONT)
+            fig.text(
+                x,
+                y,
+                _clean(str(v)),
+                fontsize=size,
+                color=INK if hot or hl_row is None else BODY,
+                va="top",
+                ha=a,
+                fontname=HEADING_FONT if hot else BODY_FONT,
+            )
         y -= lead
         if i < len(rows) - 1:
             rule(fig, y + 0.0045, c=HAIRLINE)
     return y - 0.006
 
 
-def stat_row(fig: plt.Figure, x: float, y: float, pairs: Sequence[Tuple[str, str]],
-             size: float = 8.6, dx: float = 0.082) -> float:
+def stat_row(
+    fig: plt.Figure, x: float, y: float, pairs: Sequence[Tuple[str, str]], size: float = 8.6, dx: float = 0.082
+) -> float:
     """Row of label-over-value stats. The cheapest way to put numbers near prose."""
     for i, (k, v) in enumerate(pairs):
-        fig.text(x + i * dx, y, _clean(k).upper(), fontsize=6.6, color=MUTED, va="top",
-                 fontname=HEADING_FONT)
-        fig.text(x + i * dx, y - 0.0125, _clean(str(v)), fontsize=size, color=INK, va="top",
-                 fontname=HEADING_FONT)
+        fig.text(x + i * dx, y, _clean(k).upper(), fontsize=6.6, color=MUTED, va="top", fontname=HEADING_FONT)
+        fig.text(x + i * dx, y - 0.0125, _clean(str(v)), fontsize=size, color=INK, va="top", fontname=HEADING_FONT)
     return y - 0.030
 
 
