@@ -262,10 +262,10 @@ class DFStoreCore:
 
     @staticmethod
     def type_convert_before_parquet(df: pd.DataFrame) -> pd.DataFrame:
-        # Convert object columns to string type to avoid PyArrow type inference issues.
+        # Cast object columns to nullable string to avoid PyArrow type inference issues (nulls stay null)
         df = df.copy()
         object_cols = df.select_dtypes(include=["object"]).columns
-        df[object_cols] = df[object_cols].astype("str")
+        df[object_cols] = df[object_cols].astype("string")
         return df
 
     def delete(self, location: str):

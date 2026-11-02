@@ -65,6 +65,22 @@ def test_type_conflation_issues(df_store):
     df_store.delete("/tests/test_type_conflation")
 
 
+def test_nulls_survive_round_trip(df_store):
+    df = pd.DataFrame({"id": ["A", None, "C"], "f": ["x", float("nan"), "z"]})
+
+    df_store.upsert("/tests/test_nulls", df)
+    back = df_store.get("/tests/test_nulls")
+    assert back["id"].isna().sum() == 1
+    assert back["f"].isna().sum() == 1
+
+    df_store.append("/tests/test_nulls", df)
+    back = df_store.get("/tests/test_nulls")
+    assert len(back) == 6
+    assert back["id"].isna().sum() == 2
+    assert back["f"].isna().sum() == 2
+    df_store.delete("/tests/test_nulls")
+
+
 def test_deletion(df_store):
     df_store.delete("/tests/test_data")
     df_store.delete("/tests/test_series")
@@ -86,4 +102,5 @@ if __name__ == "__main__":
     test_repr(store)
     test_string_types(store)
     test_type_conflation_issues(store)
+    test_nulls_survive_round_trip(store)
     test_deletion(store)

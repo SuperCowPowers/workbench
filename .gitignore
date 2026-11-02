@@ -178,3 +178,6 @@ src/workbench/.understand-anything/
 
 # Plugin clientside assets staged at runtime by PluginManager (not source-controlled)
 applications/aws_dashboard/assets/plugins/
+
+# PDFs (reports, papers)
+*.pdf
