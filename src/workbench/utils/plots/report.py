@@ -156,21 +156,42 @@ def rule(fig: plt.Figure, y: float, x0: float = L, x1: float = R, c: str = RULE,
     fig.add_artist(plt.Line2D([x0, x1], [y, y], color=c, lw=lw, transform=fig.transFigure))
 
 
+@lru_cache(maxsize=2048)
+def _measured_height(text: str, size: float, fontname: str, figh: float) -> float:
+    """Rendered height of a string in figure-fraction units, descenders included."""
+    fig = plt.figure(figsize=(8.5, figh))
+    canvas = FigureCanvasAgg(fig)
+    t = fig.text(0, 0.5, text, fontsize=size, fontname=fontname)
+    height = t.get_window_extent(renderer=canvas.get_renderer()).height / (fig.dpi * figh)
+    plt.close(fig)
+    return height
+
+
+def text_height(text: str, size: float = 9.5, font: Optional[str] = None, figh: float = 11.0) -> float:
+    """How tall a string will actually be, in figure-fraction units.
+
+    Stack things with this rather than a constant: a title with descenders is taller than one
+    without, so a fixed gap under it collides for some titles and gaps for others.
+    """
+    return _measured_height(text, size, font or BODY_FONT, figh)
+
+
 def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) -> float:
     """Page header: letterspaced kicker, large title, optional standfirst, rule.
 
-    Returns the `y` to start the body at.
+    The standfirst sits under the title's *measured* bottom, so a title with descenders does
+    not crowd it and one without does not leave a hole. Returns the `y` to start the body at.
     """
+    title, size = _clean(title), 25.0
     fig.text(L, 0.962, "  ".join(_clean(kicker).upper()), fontname=HEADING_FONT, fontsize=7.6, color=MUTED)
-    fig.text(L, 0.936, _clean(title), fontname=HEADING_FONT, fontsize=25, color=INK, va="top")
-    y = 0.906
+    fig.text(L, 0.936, title, fontname=HEADING_FONT, fontsize=size, color=INK, va="top")
+    y = 0.936 - _measured_height(title, size, HEADING_FONT, 11.0) - 0.007
     if sub:
         for line in textwrap.wrap(_clean(sub), 104):
             fig.text(L, y, line, fontsize=10.2, color=BODY, va="top")
             y -= 0.0165
     rule(fig, y - 0.008)
     return y - 0.030
-
 
 def sec(fig: plt.Figure, y: float, label: str, color: str = INK) -> float:
     """Small uppercase section label. Give every text block one of these."""
@@ -252,6 +273,7 @@ def table(
     x1: float = R,
     gutter: float = 0.018,
     row_rules: bool = True,
+    header_color: str = ACCENTS[1],
 ) -> float:
     """Measured table, ranged across the text column. Returns the `y` to continue at.
 
@@ -303,7 +325,7 @@ def table(
     anchor = [lefts[k] if aligns[k] == "left" else lefts[k] + nat[k] for k in range(ncol)]
 
     for k, h in enumerate(headers):
-        fig.text(anchor[k], y, h.upper(), fontsize=6.9, color=MUTED, va="top",
+        fig.text(anchor[k], y, h.upper(), fontsize=7.1, color=header_color, va="top",
                  ha=aligns[k], fontname=HEADING_FONT)
     y -= 0.0145
     rule(fig, y + 0.004, c=RULE)
