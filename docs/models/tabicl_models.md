@@ -64,7 +64,7 @@ model = fs.to_model(
 | `top_variance_features` | `None` | Keep this many of the columns expanded from compressed features (highest variance on the training rows); other features are kept |
 | `shap_sample_size` | `100` | Rows explained for SHAP feature importance (0 disables) |
 | `split_strategy` | `"scaffold"` | `"scaffold"`, `"butina"`, or `"random"` (scaffold and butina need a `smiles` column) |
-| `butina_cutoff` | `0.4` | Tanimoto distance cutoff for Butina clustering |
+| `butina_cutoff` | `0.6` | Tanimoto distance cutoff for Butina clustering (0.6 = similarity ≥ 0.4) |
 | `seed` | `42` | Random seed |
 | `uq_version` | `"v1"` | Confidence model: `"v0"`, `"v1"`, or `"v2"` |
 

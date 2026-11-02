@@ -354,8 +354,8 @@ All ChemProp model types share a common set of tunable hyperparameters:
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">butina_cutoff</td>
-      <td style="padding: 8px 16px;">0.4</td>
-      <td style="padding: 8px 16px;">Tanimoto distance cutoff for Butina clustering</td>
+      <td style="padding: 8px 16px;">0.6</td>
+      <td style="padding: 8px 16px;">Tanimoto distance cutoff for Butina clustering (0.6 = similarity ≥ 0.4)</td>
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">seed</td>
@@ -423,11 +423,26 @@ A shape sets the layer count from its own length, so `ffn_num_layers` is ignored
 
 ### Split Strategies
 
-Workbench supports three data splitting strategies for cross-validation:
+Workbench supports three data splitting strategies for cross-validation. Every framework (XGBoost, PyTorch, ChemProp, TabICL, AtomJEPA) builds its folds from the same splitter, so a given strategy and seed partition the data identically across frameworks.
 
-- **scaffold** (default) — Groups molecules by Bemis-Murcko scaffold so no scaffold appears in both train and validation. Tests generalization to new chemical series. Requires a `smiles` column; falls back to random with a warning if there isn't one.
-- **butina** — Clusters molecules by Morgan fingerprint similarity (Tanimoto distance). More stringent than scaffold, and O(n²) — prefer it for smaller datasets.
+- **scaffold** (default) — Groups molecules by Bemis-Murcko scaffold so no scaffold appears in both train and validation. Tests generalization to new chemical series.
+- **butina** — Clusters molecules by fingerprint similarity (see below). Groups analog series even when they share no Murcko scaffold, so it is typically the harsher split.
 - **random** — Standard random split. Use for non-molecular data or quick baselines.
+
+Scaffold and butina need a `smiles` column and fall back to random with a warning if there isn't one.
+
+**Fold assignment.** For scaffold and butina, groups are shuffled by the seed and each is placed in whichever fold currently holds the fewest rows. A group never straddles a fold boundary, and fold sizes stay near even. `n_folds=1` instead holds out 20% of the groups as a single validation set.
+
+#### Butina Clustering
+
+1. **Fingerprints** — Morgan radius-2 (ECFP4-equivalent) **count** fingerprints, unfolded. Counts weight each substructure by how many times it occurs, and Tanimoto over counts is the MinMax form, Σ min(a, b) / Σ max(a, b). A similarity of 0.4 here is not directly comparable to 0.4 over binary ECFP4 bits.
+2. **Neighbors** — Two molecules are neighbors when their Tanimoto distance (1 − similarity) is at most `butina_cutoff`. The default 0.6 links molecules at similarity ≥ 0.4.
+3. **Centroids** — Molecules are visited in order of neighbor count, most first. Each unclaimed molecule becomes a centroid and claims all of its unclaimed neighbors as one cluster. Molecules left with no unclaimed neighbors are singletons, and unparseable SMILES each get their own cluster.
+
+Cluster labels match RDKit's `Butina.ClusterData` exactly. Only pairs within the cutoff are stored, so memory scales with the number of similar pairs rather than n²; compute is still O(n²) Tanimoto comparisons, roughly 20 s for 10,000 molecules.
+
+- **Membership is relative to the centroid**, not to every other member, and a molecule near two centroids joins the one with more neighbors. Two close analogs on either side of a cluster boundary can land in different folds.
+- **Raising `butina_cutoff`** links less similar molecules into larger clusters (a harsher split); lowering it leaves more singletons, which constrain no fold boundary.
 
 ```python
 model = feature_set.to_model(
@@ -438,7 +453,7 @@ model = feature_set.to_model(
     feature_list=["smiles"],
     hyperparameters={
         "split_strategy": "butina",
-        "butina_cutoff": 0.4,  # Tanimoto distance threshold
+        "butina_cutoff": 0.6,  # Tanimoto distance: cluster at similarity >= 0.4
     },
 )
 ```

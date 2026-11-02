@@ -96,10 +96,10 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.6) -> np.ndarr
     n = len(fps)
     neighbors = [[i] for i in range(n)]
     for i in range(1, n):
-        for j, sim in enumerate(DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])):
-            if 1 - sim <= cutoff:
-                neighbors[i].append(j)
-                neighbors[j].append(i)
+        sims = np.asarray(DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i]))
+        for j in np.flatnonzero(1 - sims <= cutoff).tolist():
+            neighbors[i].append(j)
+            neighbors[j].append(i)
 
     # Centroids in order of neighbour count, ties to the higher index. Each claims every
     # neighbour not already taken, so membership is "within the cutoff of the centroid"

@@ -113,8 +113,13 @@ model = fs.to_model(
     </tr>
     <tr>
       <td style="padding: 8px 16px; font-weight: bold;">split_strategy</td>
-      <td style="padding: 8px 16px;">random</td>
-      <td style="padding: 8px 16px;">Data splitting: random, scaffold, or butina</td>
+      <td style="padding: 8px 16px;">scaffold</td>
+      <td style="padding: 8px 16px;">Data splitting: scaffold, butina, or random</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">butina_cutoff</td>
+      <td style="padding: 8px 16px;">0.6</td>
+      <td style="padding: 8px 16px;">Tanimoto distance cutoff for Butina clustering (0.6 = similarity ≥ 0.4)</td>
     </tr>
   </tbody>
 </table>

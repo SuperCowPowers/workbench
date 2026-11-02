@@ -213,7 +213,7 @@ def run_hpo(
         n_splits=n_folds,
         strategy=strategy,
         test_size=0.2,
-        butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.4),
+        butina_cutoff=base_hyperparameters.get("butina_cutoff", 0.6),
         **adapter.split_kwargs(),
     )
     print(

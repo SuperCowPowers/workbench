@@ -76,6 +76,7 @@ Training runs on a single GPU. A fold of about 1,000 molecules takes roughly 20â
 | `n_conformers` | 10 | Conformers per molecule |
 | `selection_conformers` | 2 | Conformers per molecule behind each epoch's validation score, which picks the best epoch |
 | `split_strategy` | `"scaffold"` | `"scaffold"`, `"butina"`, or `"random"` |
+| `butina_cutoff` | `0.6` | Tanimoto distance cutoff for Butina clustering (0.6 = similarity â‰¥ 0.4) |
 | `uq_version` | `"v1"` | Primary confidence model (`"v0"`, `"v1"`, `"v2"`) |
 
 The defaults are the authors' ADMET recipe.

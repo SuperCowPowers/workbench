@@ -58,7 +58,7 @@ DEFAULT_HYPERPARAMETERS = {
     # Split strategy: "scaffold" (default), "butina", or "random"
     # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles')
     # - butina: Morgan fingerprint clustering (requires 'smiles'). Groups analogue series
-    #     that share no Murcko scaffold. O(n^2) compute and memory — see butina_cutoff.
+    #     that share no Murcko scaffold. O(n^2) compute — see butina_cutoff.
     # - random: Standard random split (use only for non-molecular data or quick baselines)
     # Both SMILES strategies fall back to random with a warning if no SMILES column.
     "split_strategy": "scaffold",
