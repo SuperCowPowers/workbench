@@ -53,78 +53,100 @@ The default matplotlib look — DejaVu Sans, black text, full box spines, grey g
 reads as derpy. Four changes fix almost all of it: a real font pairing, softened ink,
 hairline rules, and whitespace.
 
-### Fonts
+### Start from the shared module
 
-Never assume a font exists; discover it, then pair a heading face with a body face.
+`workbench.utils.plots.report` carries the look and the layout helpers, so a new report
+is page functions rather than 200 lines of styling. Reach for it before hand-rolling.
 
 ```python
-from matplotlib import font_manager
-avail = {f.name for f in font_manager.fontManager.ttflist}
-[c for c in ["Inter", "Helvetica Neue", "Avenir Next", "Roboto", "Lato", "DejaVu Sans"]
- if c in avail]
+from workbench.utils.plots import report
+
+report.theme()          # rcParams: fonts, STIX maths, fonttype 42, softened ink
 ```
 
-macOS reliably has **Avenir Next** and **Helvetica Neue**; Linux usually needs Inter or
-Roboto installed and falls back to DejaVu Sans. Note that matplotlib often registers only
-one weight per macOS `.ttc`, so bold-vs-regular comes from *switching family*
-(`Avenir Next` for headings, `Helvetica Neue` for body) rather than from `weight="bold"`.
+It gives you the palette (`INK BODY MUTED RULE HAIRLINE ACCENTS`), the margins (`L R`),
+page helpers that each take and return the running `y` cursor — `new_page`, `head`,
+`sec`, `para`, `equation`, `table`, `stat_row`, `rule`, `footer` — plus `EQ` (typeset
+PK and metric equations) and `audit_glyphs`.
+
+### Fonts and portability
+
+**A report must render on a machine that is not yours.** Avenir Next and Helvetica Neue
+are macOS-only; a hardcoded family looks right on one laptop and silently degrades to
+DejaVu everywhere else. `report.theme()` resolves a preference chain and returns what it
+actually got, so the fallback is a known quantity rather than a surprise:
 
 ```python
-plt.rcParams.update({
-    "font.family": "Helvetica Neue",   # body
-    "pdf.fonttype": 42,                # embed TrueType -> selectable, searchable text
-    "axes.edgecolor": "#C9CED6", "axes.linewidth": 0.8,
-    "text.color": "#111827", "axes.labelcolor": "#3F4651",
-    "xtick.color": "#9AA1AC", "ytick.color": "#9AA1AC",
-})
+report.theme()
+# {'heading': 'Avenir Next', 'body': 'Helvetica Neue', 'math': 'stix'}   on macOS
+# {'heading': 'DejaVu Sans', 'body': 'DejaVu Sans',    'math': 'stix'}   on a bare Linux box
 ```
 
-`pdf.fonttype: 42` matters — the default Type 3 output is not selectable or searchable.
+Note matplotlib often registers only one weight per macOS `.ttc`, so bold-vs-regular
+comes from *switching family* rather than from `weight="bold"` — which is why the module
+keeps `HEADING_FONT` and `BODY_FONT` separate.
 
-### Ink, not black
+### Equations
+
+Fake equations with carets and slashes are the clearest tell of a thrown-together
+document, and nested ones — `10 ^ median | log10(pred/obs) |` — are simply unreadable.
+Use mathtext:
 
 ```python
-INK, BODY, MUTED, RULE = "#111827", "#3F4651", "#9AA1AC", "#E4E7EB"
+y = report.equation(fig, y, report.EQ["bateman"], size=17)
+y = report.equation(fig, y, r"$k_e = \dfrac{CL \cdot 0.06}{V_d}$")
+```
+
+`report.theme()` sets `mathtext.fontset="stix"`, and **STIX ships inside matplotlib** —
+so equations render identically everywhere with no font install, which is exactly why it
+beats the prettier option of mapping maths onto the body font. Serif maths against a sans
+body is the normal journal pairing, not a mismatch.
+
+`usetex=True` is a trap for a shared tool: it needs a full LaTeX plus `dvipng` on every
+machine that renders the document. Check `shutil.which("latex")` before assuming it, and
+prefer mathtext — it parses `\frac`, `\dfrac`, `\sqrt`, `\left(`, subscripts,
+superscripts and greek, which covers everything a PK or ML report needs.
+
+Keep equations *near the number they explain* — the GMFE formula belongs beside the GMFE
+definition, not in an appendix.
+
+### Palette
+
+```python
+report.INK, report.BODY, report.MUTED, report.RULE   # #111827  #3F4651  #9AA1AC  #E4E7EB
 ```
 
 Pure black on white is harsh at print size. Three greys give hierarchy without bold
 everywhere: `INK` for headings and numbers, `BODY` for prose, `MUTED` for labels and
-units. Rules at `#E4E7EB` or lighter — a visible table border is a 1990s table border.
+units. Rules at `RULE` or lighter — a visible table border is a 1990s table border.
 
-Give each group/cohort an accent and use it consistently across every page, so a reader
-tracks a group by color alone:
+Give each group or cohort an accent from `report.ACCENTS` and keep it on every page, so a
+reader tracks a group by colour alone:
 
 ```python
-GC = {"A": "#0F766E", "B": "#1D4ED8", "C": "#B45309", "D": "#BE123C"}
+GROUP_COLOR = dict(zip("ABCD", report.ACCENTS))
 ```
 
 ### Lay pages out in figure coordinates
 
-Full-page composition is not a subplot grid. Use a blank portrait figure, place
-everything in figure coordinates, and track a running `y` cursor down the page.
+Full-page composition is not a subplot grid. Use a blank portrait page, place everything
+in figure coordinates, and let each helper advance the `y` cursor down the page:
 
 ```python
-L, R = 0.068, 0.932                       # margins, reused by every helper
-
-def new_page():
-    return plt.figure(figsize=(8.5, 11), facecolor="white")
-
-def hrule(fig, y, c=RULE, lw=0.9):
-    fig.add_artist(plt.Line2D([L, R], [y, y], color=c, lw=lw, transform=fig.transFigure))
-
-def para(fig, y, text, size=9.5, width=112, lead=0.0155):
-    for line in textwrap.wrap(text, width):
-        fig.text(L, y, line, fontsize=size, color=BODY, va="top"); y -= lead
-    return y
+fig = report.new_page()
+y = report.head(fig, "section two", "Data Issues", "Fit quality is driven by ...")
+y = report.sec(fig, y, "How fit quality is measured", report.MUTED)
+y = report.para(fig, y, "The median absolute fold error over ...")
+y = report.equation(fig, y, report.EQ["gmfe"], size=12.5)
+y = report.table(fig, y, ["variant", "gmfe", "auc"], rows, xs=[L, L+0.40, L+0.49], hl_row=2)
+report.footer(fig, "Workbench - Method 1 validation", 2)
+pdf.savefig(fig); plt.close(fig)
 ```
 
-Write five such helpers once — `page_head`, `para`, `sec`, `table`, `stat_row` — and every
-page after the first costs minutes. Have each **return the new `y`** so pages compose by
-chaining. Draw tables as positioned text with hairline rules between rows; ASCII tables in
-a monospace block are the main thing that makes a PDF look like a terminal dump.
-
-Add quiet page furniture — a footer with the project name and a page number in `MUTED` at
-7.6pt. Cheap, and it makes a loose printed page identifiable.
+Because every helper **returns the new `y`**, pages compose by chaining and a wording
+change never breaks the layout below it. Tables are positioned text with hairline rules
+between rows, not a monospace block — ASCII tables are the main thing that makes a PDF
+look like a terminal dump.
 
 ### Figures inside a report
 
@@ -147,24 +169,25 @@ Annotate values directly on the points and drop the legend when two series are o
 
 ```python
 from matplotlib.backends.backend_pdf import PdfPages
-with PdfPages(path) as pdf:
-    for build in (page_groups, page_issues, page_method):
-        build(pdf)                      # each ends in pdf.savefig(fig); plt.close(fig)
+
+def build_report(path):
+    with PdfPages(path) as pdf:
+        for build in (page_groups, page_issues, page_method):
+            build(pdf)              # each ends in pdf.savefig(fig); plt.close(fig)
 ```
 
 Nice fonts have small character sets, and matplotlib **silently** substitutes a missing
-glyph into a visible box. Arrows are the usual casualty: `→` and `←` are absent from both
-Avenir Next and Helvetica Neue, while `≤ × · − ≈ ² ½` are generally fine. Audit the whole
-document rather than eyeballing it:
+glyph into a visible box. Arrows are the usual casualty: `->` and `<-` are absent from
+both Avenir Next and Helvetica Neue, while `<= x · - ~ ^2` characters are generally fine.
+Audit the whole document rather than eyeballing it:
 
 ```python
-with warnings.catch_warnings(record=True) as w:
-    warnings.simplefilter("always")
-    build_report(path)
-print(sorted({str(x.message) for x in w if "Glyph" in str(x.message)}) or "clean")
+report.audit_glyphs(build_report, "/tmp/preflight.pdf")    # [] means clean
 ```
 
-Fix by substituting ASCII (`->`), not by abandoning the font.
+The text helpers already swap the known offenders via `report.ASCII_FALLBACKS`; anything
+the audit still reports needs an entry there or a different character. Maths inside
+`$...$` is left alone, since STIX has the symbols.
 
 ## Define the metrics in the document
 
@@ -185,7 +208,8 @@ names you left behind.
 - Output path agreed with the user; nothing silently overwritten.
 - Page 1 answers the question; method is late, not first.
 - Every page has one headline, and no text block exceeds ~4 lines.
-- `pdf.fonttype = 42`, a discovered font, softened ink, hairline rules.
+- Built on `report.theme()`; no hardcoded font family.
+- Equations typeset with `report.equation` / `EQ`, never faked with carets.
 - Figure titles state conclusions and are left-aligned to the text column.
 - Glyph warnings audited to zero.
 - Every metric and flag defined inside the document.
