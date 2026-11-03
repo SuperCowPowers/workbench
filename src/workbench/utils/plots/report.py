@@ -324,7 +324,7 @@ def table(
             anchor[k], y, h.upper(), fontsize=7.1, color=header_color, va="top", ha=aligns[k], fontname=HEADING_FONT
         )
     y -= 0.0145
-    rule(fig, y + 0.004, c=RULE)
+    rule(fig, y + 0.004, x0=x0, x1=x1, c=RULE)
     y -= 0.0065
 
     for i, r in enumerate(body):
@@ -342,7 +342,7 @@ def table(
             )
         y -= lead
         if row_rules and i < len(body) - 1:
-            rule(fig, y + 0.0048, c=HAIRLINE)
+            rule(fig, y + 0.0048, x0=x0, x1=x1, c=HAIRLINE)
     return y - 0.008
 
 
