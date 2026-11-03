@@ -105,12 +105,12 @@ def test_auc_u_error_terms_sum_to_the_auc_u_log_ratio():
 def test_plausibility_flags():
     rows = pd.DataFrame(
         {
-            "cl_ml_min_kg": [20.0, 0.0, 20.0, 20.0, 80.0, 20.0],
-            "vd_l_kg": [2.0, 2.0, 0.01, 150.0, 2.0, 2.0],
-            "f_percent": [50.0, 50.0, 50.0, 50.0, 60.0, 120.0],
-            "fu_percent": [5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
+            "cl_ml_min_kg": [20.0, 0.0, 20.0, 20.0, 80.0, 20.0, 20.0],
+            "vd_l_kg": [2.0, 2.0, 0.01, 150.0, 2.0, 2.0, 2.0],
+            "f_percent": [50.0, 50.0, 50.0, 50.0, 60.0, 120.0, 0.0],
+            "fu_percent": [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
         },
-        index=["ok", "zero_cl", "tiny_vd", "huge_vd", "first_pass", "f_over"],
+        index=["ok", "zero_cl", "tiny_vd", "huge_vd", "first_pass", "f_over", "zero_f"],
     )
     flags = plausibility_flags(rows)
     assert not flags.loc["ok"].any()
@@ -118,4 +118,5 @@ def test_plausibility_flags():
     assert flags.loc["tiny_vd", "vd_below_plasma"]
     assert flags.loc["huge_vd", "vd_high"] and not flags.loc["huge_vd", HARD_CHECKS].any()
     assert flags.loc["first_pass", "f_above_hepatic_ceiling"] and not flags.loc["first_pass", HARD_CHECKS].any()
-    assert flags.loc["f_over", "f_out_of_range"]
+    assert flags.loc["f_over", "f_above_hepatic_ceiling"] and not flags.loc["f_over", HARD_CHECKS].any()
+    assert flags.loc["zero_f", "f_nonpositive"]

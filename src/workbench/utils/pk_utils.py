@@ -27,7 +27,7 @@ DEFAULT_KA = 1.0
 HEPATIC_BLOOD_FLOW = {"mouse": 90.0, "rat": 55.0, "monkey": 44.0, "dog": 31.0, "human": 21.0}
 
 # Plausibility checks: HARD_CHECKS are impossible values, the rest are flags for review.
-HARD_CHECKS = ["f_out_of_range", "fu_out_of_range", "cl_nonpositive", "vd_below_plasma"]
+HARD_CHECKS = ["f_nonpositive", "fu_out_of_range", "cl_nonpositive", "vd_below_plasma"]
 
 
 def bateman_concentration(t, f_dose, volume, ke, ka):
@@ -186,6 +186,8 @@ def plausibility_flags(params: pd.DataFrame, species: str = "mouse") -> pd.DataF
     - `half_life_out_of_range`: t½ outside 5 minutes to 1 week.
     - `f_above_hepatic_ceiling`: F above 100·(1 − CL/Q_h), the first-pass cap for a
       hepatically cleared compound. Renal and biliary clearance are legitimate exceptions.
+      Measured F above 100% lands here too: dose-normalized F% from PO doses well above
+      the IV dose inflates by CL_IV/CL_PO when clearance saturates.
 
     Args:
         params (pd.DataFrame): PK parameter frame (see module docstring).
@@ -201,7 +203,7 @@ def plausibility_flags(params: pd.DataFrame, species: str = "mouse") -> pd.DataF
     f_ceiling = 100.0 * (1.0 - cl / HEPATIC_BLOOD_FLOW[species])
     return pd.DataFrame(
         {
-            "f_out_of_range": ~f.between(0, 100, inclusive="right"),
+            "f_nonpositive": f <= 0,
             "fu_out_of_range": ~fu.between(0, 100, inclusive="right"),
             "cl_nonpositive": cl <= 0,
             "vd_below_plasma": vd < 0.04,
