@@ -133,8 +133,7 @@ def _measured(text: str, size: float, fontname: str, figw: float) -> float:
     return width
 
 
-def text_width(text: str, size: float = 9.5, font: Optional[str] = None,
-               figw: float = 8.5) -> float:
+def text_width(text: str, size: float = 9.5, font: Optional[str] = None, figw: float = 8.5) -> float:
     """How wide a string will actually be, in figure-fraction units.
 
     Column positions should be computed from this rather than guessed. Eyeballing is how
@@ -142,8 +141,6 @@ def text_width(text: str, size: float = 9.5, font: Optional[str] = None,
     with short labels and collides the moment the data changes.
     """
     return _measured(text, size, font or BODY_FONT, figw)
-
-
 
 
 def new_page(size: Tuple[float, float] = (8.5, 11)) -> plt.Figure:
@@ -192,6 +189,7 @@ def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) ->
             y -= 0.0165
     rule(fig, y - 0.008)
     return y - 0.030
+
 
 def sec(fig: plt.Figure, y: float, label: str, color: str = INK) -> float:
     """Small uppercase section label. Give every text block one of these."""
@@ -294,10 +292,7 @@ def table(
     body = [[_clean(str(v)) for v in r] for r in rows]
     ncol = len(headers)
     if aligns is None:
-        aligns = [
-            "right" if body and all(_is_num(r[k]) for r in body) and k > 0 else "left"
-            for k in range(ncol)
-        ]
+        aligns = ["right" if body and all(_is_num(r[k]) for r in body) and k > 0 else "left" for k in range(ncol)]
     aligns = list(aligns)
 
     # natural width of each column: widest of its header and its cells
@@ -325,8 +320,9 @@ def table(
     anchor = [lefts[k] if aligns[k] == "left" else lefts[k] + nat[k] for k in range(ncol)]
 
     for k, h in enumerate(headers):
-        fig.text(anchor[k], y, h.upper(), fontsize=7.1, color=header_color, va="top",
-                 ha=aligns[k], fontname=HEADING_FONT)
+        fig.text(
+            anchor[k], y, h.upper(), fontsize=7.1, color=header_color, va="top", ha=aligns[k], fontname=HEADING_FONT
+        )
     y -= 0.0145
     rule(fig, y + 0.004, c=RULE)
     y -= 0.0065
@@ -334,9 +330,16 @@ def table(
     for i, r in enumerate(body):
         hot = hl_row is not None and i == hl_row
         for k, v in enumerate(r):
-            fig.text(anchor[k], y, v, fontsize=size, va="top", ha=aligns[k],
-                     color=INK if hot else BODY,
-                     fontname=HEADING_FONT if hot or k == 0 else BODY_FONT)
+            fig.text(
+                anchor[k],
+                y,
+                v,
+                fontsize=size,
+                va="top",
+                ha=aligns[k],
+                color=INK if hot else BODY,
+                fontname=HEADING_FONT if hot or k == 0 else BODY_FONT,
+            )
         y -= lead
         if row_rules and i < len(body) - 1:
             rule(fig, y + 0.0048, c=HAIRLINE)
@@ -398,8 +401,11 @@ def _on_axes_ticks(ax, renderer) -> List:
     report that noise was 18 of 23 hits.
     """
     box = ax.get_window_extent(renderer).padded(30)
-    return [t for t in ax.get_xticklabels() + ax.get_yticklabels()
-            if t.get_visible() and box.overlaps(t.get_window_extent(renderer))]
+    return [
+        t
+        for t in ax.get_xticklabels() + ax.get_yticklabels()
+        if t.get_visible() and box.overlaps(t.get_window_extent(renderer))
+    ]
 
 
 def overlaps(fig: plt.Figure, min_frac: float = 0.12, pad: float = -0.6) -> List[Dict]:
@@ -433,20 +439,22 @@ def overlaps(fig: plt.Figure, min_frac: float = 0.12, pad: float = -0.6) -> List
             boxes.append((t, box))
     hits = []
     for i, (ta, ba) in enumerate(boxes):
-        for tb, bb in boxes[i + 1:]:
+        for tb, bb in boxes[i + 1 :]:
             ix = max(0.0, min(ba.x1, bb.x1) - max(ba.x0, bb.x0))
             iy = max(0.0, min(ba.y1, bb.y1) - max(ba.y0, bb.y0))
             if ix <= 0 or iy <= 0:
                 continue
             frac = ix * iy / min(ba.width * ba.height, bb.width * bb.height)
             if frac >= min_frac:
-                hits.append({
-                    "a": str(ta.get_text())[:40],
-                    "b": str(tb.get_text())[:40],
-                    "frac": round(float(frac), 2),
-                    "dx_pt": round(ix / fig.dpi * 72, 1),
-                    "dy_pt": round(iy / fig.dpi * 72, 1),
-                })
+                hits.append(
+                    {
+                        "a": str(ta.get_text())[:40],
+                        "b": str(tb.get_text())[:40],
+                        "frac": round(float(frac), 2),
+                        "dx_pt": round(ix / fig.dpi * 72, 1),
+                        "dy_pt": round(iy / fig.dpi * 72, 1),
+                    }
+                )
     return hits
 
 
@@ -506,11 +514,7 @@ def fit_axes(fig: plt.Figure, pad: float = 9.0) -> List[Dict]:
     renderer = canvas.get_renderer()
     to_pt = 72.0 / fig.dpi
     pad_px = pad / to_pt
-    text_boxes = [
-        t.get_window_extent(renderer)
-        for t in fig.texts
-        if t.get_visible() and str(t.get_text()).strip()
-    ]
+    text_boxes = [t.get_window_extent(renderer) for t in fig.texts if t.get_visible() and str(t.get_text()).strip()]
     tight = {ax: ax.get_tightbbox(renderer) for ax in fig.axes}
     moved = []
     for ax in fig.axes:
@@ -533,13 +537,11 @@ def fit_axes(fig: plt.Figure, pad: float = 9.0) -> List[Dict]:
         inv = fig.transFigure.inverted()
         (x0, y0), (x1, y1) = inv.transform([(box.x0, box.y0 + bot), (box.x1, box.y0 + bot + height)])
         ax.set_position([x0, y0, x1 - x0, y1 - y0])
-        moved.append({
-            "axes": ax.get_label() or f"axes@{round(box.y0 * to_pt)}pt",
-            "shrink_top_pt": round(top * to_pt, 1),
-            "shrink_bottom_pt": round(bot * to_pt, 1),
-        })
+        moved.append(
+            {
+                "axes": ax.get_label() or f"axes@{round(box.y0 * to_pt)}pt",
+                "shrink_top_pt": round(top * to_pt, 1),
+                "shrink_bottom_pt": round(bot * to_pt, 1),
+            }
+        )
     return moved
-
-
-
-
