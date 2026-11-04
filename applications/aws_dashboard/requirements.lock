@@ -568,7 +568,7 @@ pyarrow==24.0.0
     #   awswrangler
     #   mlflow
     #   sagemaker-mlops
-pyasn1==0.6.4
+pyasn1==0.6.5
     # via
     #   -c ci/.uv-constraints.txt
     #   pyasn1-modules
