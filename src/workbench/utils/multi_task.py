@@ -300,7 +300,9 @@ def _attach_smiles_source(
     for c in target_cols + passthrough_cols:
         merged[c] = merged[c].combine_first(looked_up[c]) if c in merged.columns else looked_up[c]
 
-    unmatched = collapsed[~collapsed.index.isin(merged[key_column])].reset_index()
+    # An unmatched structure with every target NaN carries no supervision
+    has_target = collapsed[target_cols].notna().any(axis=1)
+    unmatched = collapsed[~collapsed.index.isin(merged[key_column]) & has_target].reset_index()
     n_matched = merged[key_column].isin(collapsed.index).sum()
     log.info(
         f"SMILES source: {len(collapsed)} structures, {n_matched} existing rows matched, "
