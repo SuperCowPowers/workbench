@@ -25,6 +25,8 @@ from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 DEFAULT_HYPERPARAMETERS = {
     # Fold models in the ensemble (1 = one train/val split, with no ensemble spread for UQ)
     "n_folds": 5,
+    # Pretrained encoder: "bio" (Atom-JEPA-Bio, with a second stage on PCBA bioassays) or "molecules"
+    "encoder": "bio",
     # Training schedule, stepped per epoch: linear warmup, then cosine down to min_lr. The
     # encoder is frozen for its first epochs and re-warms over the warmup length after.
     "epochs": 50,

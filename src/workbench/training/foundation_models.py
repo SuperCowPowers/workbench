@@ -85,8 +85,8 @@ FOUNDATION_MODELS = {
         # A flat state dict (CUDA tensors): these are tensor names, not sections
         "checkpoint_keys": ["encoder.missing_fill", "encoder.pooling.value_proj.weight"],
     },
-    # Atom-JEPA's released encoder is a folder (config + weights); both files cache into one
-    # subfolder, which AtomJEPA.from_pretrained loads as is
+    # Each released Atom-JEPA encoder is a folder (config + weights); its two files cache into
+    # one subfolder, which AtomJEPA.from_pretrained loads as is
     "atomjepa_config": {
         "filename": "atomjepa-8f7514f/config.json",
         "s3_key": f"{FOUNDATION_PREFIX}/atomjepa_config/8f7514f/config.json",
@@ -110,6 +110,36 @@ FOUNDATION_MODELS = {
         "provenance_id": "hf-atom-jepa-8f7514f",
         "description": "Atom-JEPA molecules encoder weights (Hugging Face atom-jepa/atom-jepa, revision 8f7514f)",
         "expected_md5": "017889cd95b8d6810b6c35fc944dbd3c",
+        "expected_size_bytes": 156380852,
+        "checkpoint_keys": [
+            "body.blocks.0.ffn.grid_mlp.gating_linear.weight",
+            "body.blocks.0.ffn.grid_mlp.grid_linear_1.weight",
+        ],
+    },
+    # Atom-JEPA-Bio: the molecules encoder after a second pretraining stage on PCBA bioassays
+    "atomjepa_bio_config": {
+        "filename": "atomjepa-bio-c9f15bc/config.json",
+        "s3_key": f"{FOUNDATION_PREFIX}/atomjepa_bio_config/c9f15bc/config.json",
+        "origin_url": (
+            "https://huggingface.co/atom-jepa/atom-jepa/resolve/"
+            "c9f15bc6ad164719d5f19b437e2d9b924aa7c666/bio/config.json"
+        ),
+        "provenance_id": "hf-atom-jepa-c9f15bc",
+        "description": "Atom-JEPA-Bio encoder config (Hugging Face atom-jepa/atom-jepa, revision c9f15bc)",
+        "expected_md5": "5513e6ae0a9a98db29c5f644cc088bfa",
+        "expected_size_bytes": 1011,
+        "checkpoint_keys": ["eqv3_cfg"],
+    },
+    "atomjepa_bio": {
+        "filename": "atomjepa-bio-c9f15bc/model.safetensors",
+        "s3_key": f"{FOUNDATION_PREFIX}/atomjepa_bio/c9f15bc/model.safetensors",
+        "origin_url": (
+            "https://huggingface.co/atom-jepa/atom-jepa/resolve/"
+            "c9f15bc6ad164719d5f19b437e2d9b924aa7c666/bio/model.safetensors"
+        ),
+        "provenance_id": "hf-atom-jepa-c9f15bc",
+        "description": "Atom-JEPA-Bio encoder weights (Hugging Face atom-jepa/atom-jepa, revision c9f15bc)",
+        "expected_md5": "f2ff760890db35915b410205f85b2f12",
         "expected_size_bytes": 156380852,
         "checkpoint_keys": [
             "body.blocks.0.ffn.grid_mlp.gating_linear.weight",

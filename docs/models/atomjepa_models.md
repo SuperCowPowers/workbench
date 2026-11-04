@@ -1,6 +1,6 @@
 # Atom-JEPA Models
 
-[Atom-JEPA](https://arxiv.org/abs/2610.08400) is a 3D molecular encoder: an EquiformerV3 (39M parameters) pretrained by latent prediction on about 19 million molecules. Workbench fine-tunes it per dataset as a regression framework, with the same training, held-out scoring, and confidence modeling as the other frameworks.
+[Atom-JEPA](https://arxiv.org/abs/2610.08400) is a 3D molecular encoder: an EquiformerV3 (39M parameters) pretrained by latent prediction on about 19 million molecules. Workbench's default encoder is [Atom-JEPA-Bio](https://mjordahn.github.io/atom-jepa-website/atom-jepa-bio.html), the same model after a second pretraining stage on 1,089 PubChem bioassays (PCBA). Workbench fine-tunes it per dataset as a regression framework, with the same training, held-out scoring, and confidence modeling as the other frameworks.
 
 Atom-JEPA reads 3D structure. Workbench generates the conformers from SMILES (RDKit ETKDGv3 + MMFF94), so a model needs only a `smiles` column.
 
@@ -29,7 +29,7 @@ Any other numeric features in `feature_list` (an assay readout, a descriptor) en
 
 ## When to Use Atom-JEPA
 
-Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a universal upgrade. Measured in Workbench:
+Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a universal upgrade. Measured in Workbench with the `molecules` encoder:
 
 | Assay | Data | Metric | Atom-JEPA | Comparison |
 |-------|------|--------|-----------|------------|
@@ -43,6 +43,8 @@ An independent evaluation of the authors' own code ([Model Validation Central](h
 - Fine-tuned Atom-JEPA beats fine-tuned CheMeleon on 38 of 45 endpointâ€“metric combinations.
 - Against Monroe + TabPFN 3 it leads on ExpansionRx and trails on Biogen.
 - Its best endpoints are LogD, LogS, HLM clearance, and plasma and brain protein binding; its weakest are Caco-2 permeability and MLM clearance.
+
+The authors' Atom-JEPA-Bio evaluation, on the same protocol, is best or tied on 34 of 45 combinations (Monroe + TabPFN 3: 18). It leads on Biogen ADME (14 of 18, against 0 for Atom-JEPA) and cuts LogD MAE by about 9%, but still trails Monroe on Caco-2 and MLM.
 
 In practice:
 
@@ -67,6 +69,7 @@ Training runs on a single GPU. A fold of about 1,000 molecules takes roughly 20â
 | Hyperparameter | Default | What it does |
 |----------------|---------|--------------|
 | `n_folds` | 5 | Fold models in the ensemble (1 = one train/validation split, with no spread for uncertainty) |
+| `encoder` | `"bio"` | Pretrained encoder: `"bio"` (Atom-JEPA-Bio) or `"molecules"` (self-supervised pretraining only) |
 | `epochs` | 50 | Training epochs per fold; the best epoch is kept |
 | `batch_size` | 32 | Molecules per training step |
 | `encoder_lr` / `head_lr` | 5e-5 / 5e-4 | Learning rates for the pretrained encoder and the new readout |
@@ -113,7 +116,7 @@ A model's training captures need no endpoint: `get_inference_predictions("traini
 
 ## Pretrained Weights
 
-The encoder weights (Hugging Face `atom-jepa/atom-jepa`, revision `8f7514f`, CC BY 4.0) are published in Workbench's foundation-model registry, so training jobs fetch them from S3 and never depend on Hugging Face.
+The encoder weights (Hugging Face `atom-jepa/atom-jepa`, CC BY 4.0: `bio` at revision `c9f15bc`, `molecules` at `8f7514f`) are published in Workbench's foundation-model registry, so training jobs fetch them from S3 and never depend on Hugging Face.
 
 ## Running Locally
 
@@ -137,6 +140,7 @@ The SuperCowPowers team is happy to answer any questions you may have about AWSÂ
 ## References
 
 - **Paper:** [Atom-JEPA: Joint-Embedding Predictive Architecture for 3D Atomistic Systems](https://arxiv.org/abs/2610.08400) (arXiv 2610.08400)
+- **Atom-JEPA-Bio:** [project page](https://mjordahn.github.io/atom-jepa-website/atom-jepa-bio.html)
 - **Code:** [github.com/khelverskovp/atom-jepa](https://github.com/khelverskovp/atom-jepa) (MIT); `pip install atom-jepa`
 - **Weights:** [huggingface.co/atom-jepa/atom-jepa](https://huggingface.co/atom-jepa/atom-jepa) (CC BY 4.0)
 - **Independent evaluation:** Pat Walters, [Model Validation Central: Fine-tuning in 3D (Atom-JEPA)](https://patwalters.github.io/model-validation-central/reports/atom-jepa.html), with the study code in [model-validation-central/studies/atom-jepa](https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa)

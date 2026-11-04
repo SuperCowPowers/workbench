@@ -21,11 +21,16 @@ from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 from workbench.endpoints.atomjepa_utils import FineTuned, FoldModel, graph_collator, sample
 from workbench.training.foundation_models import resolve_foundation_checkpoint
 
+# Released encoder -> its foundation-registry weights entry; the config entry is "<entry>_config"
+ENCODERS = {"bio": "atomjepa_bio", "molecules": "atomjepa"}
 
-def pretrained_encoder_dir() -> str:
-    """The released molecules encoder, from the foundation registry, as the folder from_pretrained loads."""
-    resolve_foundation_checkpoint("atomjepa_config")
-    return str(resolve_foundation_checkpoint("atomjepa").parent)
+
+def pretrained_encoder_dir(encoder: str) -> str:
+    """A released encoder ("bio" or "molecules"), from the foundation registry, as the folder from_pretrained loads."""
+    if encoder not in ENCODERS:
+        raise ValueError(f"Unknown Atom-JEPA encoder: {encoder!r}. Known: {sorted(ENCODERS)}")
+    resolve_foundation_checkpoint(f"{ENCODERS[encoder]}_config")
+    return str(resolve_foundation_checkpoint(ENCODERS[encoder]).parent)
 
 
 def default_device() -> torch.device:
@@ -73,7 +78,7 @@ def train_fold(
         extra_std = np.where(np.nanstd(train_extra, axis=0) > 0, np.nanstd(train_extra, axis=0), 1.0)
     target_mean, target_std = float(train_y.mean()), float(train_y.std())
 
-    encoder = AtomJEPA.from_pretrained(pretrained_encoder_dir(), device=device, verbose=seed == 0)
+    encoder = AtomJEPA.from_pretrained(pretrained_encoder_dir(hp["encoder"]), device=device, verbose=seed == 0)
     model = FineTuned(encoder, 0 if train_extra is None else train_extra.shape[1], hp["dropout"]).to(device)
     # Recompute each encoder block's activations in the backward pass rather than storing them:
     # a batch of 32 drug-sized molecules otherwise outgrows a 24 GB GPU

@@ -11,7 +11,7 @@ pytest.importorskip("atom_jepa")
 
 # Workbench Imports
 from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers  # noqa: E402
-from workbench.training.atomjepa_core import lr_scale, train_fold  # noqa: E402
+from workbench.training.atomjepa_core import lr_scale, pretrained_encoder_dir, train_fold  # noqa: E402
 
 pytestmark = pytest.mark.medium
 
@@ -30,6 +30,7 @@ SMILES = [
     "c1ccc(-c2ccccc2)cc1",
 ]
 HYPERPARAMETERS = {
+    "encoder": "bio",
     "epochs": 2,
     "batch_size": 4,
     "encoder_lr": 5e-5,
@@ -70,6 +71,11 @@ def test_lr_scale_rewarms_the_encoder_after_unfreezing():
     head, encoder = lr_scale(2, hp, 1e-4, encoder=False), lr_scale(2, hp, 1e-4, encoder=True)
     assert encoder == pytest.approx(head / 2)
     assert lr_scale(4, hp, 1e-4, encoder=True) == pytest.approx(lr_scale(4, hp, 1e-4, encoder=False))
+
+
+def test_an_unknown_encoder_is_refused():
+    with pytest.raises(ValueError, match="Unknown Atom-JEPA encoder"):
+        pretrained_encoder_dir("crystals")
 
 
 def test_build_conformers_marks_failures_none():

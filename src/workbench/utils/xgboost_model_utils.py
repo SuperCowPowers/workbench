@@ -11,7 +11,6 @@ from typing import Any, List, Optional, Tuple
 import awswrangler as wr
 import joblib
 import pandas as pd
-import xgboost as xgb
 
 # Workbench Imports
 from workbench.utils.metrics_utils import compute_metrics_from_predictions
@@ -32,6 +31,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
     Returns:
         Loaded XGBoost model (XGBClassifier, XGBRegressor, or Booster) or None if unavailable.
     """
+    import xgboost as xgb  # imported on use: XGBoost's OpenMP runtime clashes with torch's on macOS
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Download model artifact
@@ -180,6 +180,8 @@ def add_leaf_hash(workbench_model: Any, inference_df: pd.DataFrame) -> pd.DataFr
     Returns:
         DataFrame with added 'leaf_hash' column
     """
+    import xgboost as xgb  # imported on use: XGBoost's OpenMP runtime clashes with torch's on macOS
+
     # Extract the model
     model_artifact_uri = workbench_model.model_data_url()
     xgb_model = xgboost_model_from_s3(model_artifact_uri)

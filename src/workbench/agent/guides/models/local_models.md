@@ -104,11 +104,11 @@ importlib.invalidate_caches()
 
 Training works right away afterwards — it runs as a subprocess, which imports fresh.
 
-Inference is the catch. A local Endpoint loads the model **in this process**, and torch
-and XGBoost each bring their own OpenMP runtime. Once torch is imported, serving an
-XGBoost model in that session raises. So a session that predicts with chemprop is done
-with XGBoost predictions until the REPL restarts — do the XGBoost work first when the
-user wants both.
+Inference is the catch. A local Endpoint loads the model **in this process**, and on macOS
+torch and XGBoost each load their own OpenMP runtime. Running both in one process crashes
+or hangs, in either order: a session that has predicted with a torch model (chemprop,
+PyTorch, Atom-JEPA) is done with XGBoost predictions until the REPL restarts, and the
+reverse. When the user wants both, do one framework's local inference, restart, then the other.
 
 ## Molecular features
 
