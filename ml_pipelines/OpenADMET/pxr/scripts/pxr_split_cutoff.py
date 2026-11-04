@@ -95,7 +95,9 @@ def main():
         nn = fold_nn_similarity(train_sim, folds)
         dists[name] = nn
         sizes = [len(v) for _, v in folds]
-        stats = group_stats(groups) if groups is not None else {"groups": len(train), "singletons": 1.0, "top_group": 0.0}
+        stats = (
+            group_stats(groups) if groups is not None else {"groups": len(train), "singletons": 1.0, "top_group": 0.0}
+        )
         p25, p50, p75 = np.quantile(nn, [0.25, 0.5, 0.75])
         rows.append(
             {
