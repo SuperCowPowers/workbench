@@ -110,8 +110,8 @@ def uq_query_df(uq_model, df, features: Optional[list] = None):
     V0 needs no query payload, so it returns None. V1/V2 ask their own backend what
     it indexes on — 'smiles'/'fingerprint' for FingerprintProximity, the feature
     columns for FeatureSpaceProximity — which keeps callers out of the business of
-    sniffing columns. Returns None when ``df`` can't satisfy the backend, and the
-    caller should skip UQ scoring for that batch.
+    sniffing columns. Returns None when ``df`` can't satisfy the backend, which
+    the model templates raise on rather than serve predictions without UQ.
 
     Args:
         uq_model: A fit UQ model (V0, V1, or V2), or None.

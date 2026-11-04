@@ -61,5 +61,6 @@ end.set_owner("open_admet_pxr")
 end.test_inference()
 end.cross_fold_inference()
 
-# Held-out capture on the phase1_test rows (the model never trained on them)
-end.inference(phase1[features + ["molecule_name", "pec50"]], capture_name="pxr_phase1_test")
+# Held-out capture on the phase1_test rows (the model never trained on them). The UQ model
+# finds neighbors by fingerprint, so the payload carries smiles alongside the features.
+end.inference(phase1[features + ["molecule_name", "smiles", "pec50"]], capture_name="pxr_phase1_test")

@@ -260,7 +260,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                 for col in uq_out.columns:
                     df[col] = uq_out[col].values
             else:
-                print("[uq] Skipping UQModel inference: batch can't satisfy the proximity backend.")
+                raise ValueError(
+                    f"UQ {uq_model.UQ_VERSION} can't score this batch: its {uq_model.prox.space} proximity needs "
+                    "'smiles' (fingerprint) or the model's features (feature space) in the inference payload"
+                )
 
     df["prediction"] = predictions
     return df
