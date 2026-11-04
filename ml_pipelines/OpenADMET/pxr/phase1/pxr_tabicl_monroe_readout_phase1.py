@@ -16,13 +16,26 @@ embedding columns the training job measures 5.11 GB to serve, under the 5.5 GB s
 limit. to_endpoint() raises if a retrain measures over it.
 
 Build the FeatureSet first:  ml_pipeline_launcher pxr_readout_monroe_feature_sets
+
+`--split` sets the fold split (the UQ calibrators are fit on its out-of-fold residuals):
+    ml_pipeline_launcher pxr_tabicl_monroe_readout_phase1.py -- --split butina
 """
+
+import argparse
 
 from workbench.api import FeatureSet, ModelType, ModelFramework
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--split",
+    choices=["scaffold", "butina"],
+    help="Fold split strategy; suffixes the model name with it, so the build lands beside the default model",
+)
+args = parser.parse_args()
+
 fs_name = "openadmet_pxr_readout_monroe"
-model_name = "pxr-reg-tabicl-monroe-readout-phase1"
-tags = ["openadmet_pxr", "tabicl", "monroe", "primary_screen", "phase1"]
+model_name = "pxr-reg-tabicl-monroe-readout-phase1" + (f"-{args.split}" if args.split else "")
+tags = ["openadmet_pxr", "tabicl", "monroe", "primary_screen", "phase1"] + ([args.split] if args.split else [])
 
 fs = FeatureSet(fs_name)
 df = fs.pull_dataframe()
@@ -38,7 +51,7 @@ m = fs.to_model(
     description="PXR phase-1 pEC50 TabICL on Monroe embedding + primary-screen log2FC readouts (phase1_test held out)",
     tags=tags,
     validation_ids=list(phase1["molecule_name"]),  # held-out validation set (not trained)
-    hyperparameters={"top_variance_features": 100},
+    hyperparameters={"top_variance_features": 100} | ({"split_strategy": args.split} if args.split else {}),
 )
 m.set_owner("open_admet_pxr")
 print(f"Measured serving memory: {(m.workbench_meta() or {}).get('workbench_inference_memory_gb')} GB")
