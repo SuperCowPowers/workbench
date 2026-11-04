@@ -52,16 +52,14 @@ def combine_multi_task_data(
     dataframes: list[pd.DataFrame],
     target_columns: list[list[str]],
     id_column: str = "id",
-    merge_on_smiles: bool = False,
-    standardize_smiles: bool = True,
     passthrough_columns: list[list[str]] | None = None,
 ) -> pd.DataFrame:
     """Combine single-task DataFrames into a multi-task DataFrame.
 
     Computes the shared feature columns across all DataFrames, subsets each to
-    shared features + its targets, concatenates, and collapses rows by the merge
-    key (first non-NaN per column). This ensures molecules appearing in multiple
-    sources get all their targets on a single row.
+    shared features + its targets, concatenates, and collapses rows by id_column
+    (first non-NaN per column). This ensures an id appearing in multiple sources
+    gets all its targets on a single row.
 
     Convention: the first DataFrame's target(s) are treated as the *primary* task
     downstream (e.g. by chemprop ``task_weights`` or ``MultiTaskAlignment``).
@@ -73,16 +71,6 @@ def combine_multi_task_data(
         target_columns: Parallel list where target_columns[i] names the target column(s)
             in dataframes[i]. Every other column is treated as a shared feature.
         id_column: Column to use as the identifier. Defaults to 'id'.
-        merge_on_smiles: If True, collapse rows by 'smiles' instead of id_column.
-            Use when combining external/public data where IDs have no correspondence
-            to internal IDs. Defaults to False.
-        standardize_smiles: If True (and ``merge_on_smiles`` is True), canonicalize
-            each DataFrame's 'smiles' column with the same ChEMBL pipeline used by
-            the public-data pull scripts (salt removal, charge neutralization,
-            tautomer canonicalization). Without this, a SMILES-keyed merge of
-            sources with different conventions (e.g. internal LIMS salts vs public
-            canonical) silently misses overlap and emits duplicate canonical rows
-            after downstream feature-endpoint normalization. Defaults to True.
         passthrough_columns: Optional parallel list of per-source columns that
             should survive the merge with the same mechanics as targets (excluded
             from the shared-feature intersection, NaN-filled across sources,
@@ -97,8 +85,7 @@ def combine_multi_task_data(
     Returns:
         Combined DataFrame with shared features + all target columns + any
         passthrough columns. Rows from sources missing a target or passthrough
-        will have NaN there. When standardized, the 'smiles' column holds
-        canonical (post-standardization) SMILES.
+        will have NaN there.
 
     Raises:
         ValueError: If inputs are invalid (length mismatch, missing columns, etc.)
@@ -142,29 +129,7 @@ def combine_multi_task_data(
         dupes = [c for c in all_merge_cols if all_merge_cols.count(c) > 1]
         raise ValueError(f"Duplicate target/passthrough column names across DataFrames: {set(dupes)}")
 
-    merge_key = "smiles" if merge_on_smiles else id_column
-
-    # --- Standardize SMILES for cross-source merges ---
-    # Lazy RDKit import: keeps the module light for id-based merges.
-    #
-    # Future Me: standardize_smiles uses drop_mixtures=True, so a multi-component
-    # entry (e.g. a co-crystal or true mixture in the LIMS) is dropped here before
-    # the merge. The production feature endpoints, however, use drop_mixtures=False
-    # — they keep the largest fragment and featurize it. So if a row vanishes from
-    # the multi-task merge but its compound id appears in downstream prediction
-    # logs, this asymmetry is the reason. We deliberately leave the endpoints alone
-    # to avoid silent behavior changes for already-trained models.
-    if merge_on_smiles and standardize_smiles:
-        from workbench.utils.chem_utils.mol_standardize import standardize_smiles as _std_smiles
-
-        log.info("Standardizing SMILES across input DataFrames (ChEMBL pipeline)...")
-        for i, df in enumerate(dataframes):
-            df = df.copy()
-            df["smiles"] = df["smiles"].apply(_std_smiles)
-            n_fail = df["smiles"].isna().sum()
-            if n_fail > 0:
-                log.warning(f"DataFrame {i}: dropping {n_fail} rows where SMILES standardization failed")
-            dataframes[i] = df.dropna(subset=["smiles"]).reset_index(drop=True)
+    merge_key = id_column
 
     # --- Drop rows with NaN smiles ---
     for i, df in enumerate(dataframes):
@@ -222,9 +187,8 @@ def combine_multi_task_data(
     numeric_cols = [
         c for c in result.select_dtypes(include="number").columns if c != merge_key and c not in all_passthrough
     ]
-    # Dates take the latest, not an arbitrary row. A molecule reaching this collapse from
-    # several batches (the smiles-keyed pass) must keep its most recent per-source assay
-    # date, or the row-wise max a temporal split reads is no longer the true latest.
+    # Dates take the latest, not an arbitrary row, so the row-wise max a temporal split
+    # reads is the true latest.
     date_cols = [c for c in result.select_dtypes(include="datetime").columns if c != merge_key]
     picked = set(numeric_cols) | set(date_cols) | {merge_key}
     other_cols = [c for c in result.columns if c not in picked]
@@ -282,6 +246,69 @@ def combine_multi_task_data(
     return result
 
 
+def _attach_smiles_source(
+    merged: pd.DataFrame,
+    merged_targets: list[str],
+    merged_passthrough: list[str],
+    source: pd.DataFrame,
+    target_cols: list[str],
+    passthrough_cols: list[str],
+    id_column: str,
+    key_column: str,
+) -> pd.DataFrame:
+    """Attach a source with no shared id namespace to ``merged`` by canonical SMILES.
+
+    ``merged`` rows are never grouped or rewritten: each keeps its id and SMILES and
+    takes the source's values where its canonical SMILES (``key_column``) matches,
+    so every row of a matching structure gets them. Source rows sharing a canonical
+    SMILES collapse to one (targets averaged); those matching no ``merged`` row are
+    appended as their own rows, carrying the canonical SMILES.
+    """
+    from workbench.utils.chem_utils.mol_standardize import standardize_smiles
+
+    clash = [c for c in target_cols if c in merged.columns]
+    if clash:
+        raise ValueError(f"Target columns already present before the SMILES pass: {clash}")
+
+    if key_column not in merged.columns:
+        merged = merged.assign(**{key_column: merged["smiles"].apply(standardize_smiles)})
+
+    source = source.assign(smiles=source["smiles"].apply(standardize_smiles))
+    n_fail = source["smiles"].isna().sum()
+    if n_fail:
+        log.warning(f"Dropping {n_fail} source rows where SMILES standardization failed")
+    source = source.dropna(subset=["smiles"]).assign(**{key_column: lambda d: d["smiles"]})
+
+    # Feature columns survive only where both sides carry them
+    reserved = {id_column, "smiles", key_column}
+    merged_features = set(merged.columns) - reserved - set(merged_targets) - set(merged_passthrough)
+    source_features = set(source.columns) - reserved - set(target_cols) - set(passthrough_cols)
+    shared = sorted(merged_features & source_features)
+    dropped = sorted(merged_features - source_features)
+    if dropped:
+        log.info(f"Dropping {len(dropped)} feature columns the SMILES source lacks")
+        merged = merged.drop(columns=dropped)
+
+    agg = {c: "mean" for c in target_cols}
+    agg.update({c: "first" for c in [id_column, "smiles", *shared]})
+    agg.update({c: "max" if pd.api.types.is_datetime64_any_dtype(source[c]) else "first" for c in passthrough_cols})
+    collapsed = source.groupby(key_column).agg(agg)
+
+    # Look up each merged row's structure; an existing passthrough keeps its merged value
+    looked_up = collapsed.reindex(merged[key_column]).set_axis(merged.index)
+    merged = merged.copy()
+    for c in target_cols + passthrough_cols:
+        merged[c] = merged[c].combine_first(looked_up[c]) if c in merged.columns else looked_up[c]
+
+    unmatched = collapsed[~collapsed.index.isin(merged[key_column])].reset_index()
+    n_matched = merged[key_column].isin(collapsed.index).sum()
+    log.info(
+        f"SMILES source: {len(collapsed)} structures, {n_matched} existing rows matched, "
+        f"{len(unmatched)} rows appended"
+    )
+    return pd.concat([merged, unmatched], ignore_index=True)
+
+
 def pull_multi_task_data(
     id_based_sources: dict,
     smiles_based_sources: dict = None,
@@ -293,8 +320,11 @@ def pull_multi_task_data(
 
     Two-pass merge convention:
         1. ID-based sources are combined via outer join on `id_column`.
-        2. SMILES-based sources are joined onto the result via canonical SMILES
-           (use this for external/public data with no shared id namespace).
+        2. SMILES-based sources (external/public data with no shared id namespace)
+           are looked up by canonical SMILES. The id-based rows are never grouped
+           or rewritten by SMILES: each keeps its id and SMILES and takes the
+           source's values where its structure matches. Source rows matching no
+           structure are appended as their own rows.
 
     Each source config is a dict shaped like:
         {
@@ -416,23 +446,20 @@ def pull_multi_task_data(
         id_passthrough.append(passthrough_cols)
     merged = combine_multi_task_data(id_dfs, id_targets, id_column=id_column, passthrough_columns=id_passthrough)
 
-    # Pass 2: smiles-based join (e.g. external/public data). The accumulated
+    # Pass 2: smiles-based lookup (e.g. external/public data). The accumulated
     # `merged_targets` / `merged_passthrough` lists describe what already lives
-    # in `merged` so combine_multi_task_data treats those columns correctly on
-    # the next pass.
+    # in `merged`; the canonical SMILES key is private to this pass.
     merged_targets = [t for tl in id_targets for t in tl]
     merged_passthrough = list(dict.fromkeys(p for pl in id_passthrough for p in pl))
+    key_column = "__smiles_key"
     for fs_name, fs_config in smiles_based_sources.items():
         df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config, date_required=False)
-        merged = combine_multi_task_data(
-            [merged, df],
-            [merged_targets, target_cols],
-            id_column=id_column,
-            merge_on_smiles=True,
-            passthrough_columns=[merged_passthrough, passthrough_cols],
+        merged = _attach_smiles_source(
+            merged, merged_targets, merged_passthrough, df, target_cols, passthrough_cols, id_column, key_column
         )
         merged_targets.extend(target_cols)
         merged_passthrough.extend(p for p in passthrough_cols if p not in merged_passthrough)
+    merged = merged.drop(columns=key_column, errors="ignore")
 
     missing_metadata = [c for c in metadata if c not in merged.columns]
     if missing_metadata:

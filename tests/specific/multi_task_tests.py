@@ -159,24 +159,6 @@ def test_combine_passthrough_not_treated_as_target():
     assert pd.to_datetime(out.loc[out["id"] == 1, "__date_p"].iloc[0]) == pd.Timestamp("2024-01-01")
 
 
-def test_combine_smiles_merge():
-    """SMILES-based merge joins external data with no shared id namespace."""
-    internal = pd.DataFrame({"id": [1, 2], "smiles": ["CCO", "CCC"], "primary": [10.0, 20.0]})
-    external = pd.DataFrame({"id": [99, 98], "smiles": ["CCO", "CCCC"], "aux": [1.5, 2.5]})
-    # standardize_smiles=False keeps this test pure-pandas (no rdkit dependency).
-    out = combine_multi_task_data(
-        [internal, external],
-        [["primary"], ["aux"]],
-        id_column="id",
-        merge_on_smiles=True,
-        standardize_smiles=False,
-    )
-    cco = out[out["smiles"] == "CCO"].iloc[0]
-    assert cco["primary"] == 10.0 and cco["aux"] == 1.5  # joined on SMILES
-    ext_only = out[out["smiles"] == "CCCC"].iloc[0]
-    assert pd.isna(ext_only["primary"]) and ext_only["aux"] == 2.5
-
-
 # ----------------------------------------------------------------------------
 # validate_multi_task_data
 # ----------------------------------------------------------------------------
@@ -299,6 +281,40 @@ def test_pull_smiles_source_missing_date_is_training(monkeypatch):
     # date-less public rows fall to the training side (NaT is neither <= nor > cutoff).
     _train, holdout = temporal_split(out, "assay_date", end_date="2025-10-17")
     assert set(holdout["compound_id"]) == {"2"}
+
+
+def test_pull_smiles_source_never_regroups_id_rows(monkeypatch):
+    """A SMILES-based source is a lookup: id rows keep their ids and SMILES, every matching row gets its values."""
+    pytest.importorskip("rdkit")  # the smiles pass standardizes SMILES
+    frames = {
+        "internal": pd.DataFrame(
+            {
+                "compound_id": ["m1-1", "m1-2", "m2-1"],
+                "smiles": ["CCO.Cl", "CCO", "CCCN"],  # two batches of one structure, one as a salt
+                "ta": [1.0, 3.0, 5.0],
+            }
+        ),
+        # Two public rows of the CCO structure (written differently) and one public-only structure
+        "public": pd.DataFrame({"id": ["a", "b", "c"], "smiles": ["OCC", "CCO", "CCCC"], "logp": [0.2, 0.4, 2.0]}),
+    }
+    _install_fake_feature_set(monkeypatch, frames)
+
+    out = pull_multi_task_data(
+        {"internal": {"target_info": ["ta"]}},
+        {"public": {"target_info": ["logp"], "src_id_col": "id"}},
+        id_column="compound_id",
+    )
+    rows = out.set_index("compound_id")
+
+    # Id rows are untouched: both batches survive with their own SMILES and targets
+    assert rows.loc["m1-1", "smiles"] == "CCO.Cl" and rows.loc["m1-1", "ta"] == 1.0
+    assert rows.loc["m1-2", "smiles"] == "CCO" and rows.loc["m1-2", "ta"] == 3.0
+    # Both batches of the matching structure take the public value (public duplicates averaged)
+    assert rows.loc["m1-1", "logp"] == pytest.approx(0.3) and rows.loc["m1-2", "logp"] == pytest.approx(0.3)
+    assert pd.isna(rows.loc["m2-1", "logp"])
+    # The public-only structure is appended under its own id
+    assert rows.loc["c", "logp"] == 2.0 and pd.isna(rows.loc["c", "ta"])
+    assert len(out) == 4 and "__smiles_key" not in out.columns
 
 
 # ----------------------------------------------------------------------------

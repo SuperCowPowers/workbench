@@ -306,47 +306,6 @@ def test_validate_catches_empty_target():
 # --- Two-pass merge (id-based then smiles-based) ---
 
 
-def test_two_pass_merge():
-    """Simulates the pipeline pattern: merge on ID first, then on SMILES for external data."""
-    # Pass 1: Two non-overlapping sources
-    df_ppb = _make_df(
-        ids=["A", "B"],
-        smiles=["CC", "CCC"],
-        features={"feat1": [1.0, 2.0]},
-        targets={"ppb": [0.5, 0.6]},
-    )
-    df_logd = _make_df(
-        ids=["C", "D"],
-        smiles=["CCCC", "CCCCC"],
-        features={"feat1": [3.0, 4.0]},
-        targets={"logd": [1.1, 2.2]},
-    )
-    merged = combine_multi_task_data([df_ppb, df_logd], [["ppb"], ["logd"]])
-    assert len(merged) == 4
-
-    # Pass 2: External source, merge on SMILES
-    df_logp = pd.DataFrame(
-        {
-            "id": ["X1", "X2"],
-            "smiles": ["CC", "CCCCCC"],  # CC=A, CCCCCC=new
-            "feat1": [1.0, 5.0],
-            "logp": [10.0, 50.0],
-        }
-    )
-    result = combine_multi_task_data([merged, df_logp], [["ppb", "logd"], ["logp"]], merge_on_smiles=True)
-
-    assert len(result) == 5  # CC, CCC, CCCC, CCCCC, CCCCCC
-    # CC (molecule A) gets ppb + logp collapsed onto one row
-    row_cc = result[result["smiles"] == "CC"].iloc[0]
-    assert row_cc["ppb"] == 0.5
-    assert row_cc["logp"] == 10.0
-    # CCCCCC is logp-only
-    row_new = result[result["smiles"] == "CCCCCC"].iloc[0]
-    assert np.isnan(row_new["ppb"])
-    assert np.isnan(row_new["logd"])
-    assert row_new["logp"] == 50.0
-
-
 # --- combine_multi_task_data: passthrough_columns ---
 
 
@@ -404,28 +363,26 @@ def test_combine_passthrough_length_mismatch_raises():
 
 
 def test_combine_date_passthrough_takes_latest():
-    """A smiles-keyed collapse keeps each source's LATEST date, not an arbitrary batch's."""
-    # Two batches of the same molecule, assayed on different dates
-    internal = _make_df(
-        ids=["BATCH-1", "BATCH-2"],
-        smiles=["CC", "CC"],
-        features={"feat1": [1.0, 1.0]},
-        targets={"t1": [0.5, 0.7], "__date_internal": pd.to_datetime(["2025-01-01", "2026-06-01"])},
+    """An id in several sources keeps the LATEST date of a shared passthrough, not an arbitrary source's."""
+    df1 = _make_df(
+        ids=["A", "B"],
+        smiles=["CC", "CCC"],
+        features={"feat1": [1.0, 2.0]},
+        targets={"t1": [0.5, 0.7], "__date": pd.to_datetime(["2025-01-01", "2025-03-01"])},
     )
-    public = _make_df(
-        ids=["P1"],
-        smiles=["CCC"],
-        features={"feat1": [3.0]},
-        targets={"t2": [0.9], "__date_public": pd.Series([pd.NaT], dtype="datetime64[ns]")},
+    df2 = _make_df(
+        ids=["A"],
+        smiles=["CC"],
+        features={"feat1": [1.0]},
+        targets={"t2": [0.9], "__date": pd.to_datetime(["2026-06-01"])},
     )
 
     result = combine_multi_task_data(
-        [internal, public],
+        [df1, df2],
         target_columns=[["t1"], ["t2"]],
-        passthrough_columns=[["__date_internal"], ["__date_public"]],
-        merge_on_smiles=True,
-        standardize_smiles=False,
+        passthrough_columns=[["__date"], ["__date"]],
     )
 
-    row = result[result["smiles"] == "CC"].iloc[0]
-    assert row["__date_internal"] == pd.Timestamp("2026-06-01")
+    rows = result.set_index("id")
+    assert rows.loc["A", "__date"] == pd.Timestamp("2026-06-01")
+    assert rows.loc["B", "__date"] == pd.Timestamp("2025-03-01")
