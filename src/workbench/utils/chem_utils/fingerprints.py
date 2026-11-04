@@ -120,6 +120,8 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096, 
     if smiles_column is None:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
+    df = df.copy()  # the caller's frame is never modified
+
     # Sanity check the molecule column (sometimes it gets serialized, which doesn't work)
     if "molecule" in df.columns and not df["molecule"].map(lambda m: isinstance(m, Chem.Mol)).any():
         log.warning("Detected serialized molecules in 'molecule' column. Removing...")
@@ -140,7 +142,7 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096, 
         failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
         if failed_smiles:
             log.warning(f"Failed to convert {len(failed_smiles)} SMILES to molecules (first 5: {failed_smiles[:5]})")
-        df = df.dropna(subset=["molecule"]).copy()
+        df = df.dropna(subset=["molecule"])
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
     largest_frags = df["molecule"].apply(
