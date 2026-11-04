@@ -136,7 +136,7 @@ in figure coordinates, and let each helper advance the `y` cursor down the page:
 fig = report.new_page()
 y = report.head(fig, "section two", "Data Issues", "Fit quality is driven by ...")
 y = report.sec(fig, y, "How fit quality is measured", report.MUTED)
-y = report.para(fig, y, "The median absolute fold error over ...")
+y = report.para(fig, y, "The geometric mean fold error over ...")
 y = report.equation(fig, y, report.EQ["gmfe"], size=12.5)
 y = report.table(fig, y, ["variant", "gmfe", "auc"], rows, hl_row=2)
 report.footer(fig, "Workbench - Method 1 validation", 2)
