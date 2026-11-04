@@ -43,9 +43,9 @@ INSTANCE_LADDERS = {
         "ml.g6.12xlarge",  # 4x NVIDIA L4
         "ml.g5.12xlarge",  # 4x NVIDIA A10G
     ],
-    # Single-GPU chemprop/pytorch training. Both rungs are a 24GB card with 32GB host RAM,
-    # clearing the 16.2GB VRAM and 24.5GB host peak of the multi-task models, and they draw
-    # on separate capacity pools.
+    # Single-GPU training. Both rungs are a 24GB card with 32GB host RAM, clearing the
+    # 16.2GB VRAM and 24.5GB host peak of the multi-task models, and they draw on separate
+    # capacity pools.
     "gpu": [
         "ml.g6.2xlarge",  # 1x NVIDIA L4, 8 vCPUs for data loading
         "ml.g5.2xlarge",  # 1x NVIDIA A10G, same shape
@@ -54,32 +54,50 @@ INSTANCE_LADDERS = {
     # wall-clock even though the search itself is serial.
     "cpu_hpo": ["ml.c7i.4xlarge"],  # 16 vCPUs
     "cpu": ["ml.m5.xlarge"],
-    # TabICL only runs forward passes, which CPU handles fine
-    "tabicl": ["ml.m6i.2xlarge"],  # 8 vCPUs, 32GB RAM
+}
+# The ladder each framework trains on; an `hpo` block moves it to that device's search ladder
+FRAMEWORK_WORKLOAD = {
+    ModelFramework.SKLEARN: "cpu",
+    ModelFramework.XGBOOST: "cpu",
+    ModelFramework.PYTORCH: "gpu",
+    ModelFramework.CHEMPROP: "gpu",
+    ModelFramework.ATOMJEPA: "gpu",
+    # A CUDA fit runs under AMP and saves a float16 cache; a CPU fit saves float32, about
+    # 1 GB more serving memory at 4k rows, enough to push a model past serverless
+    ModelFramework.TABICL: "gpu",
+    ModelFramework.TRANSFORMER: "cpu",
+    ModelFramework.META: "cpu",
+    ModelFramework.UNKNOWN: "cpu",
 }
 # Stops a hung training job; matches the Batch job-def ceiling a launcher run waits under.
 MAX_RUNTIME_SECONDS = 24 * 3600
 
 
-def training_workload(hyperparameters: Union[dict, None], *, gpu_framework: bool) -> str:
+def training_workload(
+    model_framework: ModelFramework, model_type: ModelType, hyperparameters: Union[dict, None]
+) -> str:
     """Which :data:`INSTANCE_LADDERS` entry a training job should ask for.
 
-    Only a *parallel* search needs a multi-GPU box; a serial one (optuna, or an explicit
-    ``max_parallel=1``) stays on the normal single-GPU instance. The job derives its own
-    concurrency from the cards it lands on, so an unset ``max_parallel`` means "pack the
-    box" and has to be given a box worth packing.
+    The framework picks the device (:data:`FRAMEWORK_WORKLOAD`), except that a TRANSFORMER
+    model computes features and trains nothing, so it never needs a GPU. Only a *parallel*
+    search needs a multi-GPU box; a serial one (optuna, or an explicit ``max_parallel=1``)
+    stays on the normal single-GPU instance. The job derives its own concurrency from the
+    cards it lands on, so an unset ``max_parallel`` means "pack the box" and has to be
+    given a box worth packing.
 
     Args:
+        model_framework: the model's framework.
+        model_type: the model's type.
         hyperparameters: the model's hyperparameters, or None.
-        gpu_framework: whether the framework trains on a GPU.
 
     Returns:
         str: a key into :data:`INSTANCE_LADDERS`.
     """
+    gpu = model_type != ModelType.TRANSFORMER and FRAMEWORK_WORKLOAD[model_framework] == "gpu"
     hpo = (hyperparameters or {}).get("hpo")
     if hpo is None:  # an empty block is a real request: a search on every default
-        return "gpu" if gpu_framework else "cpu"
-    if not gpu_framework:
+        return "gpu" if gpu else "cpu"
+    if not gpu:
         return "cpu_hpo"
     serial = hpo.get("backend", "auto") == "optuna" or hpo.get("max_parallel") == 1
     return "gpu" if serial else "gpu_hpo"
@@ -367,16 +385,7 @@ class FeaturesToModel(Transform):
             instance_ladder = [train_instance_type]
             self.log.important(f"Using user-specified instance {train_instance_type}")
         else:
-            if self.model_framework == ModelFramework.TABICL:
-                workload = "tabicl"
-            else:
-                # A TRANSFORMER model computes features and trains nothing, so it never needs a GPU
-                gpu_framework = self.model_type != ModelType.TRANSFORMER and self.model_framework in [
-                    ModelFramework.CHEMPROP,
-                    ModelFramework.PYTORCH,
-                    ModelFramework.ATOMJEPA,
-                ]
-                workload = training_workload(kwargs.get("hyperparameters"), gpu_framework=gpu_framework)
+            workload = training_workload(self.model_framework, self.model_type, kwargs.get("hyperparameters"))
             instance_ladder = INSTANCE_LADDERS[workload]
             self.log.important(f"Using {workload} instances {instance_ladder} for {self.model_framework.value}")
 
