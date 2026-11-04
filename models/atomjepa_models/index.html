@@ -5610,7 +5610,7 @@
 
 
 <h1 id="atom-jepa-models">Atom-JEPA Models</h1>
-<p><a href="https://arxiv.org/abs/2610.08400">Atom-JEPA</a> is a 3D molecular encoder: an EquiformerV3 (39M parameters) pretrained by latent prediction on about 19 million molecules. Workbench fine-tunes it per dataset as a regression framework, with the same training, held-out scoring, and confidence modeling as the other frameworks.</p>
+<p><a href="https://arxiv.org/abs/2610.08400">Atom-JEPA</a> is a 3D molecular encoder: an EquiformerV3 (39M parameters) pretrained by latent prediction on about 19 million molecules. Workbench's default encoder is <a href="https://mjordahn.github.io/atom-jepa-website/atom-jepa-bio.html">Atom-JEPA-Bio</a>, the same model after a second pretraining stage on 1,089 PubChem bioassays (PCBA). Workbench fine-tunes it per dataset as a regression framework, with the same training, held-out scoring, and confidence modeling as the other frameworks.</p>
 <p>Atom-JEPA reads 3D structure. Workbench generates the conformers from SMILES (RDKit ETKDGv3 + MMFF94), so a model needs only a <code>smiles</code> column.</p>
 <h2 id="creating-an-atom-jepa-model">Creating an Atom-JEPA Model</h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
@@ -5632,7 +5632,7 @@
 </span></code></pre></div>
 <p>Any other numeric features in <code>feature_list</code> (an assay readout, a descriptor) enter the readout alongside the encoder's output.</p>
 <h2 id="when-to-use-atom-jepa">When to Use Atom-JEPA</h2>
-<p>Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a universal upgrade. Measured in Workbench:</p>
+<p>Atom-JEPA is strongest on physicochemical and binding endpoints, and it is not a universal upgrade. Measured in Workbench with the <code>molecules</code> encoder:</p>
 <table>
 <thead>
 <tr>
@@ -5680,6 +5680,7 @@
 <li>Against Monroe + TabPFN 3 it leads on ExpansionRx and trails on Biogen.</li>
 <li>Its best endpoints are LogD, LogS, HLM clearance, and plasma and brain protein binding; its weakest are Caco-2 permeability and MLM clearance.</li>
 </ul>
+<p>The authors' Atom-JEPA-Bio evaluation, on the same protocol, is best or tied on 34 of 45 combinations (Monroe + TabPFN 3: 18). It leads on Biogen ADME (14 of 18, against 0 for Atom-JEPA) and cuts LogD MAE by about 9%, but still trails Monroe on Caco-2 and MLM.</p>
 <p>In practice:</p>
 <ul>
 <li><strong>Try Atom-JEPA</strong> for lipophilicity, solubility, microsomal clearance, and protein or tissue binding.</li>
@@ -5729,6 +5730,11 @@
 <td><code>n_folds</code></td>
 <td>5</td>
 <td>Fold models in the ensemble (1 = one train/validation split, with no spread for uncertainty)</td>
+</tr>
+<tr>
+<td><code>encoder</code></td>
+<td><code>"bio"</code></td>
+<td>Pretrained encoder: <code>"bio"</code> (Atom-JEPA-Bio) or <code>"molecules"</code> (self-supervised pretraining only)</td>
 </tr>
 <tr>
 <td><code>epochs</code></td>
@@ -5838,7 +5844,7 @@
 <p>Endpoint instances are quota-limited per instance type and region; check <code>&lt;instance type&gt; for endpoint usage</code> for each pool type in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.</p>
 <p>A model's training captures need no endpoint: <code>get_inference_predictions("training")</code> gives the out-of-fold rows and <code>get_inference_predictions("validation")</code> the rows held out with <code>validation_ids</code>.</p>
 <h2 id="pretrained-weights">Pretrained Weights</h2>
-<p>The encoder weights (Hugging Face <code>atom-jepa/atom-jepa</code>, revision <code>8f7514f</code>, CC BY 4.0) are published in Workbench's foundation-model registry, so training jobs fetch them from S3 and never depend on Hugging Face.</p>
+<p>The encoder weights (Hugging Face <code>atom-jepa/atom-jepa</code>, CC BY 4.0: <code>bio</code> at revision <code>c9f15bc</code>, <code>molecules</code> at <code>8f7514f</code>) are published in Workbench's foundation-model registry, so training jobs fetch them from S3 and never depend on Hugging Face.</p>
 <h2 id="running-locally">Running Locally</h2>
 <p>Local training works through <code>workbench.local</code> with the <code>modeling</code> extra. It runs on CPU (Apple's MPS trains this model far slower than CPU), which suits small smoke tests rather than full models.</p>
 <h2 id="limits">Limits</h2>
@@ -5857,6 +5863,7 @@
 <h2 id="references">References</h2>
 <ul>
 <li><strong>Paper:</strong> <a href="https://arxiv.org/abs/2610.08400">Atom-JEPA: Joint-Embedding Predictive Architecture for 3D Atomistic Systems</a> (arXiv 2610.08400)</li>
+<li><strong>Atom-JEPA-Bio:</strong> <a href="https://mjordahn.github.io/atom-jepa-website/atom-jepa-bio.html">project page</a></li>
 <li><strong>Code:</strong> <a href="https://github.com/khelverskovp/atom-jepa">github.com/khelverskovp/atom-jepa</a> (MIT); <code>pip install atom-jepa</code></li>
 <li><strong>Weights:</strong> <a href="https://huggingface.co/atom-jepa/atom-jepa">huggingface.co/atom-jepa/atom-jepa</a> (CC BY 4.0)</li>
 <li><strong>Independent evaluation:</strong> Pat Walters, <a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa.html">Model Validation Central: Fine-tuning in 3D (Atom-JEPA)</a>, with the study code in <a href="https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa">model-validation-central/studies/atom-jepa</a></li>
