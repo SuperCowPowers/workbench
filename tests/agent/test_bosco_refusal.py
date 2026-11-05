@@ -1,5 +1,8 @@
-"""A declined request: Bosco retries it once on the fallback model; if that declines too,
-Bosco says so and the turn leaves no trace in the conversation or the session record."""
+"""Replies that don't finish.
+
+A declined request is retried once on the fallback model; if that declines too, Bosco
+says so and the turn leaves no trace in the conversation or the session record. A reply
+cut off at MAX_TOKENS is shown but not kept, so a half-written tool call can't stick."""
 
 from types import SimpleNamespace
 
@@ -133,3 +136,22 @@ def test_no_retry_when_already_on_the_fallback(world, capsys):
 
     assert world.models == [FALLBACK]
     assert "Claude declined this request" in capsys.readouterr().out
+
+
+def test_cut_off_reply_is_shown_but_not_kept(world, capsys):
+    world.responses = [reply("max_tokens", text("partial answer"), tool_call()), reply("end_turn", text("next"))]
+    bosco_mod._ask("the question")
+
+    assert world.shown == ["partial answer"]
+    assert "token limit and was cut off" in capsys.readouterr().out
+    assert [m["role"] for m in world.history] == ["user"]
+
+    bosco_mod._ask("next question")  # no dangling tool_use goes out
+    assert "tool_use" not in str(world.sent[-1])
+
+
+def test_cut_off_round_keeps_the_rounds_before_it(world):
+    world.responses = [reply("tool_use", tool_call()), reply("max_tokens", text("partial answer"))]
+    bosco_mod._ask("the question")
+    assert [m["role"] for m in world.history] == ["user", "assistant", "user"]
+    assert world.recorded == ["the question"]

@@ -58,7 +58,9 @@ _anthropic_log.setLevel(logging.INFO)
 _anthropic_log.propagate = False
 _anthropic_log.handlers = [_RetryNotifier()]
 
-MAX_TOKENS = 8000
+# Per round, covering thinking as well as the reply. Bedrock reserves this much of the
+# account's tokens-per-minute quota at the start of each request, so keep it modest.
+MAX_TOKENS = 32000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 
 # Per-user knobs in the Workbench config; a saved change applies from the next turn.
@@ -66,9 +68,10 @@ MODEL_KEY = "BOSCO_MODEL"
 EFFORT_KEY = "BOSCO_EFFORT"
 
 # How hard the model works per turn -- thinking depth and total token spend, not reply
-# length. Higher costs latency: on a moderate question low/medium/high run ~14/17/23s.
+# length. Higher costs latency: on a moderate question Opus 5 ran low/medium/high in ~14/17/23s.
+# Opus 5.5 thinks more per level, and its medium beats Opus 5's high.
 EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
-DEFAULT_EFFORT = "high"
+DEFAULT_EFFORT = "medium"
 
 # USD per token by model (Anthropic list pricing; Bedrock adds BEDROCK_PRICE_FACTOR),
 # and the models BOSCO_MODEL accepts. Cache write is the 1.25x (5-minute ephemeral) rate we use.
@@ -332,6 +335,12 @@ def _run_turn(namespace: dict) -> None:
         text = _text_of(response)
         if text:
             render_markdown(text)
+
+        # A cut-off reply can end in a half-written tool call with no result to pair with,
+        # which would fail every later request, so it is shown but not kept.
+        if response.stop_reason == "max_tokens":
+            cprint("darkyellow", f"Reply hit the {MAX_TOKENS}-token limit and was cut off; it was not kept.")
+            return
 
         _history.append({"role": "assistant", "content": response.content})
         if response.stop_reason != "tool_use":

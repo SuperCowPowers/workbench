@@ -53,7 +53,7 @@ setting, and it then works in every terminal program, not just here.
   from workbench.utils.config_manager import ConfigManager
 
   ConfigManager().save_config("BOSCO_MODEL", "claude-sonnet-5")  # or claude-opus-5-5 (default), claude-opus-5
-  ConfigManager().save_config("BOSCO_EFFORT", "low")             # low, medium, high (default), xhigh, max
+  ConfigManager().save_config("BOSCO_EFFORT", "low")             # low, medium (default), high, xhigh, max
   ```
 
   In local mode there is no config file, so tell the user the change lasts only

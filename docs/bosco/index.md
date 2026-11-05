@@ -79,7 +79,7 @@ for you, or set them yourself. Type `bosco` to see the current values.
 | Key | Values |
 |---|---|
 | `BOSCO_MODEL` | `claude-opus-5-5` (default), `claude-opus-5`, `claude-sonnet-5` |
-| `BOSCO_EFFORT` | `low`, `medium`, `high` (default), `xhigh`, `max` |
+| `BOSCO_EFFORT` | `low`, `medium` (default), `high`, `xhigh`, `max` |
 
 Effort is thinking depth per turn, not reply length. It's the main speed lever:
 lower means faster turns and fewer tool calls, and less checking against live
