@@ -5670,11 +5670,11 @@ for you, or set them yourself. Type <code>bosco</code> to see the current values
 <tbody>
 <tr>
 <td><code>BOSCO_MODEL</code></td>
-<td><code>claude-opus-5</code> (default), <code>claude-sonnet-5</code></td>
+<td><code>claude-opus-5-5</code> (default), <code>claude-opus-5</code>, <code>claude-sonnet-5</code></td>
 </tr>
 <tr>
 <td><code>BOSCO_EFFORT</code></td>
-<td><code>low</code>, <code>medium</code>, <code>high</code> (default), <code>xhigh</code>, <code>max</code></td>
+<td><code>low</code>, <code>medium</code> (default), <code>high</code>, <code>xhigh</code>, <code>max</code></td>
 </tr>
 </tbody>
 </table>
@@ -5684,9 +5684,10 @@ data. At low effort Sonnet matches Opus's speed at about half the cost. In local
 mode there is no config file, so a change Bosco makes lasts only for that session.</p>
 <p><strong>Ctrl-C</strong> interrupts at any point, mid-thought or mid-query. The conversation
 stays usable, so the next question works normally.</p>
-<p><strong>Declined requests:</strong> Claude's safety checks can decline a request. Bosco tells
-you and drops that turn from the conversation, so the next question works
-normally. Anything already done in that turn, such as variables it created, stays
+<p><strong>Declined requests:</strong> Claude's safety checks can decline a request. Bosco
+retries that turn once on Claude Opus 5, whose checks are narrower. If that
+declines too, Bosco tells you and drops the turn from the conversation, so the
+next question works normally. Anything already done in that turn, such as variables it created, stays
 in your session.</p>
 <h2 id="sessions">Sessions</h2>
 <p>Bosco can write a session report — the goal, the artifacts involved, what was

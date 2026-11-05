@@ -5837,9 +5837,11 @@ also handy to set the dashboard URL so Bosco can open Dashboard pages for you.</
 </table>
 <div class="admonition note">
 <p class="admonition-title">Which model?</p>
-<p>The agent defaults to <strong>Claude Opus 5</strong>
-(<code>us.anthropic.claude-opus-5</code>). Any Claude model works. Non-Anthropic
-models (Llama, Mistral, Titan) are not supported.</p>
+<p>The agent defaults to <strong>Claude Opus 5.5</strong>
+(<code>us.anthropic.claude-opus-5-5</code>). Any Claude model works except Claude
+Fable, which is not available under <a href="#zero-data-retention">zero data
+retention</a>. Non-Anthropic models (Llama, Mistral,
+Titan) are not supported.</p>
 </div>
 <h3 id="verify">Verify</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bedrock_verify
@@ -5847,7 +5849,7 @@ models (Llama, Mistral, Titan) are not supported.</p>
 <p>Uses the same credentials and region as the Workbench REPL, and does a small
 round-trip against Claude:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Region: us-west-2
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Model:  us.anthropic.claude-opus-5
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Model:  us.anthropic.claude-opus-5-5
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Success: ready
 </span></code></pre></div>
 <p>To check a different model:</p>
@@ -6043,7 +6045,7 @@ unavailable to the account. The <code>bedrock:DataRetentionMode</code> condition
 Service Control Policy keep anyone from loosening it afterwards.</p>
 <h2 id="region">Region</h2>
 <p>The agent defaults to a US geographic inference profile
-(<code>us.anthropic.claude-opus-5</code>). Inference is served from a US region, which
+(<code>us.anthropic.claude-opus-5-5</code>). Inference is served from a US region, which
 may not be the region you called from; AWS routes cross-region traffic over its
 own network, never the public internet.</p>
 <p>Where a model does retain data, it is retained in the region that processed
