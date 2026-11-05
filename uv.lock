@@ -6453,7 +6453,7 @@ ui = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiobotocore", specifier = ">=3.7.0" },
+    { name = "aiobotocore", specifier = ">=3.9.2" },
     { name = "anthropic", extras = ["bedrock"], specifier = ">=0.117.0" },
     { name = "atom-jepa", marker = "extra == 'modeling'", specifier = ">=0.3.0" },
     { name = "aws-cdk-lib", marker = "extra == 'dev'" },
