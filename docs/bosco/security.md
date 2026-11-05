@@ -41,9 +41,11 @@ The config file lives at:
 | Windows | `%LOCALAPPDATA%\Workbench\workbench_config.json` |
 
 !!! note "Which model?"
-    The agent defaults to **Claude Opus 5**
-    (`us.anthropic.claude-opus-5`). Any Claude model works. Non-Anthropic
-    models (Llama, Mistral, Titan) are not supported.
+    The agent defaults to **Claude Opus 5.5**
+    (`us.anthropic.claude-opus-5-5`). Any Claude model works except Claude
+    Fable, which is not available under [zero data
+    retention](#zero-data-retention). Non-Anthropic models (Llama, Mistral,
+    Titan) are not supported.
 
 ### Verify
 
@@ -56,7 +58,7 @@ round-trip against Claude:
 
 ```
 Region: us-west-2
-Model:  us.anthropic.claude-opus-5
+Model:  us.anthropic.claude-opus-5-5
 Success: ready
 ```
 
@@ -247,7 +249,7 @@ Service Control Policy keep anyone from loosening it afterwards.
 ## Region
 
 The agent defaults to a US geographic inference profile
-(`us.anthropic.claude-opus-5`). Inference is served from a US region, which
+(`us.anthropic.claude-opus-5-5`). Inference is served from a US region, which
 may not be the region you called from; AWS routes cross-region traffic over its
 own network, never the public internet.
 

@@ -52,7 +52,7 @@ setting, and it then works in every terminal program, not just here.
   ```python
   from workbench.utils.config_manager import ConfigManager
 
-  ConfigManager().save_config("BOSCO_MODEL", "claude-sonnet-5")  # or claude-opus-5 (default)
+  ConfigManager().save_config("BOSCO_MODEL", "claude-sonnet-5")  # or claude-opus-5-5 (default), claude-opus-5
   ConfigManager().save_config("BOSCO_EFFORT", "low")             # low, medium, high (default), xhigh, max
   ```
 
@@ -72,6 +72,7 @@ conversation stays usable afterwards, so the next question works normally.
 
 ## Declined requests
 
-Claude's safety checks can decline a request. The REPL tells the user and drops
-that whole turn, so you have no record of it. If they ask what happened, say
+Claude's safety checks can decline a request. The REPL retries that turn once on
+Claude Opus 5; if that declines too, it tells the user and drops that whole turn,
+so you have no record of it. If they ask what happened, say
 that's why you can't see it, and ask them to tell you what they were doing.

@@ -78,7 +78,7 @@ for you, or set them yourself. Type `bosco` to see the current values.
 
 | Key | Values |
 |---|---|
-| `BOSCO_MODEL` | `claude-opus-5` (default), `claude-sonnet-5` |
+| `BOSCO_MODEL` | `claude-opus-5-5` (default), `claude-opus-5`, `claude-sonnet-5` |
 | `BOSCO_EFFORT` | `low`, `medium`, `high` (default), `xhigh`, `max` |
 
 Effort is thinking depth per turn, not reply length. It's the main speed lever:
@@ -89,9 +89,10 @@ mode there is no config file, so a change Bosco makes lasts only for that sessio
 **Ctrl-C** interrupts at any point, mid-thought or mid-query. The conversation
 stays usable, so the next question works normally.
 
-**Declined requests:** Claude's safety checks can decline a request. Bosco tells
-you and drops that turn from the conversation, so the next question works
-normally. Anything already done in that turn, such as variables it created, stays
+**Declined requests:** Claude's safety checks can decline a request. Bosco
+retries that turn once on Claude Opus 5, whose checks are narrower. If that
+declines too, Bosco tells you and drops the turn from the conversation, so the
+next question works normally. Anything already done in that turn, such as variables it created, stays
 in your session.
 
 ## Sessions

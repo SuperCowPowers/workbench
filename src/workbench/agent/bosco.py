@@ -61,7 +61,7 @@ _anthropic_log.handlers = [_RetryNotifier()]
 MAX_TOKENS = 8000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 
-# Per-user knobs in the Workbench config, read every round so a saved change applies at once.
+# Per-user knobs in the Workbench config; a saved change applies from the next turn.
 MODEL_KEY = "BOSCO_MODEL"
 EFFORT_KEY = "BOSCO_EFFORT"
 
@@ -71,11 +71,20 @@ EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 DEFAULT_EFFORT = "high"
 
 # USD per token by model (list pricing), and the models BOSCO_MODEL accepts. Cache
-# write is the 1.25x (5-minute ephemeral) rate we use; read is 0.1x input.
+# write is the 1.25x (5-minute ephemeral) rate we use.
 _RATES = {
+    "claude-opus-5-5": {"input": 4.0e-6, "output": 20.0e-6, "cache_read": 0.2e-6, "cache_write": 5.0e-6},
     "claude-opus-5": {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write": 6.25e-6},
     "claude-sonnet-5": {"input": 2.0e-6, "output": 10.0e-6, "cache_read": 0.2e-6, "cache_write": 2.5e-6},
 }
+
+# A declined turn is retried once on this model, which then serves the rest of that
+# turn. Opus 5.5 runs a broader set of safety classifiers than Opus 5, which can
+# flag legitimate drug-discovery work.
+REFUSAL_FALLBACK = "claude-opus-5"
+
+# Content blocks bound to the exact conversation before them (see _trim_history).
+_THINKING_BLOCKS = ("thinking", "redacted_thinking")
 
 # Every round of a turn resends the whole conversation, so an unbounded history
 # costs quadratically over a session. Roughly 50k tokens.
@@ -187,12 +196,22 @@ def _history_chars() -> int:
     return sum(len(str(m["content"])) for m in _history)
 
 
+def _without_thinking(message: dict) -> dict:
+    """The message minus its thinking blocks (prompt strings and tool results have none)."""
+    if isinstance(message["content"], str):
+        return message
+    return {**message, "content": [b for b in message["content"] if getattr(b, "type", None) not in _THINKING_BLOCKS]}
+
+
 def _trim_history() -> None:
     """Drop the oldest exchanges once the conversation gets large.
 
     Only cuts at a real user prompt, so a tool_use block is never separated from
-    its tool_result -- the API rejects that pairing.
+    its tool_result -- the API rejects that pairing. A cut also strips every thinking
+    block: each is bound to the exact conversation before it, so one replayed after
+    a cut is rejected (400) on accounts that enforce the binding.
     """
+    trimmed = False
     while _history_chars() > MAX_HISTORY_CHARS:
         cut = next(
             (
@@ -203,8 +222,12 @@ def _trim_history() -> None:
             None,
         )
         if cut is None:
-            return  # nothing safe to drop
+            break  # nothing safe to drop
         del _history[:cut]
+        trimmed = True
+    if trimmed:
+        # A message that held only thinking would go out empty, which the API rejects
+        _history[:] = [m for m in map(_without_thinking, _history) if m["content"]]
 
 
 def _cached_messages() -> list:
@@ -274,23 +297,33 @@ def _refusal_note(details) -> str:
     return f"{declined} It was dropped from the conversation, so you can keep going."
 
 
+def _send(model: str):
+    """One round of the conversation on the given model, with its usage tracked."""
+    with _spinner("🐶  Bosco is thinking:"):
+        response = message_stream(
+            on_phase=_show_phase,
+            model=model_id(model),
+            max_tokens=MAX_TOKENS,
+            output_config={"effort": _effort()},
+            system=_system_prompt(),
+            tools=TOOL_SCHEMAS,
+            messages=_cached_messages(),
+        )
+    _track_usage(response.usage, model)
+    return response
+
+
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
+    model = _model()
     for _ in range(MAX_TOOL_ROUNDS):
-        model = _model()
-        with _spinner("🐶  Bosco is thinking:"):
-            response = message_stream(
-                on_phase=_show_phase,
-                model=model_id(model),
-                max_tokens=MAX_TOKENS,
-                output_config={"effort": _effort()},
-                system=_system_prompt(),
-                tools=TOOL_SCHEMAS,
-                messages=_cached_messages(),
-            )
-        _track_usage(response.usage, model)
+        response = _send(model)
 
-        # Content is empty or partial here, so none of it is shown or kept.
+        # Content is empty or partial on a refusal, so none of it is shown or kept.
+        if response.stop_reason == "refusal" and model != REFUSAL_FALLBACK:
+            cprint("darkyellow", f"{model} declined this request; retrying on {REFUSAL_FALLBACK}.")
+            model = REFUSAL_FALLBACK
+            response = _send(model)
         if response.stop_reason == "refusal":
             raise _Refused(_refusal_note(response.stop_details))
 

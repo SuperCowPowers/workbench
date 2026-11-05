@@ -33,6 +33,7 @@ log = logging.getLogger("workbench")
 # Preference order: the agent uses the first one available.
 # Current-generation models only -- subscribe these in the Bedrock playground.
 CLAUDE_MODELS: List[str] = [
+    "claude-opus-5-5",
     "claude-opus-5",
     "claude-opus-4-8",
 ]
