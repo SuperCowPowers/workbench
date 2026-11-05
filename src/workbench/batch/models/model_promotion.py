@@ -2,10 +2,12 @@
 
 Picks the best challenger for a champion endpoint and, if it beats the incumbent,
 freezes it to a dated copy and deploys it onto the endpoint. The challengers (the
-``-dt`` models) and the champion ``endpoint_name`` come from PipelineMeta.
-A model with ``deprecated`` set in its workbench_meta never takes the endpoint, and a
-deprecated incumbent forfeits it to the best challenger.
-Every run ends by publishing the contest results to Reports() at /contests/<endpoint>.
+``-dt`` models) and the champion ``endpoint_name`` come from PipelineMeta, as does the
+``no_promote`` subset: those challengers are ranked and reported but never take the
+endpoint, so the best *promotable* challenger is the one that faces the incumbent. A
+model with ``deprecated`` set in its workbench_meta is treated the same way, and a
+deprecated incumbent forfeits the endpoint.
+Each promotion decision publishes the contest results to Reports() at /contests/<endpoint>.
 
 This is a deliberately simple reference: no thresholds, notifications, or config --
 clients override it with a ``plugin:`` script for custom promotion policy.
@@ -46,11 +48,11 @@ def beats(challenger: dict, incumbent: dict | None, is_classifier: bool) -> bool
     return challenger["rmse"] < incumbent["rmse"] and challenger["mae"] < incumbent["mae"]
 
 
-def publish_contest_report(endpoint_name: str, champion: Model, challengers: list):
+def publish_contest_report(endpoint_name: str, champion: Model | None, challengers: list, no_promote: list):
     """Publish the contest results to Reports() at /contests/<endpoint>. Never raises:
-    the promotion has already succeeded, so a report failure is logged and swallowed."""
+    the promotion decision has already been made, so a report failure is logged and swallowed."""
     try:
-        report = contest_report(champion, challengers, endpoint_name)
+        report = contest_report(champion, challengers, endpoint_name, no_promote=no_promote)
         if report is not None:
             Reports().upsert(f"/contests/{endpoint_name}", report)
             log.important(f"Published contest report /contests/{endpoint_name}")
@@ -62,43 +64,49 @@ def main():
     pm = PipelineMeta()
     endpoint_name = pm.endpoint_name
 
-    # Score each challenger; drop deprecated ones and any without full_cross_fold metrics
+    # Score each challenger; drop any without full_cross_fold metrics
     scored = []
     for name in pm.challengers:
         model = Model(name)
-        if model.workbench_meta().get("deprecated"):
-            log.warning(f"{name} is deprecated, skipping")
-            continue
         metrics = primary_metrics(model)
         if metrics is None:
             log.warning(f"No full_cross_fold metrics for {name}, skipping")
             continue
         scored.append((model, metrics))
     if not scored:
-        log.error("No eligible challengers with metrics; nothing to promote")
+        log.error("No challengers with metrics; nothing to promote")
         return
 
-    # Rank challengers (classifier: highest f1; regressor: lowest rmse) and take the best
+    # Rank challengers (classifier: highest f1; regressor: lowest rmse)
     is_classifier = scored[0][0].model_type == ModelType.CLASSIFIER
     scored.sort(key=(lambda s: -s[1]["f1"]) if is_classifier else (lambda s: s[1]["rmse"]))
-    winner, winner_metrics = scored[0]
-    log.important(f"Best challenger for {endpoint_name}: {winner.name} {winner_metrics}")
+    challengers = [model for model, _ in scored]
+    no_promote = set(pm.no_promote)
 
-    # Compare against the model currently serving the champion endpoint (a deprecated
-    # incumbent has no metrics, so the best challenger takes the endpoint)
+    # The model currently serving the champion endpoint (a deprecated one forfeits it)
     end = Endpoint(endpoint_name)
     dethroned = end.get_input() if end.exists() else None
-    incumbent_metrics = None
-    if dethroned and dethroned != "unknown" and Model(dethroned).exists():
-        if Model(dethroned).workbench_meta().get("deprecated"):
-            log.important(f"Incumbent {dethroned} is deprecated; it forfeits {endpoint_name}")
-        else:
-            incumbent_metrics = primary_metrics(Model(dethroned))
+    incumbent = Model(dethroned) if dethroned and dethroned != "unknown" and Model(dethroned).exists() else None
+    if incumbent and incumbent.workbench_meta().get("deprecated"):
+        log.important(f"Incumbent {dethroned} is deprecated; it forfeits {endpoint_name}")
+        incumbent = None
+    incumbent_metrics = primary_metrics(incumbent) if incumbent else None
 
-    challengers = [model for model, _ in scored]
+    # The best *promotable* challenger takes on the incumbent; no_promote and deprecated
+    # models are ranked and reported, but can never take the endpoint.
+    eligible = [s for s in scored if s[0].name not in no_promote and not s[0].workbench_meta().get("deprecated")]
+    if not eligible:
+        log.important(f"Every challenger for {endpoint_name} is no_promote or deprecated; champion stays")
+        publish_contest_report(endpoint_name, incumbent, challengers, pm.no_promote)
+        return
+    winner, winner_metrics = eligible[0]
+    if winner is not scored[0][0]:
+        log.important(f"Top-ranked {scored[0][0].name} is not promotable; best promotable is {winner.name}")
+    log.important(f"Best challenger for {endpoint_name}: {winner.name} {winner_metrics}")
+
     if not beats(winner_metrics, incumbent_metrics, is_classifier):
         log.important(f"Champion stays: {winner.name} does not beat incumbent {incumbent_metrics}")
-        publish_contest_report(endpoint_name, Model(dethroned), challengers)
+        publish_contest_report(endpoint_name, incumbent, challengers, pm.no_promote)
         return
 
     # Promote: freeze a dated copy of the winner, deploy it onto the champion endpoint,
@@ -116,7 +124,7 @@ def main():
         log.important(f"Retiring dethroned model {dethroned}")
         Model(dethroned).delete()
 
-    publish_contest_report(endpoint_name, frozen, challengers)
+    publish_contest_report(endpoint_name, frozen, challengers, pm.no_promote)
 
 
 if __name__ == "__main__":
