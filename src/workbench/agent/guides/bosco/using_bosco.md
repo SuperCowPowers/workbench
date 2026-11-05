@@ -1,9 +1,9 @@
 # Using Bosco
 
-> how to interact with Bosco: routing, multi-line, Shift+Enter, model and effort settings, interrupting
+> how to interact with Bosco: routing, multi-line, Shift+Enter, model and effort settings, which model you are, interrupting
 
-Read this when the user asks how to interact with you, or to change your model
-or effort.
+Read this when the user asks how to interact with you, which model you are, or
+to change your model or effort.
 
 ## Two ways in
 
@@ -64,6 +64,10 @@ setting, and it then works in every terminal program, not just here.
   data. At low effort Sonnet matches Opus's speed at about half the cost. Offer
   Sonnet at low effort when someone wants snappy turns, and suggest raising effort
   for build work or anything that should be verified against real data.
+
+- **Which model you are** — your system prompt doesn't say, so don't answer from
+  memory. Read it from the config: `ConfigManager().get_config("BOSCO_MODEL")`;
+  unset means `claude-opus-5-5`.
 
 ## Interrupting
 

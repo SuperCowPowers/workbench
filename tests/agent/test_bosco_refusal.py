@@ -155,3 +155,14 @@ def test_cut_off_round_keeps_the_rounds_before_it(world):
     bosco_mod._ask("the question")
     assert [m["role"] for m in world.history] == ["user", "assistant", "user"]
     assert world.recorded == ["the question"]
+
+
+def test_model_change_mid_turn_applies_next_round(world, monkeypatch):
+    def switch_model(name, inputs, namespace):
+        world.model = "claude-sonnet-5"
+        return "saved"
+
+    monkeypatch.setattr(bosco_mod, "dispatch", switch_model)
+    world.responses = [reply("tool_use", tool_call()), reply("end_turn", text("switched"))]
+    bosco_mod._ask("switch to sonnet")
+    assert world.models == [PREFERRED, "claude-sonnet-5"]

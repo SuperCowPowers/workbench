@@ -63,7 +63,7 @@ _anthropic_log.handlers = [_RetryNotifier()]
 MAX_TOKENS = 32000
 MAX_TOOL_ROUNDS = 25  # bounds a single turn, not the conversation
 
-# Per-user knobs in the Workbench config; a saved change applies from the next turn.
+# Per-user knobs in the Workbench config, read every round so a saved change applies at once.
 MODEL_KEY = "BOSCO_MODEL"
 EFFORT_KEY = "BOSCO_EFFORT"
 
@@ -320,15 +320,16 @@ def _send(model: str):
 
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
-    model = _model()
+    fell_back = False
     for _ in range(MAX_TOOL_ROUNDS):
+        model = REFUSAL_FALLBACK if fell_back else _model()
         response = _send(model)
 
         # Content is empty or partial on a refusal, so none of it is shown or kept.
         if response.stop_reason == "refusal" and model != REFUSAL_FALLBACK:
             cprint("darkyellow", f"{model} declined this request; retrying on {REFUSAL_FALLBACK}.")
-            model = REFUSAL_FALLBACK
-            response = _send(model)
+            fell_back = True
+            response = _send(REFUSAL_FALLBACK)
         if response.stop_reason == "refusal":
             raise _Refused(_refusal_note(response.stop_details))
 
