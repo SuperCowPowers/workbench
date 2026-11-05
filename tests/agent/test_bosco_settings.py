@@ -57,15 +57,20 @@ def test_every_effort_level_is_accepted(config):
         assert bosco_mod._effort() == level
 
 
-def test_default_model_has_a_rate(config):
-    """An unpriced default would raise a KeyError in cost tracking on every turn."""
+def test_default_and_fallback_models_have_a_rate(config):
+    """An unpriced model would raise a KeyError in cost tracking on every turn it runs."""
     assert bosco_mod.CLAUDE_MODELS[0] in bosco_mod._RATES
+    assert bosco_mod.REFUSAL_FALLBACK in bosco_mod._RATES
 
 
-def test_usage_is_priced_at_the_model_that_ran(fresh_usage):
+@pytest.mark.parametrize(
+    "provider, factor", [("anthropic", 1.0), ("trial", 1.0), ("bedrock", bosco_mod.BEDROCK_PRICE_FACTOR)]
+)
+def test_usage_is_priced_at_the_model_and_provider_that_ran(fresh_usage, monkeypatch, provider, factor):
+    monkeypatch.setattr(bosco_mod, "llm_provider", lambda: provider)
     bosco_mod._track_usage(USAGE, SONNET)
     rates = bosco_mod._RATES[SONNET]
-    assert fresh_usage["cost_usd"] == round(1000 * rates["input"] + 100 * rates["output"], 4)
+    assert fresh_usage["cost_usd"] == round(factor * (1000 * rates["input"] + 100 * rates["output"]), 4)
 
 
 def test_turn_sends_the_configured_settings(config, fresh_usage, monkeypatch):

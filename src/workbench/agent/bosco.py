@@ -17,7 +17,7 @@ from contextlib import contextmanager
 # Workbench Imports
 from workbench.utils.repl_utils import colors, cprint, Spinner, render_markdown
 from workbench.utils.log_utils import log_level
-from workbench.utils.llm_utils import message_stream, model_id, CLAUDE_MODELS
+from workbench.utils.llm_utils import message_stream, model_id, llm_provider, BEDROCK_PRICE_FACTOR, CLAUDE_MODELS
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.job_tracker import job_updates
 from workbench.utils.sso_utils import with_sso_renewal
@@ -70,8 +70,8 @@ EFFORT_KEY = "BOSCO_EFFORT"
 EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 DEFAULT_EFFORT = "high"
 
-# USD per token by model (list pricing), and the models BOSCO_MODEL accepts. Cache
-# write is the 1.25x (5-minute ephemeral) rate we use.
+# USD per token by model (Anthropic list pricing; Bedrock adds BEDROCK_PRICE_FACTOR),
+# and the models BOSCO_MODEL accepts. Cache write is the 1.25x (5-minute ephemeral) rate we use.
 _RATES = {
     "claude-opus-5-5": {"input": 4.0e-6, "output": 20.0e-6, "cache_read": 0.2e-6, "cache_write": 5.0e-6},
     "claude-opus-5": {"input": 5.0e-6, "output": 25.0e-6, "cache_read": 0.5e-6, "cache_write": 6.25e-6},
@@ -263,10 +263,12 @@ def _track_usage(usage, model: str) -> None:
         "cache_write": getattr(usage, "cache_creation_input_tokens", 0) or 0,
     }
     rates = _RATES[model]
+    factor = BEDROCK_PRICE_FACTOR if llm_provider() == "bedrock" else 1.0
     for key, n in counts.items():
         bosco.usage[key] += n
     bosco.usage["calls"] += 1
-    bosco.usage["cost_usd"] = round(bosco.usage["cost_usd"] + sum(counts[k] * rates[k] for k in counts), 4)
+    cost = factor * sum(counts[k] * rates[k] for k in counts)
+    bosco.usage["cost_usd"] = round(bosco.usage["cost_usd"] + cost, 4)
 
 
 def _phase_label(kind: str, tool_name: str) -> str:

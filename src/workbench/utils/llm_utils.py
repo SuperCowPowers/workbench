@@ -41,6 +41,9 @@ CLAUDE_MODELS: List[str] = [
 # Bedrock's inference profile prefix; the direct API takes the bare name above.
 BEDROCK_PREFIX = "us.anthropic."
 
+# Bedrock bills `us.` profiles at 1.1x Anthropic list price (`global.` bills at list).
+BEDROCK_PRICE_FACTOR = 1.1
+
 # Config keys for the trial lane: the SuperCowPowers key and the proxy it talks to.
 LLM_KEY = "WORKBENCH_LLM_KEY"
 LLM_URL = "WORKBENCH_LLM_URL"
