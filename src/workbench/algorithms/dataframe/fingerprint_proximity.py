@@ -421,6 +421,9 @@ class FingerprintProximity(Proximity):
         # matrix and query_ids stay aligned.
         smiles_col = next((c for c in ("smiles", "SMILES") if c in query_df.columns), None)
         if smiles_col is not None and self.fingerprint_column not in query_df.columns:
+            # Label rows by input position before dropping any, so surviving rows keep their place
+            if "query_id" not in query_df.columns:
+                query_df = query_df.assign(query_id=np.arange(len(query_df)))
             from rdkit import Chem
 
             valid = query_df[smiles_col].apply(lambda s: Chem.MolFromSmiles(s) is not None)

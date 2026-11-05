@@ -44,3 +44,20 @@ def test_neighbor_count_matches_request_when_set_is_large_enough():
     result = prox.neighbors("c0", n_neighbors=4)
 
     assert len(result) == 4
+
+
+def test_invalid_query_smiles_keeps_other_rows_in_place():
+    """A dropped unparseable SMILES leaves every other query labeled by its input position."""
+    ref = pd.DataFrame(
+        {
+            "id": [f"r{i}" for i in range(6)],
+            "smiles": ["CCO", "CCCO", "CCN", "c1ccccc1", "Cc1ccccc1", "Oc1ccccc1"],
+        }
+    )
+    prox = FingerprintProximity(ref, id_column="id")
+    valid = prox.neighbors_from_query_df(pd.DataFrame({"smiles": ["CCO", "c1ccccc1"]}), n_neighbors=2)
+    mixed = prox.neighbors_from_query_df(pd.DataFrame({"smiles": ["CCO", "not_a_smiles", "c1ccccc1"]}), n_neighbors=2)
+
+    assert set(mixed["query_id"]) == {0, 2}
+    benzene = valid[valid["query_id"] == 1]["neighbor_id"].tolist()
+    assert mixed[mixed["query_id"] == 2]["neighbor_id"].tolist() == benzene
