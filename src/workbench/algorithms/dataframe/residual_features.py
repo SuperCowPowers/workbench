@@ -99,7 +99,7 @@ class ResidualFeatures:
         self._distance_col = "similarity" if hasattr(prox, "_add_similarity_column") else "distance"
         self._label_coverage = float(prox.df[self.target].notna().mean())
 
-    def _request_count(self, k: int) -> int:
+    def request_count(self, k: int) -> int:
         """Neighbors to pull so that ~k of them carry a label for this target."""
         if self._label_coverage <= 0.0:
             return k
@@ -135,7 +135,7 @@ class ResidualFeatures:
         """
         ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
 
-        nbrs = self.prox.neighbors(ids, n_neighbors=self._request_count(k), include_self=False)
+        nbrs = self.prox.neighbors(ids, n_neighbors=self.request_count(k), include_self=False)
 
         return self._aggregate(
             nbrs,
@@ -152,6 +152,7 @@ class ResidualFeatures:
         predictions: Optional[Union[np.ndarray, List[float]]] = None,
         k: int = 10,
         training_only: bool = False,
+        nbrs: Optional[pd.DataFrame] = None,
     ) -> pd.DataFrame:
         """Compute residual features for novel queries (not in the reference set).
 
@@ -163,14 +164,20 @@ class ResidualFeatures:
             predictions: Optional model predictions for these queries (same order as rows).
             k: Number of nearest neighbors to consider (default: 10).
             training_only: If True, restrict neighbors to rows with `in_model=True`.
+            nbrs: Neighbor frame for ``query_df`` already fetched at ``request_count(k)``
+                or deeper, so several targets can share one lookup. Each query's list is
+                cut back to this target's own request count.
 
         Returns:
             DataFrame indexed by query_id (or positional index) with columns:
                 knn_distance, knn_target_mean, knn_target_std, knn_target_count,
                 [local_pred_gap]
         """
-        # Novel queries are never self-matches; just ask for k neighbors directly
-        nbrs = self.prox.neighbors_from_query_df(query_df, n_neighbors=self._request_count(k))
+        n_request = self.request_count(k)
+        if nbrs is None:
+            nbrs = self.prox.neighbors_from_query_df(query_df, n_neighbors=n_request)
+        else:
+            nbrs = nbrs.groupby("query_id", group_keys=False).head(n_request)
 
         if "query_id" in query_df.columns:
             query_ids = query_df["query_id"].tolist()

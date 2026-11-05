@@ -307,12 +307,52 @@ class UQModelV1:
             indexed by query id (or query_id / positional index for novel queries).
         """
         target = self._resolve_target(target)
-        if target not in self.error_models:
+        return self.predict_targets(query, {target: predictions}, {target: prediction_std})[target]
+
+    def predict_targets(
+        self,
+        query: Union[List, pd.Series, np.ndarray, pd.DataFrame],
+        predictions: Dict[str, Union[np.ndarray, pd.Series]],
+        prediction_std: Dict[str, Union[np.ndarray, pd.Series]],
+    ) -> Dict[str, pd.DataFrame]:
+        """``predict()`` for several targets of one batch, sharing a single neighbor lookup.
+
+        A novel-query batch is fingerprinted and searched once, at the deepest request
+        any of the targets needs; each target then reads its own nearest slice of that
+        list. ID queries look up neighbors per target.
+
+        Args:
+            query: IDs already in the proximity reference, or a DataFrame of novel inputs.
+            predictions: ``{target: predictions}``, each the same length as ``query``.
+            prediction_std: ``{target: ensemble std}``, keyed like ``predictions``.
+
+        Returns:
+            ``{target: DataFrame}`` with the columns ``predict()`` returns, in the key
+            order of ``predictions``.
+        """
+        missing = [t for t in predictions if t not in self.error_models]
+        if missing:
             raise RuntimeError(
-                f"UQModelV1 has no fitted error model for '{target}' "
+                f"UQModelV1 has no fitted error model for {missing} "
                 f"(fitted: {sorted(self.error_models)}). Call .fit(..., target=...) or .load(...)."
             )
 
+        nbrs = None
+        if isinstance(query, pd.DataFrame) and len(query):
+            n_request = max(self._features_for(t).request_count(self.k) for t in predictions)
+            nbrs = self.prox.neighbors_from_query_df(query, n_neighbors=n_request)
+
+        return {t: self._predict_one(query, predictions[t], prediction_std[t], t, nbrs) for t in predictions}
+
+    def _predict_one(
+        self,
+        query: Union[List, pd.Series, np.ndarray, pd.DataFrame],
+        predictions: Union[np.ndarray, pd.Series],
+        prediction_std: Union[np.ndarray, pd.Series],
+        target: str,
+        nbrs: Optional[pd.DataFrame],
+    ) -> pd.DataFrame:
+        """Score one target; ``nbrs`` is the shared neighbor frame for a novel-query batch."""
         predictions = np.asarray(predictions, dtype=float).ravel()
         prediction_std = np.asarray(prediction_std, dtype=float).ravel()
 
@@ -323,7 +363,9 @@ class UQModelV1:
         # Auto-dispatch
         features = self._features_for(target)
         if isinstance(query, pd.DataFrame):
-            feat = features.compute_from_query_df(query, predictions=predictions, k=self.k, training_only=False)
+            feat = features.compute_from_query_df(
+                query, predictions=predictions, k=self.k, training_only=False, nbrs=nbrs
+            )
         else:
             ids = list(query) if not isinstance(query, list) else query
             if len(predictions) != len(ids):
@@ -539,6 +581,9 @@ class UQModelV1:
             max_depth=metadata["max_depth"],
         )
         instance.error_models = joblib.load(os.path.join(model_dir, "uq_model.joblib"))
+        # Inference batches are small: joblib's per-tree thread dispatch costs more than the trees
+        for error_model in instance.error_models.values():
+            error_model.n_jobs = 1
         for target, per_target in metadata["per_target"].items():
             instance.scale_factors[target] = per_target["scale_factors"]
             instance.residual_percentiles[target] = np.asarray(per_target["residual_percentiles"])

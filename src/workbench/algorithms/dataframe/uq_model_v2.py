@@ -312,35 +312,67 @@ class UQModelV2:
                 distance_percentile, variance_percentile,
                 q_025, q_05, q_10, q_16, q_25, q_50, q_75, q_84, q_90, q_95, q_975
         """
+        target_col = self._resolve_target(target)
+        return self.predict_targets(query, {target_col: predictions}, {target_col: prediction_std})[target_col]
+
+    def predict_targets(
+        self,
+        query: Union[List, pd.Series, np.ndarray, pd.DataFrame],
+        predictions: Dict[str, Optional[Union[np.ndarray, pd.Series]]],
+        prediction_std: Optional[Dict[str, Optional[Union[np.ndarray, pd.Series]]]] = None,
+    ) -> Dict[str, pd.DataFrame]:
+        """``predict()`` for several targets of one batch, sharing a single neighbor lookup.
+
+        A novel-query batch is fingerprinted and searched once, at the deepest request
+        any of the targets needs; each target then reads its own nearest slice of that
+        list. ID queries look up neighbors per target.
+
+        Args:
+            query: IDs already in the proximity reference set, or a DataFrame of novel queries.
+            predictions: ``{target: predictions}``. Only the keys are used — they name the
+                targets to score. Accepted in this shape for V0/V1 compatibility.
+            prediction_std: Ignored. Accepted for V0/V1 compatibility.
+
+        Returns:
+            ``{target: DataFrame}`` with the columns ``predict()`` returns, in the key
+            order of ``predictions``.
+        """
         if self.distance_percentiles is None or not self.variance_percentiles:
             raise RuntimeError("UQModelV2 not fitted. Call .fit(...) first or .load(...).")
 
-        target_col = self._resolve_target(target)
+        targets = [self._resolve_target(t) for t in predictions]
 
         # An empty batch (e.g. every SMILES invalid) returns zero rows with the full column set
         if len(query) == 0:
-            return pd.DataFrame(columns=self._result_columns(), dtype=float)
+            return {t: pd.DataFrame(columns=self._result_columns(), dtype=float) for t in targets}
 
-        # Auto-dispatch on query type (parallel to V1.predict). Cap n_neighbors
-        # at the reference set size to avoid the proximity's broadcasting bug.
         # Capture the *expected* result identifiers so we can reindex the output
         # back to the input length even when the proximity silently drops rows
         # (e.g. unparseable SMILES). Callers do `df_val[col] = uq_out[col].values`
         # and expect len(uq_out) == len(query).
-        n_request = self._request_count(target_col)
         if isinstance(query, pd.DataFrame):
-            raw_nbrs = self.prox.neighbors_from_query_df(query, n_neighbors=n_request)
             query_col = "query_id"
             if "query_id" in query.columns:
                 expected_index = list(query["query_id"].values)
             else:
                 expected_index = list(range(len(query)))
+            n_shared = max(self._request_count(t) for t in targets)
+            shared = self.prox.neighbors_from_query_df(query, n_neighbors=n_shared)
+            raw_by_target = {
+                t: shared.groupby(query_col, group_keys=False).head(self._request_count(t)) for t in targets
+            }
         else:
             ids = list(query) if not isinstance(query, list) else query
-            raw_nbrs = self.prox.neighbors(ids, n_neighbors=n_request, include_self=False)
             query_col = self.prox.id_column
             expected_index = ids
+            raw_by_target = {
+                t: self.prox.neighbors(ids, n_neighbors=self._request_count(t), include_self=False) for t in targets
+            }
 
+        return {t: self._score(raw_by_target[t], query_col, expected_index, t) for t in targets}
+
+    def _score(self, raw_nbrs: pd.DataFrame, query_col: str, expected_index: list, target_col: str) -> pd.DataFrame:
+        """V2 outputs for one target from its raw neighbor frame."""
         if raw_nbrs.empty:
             # Nothing to score against — return an all-NaN frame matching the input
             return pd.DataFrame(

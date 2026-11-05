@@ -368,6 +368,19 @@ class UQModelV0:
         existing_q = [c for c in quantile_cols if c in result.columns]
         return result[["expected_residual", "confidence"] + existing_q]
 
+    def predict_targets(
+        self,
+        query: Optional[Union[List, pd.Series, np.ndarray, pd.DataFrame]],
+        predictions: Dict[str, Union[np.ndarray, pd.Series]],
+        prediction_std: Dict[str, Union[np.ndarray, pd.Series]],
+    ) -> Dict[str, pd.DataFrame]:
+        """``predict()`` for several targets of one batch, keyed like ``predictions``.
+
+        Signature-compatible with :meth:`UQModelV1.predict_targets`; v0 has no
+        neighbor lookup to share, so this is a loop over ``predict()``.
+        """
+        return {t: self.predict(query, predictions[t], prediction_std[t], target=t) for t in predictions}
+
     # ------------------------------------------------------------------
     # Persistence
     # ------------------------------------------------------------------

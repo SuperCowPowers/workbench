@@ -300,7 +300,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = df[f"{target_columns[0]}_pred"]
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
-        # UQModel UQ, scored per target off the shared proximity index. Each target
+        # UQModel UQ, scored per target off one shared neighbor lookup. Each target
         # gets {target}_confidence / {target}_expected_residual / {target}_q_*, and the
         # primary is aliased to the unprefixed names alongside prediction/prediction_std.
         uq_model = model_dict.get("uq_model")
@@ -308,13 +308,12 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             # V1/V2 ask their proximity backend what to send; V0 takes None.
             query_df = uq_query_df(uq_model, df.loc[valid_mask])
             if query_df is not None or uq_model.UQ_VERSION == "v0":
-                for tc in target_columns:
-                    uq_out = uq_model.predict(
-                        query_df,
-                        df.loc[valid_mask, f"{tc}_pred"].values,
-                        df.loc[valid_mask, f"{tc}_pred_std"].values,
-                        target=tc,
-                    )
+                uq_outs = uq_model.predict_targets(
+                    query_df,
+                    {tc: df.loc[valid_mask, f"{tc}_pred"].values for tc in target_columns},
+                    {tc: df.loc[valid_mask, f"{tc}_pred_std"].values for tc in target_columns},
+                )
+                for tc, uq_out in uq_outs.items():
                     for col in uq_out.columns:
                         df[f"{tc}_{col}"] = np.nan
                         df.loc[valid_mask, f"{tc}_{col}"] = uq_out[col].values
