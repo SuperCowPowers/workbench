@@ -359,8 +359,9 @@ class FeatureSetCore(AWSArtifact):
         # sagemaker.mlops creates boto3 clients at import (needs an AWS region), so import on use
         from sagemaker.mlops.feature_store import create_athena_query
 
-        # Make the query
-        query = f'SELECT * FROM "{source_table}"'
+        # Athena promises no row order without ORDER BY, and row order decides CV fold
+        # assignment in workbench.training.splits — sort so folds reproduce across retrains.
+        query = f'SELECT * FROM "{source_table}" ORDER BY "{self.id_column}"'
         athena_query = create_athena_query(feature_group_name=self.name, session=self.sm_session)
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
