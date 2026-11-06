@@ -12,7 +12,7 @@ set exercises ADMET-curation tag derivation across composition, structure,
 physchem, liability, and curation categories.
 
 Output:
-    data/public_data/output/reference_compounds/tagging.csv
+    data/public_data/output/comp_chem/reference_compounds/tagging.csv
 
 Publish:
     python data/public_data/build_tagging_reference.py

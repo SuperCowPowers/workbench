@@ -42,7 +42,7 @@ comp_chem/
     pxr/{training,testing}/
     asap/{training,testing}/         admet, potency
     octant_cyp/                      inhibition, reactivity, mass_spec_response
-  reference_compounds/               curated fixtures backing Workbench tests
+  reference_compounds/               curated fixtures backing Workbench tests (source JSON in ./reference_compounds/)
   synthetic/multi_task/              controlled multi-task experiment set
 ```
 
@@ -86,6 +86,8 @@ pip install -r requirements.txt
 python pull_logp_data.py            # -> output/comp_chem/logp/
 python pull_logd_data.py            # -> output/comp_chem/logd/
 python pull_openadmet_data.py       # -> output/comp_chem/openadmet/
+python build_reference_compounds.py # -> output/comp_chem/reference_compounds/ (from reference_compounds/*.json)
+python build_tagging_reference.py   # -> output/comp_chem/reference_compounds/tagging.csv
 
 # Push to S3 — maintainer-only, requires AWS credentials for the public bucket.
 # Dry run by default; --apply actually uploads.
@@ -97,8 +99,10 @@ AWS_PROFILE=scp_sandbox_admin python upload_data.py --apply
 off it) and merges the local `descriptions.json` into the remote one.
 
 Renames and removals need `--prune`, which treats `descriptions.json` as the
-authoritative picture of the bucket: remote keys it does not describe are
-deleted, and the remote index is replaced rather than merged. Since the index is
+authoritative picture of the bucket's CSVs: remote CSVs it does not describe are
+deleted, and the remote index is replaced rather than merged. Non-CSV keys are
+out of scope — `foundation-models/` is published by
+`scripts/admin/push_foundation_models.py` and never pruned. Since the index is
 committed and keyed by full S3 path, this stays correct no matter what the
 gitignored `output/` tree holds — `--prune` also warns about any local CSV with
 no entry, which would otherwise upload and then be pruned on the next run.

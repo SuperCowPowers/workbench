@@ -19,32 +19,6 @@
     "stereo_preserved_expected",
     "notes"
   ],
-  "description": {
-    "description": "Curated public compounds with known expected 3D molecular descriptor values. Used by the workbench feature_endpoints tests to validate the 3D descriptor pipeline (smiles-to-3d-v1). Expected ranges are intentionally wide — the purpose is to catch gross errors, not nitpick numeric accuracy.",
-    "columns": {
-      "id": "Integer row index (0 to N-1)",
-      "name": "Compound common name",
-      "smiles": "Canonical SMILES",
-      "shape_class": "Expected NPR-plot shape — 'rod', 'disc', 'sphere', or empty",
-      "npr1_min": "Expected lower bound on npr1 (null = not asserted)",
-      "npr1_max": "Expected upper bound on npr1",
-      "npr2_min": "Expected lower bound on npr2",
-      "npr2_max": "Expected upper bound on npr2",
-      "imhb_min": "Expected lower bound on pharm3d_imhb_potential (count)",
-      "imhb_max": "Expected upper bound on pharm3d_imhb_potential",
-      "axis_min": "Expected lower bound on pharm3d_molecular_axis (Angstroms, heavy atoms)",
-      "axis_max": "Expected upper bound on pharm3d_molecular_axis",
-      "nitrogen_span_min": "Expected lower bound on pharm3d_nitrogen_span (Angstroms)",
-      "nitrogen_span_max": "Expected upper bound on pharm3d_nitrogen_span",
-      "undefined_chiral_centers_expected": "Expected value of the undefined_chiral_centers column produced by standardize() — count of chiral centers in the ORIGINAL input SMILES that have no stereo flag",
-      "stereo_preserved_expected": "Expected value of desc3d_stereo_preserved — True if the input's assigned stereo should survive 3D embedding (True for compounds with no chiral centers as well)",
-      "notes": "Why this compound is in the reference table"
-    },
-    "references": [
-      "https://www.rdkit.org/docs/source/rdkit.Chem.Descriptors3D.html",
-      "https://doi.org/10.1021/acs.jmedchem.5b00911 (IMHB / chameleonicity)"
-    ]
-  },
   "compounds": [
     {
       "name": "benzene",

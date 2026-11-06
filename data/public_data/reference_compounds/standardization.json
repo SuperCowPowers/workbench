@@ -9,21 +9,6 @@
     "expected_undefined_chiral_centers",
     "notes"
   ],
-  "description": {
-    "description": "Reference compounds with known expected outputs of workbench.utils.chem_utils.mol_standardize.standardize(). Each row pairs an input SMILES with the expected standardized SMILES, extracted salt, and undefined-chiral-center count. Used as a regression gate — changes that shift any of these values are either intentional pipeline updates or bugs.",
-    "columns": {
-      "id": "Integer row index",
-      "name": "Short identifier for the test case",
-      "input_smiles": "SMILES fed to standardize()",
-      "expected_smiles": "Expected value of the 'smiles' column in standardize() output (canonical form after cleanup + salt removal + charge neutralization + tautomer canonicalization)",
-      "expected_salt": "Expected value of the 'salt' column in standardize() output; empty (None in Python, empty string in CSV) means no salt extracted",
-      "expected_undefined_chiral_centers": "Expected value of the 'undefined_chiral_centers' column — count of chiral centers in the ORIGINAL input SMILES with no stereo flag",
-      "notes": "Why this test case is in the reference set"
-    },
-    "references": [
-      "https://doi.org/10.1186/s13321-020-00456-1 (ChEMBL structure standardization pipeline)"
-    ]
-  },
   "compounds": [
     {
       "name": "sodium_acetate",

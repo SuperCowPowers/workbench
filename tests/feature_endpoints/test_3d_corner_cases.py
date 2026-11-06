@@ -7,7 +7,7 @@ gracefully — producing the expected desc3d_status without crashing.
 The reference compounds are loaded from:
     s3://workbench-public-data/comp_chem/reference_compounds/corner_cases
 
-Populated by: scripts/admin/populate_reference_compounds.py --dataset corner_cases
+Built by: data/public_data/build_reference_compounds.py --dataset corner_cases
 """
 
 import pytest

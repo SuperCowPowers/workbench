@@ -7,16 +7,6 @@
     "expected_status",
     "notes"
   ],
-  "description": {
-    "description": "Reference compounds for pipeline corner-case tests. Each row pairs an edge-case SMILES input with the expected desc3d_status value produced by the full endpoint pipeline (standardize + compute_descriptors_3d). Covers empty input, invalid parses, overly-long strings, isotopes, and unusual atoms.",
-    "columns": {
-      "id": "Integer row index",
-      "name": "Short identifier for the corner case",
-      "smiles": "Edge-case SMILES input fed to the pipeline",
-      "expected_status": "Expected value of desc3d_status after the full endpoint pipeline (standardize + compute_descriptors_3d). 'ok' means the molecule computes successfully; 'skip:empty' means it was rejected before descriptor computation.",
-      "notes": "Why this corner case is in the reference set"
-    }
-  },
   "compounds": [
     {
       "name": "empty_string",

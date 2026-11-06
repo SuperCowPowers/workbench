@@ -8,7 +8,7 @@ counts (50/300/500 by rotatable-bond tier).
 The reference compounds are loaded from:
     s3://workbench-public-data/comp_chem/reference_compounds/reference_compounds_3d
 
-Populated by: scripts/admin/populate_reference_compounds.py --dataset 3d
+Built by: data/public_data/build_reference_compounds.py --dataset 3d
 """
 
 import pandas as pd

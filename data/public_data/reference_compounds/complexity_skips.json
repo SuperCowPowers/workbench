@@ -7,16 +7,6 @@
     "expected_status",
     "notes"
   ],
-  "description": {
-    "description": "Reference compounds for 3D complexity-guard tests. Each row pairs a SMILES with the expected value of desc3d_status produced by workbench.utils.chem_utils.mol_descriptors_3d.compute_descriptors_3d, designed to exercise each specific skip path (heavy_atoms, rot_bonds, rings, ring_complexity, embed, cost) plus 'ok' controls.",
-    "columns": {
-      "id": "Integer row index",
-      "name": "Short identifier for the test case",
-      "smiles": "SMILES fed to compute_descriptors_3d",
-      "expected_status": "Expected value of the desc3d_status diagnostic column. Possible values: 'ok', 'skip:heavy_atoms', 'skip:rot_bonds', 'skip:rings', 'skip:ring_complexity', 'skip:embed', 'skip:cost'.",
-      "notes": "Why this compound exercises the named skip path"
-    }
-  },
   "compounds": [
     {
       "name": "eicosanoic_acid",

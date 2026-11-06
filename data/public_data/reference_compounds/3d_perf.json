@@ -10,19 +10,6 @@
     "stereo_centers",
     "notes"
   ],
-  "description": {
-    "description": "Public drug analogs used for 3D endpoint performance profiling. Ten compounds spanning the complexity spectrum: small NSAID baseline through large HIV protease inhibitor. Includes a bridged-bicyclic amine (maraviroc/tropane) that stresses ETKDGv3 embedding the same way many pharma-scale inputs do. Consumed by tests/feature_endpoints/test_3d_timing.py to measure per-molecule wall-clock and project async batch throughput on representative inputs.",
-    "columns": {
-      "id": "Integer row index",
-      "name": "Public drug name (lowercase)",
-      "smiles": "Canonical SMILES",
-      "heavy_atoms": "Heavy atom count",
-      "rot_bonds": "Rotatable bonds (RDKit CalcNumRotatableBonds)",
-      "bridgeheads": "Bridgehead atom count (RDKit CalcNumBridgeheadAtoms)",
-      "stereo_centers": "Specified chiral centers (no undefined)",
-      "notes": "Public name and selection rationale"
-    }
-  },
   "compounds": [
     {
       "name": "ibuprofen",

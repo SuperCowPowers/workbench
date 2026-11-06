@@ -22,8 +22,10 @@ actually upload:
     AWS_PROFILE=scp_sandbox_admin python upload_data.py --apply
 
 Renames and removals need --prune, which treats `descriptions.json` as the
-authoritative picture of the bucket: remote keys it does not describe are
-deleted, and the remote index is replaced rather than merged. It is keyed by
+authoritative picture of the bucket's CSVs: remote CSVs it does not describe are
+deleted, and the remote index is replaced rather than merged. Non-CSV keys
+(foundation-models/, published by scripts/admin/push_foundation_models.py) are
+never touched. It is keyed by
 full S3 path and is committed, so it stays correct regardless of what the
 gitignored output/ tree happens to hold.
 
@@ -116,11 +118,13 @@ def upload_csvs(dry_run: bool) -> list[str]:
 
 
 def prune_remote(dry_run: bool) -> list[str]:
-    """Delete remote keys that descriptions.json does not describe.
+    """Delete remote CSVs that descriptions.json does not describe.
 
     descriptions.json is the committed index and is keyed by full S3 path, so it
-    is the authority on what belongs in the bucket -- unlike output/, which is
-    gitignored and may hold only the subset a given maintainer pulled.
+    is the authority on which CSVs belong in the bucket -- unlike output/, which is
+    gitignored and may hold only the subset a given maintainer pulled. Only CSVs
+    are in scope: other keys have their own publisher (foundation-models/ is
+    scripts/admin/push_foundation_models.py).
     """
     if not LOCAL_DESCRIPTIONS.exists():
         raise SystemExit(f"--prune needs the index at {LOCAL_DESCRIPTIONS}; refusing to prune without it")
@@ -138,7 +142,7 @@ def prune_remote(dry_run: bool) -> list[str]:
     for page in s3_anon.get_paginator("list_objects_v2").paginate(Bucket=BUCKET):
         for obj in page.get("Contents", []):
             key = obj["Key"]
-            if obj["Size"] == 0 or key == DESCRIPTIONS_KEY or key in described:
+            if obj["Size"] == 0 or not key.endswith(".csv") or key in described:
                 continue
             stale.append(key)
 
@@ -218,7 +222,7 @@ def main():
     parser.add_argument(
         "--prune",
         action="store_true",
-        help="Treat descriptions.json as authoritative: delete remote keys it does not describe "
+        help="Treat descriptions.json as authoritative: delete remote CSVs it does not describe "
         "and replace the remote index outright rather than merging.",
     )
     args = parser.parse_args()

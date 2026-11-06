@@ -7,7 +7,7 @@ pipeline and asserts every expected value matches.
 The reference compounds are loaded from:
     s3://workbench-public-data/comp_chem/reference_compounds/standardization
 
-Populated by: scripts/admin/populate_reference_compounds.py --dataset standardization
+Built by: data/public_data/build_reference_compounds.py --dataset standardization
 """
 
 import pandas as pd

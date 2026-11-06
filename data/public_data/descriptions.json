@@ -1626,7 +1626,7 @@
       "expected_status": "Status the 3D endpoint must return (skip reason)",
       "notes": "What this case is testing"
     },
-    "num_compounds": 11,
+    "num_compounds": 12,
     "license": "MIT",
     "license_note": "Curated by Workbench as test fixtures; released under the Workbench license.",
     "references": []

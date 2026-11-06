@@ -31,9 +31,8 @@ class PublicData:
     # Public bucket
     BUCKET = "workbench-public-data"
 
-    # Dataset file extensions and the S3 keys that hold metadata rather than datasets
-    EXTENSIONS = (".parquet", ".csv", ".json")
-    METADATA_KEYS = ("descriptions.json",)
+    # Dataset file extensions; other keys (descriptions.json, foundation-models/*) aren't datasets
+    EXTENSIONS = (".parquet", ".csv")
 
     def __init__(self):
         """PublicData Init Method"""
@@ -114,14 +113,13 @@ class PublicData:
         return None
 
     def _dataset_objects(self) -> list:
-        """Yield the S3 objects that hold datasets (skipping empty keys and metadata)."""
+        """Return the S3 objects that hold datasets (non-empty .parquet/.csv keys)."""
         objects = []
         paginator = self.s3_client.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=self.BUCKET):
             for obj in page.get("Contents", []):
-                if obj["Size"] == 0 or obj["Key"] in self.METADATA_KEYS:
-                    continue
-                objects.append(obj)
+                if obj["Size"] > 0 and obj["Key"].endswith(self.EXTENSIONS):
+                    objects.append(obj)
         return objects
 
     @classmethod
