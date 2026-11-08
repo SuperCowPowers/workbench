@@ -1,16 +1,17 @@
 """Endpoint: In-process inference against a locally trained model."""
 
 import glob
-import importlib.util
-import json
 import os
+import subprocess
 import sys
+import tempfile
 from typing import Union
 
 import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifact import Artifact
+from workbench.local import inference_runner
 from workbench.local.local_artifact import LocalArtifact
 from workbench.local.model import Model
 from workbench.local import storage
@@ -20,7 +21,9 @@ class Endpoint(LocalArtifact):
     """Endpoint: Workbench Local Endpoint Class
 
     Loads the model bundle once with `model_fn` and calls `predict_fn` per
-    inference, which are the same functions the serving container calls.
+    inference, which are the same functions the serving container calls. An
+    XGBoost model is served from a child process instead when torch is already
+    imported here, since the two OpenMP runtimes cannot share a process.
 
     Common Usage:
         ```python
@@ -93,19 +96,11 @@ class Endpoint(LocalArtifact):
         Returns:
             pd.DataFrame: The predictions
         """
-        module = self._load_inference_module()
-        bundle = self._load_model_bundle()
-
-        # predict_fn resolves its own supporting files through SM_MODEL_DIR
-        previous = os.environ.get("SM_MODEL_DIR")
-        os.environ["SM_MODEL_DIR"] = self.model_dir
-        try:
-            predictions = module.predict_fn(eval_df.copy(), bundle)
-        finally:
-            if previous is None:
-                os.environ.pop("SM_MODEL_DIR", None)
-            else:
-                os.environ["SM_MODEL_DIR"] = previous
+        if self._needs_fresh_process():
+            predictions = self._inference_in_fresh_process(eval_df)
+        else:
+            module = self._load_inference_module()
+            predictions = inference_runner.predict(module, self._load_model_bundle(), self.model_dir, eval_df)
 
         if capture_name:
             self._capture(predictions, capture_name)
@@ -154,29 +149,9 @@ class Endpoint(LocalArtifact):
         Returns:
             module: The imported inference module
         """
-        if self._inference_module is not None:
-            return self._inference_module
-
-        metadata_path = os.path.join(self.model_dir, "inference-metadata.json")
-        if not os.path.isfile(metadata_path):
-            raise FileNotFoundError(
-                f"No model artifacts for '{self.model_name}' at {self.model_dir}. "
-                "The model was deleted or never finished training."
-            )
-        with open(metadata_path, encoding="utf-8") as fp:
-            script = json.load(fp)["inference_script"]
-
-        # Model scripts import modules shipped beside them; the container serves with the
-        # model directory on the import path, so local serving does too
-        model_dir = self.model_dir
-        if model_dir not in sys.path:
-            sys.path.insert(0, model_dir)
-
-        spec = importlib.util.spec_from_file_location("workbench_local_inference", os.path.join(model_dir, script))
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        self._inference_module = module
-        return module
+        if self._inference_module is None:
+            self._inference_module = inference_runner.load_inference_module(self.model_dir)
+        return self._inference_module
 
     def _load_model_bundle(self) -> dict:
         """Internal: Load the model once via model_fn, then keep it.
@@ -185,13 +160,12 @@ class Endpoint(LocalArtifact):
             dict: Whatever model_fn returns for this framework
         """
         if self._model_bundle is None:
-            self._check_openmp_conflict()
             self.log.info(f"Loading model bundle from {self.model_dir}...")
             self._model_bundle = self._load_inference_module().model_fn(self.model_dir)
         return self._model_bundle
 
-    def _check_openmp_conflict(self):
-        """Internal: Refuse to load an XGBoost model into a process that has torch.
+    def _needs_fresh_process(self) -> bool:
+        """Internal: Whether this model has to be served outside this process.
 
         Torch and XGBoost each bring their own OpenMP runtime. Two in one process is
         undefined behavior, and unpickling an XGBoost Booster there segfaults the
@@ -199,18 +173,36 @@ class Endpoint(LocalArtifact):
         containers in AWS, so the two never meet; in-process local inference is the
         first place they can.
 
-        Raises:
-            RuntimeError: If the conflict is present
+        Returns:
+            bool: True for an XGBoost model when torch is already imported here
         """
-        if "torch" not in sys.modules:
-            return
-        if not glob.glob(os.path.join(self.model_dir, "xgb*.joblib")):
-            return
-        raise RuntimeError(
-            f"Cannot serve XGBoost model '{self.model_name}' in this process: torch is already "
-            "imported, and loading an XGBoost model alongside it segfaults the interpreter "
-            "(duplicate OpenMP runtimes). Run this inference in a fresh process."
-        )
+        return "torch" in sys.modules and bool(glob.glob(os.path.join(self.model_dir, "xgb*.joblib")))
+
+    def _inference_in_fresh_process(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+        """Internal: Run inference in a child process that never imports torch.
+
+        The child loads the model on every call, so each inference pays a process start
+        and a model load rather than reusing a bundle cached on this endpoint.
+
+        Args:
+            eval_df (pd.DataFrame): The data to run inference on
+
+        Returns:
+            pd.DataFrame: The predictions
+        """
+        inference_runner.inference_script(self.model_dir)  # missing artifacts fail here, not in the child
+        self.log.important(f"torch is loaded in this process; serving XGBoost {self.model_name} from a child")
+
+        with tempfile.TemporaryDirectory() as work_dir:
+            input_path = os.path.join(work_dir, "input.pkl")
+            output_path = os.path.join(work_dir, "predictions.pkl")
+            eval_df.to_pickle(input_path)
+            runner = [sys.executable, "-m", "workbench.local.inference_runner"]
+            result = subprocess.run(runner + [self.model_dir, input_path, output_path], capture_output=True, text=True)
+            if result.returncode != 0:
+                tail = "\n".join((result.stdout + result.stderr).splitlines()[-30:])
+                raise RuntimeError(f"Inference for {self.model_name} failed in a child process:\n{tail}")
+            return pd.read_pickle(output_path)
 
     def parent(self):
         """The Model this endpoint serves, if it still exists locally"""
