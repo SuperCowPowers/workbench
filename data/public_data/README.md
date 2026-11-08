@@ -9,7 +9,7 @@ from workbench.api import PublicData
 pub = PublicData()
 pub.list()                                             # discover datasets
 pub.get("comp_chem/logp/logp_all")                     # DataFrame
-pub.describe("comp_chem/openadmet/pxr/training/main")  # metadata dict
+pub.describe("comp_chem/openadmet/pxr/train/main")     # metadata dict
 ```
 
 Reads are anonymous — the bucket is public-read, so no AWS credentials are
@@ -22,8 +22,8 @@ needed to `list()`, `get()`, or `describe()`.
 ## Layout
 
 The S3 key mirrors the path under `output/`, so the local tree *is* the bucket
-layout. Datasets that ship a train/test split put them in `training/` and
-`testing/` subdirs.
+layout. Datasets that ship a train/test split put them in `train/` and
+`test/` subdirs.
 
 ```
 common/                              generic non-chemistry fixtures
@@ -38,9 +38,11 @@ comp_chem/
   logd/                              logd_all + per-source files
   logp_logd/                         overlap_00_03, overlap_03_07, overlap_07_10
   openadmet/                         OpenADMET Consortium challenges
-    expansionrx/{training,testing}/  all_endpoints + 9 per-endpoint files
-    pxr/{training,testing}/
-    asap/{training,testing}/         admet, potency
+    expansionrx/{train,test}/        all_endpoints + 9 per-endpoint files
+    pxr/{train,test}/                main; train/ adds 4 assay variants
+    cyp/{train,test}/                inhibition, tdi, emax
+    cyp/single_concentration         full screen, split column (train/test/extra)
+    asap/{train,test}/               admet, potency
     octant_cyp/                      inhibition, reactivity, mass_spec_response
   reference_compounds/               curated fixtures backing Workbench tests (source JSON in ./reference_compounds/)
   synthetic/multi_task/              controlled multi-task experiment set
@@ -121,7 +123,8 @@ All from the [OpenADMET Consortium](https://openadmet.org/) on HuggingFace.
 | Challenge | Contents | License |
 |-----------|----------|---------|
 | **expansionrx** | 9 ADMET endpoints (LogD, KSOL, HLM/MLM CLint, Caco-2 Papp/efflux, MPPB, MBPB, MGMB), 5,326 train / 2,282 test compounds. Published as one wide `all_endpoints` table plus a per-endpoint file filtered to measured rows. | CC-BY-4.0 |
-| **pxr** | hPXR induction pEC50/Emax — primary train set plus counter-assay, single-concentration, semi-pure and HT-chem library variants; blinded and phase-1-revealed test sets. | Apache-2.0 |
+| **pxr** | hPXR induction pEC50/Emax — primary train set plus counter-assay, single-concentration, semi-pure and HT-chem library variants; test set stacks Analog Sets 1 and 2 (`phase` column). | Apache-2.0 |
+| **cyp** | CYP1A2/2C9/2D6/3A4 inhibition — direct-inhibition pIC50, time-dependent inhibition (TDI) and Emax train/test sets, plus the full single-concentration screen with a `split` column (train/test/extra). | Apache-2.0 |
 | **asap** | ASAP Discovery / Polaris antiviral challenge: 5 ADMET endpoints (560 compounds) and SARS-CoV-2 / MERS-CoV Mpro potency (1,328 compounds), split on the source `Set` column. | MIT |
 | **octant_cyp** | Octant CYP3A4 inhibition dose-response, CYP3A4/CYP2J2 reactivity, and LC-MS ionization response for 11,353 compounds. Single release, no train/test split. | Apache-2.0 |
 
@@ -147,8 +150,8 @@ Concatenating the
 two and fitting a calibrated regressor teaches the model that CYP inhibition is
 more common and more potent than it is. Pretrain and fine-tune, or reweight.
 
-Contamination-checked by standardized InChIKey against the challenge's blinded
-test set — zero of the 750 blinded compounds survive. The 198 that also appear in
+Contamination-checked by standardized InChIKey against the challenge's test
+set — zero of its 750 compounds survive. The 198 that also appear in
 the challenge *training* set are kept and flagged with `in_challenge_train`.
 
 `cyp_inhibition/censored/` adds the weak compounds back. Where an isoform has an

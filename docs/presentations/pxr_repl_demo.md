@@ -23,8 +23,8 @@ the numbers below came from.
 **REPL.** Pull the data and look at it. No credentials needed for either of these:
 
 ```python
-train = PublicData().get("comp_chem/openadmet/pxr/training/main")            # 4,139
-test  = PublicData().get("comp_chem/openadmet/pxr/testing/phase1_unblinded") # 253
+train = PublicData().get("comp_chem/openadmet/pxr/train/main")            # 4,139
+test  = PublicData().get("comp_chem/openadmet/pxr/test/main").query("phase == 1")  # 253
 ```
 
 **Bosco.** Hand off the part that carries the traps: *"mark the split, compute 2D descriptors,
@@ -131,7 +131,7 @@ shareable, and still there next week. Nothing was written to a script to get it 
 
 - The local half needs no credentials at all. Worth saying out loud at §1.
 - Nothing here needs ST-RAE. The credible intervals are in `PublicData` under
-  `comp_chem/openadmet/pxr/testing/phase1_unblinded` if you want them.
+  `comp_chem/openadmet/pxr/test/main` if you want them.
 - 253 rows is small. A Pearson difference under ~0.05 between two models on that set is not a
   result; say so rather than reading it as one.
 - The PXR contest is closed. No live-standing claims.

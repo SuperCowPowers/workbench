@@ -17,7 +17,7 @@ from workbench.api import DataSource, PublicData
 LFC_FS = "openadmet_pxr_lfc"
 CONCENTRATIONS = {8.251e-06: "lfc_8um", 3.3e-05: "lfc_33um"}
 
-sc = PublicData().get("comp_chem/openadmet/pxr/training/single_concentration")
+sc = PublicData().get("comp_chem/openadmet/pxr/train/single_concentration")
 sc = sc[sc["concentration_m"].isin(CONCENTRATIONS) & (sc["compound_class"] == "Library")]
 lfc = (
     sc.pivot_table(index=["ocnt_id", "smiles"], columns="concentration_m", values="log2_fc_estimate")

@@ -41,9 +41,9 @@ def skeletons(smiles):
     return pd.Series(keys, index=getattr(smiles, "index", None))
 
 
-ch = pd.read_csv(f"{D}/openadmet/cyp/training/inhibition.csv")
+ch = pd.read_csv(f"{D}/openadmet/cyp/train/inhibition.csv")
 ch["key"] = skeletons(ch["smiles"])
-blind = pd.read_csv(f"{D}/openadmet/cyp/testing/blinded.csv")
+blind = pd.read_csv(f"{D}/openadmet/cyp/test/inhibition.csv", usecols=["molecule_name", "smiles"])
 blind["key"] = skeletons(blind["smiles"])
 ch_keys, blind_keys = set(ch["key"].dropna()), set(blind["key"].dropna())
 
@@ -130,7 +130,7 @@ check(
 )
 
 print("\n== Single-concentration log2fc ==")
-sc = pd.read_csv(f"{D}/openadmet/cyp/training/single_concentration.csv")
+sc = pd.read_csv(f"{D}/openadmet/cyp/single_concentration.csv").query("split == 'train'")
 print("  CYP2D6 vs CYP3A4 median log2fc by fitted-pIC50 bin (the flatness claim):")
 bins = [(2, 3.5), (3.5, 4.0), (4.0, 4.31), (4.31, 4.6)]
 flat = {}
@@ -153,7 +153,7 @@ check(
 )
 
 print("\n== Emax ==")
-emax = pd.read_csv(f"{D}/openadmet/cyp/training/emax.csv")
+emax = pd.read_csv(f"{D}/openadmet/cyp/train/emax.csv")
 ec = {}
 for iso in ISOFORMS:
     col = f"{iso}_emax_vs_pos_ctrl_direct_inhibition"
@@ -174,7 +174,7 @@ check(
 )
 
 print("\n== TDI arm ==")
-tdi = pd.read_csv(f"{D}/openadmet/cyp/training/tdi.csv")
+tdi = pd.read_csv(f"{D}/openadmet/cyp/train/tdi.csv")
 check("tdi.csv and emax.csv cover 6,145 compounds", 6145, (len(tdi), len(emax)), len(tdi) == 6145)
 base = int(ch["cyp3a4_pic50_direct_inhibition"].notna().sum())
 lifted = int(

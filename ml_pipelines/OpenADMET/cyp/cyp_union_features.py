@@ -121,12 +121,12 @@ VEITH_LT = [f"{t}_lt" for t in VEITH_PIC50_TARGETS] if args.censored else []
 # at 4.0 and the challenge set is hit-enriched -- and it reaches ~5.6k compounds neither
 # other source covers.
 TOX21 = f"comp_chem/tox21/cyp_inhibition/{_CEN}"
-BLINDED = "comp_chem/openadmet/cyp/testing/blinded"
+BLINDED = "comp_chem/openadmet/cyp/test/inhibition"
 TOX21_TARGETS = [f"{iso}_pic50_tox21" for iso in PUBLIC_ISOFORMS]
 TOX21_LT = [f"{t}_lt" for t in TOX21_TARGETS] if args.censored else []
 VEITH = f"comp_chem/pubchem/cyp_inhibition/{_CEN}"
-TDI = "comp_chem/openadmet/cyp/training/tdi"
-EMAX = "comp_chem/openadmet/cyp/training/emax"
+TDI = "comp_chem/openadmet/cyp/train/tdi"
+EMAX = "comp_chem/openadmet/cyp/train/emax"
 TDI_TARGETS = [f"{iso}_pic50_tdi_condition" for iso in ISOFORMS]
 EMAX_TARGETS = [f"{iso}_emax_vs_pos_ctrl_direct_inhibition" for iso in ISOFORMS]
 MAX_RESPONSE_CLIP = (-150.0, 50.0)

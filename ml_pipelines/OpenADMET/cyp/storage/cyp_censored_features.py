@@ -53,7 +53,7 @@ CENSORED_TARGET = "cyp2d6_pic50_direct_inhibition"
 BOUND = 4.6
 
 df = FeatureSet(SOURCE_FS).pull_dataframe()
-single_conc = PublicData().get("comp_chem/openadmet/cyp/training/single_concentration")
+single_conc = PublicData().get("comp_chem/openadmet/cyp/single_concentration").query("split == 'train'")
 sc = single_conc[single_conc["enzyme"] == CENSORED_ISOFORM][["molecule_name", "log2fc_estimate"]]
 
 # The log2fc -> pIC50 scale differs per isoform (assay window, substrate, background), so

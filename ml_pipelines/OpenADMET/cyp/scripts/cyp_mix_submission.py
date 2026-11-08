@@ -43,7 +43,7 @@ def mix(base: Path, take: dict, out_dir: Path, tag: str) -> Path:
     path = out_dir / f"{base.stem}_{tag}.csv"
     sub.to_csv(path, index=False)
 
-    blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
+    blind = PublicData().get("comp_chem/openadmet/cyp/test/inhibition")[["molecule_name", "smiles"]]
     expected = {str(m) for m in blind["molecule_name"]}
     ok, errors = validate_activity_submission(path, expected_ids=expected)
     if not ok:

@@ -83,19 +83,23 @@ def fetch(repo: str, filename: str, sep: str = ",") -> pd.DataFrame:
 
 
 def pull_pxr() -> dict[str, pd.DataFrame]:
-    """PXR induction challenge: train variants plus blinded / revealed test sets."""
+    """PXR induction challenge: train variants plus the unblinded test set.
+
+    Test labels were released in two phases that together cover the full blinded
+    test set; `test/main` stacks them with a `phase` column.
+    """
     repo = "openadmet/pxr-challenge-train-test"
     files = {
-        "pxr/training/main": "pxr-challenge_TRAIN.csv",
-        "pxr/training/counter_assay": "pxr-challenge_counter-assay_TRAIN.csv",
-        "pxr/training/single_concentration": "pxr-challenge_single_concentration_TRAIN.csv",
-        "pxr/training/semi_pure_96": "pxr-challenge_96-compound-uscale-semi-pure_TRAIN.csv",
-        "pxr/training/htchem_libraries": "pxr-challenge_htchem-libraries_TRAIN.csv",
-        "pxr/testing/blinded": "pxr-challenge_TEST_BLINDED.csv",
-        "pxr/testing/phase1_unblinded": "pxr-challenge_TEST_PHASE_1_UNBLINDED.csv",
-        "pxr/testing/structure_blinded": "pxr-challenge_structure_TEST_BLINDED.csv",
+        "pxr/train/main": "pxr-challenge_TRAIN.csv",
+        "pxr/train/counter_assay": "pxr-challenge_counter-assay_TRAIN.csv",
+        "pxr/train/single_concentration": "pxr-challenge_single_concentration_TRAIN.csv",
+        "pxr/train/semi_pure_96": "pxr-challenge_96-compound-uscale-semi-pure_TRAIN.csv",
+        "pxr/train/htchem_libraries": "pxr-challenge_htchem-libraries_TRAIN.csv",
     }
-    return {name: normalize_columns(fetch(repo, f)) for name, f in files.items()}
+    out = {name: normalize_columns(fetch(repo, f)) for name, f in files.items()}
+    phases = [fetch(repo, f"pxr-challenge_TEST_PHASE_{phase}_UNBLINDED.csv").assign(phase=phase) for phase in (1, 2)]
+    out["pxr/test/main"] = normalize_columns(pd.concat(phases, ignore_index=True))
+    return out
 
 
 def pull_expansionrx() -> dict[str, pd.DataFrame]:
@@ -108,7 +112,7 @@ def pull_expansionrx() -> dict[str, pd.DataFrame]:
     """
     repo = "openadmet/openadmet-expansionrx-challenge-data"
     out = {}
-    for split, filename in [("training", "expansion_data_train.csv"), ("testing", "expansion_data_test.csv")]:
+    for split, filename in [("train", "expansion_data_train.csv"), ("test", "expansion_data_test.csv")]:
         wide = normalize_columns(fetch(repo, filename)).rename(columns={"molecule_name": "id", **RX_ENDPOINTS})
         out[f"expansionrx/{split}/all_endpoints"] = wide
         for endpoint in RX_ENDPOINTS.values():
@@ -130,27 +134,34 @@ def pull_asap() -> dict[str, pd.DataFrame]:
         df = fetch(repo, filename).rename(columns=ASAP_COLUMNS[filename])
         df = normalize_columns(df).rename(columns={"molecule_name": "id"})
         df.insert(1, "smiles", df["cxsmiles"].str.split(" ").str[0])
-        for split, label in [("training", "Train"), ("testing", "Test")]:
+        for split, label in [("train", "Train"), ("test", "Test")]:
             rows = df[df["set"] == label].drop(columns=["set"]).reset_index(drop=True)
             out[f"asap/{split}/{basename}"] = rows
     return out
 
 
 def pull_cyp() -> dict[str, pd.DataFrame]:
-    """CYP inhibition blind challenge: four training tables plus the blinded test set.
+    """CYP inhibition blind challenge: inhibition / TDI / Emax train and unblinded test
+    tables, plus the full single-concentration screen.
 
     Curve fits carry Bayesian credible intervals, published as `_conf_low`/`_conf_high`.
     Those are renamed to the `_ci_lower`/`_ci_upper` suffixes the rest of the platform
     uses (matching the Octant release and what `compute_regression_metrics` looks for to
     emit ST-RAE), so the challenge's own metric works off these tables directly.
+
+    The full single-concentration screen is a superset of its train split, holding a few
+    test compounds and thousands in neither split; its `split` column (train / test /
+    extra) says which, so a train-only consumer filters on it.
     """
     repo = "openadmet/cyp-challenge-train-test"
     files = {
-        "cyp/training/inhibition": "cyp-challenge-TRAIN_inhibition.csv",
-        "cyp/training/tdi": "cyp-challenge-TRAIN_TDI.csv",
-        "cyp/training/emax": "cyp-challenge-TRAIN_Emax.csv",
-        "cyp/training/single_concentration": "cyp-challenge-single-concentration-TRAIN.csv",
-        "cyp/testing/blinded": "cyp-challenge-TEST-BLINDED.csv",
+        "cyp/train/inhibition": "cyp-challenge-TRAIN_inhibition.csv",
+        "cyp/train/tdi": "cyp-challenge-TRAIN_TDI.csv",
+        "cyp/train/emax": "cyp-challenge-TRAIN_Emax.csv",
+        "cyp/test/inhibition": "cyp-challenge-TEST-UNBLINDED_inhibition.csv",
+        "cyp/test/tdi": "cyp-challenge-TEST-UNBLINDED_TDI.csv",
+        "cyp/test/emax": "cyp-challenge-TEST-UNBLINDED_Emax.csv",
+        "cyp/single_concentration": "cyp-challenge-single-concentration-FULL.csv",
     }
     out = {}
     for name, filename in files.items():
@@ -162,6 +173,14 @@ def pull_cyp() -> dict[str, pd.DataFrame]:
             "_conf_high", "_ci_upper", regex=False
         )
         out[name] = df
+
+    screen = out["cyp/single_concentration"]
+    train_ids = set(fetch(repo, "cyp-challenge-single-concentration-TRAIN.csv")["Molecule_Name"])
+    test_ids = set(out["cyp/test/inhibition"]["molecule_name"])
+    split = pd.Series("extra", index=screen.index)
+    split[screen["molecule_name"].isin(test_ids)] = "test"
+    split[screen["molecule_name"].isin(train_ids)] = "train"
+    screen.insert(2, "split", split)
     return out
 
 
@@ -201,6 +220,7 @@ CHALLENGES = {
 CHALLENGE_LICENSES = {
     "expansionrx": "CC-BY-4.0",
     "pxr": "Apache-2.0",
+    "cyp": "Apache-2.0",
     "asap": "MIT",
     "octant_cyp": "Apache-2.0",
 }

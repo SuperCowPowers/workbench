@@ -37,7 +37,7 @@ N_TEST = 750
 
 def build_submission(model_name: str, out_dir: Path) -> Path:
     """Predict the blinded set and write a validated submission CSV."""
-    blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
+    blind = PublicData().get("comp_chem/openadmet/cyp/test/inhibition")[["molecule_name", "smiles"]]
     if len(blind) != N_TEST:
         raise ValueError(f"Expected {N_TEST} blinded compounds, got {len(blind)}")
 

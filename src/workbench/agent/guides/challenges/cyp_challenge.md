@@ -389,11 +389,11 @@ Rebuild with `ml_pipelines/OpenADMET/cyp/cyp_feature_sets.py`.
 **The challenge's own data** (released 2026-08-17, Apache-2.0):
 
 ```python
-inh = pub_data.get("comp_chem/openadmet/cyp/training/inhibition")           # 4,905 cpds, 4 pIC50s + CIs
-tdi = pub_data.get("comp_chem/openadmet/cyp/training/tdi")                  # 6,145 cpds, is_TDI + both arms
-emax = pub_data.get("comp_chem/openadmet/cyp/training/emax")                # 6,146 cpds, Emax both arms
-screen = pub_data.get("comp_chem/openadmet/cyp/training/single_concentration")  # 17,504 rows (4,376 x 4 enzymes)
-blind = pub_data.get("comp_chem/openadmet/cyp/testing/blinded")             # 750 cpds, structures only
+inh = pub_data.get("comp_chem/openadmet/cyp/train/inhibition")         # 4,905 cpds, 4 pIC50s + CIs
+tdi = pub_data.get("comp_chem/openadmet/cyp/train/tdi")                # 6,145 cpds, is_TDI + both arms
+emax = pub_data.get("comp_chem/openadmet/cyp/train/emax")              # 6,145 cpds, Emax both arms
+screen = pub_data.get("comp_chem/openadmet/cyp/single_concentration")  # 11,358 cpds x 4 enzymes; split = train/test/extra
+test = pub_data.get("comp_chem/openadmet/cyp/test/inhibition")         # 750 cpds, labels released post-challenge (also test/tdi, test/emax)
 ```
 
 Column names are snake_cased from the challenge's (`CYP3A4_pIC50_direct_inhibition`

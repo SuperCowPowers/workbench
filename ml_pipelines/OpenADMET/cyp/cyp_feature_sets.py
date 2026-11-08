@@ -66,7 +66,7 @@ if track == "inhibition":
     # Regression track: four sparse pIC50 targets with credible intervals. Already one
     # row per compound with NaN where an isoform has no fitted curve, which is the
     # multi-task shape -- no combining needed.
-    inhibition = PublicData().get("comp_chem/openadmet/cyp/training/inhibition")
+    inhibition = PublicData().get("comp_chem/openadmet/cyp/train/inhibition")
     validate_multi_task_data(inhibition, TARGETS, id_column="molecule_name")
     build_feature_set(
         f"openadmet_cyp_{variant}",
@@ -81,7 +81,7 @@ elif track == "tdi":
     # TDI track: binary labels for the two scored isoforms. Labels only. `is_tdi` is
     # derived from the shift between the direct and TDI arms, so carrying either arm's
     # pIC50 alongside the label would hand the model the answer.
-    tdi = PublicData().get("comp_chem/openadmet/cyp/training/tdi")
+    tdi = PublicData().get("comp_chem/openadmet/cyp/train/tdi")
     tdi_targets = ["cyp3a4_is_tdi", "cyp2d6_is_tdi"]
     tdi = tdi[["molecule_name", "smiles"] + tdi_targets].copy()
     build_feature_set(

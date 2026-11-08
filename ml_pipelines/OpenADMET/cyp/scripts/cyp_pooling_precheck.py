@@ -62,7 +62,7 @@ def public_frames() -> dict:
 
 
 def main() -> None:
-    ch = pd.read_csv(f"{D}/openadmet/cyp/training/inhibition.csv")
+    ch = pd.read_csv(f"{D}/openadmet/cyp/train/inhibition.csv")
     ch["key"] = skeletons(ch["smiles"])
     ch = ch.dropna(subset=["key"]).drop_duplicates("key")
 

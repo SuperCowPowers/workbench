@@ -4,8 +4,8 @@
       {
         "script": "load_data.py",
         "inputs": [
-          "public:comp_chem/openadmet/expansionrx/training/all_endpoints",
-          "public:comp_chem/openadmet/expansionrx/testing/all_endpoints"
+          "public:comp_chem/openadmet/expansionrx/train/all_endpoints",
+          "public:comp_chem/openadmet/expansionrx/test/all_endpoints"
         ],
         "outputs": [
           "fs:open_admet_caco2_efflux",

@@ -25,11 +25,10 @@ MT_FS = "openadmet_pxr_mt"
 TARGETS = ["pec50", "logp", "logd"]  # primary first
 
 # PXR primary task: train + revealed phase-1, with the split label preserved.
-train = PublicData().get("comp_chem/openadmet/pxr/training/main")[["molecule_name", "smiles", "pec50"]].copy()
+train = PublicData().get("comp_chem/openadmet/pxr/train/main")[["molecule_name", "smiles", "pec50"]].copy()
 train["split"] = "train"
-phase1 = (
-    PublicData().get("comp_chem/openadmet/pxr/testing/phase1_unblinded")[["molecule_name", "smiles", "pec50"]].copy()
-)
+test_main = PublicData().get("comp_chem/openadmet/pxr/test/main")
+phase1 = test_main.loc[test_main["phase"] == 1, ["molecule_name", "smiles", "pec50"]].copy()
 phase1["split"] = "phase1_test"
 pxr = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)
 

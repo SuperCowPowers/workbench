@@ -30,7 +30,7 @@ ISOFORMS = ["cyp3a4", "cyp2c9", "cyp2d6", "cyp1a2"]
 AUX_TARGETS = [f"{iso}_log2fc" for iso in ISOFORMS]
 
 df = FeatureSet(SOURCE_FS).pull_dataframe()
-single_conc = PublicData().get("comp_chem/openadmet/cyp/training/single_concentration")
+single_conc = PublicData().get("comp_chem/openadmet/cyp/single_concentration").query("split == 'train'")
 
 # One row per compound, one column per enzyme.
 wide = single_conc.pivot_table(index="molecule_name", columns="enzyme", values="log2fc_estimate")

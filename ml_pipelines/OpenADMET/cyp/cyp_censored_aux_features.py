@@ -49,7 +49,7 @@ MIN_PURITY = 85.0
 CUT_GRID = np.linspace(-6.0, 1.0, 4001)
 
 df = FeatureSet(SOURCE_FS).pull_dataframe()
-single_conc = PublicData().get("comp_chem/openadmet/cyp/training/single_concentration")
+single_conc = PublicData().get("comp_chem/openadmet/cyp/single_concentration").query("split == 'train'")
 
 holdout = set(df[analog_holdout_split(df, target_columns=TARGETS, n_hits=50, analogs_per_hit=10)]["molecule_name"])
 in_holdout = df["molecule_name"].isin(holdout)

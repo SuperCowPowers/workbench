@@ -24,8 +24,8 @@ storage/               # parked (*.py.archived): feature_sets, 2d/3d/2d_3d (xgb+
 ```
 
 - **phase1** — `pxr-reg-chemprop-phase1`. Runs `test` + `cross_fold` inference and a
-  `pxr_phase1_test` capture on the held-out Analog Set 1 (`pxr_test_phase1_unblinded`,
-  revealed pEC50) for honest external RAE.
+  `pxr_phase1_test` capture on the held-out Analog Set 1 (the `phase == 1` rows of
+  `pxr/test/main`, revealed pEC50) for honest external RAE.
 - **phase2** — `pxr-reg-chemprop-phase2`. Trains on `pxr_train` + the now-revealed
   phase-1 set, predicts the blinded `pxr_test_blinded` (513 compounds), and writes
   `phase2_chemprop_submission.csv` (`SMILES, Molecule Name, pEC50`).
@@ -47,7 +47,7 @@ The PXR datasets are published to the Workbench public data store and accessed v
 
 ```python
 from workbench.api import PublicData
-df = PublicData().get("comp_chem/openadmet/pxr/training/main")
+df = PublicData().get("comp_chem/openadmet/pxr/train/main")
 ```
 
 Provisioning (fetch from HuggingFace → publish to S3) lives with the rest of the

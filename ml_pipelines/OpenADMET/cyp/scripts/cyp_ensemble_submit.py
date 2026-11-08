@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument("--flat", action="store_true", help="Unweighted member mean, ignoring confidence and lambda")
     args = parser.parse_args()
 
-    blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
+    blind = PublicData().get("comp_chem/openadmet/cyp/test/inhibition")[["molecule_name", "smiles"]]
     if len(blind) != N_TEST:
         raise ValueError(f"blinded set is {len(blind)} rows, expected {N_TEST}")
 

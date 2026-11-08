@@ -36,7 +36,7 @@ from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProx
 RDLogger.DisableLog("rdApp.*")
 
 DATA = "../../../../data/public_data/output/comp_chem"
-CHALLENGE = f"{DATA}/openadmet/cyp/training/inhibition.csv"
+CHALLENGE = f"{DATA}/openadmet/cyp/train/inhibition.csv"
 TOX21 = f"{DATA}/tox21/cyp_inhibition/cyp2d6.csv"
 
 TARGET = "cyp2d6_pic50_direct_inhibition"

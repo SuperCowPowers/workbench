@@ -133,17 +133,22 @@ def inchi_keys(smiles: pd.Series) -> pd.Series:
     return smiles.map(unique)
 
 
-def challenge_keys(subdir: str) -> set[str]:
-    """Standardized InChIKeys for every compound in a challenge split."""
-    files = sorted((CHALLENGE_DIR / subdir).glob("*.csv"))
-    if not files:
+def challenge_keys(split: str) -> set[str]:
+    """Standardized InChIKeys for every compound in a challenge split ("train" or "test"):
+    its dose-response files plus the single-concentration screen rows carrying that split."""
+    files = sorted((CHALLENGE_DIR / split).glob("*.csv"))
+    screen_path = CHALLENGE_DIR / "single_concentration.csv"
+    if not files or not screen_path.exists():
         raise FileNotFoundError(
-            f"No challenge CSVs under {CHALLENGE_DIR / subdir}. Run pull_openadmet_data.py first -- "
-            "the blinded test set is needed to guarantee this file is contamination-free."
+            f"Challenge CSVs missing under {CHALLENGE_DIR}. Run pull_openadmet_data.py first -- "
+            "the test set is needed to guarantee this file is contamination-free."
         )
-    smiles = pd.concat([pd.read_csv(f, usecols=["smiles"]) for f in files], ignore_index=True)["smiles"]
+    frames = [pd.read_csv(f, usecols=["smiles"]) for f in files]
+    screen = pd.read_csv(screen_path, usecols=["smiles", "split"])
+    frames.append(screen.loc[screen["split"] == split, ["smiles"]])
+    smiles = pd.concat(frames, ignore_index=True)["smiles"]
     keys = inchi_keys(smiles.map(standardize_smiles))
-    log.info(f"  challenge {subdir}: {len(files)} files, {keys.nunique():,} unique structures")
+    log.info(f"  challenge {split}: {len(files)} files + screen, {keys.nunique():,} unique structures")
     return set(keys.dropna())
 
 
@@ -228,10 +233,10 @@ def aggregate(exact: pd.DataFrame, censored: pd.DataFrame) -> tuple[pd.DataFrame
     return assemble(exact_identity, exact_wide), assemble(full_identity, exact_wide, censored_wide)
 
 
-def finalize(df: pd.DataFrame, blinded: set[str], training: set[str]) -> pd.DataFrame:
-    """Drop blinded-test contamination, flag challenge overlap, and number the rows."""
-    contaminated = df["inchi_key"].isin(blinded)
-    log.info(f"  blinded test compounds present: {int(contaminated.sum())} (dropped)")
+def finalize(df: pd.DataFrame, test: set[str], training: set[str]) -> pd.DataFrame:
+    """Drop test-set contamination, flag challenge overlap, and number the rows."""
+    contaminated = df["inchi_key"].isin(test)
+    log.info(f"  challenge test compounds present: {int(contaminated.sum())} (dropped)")
     df = df[~contaminated].copy()
 
     df["n_measurements"] = df[[f"{iso}_n" for iso in ISOFORMS]].sum(axis=1)
@@ -264,12 +269,12 @@ def pull_cyp_data() -> dict[str, dict[str, pd.DataFrame]]:
     fitted_raw, censored_raw = aggregate(
         fetch_measurements(EXACT_QUERY, "fitted"), fetch_measurements(CENSORED_QUERY, "censored")
     )
-    blinded, training = challenge_keys("testing"), challenge_keys("training")
+    test, training = challenge_keys("test"), challenge_keys("train")
 
     log.info("Fitted curves only:")
-    fitted = finalize(fitted_raw, blinded, training)
+    fitted = finalize(fitted_raw, test, training)
     log.info("With censored bounds:")
-    censored = finalize(censored_raw, blinded, training)
+    censored = finalize(censored_raw, test, training)
     for iso in ISOFORMS:
         log.info(f"  {iso}: {int(censored[f'{iso}_pic50_lt'].sum()):,} censored labels")
 

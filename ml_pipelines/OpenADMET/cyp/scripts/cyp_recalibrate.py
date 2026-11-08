@@ -251,7 +251,7 @@ def place(sub: pd.DataFrame, pearson: dict, strae: bool = False) -> dict:
 def recalibrate(source: Path, out_dir: Path, tag: str, calibration: dict) -> Path:
     """Apply each isoform's affine correction and write a validated submission."""
     sub = pd.read_csv(source)
-    blind = PublicData().get("comp_chem/openadmet/cyp/testing/blinded")
+    blind = PublicData().get("comp_chem/openadmet/cyp/test/inhibition")[["molecule_name", "smiles"]]
 
     expected = {str(m) for m in blind["molecule_name"]}
     if set(sub["Molecule_Name"]) != expected:

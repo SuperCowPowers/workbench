@@ -31,7 +31,7 @@ end = m.to_endpoint(tags=tags)
 end.cross_fold_inference()
 
 # Predict the blinded phase-2 test set -> submission CSV (SMILES, Molecule Name, pEC50)
-blinded = PublicData().get("comp_chem/openadmet/pxr/testing/blinded")[["molecule_name", "smiles"]]
+blinded = PublicData().get("comp_chem/openadmet/pxr/test/main")[["molecule_name", "smiles"]]
 preds = end.inference(blinded)
 
 # Write the submission CSV with the required column names

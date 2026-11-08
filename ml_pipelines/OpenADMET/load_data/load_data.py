@@ -26,8 +26,8 @@ from workbench.api import Endpoint, FeatureSet, DFStore, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 # The public wide tables (one row per compound, one column per assay)
-TRAIN_DATA = "comp_chem/openadmet/expansionrx/training/all_endpoints"
-TEST_DATA = "comp_chem/openadmet/expansionrx/testing/all_endpoints"
+TRAIN_DATA = "comp_chem/openadmet/expansionrx/train/all_endpoints"
+TEST_DATA = "comp_chem/openadmet/expansionrx/test/all_endpoints"
 
 # Where the featurized test set lands for the per-assay model scripts.
 # Deliberately NOT '/workbench/datasets/open_admet_test_featurized' -- that key holds
