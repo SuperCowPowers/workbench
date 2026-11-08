@@ -1000,9 +1000,7 @@ if __name__ == "__main__":
             else:
                 # Held-out rows were never transformed, so their targets are already
                 # original-scale; only the predictions need inverting.
-                h_frame = per_target_predictions(
-                    target_columns, h_preds, all_ens, target_transforms, prediction_bounds
-                )
+                h_frame = per_target_predictions(target_columns, h_preds, all_ens, target_transforms, prediction_bounds)
                 df_val = pd.DataFrame({id_column: h_df[id_column].values})
                 print("Held-out validation metrics (per target):")
                 for t_idx, t_name in enumerate(target_columns):
