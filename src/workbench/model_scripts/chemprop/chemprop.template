@@ -41,7 +41,6 @@ import chemprop
 from chemprop import models
 
 from workbench.endpoints.inference import (
-    compress_std_outliers,
     expand_proba_column,
     save_output,
 )
@@ -254,7 +253,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         all_preds = np.empty((len(ensemble_models), 0, n_outputs))
 
     preds = np.mean(all_preds, axis=0)
-    preds_std = compress_std_outliers(np.std(all_preds, axis=0))
+    preds_std = np.std(all_preds, axis=0)
 
     print(f"Inference complete: {preds.shape[0]} predictions")
 
@@ -751,7 +750,7 @@ if __name__ == "__main__":
                 ensemble_models, val_dps, num_workers=min(os.cpu_count() or 4, 8), device=device
             )
             print(f"[timing] prediction_std (ensemble inference): {time.time() - _std_t0:.1f}s", flush=True)
-            preds_std = compress_std_outliers(np.std(all_ens_preds, axis=0))
+            preds_std = np.std(all_ens_preds, axis=0)
 
         print(f"[timing] post-training elapsed before metrics: {time.time() - _post_t0:.1f}s", flush=True)
         print("\n--- Per-target metrics ---")
@@ -934,7 +933,7 @@ if __name__ == "__main__":
         if len(h_dps):
             all_ens = predict_ensemble(ensemble_models, h_dps, device=device)
             h_preds = np.mean(all_ens, axis=0)
-            h_std = compress_std_outliers(np.std(all_ens, axis=0))
+            h_std = np.std(all_ens, axis=0)
 
             if model_type == "classifier":
                 all_probs_stack = all_ens  # (n_models, n_samples, n_classes or 1 sigmoid)

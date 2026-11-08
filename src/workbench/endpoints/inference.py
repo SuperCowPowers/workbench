@@ -291,52 +291,6 @@ def output_fn(output_df: pd.DataFrame, accept_type: str) -> tuple[str, str]:
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
-def compress_std_outliers(std_array: np.ndarray) -> np.ndarray:
-    """Soft-cap extreme outliers in prediction_std using IQR-based log compression.
-
-    Values below the IQR fence (Q3 + 1.5*IQR) pass through unchanged. Values above
-    are logarithmically compressed so that extreme outliers are tamed while preserving
-    monotonicity and relative ordering — no hard ceiling, no gaps in the distribution.
-
-    The compression formula above the fence:
-        output = fence + scale * log(1 + (std - fence) / scale)
-
-    where scale = IQR, so the compression adapts to the data spread.
-
-    Args:
-        std_array (np.ndarray): Array of standard deviations (n_samples,) or (n_samples, n_targets)
-
-    Returns:
-        np.ndarray: Array with outliers soft-capped via log compression
-    """
-    if std_array.size == 0:
-        return std_array
-    if std_array.ndim == 1:
-        std_array = std_array.reshape(-1, 1)
-        squeeze = True
-    else:
-        squeeze = False
-
-    capped = std_array.copy()
-    for col in range(capped.shape[1]):
-        col_data = capped[:, col]
-        q1, q3 = np.percentile(col_data, [25, 75])
-        iqr = q3 - q1
-
-        # Fence is the knee point where compression kicks in
-        fence = q3 + 1.5 * iqr
-
-        # Scale controls compression rate (use IQR so it adapts to data spread)
-        # Fallback to fence/2 if IQR is near zero (very tight distribution)
-        scale = max(iqr, fence / 2, 1e-10)
-
-        # Log-compress values above the fence, pass through below
-        above = col_data > fence
-        capped[above, col] = fence + scale * np.log1p((col_data[above] - fence) / scale)
-
-    return capped.squeeze() if squeeze else capped
-
-
 def compute_classification_metrics(
     y_true: np.ndarray, y_pred: np.ndarray, label_names: list[str], target_col: str
 ) -> pd.DataFrame:
