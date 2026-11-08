@@ -86,7 +86,9 @@ DEFAULT_HYPERPARAMETERS = {
     # Target transform (regression only): fit in transformed space, serve on the original
     # scale. None (identity), a name ("log10"), or a name with arguments
     # ({"name": "log10", "offset": 0.001}). Set offset near the assay's lower limit to bring
-    # zeros into the domain. Metrics, saved predictions, and UQ are all on the original scale.
+    # zeros into the domain. Metrics, saved predictions, and UQ are all on the original scale,
+    # while an `hpo` search scores trials in transformed space, so its cv_mae is not
+    # comparable to the reported metrics.
     "target_transform": None,
     # Clip predictions into a physically valid range, e.g. [0.0, 1.0] for a fraction. Applied
     # after any inverse transform; either side may be null. Independent of target_transform.
@@ -340,14 +342,10 @@ if __name__ == "__main__":
     # the original scale below, so a transform never changes how a model is reported or
     # compared. Applied before HPO so the search optimizes the same objective training does.
     # Held-out rows keep their original-scale target; only their predictions are inverted.
+    # Model creation rejects these on a classifier, so only the regression path transforms.
     target_transform = resolve_target_transform(hyperparameters.get("target_transform"))
     prediction_bounds = hyperparameters.get("prediction_bounds")
-    if model_type == "classifier":
-        if hyperparameters.get("target_transform") is not None:
-            raise ValueError("target_transform applies to regression targets only")
-        if prediction_bounds is not None:
-            raise ValueError("prediction_bounds applies to regression targets only")
-    else:
+    if model_type != "classifier":
         all_df[target] = target_transform.forward(all_df[target].values)
         print(f"Target transform: {target_transform}")
         print(f"Prediction bounds: {prediction_bounds}")

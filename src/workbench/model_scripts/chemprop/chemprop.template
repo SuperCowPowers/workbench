@@ -55,6 +55,17 @@ from workbench.endpoints.chemprop_utils import (
     find_smiles_column,
     predict_ensemble,
 )
+from workbench.endpoints.multi_target import (
+    alias_primary_target,
+    apply_per_target_uq,
+    multi_target_output_columns,
+    per_target_predictions,
+)
+from workbench.endpoints.target_transform import (
+    load_target_transform,
+    resolve_prediction_bounds,
+    resolve_target_transforms,
+)
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 print(
@@ -129,6 +140,18 @@ DEFAULT_HYPERPARAMETERS = {
     # saved when regression UQ is enabled, so the other versions stay available for
     # comparison via Model.uq_model(version=...).
     "uq_version": "v1",
+    # Target transform (regression only): fit in transformed space, serve on the original
+    # scale. One spec covers every target ("log10", or {"name": "log10", "offset": 0.001}),
+    # or key it per target ({"ksol": "log10", "logd": None}) — multi-target models carry
+    # targets in different units, so a shared transform rarely suits all of them. Set offset
+    # near the assay's lower limit to bring zeros into the domain. Metrics, saved predictions,
+    # and UQ are all on the original scale, while an `hpo` search scores trials in transformed
+    # space, so its cv_mae is not comparable to the reported metrics.
+    "target_transform": None,
+    # Clip predictions into a physically valid range, e.g. [0.0, 100.0] for a percentage.
+    # One (low, high) covers every target, or key it per target. Applied after any inverse
+    # transform; either side may be null.
+    "prediction_bounds": None,
 }
 
 # Template parameters (filled in by Workbench)
@@ -174,12 +197,15 @@ def model_fn(model_dir: str) -> dict:
 
     active_uq = uq_model.UQ_VERSION if uq_model is not None else "none"
     print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}, " f"active_uq={active_uq}")
+    target_transforms, prediction_bounds = load_target_transform(model_dir, metadata["target_columns"])
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
         "uq_model": uq_model,
         "classification_uq": classification_uq,
+        "target_transforms": target_transforms,
+        "prediction_bounds": prediction_bounds,
     }
 
 
@@ -253,7 +279,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         all_preds = np.empty((len(ensemble_models), 0, n_outputs))
 
     preds = np.mean(all_preds, axis=0)
-    preds_std = np.std(all_preds, axis=0)
 
     print(f"Inference complete: {preds.shape[0]} predictions")
 
@@ -289,15 +314,16 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             df["confidence"] = np.nan
             df.loc[valid_mask, "confidence"] = conf_values
     else:
-        for t_idx, tc in enumerate(target_columns):
-            df.loc[valid_mask, f"{tc}_pred"] = preds[:, t_idx]
-            df.loc[valid_mask, f"{tc}_pred_std"] = preds_std[:, t_idx]
+        target_frame = per_target_predictions(
+            target_columns, preds, all_preds, model_dict["target_transforms"], model_dict["prediction_bounds"]
+        )
+        for col in target_frame.columns:
+            df.loc[valid_mask, col] = target_frame[col].values
         # FIXME: Multi-target models don't have a "primary target" — aliasing to the first
         #  target here is a shortcut so the web UI (which expects a single "prediction" column)
         #  continues to work. Per-target columns ({target}_pred, {target}_pred_std) are the
         #  real source of truth.
-        df["prediction"] = df[f"{target_columns[0]}_pred"]
-        df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
+        alias_primary_target(df, target_columns[0])
 
         # UQModel UQ, scored per target off one shared neighbor lookup. Each target
         # gets {target}_confidence / {target}_expected_residual / {target}_q_*, and the
@@ -312,12 +338,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                     {tc: df.loc[valid_mask, f"{tc}_pred"].values for tc in target_columns},
                     {tc: df.loc[valid_mask, f"{tc}_pred_std"].values for tc in target_columns},
                 )
-                for tc, uq_out in uq_outs.items():
-                    for col in uq_out.columns:
-                        df[f"{tc}_{col}"] = np.nan
-                        df.loc[valid_mask, f"{tc}_{col}"] = uq_out[col].values
-                        if tc == target_columns[0]:
-                            df[col] = df[f"{tc}_{col}"]
+                apply_per_target_uq(df, uq_outs, target_columns[0], valid_mask)
             else:
                 raise ValueError(
                     f"UQ {uq_model.UQ_VERSION} can't score this batch: its {uq_model.prox.space} proximity needs "
@@ -486,6 +507,21 @@ if __name__ == "__main__":
 
     all_targets = all_df[target_columns].values.astype(np.float32)
 
+    # Target transform and prediction bounds, resolved per target. Only `all_targets` carries
+    # the transform — all_df keeps its original-scale targets, so metrics, the UQ proximity
+    # reference, and the saved predictions all read true values, and only predictions need
+    # inverting. Censoring survives untouched: the {t}_gt / {t}_lt masks below are booleans
+    # whose bound is the target value itself, and a monotonic transform preserves the
+    # inequality.
+    # Model creation rejects these on a classifier, so only the regression path transforms.
+    target_transforms = resolve_target_transforms(hyperparameters.get("target_transform"), target_columns)
+    prediction_bounds = resolve_prediction_bounds(hyperparameters.get("prediction_bounds"), target_columns)
+    if model_type != "classifier":
+        for t_idx, t_name in enumerate(target_columns):
+            all_targets[:, t_idx] = target_transforms[t_name].forward(all_targets[:, t_idx])
+        print(f"Target transforms: {dict((t, str(x)) for t, x in target_transforms.items())}")
+        print(f"Prediction bounds: {prediction_bounds}")
+
     # ---------------------------------------------------------------------
     # Bounded-loss masks (regression only). Opt-in via hyperparameter
     # `bounded_loss=True`. By convention reads per-target boolean columns
@@ -577,8 +613,11 @@ if __name__ == "__main__":
     if hpo_block is not None:
         from workbench.training.chemprop_hpo import run_chemprop_hpo
 
+        # The search scores trials on the same transformed targets the final fit trains on;
+        # all_targets already carries the transform and is row-aligned with all_df.
+        hpo_df = all_df.assign(**{t: all_targets[:, i] for i, t in enumerate(target_columns)})
         hyperparameters = run_chemprop_hpo(
-            all_df,
+            hpo_df,
             hyperparameters,
             hpo_block,
             target_columns=target_columns,
@@ -741,7 +780,7 @@ if __name__ == "__main__":
         uq_dict = None
     else:
         classification_uq = None
-        preds_std = None
+        all_ens_preds = None
         if len(ensemble_models) > 1:
             _std_t0 = time.time()
             print(f"Computing prediction_std from {len(ensemble_models)} models...", flush=True)
@@ -750,20 +789,26 @@ if __name__ == "__main__":
                 ensemble_models, val_dps, num_workers=min(os.cpu_count() or 4, 8), device=device
             )
             print(f"[timing] prediction_std (ensemble inference): {time.time() - _std_t0:.1f}s", flush=True)
-            preds_std = np.std(all_ens_preds, axis=0)
+
+        # Back to the original scale, so metrics and UQ below read true values
+        target_frame = per_target_predictions(
+            target_columns, preds, all_ens_preds, target_transforms, prediction_bounds
+        )
 
         print(f"[timing] post-training elapsed before metrics: {time.time() - _post_t0:.1f}s", flush=True)
         print("\n--- Per-target metrics ---")
         for t_idx, t_name in enumerate(target_columns):
-            valid_mask = ~np.isnan(y_oof[:, t_idx])
-            if valid_mask.sum() > 0:
-                metrics = compute_regression_metrics(y_oof[valid_mask, t_idx], preds[valid_mask, t_idx])
+            labeled = df_oof[t_name].notna().values
+            if labeled.sum() > 0:
+                metrics = compute_regression_metrics(
+                    df_oof[t_name].values[labeled], target_frame[f"{t_name}_pred"].values[labeled]
+                )
                 if not metrics:
                     raise ValueError(f"Out-of-fold predictions for '{t_name}' are all NaN.")
                 print_regression_metrics(metrics)
 
-            df_oof[f"{t_name}_pred"] = preds[:, t_idx]
-            df_oof[f"{t_name}_pred_std"] = preds_std[:, t_idx] if preds_std is not None else 0.0
+        for col in target_frame.columns:
+            df_oof[col] = target_frame[col].values
 
         # Calibrate UQ for every target off the out-of-fold predictions. One shared
         # proximity index serves all of them; each target contributes only its own
@@ -773,8 +818,7 @@ if __name__ == "__main__":
         print("=" * 50)
 
         primary = target_columns[0]
-        df_oof["prediction"] = df_oof[f"{primary}_pred"]
-        df_oof["prediction_std"] = df_oof[f"{primary}_pred_std"]
+        alias_primary_target(df_oof, primary)
 
         uq_dict = None  # set in the valid-rows branch below; save handles None
 
@@ -813,14 +857,13 @@ if __name__ == "__main__":
             # Apply active UQ to df_oof columns for oof_predictions.csv. Each target
             # gets {target}_-prefixed outputs; the primary is aliased unprefixed to
             # match prediction / prediction_std.
-            for t_name in per_target:
-                valid = df_oof[t_name].notna()
-                uq_out = uq_dict["oof_outputs"][t_name]
-                for col in uq_out.columns:
-                    df_oof[f"{t_name}_{col}"] = np.nan
-                    df_oof.loc[valid, f"{t_name}_{col}"] = uq_out[col].values
-                    if t_name == primary:
-                        df_oof[col] = df_oof[f"{t_name}_{col}"]
+            # Each target calibrates on its own labeled rows, so the masks differ per target.
+            apply_per_target_uq(
+                df_oof,
+                {t_name: uq_dict["oof_outputs"][t_name] for t_name in per_target},
+                primary,
+                {t_name: df_oof[t_name].notna() for t_name in per_target},
+            )
         else:
             print("[uq] No valid target rows; skipping UQ fits.")
 
@@ -933,7 +976,6 @@ if __name__ == "__main__":
         if len(h_dps):
             all_ens = predict_ensemble(ensemble_models, h_dps, device=device)
             h_preds = np.mean(all_ens, axis=0)
-            h_std = np.std(all_ens, axis=0)
 
             if model_type == "classifier":
                 all_probs_stack = all_ens  # (n_models, n_samples, n_classes or 1 sigmoid)
@@ -956,15 +998,22 @@ if __name__ == "__main__":
                         raw_conf, classification_uq["classification_confidence"]
                     )
             else:
+                # Held-out rows were never transformed, so their targets are already
+                # original-scale; only the predictions need inverting.
+                h_frame = per_target_predictions(
+                    target_columns, h_preds, all_ens, target_transforms, prediction_bounds
+                )
                 df_val = pd.DataFrame({id_column: h_df[id_column].values})
                 print("Held-out validation metrics (per target):")
                 for t_idx, t_name in enumerate(target_columns):
                     df_val[t_name] = h_df[t_name].values
-                    df_val[f"{t_name}_pred"] = h_preds[:, t_idx]
-                    df_val[f"{t_name}_pred_std"] = h_std[:, t_idx]
+                    df_val[f"{t_name}_pred"] = h_frame[f"{t_name}_pred"].values
+                    df_val[f"{t_name}_pred_std"] = h_frame[f"{t_name}_pred_std"].values
                     mask = h_df[t_name].notna().values
                     if mask.sum() > 0:
-                        metrics = compute_regression_metrics(h_df[t_name].values[mask], h_preds[mask, t_idx])
+                        metrics = compute_regression_metrics(
+                            h_df[t_name].values[mask], h_frame[f"{t_name}_pred"].values[mask]
+                        )
                         if not metrics:
                             raise ValueError(
                                 f"Held-out predictions for '{t_name}' are all NaN ({int(mask.sum())} labeled rows)."
@@ -972,8 +1021,7 @@ if __name__ == "__main__":
                         print_regression_metrics(metrics)
                         if t_idx == 0:
                             print(f"holdout_mae: {metrics['mae']:.3f}")
-                df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
-                df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
+                alias_primary_target(df_val, target_columns[0])
 
             # Held-out rows are novel to the UQ proximity reference (they were split
             # out before it was built), so score them the way inference scores a new
@@ -992,15 +1040,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Save out-of-fold and held-out validation predictions to S3
     # -------------------------------------------------------------------------
-    output_columns = [id_column] + target_columns
-    output_columns += [f"{t}_pred" for t in target_columns] + [f"{t}_pred_std" for t in target_columns]
-    output_columns += ["prediction", "prediction_std"]
-    # UQ outputs: unprefixed for the primary target, {target}_-prefixed for every target
-    uq_names = [c for c in df_oof.columns if c.startswith("q_") or c in ("confidence", "expected_residual")]
-    output_columns += uq_names
-    output_columns += [f"{t}_{c}" for t in target_columns for c in uq_names]
-    output_columns += [c for c in df_oof.columns if c.endswith("_proba")]
-    output_columns = [c for c in output_columns if c in df_oof.columns]
+    output_columns = multi_target_output_columns(df_oof, id_column, target_columns)
 
     # Both files carry the same columns; reindex covers anything the held-out path
     # didn't produce (e.g. UQ columns when the active version needs fingerprints).

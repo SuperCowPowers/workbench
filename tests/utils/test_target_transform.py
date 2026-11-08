@@ -103,9 +103,9 @@ def test_transforms_preserve_order():
     assert np.all(np.diff(forward) > 0)
 
 
-def test_spec_round_trips_through_the_registry():
+def test_resolve_passes_an_already_resolved_transform_through():
     transform = Log10(offset=0.01)
-    assert resolve_target_transform(transform.spec()).offset == transform.offset
+    assert resolve_target_transform(transform) is transform
 
 
 def test_multi_target_single_spec_applies_to_every_target():
@@ -132,10 +132,18 @@ def test_multi_target_mapping_rejects_unknown_columns():
         resolve_target_transforms({"ksoll": "log10"}, TARGETS)
 
 
-def test_multi_target_name_key_wins_over_mapping_reading():
-    """A target column literally named 'name' is not a case we support; 'name' means a spec."""
-    resolved = resolve_target_transforms({"name": "identity"}, TARGETS)
-    assert all(isinstance(t, Identity) for t in resolved.values())
+def test_multi_target_spec_dict_is_not_read_as_a_mapping():
+    """'name' and 'offset' are not target columns, so this is one spec for every target."""
+    resolved = resolve_target_transforms({"name": "log10", "offset": 0.5}, TARGETS)
+    assert all(isinstance(t, Log10) and t.offset == 0.5 for t in resolved.values())
+
+
+def test_multi_target_mapping_wins_when_a_target_is_called_name():
+    """Every key is a target column, so the dict is a mapping even with a 'name' key."""
+    targets = ["name", "logd"]
+    resolved = resolve_target_transforms({"name": "log10", "logd": None}, targets)
+    assert isinstance(resolved["name"], Log10)
+    assert isinstance(resolved["logd"], Identity)
 
 
 def test_resolve_prediction_bounds_shared_and_per_target():

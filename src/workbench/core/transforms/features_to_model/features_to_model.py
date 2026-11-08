@@ -31,18 +31,6 @@ from workbench.utils.metrics_utils import TRAINING_METRICS
 # retryable, so a single blip under concurrent Batch load would otherwise kill the pipeline.
 TRANSIENT_DESCRIBE_ERRORS = {"HttpTimeoutException", "ThrottlingException", "ThrottledException"}
 
-# Built-in templates that invert a target transform at inference. A spec handed to any other
-# template is dropped on the floor, which would train on the raw target and serve predictions
-# that silently disagree with the request, so creation fails instead.
-TARGET_TRANSFORM_FRAMEWORKS = {
-    ModelFramework.XGBOOST,
-    ModelFramework.CHEMPROP,
-    ModelFramework.PYTORCH,
-    ModelFramework.TABICL,
-    ModelFramework.ATOMJEPA,
-}
-TARGET_TRANSFORM_KEYS = ("target_transform", "prediction_bounds")
-
 # Every training instance this class can pick, keyed by workload, in preference order (at most
 # 5). SageMaker launches the job on the first type with capacity; when none has any, the job
 # queues and SageMaker retries the list until one does. Ray sizes trial concurrency to the GPUs
@@ -319,14 +307,6 @@ class FeaturesToModel(Transform):
             "id_column": feature_set.id_column,
             "hyperparameters": kwargs.get("hyperparameters", {}),
         }
-
-        # A custom script owns its own hyperparameters, so it is free to handle these itself.
-        requested = [k for k in TARGET_TRANSFORM_KEYS if template_params["hyperparameters"].get(k) is not None]
-        if requested and not self.custom_script and self.model_framework not in TARGET_TRANSFORM_FRAMEWORKS:
-            raise ValueError(
-                f"{self.model_framework.value} does not support {', '.join(requested)}. "
-                f"Supported frameworks: {sorted(f.value for f in TARGET_TRANSFORM_FRAMEWORKS)}"
-            )
 
         # Caller-supplied template params (used by MetaEndpoint to inject DAG
         # config, region, s3_bucket; available for any framework that needs

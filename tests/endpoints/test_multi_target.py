@@ -1,5 +1,7 @@
 """Tests for multi-target prediction columns."""
 
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,7 +12,7 @@ from workbench.endpoints.multi_target import (
     multi_target_output_columns,
     per_target_predictions,
 )
-from workbench.utils.target_transform import Log10
+from workbench.utils.target_transform import Log10, load_target_transform, resolve_target_transforms
 
 TARGETS = ["ksol", "logd"]
 
@@ -66,6 +68,14 @@ def test_per_target_predictions_clips_bounds():
     assert frame["logd_pred"][0] == 100.0
 
 
+def test_per_target_predictions_on_an_empty_batch():
+    """A batch with no parseable molecules still returns the same columns."""
+    stack = np.empty((3, 0, 2))
+    frame = per_target_predictions(TARGETS, np.mean(stack, axis=0), stack, transforms={"ksol": Log10()})
+    assert list(frame.columns) == ["ksol_pred", "ksol_pred_std", "logd_pred", "logd_pred_std"]
+    assert len(frame) == 0
+
+
 def test_alias_primary_target():
     df = pd.DataFrame({"ksol_pred": [1.0], "ksol_pred_std": [0.5], "ksol_confidence": [0.9]})
     alias_primary_target(df, "ksol", ["confidence", "q_05"])
@@ -104,6 +114,39 @@ def test_apply_per_target_uq_with_per_target_masks():
     apply_per_target_uq(df, uq_outs, primary="ksol", masks=masks)
     assert df["ksol_confidence"][0] == 0.1 and np.isnan(df["ksol_confidence"][1])
     assert np.isnan(df["logd_confidence"][0]) and df["logd_confidence"][1] == 0.4
+
+
+def test_training_to_inference_round_trip(tmp_path):
+    """The seam the templates sit on: what training writes, inference must read back.
+
+    Training applies forward to the target and saves the spec; model_fn reads the spec from
+    that file and predict_fn inverts with it. A perfect model's predictions must therefore
+    come back equal to the original-scale targets.
+    """
+    truth = np.array([[0.001, 2.0], [0.5, 3.0], [250.0, 4.0]])
+    spec = {"ksol": {"name": "log10", "offset": 0.0001}}
+
+    # Training: transform the target, then persist the spec the way a template does
+    fitted = {t: resolve_target_transforms(spec, TARGETS)[t] for t in TARGETS}
+    trained_on = np.column_stack([fitted[t].forward(truth[:, i]) for i, t in enumerate(TARGETS)])
+    (tmp_path / "hyperparameters.json").write_text(json.dumps({"target_transform": spec, "n_folds": 5}))
+
+    # Inference: resolve from the saved file alone, then invert a perfect model's output
+    transforms, bounds = load_target_transform(str(tmp_path), TARGETS)
+    frame = per_target_predictions(TARGETS, trained_on, np.stack([trained_on]), transforms, bounds)
+
+    np.testing.assert_allclose(frame["ksol_pred"], truth[:, 0], rtol=1e-9)
+    np.testing.assert_allclose(frame["logd_pred"], truth[:, 1], rtol=1e-9)
+
+
+def test_training_to_inference_round_trip_without_a_spec(tmp_path):
+    """A model saved with no transform must serve its predictions unchanged."""
+    truth = np.array([[1.5, 2.0]])
+    (tmp_path / "hyperparameters.json").write_text(json.dumps({"n_folds": 5}))
+    transforms, bounds = load_target_transform(str(tmp_path), TARGETS)
+    frame = per_target_predictions(TARGETS, truth, None, transforms, bounds)
+    np.testing.assert_allclose(frame["ksol_pred"], truth[:, 0])
+    np.testing.assert_allclose(frame["logd_pred"], truth[:, 1])
 
 
 def test_multi_target_output_columns_order():

@@ -31,9 +31,6 @@ class Identity:
     def inverse(self, predictions: np.ndarray) -> np.ndarray:
         return np.asarray(predictions, dtype=float)
 
-    def spec(self) -> dict:
-        return {"name": self.name}
-
     def __repr__(self) -> str:
         return self.name
 
@@ -41,9 +38,9 @@ class Identity:
 class Log10:
     """``log10(y + offset)``, for targets spanning orders of magnitude.
 
-    ``offset`` shifts the target away from zero and should be set near the assay's lower
-    limit, not reflexively to 1.0: over a target already confined to [0, 1] an offset of 1.0
-    makes the map nearly linear, which is no transform at all.
+    ``offset`` shifts the target away from zero and belongs near the assay's lower limit. An
+    offset large relative to the target's own range flattens the map toward linear — over a
+    target confined to [0, 1], an offset of 1.0 is barely a transform at all.
     """
 
     name = "log10"
@@ -69,9 +66,6 @@ class Log10:
     def inverse(self, predictions: np.ndarray) -> np.ndarray:
         return np.power(10.0, np.asarray(predictions, dtype=float)) - self.offset
 
-    def spec(self) -> dict:
-        return {"name": self.name, "offset": self.offset}
-
     def __repr__(self) -> str:
         return f"{self.name}(offset={self.offset:g})"
 
@@ -94,7 +88,7 @@ def resolve_target_transform(spec: TransformSpec) -> Union[Identity, Log10]:
     """
     if spec is None:
         return Identity()
-    if isinstance(spec, (Identity, Log10)):
+    if isinstance(spec, tuple(TRANSFORMS.values())):
         return spec
     if isinstance(spec, str):
         spec = {"name": spec}
@@ -114,18 +108,22 @@ def resolve_target_transform(spec: TransformSpec) -> Union[Identity, Log10]:
         raise ValueError(f"Bad arguments for target_transform {name!r}: {exc}") from exc
 
 
-def _is_single_spec(spec: TransformSpec) -> bool:
-    """True when ``spec`` describes one transform rather than a per-target mapping."""
-    return spec is None or isinstance(spec, str) or (isinstance(spec, dict) and "name" in spec)
+def _is_per_target_mapping(spec: TransformSpec, targets: Sequence[str]) -> bool:
+    """True when every key names a target column, so the dict is a per-target mapping.
+
+    Tested before the single-spec form, so a model with a target column called ``name`` reads
+    ``{"name": ...}`` as that target rather than as a transform name.
+    """
+    return isinstance(spec, dict) and bool(spec) and all(key in targets for key in spec)
 
 
 def resolve_target_transforms(spec: TransformSpec, targets: Sequence[str]) -> dict:
     """Resolve a transform for each target of a multi-target model.
 
-    A single spec (``None``, ``"log10"``, or ``{"name": "log10", ...}``) applies to every
-    target. Any other dict is a ``{target_column: spec}`` mapping, and targets it omits get
-    identity — multi-target models carry targets in different units, so a shared transform
-    rarely suits all of them.
+    A dict whose every key is a target column is a ``{target_column: spec}`` mapping, and
+    targets it omits get identity — multi-target models carry targets in different units, so
+    a shared transform rarely suits all of them. Anything else is a single spec (``None``,
+    ``"log10"``, or ``{"name": "log10", ...}``) applied to every target.
 
     Args:
         spec: The ``target_transform`` hyperparameter value.
@@ -134,16 +132,14 @@ def resolve_target_transforms(spec: TransformSpec, targets: Sequence[str]) -> di
     Returns:
         ``{target_column: transform}`` covering every target.
     """
-    if _is_single_spec(spec):
-        shared = resolve_target_transform(spec)
-        return {target: shared for target in targets}
-    if not isinstance(spec, dict):
-        raise ValueError(f"target_transform must be a name, a spec dict, or a per-target mapping, got {spec!r}")
-
-    unknown = [column for column in spec if column not in targets]
-    if unknown:
+    if _is_per_target_mapping(spec, targets):
+        return {target: resolve_target_transform(spec.get(target)) for target in targets}
+    if isinstance(spec, dict) and spec and "name" not in spec:
+        unknown = [column for column in spec if column not in targets]
         raise ValueError(f"target_transform names columns that are not targets: {unknown}. Targets: {list(targets)}")
-    return {target: resolve_target_transform(spec.get(target)) for target in targets}
+
+    shared = resolve_target_transform(spec)
+    return {target: shared for target in targets}
 
 
 def resolve_prediction_bounds(spec, targets: Sequence[str]) -> dict:
