@@ -816,9 +816,7 @@ if __name__ == "__main__":
             fold_preds = np.stack([p.flatten() for p in all_preds])
             h_pred = clip_to_bounds(target_transform.inverse(np.mean(fold_preds, axis=0)), prediction_bounds)
             fold_preds = target_transform.inverse(fold_preds)
-            h_std = (
-                np.std(fold_preds, axis=0) if len(ensemble_models) > 1 else np.zeros(len(h_pred))
-            )
+            h_std = np.std(fold_preds, axis=0) if len(ensemble_models) > 1 else np.zeros(len(h_pred))
             metrics = compute_regression_metrics(y_h_true, h_pred)
             print("Held-out validation metrics:")
             print_regression_metrics(metrics)
