@@ -47,6 +47,8 @@ class Log10:
 
     def __init__(self, offset: float = 0.0):
         self.offset = float(offset)
+        if not np.isfinite(self.offset):
+            raise ValueError(f"target_transform 'log10' needs a finite offset, got {offset!r}")
 
     def forward(self, y: np.ndarray) -> np.ndarray:
         shifted = np.asarray(y, dtype=float) + self.offset

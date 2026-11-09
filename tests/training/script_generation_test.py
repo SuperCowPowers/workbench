@@ -127,3 +127,18 @@ def test_shipped_templates_generate_valid_python():
         ]
         assert len(payloads) == 1, framework
         assert json.loads(payloads[0]) == params["hyperparameters"], framework
+
+
+@pytest.mark.parametrize("key", ["target_transform", "prediction_bounds"])
+def test_target_transform_keys_cannot_be_searched_by_hpo(key):
+    """Trials train on the transform set before the search, so a searched one would not match inference."""
+    from workbench.core.model_types import ModelFramework, ModelType
+    from workbench.model_scripts.script_generation import _check_target_transform_support
+
+    params = {
+        "model_framework": ModelFramework.XGBOOST,
+        "model_type": ModelType.REGRESSOR,
+        "hyperparameters": {"hpo": {"search_space": {key: {"type": "choice", "options": [None, "log10"]}}}},
+    }
+    with pytest.raises(ValueError, match="cannot be searched by HPO"):
+        _check_target_transform_support(params, ModelType, ModelFramework)

@@ -86,7 +86,17 @@ def _check_target_transform_support(template_params: dict, model_type_enum, mode
     serve predictions that disagree with the request, so creation fails instead. Shared by
     every path that generates a script, AWS and local alike.
     """
-    requested = [k for k in TARGET_TRANSFORM_KEYS if (template_params.get("hyperparameters") or {}).get(k) is not None]
+    hyperparameters = template_params.get("hyperparameters") or {}
+
+    # The target is transformed once, before HPO runs, so a searched transform would differ
+    # between the trials and the winner's saved config that inference reads back
+    hpo_block = hyperparameters.get("hpo")
+    search_space = hpo_block.get("search_space") if isinstance(hpo_block, dict) else None
+    searched = [k for k in TARGET_TRANSFORM_KEYS if isinstance(search_space, dict) and k in search_space]
+    if searched:
+        raise ValueError(f"{', '.join(searched)} cannot be searched by HPO; set it as a top-level hyperparameter")
+
+    requested = [k for k in TARGET_TRANSFORM_KEYS if hyperparameters.get(k) is not None]
     if not requested:
         return
 

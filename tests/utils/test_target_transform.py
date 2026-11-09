@@ -43,6 +43,13 @@ def test_resolve_raises_on_bad_arguments():
         resolve_target_transform({"name": "log10", "offsset": 1.0})
 
 
+@pytest.mark.parametrize("offset", ["nan", "inf", float("-inf")])
+def test_resolve_raises_on_a_non_finite_offset(offset):
+    """A non-finite offset would turn every label into NaN rather than fail."""
+    with pytest.raises(ValueError, match="needs a finite offset"):
+        resolve_target_transform({"name": "log10", "offset": offset})
+
+
 def test_resolve_raises_on_malformed_spec():
     with pytest.raises(ValueError, match="must be None, a name, or a dict"):
         resolve_target_transform({"offset": 1.0})
