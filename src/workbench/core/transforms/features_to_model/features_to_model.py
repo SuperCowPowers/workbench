@@ -448,21 +448,25 @@ class FeaturesToModel(Transform):
         self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
 
-    def _wait_for_training_job(self, poll_interval: int = 30):
+    def _wait_for_training_job(self, poll_interval: int = 30, heartbeat_interval: int = 300):
         """Poll the training job to completion using our hardened SageMaker client.
 
         Retries transient DescribeTrainingJob control-plane errors (HttpTimeoutException,
         throttling) that botocore won't retry on its own, so a blip doesn't fail the job.
+        Logs each status/secondary-status change plus a periodic heartbeat, so a long wait
+        for instance capacity still shows elapsed time and that the poller is alive.
 
         Args:
             poll_interval (int): Seconds between DescribeTrainingJob polls (default 30)
+            heartbeat_interval (int): Seconds between proof-of-life logs (default 300)
 
         Raises:
             RuntimeError: If the training job reaches a terminal status other than Completed
         """
         terminal = {"Completed", "Failed", "Stopped"}
-        last_status = None
-        selected = None
+        start = time.time()
+        last_heartbeat = start
+        last_state = None
         while True:
             try:
                 desc = self.sm_client.describe_training_job(TrainingJobName=self.training_job_name)
@@ -475,12 +479,16 @@ class FeaturesToModel(Transform):
                 raise
 
             status = desc["TrainingJobStatus"]
-            if status != last_status:
-                self.log.info(f"Training job {self.training_job_name} status: {status}")
-                last_status = status
-            if not selected and desc["ResourceConfig"].get("SelectedInstanceType"):
-                selected = desc["ResourceConfig"]["SelectedInstanceType"]
-                self.log.important(f"Training job {self.training_job_name} got a {selected}")
+            secondary = desc.get("SecondaryStatus", "")
+            now = time.time()
+            if (status, secondary) != last_state:
+                self.log.info(f"Training job {self.training_job_name} status: {status}/{secondary}")
+                last_state = (status, secondary)
+                last_heartbeat = now
+            elif now - last_heartbeat >= heartbeat_interval:
+                elapsed = int(now - start) // 60
+                self.log.info(f"Training job {self.training_job_name} {secondary} ({elapsed}m elapsed)...")
+                last_heartbeat = now
             if status in terminal:
                 if status == "Completed":
                     return
