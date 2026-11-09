@@ -19,6 +19,7 @@ nav:
     - Atom-JEPA: models/atomjepa_models.md
     - Cleanlab: models/cleanlab_models.md
     - Meta Endpoints: models/meta_endpoints.md
+    - Target Transforms: models/target_transforms.md
     - Hyperparameter Optimization: models/hpo.md
   - API Classes: 
     - OverView: api_classes/overview.md
