@@ -1,0 +1,48 @@
+{
+  "pipelines": {
+    "target_transform": [
+      {
+        "script": "target_transform_fs.py",
+        "inputs": [
+          "public:comp_chem/openadmet/expansionrx/train/mppb"
+        ],
+        "outputs": [
+          "ds:mppb_raw",
+          "fs:mppb_raw"
+        ]
+      },
+      {
+        "script": "target_transform_xgb.py",
+        "inputs": [
+          "fs:mppb_raw"
+        ],
+        "outputs": [
+          "model:mppb-xgb-plain",
+          "endpoint:mppb-xgb-plain",
+          "model:mppb-xgb-bounds",
+          "endpoint:mppb-xgb-bounds",
+          "model:mppb-xgb-log10",
+          "endpoint:mppb-xgb-log10"
+        ]
+      },
+      {
+        "script": "target_transform_frameworks.py",
+        "inputs": [
+          "fs:mppb_raw"
+        ],
+        "outputs": [
+          "model:mppb-pytorch-log10",
+          "endpoint:mppb-pytorch-log10",
+          "model:mppb-chemprop-log10",
+          "endpoint:mppb-chemprop-log10",
+          "model:mppb-tabicl-log10",
+          "endpoint:mppb-tabicl-log10",
+          "model:mppb-chemprop-mt-log10",
+          "endpoint:mppb-chemprop-mt-log10",
+          "model:mppb-atomjepa-log10",
+          "endpoint:mppb-atomjepa-log10"
+        ]
+      }
+    ]
+  }
+}
