@@ -48,16 +48,21 @@ def load_tabicl(model_dir: str, device: str | None = None) -> tuple:
     return model, reducer
 
 
-def predict_with_std(model, X, reducer=None) -> tuple[np.ndarray, np.ndarray]:
+def predict_with_std(model, X, reducer=None, transform=None) -> tuple[np.ndarray, np.ndarray]:
     """Mean prediction and a std-like spread from TabICL's predictive distribution.
 
     The spread is half the distance between the 16th and 84th percentiles: the model's
     own per-row uncertainty, used as ``prediction_std`` by the UQModel.
 
+    A ``transform`` inverts both quantiles before the spread is taken. The transform is
+    monotonic, so the inverted quantiles are the true original-scale quantiles and the spread
+    stays exact — nothing here approximates a transformed-space std.
+
     Args:
         model: a fitted TabICLRegressor.
         X: feature frame or array, in the model's training column order.
         reducer: fitted feature reducer, applied before the model when present.
+        transform: target transform to invert, for a model fitted on a transformed target.
 
     Returns:
         tuple: (prediction, prediction_std), each of shape (n_rows,).
@@ -65,5 +70,7 @@ def predict_with_std(model, X, reducer=None) -> tuple[np.ndarray, np.ndarray]:
     if reducer is not None:
         X = reducer.transform(X)
     out = model.predict(X, output_type=["mean", "quantiles"], alphas=STD_QUANTILES)
-    lower, upper = out["quantiles"][:, 0], out["quantiles"][:, 1]
-    return np.asarray(out["mean"]), (upper - lower) / 2
+    mean, lower, upper = np.asarray(out["mean"]), out["quantiles"][:, 0], out["quantiles"][:, 1]
+    if transform is not None:
+        mean, lower, upper = transform.inverse(mean), transform.inverse(lower), transform.inverse(upper)
+    return mean, (upper - lower) / 2

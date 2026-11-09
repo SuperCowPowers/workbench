@@ -72,6 +72,47 @@ def fill_template(template_path: str, params: dict, output_script: str, output_d
     return output_path
 
 
+# Hyperparameters only the templates listed below act on. Every caller of
+# generate_model_script reaches it with a built-in template, so a custom script — which owns
+# its own hyperparameters — never passes through here.
+TARGET_TRANSFORM_KEYS = ("target_transform", "prediction_bounds")
+TARGET_TRANSFORM_FRAMEWORKS = ("XGBOOST", "CHEMPROP", "PYTORCH", "TABICL", "ATOMJEPA")
+
+
+def _check_target_transform_support(template_params: dict, model_type_enum, model_framework_enum) -> None:
+    """Reject a target transform the chosen template would silently drop.
+
+    A spec handed to a template that does not invert it would train on the raw target and
+    serve predictions that disagree with the request, so creation fails instead. Shared by
+    every path that generates a script, AWS and local alike.
+    """
+    hyperparameters = template_params.get("hyperparameters") or {}
+
+    # The target is transformed once, before HPO runs, so a searched transform would differ
+    # between the trials and the winner's saved config that inference reads back
+    hpo_block = hyperparameters.get("hpo")
+    search_space = hpo_block.get("search_space") if isinstance(hpo_block, dict) else None
+    searched = [k for k in TARGET_TRANSFORM_KEYS if isinstance(search_space, dict) and k in search_space]
+    if searched:
+        raise ValueError(f"{', '.join(searched)} cannot be searched by HPO; set it as a top-level hyperparameter")
+
+    requested = [k for k in TARGET_TRANSFORM_KEYS if hyperparameters.get(k) is not None]
+    if not requested:
+        return
+
+    supported = {getattr(model_framework_enum, name) for name in TARGET_TRANSFORM_FRAMEWORKS}
+    framework = template_params.get("model_framework")
+    if framework not in supported:
+        raise ValueError(
+            f"{getattr(framework, 'value', framework)} does not support {', '.join(requested)}. "
+            f"Supported frameworks: {sorted(f.value for f in supported)}"
+        )
+    if template_params.get("model_type") == model_type_enum.CLASSIFIER:
+        raise ValueError(f"{', '.join(requested)} applies to regression targets only")
+    if template_params.get("model_class"):
+        raise ValueError(f"a scikit-learn model_class does not support {', '.join(requested)}")
+
+
 def generate_model_script(template_params: dict) -> str:
     """
     Fill in the model template with specific parameters.
@@ -92,6 +133,8 @@ def generate_model_script(template_params: dict) -> str:
         str: The path to the generated model script
     """
     from workbench.core.model_types import ModelType, ModelFramework
+
+    _check_target_transform_support(template_params, ModelType, ModelFramework)
 
     # Determine which template to use based on model type
     if template_params.get("model_class"):

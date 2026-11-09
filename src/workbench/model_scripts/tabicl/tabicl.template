@@ -29,6 +29,7 @@ from workbench.endpoints.inference import (
 )
 from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
 from workbench.endpoints.tabicl_utils import load_tabicl, predict_with_std
+from workbench.endpoints.target_transform import clip_to_bounds, load_target_transform, resolve_target_transform
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 log = logging.getLogger("workbench")
@@ -70,6 +71,14 @@ DEFAULT_HYPERPARAMETERS = {
     #   "v1" (default): proximity-augmented RandomForest error model
     #   "v2": pure applicability-domain confidence from neighbors
     "uq_version": "v1",
+    # Target transform: fit in transformed space, serve on the original scale. None
+    # (identity), a name ("log10"), or a name with arguments ({"name": "log10",
+    # "offset": 0.001}). Set offset near the assay's lower limit to bring zeros into the
+    # domain. Metrics, saved predictions, and UQ are all on the original scale.
+    "target_transform": None,
+    # Clip predictions into a physically valid range, e.g. [0.0, 100.0] for a percentage.
+    # Applied after any inverse transform; either side may be null.
+    "prediction_bounds": None,
 }
 
 # Column count TabICL is pretrained on; beyond it accuracy can degrade
@@ -93,6 +102,7 @@ TEMPLATE_PARAMS = {
 def model_fn(model_dir: str) -> dict:
     """Load the served TabICL model from the specified directory."""
     model, reducer = load_tabicl(model_dir)
+    target_transform, prediction_bounds = load_target_transform(model_dir)
 
     category_mappings = {}
     category_path = os.path.join(model_dir, "category_mappings.json")
@@ -105,6 +115,8 @@ def model_fn(model_dir: str) -> dict:
         "reducer": reducer,
         "category_mappings": category_mappings,
         "uq_model": load_regression_uq(model_dir),
+        "target_transform": target_transform,
+        "prediction_bounds": prediction_bounds,
     }
 
 
@@ -130,9 +142,12 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         print("Decompressing features for prediction...")
         matched_df, features = decompress_features(matched_df, features, compressed_features)
 
+    # predict_with_std inverts the transform on both quantiles, so the spread is already on
+    # the original scale and exact — the transform is monotonic.
     df["prediction"], df["prediction_std"] = predict_with_std(
-        model_dict["model"], matched_df[features], model_dict["reducer"]
+        model_dict["model"], matched_df[features], model_dict["reducer"], model_dict["target_transform"]
     )
+    df["prediction"] = clip_to_bounds(df["prediction"].values, model_dict.get("prediction_bounds"))
 
     # UQModel UQ: expected_residual, confidence, and conformal intervals. V1/V2 need a
     # neighbor-lookup payload; V0 has no backend and scores from prediction + std alone.
@@ -218,6 +233,18 @@ if __name__ == "__main__":
     print(f"Hyperparameters: {hyperparameters}")
 
     # -------------------------------------------------------------------------
+    # Target transform and prediction bounds
+    # -------------------------------------------------------------------------
+    # Fit in transformed space. The fold and served predictions below invert back to the
+    # original scale, so metrics, saved predictions, and UQ are all original-scale. Held-out
+    # rows keep their original-scale target; only their predictions are inverted.
+    target_transform = resolve_target_transform(hyperparameters.get("target_transform"))
+    prediction_bounds = hyperparameters.get("prediction_bounds")
+    all_df[target] = target_transform.forward(all_df[target].values)
+    print(f"Target transform: {target_transform}")
+    print(f"Prediction bounds: {prediction_bounds}")
+
+    # -------------------------------------------------------------------------
     # Preprocessing: Categorical features and decompression
     # -------------------------------------------------------------------------
     non_compressed_features = [f for f in features if f not in (compressed_features or [])]
@@ -270,14 +297,18 @@ if __name__ == "__main__":
             hyperparameters, fold_df[features], fold_df[target], cache=False, expanded_columns=expanded_columns
         )
         oof_predictions[val_idx], oof_std[val_idx] = predict_with_std(
-            fold_model, all_df.iloc[val_idx][features], fold_reducer
+            fold_model, all_df.iloc[val_idx][features], fold_reducer, target_transform
         )
 
     # K-fold: every row has an out-of-fold prediction. Single split: only the validation rows.
     oof_mask = ~np.isnan(oof_predictions)
     df_oof = all_df[oof_mask].copy()
-    df_oof["prediction"] = oof_predictions[oof_mask]
+    df_oof["prediction"] = clip_to_bounds(oof_predictions[oof_mask], prediction_bounds)
     df_oof["prediction_std"] = oof_std[oof_mask]
+
+    # Predictions came back on the original scale; bring the target alongside them for
+    # metrics. all_df stays transformed until the served model is fitted below.
+    df_oof[target] = target_transform.inverse(df_oof[target].values)
 
     y_true = df_oof[target].values
     y_pred = df_oof["prediction"].values
@@ -294,6 +325,10 @@ if __name__ == "__main__":
     model, reducer = fit_tabicl(
         hyperparameters, all_df[features], all_df[target], cache=True, expanded_columns=expanded_columns
     )
+
+    # Served model is fitted, so nothing trains on the target again. Invert it: it still
+    # feeds the UQ proximity reference set, which must agree with the original-scale y_true.
+    all_df[target] = target_transform.inverse(all_df[target].values)
 
     # -------------------------------------------------------------------------
     # Fit UQ models on the out-of-fold predictions
@@ -372,7 +407,9 @@ if __name__ == "__main__":
 
         # Preprocess held-out rows through the SAME fitted objects used for training
         h_df = align_frame(holdout_df, category_mappings, orig_features, compressed_features)
-        h_pred, h_std = predict_with_std(model, h_df[features], reducer)
+        h_pred, h_std = predict_with_std(model, h_df[features], reducer, target_transform)
+        h_pred = clip_to_bounds(h_pred, prediction_bounds)
+        # Held-out rows were never transformed, so their target is already original-scale
         y_h_true = holdout_df[target].values
         metrics = compute_regression_metrics(y_h_true, h_pred)
         print("Held-out validation metrics:")

@@ -17,6 +17,7 @@ import pandas as pd
 
 from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers
 from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
+from workbench.endpoints.target_transform import clip_to_bounds, load_target_transform, resolve_target_transform
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 # =============================================================================
@@ -56,6 +57,14 @@ DEFAULT_HYPERPARAMETERS = {
     #   "v1" (default): proximity-augmented RandomForest error model
     #   "v2": pure applicability-domain confidence from neighbors
     "uq_version": "v1",
+    # Target transform: fit in transformed space, serve on the original scale. None
+    # (identity), a name ("log10"), or a name with arguments ({"name": "log10",
+    # "offset": 0.001}). Set offset near the assay's lower limit to bring zeros into the
+    # domain. Metrics, saved predictions, and UQ are all on the original scale.
+    "target_transform": None,
+    # Clip predictions into a physically valid range, e.g. [0.0, 100.0] for a percentage.
+    # Applied after any inverse transform; either side may be null.
+    "prediction_bounds": None,
 }
 
 # Template parameters (filled in by Workbench)
@@ -86,10 +95,13 @@ def model_fn(model_dir: str) -> dict:
     with open(os.path.join(model_dir, "hyperparameters.json"), encoding="utf-8") as f:
         hyperparameters = json.load(f)
     fold_dirs = sorted(d for d in os.listdir(model_dir) if d.startswith("fold_"))
+    target_transform, prediction_bounds = load_target_transform(model_dir)
     return {
         "folds": [FoldModel.load(os.path.join(model_dir, d)) for d in fold_dirs],
         "hyperparameters": hyperparameters,
         "uq_model": load_regression_uq(model_dir),
+        "target_transform": target_transform,
+        "prediction_bounds": prediction_bounds,
     }
 
 
@@ -114,7 +126,15 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     extra = matched.loc[ok, extra_features].to_numpy(np.float64) if extra_features else None
     valid = [c for c in conformers if c is not None]
     preds = np.stack([fold.predict(valid, extra) for fold in model_dict["folds"]])
-    df.loc[ok, "prediction"], df.loc[ok, "prediction_std"] = preds.mean(axis=0), preds.std(axis=0)
+
+    # Back to the original scale: the point prediction inverts the ensemble mean, which is the
+    # conditional median and so the MAE-optimal estimate, while the spread is the std of the
+    # inverted members so it carries the same units as the prediction it accompanies.
+    target_transform = model_dict["target_transform"]
+    df.loc[ok, "prediction"] = clip_to_bounds(
+        target_transform.inverse(preds.mean(axis=0)), model_dict.get("prediction_bounds")
+    )
+    df.loc[ok, "prediction_std"] = target_transform.inverse(preds).std(axis=0)
 
     # UQModel UQ: expected_residual, confidence, and conformal intervals, for the molecules
     # that have a prediction. V1/V2 need a neighbor-lookup payload; V0 scores from
@@ -209,7 +229,14 @@ if __name__ == "__main__":
     print(f"Conformers ({n_conformers} each) for {ok.sum()} of {len(all_df)} training molecules")
     all_df = all_df[ok].reset_index(drop=True)
     conformers = [c for c in conformers if c is not None]
-    y = all_df[target].to_numpy(np.float64)
+    # Fit in transformed space. Only `y` carries the transform — all_df keeps its original-scale
+    # target, so metrics, the UQ proximity reference, and the saved predictions all read true
+    # values, and only the fold predictions need inverting.
+    target_transform = resolve_target_transform(hyperparameters.get("target_transform"))
+    prediction_bounds = hyperparameters.get("prediction_bounds")
+    print(f"Target transform: {target_transform}")
+    print(f"Prediction bounds: {prediction_bounds}")
+    y = target_transform.forward(all_df[target].to_numpy(np.float64))
     extra = all_df[extra_features].to_numpy(np.float64) if extra_features else None
 
     # -------------------------------------------------------------------------
@@ -247,7 +274,7 @@ if __name__ == "__main__":
     # K-fold: every row has an out-of-fold prediction. Single split: only the validation rows.
     oof_mask = ~np.isnan(oof_predictions)
     df_oof = all_df.loc[oof_mask, [id_column, target]].copy()
-    df_oof["prediction"] = oof_predictions[oof_mask]
+    df_oof["prediction"] = clip_to_bounds(target_transform.inverse(oof_predictions[oof_mask]), prediction_bounds)
     print_regression_metrics(compute_regression_metrics(df_oof[target].values, df_oof["prediction"].values))
 
     # -------------------------------------------------------------------------
@@ -257,7 +284,7 @@ if __name__ == "__main__":
     df_oof["prediction_std"] = 0.0
     if len(fold_models) > 1:
         print(f"\nComputing prediction_std from {len(fold_models)} fold models...", flush=True)
-        all_preds = np.stack([fold.predict(conformers, extra) for fold in fold_models])
+        all_preds = target_transform.inverse(np.stack([fold.predict(conformers, extra) for fold in fold_models]))
         df_oof["prediction_std"] = all_preds.std(axis=0)[oof_mask]
 
         # Fingerprint proximity over every training row (each trained at least one fold model)
@@ -292,7 +319,10 @@ if __name__ == "__main__":
         h_preds = np.stack([fold.predict(h_valid, h_extra) for fold in fold_models])
         df_val = holdout_df[[id_column, target]].copy()
         df_val["prediction"], df_val["prediction_std"] = np.nan, np.nan
-        df_val.loc[h_ok, "prediction"], df_val.loc[h_ok, "prediction_std"] = h_preds.mean(axis=0), h_preds.std(axis=0)
+        df_val.loc[h_ok, "prediction"] = clip_to_bounds(
+            target_transform.inverse(h_preds.mean(axis=0)), prediction_bounds
+        )
+        df_val.loc[h_ok, "prediction_std"] = target_transform.inverse(h_preds).std(axis=0)
         scored = df_val[h_ok]
         print(f"\nHeld-out validation ({len(scored)} of {len(df_val)} rows with conformers):")
         metrics = compute_regression_metrics(scored[target].values, scored["prediction"].values)

@@ -1,13 +1,8 @@
-"""Tests for Endpoint inference (no AWS required)
-
-These load an XGBoost model in-process. If the worker already imported torch, the
-two OpenMP runtimes segfault the interpreter, so the module skips rather than taking
-the worker down -- under `-n auto --dist=loadfile` a worker may have run a torch test
-file first. Remove this when in-process loading is isolated.
-"""
+"""Tests for Endpoint inference (no AWS required)"""
 
 import os
 import sys
+import types
 
 import numpy as np
 import pandas as pd
@@ -18,13 +13,6 @@ from workbench.local.local_artifact import LocalArtifact
 from workbench.utils.config_manager import ConfigManager
 
 pytestmark = pytest.mark.medium
-
-
-@pytest.fixture(autouse=True)
-def skip_when_torch_loaded():
-    """Checked per test, not at import: the worker may load torch after collection"""
-    if "torch" in sys.modules:
-        pytest.skip("torch is already imported in this worker; loading an XGBoost model here would segfault")
 
 
 @pytest.fixture(autouse=True)
@@ -125,6 +113,23 @@ class TestEndpoint:
         predictions = endpoint.inference(eval_df)
         assert len(predictions) == 10
         assert "prediction" in predictions.columns
+
+    def test_xgboost_served_from_a_child_when_torch_is_loaded(self, trained_model, monkeypatch):
+        """With torch in this process, an XGBoost model is served from a fresh one instead.
+
+        Stands in a placeholder for torch rather than importing it: a real torch import
+        would stay in this worker and endanger later in-process XGBoost loads in other
+        test files. The guard keys on the module's presence, which the placeholder gives.
+        """
+        eval_df = DataSource("e_data").pull_dataframe().head(10)
+        expected = trained_model.to_endpoint().inference(eval_df)
+
+        monkeypatch.setitem(sys.modules, "torch", types.ModuleType("torch"))
+        endpoint = Endpoint(trained_model.name)
+        predictions = endpoint.inference(eval_df)
+
+        assert endpoint._model_bundle is None, "the model must not be loaded into this process"
+        pd.testing.assert_frame_equal(predictions, expected)
 
     def test_uq_columns_present(self, trained_model):
         """A UQ regressor serves quantiles, same as a deployed endpoint"""
