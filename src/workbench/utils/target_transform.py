@@ -38,9 +38,11 @@ class Identity:
 class Log10:
     """``log10(y + offset)``, for targets spanning orders of magnitude.
 
-    ``offset`` shifts the target away from zero and belongs near the assay's lower limit. An
-    offset large relative to the target's own range flattens the map toward linear — over a
-    target confined to [0, 1], an offset of 1.0 is barely a transform at all.
+    ``offset`` shifts the target away from zero, and the assay's LLOQ is where it belongs:
+    below that threshold the assay cannot separate values, so resolution spent there is spent
+    on noise. What matters is the offset relative to the target's own range, not its absolute
+    size — over a target confined to [0, 1], an offset of 1.0 gives the bottom decile 14% of
+    the output range against a linear map's 10%, which is barely a transform at all.
     """
 
     name = "log10"
