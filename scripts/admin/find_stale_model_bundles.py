@@ -8,8 +8,10 @@ startup with ``ImportError`` -> "the model process exited".
 
 This sweep opens each bundle's script, resolves every ``workbench.*`` import against
 the installed workbench, and reports the bundles whose imports no longer resolve.
-Each stale model is marked deprecated in its workbench meta (promotion skips it, and a
-deprecated incumbent forfeits its endpoint) and needs a retrain to re-bake the script.
+Each stale model needs a retrain to re-bake the script. With ``--mark-deprecated``, stale
+models are also marked deprecated in their workbench meta (promotion skips them, and a
+deprecated incumbent forfeits its endpoint); that write is refused unless the installed
+workbench matches the version the inference image pins.
 The script prints the ``ml_pipeline_launcher`` commands that do it, resolved from the
 ``pipelines.json`` files that declare each model as an output, and ends with the stale
 models as a paste-ready Python list.
@@ -19,12 +21,13 @@ promoted, so a stale TS bundle never reaches a served endpoint. ``--model`` over
 the filter for a one-off check.
 
 The verdict is only as good as the installed workbench matching the images, so the
-header prints both and warns on a mismatch.
+header prints both and warns on a mismatch or an unknown image version.
 
 Usage:
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --model cl-mouse-reg-chemprop-1-dt
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --pipelines-dir ~/work/ideaya/ml_pipelines
+    AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --mark-deprecated
 """
 
 import argparse
@@ -196,15 +199,21 @@ def main():
         help="Directory holding the pipelines.json files that declare the models (default: cwd)",
     )
     parser.add_argument("--workers", type=int, default=8, help="Concurrent bundle reads (default: 8)")
+    parser.add_argument(
+        "--mark-deprecated",
+        action="store_true",
+        help="Mark stale models deprecated (requires the installed workbench to match the image)",
+    )
     args = parser.parse_args()
 
     installed = importlib.metadata.version("workbench")
     pinned = image_workbench_version()
     print(f"Installed workbench: {installed}   inference image pins: {pinned or 'unknown'}")
     # A local editable install carries a ".devN" suffix off the same release, which
-    # tracks the image fine -- only a differing release is worth a warning.
-    if pinned and pinned != installed.partition(".dev")[0]:
-        print("  [warn] versions differ -- the imports resolve against the installed one, not the image's")
+    # tracks the image fine -- only a differing or unknown release is worth a warning.
+    versions_match = pinned == installed.partition(".dev")[0]
+    if not versions_match:
+        print("  [warn] image version differs or is unknown -- imports resolve against the installed workbench")
 
     all_models = Meta().models()["Model Group"].tolist()
     if args.model:
@@ -246,9 +255,14 @@ def main():
             print(f"  {model_name}")
 
     stale = sorted(finding["model"] for finding in findings)
-    print(f"\nMarking {len(stale)} model(s) deprecated...")
-    for model_name in stale:
-        Model(model_name).upsert_workbench_meta({"deprecated": True})
+    if not args.mark_deprecated:
+        print("\nRe-run with --mark-deprecated to mark these models deprecated.")
+    elif not versions_match:
+        print("\nNot marking models deprecated: the installed workbench doesn't match the image's.")
+    else:
+        print(f"\nMarking {len(stale)} model(s) deprecated...")
+        for model_name in stale:
+            Model(model_name).upsert_workbench_meta({"deprecated": True})
 
     print("\nstale_models = [")
     for model_name in stale:

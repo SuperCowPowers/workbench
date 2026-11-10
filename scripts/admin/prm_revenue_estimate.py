@@ -11,7 +11,8 @@ The tagged figure is an estimate: SageMaker spend is split by usage-type family 
 and ECS spend is split by subtracting always-on services (task size x hours at Fargate list price) from
 the total. When a PRM tag key is an active cost allocation tag, the exact tag-filtered spend is printed too.
 
-Runs with the caller's own credentials (AWS_PROFILE); the Workbench role has no Cost Explorer access.
+Scope is the caller's account and region (plus global and non-regional charges), matching the resource
+inventory. Runs with the caller's own credentials (AWS_PROFILE); the Workbench role has no Cost Explorer access.
 
 Usage:
     python scripts/admin/prm_revenue_estimate.py                         # last 3 complete months
@@ -94,16 +95,18 @@ def money(x: float) -> str:
     return f"${x:,.2f}"
 
 
-def ce_rows(ce, start: date, end: date, group_by: list[str], filter_: dict | None = None) -> list[dict]:
-    """Monthly UnblendedCost rows {month, keys, cost} from Cost Explorer."""
+def ce_rows(
+    ce, start: date, end: date, group_by: list[str], scope: list[dict], filter_: dict | None = None
+) -> list[dict]:
+    """Monthly UnblendedCost rows {month, keys, cost} from Cost Explorer, limited to `scope` filters."""
+    filters = scope + ([filter_] if filter_ else [])
     kwargs = {
         "TimePeriod": {"Start": start.isoformat(), "End": end.isoformat()},
         "Granularity": "MONTHLY",
         "Metrics": ["UnblendedCost"],
         "GroupBy": [{"Type": "DIMENSION", "Key": k} for k in group_by],
+        "Filter": filters[0] if len(filters) == 1 else {"And": filters},
     }
-    if filter_:
-        kwargs["Filter"] = filter_
     rows = []
     while True:
         resp = ce.get_cost_and_usage(**kwargs)
@@ -139,13 +142,16 @@ def list_arns(sm, operation: str, list_key: str, arn_key: str, **kwargs) -> list
 
 
 def ecs_services(session) -> list[dict]:
-    """ECS services (e.g. the dashboard) with their Fargate hourly cost and PRM tag status."""
+    """Fargate ECS services (e.g. the dashboard) with their hourly cost and PRM tag status."""
     ecs = session.client("ecs")
     services = []
     for cluster in [c for page in ecs.get_paginator("list_clusters").paginate() for c in page["clusterArns"]]:
         arns = [a for page in ecs.get_paginator("list_services").paginate(cluster=cluster) for a in page["serviceArns"]]
         for i in range(0, len(arns), 10):
             for svc in ecs.describe_services(cluster=cluster, services=arns[i : i + 10], include=["TAGS"])["services"]:
+                providers = {p["capacityProvider"] for p in svc.get("capacityProviderStrategy", [])}
+                if svc.get("launchType") != "FARGATE" and not providers & {"FARGATE", "FARGATE_SPOT"}:
+                    continue
                 td = ecs.describe_task_definition(taskDefinition=svc["taskDefinition"])["taskDefinition"]
                 task_hourly = int(td["cpu"]) / 1024 * FARGATE_VCPU_HOUR + int(td["memory"]) / 1024 * FARGATE_GB_HOUR
                 tags = {t["key"]: t["value"] for t in svc.get("tags", [])}
@@ -184,7 +190,7 @@ def coverage_line(label: str, arns: list[str], tagged: set[str]) -> float:
     n_tagged = len(arns) - len(untagged)
     extra = f"   untagged: {', '.join(untagged[:5])}{' ...' if len(untagged) > 5 else ''}" if untagged else ""
     print(f"  {label:<34}{n_tagged:>5}/{len(arns):<5}{extra}")
-    return n_tagged / len(arns) if arns else 1.0
+    return n_tagged / len(arns) if arns else 0.0
 
 
 def tag_status(ce) -> dict[str, str]:
@@ -214,7 +220,12 @@ def main() -> int:
     ce = session.client("ce", region_name="us-east-1")
     sm = session.client("sagemaker")
 
-    print(f"Account {account} | region {session.region_name} | {start:%Y-%m} to {add_months(end, -1):%Y-%m}")
+    region = session.region_name
+    scope = [
+        {"Dimensions": {"Key": "LINKED_ACCOUNT", "Values": [account]}},
+        {"Dimensions": {"Key": "REGION", "Values": [region, "global", "NoRegion"]}},
+    ]
+    print(f"Account {account} | region {region} (+ global) | {start:%Y-%m} to {add_months(end, -1):%Y-%m}")
     print(f"PRM tag {' or '.join(TAG_KEYS)} = {PRM_TAG_VALUE}\n")
 
     # Tag coverage
@@ -249,7 +260,7 @@ def main() -> int:
 
     # Spend split
     usage_filter = {"Dimensions": {"Key": "RECORD_TYPE", "Values": USAGE_RECORD_TYPES}}
-    rows = ce_rows(ce, start, end, ["SERVICE", "USAGE_TYPE"], usage_filter)
+    rows = ce_rows(ce, start, end, ["SERVICE", "USAGE_TYPE"], scope, usage_filter)
     by_month = defaultdict(lambda: defaultdict(float))
     by_service = defaultdict(lambda: defaultdict(float))
     sagemaker_families = defaultdict(float)
@@ -301,7 +312,7 @@ def main() -> int:
 
     # Credits and other record types: PRM may attribute net of credits
     record_types = defaultdict(float)
-    for r in ce_rows(ce, start, end, ["RECORD_TYPE"]):
+    for r in ce_rows(ce, start, end, ["RECORD_TYPE"], scope):
         record_types[r["keys"][0]] += r["cost"]
     print("Record types (window): " + " | ".join(f"{k} {money(v)}" for k, v in sorted(record_types.items())))
 
@@ -314,7 +325,7 @@ def main() -> int:
         filters = [{"Tags": {"Key": k, "Values": [PRM_TAG_VALUE], "MatchOptions": ["EQUALS"]}} for k in active]
         tag_filter = filters[0] if len(filters) == 1 else {"Or": filters}
         exact = defaultdict(float)
-        for r in ce_rows(ce, start, end, ["SERVICE"], {"And": [usage_filter, tag_filter]}):
+        for r in ce_rows(ce, start, end, ["SERVICE"], scope, {"And": [usage_filter, tag_filter]}):
             exact[r["keys"][0]] += r["cost"]
         print(f"  Exact tagged spend: {money(sum(exact.values()))}")
         for service, cost in sorted(exact.items(), key=lambda kv: -kv[1]):
