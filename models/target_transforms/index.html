@@ -879,6 +879,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#picking-one-three-real-assays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Picking one: three real assays
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Picking one: three real assays">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ksol-five-decades-nothing-to-decide-log10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ksol: five decades, nothing to decide → log10
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mppb-bounded-at-both-ends-logit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mppb: bounded at both ends → logit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlm_clint-decades-and-a-pile-of-zeros-arcsinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mlm_clint: decades and a pile of zeros → arcsinh
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#log10-and-its-offset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -905,6 +955,17 @@
     <span class="md-ellipsis">
       
         arcsinh, where zeros and negatives live
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain errors
       
     </span>
   </a>
@@ -5522,6 +5583,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#picking-one-three-real-assays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Picking one: three real assays
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Picking one: three real assays">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ksol-five-decades-nothing-to-decide-log10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ksol: five decades, nothing to decide → log10
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mppb-bounded-at-both-ends-logit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mppb: bounded at both ends → logit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mlm_clint-decades-and-a-pile-of-zeros-arcsinh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mlm_clint: decades and a pile of zeros → arcsinh
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#log10-and-its-offset" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5548,6 +5659,17 @@
     <span class="md-ellipsis">
       
         arcsinh, where zeros and negatives live
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain errors
       
     </span>
   </a>
@@ -5675,6 +5797,13 @@ back in the units you measured.</p>
 </tr>
 </tbody>
 </table>
+<figure style="text-align: center;">
+  <img src="../images/target_transform_domains.svg" alt="Each transform's forward map and valid domain" style="width: 100%; max-width: 860px;">
+</figure>
+
+<p>Each map is monotonic increasing, so rank metrics are untouched; what differs is the shape and
+what each one refuses. <code>log10</code> needs <code>y + offset &gt; 0</code>, <code>logit</code> needs <code>0 &lt; y &lt; ceiling</code>, and
+<code>arcsinh</code> accepts every real number.</p>
 <h2 id="setting-one">Setting one</h2>
 <p>Two hyperparameters on an otherwise normal <code>to_model()</code> call:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
@@ -5719,11 +5848,86 @@ back in the units you measured.</p>
 </table>
 <p>The model stores what it was fitted with, and inference reads that back — so the inverse is
 always exactly the forward that trained it, never a separately-passed value that can drift.</p>
+<h2 id="picking-one-three-real-assays">Picking one: three real assays</h2>
+<p>Every number below is measured on OpenADMET training data, loaded straight from
+<code>PublicData()</code>. The three assays want three different transforms, for three different reasons.</p>
+<figure style="text-align: center;">
+  <img src="../images/target_transform_resolution.svg" alt="Share of the output range each transform gives the low and high tails" style="width: 100%; max-width: 880px;">
+</figure>
+
+<h3 id="ksol-five-decades-nothing-to-decide-log10">ksol: five decades, nothing to decide → <code>log10</code></h3>
+<p>Kinetic solubility runs 0.00285 to 325 µM across 5128 compounds — 5.06 decades, no zeros, no
+negatives. The offset exists to rescue zeros, and this assay has none, so a bare <code>log10</code> is the
+whole spec:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">Endpoint</span><span class="p">,</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelFramework</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">PublicData</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">df</span> <span class="o">=</span> <span class="n">PublicData</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"comp_chem/openadmet/expansionrx/train/ksol"</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">DataSource</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"ksol_raw"</span><span class="p">)</span><span class="o">.</span><span class="n">to_features</span><span class="p">(</span><span class="s2">"ksol_raw"</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">features</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">"smiles-to-2d-v1"</span><span class="p">)</span><span class="o">.</span><span class="n">output_columns</span><span class="p">()</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">model</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">"ksol_raw"</span><span class="p">)</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"ksol-log10"</span><span class="p">,</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">XGBOOST</span><span class="p">,</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">"ksol"</span><span class="p">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">features</span><span class="p">,</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_transform"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">},</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>That hands the lowest decile of the data 60% of the output range against a linear map's 10%,
+and the top decile 1%. On a solubility that is the right trade: 0.003 µM against 0.03 µM is a
+decision, 300 µM against 325 µM is not.</p>
+<h3 id="mppb-bounded-at-both-ends-logit">mppb: bounded at both ends → <code>logit</code></h3>
+<p>Percent unbound is bounded at 0 and at 100 by physics, and the 1302 measured values run 0 to
+87.6 with 10 exact zeros. <code>log10</code> resolves the low end and crushes the high one. A logit keeps
+both, and the figure above shows the trade in one line: <code>log10</code> with an offset of 0.1 splits
+the range 38% / 12% between the tails, while a logit with a ceiling of 120 splits it 31% / 22%.</p>
+<p>A logit refuses zeros and clamps nothing itself, so the clamp belongs in the FeatureSet, where
+it stays visible in the data:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">PublicData</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"comp_chem/openadmet/expansionrx/train/mppb"</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">df</span><span class="p">[</span><span class="s2">"mppb_floored"</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">"mppb"</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>      <span class="c1"># 10 BLQ rows, to the assay's floor</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">DataSource</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"mppb_raw"</span><span class="p">)</span><span class="o">.</span><span class="n">to_features</span><span class="p">(</span><span class="s2">"mppb_raw"</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">model</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">"mppb_raw"</span><span class="p">)</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"mppb-logit"</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">XGBOOST</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">"mppb_floored"</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">features</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"logit"</span><span class="p">,</span> <span class="s2">"ceiling"</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">}},</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>No <code>prediction_bounds</code> here: the inverse of a logit lands in <code>(0, ceiling)</code> by construction.</p>
+<h3 id="mlm_clint-decades-and-a-pile-of-zeros-arcsinh">mlm_clint: decades <em>and</em> a pile of zeros → <code>arcsinh</code></h3>
+<p>Mouse liver microsome clearance is the awkward case — 4522 rows spanning 0 to 10355, five
+decades like <code>ksol</code>, but with <strong>147 exact zeros</strong> where the compound did not turn over. <code>log10</code>
+can handle it only if you pick an offset, and picking one is a real piece of analysis.
+<code>arcsinh</code> needs no such decision, and lands in almost the same place: 46% / 16% against
+<code>log10</code>'s 43% / 17% with the offset set at the assay's smallest non-zero reading.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">df</span> <span class="o">=</span> <span class="n">PublicData</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"comp_chem/openadmet/expansionrx/train/mlm_clint"</span><span class="p">)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">DataSource</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"mlm_clint_raw"</span><span class="p">)</span><span class="o">.</span><span class="n">to_features</span><span class="p">(</span><span class="s2">"mlm_clint_raw"</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="s2">"id"</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">"mlm_clint_raw"</span><span class="p">)</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">"mlm-clint-arcsinh"</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">XGBOOST</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">"mlm_clint"</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">features</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"arcsinh"</span><span class="p">,</span> <span class="s2">"scale"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="s2">"prediction_bounds"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="p">},</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><code>arcsinh</code> is unbounded in both directions, so unlike the logit this one <em>does</em> want a lower
+bound — a clearance cannot be negative.</p>
+<p>The same argument settles a target that goes below zero outright: <code>logd</code> runs -2 to 5.2 over
+5039 rows with 238 negative values, and no offset makes <code>log10</code> the right tool for it.</p>
 <h2 id="log10-and-its-offset">log10 and its offset</h2>
 <p><code>log10</code> is <code>log10(y + offset)</code>, and <code>offset</code> defaults to 0. A bare <code>"log10"</code> is therefore a
 plain <code>log10(y)</code>; <code>log10(y + 1)</code> is written out:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="s2">"log10"</span>                             <span class="c1"># log10(y)</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"offset"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>    <span class="c1"># log10(y + 1)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="s2">"log10"</span>                             <span class="c1"># log10(y)</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"offset"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>    <span class="c1"># log10(y + 1)</span>
 </span></code></pre></div>
 <p><strong>The offset belongs just above the assay's reporting floor</strong> — the smallest value the assay
 actually reports. Below that floor the assay cannot separate values, so resolution spent
@@ -5734,12 +5938,12 @@ the real readings. Keep them within <strong>a few reporting steps</strong> of th
 read as "under the lowest measurement," rather than the ten or more steps that turn a handful
 of rows into a detached cluster for the loss to chase.</p>
 <p>Both numbers come out of the data:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">y</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">pull_dataframe</span><span class="p">()[</span><span class="s2">"mppb"</span><span class="p">]</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">readings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">floor</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>                                   <span class="c1"># smallest real reading</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">readings</span><span class="p">[:</span><span class="mi">10</span><span class="p">])))</span>    <span class="c1"># typical step, in log units</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">y</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">pull_dataframe</span><span class="p">()[</span><span class="s2">"mppb"</span><span class="p">]</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">readings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">floor</span> <span class="o">=</span> <span class="n">readings</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>                                   <span class="c1"># smallest real reading</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">readings</span><span class="p">[:</span><span class="mi">10</span><span class="p">])))</span>    <span class="c1"># typical step, in log units</span>
 </span></code></pre></div>
 <p>The same rule lands on very different offsets, because assays report to different precision:</p>
 <table>
@@ -5834,14 +6038,23 @@ tails (%F, rows at or under 100):</p>
 </tr>
 </tbody>
 </table>
+<figure style="text-align: center;">
+  <img src="../images/target_transform_ceiling.svg" alt="How a logit ceiling trades range between the tails" style="width: 100%; max-width: 860px;">
+</figure>
+
+<p>The figure measures that on <code>mbpb</code>, percent <em>bound</em>, whose 975 values reach 99.23 — close
+enough to the bound that the ceiling choice is visible in real data rather than in principle.</p>
 <p>A ceiling above the physical bound leaves every measured value defined. A ceiling at the bound
 gives the top tail more room but rejects anything reaching it, and the error says so rather
 than swallowing the rows — raw %F data runs well above 100, so those rows are capped or
 dropped in the FeatureSet either way.</p>
-<p><code>floor</code> lifts sub-LLOQ readings, as <code>offset</code> does for <code>log10</code>. A negative target is out of
-domain whatever the floor:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"logit"</span><span class="p">,</span> <span class="s2">"ceiling"</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span> <span class="s2">"floor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">}</span>
+<p>The domain is <code>0 &lt; y &lt; ceiling</code>, and the transform clamps nothing of its own, so the map is
+exactly invertible and metrics score against the target you supplied. Sub-LLOQ rows are
+clamped or dropped in the FeatureSet, where they stay visible in the data:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"logit"</span><span class="p">,</span> <span class="s2">"ceiling"</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">}</span>
 </span></code></pre></div>
+<p>That is the one thing <code>logit</code> asks of a FeatureSet that <code>log10</code> and <code>arcsinh</code> do not: an
+<code>offset</code> or a <code>scale</code> absorbs a zero inside the model, a ceiling cannot.</p>
 <p>The inverse lands in <code>(0, ceiling)</code> by construction, so <strong>a logit model needs no
 <code>prediction_bounds</code></strong>. Bounds still apply after the inverse, so a high bound below the ceiling
 clips real predictions into a mass point.</p>
@@ -5883,6 +6096,52 @@ map gives 10%:</p>
 </table>
 <p><code>scale</code> defaults to 1.0, a plain <code>asinh(y)</code> — a strong transform on a percentage, barely a
 transform on a fraction. Set it at the assay's reporting floor.</p>
+<h2 id="domain-errors">Domain errors</h2>
+<p>Every transform's domain is an interval, so the target's minimum and maximum decide whether a
+spec can work at all. <code>to_model()</code> checks them against the FeatureSet's cached stats, which
+costs no query and turns an unusable spec into a two-second error instead of a failed training
+job:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mppb_raw column 'mppb': target_transform 'logit' needs target &gt; 0, but the smallest target
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>is 0. Clamp those rows up to the assay's lower limit or drop them in the FeatureSet, or use
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>'arcsinh', which has no domain restriction.
+</span></code></pre></div>
+<p>Each transform carries its own remedy, because they differ:</p>
+<table>
+<thead>
+<tr>
+<th>transform</th>
+<th>out of domain</th>
+<th>the fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>log10</code></td>
+<td><code>y + offset &lt;= 0</code></td>
+<td>raise the offset — it is lossless, and <code>inverse</code> recovers the value exactly</td>
+</tr>
+<tr>
+<td><code>logit</code></td>
+<td><code>y &lt;= 0</code></td>
+<td>clamp or drop those rows in the FeatureSet; the transform clamps nothing itself</td>
+</tr>
+<tr>
+<td><code>logit</code></td>
+<td><code>y &gt;= ceiling</code></td>
+<td>raise the ceiling above the data, or cap the rows. <strong>A percent target holding an exact <code>100.0</code> needs a ceiling above 100</strong></td>
+</tr>
+<tr>
+<td><code>arcsinh</code></td>
+<td>never</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>One case is a warning rather than an error: a negative target smaller in magnitude than a
+<code>log10</code> offset transforms and inverts exactly, so it is usable — but it is rarely what the
+caller expected, and <code>arcsinh</code> represents negatives directly.</p>
+<p>The same check runs inside the training job as a backstop, so a model script invoked directly
+still refuses out-of-domain data rather than training on NaNs.</p>
 <h2 id="prediction-bounds">Prediction bounds</h2>
 <p><code>prediction_bounds</code> is independent of any transform — a non-negative or percentage target
 wants it under the identity transform too. Either side may be <code>None</code> to leave it unbounded.</p>
@@ -5901,10 +6160,10 @@ wants a <code>logit</code>, whose inverse is bounded by construction, rather tha
 <p>A single spec applies to every target. Since a multi-target model usually carries targets in
 different units, a <code>{target_column: spec}</code> mapping sets them one at a time, and targets it
 omits get identity:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ksol"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"mppb"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"offset"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">}},</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">"prediction_bounds"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mppb"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">]},</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ksol"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"mppb"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"offset"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">}},</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="s2">"prediction_bounds"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mppb"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">]},</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="what-inference-gives-back">What inference gives back</h2>
 <table>
