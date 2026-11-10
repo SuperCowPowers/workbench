@@ -10,8 +10,8 @@ This sweep opens each bundle's script, resolves every ``workbench.*`` import aga
 the installed workbench, and reports the bundles whose imports no longer resolve.
 Each stale model needs a retrain to re-bake the script. With ``--mark-deprecated``, stale
 models are also marked deprecated in their workbench meta (promotion skips them, and a
-deprecated incumbent forfeits its endpoint); that write is refused unless the installed
-workbench matches the version the inference image pins.
+deprecated incumbent forfeits its endpoint). A bundle whose imports fail on a non-workbench
+dependency missing from this environment is reported as unchecked, never stale.
 The script prints the ``ml_pipeline_launcher`` commands that do it, resolved from the
 ``pipelines.json`` files that declare each model as an output, and ends with the stale
 models as a paste-ready Python list.
@@ -20,8 +20,8 @@ Scope is the DT models and the promoted copies taken from them -- only DT models
 promoted, so a stale TS bundle never reaches a served endpoint. ``--model`` overrides
 the filter for a one-off check.
 
-The verdict is only as good as the installed workbench matching the images, so the
-header prints both and warns on a mismatch or an unknown image version.
+Imports resolve against the installed workbench, the code the next images ship. The
+header prints it alongside the version the current inference image pins.
 
 Usage:
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py
@@ -83,12 +83,17 @@ def read_bundle_script(s3_client, model_data_url: str) -> str | None:
     return None
 
 
+def is_workbench_module(name: str | None) -> bool:
+    return bool(name) and (name == "workbench" or name.startswith("workbench."))
+
+
 def unresolved_workbench_imports(source: str) -> list[str]:
     """Return 'module.name' for every workbench import in the script that no longer resolves.
 
     Covers both a module that's gone and a name the module no longer exports. Imports
     inside functions count too -- the template defers training-only imports, but a
-    missing one still breaks that code path.
+    missing one still breaks that code path. An ImportError on a non-workbench module
+    (e.g. torch not installed here) propagates: the bundle can't be checked locally.
     """
     missing = []
     for node in ast.walk(ast.parse(source)):
@@ -99,18 +104,22 @@ def unresolved_workbench_imports(source: str) -> list[str]:
         else:
             continue
         for mod, name in [(module, n) for n in names] if module else [(n, None) for n in names]:
-            if not mod or not (mod == "workbench" or mod.startswith("workbench.")):
+            if not is_workbench_module(mod):
                 continue
             try:
                 imported = importlib.import_module(mod)
-            except ImportError:
+            except ImportError as e:
+                if not is_workbench_module(e.name):
+                    raise
                 missing.append(f"{mod}.{name}" if name else mod)
                 continue
             if name and name != "*" and not hasattr(imported, name):
                 # A submodule not yet imported isn't an attribute of its package yet.
                 try:
                     importlib.import_module(f"{mod}.{name}")
-                except ImportError:
+                except ImportError as e:
+                    if not is_workbench_module(e.name):
+                        raise
                     missing.append(f"{mod}.{name}")
     return missing
 
@@ -179,6 +188,9 @@ def scan_models(model_names: list[str], workers: int) -> list[dict]:
         except SyntaxError as e:
             print(f"  [warn] {model_name}: unparseable script ({e})")
             return None
+        except ImportError as e:
+            print(f"  [unchecked] {model_name}: {e.name or e} isn't importable in this environment")
+            return None
         if missing:
             print(f"  [stale] {model_name}: {', '.join(missing)}")
             return {"model": model_name, "missing": missing, "model_data_url": model_data_url}
@@ -202,18 +214,13 @@ def main():
     parser.add_argument(
         "--mark-deprecated",
         action="store_true",
-        help="Mark stale models deprecated (requires the installed workbench to match the image)",
+        help="Mark stale models deprecated in their workbench meta",
     )
     args = parser.parse_args()
 
     installed = importlib.metadata.version("workbench")
     pinned = image_workbench_version()
     print(f"Installed workbench: {installed}   inference image pins: {pinned or 'unknown'}")
-    # A local editable install carries a ".devN" suffix off the same release, which
-    # tracks the image fine -- only a differing or unknown release is worth a warning.
-    versions_match = pinned == installed.partition(".dev")[0]
-    if not versions_match:
-        print("  [warn] image version differs or is unknown -- imports resolve against the installed workbench")
 
     all_models = Meta().models()["Model Group"].tolist()
     if args.model:
@@ -257,8 +264,6 @@ def main():
     stale = sorted(finding["model"] for finding in findings)
     if not args.mark_deprecated:
         print("\nRe-run with --mark-deprecated to mark these models deprecated.")
-    elif not versions_match:
-        print("\nNot marking models deprecated: the installed workbench doesn't match the image's.")
     else:
         print(f"\nMarking {len(stale)} model(s) deprecated...")
         for model_name in stale:
