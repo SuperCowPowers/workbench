@@ -126,7 +126,8 @@ def domains_figure(path: Path) -> None:
 
     panels = [
         {
-            "title": "log10(y + offset)",
+            "name": "log10",
+            "title": "log10(y + offset)      offset = 0.1",
             "note": "valid where y + offset > 0 — an offset lifts the zeros",
             "colour": BLUE,
             "transform": Log10(offset=0.1),
@@ -135,6 +136,7 @@ def domains_figure(path: Path) -> None:
             "ticks": [0, 2, 4, 6, 8, 10],
         },
         {
+            "name": "logit",
             "title": "log10(y / (ceiling - y))      ceiling = 120",
             "note": "valid where 0 < y < ceiling — both ends are refused",
             "colour": AQUA,
@@ -144,6 +146,7 @@ def domains_figure(path: Path) -> None:
             "ticks": [0, 30, 60, 90, 120],
         },
         {
+            "name": "arcsinh",
             "title": "asinh(y / scale)      scale = 1",
             "note": "valid everywhere — zeros and negatives pass straight through",
             "colour": ORANGE,
@@ -181,7 +184,8 @@ def domains_figure(path: Path) -> None:
         y_lo, y_hi = y_lo - pad, y_hi + pad
         scale = Scale((x_lo, x_hi), (y_lo, y_hi), (left, plot_top, plot_w, plot_h))
 
-        body.append(text(left, top + 24, panel["title"], 19, TITLE, "start", "bold"))
+        body.append(text(left, top + 24, panel["name"], 20, TITLE, "start", "bold"))
+        body.append(text(left + 13 * len(panel["name"]) + 14, top + 24, panel["title"], 16, LABEL))
         body.append(text(left + plot_w + 16, plot_top + 16, "output", 14, LABEL))
 
         # Invalid regions, marked before the curve so the curve sits on top
