@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 556" width="880" height="556">
+<text x="440.0" y="36.0" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Where each transform spends its output range</text>
+<text x="440.0" y="62.0" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">share of the output range held by the lowest and highest 10% of the measured values</text>
+<text x="534.0" y="96.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">◀ lowest 10%</text>
+<text x="562.0" y="96.0" text-anchor="start" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">highest 10% ▶</text>
+<line x1="548.0" y1="104.0" x2="548.0" y2="512.0" stroke="#999" stroke-width="1.5"/>
+<line x1="591.2" y1="104.0" x2="591.2" y2="512.0" stroke="#aaa" stroke-width="1.2" stroke-dasharray="4 4"/>
+<line x1="504.8" y1="104.0" x2="504.8" y2="512.0" stroke="#aaa" stroke-width="1.2" stroke-dasharray="4 4"/>
+<text x="26.0" y="130.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="16" font-weight="bold">ksol — kinetic solubility, 5 decades, no zeros</text>
+<text x="236.0" y="167.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">linear</text>
+<rect x="504.8" y="152.0" width="42.2" height="20.0" rx="4" fill="#8a8a84" opacity="1.0"/>
+<rect x="549.0" y="152.0" width="42.2" height="20.0" rx="4" fill="#8a8a84" opacity="1.0"/>
+<text x="494.8" y="167.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">10%</text>
+<text x="601.2" y="167.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">10%</text>
+<text x="236.0" y="199.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">log10</text>
+<rect x="290.8" y="184.0" width="256.2" height="20.0" rx="4" fill="#3987e5" opacity="1.0"/>
+<rect x="549.0" y="184.0" width="4.0" height="20.0" rx="4" fill="#3987e5" opacity="1.0"/>
+<text x="280.8" y="199.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">60%</text>
+<text x="563.0" y="199.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">1%</text>
+<text x="26.0" y="244.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="16" font-weight="bold">mppb — percent unbound, bounded [0, 100], 10 zeros</text>
+<text x="236.0" y="281.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">linear</text>
+<rect x="504.8" y="266.0" width="42.2" height="20.0" rx="4" fill="#8a8a84" opacity="1.0"/>
+<rect x="549.0" y="266.0" width="42.2" height="20.0" rx="4" fill="#8a8a84" opacity="1.0"/>
+<text x="494.8" y="281.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">10%</text>
+<text x="601.2" y="281.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">10%</text>
+<text x="236.0" y="313.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">log10 offset 0.1</text>
+<rect x="384.4" y="298.0" width="162.6" height="20.0" rx="4" fill="#3987e5" opacity="1.0"/>
+<rect x="549.0" y="298.0" width="52.0" height="20.0" rx="4" fill="#3987e5" opacity="1.0"/>
+<text x="374.4" y="313.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">38%</text>
+<text x="611.0" y="313.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">12%</text>
+<text x="236.0" y="345.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">logit ceiling 120</text>
+<rect x="414.6" y="330.0" width="132.4" height="20.0" rx="4" fill="#199e70" opacity="1.0"/>
+<rect x="549.0" y="330.0" width="93.1" height="20.0" rx="4" fill="#199e70" opacity="1.0"/>
+<text x="404.6" y="345.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">31%</text>
+<text x="652.1" y="345.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">22%</text>
+<text x="26.0" y="390.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="16" font-weight="bold">mlm_clint — 5 decades and 147 exact zeros (floor 0.1)</text>
+<text x="236.0" y="427.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">linear</text>
+<rect x="504.8" y="412.0" width="42.2" height="20.0" rx="4" fill="#8a8a84" opacity="1.0"/>
+<rect x="549.0" y="412.0" width="42.2" height="20.0" rx="4" fill="#8a8a84" opacity="1.0"/>
+<text x="494.8" y="427.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">10%</text>
+<text x="601.2" y="427.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">10%</text>
+<text x="236.0" y="459.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">log10 offset 0.1</text>
+<rect x="362.7" y="444.0" width="184.3" height="20.0" rx="4" fill="#3987e5" opacity="1.0"/>
+<rect x="549.0" y="444.0" width="71.6" height="20.0" rx="4" fill="#3987e5" opacity="1.0"/>
+<text x="352.7" y="459.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">43%</text>
+<text x="630.6" y="459.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">17%</text>
+<text x="236.0" y="491.0" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="15" font-weight="normal">arcsinh scale 0.1</text>
+<rect x="349.0" y="476.0" width="198.0" height="20.0" rx="4" fill="#d95926" opacity="1.0"/>
+<rect x="549.0" y="476.0" width="67.5" height="20.0" rx="4" fill="#d95926" opacity="1.0"/>
+<text x="339.0" y="491.0" text-anchor="end" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">46%</text>
+<text x="626.5" y="491.0" text-anchor="start" fill="#ccc" font-family="Helvetica, Arial" font-size="15" font-weight="normal">16%</text>
+<text x="548.0" y="538.0" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="14" font-weight="normal">dashed: the 10% a linear target gives each tail</text>
+</svg>

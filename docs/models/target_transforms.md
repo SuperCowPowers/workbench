@@ -19,6 +19,14 @@ Available for XGBoost, PyTorch, ChemProp, TabICL and Atom-JEPA, regression only.
 | `logit` | `log10(y / (ceiling - y))` | the target is bounded at both ends (a percent) |
 | `arcsinh` | `asinh(y / scale)` | the target has exact zeros, a BLQ pile-up, or negatives |
 
+<figure style="text-align: center;">
+  <img src="../images/target_transform_domains.svg" alt="Each transform's forward map and valid domain" style="width: 100%; max-width: 860px;">
+</figure>
+
+Each map is monotonic increasing, so rank metrics are untouched; what differs is the shape and
+what each one refuses. `log10` needs `y + offset > 0`, `logit` needs `0 < y < ceiling`, and
+`arcsinh` accepts every real number.
+
 ## Setting one
 
 Two hyperparameters on an otherwise normal `to_model()` call:
@@ -51,6 +59,100 @@ end.inference(eval_df)   # percent unbound, not log space
 
 The model stores what it was fitted with, and inference reads that back — so the inverse is
 always exactly the forward that trained it, never a separately-passed value that can drift.
+
+## Picking one: three real assays
+
+Every number below is measured on OpenADMET training data, loaded straight from
+`PublicData()`. The three assays want three different transforms, for three different reasons.
+
+<figure style="text-align: center;">
+  <img src="../images/target_transform_resolution.svg" alt="Share of the output range each transform gives the low and high tails" style="width: 100%; max-width: 880px;">
+</figure>
+
+### ksol: five decades, nothing to decide → `log10`
+
+Kinetic solubility runs 0.00285 to 325 µM across 5128 compounds — 5.06 decades, no zeros, no
+negatives. The offset exists to rescue zeros, and this assay has none, so a bare `log10` is the
+whole spec:
+
+```python
+from workbench.api import DataSource, Endpoint, FeatureSet, ModelFramework, ModelType, PublicData
+
+df = PublicData().get("comp_chem/openadmet/expansionrx/train/ksol")
+DataSource(df, name="ksol_raw").to_features("ksol_raw", id_column="id")
+features = Endpoint("smiles-to-2d-v1").output_columns()
+
+model = FeatureSet("ksol_raw").to_model(
+    name="ksol-log10",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.XGBOOST,
+    target_column="ksol",
+    feature_list=features,
+    hyperparameters={"target_transform": "log10"},
+)
+```
+
+That hands the lowest decile of the data 60% of the output range against a linear map's 10%,
+and the top decile 1%. On a solubility that is the right trade: 0.003 µM against 0.03 µM is a
+decision, 300 µM against 325 µM is not.
+
+### mppb: bounded at both ends → `logit`
+
+Percent unbound is bounded at 0 and at 100 by physics, and the 1302 measured values run 0 to
+87.6 with 10 exact zeros. `log10` resolves the low end and crushes the high one. A logit keeps
+both, and the figure above shows the trade in one line: `log10` with an offset of 0.1 splits
+the range 38% / 12% between the tails, while a logit with a ceiling of 120 splits it 31% / 22%.
+
+A logit refuses zeros and clamps nothing itself, so the clamp belongs in the FeatureSet, where
+it stays visible in the data:
+
+```python
+df = PublicData().get("comp_chem/openadmet/expansionrx/train/mppb")
+df["mppb_floored"] = df["mppb"].clip(lower=0.1)      # 10 BLQ rows, to the assay's floor
+DataSource(df, name="mppb_raw").to_features("mppb_raw", id_column="id")
+
+model = FeatureSet("mppb_raw").to_model(
+    name="mppb-logit",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.XGBOOST,
+    target_column="mppb_floored",
+    feature_list=features,
+    hyperparameters={"target_transform": {"name": "logit", "ceiling": 120.0}},
+)
+```
+
+No `prediction_bounds` here: the inverse of a logit lands in `(0, ceiling)` by construction.
+
+### mlm_clint: decades *and* a pile of zeros → `arcsinh`
+
+Mouse liver microsome clearance is the awkward case — 4522 rows spanning 0 to 10355, five
+decades like `ksol`, but with **147 exact zeros** where the compound did not turn over. `log10`
+can handle it only if you pick an offset, and picking one is a real piece of analysis.
+`arcsinh` needs no such decision, and lands in almost the same place: 46% / 16% against
+`log10`'s 43% / 17% with the offset set at the assay's smallest non-zero reading.
+
+```python
+df = PublicData().get("comp_chem/openadmet/expansionrx/train/mlm_clint")
+DataSource(df, name="mlm_clint_raw").to_features("mlm_clint_raw", id_column="id")
+
+model = FeatureSet("mlm_clint_raw").to_model(
+    name="mlm-clint-arcsinh",
+    model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.XGBOOST,
+    target_column="mlm_clint",
+    feature_list=features,
+    hyperparameters={
+        "target_transform": {"name": "arcsinh", "scale": 0.1},
+        "prediction_bounds": [0.0, None],
+    },
+)
+```
+
+`arcsinh` is unbounded in both directions, so unlike the logit this one *does* want a lower
+bound — a clearance cannot be negative.
+
+The same argument settles a target that goes below zero outright: `logd` runs -2 to 5.2 over
+5039 rows with 238 negative values, and no offset makes `log10` the right tool for it.
 
 ## log10 and its offset
 
@@ -120,6 +222,13 @@ tails (%F, rows at or under 100):
 | logit, ceiling 120 | 54.6% | 8.3% |
 | logit, ceiling 105 | 48.3% | 15.3% |
 | logit, ceiling 100.5 | 39.9% | 28.6% |
+
+<figure style="text-align: center;">
+  <img src="../images/target_transform_ceiling.svg" alt="How a logit ceiling trades range between the tails" style="width: 100%; max-width: 860px;">
+</figure>
+
+The figure measures that on `mbpb`, percent *bound*, whose 975 values reach 99.23 — close
+enough to the bound that the ceiling choice is visible in real data rather than in principle.
 
 A ceiling above the physical bound leaves every measured value defined. A ceiling at the bound
 gives the top tail more room but rejects anything reaching it, and the error says so rather
