@@ -189,3 +189,25 @@ def test_multi_target_output_columns_drops_absent_columns():
     """One order serves both the out-of-fold and held-out files."""
     df = pd.DataFrame({"id": [1], "ksol": [1.0], "ksol_pred": [1.0], "ksol_pred_std": [0.1]})
     assert multi_target_output_columns(df, "id", ["ksol"]) == ["id", "ksol", "ksol_pred", "ksol_pred_std"]
+
+
+def test_apply_per_target_uq_clips_quantiles_to_bounds():
+    """A target's quantiles are clipped the way its point prediction is."""
+    df = pd.DataFrame({"id": [1]})
+    uq_outs = {
+        "ksol": pd.DataFrame({"q_05": [-5.0], "q_95": [150.0], "prediction_std": [60.0]}),
+        "logd": pd.DataFrame({"q_05": [-5.0], "q_95": [150.0], "prediction_std": [60.0]}),
+    }
+    apply_per_target_uq(df, uq_outs, "ksol", None, {"ksol": (0.0, 100.0)})
+
+    assert df["ksol_q_05"][0] == 0.0 and df["ksol_q_95"][0] == 100.0
+    assert df["q_05"][0] == 0.0, "the primary target's aliases carry the clipped values"
+    assert df["ksol_prediction_std"][0] == 60.0, "a dispersion estimate is not clipped"
+    assert df["logd_q_05"][0] == -5.0, "an unbounded target is untouched"
+
+
+def test_apply_per_target_uq_without_bounds_leaves_quantiles_alone():
+    df = pd.DataFrame({"id": [1]})
+    uq_outs = {"ksol": pd.DataFrame({"q_95": [150.0]})}
+    apply_per_target_uq(df, uq_outs, "ksol")
+    assert df["ksol_q_95"][0] == 150.0

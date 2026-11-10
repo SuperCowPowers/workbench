@@ -13,6 +13,12 @@ back in the units you measured.
 
 Available for XGBoost, PyTorch, ChemProp, TabICL and Atom-JEPA, regression only.
 
+| transform | map | reach for it when |
+|---|---|---|
+| `log10` | `log10(y + offset)` | the target spans decades and stays positive |
+| `logit` | `log10(y / (ceiling - y))` | the target is bounded at both ends (a percent) |
+| `arcsinh` | `asinh(y / scale)` | the target has exact zeros, a BLQ pile-up, or negatives |
+
 ## Setting one
 
 Two hyperparameters on an otherwise normal `to_model()` call:
@@ -99,6 +105,58 @@ linear map gives 10%:
 So `offset=1.0` over a fraction is barely a transform at all, while the same offset over a
 percentage is a strong one.
 
+## logit, for a target bounded at both ends
+
+A percent-type target — oral bioavailability, percent unbound — is bounded at 0 *and* at 100,
+and `log10` resolves only the low end. On %F it leaves the top decile 2.6% of the output
+range, so the model stops separating 84% from 100% bioavailability.
+
+`logit` is `log10(y / (ceiling - y))`, and `ceiling` sets how the range splits between the
+tails (%F, rows at or under 100):
+
+| map | bottom decile | top decile |
+|---|---|---|
+| linear | 7.7% | 16.4% |
+| logit, ceiling 120 | 54.6% | 8.3% |
+| logit, ceiling 105 | 48.3% | 15.3% |
+| logit, ceiling 100.5 | 39.9% | 28.6% |
+
+A ceiling above the physical bound leaves every measured value defined. A ceiling at the bound
+gives the top tail more room but rejects anything reaching it, and the error says so rather
+than swallowing the rows — raw %F data runs well above 100, so those rows are capped or
+dropped in the FeatureSet either way.
+
+`floor` lifts sub-LLOQ readings, as `offset` does for `log10`. A negative target is out of
+domain whatever the floor:
+
+```python
+"target_transform": {"name": "logit", "ceiling": 120.0, "floor": 0.001}
+```
+
+The inverse lands in `(0, ceiling)` by construction, so **a logit model needs no
+`prediction_bounds`**. Bounds still apply after the inverse, so a high bound below the ceiling
+clips real predictions into a mass point.
+
+## arcsinh, where zeros and negatives live
+
+`arcsinh` is `asinh(y / scale)`: logarithmic above `scale`, linear below it, defined for every
+real target. No domain error and no offset to place against the assay's floor, which is what
+makes it the one to reach for when the target has exact zeros, piles up at BLQ, or goes
+negative (logD).
+
+`scale` is the same knob as `log10`'s `offset` — where resolution stops being spent — and
+lands in the same place: 29.4% of the output range to the bottom decile of a 0-1 target at
+`scale` 0.1, against 28.9% at `offset` 0.1. Share given to the bottom decile, where a linear
+map gives 10%:
+
+| target range | scale 0.01 | scale 0.1 | scale 1 | scale 10 |
+|---|---|---|---|---|
+| 0 – 1 | 56.6% | 29.4% | 11.3% | 10.0% |
+| 0 – 100 | 76.7% | 69.7% | 56.6% | 29.4% |
+
+`scale` defaults to 1.0, a plain `asinh(y)` — a strong transform on a percentage, barely a
+transform on a fraction. Set it at the assay's reporting floor.
+
 ## Prediction bounds
 
 `prediction_bounds` is independent of any transform — a non-negative or percentage target
@@ -106,6 +164,17 @@ wants it under the identity transform too. Either side may be `None` to leave it
 
 Clipped values pile up as a mass point at the bound, which destroys ordering among them, so
 bound only targets whose predictions should not reach the bound.
+
+Bounds clip the point prediction and the UQ quantiles (`q_05`, `q_95`, …), which cannot
+change interval coverage: a quantile predicts the target, the target obeys the bound, so the
+clip only drops mass the model has declared impossible and the interval gets tighter for
+free.
+
+`prediction_std` stays the spread of the unclipped ensemble members, because clipping them
+would shrink it exactly where predictions pile up at a bound, and UQ calibrates
+`expected_residual` and `confidence` off that spread. So `prediction ± prediction_std` can
+still reach past a bound, while the quantiles do not. A target that keeps hitting its bound
+wants a `logit`, whose inverse is bounded by construction, rather than a clip.
 
 ## Multi-target models
 
@@ -151,6 +220,11 @@ reason to check the tail rather than the headline number.
 
 - Regression only — a transform on a classifier raises
 - Not available with a scikit-learn `model_class`
+- Transforms live in workbench core. A plugin-registered transform would train and then fail
+  at deployment, since plugins are not on the endpoint import path and the serving container
+  rebuilds the transform from `hyperparameters.json`. The contract a new one owes is in the
+  `workbench.utils.target_transform` module docstring, and `assert_transform_contract` in
+  `tests/utils/test_target_transform.py` checks it
 - Cannot be HPO-searched. The target is transformed once, before the search runs, so a
   searched transform would differ between the trials and the winner's saved config that
   inference reads back. Set it as a top-level hyperparameter and search around it.

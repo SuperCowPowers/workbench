@@ -338,7 +338,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                     {tc: df.loc[valid_mask, f"{tc}_pred"].values for tc in target_columns},
                     {tc: df.loc[valid_mask, f"{tc}_pred_std"].values for tc in target_columns},
                 )
-                apply_per_target_uq(df, uq_outs, target_columns[0], valid_mask)
+                apply_per_target_uq(df, uq_outs, target_columns[0], valid_mask, model_dict["prediction_bounds"])
             else:
                 raise ValueError(
                     f"UQ {uq_model.UQ_VERSION} can't score this batch: its {uq_model.prox.space} proximity needs "
@@ -863,6 +863,7 @@ if __name__ == "__main__":
                 {t_name: uq_dict["oof_outputs"][t_name] for t_name in per_target},
                 primary,
                 {t_name: df_oof[t_name].notna() for t_name in per_target},
+                prediction_bounds,
             )
         else:
             print("[uq] No valid target rows; skipping UQ fits.")

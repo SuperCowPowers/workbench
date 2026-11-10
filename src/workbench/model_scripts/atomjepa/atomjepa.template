@@ -17,7 +17,12 @@ import pandas as pd
 
 from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers
 from workbench.endpoints.inference import input_fn, output_fn  # noqa: F401 (re-exported for the serving harness)
-from workbench.endpoints.target_transform import clip_to_bounds, load_target_transform, resolve_target_transform
+from workbench.endpoints.target_transform import (
+    clip_quantile_columns,
+    clip_to_bounds,
+    load_target_transform,
+    resolve_target_transform,
+)
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 # =============================================================================
@@ -145,6 +150,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         query = uq_query_df(uq_model, matched[ok])
         if query is not None or uq_model.UQ_VERSION == "v0":
             uq_out = uq_model.predict(query, scored["prediction"].values, scored["prediction_std"].values)
+            clip_quantile_columns(uq_out, model_dict.get("prediction_bounds"))
             for col in uq_out.columns:
                 df.loc[ok, col] = uq_out[col].values
         else:
@@ -304,6 +310,7 @@ if __name__ == "__main__":
             active_version=hyperparameters["uq_version"],
         )
         uq_out = uq_dict["oof_outputs"][target]
+        clip_quantile_columns(uq_out, prediction_bounds)
         for col in uq_out.columns:
             df_oof[col] = uq_out[col].values
 

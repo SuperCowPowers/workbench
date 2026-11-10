@@ -3,11 +3,15 @@
 import json
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from workbench.utils.target_transform import (
+    ArcSinh,
     Identity,
     Log10,
+    Logit,
+    clip_quantile_columns,
     clip_to_bounds,
     load_target_transform,
     resolve_prediction_bounds,
@@ -16,6 +20,62 @@ from workbench.utils.target_transform import (
 )
 
 TARGETS = ["ksol", "logd", "mppb"]
+
+
+def assert_transform_contract(transform, values, domain_errors=()):
+    """The contract every transform owes, as the module docstring states it.
+
+    Args:
+        transform: The transform under test.
+        values: In-domain targets, spanning the range the transform is meant for.
+        domain_errors: ``(values, message_pattern)`` pairs the transform must reject.
+    """
+    y = np.sort(np.asarray(values, dtype=float))
+    forward = transform.forward(y)
+
+    np.testing.assert_allclose(transform.inverse(forward), y, rtol=1e-9, atol=1e-12)
+    assert np.all(np.diff(forward) > 0), "forward must be monotonic increasing"
+
+    with_nan = transform.forward(np.array([y[0], np.nan, y[-1]]))
+    assert np.isnan(with_nan[1]), "a missing target stays missing"
+    np.testing.assert_allclose(with_nan[[0, 2]], forward[[0, -1]], rtol=1e-9, atol=1e-12)
+
+    # Constructor args ride to the serving container in hyperparameters.json, and the spec
+    # built from them must rebuild the same transform. repr is a label, not a spec.
+    args = vars(transform)
+    assert json.loads(json.dumps(args)) == args, "constructor args must be JSON-serializable"
+    rebuilt = resolve_target_transform({"name": transform.name, **args})
+    assert type(rebuilt) is type(transform) and vars(rebuilt) == args
+    assert transform.name in repr(transform)
+
+    for bad_values, message in domain_errors:
+        with pytest.raises(ValueError, match=message):
+            transform.forward(np.asarray(bad_values, dtype=float))
+
+
+def test_contract_identity():
+    assert_transform_contract(Identity(), [-2.0, 0.0, 3.5])
+
+
+def test_contract_log10():
+    assert_transform_contract(
+        Log10(offset=0.01),
+        [0.0, 0.5, 10.0, 250.0],
+        domain_errors=[([-1.0, 1.0], r"needs target \+ offset > 0")],
+    )
+
+
+def test_contract_logit():
+    assert_transform_contract(
+        Logit(ceiling=120.0),
+        [0.002, 1.0, 50.0, 99.5],
+        domain_errors=[([0.0, 1.0], "needs target > 0"), ([1.0, 1345.0], "needs target < ceiling")],
+    )
+
+
+def test_contract_arcsinh():
+    """No domain errors to check: arcsinh is defined for every real target."""
+    assert_transform_contract(ArcSinh(scale=0.1), [-50.0, 0.0, 0.05, 100.0])
 
 
 def test_resolve_accepts_none_bare_name_and_dict():
@@ -211,3 +271,164 @@ def test_clip_to_bounds_validates():
         clip_to_bounds(np.array([1.0]), (0.0, 1.0, 2.0))
     with pytest.raises(ValueError, match="low must be below high"):
         clip_to_bounds(np.array([1.0]), (1.0, 0.0))
+
+
+def test_logit_forward_values():
+    """Half the ceiling is the odds midpoint, so it maps to zero."""
+    transform = Logit(ceiling=2.0)
+    np.testing.assert_allclose(transform.forward(np.array([1.0])), [0.0])
+    np.testing.assert_allclose(Logit(ceiling=11.0).forward(np.array([1.0])), [-1.0])
+
+
+def test_logit_inverse_stays_inside_zero_and_ceiling():
+    """Why a logit model needs no prediction_bounds, at either extreme."""
+    inverted = Logit(ceiling=120.0).inverse(np.array([-400.0, -3.0, 0.0, 3.0, 400.0]))
+    assert np.all(inverted > 0.0) and np.all(inverted <= 120.0)
+    assert np.isfinite(inverted).all()
+
+
+def test_logit_ceiling_trades_range_between_the_tails():
+    """A ceiling at the physical bound spends more of the range on the top tail."""
+    y = np.linspace(0.5, 99.5, 1000)
+    shares = {}
+    for ceiling in (120.0, 100.5):
+        forward = Logit(ceiling=ceiling).forward(y)
+        full = forward[-1] - forward[0]
+        shares[ceiling] = (forward[-1] - forward[-100]) / full
+    assert shares[100.5] > 3 * shares[120.0]
+
+
+def test_logit_floor_clamps_sub_lloq_values():
+    transform = Logit(ceiling=120.0, floor=0.001)
+    clamped = transform.forward(np.array([0.0, 0.0005, 0.001]))
+    assert np.isfinite(clamped).all()
+    assert len(np.unique(clamped)) == 1, "everything at or below the floor lands on the floor"
+
+
+def test_logit_rejects_negative_targets_whatever_the_floor():
+    """A floor lifts sub-LLOQ readings; it does not make a negative percent meaningful."""
+    with pytest.raises(ValueError, match="needs target >= 0"):
+        Logit(ceiling=120.0, floor=0.001).forward(np.array([-2.0, 1.0]))
+
+
+def test_logit_ceiling_error_names_the_offender_and_the_remedy():
+    """%F data reaches 1345, so the message has to point at capping rather than the ceiling."""
+    with pytest.raises(ValueError, match="largest target: 1345, ceiling: 120"):
+        Logit(ceiling=120.0).forward(np.array([1.0, 50.0, 1345.0]))
+    with pytest.raises(ValueError, match="Cap or drop those rows"):
+        Logit(ceiling=120.0).forward(np.array([120.0]))
+
+
+def test_logit_validates_its_arguments():
+    with pytest.raises(ValueError, match="needs a finite ceiling and floor"):
+        Logit(ceiling=float("inf"))
+    with pytest.raises(ValueError, match="needs 0 <= floor < ceiling"):
+        Logit(ceiling=100.0, floor=100.0)
+    with pytest.raises(ValueError, match="needs 0 <= floor < ceiling"):
+        Logit(ceiling=100.0, floor=-1.0)
+
+
+def test_logit_resolves_from_bare_name_and_dict():
+    """A bare name cannot stand in for a ceiling, and the failure says which argument."""
+    with pytest.raises(ValueError, match="Bad arguments.*ceiling"):
+        resolve_target_transform("logit")
+    resolved = resolve_target_transform({"name": "logit", "ceiling": 105.0, "floor": 0.001})
+    assert isinstance(resolved, Logit)
+    assert resolved.ceiling == 105.0 and resolved.floor == 0.001
+    assert resolve_target_transform({"name": "logit", "ceiling": 120.0}).floor == 0.0
+
+
+def test_logit_accepts_redundant_prediction_bounds():
+    """Bounds are independent of the transform, so a bound inside the ceiling is not an error."""
+    assert resolve_prediction_bounds((0.0, 100.0), ["mppb"]) == {"mppb": (0.0, 100.0)}
+    clipped = clip_to_bounds(Logit(ceiling=120.0).inverse(np.array([1.0])), (0.0, 100.0))
+    assert clipped[0] == 100.0, "a bound below the ceiling still clips, after the inverse"
+
+
+def test_arcsinh_has_no_domain_error():
+    """Exact zeros, sub-LLOQ noise and negative readings all pass through."""
+    result = ArcSinh(scale=0.1).forward(np.array([-1000.0, -0.5, 0.0, 0.002, 1000.0]))
+    assert np.isfinite(result).all()
+
+
+def test_arcsinh_defaults_to_a_plain_asinh():
+    assert resolve_target_transform("arcsinh").scale == 1.0
+    np.testing.assert_allclose(ArcSinh().forward(np.array([0.0, 1.0])), np.arcsinh([0.0, 1.0]))
+
+
+def test_arcsinh_scale_matches_the_log10_offset_it_replaces():
+    """Why scale is the same knob as offset: the bottom decile gets the same share."""
+    y = np.linspace(0.0, 1.0, 1000)
+
+    def bottom_decile_share(forward):
+        return (forward[99] - forward[0]) / (forward[-1] - forward[0])
+
+    arcsinh_share = bottom_decile_share(ArcSinh(scale=0.1).forward(y))
+    log10_share = bottom_decile_share(Log10(offset=0.1).forward(y))
+    assert arcsinh_share == pytest.approx(0.294, abs=0.005)
+    assert arcsinh_share == pytest.approx(log10_share, abs=0.01)
+
+
+def test_arcsinh_validates_its_scale():
+    for scale in (0.0, -1.0, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="needs a finite scale above zero"):
+            ArcSinh(scale=scale)
+
+
+def test_multi_target_mapping_mixes_the_transforms():
+    resolved = resolve_target_transforms({"ksol": "arcsinh", "mppb": {"name": "logit", "ceiling": 100.5}}, TARGETS)
+    assert isinstance(resolved["ksol"], ArcSinh)
+    assert isinstance(resolved["mppb"], Logit) and resolved["mppb"].ceiling == 100.5
+    assert isinstance(resolved["logd"], Identity)
+
+
+def test_load_target_transform_reads_back_a_logit(tmp_path):
+    """The spec that trained the model is what inference inverts."""
+    model_dir = _write_hyperparameters(
+        tmp_path, {"target_transform": {"name": "logit", "ceiling": 120.0, "floor": 0.001}}
+    )
+    transform, bounds = load_target_transform(model_dir)
+    assert isinstance(transform, Logit)
+    assert (transform.ceiling, transform.floor) == (120.0, 0.001)
+    assert bounds is None
+
+
+def _uq_frame():
+    return pd.DataFrame(
+        {
+            "q_05": [-3.0, 10.0],
+            "q_50": [5.0, 60.0],
+            "q_95": [40.0, 130.0],
+            "prediction_std": [12.0, 40.0],
+            "confidence": [0.8, 0.3],
+            "expected_residual": [4.0, 9.0],
+        }
+    )
+
+
+def test_clip_quantile_columns_clips_only_the_quantiles():
+    uq_out = _uq_frame()
+    clip_quantile_columns(uq_out, (0.0, 100.0))
+    assert uq_out["q_05"].tolist() == [0.0, 10.0]
+    assert uq_out["q_95"].tolist() == [40.0, 100.0]
+    assert uq_out["prediction_std"].tolist() == [12.0, 40.0], "a dispersion estimate is not clipped"
+    assert uq_out["confidence"].tolist() == [0.8, 0.3]
+    assert uq_out["expected_residual"].tolist() == [4.0, 9.0]
+
+
+def test_clip_quantile_columns_without_bounds_is_a_no_op():
+    uq_out = _uq_frame()
+    clip_quantile_columns(uq_out, None)
+    pd.testing.assert_frame_equal(uq_out, _uq_frame())
+
+
+def test_clip_quantile_columns_cannot_lose_coverage():
+    """Truth obeys the bound, so a clipped interval still covers whatever it covered."""
+    truth = np.array([0.0, 42.0, 100.0])
+    uq_out = pd.DataFrame({"q_05": [-20.0, 30.0, 80.0], "q_95": [25.0, 150.0, 140.0]})
+    covered = (truth >= uq_out["q_05"]) & (truth <= uq_out["q_95"])
+
+    clip_quantile_columns(uq_out, (0.0, 100.0))
+    still_covered = (truth >= uq_out["q_05"]) & (truth <= uq_out["q_95"])
+    assert still_covered.tolist() == covered.tolist()
+    assert (uq_out["q_95"] - uq_out["q_05"]).sum() < 190.0, "and the intervals got tighter"

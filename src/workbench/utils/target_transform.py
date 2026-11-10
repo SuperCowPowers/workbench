@@ -8,6 +8,13 @@ is reported or compared.
 Monotonicity is the contract: rank-based metrics (Spearman, Kendall) are identical with and
 without a transform, and only placement-dependent metrics move.
 
+A transform provides ``name``, ``forward``, ``inverse`` and ``__repr__``; is monotonic
+increasing; takes JSON-serializable constructor arguments, since
+``resolve_target_transform`` rebuilds it from ``hyperparameters.json`` inside the serving
+container; and raises on out-of-domain input at training time rather than returning NaN.
+Transforms live here rather than behind a plugin hook: plugins are not on the endpoint
+import path, so a plugin-supplied transform would train and then fail to load at deployment.
+
 numpy-only by design — this module is on the endpoint import path.
 """
 
@@ -74,10 +81,130 @@ class Log10:
         return f"{self.name}(offset={self.offset:g})"
 
 
-TRANSFORMS = {cls.name: cls for cls in (Identity, Log10)}
+class Logit:
+    """``log10(y / (ceiling - y))``, for a target bounded at both ends.
+
+    A percent-type target — oral bioavailability, percent unbound — is bounded at 0 and at
+    100, and ``log10`` resolves only the low end: over %F it leaves the top decile 2.6% of the
+    output range, so the model stops separating 84% from 100%. A logit keeps both tails, and
+    ``ceiling`` sets the balance. Decile shares on %F, bottom/top, against a linear map's
+    7.7%/16.4%: 54.6%/8.3% at ceiling 120, 48.3%/15.3% at 105, 39.9%/28.6% at 100.5.
+
+    A ceiling above the physical bound leaves every measured value defined; one at the bound
+    spends more range on the top tail but rejects anything reaching it. ``floor`` lifts
+    sub-LLOQ values, as ``Log10``'s ``offset`` does, and a negative target is out of domain
+    whatever the floor.
+
+    ``inverse`` lands in ``(0, ceiling)`` by construction, so a logit model needs no
+    ``prediction_bounds``. Bounds still apply after the inverse, so a high bound below the
+    ceiling clips real predictions into a mass point.
+    """
+
+    name = "logit"
+
+    def __init__(self, ceiling: float, floor: float = 0.0):
+        self.ceiling = float(ceiling)
+        self.floor = float(floor)
+        if not np.isfinite(self.ceiling) or not np.isfinite(self.floor):
+            raise ValueError(
+                f"target_transform 'logit' needs a finite ceiling and floor, got ceiling {ceiling!r} "
+                f"and floor {floor!r}"
+            )
+        if not 0.0 <= self.floor < self.ceiling:
+            raise ValueError(
+                f"target_transform 'logit' needs 0 <= floor < ceiling, got floor {self.floor:g} "
+                f"and ceiling {self.ceiling:g}"
+            )
+
+    def forward(self, y: np.ndarray) -> np.ndarray:
+        values = np.asarray(y, dtype=float)
+        known = np.isfinite(values)
+
+        too_low = known & (values < 0.0) if self.floor > 0.0 else known & (values <= 0.0)
+        if too_low.any():
+            requirement = "target >= 0" if self.floor > 0.0 else "target > 0"
+            remedy = (
+                "A negative target has no bound fraction a logit can represent, so drop those rows."
+                if self.floor > 0.0
+                else "Set a floor just under the assay's lower limit."
+            )
+            raise ValueError(
+                f"target_transform 'logit' needs {requirement}, but {int(too_low.sum())} of "
+                f"{int(known.sum())} values are not (smallest target: {float(np.min(values[known])):g}, "
+                f"floor: {self.floor:g}). {remedy}"
+            )
+
+        at_ceiling = known & (values >= self.ceiling)
+        if at_ceiling.any():
+            raise ValueError(
+                f"target_transform 'logit' needs target < ceiling, but {int(at_ceiling.sum())} of "
+                f"{int(known.sum())} values are not (largest target: {float(np.max(values[known])):g}, "
+                f"ceiling: {self.ceiling:g}). Cap or drop those rows — raising the ceiling to cover "
+                f"them spends the target's range on values the assay cannot support."
+            )
+
+        clamped = np.maximum(values, self.floor) if self.floor > 0.0 else values
+        odds = np.full(clamped.shape, np.nan, dtype=float)
+        np.divide(clamped, self.ceiling - clamped, out=odds, where=known)
+        result = np.full(clamped.shape, np.nan, dtype=float)
+        np.log10(odds, out=result, where=known)
+        return result
+
+    def inverse(self, predictions: np.ndarray) -> np.ndarray:
+        # Sigmoid form with a clipped exponent, so an extreme prediction saturates inside
+        # (0, ceiling) rather than overflowing to a NaN
+        exponent = np.clip(-np.asarray(predictions, dtype=float), -300.0, 300.0)
+        return self.ceiling / (1.0 + np.power(10.0, exponent))
+
+    def __repr__(self) -> str:
+        return f"{self.name}(ceiling={self.ceiling:g}, floor={self.floor:g})"
 
 
-def resolve_target_transform(spec: TransformSpec) -> Union[Identity, Log10]:
+class ArcSinh:
+    """``asinh(y / scale)``, logarithmic above ``scale`` and linear below it.
+
+    Defined for every real target, so it has no domain error and no offset to place against
+    the assay's floor: exact zeros, sub-LLOQ noise and negative readings all pass through,
+    which is what makes it usable where ``Log10`` is not — logD and anything else that goes
+    below zero.
+
+    ``scale`` is where resolution stops being spent, the role ``Log10``'s ``offset`` plays,
+    and the two land in the same place: on a 0-1 target the bottom decile gets 29.4% of the
+    output range under ``scale`` 0.1 against 28.9% under ``offset`` 0.1. What matters is
+    ``scale`` against the target's own range — share of the output range given to the bottom
+    decile, where a linear map gives 10%:
+
+    | target range | scale 0.01 | scale 0.1 | scale 1 | scale 10 |
+    |---|---|---|---|---|
+    | 0 - 1 | 56.6% | 29.4% | 11.3% | 10.0% |
+    | 0 - 100 | 76.7% | 69.7% | 56.6% | 29.4% |
+
+    So the default of 1.0 is a plain ``asinh(y)``: a strong transform on a percentage, barely
+    a transform on a fraction.
+    """
+
+    name = "arcsinh"
+
+    def __init__(self, scale: float = 1.0):
+        self.scale = float(scale)
+        if not np.isfinite(self.scale) or self.scale <= 0.0:
+            raise ValueError(f"target_transform 'arcsinh' needs a finite scale above zero, got {scale!r}")
+
+    def forward(self, y: np.ndarray) -> np.ndarray:
+        return np.arcsinh(np.asarray(y, dtype=float) / self.scale)
+
+    def inverse(self, predictions: np.ndarray) -> np.ndarray:
+        return self.scale * np.sinh(np.asarray(predictions, dtype=float))
+
+    def __repr__(self) -> str:
+        return f"{self.name}(scale={self.scale:g})"
+
+
+TRANSFORMS = {cls.name: cls for cls in (Identity, Log10, Logit, ArcSinh)}
+Transform = Union[Identity, Log10, Logit, ArcSinh]
+
+
+def resolve_target_transform(spec: TransformSpec) -> Transform:
     """Build a transform from a hyperparameter value.
 
     Accepts ``None`` (identity), a bare name (``"log10"``), or a name with arguments
@@ -208,6 +335,26 @@ def _validated_bounds(bounds: Optional[Sequence[Optional[float]]]) -> Optional[t
     if low is not None and high is not None and low >= high:
         raise ValueError(f"prediction_bounds low must be below high, got {bounds!r}")
     return (low, high)
+
+
+def clip_quantile_columns(df, bounds: Optional[Sequence[Optional[float]]], prefix: str = "q_") -> None:
+    """Clip UQ prediction quantiles into the same range as the point prediction, in place.
+
+    A quantile predicts the target and the target obeys the bound, so clipping one cannot
+    change interval coverage — it only drops mass the model has declared impossible. The
+    spread in ``prediction_std`` is a dispersion estimate that UQ calibrates against, so it
+    stays unclipped and ``prediction ± prediction_std`` can still reach past a bound.
+
+    Args:
+        df: Frame of UQ columns, modified in place.
+        bounds: ``(low, high)``, either side optional, or None to leave the frame untouched.
+        prefix: Names the quantile columns.
+    """
+    if bounds is None:
+        return
+    for column in df.columns:
+        if column.startswith(prefix):
+            df[column] = clip_to_bounds(df[column].to_numpy(), bounds)
 
 
 def clip_to_bounds(values: np.ndarray, bounds: Optional[Sequence[Optional[float]]]) -> np.ndarray:

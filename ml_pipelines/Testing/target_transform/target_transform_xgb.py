@@ -1,39 +1,57 @@
-"""Does a target transform earn its place on MPPB? Three XGBoost models, one answer.
+"""Does a target transform earn its place on MPPB? Five XGBoost models, one answer.
 
 MPPB is percent unbound: physically bounded [0, 100], heavily skewed toward zero, and the
-range that matters clinically is under 1%. The three variants separate the two knobs:
+range that matters clinically is under 1%. The variants separate the two knobs and then cover
+every transform on one target:
 
     plain    no transform, no bounds -- the baseline
     bounds   prediction_bounds only -- a linear target held inside its physical range
-    log10    log10(offset=0.1) + bounds -- the transform the skew argues for
+    log10    log10(offset=0.1) + bounds -- resolution on the low tail
+    logit    logit(ceiling=100, floor=0.1) -- both tails; its inverse needs no bounds
+    arcsinh  arcsinh(scale=0.1) + bounds -- same low-tail stretch, no domain to respect
 
-The offset is the assay's smallest non-zero reading, so the 10 zero rows land at -1 in
-transformed space rather than failing the domain check.
+The assay's smallest non-zero reading, 0.1, is what the 10 zero rows need from each
+transform: log10 takes it as an offset, logit as a floor, arcsinh as the scale where its
+linear region ends.
 
 Metrics come from the pooled out-of-fold predictions, always on the original percent scale,
 with the under-1% rows broken out separately.
 
 Models:
-    - mppb-xgb-plain, mppb-xgb-bounds, mppb-xgb-log10
+    - mppb-xgb-plain, mppb-xgb-bounds, mppb-xgb-log10, mppb-xgb-logit, mppb-xgb-arcsinh
 Endpoints:
-    - mppb-xgb-plain, mppb-xgb-bounds, mppb-xgb-log10
+    - mppb-xgb-plain, mppb-xgb-bounds, mppb-xgb-log10, mppb-xgb-logit, mppb-xgb-arcsinh
 """
 
 import numpy as np
 import pandas as pd
 
 from workbench.api import Endpoint, FeatureSet, Model, ModelType, ModelFramework
+from workbench.utils.target_transform import resolve_target_transform
 
 FS_NAME = "mppb_raw"
 TARGET = "mppb"
 BOUNDS = [0.0, 100.0]
 LOW_RANGE = 1.0  # the clinically interesting tail, in percent unbound
+LLOQ = 0.1  # the assay's smallest non-zero reading
 
 VARIANTS = {
     "plain": {},
     "bounds": {"prediction_bounds": BOUNDS},
-    "log10": {"target_transform": {"name": "log10", "offset": 0.1}, "prediction_bounds": BOUNDS},
+    "log10": {"target_transform": {"name": "log10", "offset": LLOQ}, "prediction_bounds": BOUNDS},
+    # A logit inverts into (0, ceiling), so bounds would only add a mass point
+    "logit": {"target_transform": {"name": "logit", "ceiling": 100.0, "floor": LLOQ}},
+    "arcsinh": {"target_transform": {"name": "arcsinh", "scale": LLOQ}, "prediction_bounds": BOUNDS},
 }
+
+
+def transformed_max(spec, target_max: float) -> float:
+    """Where the target's top lands in this variant's transformed space.
+
+    A prediction range confined inside it means an inverse never ran. With no transform it is
+    the target's own top.
+    """
+    return float(resolve_target_transform(spec).forward(np.array([target_max]))[0])
 
 
 def metrics(df: pd.DataFrame) -> dict:
@@ -82,6 +100,8 @@ def main():
             "all": metrics(oof),
             "low": metrics(oof[oof[TARGET] < LOW_RANGE]),
             "range": (oof["prediction"].min(), oof["prediction"].max()),
+            "target_max": oof[TARGET].max(),
+            "transformed_max": transformed_max(hyperparameters.get("target_transform"), oof[TARGET].max()),
         }
 
     print("\n" + "=" * 78)
@@ -99,7 +119,16 @@ def main():
     print("-" * 78)
     low_n = results["plain"]["low"]["n"]
     print(f"MAE <1% is over the {low_n} rows measured under {LOW_RANGE:g}% unbound")
-    print("A prediction range topping out near 2 would mean an inverse never ran")
+
+    # Each transform compresses the target into a different range, so what an un-inverted
+    # prediction would look like is per-variant
+    tops = ", ".join(
+        f"{variant} {r['transformed_max']:.2f}"
+        for variant, r in results.items()
+        if VARIANTS[variant].get("target_transform")
+    )
+    print(f"Target max is {results['plain']['target_max']:g}; transformed space tops out at {tops},")
+    print("so a prediction range inside those would mean an inverse never ran")
 
 
 if __name__ == "__main__":

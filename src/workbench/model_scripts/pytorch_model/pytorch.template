@@ -41,7 +41,12 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from workbench.endpoints.target_transform import clip_to_bounds, load_target_transform, resolve_target_transform
+from workbench.endpoints.target_transform import (
+    clip_quantile_columns,
+    clip_to_bounds,
+    load_target_transform,
+    resolve_target_transform,
+)
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 log = logging.getLogger("workbench")
@@ -272,6 +277,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             query = uq_query_df(uq_model, matched_df)
             if query is not None or uq_model.UQ_VERSION == "v0":
                 uq_out = uq_model.predict(query, df["prediction"].values, df["prediction_std"].values)
+                clip_quantile_columns(uq_out, model_dict.get("prediction_bounds"))
                 for col in uq_out.columns:
                     df[col] = uq_out[col].values
             else:
@@ -663,6 +669,7 @@ if __name__ == "__main__":
 
         # Apply active UQ to df_oof for oof_predictions.csv
         uq_out = uq_dict["oof_outputs"][target]
+        clip_quantile_columns(uq_out, prediction_bounds)
         for col in uq_out.columns:
             df_oof[col] = uq_out[col].values
 

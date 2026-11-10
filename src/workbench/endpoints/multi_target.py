@@ -14,7 +14,7 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 
-from workbench.utils.target_transform import Identity, clip_to_bounds
+from workbench.utils.target_transform import Identity, clip_quantile_columns, clip_to_bounds
 
 # UQ output columns, as the UQ models name them before per-target prefixing
 UQ_COLUMN_PREFIXES = ("q_",)
@@ -37,6 +37,11 @@ def per_target_predictions(
     MAE-optimal estimate. The spread is the std of the inverted members, which keeps it in
     the same units as the prediction it accompanies — a transformed-space std would be
     meaningless to UQ and to anything else reading ``{target}_pred_std``.
+
+    Bounds clip the point prediction, and ``apply_per_target_uq`` clips the UQ quantiles to
+    match. The spread stays the std of the unclipped members: clipping them would shrink it
+    exactly where predictions pile up at a bound, and UQ calibrates ``expected_residual`` and
+    ``confidence`` off ``{target}_pred_std``. So ``pred ± std`` can reach past a bound.
 
     Args:
         target_columns: Target columns, in the model's output order.
@@ -83,6 +88,7 @@ def apply_per_target_uq(
     uq_outs: dict,
     primary: str,
     masks: Union[None, np.ndarray, pd.Series, dict] = None,
+    bounds: Optional[dict] = None,
 ) -> None:
     """Write ``{target}_``-prefixed UQ columns, aliasing the primary target's, in place.
 
@@ -92,9 +98,12 @@ def apply_per_target_uq(
         primary: The target whose columns are also written unprefixed.
         masks: Row selector — one boolean array for every target, ``{target: array}`` for a
             per-target one, or None to write whole columns.
+        bounds: ``{target: (low, high)}``, which clips that target's quantiles as it clips its
+            point prediction; omit to leave the quantiles unclipped.
     """
     for target, uq_out in uq_outs.items():
         mask = masks.get(target) if isinstance(masks, dict) else masks
+        clip_quantile_columns(uq_out, (bounds or {}).get(target))
         for col in uq_out.columns:
             prefixed = f"{target}_{col}"
             if mask is None:

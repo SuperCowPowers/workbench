@@ -1,42 +1,63 @@
 """Every framework that claims target_transform support has to invert it.
 
-One `log10(offset=0.1)` + bounds model per framework on the as-measured MPPB FeatureSet.
-XGBoost is covered by target_transform_xgb.py; this covers the other four, including the
+One model per framework on the as-measured MPPB FeatureSet, each carrying a different
+transform, so a single run covers both axes. XGBoost is covered by target_transform_xgb.py
+alongside its own transform comparison; this covers the other four, including the
 multi-target chemprop path where each target resolves its own transform.
 
-A missing inverse is unmistakable: MPPB runs 0 to 87.6 percent unbound, so predictions left
-in transformed space top out near log10(87.7) = 1.94. Each model's prediction range is
-printed and checked against the target's own.
+    pytorch      logit(ceiling=100, floor=0.1), no bounds -- its inverse is bounded already
+    chemprop     arcsinh(scale=0.1) + bounds -- unbounded either way, so bounds earn a place
+    tabicl       log10(offset=0.1) + bounds
+    atomjepa     log10(offset=0.1) + bounds
+    chemprop-mt  logit on mppb, a bare arcsinh on the signed mollogp
+
+A missing inverse is unmistakable, and each transform compresses the target differently:
+MPPB runs 0 to 87.6 percent unbound, which lands at 1.94 under log10, 0.85 under logit and
+7.47 under arcsinh. Every model's prediction range is printed against the top of its own
+transformed space.
 
 Models/Endpoints:
-    - mppb-pytorch-log10, mppb-chemprop-log10, mppb-tabicl-log10, mppb-atomjepa-log10
-    - mppb-chemprop-mt-log10 (multi-target: mppb + a per-target transform)
+    - mppb-pytorch-logit, mppb-chemprop-arcsinh, mppb-tabicl-log10, mppb-atomjepa-log10
+    - mppb-chemprop-mt-logit (multi-target: a different transform on each target)
 """
 
 import argparse
 
+import numpy as np
+
 from workbench.api import Endpoint, FeatureSet, Model, ModelType, ModelFramework
+from workbench.utils.target_transform import resolve_target_transform
 
 FS_NAME = "mppb_raw"
 TARGET = "mppb"
 BOUNDS = [0.0, 100.0]
-TRANSFORM = {"name": "log10", "offset": 0.1}
-TRANSFORM_HYPERPARAMETERS = {"target_transform": TRANSFORM, "prediction_bounds": BOUNDS}
+LLOQ = 0.1  # the assay's smallest non-zero reading
 
-# A transformed prediction would land in log10 space, roughly [-1, 2]
-MIN_CREDIBLE_MAX = 5.0
+LOG10 = {"name": "log10", "offset": LLOQ}
+LOGIT = {"name": "logit", "ceiling": 100.0, "floor": LLOQ}
+ARCSINH = {"name": "arcsinh", "scale": LLOQ}
+
+LOG10_HYPERPARAMETERS = {"target_transform": LOG10, "prediction_bounds": BOUNDS}
+
+# Clear of the top of any transformed space, so an un-inverted prediction cannot pass
+SCALE_MARGIN = 2.0
 
 
-def check_scale(model: Model) -> None:
+def check_scale(model: Model, spec) -> None:
     """Report whether out-of-fold predictions came back on the target's own scale."""
     oof = model.get_inference_predictions("full_cross_fold")
     if oof is None:
         print(f"  {model.name}: no out-of-fold predictions to check")
         return
 
+    target_max = oof[TARGET].max()
+    transformed_max = float(resolve_target_transform(spec).forward(np.array([target_max]))[0])
     low, high = oof["prediction"].min(), oof["prediction"].max()
-    verdict = "ORIGINAL SCALE" if high >= MIN_CREDIBLE_MAX else "*** LOOKS TRANSFORMED ***"
-    print(f"  {model.name}: predictions [{low:.2f}, {high:.2f}] vs target [0, 87.6] -> {verdict}")
+    verdict = "ORIGINAL SCALE" if high > SCALE_MARGIN * transformed_max else "*** LOOKS TRANSFORMED ***"
+    print(
+        f"  {model.name}: predictions [{low:.2f}, {high:.2f}] vs target [0, {target_max:.1f}] "
+        f"(transformed space tops out at {transformed_max:.2f}) -> {verdict}"
+    )
 
 
 def build(name: str, framework, features: list, targets, hyperparameters: dict, async_endpoint: bool = False) -> Model:
@@ -71,39 +92,60 @@ def main():
     tabular = Endpoint("smiles-to-2d-v1").output_columns()
     trained = []
 
-    trained.append(build("mppb-pytorch-log10", ModelFramework.PYTORCH, tabular, TARGET, TRANSFORM_HYPERPARAMETERS))
-    trained.append(build("mppb-chemprop-log10", ModelFramework.CHEMPROP, ["smiles"], TARGET, TRANSFORM_HYPERPARAMETERS))
-    trained.append(build("mppb-tabicl-log10", ModelFramework.TABICL, tabular, TARGET, TRANSFORM_HYPERPARAMETERS))
-
-    # Multi-target, mapping form: mppb is transformed and bounded, mollogp is left alone.
-    # One target transformed and one not is the case a single shared spec cannot express.
+    # A logit inverts into (0, ceiling), so this one carries no bounds
     trained.append(
-        build(
-            "mppb-chemprop-mt-log10",
-            ModelFramework.CHEMPROP,
-            ["smiles"],
-            [TARGET, "mollogp"],
-            {"target_transform": {TARGET: TRANSFORM}, "prediction_bounds": {TARGET: BOUNDS}},
+        (build("mppb-pytorch-logit", ModelFramework.PYTORCH, tabular, TARGET, {"target_transform": LOGIT}), LOGIT)
+    )
+    trained.append(
+        (
+            build(
+                "mppb-chemprop-arcsinh",
+                ModelFramework.CHEMPROP,
+                ["smiles"],
+                TARGET,
+                {"target_transform": ARCSINH, "prediction_bounds": BOUNDS},
+            ),
+            ARCSINH,
+        )
+    )
+    trained.append((build("mppb-tabicl-log10", ModelFramework.TABICL, tabular, TARGET, LOG10_HYPERPARAMETERS), LOG10))
+
+    # Multi-target, mapping form: a bounded percent takes a logit, and mollogp goes negative,
+    # so it takes a bare arcsinh. Different transforms per target is what a shared spec cannot
+    # express, and only mppb has a physical range to bound.
+    trained.append(
+        (
+            build(
+                "mppb-chemprop-mt-logit",
+                ModelFramework.CHEMPROP,
+                ["smiles"],
+                [TARGET, "mollogp"],
+                {"target_transform": {TARGET: LOGIT, "mollogp": "arcsinh"}},
+            ),
+            LOGIT,
         )
     )
 
     if not args.skip_atomjepa:
         trained.append(
-            build(
-                "mppb-atomjepa-log10",
-                ModelFramework.ATOMJEPA,
-                ["smiles"],
-                TARGET,
-                TRANSFORM_HYPERPARAMETERS,
-                async_endpoint=True,
+            (
+                build(
+                    "mppb-atomjepa-log10",
+                    ModelFramework.ATOMJEPA,
+                    ["smiles"],
+                    TARGET,
+                    LOG10_HYPERPARAMETERS,
+                    async_endpoint=True,
+                ),
+                LOG10,
             )
         )
 
     print("\n" + "=" * 78)
     print("PREDICTION SCALE CHECK")
     print("=" * 78)
-    for model in trained:
-        check_scale(model)
+    for model, spec in trained:
+        check_scale(model, spec)
 
 
 if __name__ == "__main__":
