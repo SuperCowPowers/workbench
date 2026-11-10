@@ -21,7 +21,7 @@ import numpy as np
 from workbench.api import PublicData
 from workbench.utils.target_transform import ArcSinh, Log10, Logit
 
-OUT_DIR = Path("docs/images")
+OUT_DIR = Path("docs/models/images")
 
 # Dark-surface categorical slots 1-3, which validate on every pair, plus recessive ink
 BLUE, ORANGE, AQUA = "#3987e5", "#d95926", "#199e70"
