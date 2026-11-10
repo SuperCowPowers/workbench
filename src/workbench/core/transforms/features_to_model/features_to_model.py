@@ -23,7 +23,7 @@ from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFrame
 from workbench.core.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.workbench_logging import _suppress_sagemaker_logging
-from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 from workbench.utils.s3_utils import read_s3_json
 from workbench.utils.metrics_utils import TRAINING_METRICS
 
@@ -393,7 +393,7 @@ class FeaturesToModel(Transform):
         v3_metric_definitions = [MetricDefinition(name=m["Name"], regex=m["Regex"]) for m in metric_definitions]
 
         # PRM attribution tag: connects the training-job compute to our Marketplace listing
-        prm_tag = Tag(key="aws-apn-id", value=f"pc:{AWS_MARKETPLACE_PRODUCT_CODE}")
+        prm_tag = Tag(key=PRM_TAG_KEY, value=PRM_TAG_VALUE)
 
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
         _suppress_sagemaker_logging()

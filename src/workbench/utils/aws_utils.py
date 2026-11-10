@@ -139,10 +139,14 @@ def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: st
 # Tag-safe values are stored plain (no marker); only unsafe values get the marker.
 B64_MARKER = "b64:"
 
-# AWS Partner Revenue Measurement (PRM) product code for the ADMET Workbench Marketplace
-# listing. Applied as tag `aws-apn-id`=`pc:<code>` on deployed resources so AWS attributes
-# the driven service consumption to the listing (see PRM onboarding guide).
+# AWS Partner Revenue Measurement (PRM): attributes the AWS consumption Workbench drives to our
+# Marketplace listing. Resources carry the PRM tag; AWS API calls carry the PRM user agent.
 AWS_MARKETPLACE_PRODUCT_CODE = "41c7xn73mrdq90y6g5ktdo7ye"
+AWS_PARTNER_CENTRAL_ACCOUNT_ID = "975050283469"
+PRM_TAG_KEY = f"aws-apn-id-{AWS_PARTNER_CENTRAL_ACCOUNT_ID}"
+PRM_TAG_VALUE = f"pc:{AWS_MARKETPLACE_PRODUCT_CODE}"
+PRM_LEGACY_TAG_KEY = "aws-apn-id"  # still attributed on resources tagged with it
+PRM_USER_AGENT = f"APN_1.1/pc_{AWS_MARKETPLACE_PRODUCT_CODE}$"
 
 # AWS resource tag values allow letters, numbers, spaces, and _ . : / = + - @
 _TAG_SAFE_RE = re.compile(r"^[A-Za-z0-9 _.:/=+@-]*$")

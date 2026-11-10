@@ -206,6 +206,8 @@ class WorkbenchDashboardStack(Stack):
             # Fail fast (and roll back) on bad deploys; keep old task running until new one is healthy
             circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
             min_healthy_percent=100,
+            # Service tags (incl. PRM attribution) carry onto the billable Fargate tasks
+            propagate_tags=ecs.PropagatedTagSource.SERVICE,
             # The app takes ~30s+ to boot (theme/plugin S3 pulls + meta refresh); give it room
             health_check_grace_period=Duration.seconds(120),
         )

@@ -1,5 +1,6 @@
 import boto3
 import aws_cdk as cdk
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 from pprint import pprint
 
 from workbench_dashboard.workbench_dashboard_stack import WorkbenchDashboardStack, WorkbenchDashboardStackProps
@@ -66,6 +67,7 @@ if not public and not certificate_arn:
     )
 
 app = cdk.App()
+cdk.Tags.of(app).add(PRM_TAG_KEY, PRM_TAG_VALUE)  # PRM attribution on every taggable resource
 WorkbenchDashboardStack(
     app,
     "WorkbenchDashboard",

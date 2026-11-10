@@ -9,6 +9,7 @@ import logging
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 
 
 class TransformInput(Enum):
@@ -114,11 +115,12 @@ class Transform(ABC):
         return [{"key": key, "value": value} for key, value in metadata.items()]
 
     def get_aws_tags(self):
-        """Get the metadata/tags and convert them into AWS Tag Format"""
+        """Get the metadata/tags, plus the PRM attribution tag, in AWS Tag Format"""
         # Set up our metadata storage
         workbench_meta = {"workbench_tags": self.output_tags}
         for key, value in self.output_meta.items():
             workbench_meta[key] = value
+        workbench_meta[PRM_TAG_KEY] = PRM_TAG_VALUE
         aws_tags = self.convert_to_aws_tags(workbench_meta)
         return aws_tags
 
