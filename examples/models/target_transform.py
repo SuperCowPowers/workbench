@@ -31,10 +31,10 @@ if recreate or not Model(NAME).exists():
         description="MPPB percent unbound, log10 target transform",
         tags=["mppb", "target_transform"],
         hyperparameters={
-            # The LLOQ of 0.1 goes somewhere in every transform, since 10 rows read exactly 0:
-            #   {"name": "log10", "offset": 0.1}                  low tail only
-            #   {"name": "logit", "ceiling": 100.0, "floor": 0.1} both tails, needs no bounds
-            #   {"name": "arcsinh", "scale": 0.1}                 zeros and negatives pass through
+            # 10 rows read exactly 0, which each transform meets differently:
+            #   {"name": "log10", "offset": 0.1}     the offset lifts them into the domain
+            #   {"name": "arcsinh", "scale": 0.1}    zeros and negatives pass straight through
+            #   {"name": "logit", "ceiling": 100.0}  needs 0 < y < ceiling, so clamp upstream
             "target_transform": {"name": "log10", "offset": 0.1},
             "prediction_bounds": [0.0, 100.0],
         },

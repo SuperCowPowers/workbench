@@ -126,12 +126,16 @@ gives the top tail more room but rejects anything reaching it, and the error say
 than swallowing the rows — raw %F data runs well above 100, so those rows are capped or
 dropped in the FeatureSet either way.
 
-`floor` lifts sub-LLOQ readings, as `offset` does for `log10`. A negative target is out of
-domain whatever the floor:
+The domain is `0 < y < ceiling`, and the transform clamps nothing of its own, so the map is
+exactly invertible and metrics score against the target you supplied. Sub-LLOQ rows are
+clamped or dropped in the FeatureSet, where they stay visible in the data:
 
 ```python
-"target_transform": {"name": "logit", "ceiling": 120.0, "floor": 0.001}
+"target_transform": {"name": "logit", "ceiling": 120.0}
 ```
+
+That is the one thing `logit` asks of a FeatureSet that `log10` and `arcsinh` do not: an
+`offset` or a `scale` absorbs a zero inside the model, a ceiling cannot.
 
 The inverse lands in `(0, ceiling)` by construction, so **a logit model needs no
 `prediction_bounds`**. Bounds still apply after the inverse, so a high bound below the ceiling
@@ -156,6 +160,35 @@ map gives 10%:
 
 `scale` defaults to 1.0, a plain `asinh(y)` — a strong transform on a percentage, barely a
 transform on a fraction. Set it at the assay's reporting floor.
+
+## Domain errors
+
+Every transform's domain is an interval, so the target's minimum and maximum decide whether a
+spec can work at all. `to_model()` checks them against the FeatureSet's cached stats, which
+costs no query and turns an unusable spec into a two-second error instead of a failed training
+job:
+
+```
+mppb_raw column 'mppb': target_transform 'logit' needs target > 0, but the smallest target
+is 0. Clamp those rows up to the assay's lower limit or drop them in the FeatureSet, or use
+'arcsinh', which has no domain restriction.
+```
+
+Each transform carries its own remedy, because they differ:
+
+| transform | out of domain | the fix |
+|---|---|---|
+| `log10` | `y + offset <= 0` | raise the offset — it is lossless, and `inverse` recovers the value exactly |
+| `logit` | `y <= 0` | clamp or drop those rows in the FeatureSet; the transform clamps nothing itself |
+| `logit` | `y >= ceiling` | raise the ceiling above the data, or cap the rows. **A percent target holding an exact `100.0` needs a ceiling above 100** |
+| `arcsinh` | never | — |
+
+One case is a warning rather than an error: a negative target smaller in magnitude than a
+`log10` offset transforms and inverts exactly, so it is usable — but it is rarely what the
+caller expected, and `arcsinh` represents negatives directly.
+
+The same check runs inside the training job as a backstop, so a model script invoked directly
+still refuses out-of-domain data rather than training on NaNs.
 
 ## Prediction bounds
 

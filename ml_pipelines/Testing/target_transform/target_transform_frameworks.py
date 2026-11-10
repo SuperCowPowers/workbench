@@ -5,11 +5,11 @@ transform, so a single run covers both axes. XGBoost is covered by target_transf
 alongside its own transform comparison; this covers the other four, including the
 multi-target chemprop path where each target resolves its own transform.
 
-    pytorch      logit(ceiling=100, floor=0.1), no bounds -- its inverse is bounded already
+    pytorch      logit(ceiling=100) on mppb_floored, no bounds -- its inverse is bounded
     chemprop     arcsinh(scale=0.1) + bounds -- unbounded either way, so bounds earn a place
     tabicl       log10(offset=0.1) + bounds
     atomjepa     log10(offset=0.1) + bounds
-    chemprop-mt  logit on mppb, a bare arcsinh on the signed mollogp
+    chemprop-mt  logit on mppb_floored, a bare arcsinh on the signed mollogp
 
 A missing inverse is unmistakable, and each transform compresses the target differently:
 MPPB runs 0 to 87.6 percent unbound, which lands at 1.94 under log10, 0.85 under logit and
@@ -33,8 +33,11 @@ TARGET = "mppb"
 BOUNDS = [0.0, 100.0]
 LLOQ = 0.1  # the assay's smallest non-zero reading
 
+# A logit clamps nothing itself, so it trains on the FeatureSet's floored target column
+LOGIT_TARGET = "mppb_floored"
+
 LOG10 = {"name": "log10", "offset": LLOQ}
-LOGIT = {"name": "logit", "ceiling": 100.0, "floor": LLOQ}
+LOGIT = {"name": "logit", "ceiling": 100.0}
 ARCSINH = {"name": "arcsinh", "scale": LLOQ}
 
 LOG10_HYPERPARAMETERS = {"target_transform": LOG10, "prediction_bounds": BOUNDS}
@@ -94,7 +97,10 @@ def main():
 
     # A logit inverts into (0, ceiling), so this one carries no bounds
     trained.append(
-        (build("mppb-pytorch-logit", ModelFramework.PYTORCH, tabular, TARGET, {"target_transform": LOGIT}), LOGIT)
+        (
+            build("mppb-pytorch-logit", ModelFramework.PYTORCH, tabular, LOGIT_TARGET, {"target_transform": LOGIT}),
+            LOGIT,
+        )
     )
     trained.append(
         (
@@ -119,8 +125,8 @@ def main():
                 "mppb-chemprop-mt-logit",
                 ModelFramework.CHEMPROP,
                 ["smiles"],
-                [TARGET, "mollogp"],
-                {"target_transform": {TARGET: LOGIT, "mollogp": "arcsinh"}},
+                [LOGIT_TARGET, "mollogp"],
+                {"target_transform": {LOGIT_TARGET: LOGIT, "mollogp": "arcsinh"}},
             ),
             LOGIT,
         )

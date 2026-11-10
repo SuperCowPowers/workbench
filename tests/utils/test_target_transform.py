@@ -1,6 +1,7 @@
 """Tests for target transforms."""
 
 import json
+import logging
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from workbench.utils.target_transform import (
     Identity,
     Log10,
     Logit,
+    check_target_domain,
     clip_quantile_columns,
     clip_to_bounds,
     load_target_transform,
@@ -298,44 +300,67 @@ def test_logit_ceiling_trades_range_between_the_tails():
     assert shares[100.5] > 3 * shares[120.0]
 
 
-def test_logit_floor_clamps_sub_lloq_values():
-    transform = Logit(ceiling=120.0, floor=0.001)
-    clamped = transform.forward(np.array([0.0, 0.0005, 0.001]))
-    assert np.isfinite(clamped).all()
-    assert len(np.unique(clamped)) == 1, "everything at or below the floor lands on the floor"
+def test_logit_rejects_sub_lloq_rows_rather_than_clamping_them():
+    """Nothing is clamped here, so the forward map stays exactly invertible."""
+    with pytest.raises(ValueError, match="needs target > 0"):
+        Logit(ceiling=120.0).forward(np.array([0.0, 1.0]))
+    with pytest.raises(ValueError, match="Clamp those rows up to the assay"):
+        Logit(ceiling=120.0).forward(np.array([-2.0, 1.0]))
 
 
-def test_logit_rejects_negative_targets_whatever_the_floor():
-    """A floor lifts sub-LLOQ readings; it does not make a negative percent meaningful."""
-    with pytest.raises(ValueError, match="needs target >= 0"):
-        Logit(ceiling=120.0, floor=0.001).forward(np.array([-2.0, 1.0]))
-
-
-def test_logit_ceiling_error_names_the_offender_and_the_remedy():
-    """%F data reaches 1345, so the message has to point at capping rather than the ceiling."""
-    with pytest.raises(ValueError, match="largest target: 1345, ceiling: 120"):
+def test_logit_ceiling_error_names_the_offender_and_both_remedies():
+    """%F data reaches 1345, and percent data holds an exact 100: different fixes, one message."""
+    with pytest.raises(ValueError, match="largest target is 1345 with ceiling 120"):
         Logit(ceiling=120.0).forward(np.array([1.0, 50.0, 1345.0]))
-    with pytest.raises(ValueError, match="Cap or drop those rows"):
-        Logit(ceiling=120.0).forward(np.array([120.0]))
+    with pytest.raises(ValueError, match="Raise the ceiling above the data"):
+        Logit(ceiling=100.0).forward(np.array([100.0]))
+    with pytest.raises(ValueError, match="cap those rows in the FeatureSet"):
+        Logit(ceiling=100.0).forward(np.array([100.0]))
 
 
-def test_logit_validates_its_arguments():
-    with pytest.raises(ValueError, match="needs a finite ceiling and floor"):
-        Logit(ceiling=float("inf"))
-    with pytest.raises(ValueError, match="needs 0 <= floor < ceiling"):
-        Logit(ceiling=100.0, floor=100.0)
-    with pytest.raises(ValueError, match="needs 0 <= floor < ceiling"):
-        Logit(ceiling=100.0, floor=-1.0)
+@pytest.fixture
+def workbench_warnings(caplog):
+    """Capture warnings off the ``workbench`` logger.
+
+    It sets ``propagate=False`` and owns its own handler, so caplog's root handler never
+    sees these records -- attach it to the logger directly.
+    """
+    logger = logging.getLogger("workbench")
+    logger.addHandler(caplog.handler)
+    caplog.set_level(logging.WARNING, logger="workbench")
+    yield caplog
+    logger.removeHandler(caplog.handler)
+
+
+def test_log10_warns_when_the_offset_absorbs_a_negative(workbench_warnings):
+    """Usable and exactly invertible, but not what most callers expect -- so it is a warning."""
+    transform = Log10(offset=0.1)
+    y = np.array([-0.05, 0.5])
+    forward = transform.forward(y)
+
+    assert "absorbing negative targets" in workbench_warnings.text
+    assert "smallest: -0.05" in workbench_warnings.text
+    np.testing.assert_allclose(transform.inverse(forward), y, atol=1e-12), "and it round-trips exactly"
+
+
+def test_log10_does_not_warn_without_negatives(workbench_warnings):
+    Log10(offset=0.1).forward(np.array([0.0, 0.5]))
+    assert "absorbing" not in workbench_warnings.text
+
+
+@pytest.mark.parametrize("ceiling", [float("inf"), float("nan"), 0.0, -100.0])
+def test_logit_validates_its_ceiling(ceiling):
+    with pytest.raises(ValueError, match="needs a finite ceiling above zero"):
+        Logit(ceiling=ceiling)
 
 
 def test_logit_resolves_from_bare_name_and_dict():
     """A bare name cannot stand in for a ceiling, and the failure says which argument."""
     with pytest.raises(ValueError, match="Bad arguments.*ceiling"):
         resolve_target_transform("logit")
-    resolved = resolve_target_transform({"name": "logit", "ceiling": 105.0, "floor": 0.001})
+    resolved = resolve_target_transform({"name": "logit", "ceiling": 105.0})
     assert isinstance(resolved, Logit)
-    assert resolved.ceiling == 105.0 and resolved.floor == 0.001
-    assert resolve_target_transform({"name": "logit", "ceiling": 120.0}).floor == 0.0
+    assert resolved.ceiling == 105.0
 
 
 def test_logit_accepts_redundant_prediction_bounds():
@@ -384,12 +409,10 @@ def test_multi_target_mapping_mixes_the_transforms():
 
 def test_load_target_transform_reads_back_a_logit(tmp_path):
     """The spec that trained the model is what inference inverts."""
-    model_dir = _write_hyperparameters(
-        tmp_path, {"target_transform": {"name": "logit", "ceiling": 120.0, "floor": 0.001}}
-    )
+    model_dir = _write_hyperparameters(tmp_path, {"target_transform": {"name": "logit", "ceiling": 120.0}})
     transform, bounds = load_target_transform(model_dir)
     assert isinstance(transform, Logit)
-    assert (transform.ceiling, transform.floor) == (120.0, 0.001)
+    assert transform.ceiling == 120.0
     assert bounds is None
 
 
@@ -432,3 +455,43 @@ def test_clip_quantile_columns_cannot_lose_coverage():
     still_covered = (truth >= uq_out["q_05"]) & (truth <= uq_out["q_95"])
     assert still_covered.tolist() == covered.tolist()
     assert (uq_out["q_95"] - uq_out["q_05"]).sum() < 190.0, "and the intervals got tighter"
+
+
+def test_check_target_domain_passes_an_in_domain_column():
+    check_target_domain({"name": "logit", "ceiling": 120.0}, ["mppb"], {"mppb": (0.002, 87.6)})
+    check_target_domain("log10", ["mppb"], {"mppb": (0.1, 87.6)})
+    check_target_domain("arcsinh", ["mppb"], {"mppb": (-50.0, 87.6)})
+
+
+def test_check_target_domain_names_the_data_and_the_remedy():
+    """What a model author sees at creation, instead of a failed training job."""
+    logit = {"name": "logit", "ceiling": 120.0}
+    with pytest.raises(ValueError, match=r"mppb_raw column 'mppb': target_transform 'logit'"):
+        check_target_domain(logit, ["mppb"], {"mppb": (0.0, 87.6)}, "mppb_raw")
+    with pytest.raises(ValueError, match="Clamp those rows up to the assay"):
+        check_target_domain(logit, ["mppb"], {"mppb": (0.0, 87.6)}, "mppb_raw")
+    with pytest.raises(ValueError, match="Raise the offset"):
+        check_target_domain("log10", ["mppb"], {"mppb": (0.0, 87.6)}, "mppb_raw")
+
+
+def test_check_target_domain_catches_a_ceiling_at_the_physical_bound():
+    """Percent data holding an exact 100 is the ceiling trap, caught before training."""
+    with pytest.raises(ValueError, match="needs target < ceiling"):
+        check_target_domain({"name": "logit", "ceiling": 100.0}, ["ppb"], {"ppb": (0.1, 100.0)}, "ppb_raw")
+    check_target_domain({"name": "logit", "ceiling": 100.5}, ["ppb"], {"ppb": (0.1, 100.0)}, "ppb_raw")
+
+
+def test_check_target_domain_checks_each_target_against_its_own_transform():
+    spec = {"mppb": {"name": "logit", "ceiling": 100.0}, "logd": "arcsinh"}
+    ranges = {"mppb": (1.0, 90.0), "logd": (-3.0, 5.0)}
+    check_target_domain(spec, ["mppb", "logd"], ranges)
+
+    with pytest.raises(ValueError, match="column 'mppb'"):
+        check_target_domain(spec, ["mppb", "logd"], {**ranges, "mppb": (0.0, 90.0)})
+
+
+def test_check_target_domain_skips_what_it_cannot_judge():
+    """A target with no stats, or a column of all NaN, is left to the training job."""
+    check_target_domain("log10", ["mppb"], {})
+    check_target_domain("log10", ["mppb"], {"mppb": (None, None)})
+    check_target_domain("log10", ["mppb"], {"mppb": (float("nan"), float("nan"))})

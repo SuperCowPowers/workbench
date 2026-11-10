@@ -16,6 +16,8 @@ import logging
 import tempfile
 from pathlib import Path
 
+from workbench.utils.target_transform import check_target_domain
+
 # Setup the logger
 log = logging.getLogger("workbench")
 
@@ -111,6 +113,16 @@ def _check_target_transform_support(template_params: dict, model_type_enum, mode
         raise ValueError(f"{', '.join(requested)} applies to regression targets only")
     if template_params.get("model_class"):
         raise ValueError(f"a scikit-learn model_class does not support {', '.join(requested)}")
+
+    # The target's own range decides every transform's domain, so a spec that cannot work on
+    # this data fails here rather than inside a training job
+    ranges = template_params.get("target_ranges")
+    if ranges:
+        targets = template_params.get("target_column")
+        targets = [targets] if isinstance(targets, str) else list(targets or [])
+        check_target_domain(
+            hyperparameters.get("target_transform"), targets, ranges, template_params.get("target_label", "")
+        )
 
 
 def generate_model_script(template_params: dict) -> str:

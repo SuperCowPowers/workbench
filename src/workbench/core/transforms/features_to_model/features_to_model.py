@@ -103,6 +103,18 @@ def training_workload(
     return "gpu" if serial else "gpu_hpo"
 
 
+def _target_ranges(stats: dict, targets: list) -> dict:
+    """``{column: (min, max)}`` for the targets the descriptive stats cover.
+
+    Feeds the creation-time domain check, which only needs each target's extremes.
+    """
+    return {
+        target: (stats[target]["min"], stats[target]["max"])
+        for target in targets
+        if isinstance(stats.get(target), dict) and "min" in stats[target] and "max" in stats[target]
+    }
+
+
 class FeaturesToModel(Transform):
     """FeaturesToModel: Train/Create a Model from a FeatureSet
 
@@ -306,6 +318,8 @@ class FeaturesToModel(Transform):
             "model_metrics_path": self.model_training_root,
             "id_column": feature_set.id_column,
             "hyperparameters": kwargs.get("hyperparameters", {}),
+            "target_ranges": _target_ranges(feature_set.descriptive_stats(), target_list),
+            "target_label": feature_set.name,
         }
 
         # Caller-supplied template params (used by MetaEndpoint to inject DAG

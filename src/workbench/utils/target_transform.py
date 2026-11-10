@@ -19,10 +19,13 @@ numpy-only by design — this module is on the endpoint import path.
 """
 
 import json
+import logging
 import os
 from typing import Optional, Sequence, Union
 
 import numpy as np
+
+log = logging.getLogger("workbench")
 
 TransformSpec = Union[None, str, dict]
 
@@ -62,14 +65,23 @@ class Log10:
     def forward(self, y: np.ndarray) -> np.ndarray:
         shifted = np.asarray(y, dtype=float) + self.offset
         known = np.isfinite(shifted)
-        out_of_domain = known & (shifted <= 0.0)
-        if out_of_domain.any():
+        if (known & (shifted <= 0.0)).any():
             smallest = float(np.min(shifted[known])) - self.offset
             raise ValueError(
-                f"target_transform 'log10' needs target + offset > 0, but {int(out_of_domain.sum())} "
-                f"of {int(known.sum())} values are not (smallest target: {smallest:g}, "
-                f"offset: {self.offset:g}). Raise the offset to just under the assay's lower limit."
+                f"target_transform 'log10' needs target + offset > 0, but the smallest target is "
+                f"{smallest:g} with offset {self.offset:g}. Raise the offset to just under the assay's "
+                f"lower limit, or use 'arcsinh', which has no domain restriction."
             )
+
+        # A negative inside the offset transforms and inverts exactly, so it is usable rather
+        # than wrong -- but a caller who did not expect negatives should hear about them
+        original = np.asarray(y, dtype=float)
+        if (known & (original < 0.0)).any():
+            log.warning(
+                f"target_transform 'log10' is absorbing negative targets into offset {self.offset:g} "
+                f"(smallest: {float(np.min(original[known])):g}); 'arcsinh' represents them directly."
+            )
+
         result = np.full(shifted.shape, np.nan, dtype=float)
         np.log10(shifted, out=result, where=known)
         return result
@@ -91,9 +103,10 @@ class Logit:
     7.7%/16.4%: 54.6%/8.3% at ceiling 120, 48.3%/15.3% at 105, 39.9%/28.6% at 100.5.
 
     A ceiling above the physical bound leaves every measured value defined; one at the bound
-    spends more range on the top tail but rejects anything reaching it. ``floor`` lifts
-    sub-LLOQ values, as ``Log10``'s ``offset`` does, and a negative target is out of domain
-    whatever the floor.
+    spends more range on the top tail but rejects anything reaching it. The domain is
+    ``0 < y < ceiling`` and nothing is clamped here, so the map is exactly invertible and the
+    target a model reports against is the one it was given. A sub-LLOQ or over-ceiling reading
+    is capped or dropped in the FeatureSet, where it stays visible.
 
     ``inverse`` lands in ``(0, ceiling)`` by construction, so a logit model needs no
     ``prediction_bounds``. Bounds still apply after the inverse, so a high bound below the
@@ -102,51 +115,33 @@ class Logit:
 
     name = "logit"
 
-    def __init__(self, ceiling: float, floor: float = 0.0):
+    def __init__(self, ceiling: float):
         self.ceiling = float(ceiling)
-        self.floor = float(floor)
-        if not np.isfinite(self.ceiling) or not np.isfinite(self.floor):
-            raise ValueError(
-                f"target_transform 'logit' needs a finite ceiling and floor, got ceiling {ceiling!r} "
-                f"and floor {floor!r}"
-            )
-        if not 0.0 <= self.floor < self.ceiling:
-            raise ValueError(
-                f"target_transform 'logit' needs 0 <= floor < ceiling, got floor {self.floor:g} "
-                f"and ceiling {self.ceiling:g}"
-            )
+        if not np.isfinite(self.ceiling) or self.ceiling <= 0.0:
+            raise ValueError(f"target_transform 'logit' needs a finite ceiling above zero, got {ceiling!r}")
 
     def forward(self, y: np.ndarray) -> np.ndarray:
         values = np.asarray(y, dtype=float)
         known = np.isfinite(values)
 
-        too_low = known & (values < 0.0) if self.floor > 0.0 else known & (values <= 0.0)
-        if too_low.any():
-            requirement = "target >= 0" if self.floor > 0.0 else "target > 0"
-            remedy = (
-                "A negative target has no bound fraction a logit can represent, so drop those rows."
-                if self.floor > 0.0
-                else "Set a floor just under the assay's lower limit."
-            )
+        if (known & (values <= 0.0)).any():
             raise ValueError(
-                f"target_transform 'logit' needs {requirement}, but {int(too_low.sum())} of "
-                f"{int(known.sum())} values are not (smallest target: {float(np.min(values[known])):g}, "
-                f"floor: {self.floor:g}). {remedy}"
+                f"target_transform 'logit' needs target > 0, but the smallest target is "
+                f"{float(np.min(values[known])):g}. Clamp those rows up to the assay's lower limit or "
+                f"drop them in the FeatureSet, or use 'arcsinh', which has no domain restriction."
             )
 
-        at_ceiling = known & (values >= self.ceiling)
-        if at_ceiling.any():
+        if (known & (values >= self.ceiling)).any():
             raise ValueError(
-                f"target_transform 'logit' needs target < ceiling, but {int(at_ceiling.sum())} of "
-                f"{int(known.sum())} values are not (largest target: {float(np.max(values[known])):g}, "
-                f"ceiling: {self.ceiling:g}). Cap or drop those rows — raising the ceiling to cover "
-                f"them spends the target's range on values the assay cannot support."
+                f"target_transform 'logit' needs target < ceiling, but the largest target is "
+                f"{float(np.max(values[known])):g} with ceiling {self.ceiling:g}. Raise the ceiling "
+                f"above the data — a percent reading exactly 100 needs a ceiling above 100 — or cap "
+                f"those rows in the FeatureSet."
             )
 
-        clamped = np.maximum(values, self.floor) if self.floor > 0.0 else values
-        odds = np.full(clamped.shape, np.nan, dtype=float)
-        np.divide(clamped, self.ceiling - clamped, out=odds, where=known)
-        result = np.full(clamped.shape, np.nan, dtype=float)
+        odds = np.full(values.shape, np.nan, dtype=float)
+        np.divide(values, self.ceiling - values, out=odds, where=known)
+        result = np.full(values.shape, np.nan, dtype=float)
         np.log10(odds, out=result, where=known)
         return result
 
@@ -157,7 +152,7 @@ class Logit:
         return self.ceiling / (1.0 + np.power(10.0, exponent))
 
     def __repr__(self) -> str:
-        return f"{self.name}(ceiling={self.ceiling:g}, floor={self.floor:g})"
+        return f"{self.name}(ceiling={self.ceiling:g})"
 
 
 class ArcSinh:
@@ -296,6 +291,37 @@ def resolve_prediction_bounds(spec, targets: Sequence[str]) -> dict:
             )
         return {target: _validated_bounds(spec.get(target)) for target in targets}
     return {target: _validated_bounds(spec) for target in targets}
+
+
+def check_target_domain(spec: TransformSpec, targets: Sequence[str], ranges: dict, label: str = "") -> None:
+    """Raise when a target's range falls outside the domain of its transform.
+
+    Every transform's domain is an interval, so a column's minimum and maximum decide it and
+    no row-by-row scan is needed. Model creation calls this, which turns a spec that cannot
+    work into a two-second error instead of a failed training job. The transform raises its
+    own message, so the domain rules and their remedies live in one place.
+
+    Args:
+        spec: The ``target_transform`` hyperparameter value.
+        targets: The model's target columns.
+        ranges: ``{column: (minimum, maximum)}``, covering whichever targets are known.
+        label: Names the data in the error, such as the FeatureSet.
+
+    Raises:
+        ValueError: When a target's extremes are outside its transform's domain.
+    """
+    for target, transform in resolve_target_transforms(spec, targets).items():
+        extremes = ranges.get(target)
+        if not extremes or any(value is None for value in extremes):
+            continue
+        minimum, maximum = (float(value) for value in extremes)
+        if not (np.isfinite(minimum) and np.isfinite(maximum)):
+            continue
+        try:
+            transform.forward(np.array([minimum, maximum]))
+        except ValueError as exc:
+            where = f"{label} column '{target}'" if label else f"column '{target}'"
+            raise ValueError(f"{where}: {exc}") from exc
 
 
 def load_target_transform(model_dir: str, targets: Optional[Sequence[str]] = None) -> tuple:

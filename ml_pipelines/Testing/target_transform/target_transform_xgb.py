@@ -7,12 +7,14 @@ every transform on one target:
     plain    no transform, no bounds -- the baseline
     bounds   prediction_bounds only -- a linear target held inside its physical range
     log10    log10(offset=0.1) + bounds -- resolution on the low tail
-    logit    logit(ceiling=100, floor=0.1) -- both tails; its inverse needs no bounds
+    logit    logit(ceiling=100) on mppb_floored -- both tails; its inverse needs no bounds
     arcsinh  arcsinh(scale=0.1) + bounds -- same low-tail stretch, no domain to respect
 
-The assay's smallest non-zero reading, 0.1, is what the 10 zero rows need from each
-transform: log10 takes it as an offset, logit as a floor, arcsinh as the scale where its
-linear region ends.
+The assay's smallest non-zero reading, 0.1, is what the 10 zero rows need. log10 takes it as
+an offset and arcsinh as the scale where its linear region ends, both inside the model. A
+logit has no such knob, so it trains on `mppb_floored`: the same target with those 10 rows
+clamped in the FeatureSet. That is the one row of this table scored against a truth column
+that differs at all, and only on those sub-LLOQ rows.
 
 Metrics come from the pooled out-of-fold predictions, always on the original percent scale,
 with the under-1% rows broken out separately.
@@ -34,15 +36,19 @@ TARGET = "mppb"
 BOUNDS = [0.0, 100.0]
 LOW_RANGE = 1.0  # the clinically interesting tail, in percent unbound
 LLOQ = 0.1  # the assay's smallest non-zero reading
+FLOORED_TARGET = "mppb_floored"  # mppb with its 10 zeros clamped to the LLOQ
 
 VARIANTS = {
     "plain": {},
     "bounds": {"prediction_bounds": BOUNDS},
     "log10": {"target_transform": {"name": "log10", "offset": LLOQ}, "prediction_bounds": BOUNDS},
     # A logit inverts into (0, ceiling), so bounds would only add a mass point
-    "logit": {"target_transform": {"name": "logit", "ceiling": 100.0, "floor": LLOQ}},
+    "logit": {"target_transform": {"name": "logit", "ceiling": 100.0}},
     "arcsinh": {"target_transform": {"name": "arcsinh", "scale": LLOQ}, "prediction_bounds": BOUNDS},
 }
+
+# The target each variant trains on, where it is not the as-measured column
+VARIANT_TARGETS = {"logit": FLOORED_TARGET}
 
 
 def transformed_max(spec, target_max: float) -> float:
@@ -54,18 +60,18 @@ def transformed_max(spec, target_max: float) -> float:
     return float(resolve_target_transform(spec).forward(np.array([target_max]))[0])
 
 
-def metrics(df: pd.DataFrame) -> dict:
+def metrics(df: pd.DataFrame, target: str) -> dict:
     """MAE, RMSE and Spearman on the original percent scale."""
-    error = df["prediction"] - df[TARGET]
+    error = df["prediction"] - df[target]
     return {
         "n": len(df),
         "mae": np.abs(error).mean(),
         "rmse": np.sqrt((error**2).mean()),
-        "spearman": df["prediction"].corr(df[TARGET], method="spearman"),
+        "spearman": df["prediction"].corr(df[target], method="spearman"),
     }
 
 
-def train(variant: str, hyperparameters: dict, features: list) -> Model:
+def train(variant: str, hyperparameters: dict, features: list, target: str) -> Model:
     name = f"mppb-xgb-{variant}"
     print(f"\n{'=' * 60}\nTraining {name}: {hyperparameters or 'baseline'}\n{'=' * 60}")
 
@@ -74,7 +80,7 @@ def train(variant: str, hyperparameters: dict, features: list) -> Model:
         name=name,
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.XGBOOST,
-        target_column=TARGET,
+        target_column=target,
         feature_list=features,
         description=f"MPPB percent unbound, XGBoost ({variant})",
         tags=["target_transform", "mppb", variant],
@@ -94,14 +100,15 @@ def main():
     results = {}
 
     for variant, hyperparameters in VARIANTS.items():
-        model = train(variant, hyperparameters, features)
+        target = VARIANT_TARGETS.get(variant, TARGET)
+        model = train(variant, hyperparameters, features, target)
         oof = model.get_inference_predictions("full_cross_fold")
         results[variant] = {
-            "all": metrics(oof),
-            "low": metrics(oof[oof[TARGET] < LOW_RANGE]),
+            "all": metrics(oof, target),
+            "low": metrics(oof[oof[target] < LOW_RANGE], target),
             "range": (oof["prediction"].min(), oof["prediction"].max()),
-            "target_max": oof[TARGET].max(),
-            "transformed_max": transformed_max(hyperparameters.get("target_transform"), oof[TARGET].max()),
+            "target_max": oof[target].max(),
+            "transformed_max": transformed_max(hyperparameters.get("target_transform"), oof[target].max()),
         }
 
     print("\n" + "=" * 78)

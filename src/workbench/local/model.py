@@ -168,6 +168,8 @@ class Model(LocalArtifact):
             "model_metrics_path": model.output_dir,
             "id_column": feature_set.id_column,
             "hyperparameters": hyperparameters or {},
+            "target_ranges": {t: (train_df[t].min(), train_df[t].max()) for t in target_list if t in train_df.columns},
+            "target_label": feature_set.name,
         }
         script_path = model._build_script(template_params, custom_script)
         shutil.copytree(os.path.dirname(script_path), model.script_dir, dirs_exist_ok=True)
