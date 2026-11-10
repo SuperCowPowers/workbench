@@ -8,9 +8,11 @@ startup with ``ImportError`` -> "the model process exited".
 
 This sweep opens each bundle's script, resolves every ``workbench.*`` import against
 the installed workbench, and reports the bundles whose imports no longer resolve.
-Those models need a retrain to re-bake the script; the script also prints the
-``ml_pipeline_launcher`` commands that do it, resolved from the ``pipelines.json``
-files that declare each model as an output.
+Each stale model is marked deprecated in its workbench meta (promotion skips it, and a
+deprecated incumbent forfeits its endpoint) and needs a retrain to re-bake the script.
+The script prints the ``ml_pipeline_launcher`` commands that do it, resolved from the
+``pipelines.json`` files that declare each model as an output, and ends with the stale
+models as a paste-ready Python list.
 
 Scope is the DT models and the promoted copies taken from them -- only DT models get
 promoted, so a stale TS bundle never reaches a served endpoint. ``--model`` overrides
@@ -242,6 +244,16 @@ def main():
         print("\nNo pipeline declares these as an output -- retrain or retire them by hand:\n")
         for model_name in unmatched:
             print(f"  {model_name}")
+
+    stale = sorted(finding["model"] for finding in findings)
+    print(f"\nMarking {len(stale)} model(s) deprecated...")
+    for model_name in stale:
+        Model(model_name).upsert_workbench_meta({"deprecated": True})
+
+    print("\nstale_models = [")
+    for model_name in stale:
+        print(f'    "{model_name}",')
+    print("]")
 
 
 if __name__ == "__main__":
