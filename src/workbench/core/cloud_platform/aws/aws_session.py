@@ -10,6 +10,7 @@ import logging
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
+from workbench.utils.aws_utils import PRM_USER_AGENT
 from workbench.utils.execution_environment import running_as_service
 from workbench.utils.sso_utils import SSO_TOKEN_ERRORS, sso_login_hint, with_sso_renewal
 
@@ -68,7 +69,7 @@ class AWSSession:
         # Check if we're running as a service or already using the Workbench Role
         if running_as_service() or self.is_workbench_role():
             self.log.important("Using the default Boto3 session...")
-            return boto3.Session(region_name=self.region)
+            return boto3.Session(botocore_session=self._botocore_session(), region_name=self.region)
 
         # Okay, so we need to assume the Workbench Role
         try:
@@ -115,6 +116,13 @@ class AWSSession:
         # Construct the ARN
         return f"arn:aws:iam::{self.account_id}:role/{self.workbench_role_name}"
 
+    @staticmethod
+    def _botocore_session():
+        """Internal: Botocore session whose clients send the PRM attribution user agent"""
+        session = get_session()
+        session.user_agent_extra = PRM_USER_AGENT
+        return session
+
     def _workbench_role_boto3_session(self):
         """Internal: Get a boto3 session with assumed Workbench role and refreshing credentials"""
         refreshable_credentials = RefreshableCredentials.create_from_metadata(
@@ -122,7 +130,7 @@ class AWSSession:
             refresh_using=self._assume_workbench_role_session_credentials,
             method="sts-assume-role",
         )
-        session = get_session()
+        session = self._botocore_session()
         session._credentials = refreshable_credentials
         return boto3.Session(botocore_session=session)
 

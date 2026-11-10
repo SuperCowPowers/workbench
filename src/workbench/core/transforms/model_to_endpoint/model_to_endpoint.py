@@ -52,7 +52,6 @@ from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     register_autoscaling,
 )
 from workbench.utils.async_endpoint_utils import ASYNC_BATCH_SIZE, TASKS_PER_VCPU, instance_vcpus  # noqa: E402
-from workbench.utils.aws_utils import AWS_MARKETPLACE_PRODUCT_CODE  # noqa: E402
 from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE  # noqa: E402
 from workbench.utils.monitor_utils import (  # noqa: E402
     CAPTURE_CSV_CONTENT_TYPES,
@@ -350,10 +349,6 @@ class ModelToEndpoint(Transform):
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
-
-        # PRM attribution tag: connects driven AWS consumption to our Marketplace listing
-        aws_tags.append({"key": "aws-apn-id", "value": f"pc:{AWS_MARKETPLACE_PRODUCT_CODE}"})
-
         sagemaker_tags = [Tag(key=t["key"], value=t["value"]) for t in aws_tags]
 
         # Check the model framework for resource requirements

@@ -1,6 +1,7 @@
 import sys
 import boto3
 import aws_cdk as cdk
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 from aws_cdk import Fn
 from workbench_compute.workbench_compute_stack import WorkbenchComputeStack, WorkbenchComputeStackProps
 
@@ -56,6 +57,9 @@ print(f"  REDIS_PORT: {redis_port}")
 
 # Our CDK App and Environment
 app = cdk.App()
+# PRM attribution on every taggable resource. A tag change replaces a Batch compute environment;
+# its Fargate spend is carried by the job-definition tags propagated onto the ECS tasks.
+cdk.Tags.of(app).add(PRM_TAG_KEY, PRM_TAG_VALUE, exclude_resource_types=["AWS::Batch::ComputeEnvironment"])
 env = cdk.Environment(account=aws_account, region=aws_region)
 
 # Create the Workbench Compute Stack

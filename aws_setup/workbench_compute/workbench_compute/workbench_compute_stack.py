@@ -24,11 +24,6 @@ from typing import Any, List, Dict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# AWS Marketplace product code for PRM attribution. Canonical source is
-# workbench.utils.aws_utils.AWS_MARKETPLACE_PRODUCT_CODE; duplicated here because the
-# CDK infra does not import the workbench package. Keep the two in sync.
-AWS_MARKETPLACE_PRODUCT_CODE = "41c7xn73mrdq90y6g5ktdo7ye"
-
 
 @dataclass
 class WorkbenchComputeStackProps:
@@ -159,6 +154,8 @@ class WorkbenchComputeStack(Stack):
                 self,
                 f"JobDef{size.capitalize()}",
                 job_definition_name=f"workbench-batch-{size}",
+                # Job and job-definition tags (incl. PRM attribution) carry onto the billable ECS task
+                propagate_tags=True,
                 container=batch.EcsFargateContainerDefinition(
                     self,
                     f"Container{size.capitalize()}",
@@ -260,7 +257,6 @@ class WorkbenchComputeStack(Stack):
                 "JOB_DEF_SMALL": job_def_names["small"],
                 "JOB_DEF_MEDIUM": job_def_names["medium"],
                 "JOB_DEF_LARGE": job_def_names["large"],
-                "AWS_MARKETPLACE_PRODUCT_CODE": AWS_MARKETPLACE_PRODUCT_CODE,
             },
             role=self.workbench_lambda_role,
         )

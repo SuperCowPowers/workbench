@@ -9,6 +9,7 @@ from typing import Dict, Any
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 from workbench.utils.s3_utils import upload_content_to_s3
 from workbench.utils.workbench_event_bridge import WorkbenchEventBridge
 
@@ -72,7 +73,7 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str, create_tri
         glue_client.update_job(JobName=job_name, JobUpdate=job_args)
     except glue_client.exceptions.EntityNotFoundException:
         log.info(f"Creating new Glue job: {job_name}")
-        glue_client.create_job(Name=job_name, **job_args)
+        glue_client.create_job(Name=job_name, Tags={PRM_TAG_KEY: PRM_TAG_VALUE}, **job_args)
     result = {"job_name": job_name}
 
     # Only create trigger if requested

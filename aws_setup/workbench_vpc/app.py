@@ -1,5 +1,6 @@
 import boto3
 import aws_cdk as cdk
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 
 from workbench_vpc.workbench_vpc_stack import WorkbenchVpcStack
 
@@ -39,6 +40,7 @@ print(f"  Max AZs: {max_azs}")
 print(f"  NAT Gateways: {nat_gateways}")
 
 app = cdk.App()
+cdk.Tags.of(app).add(PRM_TAG_KEY, PRM_TAG_VALUE)  # PRM attribution on every taggable resource
 env = cdk.Environment(account=aws_account, region=aws_region)
 
 WorkbenchVpcStack(

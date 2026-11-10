@@ -330,6 +330,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:CreateJob",
                 "glue:UpdateJob",
                 "glue:StartJobRun",
+                "glue:TagResource",  # CreateJob with Tags (PRM attribution)
             ],
             resources=read_statement.resources,
         )
@@ -421,7 +422,6 @@ class WorkbenchCoreStack(Stack):
                 "batch:SubmitJob",
                 "batch:TerminateJob",
                 "batch:CancelJob",
-                "batch:TagResource",  # SubmitJob with Tags (PRM attribution) requires TagResource
             ],
             resources=read_statement.resources,
         )

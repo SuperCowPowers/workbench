@@ -3,6 +3,7 @@ import os
 import boto3
 import logging
 import aws_cdk as cdk
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 from workbench_core.workbench_core_stack import WorkbenchCoreStack, WorkbenchCoreStackProps
 
 # Initialize ConfigManager with error handling
@@ -62,6 +63,7 @@ print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
 
 # Our CDK App and Environment
 app = cdk.App()
+cdk.Tags.of(app).add(PRM_TAG_KEY, PRM_TAG_VALUE)  # PRM attribution on every taggable resource
 env = cdk.Environment(account=aws_account, region=aws_region)
 
 # Create the Workbench Core Stack
