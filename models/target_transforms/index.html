@@ -890,6 +890,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#logit-for-a-target-bounded-at-both-ends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        logit, for a target bounded at both ends
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arcsinh-where-zeros-and-negatives-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arcsinh, where zeros and negatives live
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#prediction-bounds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5511,6 +5533,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#logit-for-a-target-bounded-at-both-ends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        logit, for a target bounded at both ends
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arcsinh-where-zeros-and-negatives-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        arcsinh, where zeros and negatives live
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#prediction-bounds" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5605,6 +5649,32 @@ solubility, a percent unbound. The transform belongs on the <strong>model</stron
 <p>Training applies the transform to the target column; inference inverts it. Predictions come
 back in the units you measured.</p>
 <p>Available for XGBoost, PyTorch, ChemProp, TabICL and Atom-JEPA, regression only.</p>
+<table>
+<thead>
+<tr>
+<th>transform</th>
+<th>map</th>
+<th>reach for it when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>log10</code></td>
+<td><code>log10(y + offset)</code></td>
+<td>the target spans decades and stays positive</td>
+</tr>
+<tr>
+<td><code>logit</code></td>
+<td><code>log10(y / (ceiling - y))</code></td>
+<td>the target is bounded at both ends (a percent)</td>
+</tr>
+<tr>
+<td><code>arcsinh</code></td>
+<td><code>asinh(y / scale)</code></td>
+<td>the target has exact zeros, a BLQ pile-up, or negatives</td>
+</tr>
+</tbody>
+</table>
 <h2 id="setting-one">Setting one</h2>
 <p>Two hyperparameters on an otherwise normal <code>to_model()</code> call:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
@@ -5727,19 +5797,114 @@ linear map gives 10%:</p>
 </table>
 <p>So <code>offset=1.0</code> over a fraction is barely a transform at all, while the same offset over a
 percentage is a strong one.</p>
+<h2 id="logit-for-a-target-bounded-at-both-ends">logit, for a target bounded at both ends</h2>
+<p>A percent-type target — oral bioavailability, percent unbound — is bounded at 0 <em>and</em> at 100,
+and <code>log10</code> resolves only the low end. On %F it leaves the top decile 2.6% of the output
+range, so the model stops separating 84% from 100% bioavailability.</p>
+<p><code>logit</code> is <code>log10(y / (ceiling - y))</code>, and <code>ceiling</code> sets how the range splits between the
+tails (%F, rows at or under 100):</p>
+<table>
+<thead>
+<tr>
+<th>map</th>
+<th>bottom decile</th>
+<th>top decile</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>linear</td>
+<td>7.7%</td>
+<td>16.4%</td>
+</tr>
+<tr>
+<td>logit, ceiling 120</td>
+<td>54.6%</td>
+<td>8.3%</td>
+</tr>
+<tr>
+<td>logit, ceiling 105</td>
+<td>48.3%</td>
+<td>15.3%</td>
+</tr>
+<tr>
+<td>logit, ceiling 100.5</td>
+<td>39.9%</td>
+<td>28.6%</td>
+</tr>
+</tbody>
+</table>
+<p>A ceiling above the physical bound leaves every measured value defined. A ceiling at the bound
+gives the top tail more room but rejects anything reaching it, and the error says so rather
+than swallowing the rows — raw %F data runs well above 100, so those rows are capped or
+dropped in the FeatureSet either way.</p>
+<p><code>floor</code> lifts sub-LLOQ readings, as <code>offset</code> does for <code>log10</code>. A negative target is out of
+domain whatever the floor:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"logit"</span><span class="p">,</span> <span class="s2">"ceiling"</span><span class="p">:</span> <span class="mf">120.0</span><span class="p">,</span> <span class="s2">"floor"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">}</span>
+</span></code></pre></div>
+<p>The inverse lands in <code>(0, ceiling)</code> by construction, so <strong>a logit model needs no
+<code>prediction_bounds</code></strong>. Bounds still apply after the inverse, so a high bound below the ceiling
+clips real predictions into a mass point.</p>
+<h2 id="arcsinh-where-zeros-and-negatives-live">arcsinh, where zeros and negatives live</h2>
+<p><code>arcsinh</code> is <code>asinh(y / scale)</code>: logarithmic above <code>scale</code>, linear below it, defined for every
+real target. No domain error and no offset to place against the assay's floor, which is what
+makes it the one to reach for when the target has exact zeros, piles up at BLQ, or goes
+negative (logD).</p>
+<p><code>scale</code> is the same knob as <code>log10</code>'s <code>offset</code> — where resolution stops being spent — and
+lands in the same place: 29.4% of the output range to the bottom decile of a 0-1 target at
+<code>scale</code> 0.1, against 28.9% at <code>offset</code> 0.1. Share given to the bottom decile, where a linear
+map gives 10%:</p>
+<table>
+<thead>
+<tr>
+<th>target range</th>
+<th>scale 0.01</th>
+<th>scale 0.1</th>
+<th>scale 1</th>
+<th>scale 10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 – 1</td>
+<td>56.6%</td>
+<td>29.4%</td>
+<td>11.3%</td>
+<td>10.0%</td>
+</tr>
+<tr>
+<td>0 – 100</td>
+<td>76.7%</td>
+<td>69.7%</td>
+<td>56.6%</td>
+<td>29.4%</td>
+</tr>
+</tbody>
+</table>
+<p><code>scale</code> defaults to 1.0, a plain <code>asinh(y)</code> — a strong transform on a percentage, barely a
+transform on a fraction. Set it at the assay's reporting floor.</p>
 <h2 id="prediction-bounds">Prediction bounds</h2>
 <p><code>prediction_bounds</code> is independent of any transform — a non-negative or percentage target
 wants it under the identity transform too. Either side may be <code>None</code> to leave it unbounded.</p>
 <p>Clipped values pile up as a mass point at the bound, which destroys ordering among them, so
 bound only targets whose predictions should not reach the bound.</p>
+<p>Bounds clip the point prediction and the UQ quantiles (<code>q_05</code>, <code>q_95</code>, …), which cannot
+change interval coverage: a quantile predicts the target, the target obeys the bound, so the
+clip only drops mass the model has declared impossible and the interval gets tighter for
+free.</p>
+<p><code>prediction_std</code> stays the spread of the unclipped ensemble members, because clipping them
+would shrink it exactly where predictions pile up at a bound, and UQ calibrates
+<code>expected_residual</code> and <code>confidence</code> off that spread. So <code>prediction ± prediction_std</code> can
+still reach past a bound, while the quantiles do not. A target that keeps hitting its bound
+wants a <code>logit</code>, whose inverse is bounded by construction, rather than a clip.</p>
 <h2 id="multi-target-models">Multi-target models</h2>
 <p>A single spec applies to every target. Since a multi-target model usually carries targets in
 different units, a <code>{target_column: spec}</code> mapping sets them one at a time, and targets it
 omits get identity:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ksol"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"mppb"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"offset"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">}},</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="s2">"prediction_bounds"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mppb"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">]},</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">"target_transform"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ksol"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"mppb"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"log10"</span><span class="p">,</span> <span class="s2">"offset"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">}},</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="s2">"prediction_bounds"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mppb"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">]},</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="what-inference-gives-back">What inference gives back</h2>
 <table>
@@ -5808,6 +5973,11 @@ reason to check the tail rather than the headline number.</p>
 <ul>
 <li>Regression only — a transform on a classifier raises</li>
 <li>Not available with a scikit-learn <code>model_class</code></li>
+<li>Transforms live in workbench core. A plugin-registered transform would train and then fail
+  at deployment, since plugins are not on the endpoint import path and the serving container
+  rebuilds the transform from <code>hyperparameters.json</code>. The contract a new one owes is in the
+  <code>workbench.utils.target_transform</code> module docstring, and <code>assert_transform_contract</code> in
+  <code>tests/utils/test_target_transform.py</code> checks it</li>
 <li>Cannot be HPO-searched. The target is transformed once, before the search runs, so a
   searched transform would differ between the trials and the winner's saved config that
   inference reads back. Set it as a top-level hyperparameter and search around it.</li>
