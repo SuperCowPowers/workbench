@@ -1,7 +1,7 @@
 """Estimate the spend AWS Partner Revenue Measurement (PRM) should attribute to Workbench in this account.
 
 Splits the account's Cost Explorer usage spend (gross, before credits) into:
-  tagged     driven by resources carrying the PRM tag (aws-apn-id-<partner-account> or legacy aws-apn-id)
+  tagged     driven by resources carrying the PRM tag (aws-apn-id-<partner-account>=pc:<product-code>)
              (SageMaker training jobs + endpoints, Batch/Fargate pipeline jobs)
   untagged   in PRM-included services but from resources without the tag
              (dashboard Fargate service, Redis, ALB, NAT, S3 storage, Athena, Glue, feature store, ...)
@@ -9,7 +9,7 @@ Splits the account's Cost Explorer usage spend (gross, before credits) into:
 
 The tagged figure is an estimate: SageMaker spend is split by usage-type family scaled by tag coverage,
 and ECS spend is split by subtracting always-on services (task size x hours at Fargate list price) from
-the total. When a PRM tag key is an active cost allocation tag, the exact tag-filtered spend is printed too.
+the total. When the PRM tag is an active cost allocation tag, the exact tag-filtered spend is printed too.
 
 Scope is the caller's account and region (plus global and non-regional charges), matching the resource
 inventory. Runs with the caller's own credentials (AWS_PROFILE); the Workbench role has no Cost Explorer access.
@@ -28,9 +28,7 @@ from datetime import date, datetime, timezone
 import boto3
 from botocore.exceptions import ClientError
 
-from workbench.utils.aws_utils import PRM_LEGACY_TAG_KEY, PRM_TAG_KEY, PRM_TAG_VALUE
-
-TAG_KEYS = (PRM_TAG_KEY, PRM_LEGACY_TAG_KEY)
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 
 # Gross usage line items; credits, refunds, tax, and fees are reported separately
 USAGE_RECORD_TYPES = ["Usage", "DiscountedUsage", "SavingsPlanCoveredUsage"]
@@ -120,12 +118,12 @@ def ce_rows(
 
 
 def tagged_arns(session) -> set[str]:
-    """Lower-cased ARNs of every resource in the region carrying either PRM tag key."""
+    """Lower-cased ARNs of every resource in the region carrying the PRM tag."""
     pages = session.client("resourcegroupstaggingapi").get_paginator("get_resources")
+    tag_filter = [{"Key": PRM_TAG_KEY, "Values": [PRM_TAG_VALUE]}]
     return {
         r["ResourceARN"].lower()
-        for key in TAG_KEYS
-        for page in pages.paginate(TagFilters=[{"Key": key, "Values": [PRM_TAG_VALUE]}])
+        for page in pages.paginate(TagFilters=tag_filter)
         for r in page["ResourceTagMappingList"]
     }
 
@@ -159,7 +157,7 @@ def ecs_services(session) -> list[dict]:
                     {
                         "name": svc["serviceName"],
                         "arn": svc["serviceArn"],
-                        "tagged": PRM_TAG_VALUE in (tags.get(k) for k in TAG_KEYS),
+                        "tagged": tags.get(PRM_TAG_KEY) == PRM_TAG_VALUE,
                         "hourly": task_hourly * svc["runningCount"],
                         "created": svc["createdAt"],
                     }
@@ -193,14 +191,13 @@ def coverage_line(label: str, arns: list[str], tagged: set[str]) -> float:
     return n_tagged / len(arns) if arns else 0.0
 
 
-def tag_status(ce) -> dict[str, str]:
-    """Cost allocation tag status per PRM tag key."""
+def tag_status(ce) -> str:
+    """Cost allocation tag status of the PRM tag key."""
     try:
-        tags = ce.list_cost_allocation_tags(TagKeys=list(TAG_KEYS))["CostAllocationTags"]
+        tags = ce.list_cost_allocation_tags(TagKeys=[PRM_TAG_KEY])["CostAllocationTags"]
     except ClientError as e:
-        return {key: f"unknown ({e.response['Error']['Code']}; needs the management account)" for key in TAG_KEYS}
-    status = {t["TagKey"]: t["Status"] for t in tags}
-    return {key: status.get(key, "not yet seen by Billing") for key in TAG_KEYS}
+        return f"unknown ({e.response['Error']['Code']}; needs the management account)"
+    return tags[0]["Status"] if tags else "not yet seen by Billing"
 
 
 def main() -> int:
@@ -226,7 +223,7 @@ def main() -> int:
         {"Dimensions": {"Key": "REGION", "Values": [region, "global", "NoRegion"]}},
     ]
     print(f"Account {account} | region {region} (+ global) | {start:%Y-%m} to {add_months(end, -1):%Y-%m}")
-    print(f"PRM tag {' or '.join(TAG_KEYS)} = {PRM_TAG_VALUE}\n")
+    print(f"PRM tag {PRM_TAG_KEY}={PRM_TAG_VALUE}\n")
 
     # Tag coverage
     tagged = tagged_arns(session)
@@ -318,12 +315,9 @@ def main() -> int:
 
     # Exact tag-filtered spend, when Billing has the tag active
     status = tag_status(ce)
-    for key, state in status.items():
-        print(f"Cost allocation tag {key}: {state}")
-    active = [key for key, state in status.items() if state == "Active"]
-    if active:
-        filters = [{"Tags": {"Key": k, "Values": [PRM_TAG_VALUE], "MatchOptions": ["EQUALS"]}} for k in active]
-        tag_filter = filters[0] if len(filters) == 1 else {"Or": filters}
+    print(f"Cost allocation tag {PRM_TAG_KEY}: {status}")
+    if status == "Active":
+        tag_filter = {"Tags": {"Key": PRM_TAG_KEY, "Values": [PRM_TAG_VALUE], "MatchOptions": ["EQUALS"]}}
         exact = defaultdict(float)
         for r in ce_rows(ce, start, end, ["SERVICE"], scope, {"And": [usage_filter, tag_filter]}):
             exact[r["keys"][0]] += r["cost"]

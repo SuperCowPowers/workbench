@@ -145,7 +145,6 @@ AWS_MARKETPLACE_PRODUCT_CODE = "41c7xn73mrdq90y6g5ktdo7ye"
 AWS_PARTNER_CENTRAL_ACCOUNT_ID = "975050283469"
 PRM_TAG_KEY = f"aws-apn-id-{AWS_PARTNER_CENTRAL_ACCOUNT_ID}"
 PRM_TAG_VALUE = f"pc:{AWS_MARKETPLACE_PRODUCT_CODE}"
-PRM_LEGACY_TAG_KEY = "aws-apn-id"  # still attributed on resources tagged with it
 PRM_USER_AGENT = f"APN_1.1/pc_{AWS_MARKETPLACE_PRODUCT_CODE}$"
 
 # AWS resource tag values allow letters, numbers, spaces, and _ . : / = + - @

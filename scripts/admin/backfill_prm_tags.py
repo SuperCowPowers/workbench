@@ -1,8 +1,8 @@
 """Backfill the AWS Partner Revenue Measurement (PRM) attribution tag on existing SageMaker resources.
 
 Workbench tags endpoints, feature groups, and training jobs at creation. This applies the tag once to
-endpoints and feature groups that predate that (training jobs are ephemeral). Resources carrying the
-legacy ``aws-apn-id`` key are left as they are; AWS still attributes them.
+endpoints and feature groups that don't carry it yet (training jobs are ephemeral). Attribution starts
+from the date the tag is in place.
 
 Idempotent. Run once per AWS environment.
 
@@ -15,7 +15,7 @@ import argparse
 import sys
 
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.utils.aws_utils import PRM_LEGACY_TAG_KEY, PRM_TAG_KEY, PRM_TAG_VALUE
+from workbench.utils.aws_utils import PRM_TAG_KEY, PRM_TAG_VALUE
 
 
 def resource_arns(sm) -> dict[str, list[str]]:
@@ -56,8 +56,7 @@ def main() -> int:
         for arn in arns:
             name = f"{kind} {arn.split('/')[-1]}"
             try:
-                tags = current_tags(sm, arn)
-                if PRM_TAG_VALUE in (tags.get(PRM_TAG_KEY), tags.get(PRM_LEGACY_TAG_KEY)):
+                if current_tags(sm, arn).get(PRM_TAG_KEY) == PRM_TAG_VALUE:
                     already += 1
                     continue
                 if args.apply:
