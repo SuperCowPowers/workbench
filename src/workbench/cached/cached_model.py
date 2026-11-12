@@ -95,7 +95,7 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
     @CachedArtifactMixin.cache_result
     def get_inference_predictions(
-        self, capture_name: str = "default", target_rows: int = 50000
+        self, capture_name: str = "default", target_rows: int = 50000, transformed: bool = False
     ) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
@@ -103,11 +103,13 @@ class CachedModel(CachedArtifactMixin, ModelCore):
             capture_name (str, optional): A specific capture_name, or "default" to
                 resolve via default_inference_run() (default: "default")
             target_rows (int, optional): Target number of rows to return (default: 2000)
+            transformed (bool, optional): Map targets and predictions into the model's
+                target_transform space (default: False)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        df = super().get_inference_predictions(capture_name=capture_name)
+        df = super().get_inference_predictions(capture_name=capture_name, transformed=transformed)
         if df is None:
             return None
 

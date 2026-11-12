@@ -94,6 +94,6 @@ if __name__ == "__main__":
             # Score the scaffold hold-out through the real serving path. Same rows,
             # same capture name across all three, so the confidence and q_* columns
             # line up row-for-row when comparing versions.
-            end.inference(val_df, capture_name="scaffold_holdout", include_quantiles=True)
+            end.inference(val_df, capture_name="scaffold_holdout")
 
     log.important("UQ compare model creation complete.")

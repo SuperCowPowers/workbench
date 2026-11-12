@@ -51,7 +51,6 @@ class Endpoint(EndpointCore):
         capture_name: str = None,
         id_column: str = None,
         drop_error_rows: bool = False,
-        include_quantiles: bool = False,
     ) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
@@ -60,14 +59,13 @@ class Endpoint(EndpointCore):
             capture_name (str, optional): The Name of the capture to use (default: None)
             id_column (str, optional): The name of the column to use as the ID (default: None)
             drop_error_rows (bool): Whether to drop rows with errors (default: False)
-            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
         if self._async is not None:
-            return self._async.inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
-        return super().inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
+            return self._async.inference(eval_df, capture_name, id_column, drop_error_rows)
+        return super().inference(eval_df, capture_name, id_column, drop_error_rows)
 
     def test_inference(self, *args, **kwargs) -> pd.DataFrame:
         """Smoke-test the Endpoint by running inference on a sample of rows.
@@ -139,16 +137,13 @@ class Endpoint(EndpointCore):
             return self._async.fast_inference(eval_df, threads=threads)
         return super().fast_inference(eval_df, threads=threads)
 
-    def cross_fold_inference(self, include_quantiles: bool = False) -> pd.DataFrame:
+    def cross_fold_inference(self) -> pd.DataFrame:
         """Pull cross-fold inference from model associated with this Endpoint
-
-        Args:
-            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame with cross fold predictions
         """
-        return super().cross_fold_inference(include_quantiles)
+        return super().cross_fold_inference()
 
     def output_columns(self) -> List[str]:
         """Return this endpoint's registered output columns.

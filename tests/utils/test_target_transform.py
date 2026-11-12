@@ -15,6 +15,7 @@ from workbench.utils.target_transform import (
     check_target_domain,
     clip_quantile_columns,
     clip_to_bounds,
+    forward_predictions,
     load_target_transform,
     resolve_prediction_bounds,
     resolve_target_transform,
@@ -495,3 +496,65 @@ def test_check_target_domain_skips_what_it_cannot_judge():
     check_target_domain("log10", ["mppb"], {})
     check_target_domain("log10", ["mppb"], {"mppb": (None, None)})
     check_target_domain("log10", ["mppb"], {"mppb": (float("nan"), float("nan"))})
+
+
+@pytest.mark.parametrize(
+    "transform, values",
+    [
+        (Log10(offset=0.0), [0.0, -1.0, 0.01, 1.0]),
+        (Logit(ceiling=100.0), [0.0, 100.0, 1.0, 50.0]),
+    ],
+)
+def test_lenient_forward_maps_out_of_domain_to_nan(transform, values):
+    with pytest.raises(ValueError):
+        transform.forward(np.array(values))
+
+    lenient = transform.forward(np.array(values), strict=False)
+    assert np.isnan(lenient[:2]).all()
+    np.testing.assert_allclose(lenient[2:], transform.forward(np.array(values[2:])))
+
+
+def test_forward_predictions_maps_target_prediction_and_quantiles():
+    df = pd.DataFrame(
+        {
+            "id": [1, 2],
+            "ksol": [10.0, 100.0],
+            "prediction": [10.0, 0.0],
+            "prediction_std": [1.0, 2.0],
+            "q_05": [1.0, 10.0],
+            "confidence": [0.4, 0.9],
+        }
+    )
+    out = forward_predictions(df, {"ksol": Log10()}, primary="ksol")
+
+    np.testing.assert_allclose(out["ksol"], [1.0, 2.0])
+    np.testing.assert_allclose(out["q_05"], [0.0, 1.0])
+    assert out["prediction"].iloc[0] == 1.0 and np.isnan(out["prediction"].iloc[1])
+    assert "prediction_std" not in out.columns
+    assert out["id"].tolist() == [1, 2] and out["confidence"].tolist() == [0.4, 0.9]
+    assert df["ksol"].tolist() == [10.0, 100.0]
+
+
+def test_forward_predictions_maps_each_target_with_its_own_transform():
+    df = pd.DataFrame(
+        {
+            "ksol": [10.0],
+            "logd": [2.0],
+            "ksol_pred": [100.0],
+            "ksol_pred_std": [1.0],
+            "logd_pred": [1.5],
+            "logd_pred_std": [0.3],
+            "prediction": [100.0],
+            "prediction_std": [1.0],
+        }
+    )
+    out = forward_predictions(df, {"ksol": Log10(), "logd": Identity()}, primary="ksol")
+
+    assert out["ksol"].iloc[0] == 1.0 and out["ksol_pred"].iloc[0] == 2.0 and out["prediction"].iloc[0] == 2.0
+    assert out["logd"].iloc[0] == 2.0 and out["logd_pred_std"].iloc[0] == 0.3
+    assert "ksol_pred_std" not in out.columns and "prediction_std" not in out.columns
+
+
+def test_forward_predictions_is_a_no_op_for_identity():
+    df = pd.DataFrame({"y": [1.0], "prediction": [1.0], "prediction_std": [0.1]})
+    assert forward_predictions(df, {"y": Identity()}, primary="y") is df

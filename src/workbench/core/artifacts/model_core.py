@@ -20,10 +20,16 @@ from sagemaker.core.resources import (
 from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.core.model_types import ModelType, ModelFramework  # noqa: F401 (re-exported)
 from workbench.utils.aws_utils import newest_path, pull_s3_data, dict_to_aws_tags
-from workbench.utils.metrics_utils import default_inference_run, reorder_cm_df, reorder_metrics_df
+from workbench.utils.metrics_utils import (
+    default_inference_run,
+    reorder_cm_df,
+    reorder_metrics_df,
+    resolve_primary_target,
+)
 from workbench.utils.s3_utils import compute_s3_object_hash, read_s3_json
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
+from workbench.utils.target_transform import forward_predictions, resolve_target_transforms
 from workbench.utils.model_utils import (
     get_model_hyperparameters,
     copy_model_artifacts,
@@ -625,6 +631,18 @@ class ModelCore(AWSArtifact):
             dict: The hyperparameters used during training, or None if not found
         """
         return get_model_hyperparameters(self)
+
+    def target_transform(self) -> Union[object, dict]:
+        """The target transform this Model trained with (identity for a raw target).
+
+        Returns:
+            The transform for a single-target model, or ``{target: transform}`` for a
+            multi-target one.
+        """
+        targets = self.target()
+        target_list = targets if isinstance(targets, list) else [targets]
+        transforms = resolve_target_transforms((self.hyperparameters() or {}).get("target_transform"), target_list)
+        return transforms if isinstance(targets, list) else transforms[targets]
 
     def hpo_results(self) -> Union[dict, None]:
         """The hyperparameter-search results for this Model.
@@ -1333,13 +1351,17 @@ class ModelCore(AWSArtifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def get_inference_predictions(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(
+        self, capture_name: str = "default", transformed: bool = False
+    ) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
             capture_name (str, optional): A specific capture_name, "training" (out-of-fold
                 predictions), "validation" (held-out validation_ids rows, scored by the full
                 model), or "default" to resolve via default_inference_run() (default: "default")
+            transformed (bool, optional): Map targets and predictions into the model's
+                target_transform space; spread columns are dropped (default: False)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
@@ -1365,13 +1387,30 @@ class ModelCore(AWSArtifact):
 
         # Training-job captures live with the model's training artifacts
         if capture_name == "training":
-            return self._get_oof_predictions()
-        if capture_name == "validation":
-            return self._get_val_predictions()
+            df = self._get_oof_predictions()
+        elif capture_name == "validation":
+            df = self._get_val_predictions()
+        else:
+            df = pull_s3_data(f"{self.endpoint_inference_path}/{capture_name}/inference_predictions.csv")
 
-        # Construct the S3 path for the Inference Predictions
-        s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_predictions.csv"
-        return pull_s3_data(s3_path)
+        if df is None or not transformed:
+            return df
+        return self._forward_predictions(df)
+
+    def _forward_predictions(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Internal: Map a prediction frame into this model's target_transform space
+
+        An endpoint capture carries exactly one target column, the one its unprefixed
+        prediction columns belong to; a training capture carries every target, aliased to
+        the primary one.
+        """
+        targets = self.target()
+        transforms = self.target_transform()
+        if not isinstance(targets, list):
+            transforms = {targets: transforms}
+        present = [target for target in transforms if target in df.columns]
+        primary = present[0] if len(present) == 1 else resolve_primary_target(targets)
+        return forward_predictions(df, transforms, primary)
 
     def _get_oof_predictions(self) -> Union[pd.DataFrame, None]:
         """Internal: Retrieve the out-of-fold predictions captured during training

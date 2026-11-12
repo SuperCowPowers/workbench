@@ -12,6 +12,8 @@ A transform provides ``name``, ``forward``, ``inverse`` and ``__repr__``; is mon
 increasing; takes JSON-serializable constructor arguments, since
 ``resolve_target_transform`` rebuilds it from ``hyperparameters.json`` inside the serving
 container; and raises on out-of-domain input at training time rather than returning NaN.
+``forward(y, strict=False)`` maps out-of-domain input to NaN instead, for display views of
+predictions that a bound has clipped outside the domain.
 Transforms live here rather than behind a plugin hook: plugins are not on the endpoint
 import path, so a plugin-supplied transform would train and then fail to load at deployment.
 
@@ -35,7 +37,7 @@ class Identity:
 
     name = "identity"
 
-    def forward(self, y: np.ndarray) -> np.ndarray:
+    def forward(self, y: np.ndarray, strict: bool = True) -> np.ndarray:
         return np.asarray(y, dtype=float)
 
     def inverse(self, predictions: np.ndarray) -> np.ndarray:
@@ -62,9 +64,11 @@ class Log10:
         if not np.isfinite(self.offset):
             raise ValueError(f"target_transform 'log10' needs a finite offset, got {offset!r}")
 
-    def forward(self, y: np.ndarray) -> np.ndarray:
+    def forward(self, y: np.ndarray, strict: bool = True) -> np.ndarray:
         shifted = np.asarray(y, dtype=float) + self.offset
         known = np.isfinite(shifted)
+        if not strict:
+            known &= shifted > 0.0
         if (known & (shifted <= 0.0)).any():
             smallest = float(np.min(shifted[known])) - self.offset
             raise ValueError(
@@ -76,7 +80,7 @@ class Log10:
         # A negative inside the offset transforms and inverts exactly, so it is usable rather
         # than wrong -- but a caller who did not expect negatives should hear about them
         original = np.asarray(y, dtype=float)
-        if (known & (original < 0.0)).any():
+        if strict and (known & (original < 0.0)).any():
             log.warning(
                 f"target_transform 'log10' is absorbing negative targets into offset {self.offset:g} "
                 f"(smallest: {float(np.min(original[known])):g}); 'arcsinh' represents them directly."
@@ -120,9 +124,11 @@ class Logit:
         if not np.isfinite(self.ceiling) or self.ceiling <= 0.0:
             raise ValueError(f"target_transform 'logit' needs a finite ceiling above zero, got {ceiling!r}")
 
-    def forward(self, y: np.ndarray) -> np.ndarray:
+    def forward(self, y: np.ndarray, strict: bool = True) -> np.ndarray:
         values = np.asarray(y, dtype=float)
         known = np.isfinite(values)
+        if not strict:
+            known &= (values > 0.0) & (values < self.ceiling)
 
         if (known & (values <= 0.0)).any():
             raise ValueError(
@@ -185,7 +191,7 @@ class ArcSinh:
         if not np.isfinite(self.scale) or self.scale <= 0.0:
             raise ValueError(f"target_transform 'arcsinh' needs a finite scale above zero, got {scale!r}")
 
-    def forward(self, y: np.ndarray) -> np.ndarray:
+    def forward(self, y: np.ndarray, strict: bool = True) -> np.ndarray:
         return np.arcsinh(np.asarray(y, dtype=float) / self.scale)
 
     def inverse(self, predictions: np.ndarray) -> np.ndarray:
@@ -266,6 +272,41 @@ def resolve_target_transforms(spec: TransformSpec, targets: Sequence[str]) -> di
 
     shared = resolve_target_transform(spec)
     return {target: shared for target in targets}
+
+
+def forward_predictions(df, transforms: dict, primary: str):
+    """Map a prediction frame's targets and predictions into the space the model trained in.
+
+    A display view: a value outside a transform's domain, such as a prediction clipped to a
+    bound the transform cannot reach, becomes NaN rather than raising. Quantiles map exactly,
+    but a spread in original units has no meaning after a nonlinear map, so spread columns
+    are dropped. Targets with the identity transform pass through untouched.
+
+    Args:
+        df: Prediction frame on the original scale.
+        transforms: ``{target_column: transform}``, from ``resolve_target_transforms``.
+        primary: The target the unprefixed ``prediction`` and ``q_*`` columns belong to.
+
+    Returns:
+        A transformed copy, or ``df`` itself when every transform is the identity.
+    """
+    active = {target: transform for target, transform in transforms.items() if not isinstance(transform, Identity)}
+    if not active:
+        return df
+
+    out = df.copy()
+    drop = []
+    for target, transform in active.items():
+        columns = [target, f"{target}_pred"] + [c for c in out.columns if c.startswith(f"{target}_q_")]
+        spreads = [f"{target}_pred_std", f"{target}_expected_residual"]
+        if target == primary:
+            columns += ["prediction"] + [c for c in out.columns if c.startswith("q_")]
+            spreads += ["prediction_std", "expected_residual", "residual"]
+        for column in columns:
+            if column in out.columns:
+                out[column] = transform.forward(out[column].to_numpy(dtype=float), strict=False)
+        drop += [column for column in spreads if column in out.columns]
+    return out.drop(columns=drop)
 
 
 def resolve_prediction_bounds(spec, targets: Sequence[str]) -> dict:

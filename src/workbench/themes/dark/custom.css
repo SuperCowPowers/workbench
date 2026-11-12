@@ -179,6 +179,12 @@ div:has(> [class*="ag-theme-"]) {
     color: rgb(230, 230, 230) !important;
 }
 
+/* Checklist labels keep their text color while hovered or focused */
+.dash-options-list-option:not(:has(input[disabled])):hover,
+.dash-options-list-option:not(:has(input[disabled])):focus-within {
+    color: var(--Dash-Text-Strong) !important;
+}
+
 /* Bootstrap form controls (dbc components) */
 .form-select, .form-control {
     background-color: rgb(35, 35, 35) !important;

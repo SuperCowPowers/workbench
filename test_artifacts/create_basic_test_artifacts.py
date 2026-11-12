@@ -178,4 +178,4 @@ if __name__ == "__main__":
         # Score the held-out rows through the serving path — the deployed-path
         # counterpart to the val_predictions.csv the training job wrote.
         val_df = abalone_df[abalone_df[fs.id_column].isin(validation_ids)]
-        end.inference(val_df, capture_name="validation_holdout", include_quantiles=True)
+        end.inference(val_df, capture_name="validation_holdout")

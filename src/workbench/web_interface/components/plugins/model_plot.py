@@ -1,17 +1,22 @@
 """A Model Plot plugin that displays the appropriate visualization based on model type.
 
 For classifiers: Shows a Confusion Explorer (Confusion Matrix + Confusion Triangle)
-For regressors: Shows a Scatter Plot of predictions vs actuals
+For regressors: Shows a Scatter Plot of predictions vs actuals, in the model's
+target_transform space by default when it has one
 """
 
-from dash import html, no_update
+from dash import Input, Output, callback, dcc, html, no_update
+from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.api import ModelType
 from workbench.cached.cached_model import CachedModel
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.web_interface.components.plugins.confusion_explorer import ConfusionExplorer
-from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+from workbench.web_interface.components.plugins.scatter_plot import CHECKLIST_STYLE, ScatterPlot
+from workbench.utils.target_transform import Identity
+
+_HIDDEN = {"visibility": "hidden", "height": 0, "overflow": "hidden"}
 
 
 class ModelPlot(PluginInterface):
@@ -25,6 +30,8 @@ class ModelPlot(PluginInterface):
         self.component_id = None
         self.model = None
         self.inference_run = None
+        self.target = None
+        self.transformed = False
 
         # Internal plugins
         self.scatter_plot = ScatterPlot()
@@ -44,14 +51,22 @@ class ModelPlot(PluginInterface):
         """
         self.component_id = component_id
 
-        # Create internal components
-        scatter_component = self.scatter_plot.create_component(f"{component_id}-scatter")
+        # Create internal components (the transform toggle sits in the scatter controls row)
+        transform_toggle = dcc.Checklist(
+            id=f"{component_id}-transformed", options=[], value=[], style={"display": "none"}
+        )
+        scatter_component = self.scatter_plot.create_component(
+            f"{component_id}-scatter", extra_controls=[transform_toggle]
+        )
         confusion_component = self.confusion_explorer.create_component(f"{component_id}-confusion")
 
-        # Build properties list: visibility styles + scatter props + confusion props
+        # Build properties list: visibility styles + transform toggle + scatter props + confusion props
         self.properties = [
             (f"{component_id}-scatter-container", "style"),
             (f"{component_id}-confusion-container", "style"),
+            (f"{component_id}-transformed", "options"),
+            (f"{component_id}-transformed", "value"),
+            (f"{component_id}-transformed", "style"),
         ]
         self.properties.extend(self.scatter_plot.properties)
         self.properties.extend(self.confusion_explorer.properties)
@@ -63,7 +78,6 @@ class ModelPlot(PluginInterface):
         # Show scatter plot by default (will display "Waiting for Data..." until model loads)
         # Note: Use visibility/height instead of display:none so Bootstrap grid computes
         # column widths upfront, preventing Plotly from rendering wide then shrinking.
-        _hidden = {"visibility": "hidden", "height": 0, "overflow": "hidden"}
         return html.Div(
             id=component_id,
             children=[
@@ -75,7 +89,7 @@ class ModelPlot(PluginInterface):
                 html.Div(
                     confusion_component,
                     id=f"{component_id}-confusion-container",
-                    style=_hidden,
+                    style=_HIDDEN,
                 ),
             ],
         )
@@ -89,7 +103,8 @@ class ModelPlot(PluginInterface):
                 - inference_run (str): Inference capture name (default: resolved via default_inference_run())
 
         Returns:
-            list: Property values [scatter_style, confusion_style, ...scatter_props, ...confusion_props]
+            list: Property values [scatter_style, confusion_style, ...toggle_props, ...scatter_props,
+                ...confusion_props]
         """
         # Cache for theme re-rendering
         self.model = model
@@ -97,42 +112,52 @@ class ModelPlot(PluginInterface):
 
         # Determine model type and set visibility
         # Use visibility/height instead of display:none to preserve Bootstrap grid layout
-        _hidden = {"visibility": "hidden", "height": 0, "overflow": "hidden"}
         is_classifier = model.model_type == ModelType.CLASSIFIER
-        scatter_style = _hidden if is_classifier else {}
-        confusion_style = {} if is_classifier else _hidden
+        scatter_style = _HIDDEN if is_classifier else {}
+        confusion_style = {} if is_classifier else _HIDDEN
+        toggle_props = [[], [], {"display": "none"}]
 
         if is_classifier:
             # Update ConfusionExplorer, no_update for ScatterPlot
             cm_props = self.confusion_explorer.update_properties(model, inference_run=self.inference_run)
             scatter_props = [no_update] * len(self.scatter_plot.properties)
         else:
-            # Update ScatterPlot with regression data
-            df = model.get_inference_predictions(self.inference_run)
-            if df is None:
-                # Still update visibility styles, but no_update for plugin properties
-                scatter_props = [no_update] * len(self.scatter_plot.properties)
-                cm_props = [no_update] * len(self.confusion_explorer.properties)
-                return [scatter_style, confusion_style] + scatter_props + cm_props
-
             # Get target column for the x-axis
-            target = model.target()
-            if isinstance(target, list):
-                target = next((t for t in target if t in self.inference_run), target[0])
+            self.target = model.target()
+            if isinstance(self.target, list):
+                self.target = next((t for t in self.target if t in self.inference_run), self.target[0])
 
-            # Check if "confidence" column exists for coloring
-            color_col = "confidence" if "confidence" in df.columns else "prediction"
+            # Plot in the model's target_transform space by default when it has one
+            transform = model.target_transform()
+            if isinstance(transform, dict):
+                transform = transform[self.target]
+            has_transform = not isinstance(transform, Identity)
+            if has_transform:
+                options = [{"label": f" {transform!r}", "value": "show"}]
+                toggle_props = [options, ["show"], CHECKLIST_STYLE]
 
-            scatter_props = self.scatter_plot.update_properties(
-                df,
-                x=target,
-                y="prediction",
-                color=color_col,
-                regression_line=True,
-            )
+            # Update ScatterPlot with regression data
+            scatter_props = self._scatter_properties(has_transform)
             cm_props = [no_update] * len(self.confusion_explorer.properties)
 
-        return [scatter_style, confusion_style] + scatter_props + cm_props
+        return [scatter_style, confusion_style] + toggle_props + scatter_props + cm_props
+
+    def _scatter_properties(self, transformed: bool) -> list:
+        """Render the regression scatter plot, in target_transform space when transformed is set."""
+        self.transformed = transformed
+        df = self.model.get_inference_predictions(self.inference_run, transformed=transformed)
+        if df is None:
+            return [no_update] * len(self.scatter_plot.properties)
+
+        # Check if "confidence" column exists for coloring
+        color_col = "confidence" if "confidence" in df.columns else "prediction"
+        return self.scatter_plot.update_properties(
+            df,
+            x=self.target,
+            y="prediction",
+            color=color_col,
+            regression_line=True,
+        )
 
     def set_theme(self, theme: str) -> list:
         """Re-render the appropriate plot when the theme changes."""
@@ -143,9 +168,22 @@ class ModelPlot(PluginInterface):
         return self.update_properties(self.model, inference_run=self.inference_run)
 
     def register_internal_callbacks(self):
-        """Register internal callbacks for both sub-plugins."""
+        """Register internal callbacks for both sub-plugins and the transform toggle."""
         self.scatter_plot.register_internal_callbacks()
         self.confusion_explorer.register_internal_callbacks()
+
+        # allow_duplicate: the scatter plot is also set by page-level callbacks and theme changes
+        @callback(
+            [Output(cid, prop, allow_duplicate=True) for cid, prop in self.scatter_plot.properties],
+            Input(f"{self.component_id}-transformed", "value"),
+            prevent_initial_call=True,
+        )
+        def _toggle_transformed(value):
+            # A page-level update sets the toggle and renders in the same pass
+            transformed = bool(value)
+            if self.model is None or transformed == self.transformed:
+                raise PreventUpdate
+            return self._scatter_properties(transformed)
 
 
 if __name__ == "__main__":

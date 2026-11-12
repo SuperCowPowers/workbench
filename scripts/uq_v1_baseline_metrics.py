@@ -65,9 +65,7 @@ def snapshot_model(model_name: str, out_dir: Path) -> dict:
     endpoint_name = endpoint_names[0]
     endpoint = Endpoint(endpoint_name)
 
-    # include_quantiles=True is critical — uq_metrics needs q_025/q_975/etc.
-    # to compute coverage and width metrics. Defaults to False on the API.
-    df = endpoint.cross_fold_inference(include_quantiles=True)
+    df = endpoint.cross_fold_inference()
 
     # Save raw df for posterity (cheap, lets us recompute metrics later
     # without re-hitting the endpoint).

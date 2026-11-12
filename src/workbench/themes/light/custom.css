@@ -220,6 +220,12 @@ div:has(> [class*="ag-theme-"]) {
     color: var(--wb-text-primary) !important;
 }
 
+/* Checklist labels keep their text color while hovered or focused */
+.dash-options-list-option:not(:has(input[disabled])):hover,
+.dash-options-list-option:not(:has(input[disabled])):focus-within {
+    color: var(--Dash-Text-Strong) !important;
+}
+
 /* Bootstrap form controls (dbc components) */
 .form-select, .form-control {
     background-color: var(--wb-dropdown-bg) !important;

@@ -15,6 +15,12 @@ from workbench.web_interface.utils.clientside_callbacks import hover_ring_overla
 _HOVER_OVERLAY_NAME = "__hover_overlay__"
 
 
+# Controls-row styles (CHECKLIST_STYLE is shared with plugins that add their own checkboxes)
+_AXIS_LABEL_STYLE = {"marginLeft": "12px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}
+_DROPDOWN_STYLE = {"minWidth": "90px", "flex": "1 1 0"}
+CHECKLIST_STYLE = {"marginLeft": "12px", "display": "flex", "alignItems": "center", "whiteSpace": "nowrap"}
+
+
 class ScatterPlot(PluginInterface):
     """A Scatter Plot Plugin for Feature Sets."""
 
@@ -47,11 +53,12 @@ class ScatterPlot(PluginInterface):
         # Call the parent class constructor
         super().__init__()
 
-    def create_component(self, component_id: str) -> html.Div:
+    def create_component(self, component_id: str, extra_controls: list = None) -> html.Div:
         """Create a Dash Graph Component without any data.
 
         Args:
             component_id (str): The ID of the web component.
+            extra_controls (list, optional): Components appended to the controls row.
 
         Returns:
             html.Div: A Dash Div Component containing the graph and dropdowns.
@@ -86,72 +93,47 @@ class ScatterPlot(PluginInterface):
                     style={"height": f"{self.height}px", "width": "100%"},
                     clear_on_unhover=True,
                 ),
-                # Controls: X, Y, Color, Label Dropdowns, and Regression Line Checkbox
+                # Controls: the dropdowns shrink first, then the checkboxes wrap to a second line
                 html.Div(
                     [
-                        html.Label(
-                            "X",
-                            style={
-                                "marginLeft": "20px",
-                                "marginRight": "5px",
-                                "fontWeight": "bold",
-                                "display": "flex",
-                                "alignItems": "center",
-                            },
+                        html.Div(
+                            [
+                                html.Label("X", style=_AXIS_LABEL_STYLE),
+                                dcc.Dropdown(id=f"{component_id}-x-dropdown", style=_DROPDOWN_STYLE, clearable=False),
+                                html.Label("Y", style=_AXIS_LABEL_STYLE),
+                                dcc.Dropdown(id=f"{component_id}-y-dropdown", style=_DROPDOWN_STYLE, clearable=False),
+                                html.Label("Color", style=_AXIS_LABEL_STYLE),
+                                dcc.Dropdown(
+                                    id=f"{component_id}-color-dropdown", style=_DROPDOWN_STYLE, clearable=False
+                                ),
+                            ],
+                            style={"display": "flex", "alignItems": "center", "gap": "4px", "flex": "1 1 0"},
                         ),
-                        dcc.Dropdown(
-                            id=f"{component_id}-x-dropdown",
-                            style={"minWidth": "150px", "flex": 1},
-                            clearable=False,
-                        ),
-                        html.Label(
-                            "Y",
-                            style={
-                                "marginLeft": "20px",
-                                "marginRight": "5px",
-                                "fontWeight": "bold",
-                                "display": "flex",
-                                "alignItems": "center",
-                            },
-                        ),
-                        dcc.Dropdown(
-                            id=f"{component_id}-y-dropdown",
-                            style={"minWidth": "150px", "flex": 1},
-                            clearable=False,
-                        ),
-                        html.Label(
-                            "Color",
-                            style={
-                                "marginLeft": "20px",
-                                "marginRight": "5px",
-                                "fontWeight": "bold",
-                                "display": "flex",
-                                "alignItems": "center",
-                            },
-                        ),
-                        dcc.Dropdown(
-                            id=f"{component_id}-color-dropdown",
-                            style={"minWidth": "150px", "flex": 1},
-                            clearable=False,
-                        ),
-                        dcc.Checklist(
-                            id=f"{component_id}-regression-line",
-                            options=[{"label": " Diagonal", "value": "show"}],
-                            value=[],
-                            style={"marginLeft": "20px", "display": "flex", "alignItems": "center"},
-                        ),
-                        dcc.Checklist(
-                            id=f"{component_id}-pred-intervals",
-                            options=[{"label": " Pred Intervals", "value": "show"}],
-                            value=["show"],
-                            style={"marginLeft": "20px", "display": "flex", "alignItems": "center"},
+                        html.Div(
+                            [
+                                dcc.Checklist(
+                                    id=f"{component_id}-regression-line",
+                                    options=[{"label": " Diag", "value": "show"}],
+                                    value=[],
+                                    style=CHECKLIST_STYLE,
+                                ),
+                                dcc.Checklist(
+                                    id=f"{component_id}-pred-intervals",
+                                    options=[{"label": " Intervals", "value": "show"}],
+                                    value=["show"],
+                                    style=CHECKLIST_STYLE,
+                                ),
+                            ]
+                            + (extra_controls or []),
+                            style={"display": "flex", "alignItems": "center", "flex": "0 0 auto"},
                         ),
                     ],
                     style={
                         "padding": "0px 0px 10px 0px",
                         "display": "flex" if self.show_controls else "none",
+                        "flexWrap": "wrap",
                         "alignItems": "center",
-                        "gap": "5px",
+                        "rowGap": "6px",
                     },
                 ),
                 # Molecule tooltip (offset from hovered point) - only used when smiles column exists
@@ -207,8 +189,9 @@ class ScatterPlot(PluginInterface):
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         self.df = self.df.drop(columns=aws_cols, errors="ignore")
 
-        # Set hover columns and custom data
-        self.hover_columns = kwargs.get("hover_columns", sorted(self.df.columns.tolist()[:15]))
+        # Set hover columns and custom data (q_* quantiles draw the interval bands, not hover text)
+        default_hover = [col for col in self.df.columns if not col.startswith("q_")][:15]
+        self.hover_columns = kwargs.get("hover_columns", sorted(default_hover))
         self.suppress_hover_display = kwargs.get("suppress_hover_display", False)
         self.custom_data = kwargs.get("custom_data", [])
 

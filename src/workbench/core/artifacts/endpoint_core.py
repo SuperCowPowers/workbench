@@ -487,7 +487,6 @@ class EndpointCore(AWSArtifact):
         capture_name: str = None,
         id_column: str = None,
         drop_error_rows: bool = False,
-        include_quantiles: bool = False,
     ) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
@@ -496,7 +495,6 @@ class EndpointCore(AWSArtifact):
             capture_name (str, optional): Name of the inference capture (default=None)
             id_column (str, optional): Name of the ID column (default=None)
             drop_error_rows (bool, optional): If True, drop rows that had endpoint errors/issues (default=False)
-            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: DataFrame with the inference results
@@ -596,7 +594,6 @@ class EndpointCore(AWSArtifact):
                         description,
                         features,
                         id_column,
-                        include_quantiles,
                     )
 
                 # Save primary target (or single target) with original capture_name
@@ -610,7 +607,6 @@ class EndpointCore(AWSArtifact):
                         capture_name.replace("_", " ").title(),
                         features,
                         id_column,
-                        include_quantiles,
                     )
 
             # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
@@ -622,11 +618,8 @@ class EndpointCore(AWSArtifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def cross_fold_inference(self, include_quantiles: bool = False) -> pd.DataFrame:
+    def cross_fold_inference(self) -> pd.DataFrame:
         """Pull cross-fold inference training results for this Endpoint's model
-
-        Args:
-            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame with cross fold predictions
@@ -742,7 +735,6 @@ class EndpointCore(AWSArtifact):
                     description,
                     features=additional_columns,
                     id_column=id_column,
-                    include_quantiles=include_quantiles,
                 )
 
                 # Primary target also drives a "full_cross_fold" capture so default
@@ -758,7 +750,6 @@ class EndpointCore(AWSArtifact):
                         "Full Cross Fold",
                         features=additional_columns,
                         id_column=id_column,
-                        include_quantiles=include_quantiles,
                     )
 
             # Single-target: save as "full_cross_fold"
@@ -772,7 +763,6 @@ class EndpointCore(AWSArtifact):
                     "Full Cross Fold",
                     features=additional_columns,
                     id_column=id_column,
-                    include_quantiles=include_quantiles,
                 )
 
         return out_of_fold_df
@@ -1105,7 +1095,6 @@ class EndpointCore(AWSArtifact):
         description: str,
         features: list,
         id_column: str = None,
-        include_quantiles: bool = False,
     ):
         """Internal: Capture the inference results and metrics to S3 for a single target
 
@@ -1118,7 +1107,6 @@ class EndpointCore(AWSArtifact):
             description (str): Description of the inference results
             features (list): List of features to include in the inference results
             id_column (str, optional): Name of the ID column (default=None)
-            include_quantiles (bool): Include q_* quantile columns in output (default: False)
         """
 
         # Compute a dataframe hash (just use the last 8)
@@ -1150,7 +1138,7 @@ class EndpointCore(AWSArtifact):
             self.log.info(f"No metrics for {capture_name} (no ground truth for target); skipping metrics file.")
 
         # Save the inference predictions for this target
-        self._save_target_inference(inference_capture_path, pred_results_df, target, id_column, include_quantiles)
+        self._save_target_inference(inference_capture_path, pred_results_df, target, id_column)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER:
@@ -1164,7 +1152,6 @@ class EndpointCore(AWSArtifact):
         pred_results_df: pd.DataFrame,
         target: str,
         id_column: str = None,
-        include_quantiles: bool = False,
     ):
         """Save inference results for a single target.
 
@@ -1173,7 +1160,6 @@ class EndpointCore(AWSArtifact):
             pred_results_df (pd.DataFrame): DataFrame with prediction results
             target (str): Target column name
             id_column (str, optional): Name of the ID column
-            include_quantiles (bool): Include q_* quantile columns in output (default: False)
         """
         cols = pred_results_df.columns
 
@@ -1190,9 +1176,8 @@ class EndpointCore(AWSArtifact):
         if "confidence" in cols:
             output_columns.append("confidence")
 
-        # Add quantile columns (q_*) only if requested
-        if include_quantiles:
-            output_columns += [c for c in cols if c.startswith("q_")]
+        # Add quantile columns (q_*)
+        output_columns += [c for c in cols if c.startswith("q_")]
 
         # Add proba columns for classifiers
         output_columns += [c for c in cols if c.endswith("_proba")]

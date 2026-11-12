@@ -48,8 +48,7 @@ q_025, q_05, q_25, q_50, q_75, q_95, q_975
 `q_05`/`q_95` bound the 90% interval. `confidence` is a percentile rank: 0.7
 means "expected error lower than 70% of calibration-set predictions."
 
-`inference()` and `cross_fold_inference()` take `include_quantiles=False` by
-default — pass `True` to persist the `q_*` columns.
+`inference()` and `cross_fold_inference()` persist the `q_*` columns in each capture.
 
 A multi-task model calibrates every target and repeats the block per target as
 `{target}_confidence`, `{target}_expected_residual`, `{target}_q_*`; the
