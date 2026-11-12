@@ -8,6 +8,7 @@ thresholds apply to rank correlation.
 
 import numpy as np
 import pandas as pd
+from pytest import approx
 
 from workbench.algorithms.dataframe.multi_task_alignment import MultiTaskAlignment
 
@@ -40,8 +41,8 @@ def summary_for(aux_fn, **kwargs) -> pd.Series:
 
 
 def noisy(scale: float):
-    """An aux that tracks the primary with noise, in a given direction."""
-    return lambda p: scale * p + np.random.default_rng(AUX_SEED).normal(0, 0.9, len(p))
+    """An aux that tracks the primary with noise, in a given direction; opposite scales are exact mirrors."""
+    return lambda p: scale * (p + np.random.default_rng(AUX_SEED).normal(0, 0.9, len(p)))
 
 
 def test_verdict_depends_on_strength_not_direction():
@@ -62,7 +63,7 @@ def test_residual_measures_disagreement_not_direction():
     positive = summary_for(noisy(1.0))
     negative = summary_for(noisy(-1.0))
 
-    assert negative["residual_abs_mean"] == approx(positive["residual_abs_mean"], 0.05)
+    assert negative["residual_abs_mean"] == approx(positive["residual_abs_mean"], abs=1e-9)
 
 
 def test_coverage_resolves_against_a_sparse_primary_set():
@@ -95,16 +96,3 @@ def test_thresholds_apply_to_rank_correlation():
 
     assert abs(row["pearson_r"]) < 0.4 <= abs(row["spearman_r"])
     assert row["overlap"] == "Beneficial"
-
-
-def approx(value: float, tol: float):
-    """Absolute-tolerance comparison helper."""
-
-    class _Approx:
-        def __eq__(self, other):
-            return abs(other - value) <= tol
-
-        def __repr__(self):
-            return f"{value} +/- {tol}"
-
-    return _Approx()
