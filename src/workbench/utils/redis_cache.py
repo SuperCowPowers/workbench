@@ -13,6 +13,52 @@ from workbench.utils.json_utils import CustomEncoder, custom_decoder
 log = logging.getLogger("workbench")
 
 
+def _server() -> tuple:
+    """The configured Redis (host, port, password)."""
+    cm = ConfigManager()
+    return cm.get_config("REDIS_HOST", "localhost"), cm.get_config("REDIS_PORT", 6379), cm.get_config("REDIS_PASSWORD")
+
+
+def _ping(host, port, password) -> None:
+    """Ping Redis once with a 1s timeout, raising the Redis error on failure."""
+    with redis.Redis(
+        host,
+        port=port,
+        password=password,
+        socket_timeout=1,
+        socket_connect_timeout=1,
+        retry=redis.retry.Retry(redis.backoff.NoBackoff(), 0),
+    ) as probe:
+        probe.ping()
+
+
+# Long-lived probe client, keyed by the server it targets. A warm connection pings in
+# one round trip; a fresh one pays the AUTH/handshake round trips on every call.
+_probe = {"server": None, "client": None}
+
+
+def redis_reachable() -> bool:
+    """Whether the configured Redis answers a ping within a second."""
+    server = _server()
+    if _probe["server"] != server:
+        if _probe["client"] is not None:
+            _probe["client"].close()
+        host, port, password = server
+        _probe["server"] = server
+        _probe["client"] = redis.Redis(
+            host,
+            port=port,
+            password=password,
+            socket_timeout=1,
+            socket_connect_timeout=1,
+            retry=redis.retry.Retry(redis.backoff.NoBackoff(), 1),  # one reconnect for a stale pooled connection
+        )
+    try:
+        return _probe["client"].ping()
+    except redis.exceptions.RedisError:
+        return False
+
+
 class RedisCache:
     """A Redis Database Cache Class
     Usage:
@@ -40,34 +86,25 @@ class RedisCache:
         self.prefix = self.base_prefix + self.prefix
         self.postfix = postfix if not postfix or postfix.startswith(":") else ":" + postfix
 
-        # Load Redis configuration from the Workbench ConfigManager
-        cm = ConfigManager()
-        self.host = cm.get_config("REDIS_HOST", "localhost")
-        self.port = cm.get_config("REDIS_PORT", 6379)
-        self.password = cm.get_config("REDIS_PASSWORD")
+        self.host, self.port, self.password = _server()
 
         # Attempt to establish a connection to Redis
         log.info(f"Opening Redis connection to: {self.host}:{self.port}...")
         self.redis_db = None
         try:
-            # Create a temporary connection to test the connection (single attempt, 1s timeout)
-            _redis_db = redis.Redis(
-                self.host,
-                port=self.port,
-                password=self.password,
-                socket_timeout=1,
-                socket_connect_timeout=1,
-                retry=redis.retry.Retry(redis.backoff.NoBackoff(), 0),
-            )
-            _redis_db.ping()
+            _ping(self.host, self.port, self.password)
 
-            # Now create the actual connection
+            # Bounded timeouts and one retry: if Redis drops mid-session, calls fail in
+            # seconds rather than stalling on redis-py's default retry ladder.
             self.redis_db = redis.Redis(
                 self.host,
                 port=self.port,
                 password=self.password,
                 decode_responses=True,
                 db=0,
+                socket_timeout=5,
+                socket_connect_timeout=1,
+                retry=redis.retry.Retry(redis.backoff.NoBackoff(), 1),
             )
             log.info(f"Redis connection success: {self.host}:{self.port}...")
         except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError) as e:

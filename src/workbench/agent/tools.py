@@ -147,6 +147,28 @@ def mode_text() -> str:
     return "" if ConfigManager().config_okay() else LOCAL_MODE_TEXT
 
 
+CACHE_DOWN_TEXT = """## Cache
+
+The Workbench Redis cache **is not reachable** right now (VPN or Redis tunnel down).
+
+- Tell the user at the start of your reply, unless you already have earlier in this
+  conversation and nothing has changed.
+- Use `Meta()` and the plain artifact classes, not `CachedMeta` or the `Cached*`
+  classes, and not the bound `models()`/`feature_sets()`/`data_sources()`/`endpoints()`:
+  those go through the cache and fail or stall when it drops mid-session.
+- Redis connection errors in captured logs are this; don't diagnose them."""
+
+
+def cache_text() -> str:
+    """The cache-down block for the system prompt, empty when Redis answers or in local mode."""
+    from workbench.utils.config_manager import ConfigManager
+    from workbench.utils.redis_cache import redis_reachable
+
+    if not ConfigManager().config_okay() or redis_reachable():
+        return ""
+    return CACHE_DOWN_TEXT
+
+
 def provider_egress_text() -> str:
     """Where this session's conversation goes, for the system prompt."""
     from workbench.utils.llm_utils import llm_provider

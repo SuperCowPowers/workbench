@@ -28,6 +28,7 @@ from workbench.agent.tools import (
     guide_index,
     general_guide,
     egress_text,
+    cache_text,
     mode_text,
     provider_egress_text,
     personality_text,
@@ -108,6 +109,9 @@ _window = bosco_utils.SessionWindow()
 # Tools that keep the session record rather than do the user's work
 _BOOKKEEPING_TOOLS = {"read_last_session", "note_topic"}
 
+# The cache-down block, re-probed every turn so a dropped VPN or tunnel shows up mid-session
+_cache_note = ""
+
 # The runtime frame lives here; tunable behavior lives in guides/general.md,
 # injected below so a human can edit it without touching code.
 SYSTEM_PROMPT = """You are Bosco, an ML engineering agent inside the Workbench REPL.
@@ -117,6 +121,8 @@ You work in the user's live REPL session. Variables you create stay available to
 them afterwards, so use clear names and tell them what you left behind.
 
 {mode}
+
+{cache}
 
 {general}
 
@@ -144,6 +150,7 @@ your own assumptions rather than answering from general knowledge."""
 def _system_prompt() -> str:
     return SYSTEM_PROMPT.format(
         mode=mode_text(),
+        cache=_cache_note,
         general=general_guide().strip(),
         egress=egress_text(),
         provider_egress=provider_egress_text(),
@@ -388,6 +395,8 @@ def _resume_turn() -> None:
 
 def _ask(prompt: str) -> None:
     """One user turn against the shared history."""
+    global _cache_note
+    _cache_note = cache_text()
     bosco_utils.previous_session()  # snapshot before this turn's save replaces it
     _history.append({"role": "user", "content": job_updates(prompt)})
     _trim_history()
