@@ -114,7 +114,7 @@ class DataSource(AthenaSource):
         tags: list = None,
         event_time_column: str = None,
         one_hot_columns: list = None,
-    ) -> Union[FeatureSet, None]:
+    ) -> FeatureSet:
         """
         Convert the DataSource to a FeatureSet
 
@@ -126,13 +126,14 @@ class DataSource(AthenaSource):
             one_hot_columns (list, optional): Set the columns to be one-hot encoded. (default: None)
 
         Returns:
-            FeatureSet: The FeatureSet created from the DataSource (or None if the FeatureSet isn't created)
+            FeatureSet: The FeatureSet created from the DataSource
+
+        Raises:
+            ValueError: If the FeatureSet name is invalid
         """
 
-        # Ensure the feature_set_name is valid
         if not Artifact.is_name_valid(name):
-            self.log.critical(f"Invalid FeatureSet name: {name}, not creating FeatureSet!")
-            return None
+            raise ValueError(f"Invalid FeatureSet name: '{name}' (try '{Artifact.generate_valid_name(name)}')")
 
         # Set the Tags
         tags = [name] if tags is None else tags

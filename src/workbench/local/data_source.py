@@ -121,7 +121,7 @@ class DataSource(LocalArtifact):
         tags: list = None,
         event_time_column: str = None,
         one_hot_columns: list = None,
-    ) -> Union["FeatureSet", None]:  # noqa: F821
+    ) -> "FeatureSet":  # noqa: F821
         """Convert this DataSource to a FeatureSet
 
         Args:
@@ -132,13 +132,15 @@ class DataSource(LocalArtifact):
             one_hot_columns (list, optional): Columns to one-hot encode (default: None).
 
         Returns:
-            FeatureSet: The FeatureSet created from this DataSource (or None on invalid name)
+            FeatureSet: The FeatureSet created from this DataSource
+
+        Raises:
+            ValueError: If the FeatureSet name is invalid
         """
         from workbench.local.feature_set import FeatureSet
 
         if not Artifact.is_name_valid(name):
-            self.log.critical(f"Invalid FeatureSet name: {name}, not creating FeatureSet!")
-            return None
+            raise ValueError(f"Invalid FeatureSet name: '{name}' (try '{Artifact.generate_valid_name(name)}')")
 
         return FeatureSet.from_dataframe(
             self.pull_dataframe(),

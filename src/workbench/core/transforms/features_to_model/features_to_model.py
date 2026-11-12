@@ -643,16 +643,13 @@ class FeaturesToModel(Transform):
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
-        # Create model group (if it doesn't already exist)
-        try:
-            ModelPackageGroup.create(
-                model_package_group_name=self.output_name,
-                model_package_group_description=self.model_description,
-                tags=aws_tags,
-                session=self.boto3_session,
-            )
-        except Exception:
-            self.log.info(f"Model Package Group {self.output_name} may already exist, continuing...")
+        # Create the model group (transform_impl's managed_delete() already removed any existing one)
+        ModelPackageGroup.create(
+            model_package_group_name=self.output_name,
+            model_package_group_description=self.model_description,
+            tags=aws_tags,
+            session=self.boto3_session,
+        )
 
         # Get the model artifacts URL from the completed training job
         training_job = TrainingJob.get(self.training_job_name, session=self.boto3_session)

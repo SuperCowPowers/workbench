@@ -78,7 +78,7 @@ class FeatureSet(FeatureSetCore):
         custom_script: Union[str, Path] = None,
         custom_args: dict = None,
         **kwargs,
-    ) -> Union[Model, None]:
+    ) -> Model:
         """Create a Model from the FeatureSet
 
         Args:
@@ -99,14 +99,16 @@ class FeatureSet(FeatureSetCore):
                 ``exclude_ids`` (list): ids dropped from the training view entirely.
 
         Returns:
-            Model: The Model created from the FeatureSet (or None if the Model could not be created)
+            Model: The Model created from the FeatureSet
+
+        Raises:
+            ValueError: If the Model name is invalid
         """
 
-        # Ensure the model_name is valid
         if name:
             if not Artifact.is_name_valid(name, delimiter="-", lower_case=False):
-                self.log.critical(f"Invalid Model name: {name}, not creating Model!")
-                return None
+                valid_name = Artifact.generate_valid_name(name, delimiter="-", lower_case=False)
+                raise ValueError(f"Invalid Model name: '{name}' (try '{valid_name}')")
 
         # If the model_name wasn't given generate it
         else:

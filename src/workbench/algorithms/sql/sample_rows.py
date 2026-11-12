@@ -40,10 +40,9 @@ def sample_rows(data_source: DataSourceAbstract, rows: int = 100) -> pd.DataFram
         query = f'SELECT {sql_columns} FROM "{table}"'
     sample_df = data_source.query(query)
 
-    # Sanity Check
+    # DataSource.query() returns None when the Athena query fails
     if sample_df is None:
-        log.error(f"Error pulling sample rows from {data_source.name}")
-        return None
+        raise RuntimeError(f"Failed to pull sample rows for {data_source.name} from table '{table}'")
 
     # Grab the first N rows (this clamps the sample_df to the desired number of rows)
     sample_df = sample_df.head(rows)

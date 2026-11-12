@@ -11,9 +11,9 @@ def test():
     pprint(my_data.summary())
     pprint(my_data.details())
 
-    # Create a FeatureSet (with a name that has mixed case)
-    fs = my_data.to_features("aBaLone-feaTures-Temp", id_column="auto")
-    assert fs is None
+    # A FeatureSet name with mixed case and dashes is rejected
+    with pytest.raises(ValueError, match="Invalid FeatureSet name"):
+        my_data.to_features("aBaLone-feaTures-Temp", id_column="auto")
 
 
 if __name__ == "__main__":
