@@ -140,7 +140,17 @@ On the measured parameters, one row per arm or per compound:
   `data_cleanup` once the table is one row per compound.
 - **Dose linearity.** Dose-normalized AUC across arms of the same compound and route
   should be flat. A trend is saturation, not noise.
-- **F above 100%.** Usually a PO dose far above the IV dose with saturating clearance.
+- **F is per dose level.** A common design is one low IV dose and several escalating PO
+  doses. Clearance or first-pass saturates at the high PO doses, dose-normalized AUC
+  rises, and F drifts past 100%. That is nonlinear PK, not measurement error.
+    - Report F per PO dose and plot it against the PO/IV dose ratio. A rising trend is
+      saturation.
+    - F above 100% at a high dose ratio is a review item; at a ratio near 1 it is a
+      likely defect.
+    - Check which arm the model target uses. The lowest PO dose is closest to the linear
+      range. Confirm it from the data rather than assuming.
+    - A target clipped to 100 reads as fully bioavailable when it means saturated at
+      that dose. Count the clipped rows.
 - **Arm-to-arm spread.** Arms of one compound under the same conditions that disagree
   are the assay's reproducibility, measured.
 
