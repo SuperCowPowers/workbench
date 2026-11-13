@@ -69,7 +69,11 @@ def ref_name(ref: str) -> str:
 # Flags an input ref may carry as a trailing ":<flag>" ("model:logd-reg-1-dt:no_promote").
 # They qualify that ref's role in the consuming job, so they're stripped before the graph
 # sees the ref and kept on the job in ``Job.input_flags``.
-REF_FLAGS = {"no_promote"}
+#   no_promote -> a challenger that is scored and reported but can never take the endpoint
+#   eval       -> not a challenger: a model the job scores *with* (e.g. a -ts model whose
+#                 held-out score stands in for its -dt sibling). Still a graph input, so the
+#                 job waits for it and reruns when it is rebuilt.
+REF_FLAGS = {"no_promote", "eval"}
 
 
 def split_ref_flags(ref: str) -> tuple[str, list[str]]:
@@ -172,8 +176,9 @@ class Job:
 
          model_name    -> from a model: output
          endpoint_name -> from an endpoint: output, else the model's own endpoint
-         challengers   -> from model: inputs (a promote node's contestants)
+         challengers   -> from model: inputs (a promote node's contestants), minus :eval ones
          no_promote    -> the challengers flagged :no_promote (ineligible to win)
+         eval_models   -> the model: inputs flagged :eval (scorers, never challengers)
         """
         meta: dict = {"serverless": serverless}
         if self.mode is not None:
@@ -185,11 +190,15 @@ class Job:
             meta["model_name"] = model_out
         if endpoint_out or model_out:
             meta["endpoint_name"] = endpoint_out or model_out
-        if model_ins:
-            meta["challengers"] = [ref_name(i) for i in model_ins]
-            no_promote = [ref_name(i) for i in model_ins if "no_promote" in self.input_flags.get(i, ())]
+        eval_ins = [i for i in model_ins if "eval" in self.input_flags.get(i, ())]
+        challenger_ins = [i for i in model_ins if i not in eval_ins]
+        if challenger_ins:
+            meta["challengers"] = [ref_name(i) for i in challenger_ins]
+            no_promote = [ref_name(i) for i in challenger_ins if "no_promote" in self.input_flags.get(i, ())]
             if no_promote:
                 meta["no_promote"] = no_promote
+        if eval_ins:
+            meta["eval_models"] = [ref_name(i) for i in eval_ins]
         return meta
 
 

@@ -83,6 +83,11 @@ class PipelineMeta:
         return self._meta.get("no_promote", [])
 
     @property
+    def eval_models(self) -> list:
+        """Models a promote node scores *with* (inputs flagged :eval), never challengers."""
+        return self._meta.get("eval_models", [])
+
+    @property
     def mode(self) -> str | None:
         """The pipeline execution mode (e.g., 'dt', 'ts'), or None for a modeless run."""
         return self._meta.get("mode")

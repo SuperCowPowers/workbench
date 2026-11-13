@@ -94,6 +94,13 @@ class TestParseSpec:
         spec = {"pipelines": {"p": [{"script": "a.py", "no_auto": True}, {"script": "b.py"}]}}
         assert [j.no_auto for j in parse_spec(spec)] == [True, False]
 
+    def test_eval_input_is_still_a_graph_input(self):
+        # :eval is stripped from the ref, so the job still depends on (waits for) the model
+        spec = {"pipelines": {"p": [{"script": "p.py", "inputs": ["model:a-dt", "model:a-ts:eval"]}]}}
+        j = parse_spec(spec)[0]
+        assert j.inputs == ["model:a-dt", "model:a-ts"]
+        assert j.input_flags == {"model:a-ts": ["eval"]}
+
     def test_input_flags_stripped_from_refs(self):
         spec = {"pipelines": {"p": [{"script": "p.py", "inputs": ["model:a-dt:no_promote", "model:b-dt"]}]}}
         j = parse_spec(spec)[0]
@@ -420,6 +427,27 @@ class TestPipelineMeta:
     def test_no_promote_absent_when_unflagged(self):
         meta = job("promote.py", inputs=["model:a-dt"], outputs=["endpoint:e"]).pipeline_meta()
         assert "no_promote" not in meta
+
+    def test_eval_inputs_are_not_challengers(self):
+        spec = {
+            "pipelines": {
+                "p": [
+                    {
+                        "script": "promote.py",
+                        "inputs": ["model:a-dt", "model:a-ts:eval", "model:b-dt:no_promote", "model:b-ts:eval"],
+                        "outputs": ["endpoint:e"],
+                    }
+                ]
+            }
+        }
+        meta = parse_spec(spec)[0].pipeline_meta()
+        assert meta["challengers"] == ["a-dt", "b-dt"]
+        assert meta["no_promote"] == ["b-dt"]
+        assert meta["eval_models"] == ["a-ts", "b-ts"]
+
+    def test_eval_models_absent_when_unflagged(self):
+        meta = job("promote.py", inputs=["model:a-dt"], outputs=["endpoint:e"]).pipeline_meta()
+        assert "eval_models" not in meta
 
 
 class TestSimulatedMtime:
