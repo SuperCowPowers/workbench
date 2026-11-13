@@ -208,6 +208,27 @@ smaller box** (12%) rather than raw intersection, so a paragraph whose lines
 abut is not flagged, and it drops tick labels that are not really drawn -- matplotlib keeps artists
 for ticks outside the view at stale positions, which on one report was 18 of 23 hits.
 
+### Check page bounds too -- `audit` does not
+
+`audit` finds text hitting text, not content running off the page, and both edges fail
+silently. Check every page after `audit`:
+
+- **Bottom:** the lowest non-footer text clears the footer's top by a few points. A
+  paragraph that wraps longer than planned slides into it.
+- **Left / right:** every axes' `ax.get_tightbbox(renderer)` -- which includes tick
+  labels, axis labels and `ax.text` value labels -- sits inside `report.L`..`report.R`.
+  An `add_axes` rect places the *plot area*; long horizontal-bar category labels hang
+  off its left by their full width. A rect that pins x0 to the margin pushes them off the
+  page, and a rect padded for them by guesswork leaves a dead gap and a title indented
+  away from the text column. Measure the overhang and solve for the rect instead: draw,
+  read `tightbbox.x0 - position.x0`, set x0 = `L` minus that, and repeat until it settles.
+- **Titles:** a `loc="left"` title starts at the plot area, not the labels. After pinning,
+  move `ax._left_title` so it is flush with the text column.
+
+Draw the canvas first, then `t.get_window_extent(renderer)` for `fig.texts` and
+`ax.get_tightbbox(renderer)` for axes give the boxes in display units. A negative
+clearance, or a box outside the margins, is an overrun.
+
 ### Measure, do not eyeball
 
 Overlap is usually a guessed column position. `report.text_width(s, size, font)` gives the
@@ -247,5 +268,6 @@ names you left behind.
 - Equations typeset with `report.equation` / `EQ`, never faked with carets.
 - Figure titles state conclusions and are left-aligned to the text column.
 - `report.audit(build_report)` returns no overlaps and no glyph warnings.
+- Lowest text on every page clears the footer; every axes' tight bbox sits inside the L/R margins.
 - Every metric and flag defined inside the document.
 - Exemplars include a failure, not only successes.
