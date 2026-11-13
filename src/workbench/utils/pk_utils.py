@@ -54,6 +54,16 @@ NCA_COLUMNS = [
     "mrt",
 ]
 
+NCA_PARAM_COLUMNS = [
+    "cmax_ng_ml",
+    "auc_last_ng_h_ml",
+    "auc_inf_ng_h_ml",
+    "cl_ml_min_kg",
+    "vss_l_kg",
+    "vz_l_kg",
+    "f_percent",
+]
+
 
 def bateman_concentration(t, f_dose, volume, ke, ka):
     """Bateman one-compartment oral profile, mass units per volume unit. Broadcasts over all arguments."""
@@ -257,7 +267,7 @@ def _terminal_slope(t: np.ndarray, c: np.ndarray) -> tuple:
     return best
 
 
-def _nca_curve(t: np.ndarray, c: np.ndarray, blq: np.ndarray, extravascular: bool) -> dict:
+def _nca_curve(t: np.ndarray, c: np.ndarray, blq: np.ndarray, start: str) -> dict:
     """NCA summaries for one curve; `t` is sorted and free of missing concentrations."""
     result = dict.fromkeys(NCA_COLUMNS, np.nan)
     result["n_points"], result["n_blq"] = len(t), int(blq.sum())
@@ -270,12 +280,18 @@ def _nca_curve(t: np.ndarray, c: np.ndarray, blq: np.ndarray, extravascular: boo
     keep[: quantifiable[0]] = True
     c = np.where(blq, 0.0, c)
     t, c = t[keep], c[keep]
-    if extravascular and t[0] > 0:
-        t, c = np.insert(t, 0, 0.0), np.insert(c, 0, 0.0)
-
     peak = int(np.argmax(c))
     tlast, clast = t[-1], c[-1]
     result.update(cmax=c[peak], tmax=t[peak], tlast=tlast, clast=clast)
+    terminal_t, terminal_c = t[peak + 1 :], c[peak + 1 :]
+
+    # Concentration at t=0: zero for an extravascular dose, back-extrapolated C0 for an IV bolus
+    if start is not None and t[0] > 0:
+        c0 = 0.0
+        if start == "iv":
+            log_linear = len(c) > 1 and c[0] > c[1] > 0
+            c0 = c[0] * (c[0] / c[1]) ** (t[0] / (t[1] - t[0])) if log_linear else c[0]
+        t, c = np.insert(t, 0, 0.0), np.insert(c, 0, c0)
 
     # Linear-up / log-down trapezoids for AUC and its first moment
     t1, t2, c1, c2 = t[:-1], t[1:], c[:-1], c[1:]
@@ -292,7 +308,7 @@ def _nca_curve(t: np.ndarray, c: np.ndarray, blq: np.ndarray, extravascular: boo
     result["auc_last"] = auc.sum()
 
     # Terminal phase: samples after the peak
-    lambda_z, n, r2 = _terminal_slope(t[peak + 1 :], c[peak + 1 :]) if len(t) - peak - 1 >= 3 else (np.nan,) * 3
+    lambda_z, n, r2 = _terminal_slope(terminal_t, terminal_c) if len(terminal_t) >= 3 else (np.nan,) * 3
     if np.isnan(lambda_z):
         return result
     auc_inf = result["auc_last"] + clast / lambda_z
@@ -328,8 +344,9 @@ def nca(
       quantifiable sample and are dropped when embedded or trailing.
     - lambda_z is the log-linear fit over the last 3+ samples after Cmax with the best
       adjusted R², ties going to the longer fit. `lambda_z_r2` is that adjusted R².
-    - Extravascular curves with no t=0 sample get (0, 0). IV curves start at their first
-      sample: C0 is not back-extrapolated, so their AUC omits the area before it.
+    - A curve with no t=0 sample gets one: zero for an extravascular dose, and for an IV
+      bolus C0 back-extrapolated log-linearly through the first two samples (the first
+      sample's value when those two do not decline). `cmax` and `tmax` stay observed values.
 
     Summaries that cannot be computed are NaN: everything past the counts for a curve with
     no quantifiable sample, and everything derived from lambda_z when fewer than 3 samples
@@ -341,8 +358,8 @@ def nca(
         time (str): Sample time column. Defaults to "time_h".
         conc (str): Concentration column. Defaults to "conc".
         blq (str): Boolean below-quantitation column, or None for none. Defaults to "blq".
-        route (str): Dosing route column, or None to treat every curve as starting at its
-            first sample. Defaults to "route".
+        route (str): Dosing route column, or None to start every curve at its first sample.
+            Defaults to "route".
 
     Returns:
         pd.DataFrame: NCA_COLUMNS, indexed by `curve`.
@@ -354,6 +371,61 @@ def nca(
         flagged = group[blq].fillna(False).to_numpy(bool) if blq else np.zeros(len(group), dtype=bool)
         measured = flagged | ~np.isnan(c)
         below = (flagged | (np.nan_to_num(c) <= 0))[measured]
-        extravascular = route is not None and not group[route].isin(IV_ROUTES).any()
-        rows[curve_id] = _nca_curve(group[time].to_numpy(float)[measured], c[measured], below, extravascular)
+        start = None if route is None else "iv" if group[route].isin(IV_ROUTES).any() else "extravascular"
+        rows[curve_id] = _nca_curve(group[time].to_numpy(float)[measured], c[measured], below, start)
     return pd.DataFrame.from_dict(rows, orient="index", columns=NCA_COLUMNS).rename_axis(curve)
+
+
+def nca_parameters(
+    summary: pd.DataFrame,
+    arms: pd.DataFrame,
+    dose: str = "dose_mg_per_kg",
+    route: str = "route",
+    mol_wt: str = None,
+    pair_on: list = ("udm_mol_id",),
+) -> pd.DataFrame:
+    """Clearance, volumes and bioavailability from `nca()` output, in the ADMET reporting units.
+
+    - IV curves: CL = Dose / AUCinf, Vss = CL · MRT, Vz = CL / lambda_z.
+    - Other routes: F = dose-normalized AUCinf over the median dose-normalized AUCinf of
+      the IV curves sharing the `pair_on` values. NaN when no IV curve matches.
+
+    Args:
+        summary (pd.DataFrame): `nca()` output.
+        arms (pd.DataFrame): One row per curve, indexed like `summary`, carrying the dose,
+            route and `pair_on` columns (and `mol_wt` when given).
+        dose (str): Dose column, mg/kg. Defaults to "dose_mg_per_kg".
+        route (str): Dosing route column. Defaults to "route".
+        mol_wt (str): Molecular weight column (g/mol) when concentrations are nM; None when
+            they are ng/mL. Defaults to None.
+        pair_on (list): Columns an IV curve must share with a curve to be its F reference.
+            Defaults to ("udm_mol_id",).
+
+    Returns:
+        pd.DataFrame: NCA_PARAM_COLUMNS, indexed like `summary`.
+    """
+    arms = arms.reindex(summary.index)
+    to_ng_ml = arms[mol_wt].astype(float) / 1000.0 if mol_wt else 1.0
+    params = pd.DataFrame(index=summary.index, columns=NCA_PARAM_COLUMNS, dtype=float)
+    for name in ("cmax", "auc_last", "auc_inf"):
+        unit = "ng_ml" if name == "cmax" else "ng_h_ml"
+        params[f"{name}_{unit}"] = summary[name] * to_ng_ml
+
+    # mg/kg over ng·h/mL is 1000 L/h/kg
+    iv = arms[route].isin(IV_ROUTES)
+    dose_normalized = params["auc_inf_ng_h_ml"] / arms[dose].astype(float)
+    cl_l_h_kg = (1000.0 / dose_normalized).where(iv)
+    params["cl_ml_min_kg"] = cl_l_h_kg / CL_TO_L_PER_H
+    params["vss_l_kg"] = cl_l_h_kg * summary["mrt"]
+    params["vz_l_kg"] = cl_l_h_kg / summary["lambda_z"]
+
+    keys = list(pair_on)
+    reference = (
+        arms.loc[iv, keys]
+        .assign(iv_reference=dose_normalized[iv])
+        .groupby(keys, as_index=False)["iv_reference"]
+        .median()
+    )
+    paired = arms[keys].reset_index().merge(reference, on=keys, how="left").set_index(summary.index.name or "index")
+    params["f_percent"] = (100.0 * dose_normalized / paired["iv_reference"]).where(~iv)
+    return params

@@ -12,6 +12,7 @@ from workbench.utils.pk_utils import (
     curve_fold_error,
     exposure,
     nca,
+    nca_parameters,
     plausibility_flags,
     unbound_concentration,
 )
@@ -142,13 +143,17 @@ def test_nca_recovers_a_bateman_curve():
     assert result["extrap_percent"] < 1.0
 
 
-def test_nca_iv_curve_is_exact_and_starts_at_the_first_sample():
-    """Mono-exponential IV decline: log-down trapezoids are exact and no t=0 point is added."""
+def test_nca_iv_curve_is_exact_with_back_extrapolated_c0():
+    """Mono-exponential IV decline: C0 and the log-down trapezoids recover the analytic areas."""
     t = np.array([0.25, 0.5, 1.0, 2.0, 4.0, 8.0])
     c = 100.0 * np.exp(-0.3 * t)
     result = nca(_curve("iv", t, c, route="IV")).loc["iv"]
-    assert result["auc_last"] == pytest.approx((c[0] - c[-1]) / 0.3)
-    assert result["auc_inf"] == pytest.approx(c[0] / 0.3)
+    assert result["auc_last"] == pytest.approx((100.0 - c[-1]) / 0.3)
+    assert result["auc_inf"] == pytest.approx(100.0 / 0.3)
+    assert result["mrt"] == pytest.approx(1 / 0.3)
+    assert result["cmax"] == pytest.approx(c[0]) and result["tmax"] == 0.25
+    # with no route, the curve starts at its first sample
+    assert nca(_curve("iv", t, c), route=None).loc["iv", "auc_inf"] == pytest.approx(c[0] / 0.3)
     assert result["lambda_z"] == pytest.approx(0.3)
     assert result["lambda_z_n"] == 5  # every sample after Cmax
 
@@ -164,7 +169,8 @@ def test_nca_blq_rule():
     assert with_blq["tlast"] == 12.0 and with_blq["clast"] == 5.0
     assert with_blq["auc_last"] == pytest.approx(without["auc_last"])
     # the leading zero contributes the 0.5 -> 1.0 triangle and nothing before it
-    assert with_blq["auc_last"] > nca(_curve("x", t[1:7], c[1:7], route="IV")).loc["x", "auc_last"]
+    from_first_quantifiable = nca(_curve("x", t[keep][1:], c[keep][1:]), route=None).loc["x", "auc_last"]
+    assert with_blq["auc_last"] == pytest.approx(from_first_quantifiable + 0.5 * 50.0 / 2)
 
 
 def test_nca_returns_nan_rather_than_guessing():
@@ -181,3 +187,37 @@ def test_nca_returns_nan_rather_than_guessing():
     assert result.loc["all_blq", "n_blq"] == 2
     assert result.loc["short", "auc_last"] > 0
     assert result.loc[["short", "rising"], ["lambda_z", "auc_inf", "half_life", "mrt"]].isna().all().all()
+
+
+def test_nca_parameters_recover_the_generating_values():
+    """IV and PO curves simulated from known CL, Vd and F, in nM, come back in reporting units."""
+    cl, vd, f, mol_wt = 30.0, 2.0, 40.0, 400.0  # mL/min/kg, L/kg, %, g/mol
+    ke = 0.06 * cl / vd
+    to_nm = 1e6 / mol_wt  # mg/L -> nM
+    t = np.concatenate([np.linspace(0.05, 2, 40), np.linspace(2.25, 12, 40)])
+    iv_dose, po_dose = 1.0, 10.0
+    curves = pd.concat(
+        [
+            _curve("iv", t, to_nm * iv_dose / vd * np.exp(-ke * t), route="IV"),
+            _curve("po", t, to_nm * bateman_concentration(t, po_dose * f / 100, vd, ke, 3.0)),
+            _curve("orphan", t, to_nm * bateman_concentration(t, po_dose * f / 100, vd, ke, 3.0)),
+        ]
+    )
+    arms = pd.DataFrame(
+        {
+            "route": ["IV", "PO", "PO"],
+            "dose_mg_per_kg": [iv_dose, po_dose, po_dose],
+            "udm_mol_id": ["m1", "m1", "m2"],
+            "mol_wt": mol_wt,
+        },
+        index=pd.Index(["iv", "po", "orphan"], name="curve_id"),
+    )
+    params = nca_parameters(nca(curves), arms, mol_wt="mol_wt")
+    assert params.loc["iv", "cl_ml_min_kg"] == pytest.approx(cl, rel=1e-3)
+    assert params.loc["iv", "vss_l_kg"] == pytest.approx(vd, rel=1e-3)
+    assert params.loc["iv", "vz_l_kg"] == pytest.approx(vd, rel=1e-3)
+    assert params.loc["po", "f_percent"] == pytest.approx(f, rel=1e-2)
+    assert params.loc["po", "auc_inf_ng_h_ml"] == pytest.approx(1000 * po_dose * f / 100 / (0.06 * cl), rel=1e-2)
+    # IV curves carry no F, extravascular curves no CL, and a PO curve with no IV partner no F
+    assert np.isnan(params.loc["iv", "f_percent"]) and np.isnan(params.loc["po", "cl_ml_min_kg"])
+    assert np.isnan(params.loc["orphan", "f_percent"])
