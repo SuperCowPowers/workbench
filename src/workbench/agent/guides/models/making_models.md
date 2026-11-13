@@ -72,6 +72,8 @@ model with no endpoint and no metrics.
 - `uq_version` defaults to `"v1"` (strongest uncertainty quantification). It builds
   neighborhoods from a `smiles` column when present, otherwise from the model's
   features; only a model with neither falls back to `"v0"`.
+- A skewed regression target can train in `log10`, `logit` or `arcsinh` space via
+  the `target_transform` hyperparameter; see the `target_transforms` guide.
 - Check `fs.columns` (a property), or pull a DataFrame and read `df.dtypes`,
   before choosing a `feature_list`. Don't guess column names.
 - **For a FeatureSet built by a feature endpoint, ask the endpoint instead:**
