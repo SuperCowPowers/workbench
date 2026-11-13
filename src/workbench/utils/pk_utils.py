@@ -1,5 +1,6 @@
-"""Pharmacokinetic curve math: the one-compartment oral (Bateman) model and the
-exposure summaries used to score predicted PK parameters against measured ones.
+"""Pharmacokinetic curve math: the one-compartment oral (Bateman) model, the exposure
+summaries used to score predicted PK parameters against measured ones, and
+non-compartmental analysis (NCA) of measured concentration-time curves.
 
 Parameter frames carry one row per compound and these columns:
 
@@ -28,6 +29,30 @@ HEPATIC_BLOOD_FLOW = {"mouse": 90.0, "rat": 55.0, "monkey": 44.0, "dog": 31.0, "
 
 # Plausibility checks: HARD_CHECKS are impossible values, the rest are flags for review.
 HARD_CHECKS = ["f_nonpositive", "fu_out_of_range", "cl_nonpositive", "vd_below_plasma"]
+
+# Routes dosed straight into circulation: concentration at t=0 is not zero.
+IV_ROUTES = {"IV"}
+
+# Terminal-slope fits within this adjusted R² of the best one count as tied; the longest wins.
+LAMBDA_Z_R2_TOLERANCE = 1e-4
+
+NCA_COLUMNS = [
+    "n_points",
+    "n_blq",
+    "cmax",
+    "tmax",
+    "tlast",
+    "clast",
+    "auc_last",
+    "auc_inf",
+    "extrap_percent",
+    "lambda_z",
+    "lambda_z_n",
+    "lambda_z_r2",
+    "half_life",
+    "aumc_inf",
+    "mrt",
+]
 
 
 def bateman_concentration(t, f_dose, volume, ke, ka):
@@ -213,3 +238,122 @@ def plausibility_flags(params: pd.DataFrame, species: str = "mouse") -> pd.DataF
         },
         index=params.index,
     )
+
+
+def _terminal_slope(t: np.ndarray, c: np.ndarray) -> tuple:
+    """Best log-linear fit over the last 3+ points: (lambda_z, n points, adjusted R²), NaNs if none declines."""
+    best = (np.nan, np.nan, np.nan)
+    log_c = np.log(c)
+    for n in range(3, len(t) + 1):
+        x, y = t[-n:], log_c[-n:]
+        slope, intercept = np.polyfit(x, y, 1)
+        ss_tot = np.sum((y - y.mean()) ** 2)
+        if slope >= 0 or ss_tot == 0:
+            continue
+        r2 = 1.0 - np.sum((y - (slope * x + intercept)) ** 2) / ss_tot
+        adjusted = 1.0 - (1.0 - r2) * (n - 1) / (n - 2)
+        if np.isnan(best[2]) or adjusted >= best[2] - LAMBDA_Z_R2_TOLERANCE:
+            best = (-slope, n, adjusted)
+    return best
+
+
+def _nca_curve(t: np.ndarray, c: np.ndarray, blq: np.ndarray, extravascular: bool) -> dict:
+    """NCA summaries for one curve; `t` is sorted and free of missing concentrations."""
+    result = dict.fromkeys(NCA_COLUMNS, np.nan)
+    result["n_points"], result["n_blq"] = len(t), int(blq.sum())
+    quantifiable = np.flatnonzero(~blq)
+    if len(quantifiable) == 0:
+        return result
+
+    # BLQ rule: zero before the first quantifiable sample, dropped when embedded or trailing
+    keep = ~blq
+    keep[: quantifiable[0]] = True
+    c = np.where(blq, 0.0, c)
+    t, c = t[keep], c[keep]
+    if extravascular and t[0] > 0:
+        t, c = np.insert(t, 0, 0.0), np.insert(c, 0, 0.0)
+
+    peak = int(np.argmax(c))
+    tlast, clast = t[-1], c[-1]
+    result.update(cmax=c[peak], tmax=t[peak], tlast=tlast, clast=clast)
+
+    # Linear-up / log-down trapezoids for AUC and its first moment
+    t1, t2, c1, c2 = t[:-1], t[1:], c[:-1], c[1:]
+    dt = t2 - t1
+    declining = (c2 < c1) & (c2 > 0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        log_ratio = np.where(declining, np.log(c1 / c2), 1.0)
+    auc = np.where(declining, (c1 - c2) * dt / log_ratio, dt * (c1 + c2) / 2.0)
+    aumc = np.where(
+        declining,
+        (t1 * c1 - t2 * c2) * dt / log_ratio + (c1 - c2) * dt**2 / log_ratio**2,
+        dt * (t1 * c1 + t2 * c2) / 2.0,
+    )
+    result["auc_last"] = auc.sum()
+
+    # Terminal phase: samples after the peak
+    lambda_z, n, r2 = _terminal_slope(t[peak + 1 :], c[peak + 1 :]) if len(t) - peak - 1 >= 3 else (np.nan,) * 3
+    if np.isnan(lambda_z):
+        return result
+    auc_inf = result["auc_last"] + clast / lambda_z
+    aumc_inf = aumc.sum() + clast * tlast / lambda_z + clast / lambda_z**2
+    result.update(
+        auc_inf=auc_inf,
+        extrap_percent=100.0 * (clast / lambda_z) / auc_inf,
+        lambda_z=lambda_z,
+        lambda_z_n=n,
+        lambda_z_r2=r2,
+        half_life=np.log(2) / lambda_z,
+        aumc_inf=aumc_inf,
+        mrt=aumc_inf / auc_inf,
+    )
+    return result
+
+
+def nca(
+    curves: pd.DataFrame,
+    curve: str = "curve_id",
+    time: str = "time_h",
+    conc: str = "conc",
+    blq: str = "blq",
+    route: str = "route",
+) -> pd.DataFrame:
+    """Non-compartmental analysis of measured concentration-time curves, one row per curve.
+
+    Unit-agnostic: areas come back in the input's concentration × time units. Conventions
+    are the Phoenix WinNonlin defaults:
+
+    - AUC by linear-up / log-down trapezoids.
+    - BLQ samples (flagged, or a non-positive concentration) count as zero before the first
+      quantifiable sample and are dropped when embedded or trailing.
+    - lambda_z is the log-linear fit over the last 3+ samples after Cmax with the best
+      adjusted R², ties going to the longer fit. `lambda_z_r2` is that adjusted R².
+    - Extravascular curves with no t=0 sample get (0, 0). IV curves start at their first
+      sample: C0 is not back-extrapolated, so their AUC omits the area before it.
+
+    Summaries that cannot be computed are NaN: everything past the counts for a curve with
+    no quantifiable sample, and everything derived from lambda_z when fewer than 3 samples
+    follow Cmax or none of the fits declines.
+
+    Args:
+        curves (pd.DataFrame): One row per sample.
+        curve (str): Column identifying the curve. Defaults to "curve_id".
+        time (str): Sample time column. Defaults to "time_h".
+        conc (str): Concentration column. Defaults to "conc".
+        blq (str): Boolean below-quantitation column, or None for none. Defaults to "blq".
+        route (str): Dosing route column, or None to treat every curve as starting at its
+            first sample. Defaults to "route".
+
+    Returns:
+        pd.DataFrame: NCA_COLUMNS, indexed by `curve`.
+    """
+    curves = curves.dropna(subset=[time]).sort_values(time)
+    rows = {}
+    for curve_id, group in curves.groupby(curve, sort=True):
+        c = group[conc].to_numpy(float, na_value=np.nan)
+        flagged = group[blq].fillna(False).to_numpy(bool) if blq else np.zeros(len(group), dtype=bool)
+        measured = flagged | ~np.isnan(c)
+        below = (flagged | (np.nan_to_num(c) <= 0))[measured]
+        extravascular = route is not None and not group[route].isin(IV_ROUTES).any()
+        rows[curve_id] = _nca_curve(group[time].to_numpy(float)[measured], c[measured], below, extravascular)
+    return pd.DataFrame.from_dict(rows, orient="index", columns=NCA_COLUMNS).rename_axis(curve)

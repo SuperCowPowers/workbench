@@ -11,6 +11,7 @@ from workbench.utils.pk_utils import (
     bateman_tmax,
     curve_fold_error,
     exposure,
+    nca,
     plausibility_flags,
     unbound_concentration,
 )
@@ -120,3 +121,63 @@ def test_plausibility_flags():
     assert flags.loc["first_pass", "f_above_hepatic_ceiling"] and not flags.loc["first_pass", HARD_CHECKS].any()
     assert flags.loc["f_over", "f_above_hepatic_ceiling"] and not flags.loc["f_over", HARD_CHECKS].any()
     assert flags.loc["zero_f", "f_nonpositive"]
+
+
+def _curve(curve_id, t, c, route="PO", blq=None):
+    blq = np.zeros(len(t), dtype=bool) if blq is None else blq
+    return pd.DataFrame({"curve_id": curve_id, "time_h": t, "conc": c, "blq": blq, "route": route})
+
+
+def test_nca_recovers_a_bateman_curve():
+    """Densely sampled one-compartment oral curve: NCA returns the analytic summaries."""
+    ke, ka, f_dose, volume = 0.2, 1.5, 10.0, 2.0
+    t = np.concatenate([np.linspace(0.05, 4, 80), np.linspace(4.5, 36, 64)])
+    result = nca(_curve("a", t, bateman_concentration(t, f_dose, volume, ke, ka))).loc["a"]
+    # the tie rule extends the fit toward the absorption phase, so the slope is close, not exact
+    assert result["lambda_z"] == pytest.approx(ke, rel=1e-2)
+    assert result["half_life"] == pytest.approx(np.log(2) / ke, rel=1e-2)
+    assert result["auc_inf"] == pytest.approx(f_dose / (volume * ke), rel=1e-3)
+    assert result["mrt"] == pytest.approx(1 / ke + 1 / ka, rel=1e-2)
+    assert result["tmax"] == pytest.approx(bateman_tmax(ke, ka), abs=0.05)
+    assert result["extrap_percent"] < 1.0
+
+
+def test_nca_iv_curve_is_exact_and_starts_at_the_first_sample():
+    """Mono-exponential IV decline: log-down trapezoids are exact and no t=0 point is added."""
+    t = np.array([0.25, 0.5, 1.0, 2.0, 4.0, 8.0])
+    c = 100.0 * np.exp(-0.3 * t)
+    result = nca(_curve("iv", t, c, route="IV")).loc["iv"]
+    assert result["auc_last"] == pytest.approx((c[0] - c[-1]) / 0.3)
+    assert result["auc_inf"] == pytest.approx(c[0] / 0.3)
+    assert result["lambda_z"] == pytest.approx(0.3)
+    assert result["lambda_z_n"] == 5  # every sample after Cmax
+
+
+def test_nca_blq_rule():
+    """Leading BLQ counts as zero; embedded and trailing BLQ are dropped."""
+    t = np.array([0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 12.0, 24.0])
+    c = np.array([0.0, 50.0, 80.0, 40.0, 0.0, 10.0, 5.0, 0.0])
+    with_blq = nca(_curve("x", t, c, blq=c == 0)).loc["x"]
+    keep = [0, 1, 2, 3, 5, 6]
+    without = nca(_curve("x", t[keep], c[keep], blq=(c == 0)[keep])).loc["x"]
+    assert with_blq["n_blq"] == 3
+    assert with_blq["tlast"] == 12.0 and with_blq["clast"] == 5.0
+    assert with_blq["auc_last"] == pytest.approx(without["auc_last"])
+    # the leading zero contributes the 0.5 -> 1.0 triangle and nothing before it
+    assert with_blq["auc_last"] > nca(_curve("x", t[1:7], c[1:7], route="IV")).loc["x", "auc_last"]
+
+
+def test_nca_returns_nan_rather_than_guessing():
+    """No quantifiable sample, too short a tail, or a rising tail leave the dependent columns NaN."""
+    curves = pd.concat(
+        [
+            _curve("all_blq", [1.0, 2.0], [0.0, 0.0], blq=[True, True]),
+            _curve("short", [1.0, 2.0, 4.0], [10.0, 20.0, 5.0]),
+            _curve("rising", [1.0, 2.0, 4.0, 8.0, 12.0], [20.0, 1.0, 2.0, 3.0, 4.0]),
+        ]
+    )
+    result = nca(curves)
+    assert result.loc["all_blq", ["cmax", "auc_last"]].isna().all()
+    assert result.loc["all_blq", "n_blq"] == 2
+    assert result.loc["short", "auc_last"] > 0
+    assert result.loc[["short", "rising"], ["lambda_z", "auc_inf", "half_life", "mrt"]].isna().all().all()
