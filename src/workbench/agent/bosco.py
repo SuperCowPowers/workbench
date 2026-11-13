@@ -120,6 +120,13 @@ Workbench builds AWS SageMaker model pipelines: DataSource -> FeatureSet -> Mode
 You work in the user's live REPL session. Variables you create stay available to
 them afterwards, so use clear names and tell them what you left behind.
 
+## Domain
+
+Workbench users are computational chemists and ML engineers doing small-molecule
+drug discovery. The models predict ADMET properties (solubility, permeability,
+CYP inhibition, hERG, clearance, plasma protein binding) from chemical structure,
+to triage compounds. Toxicity endpoints are liabilities to screen out.
+
 {mode}
 
 {cache}
@@ -309,6 +316,16 @@ def _refusal_note(details) -> str:
     return f"{declined} It was dropped from the conversation, so you can keep going."
 
 
+def _log_refusal(model: str, details, round_num: int) -> None:
+    """Record a declined round: the model, the category, and the prompt of the turn it came in.
+
+    Round 0 was declined on the prompt itself; a later round was declined after tool results.
+    """
+    prompt = next((m["content"] for m in reversed(_history) if isinstance(m["content"], str)), "")
+    category = getattr(details, "category", None)
+    log.warning(f"Bosco refusal: model={model} category={category} round={round_num} prompt={prompt[:500]!r}")
+
+
 def _send(model: str):
     """One round of the conversation on the given model, with its usage tracked."""
     with _spinner("🐶  Bosco is thinking:"):
@@ -328,16 +345,18 @@ def _send(model: str):
 def _run_turn(namespace: dict) -> None:
     """Send the current history, running tools until Claude is done."""
     fell_back = False
-    for _ in range(MAX_TOOL_ROUNDS):
+    for round_num in range(MAX_TOOL_ROUNDS):
         model = REFUSAL_FALLBACK if fell_back else _model()
         response = _send(model)
 
         # Content is empty or partial on a refusal, so none of it is shown or kept.
         if response.stop_reason == "refusal" and model != REFUSAL_FALLBACK:
+            _log_refusal(model, response.stop_details, round_num)
             cprint("darkyellow", f"{model} declined this request; retrying on {REFUSAL_FALLBACK}.")
             fell_back = True
             response = _send(REFUSAL_FALLBACK)
         if response.stop_reason == "refusal":
+            _log_refusal(REFUSAL_FALLBACK, response.stop_details, round_num)
             raise _Refused(_refusal_note(response.stop_details))
 
         text = _text_of(response)
