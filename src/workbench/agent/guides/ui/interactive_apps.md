@@ -14,7 +14,7 @@ One curve per compound, colored by group, structure panel on hover.
 ```python
 from workbench.utils import apps
 
-apps.pk_explorer(df, cl_col="cl", vd_col="vd", smiles_col="smiles", id_col="id")
+apps.pk_explorer(df, cl_col="cl", vss_col="vss", smiles_col="smiles", id_col="id")
 ```
 
 Rows missing clearance or volume of distribution are dropped and the count is logged —
@@ -46,7 +46,7 @@ Two judgment calls the app makes that you may want to revisit with the user:
 ## Grouping
 
 `group_col` colors by any column — chemotype, project, potency bin. Omit it and the app
-clusters on the standardized (log CL, log Vd) plane, `n_clusters=4`, relabeled so group 0
+clusters on the standardized (log CL, log Vss) plane, `n_clusters=4`, relabeled so group 0
 has the longest median half-life.
 
 Cluster on the **parameter plane, not the curves**. Two groups can share a half-life and

@@ -5,7 +5,7 @@ non-compartmental analysis (NCA) of measured concentration-time curves.
 Parameter frames carry one row per compound and these columns:
 
     cl_ml_min_kg   total plasma clearance, mL/min/kg
-    vd_l_kg        volume of distribution, L/kg
+    vss_l_kg        volume of distribution, L/kg
     f_percent      oral bioavailability, %
     fu_percent     plasma fraction unbound, % free
 
@@ -16,9 +16,9 @@ comparisons between two parameter frames do not depend on dose.
 import numpy as np
 import pandas as pd
 
-PK_PARAMS = ["cl_ml_min_kg", "vd_l_kg", "f_percent", "fu_percent"]
+PK_PARAMS = ["cl_ml_min_kg", "vss_l_kg", "f_percent", "fu_percent"]
 
-# mL/min/kg -> L/h/kg. CL and Vd are reported in units that do not agree.
+# mL/min/kg -> L/h/kg. CL and Vss are reported in units that do not agree.
 CL_TO_L_PER_H = 0.06
 
 # Absorption rate (1/h) assumed when none is measured. Nothing in an early ADMET package pins it down.
@@ -28,7 +28,7 @@ DEFAULT_KA = 1.0
 HEPATIC_BLOOD_FLOW = {"mouse": 90.0, "rat": 55.0, "monkey": 44.0, "dog": 31.0, "human": 21.0}
 
 # Plausibility checks: HARD_CHECKS are impossible values, the rest are flags for review.
-HARD_CHECKS = ["f_nonpositive", "fu_out_of_range", "cl_nonpositive", "vd_below_plasma"]
+HARD_CHECKS = ["f_nonpositive", "fu_out_of_range", "cl_nonpositive", "vss_below_plasma"]
 
 # Routes dosed straight into circulation: concentration at t=0 is not zero.
 IV_ROUTES = {"IV"}
@@ -84,8 +84,8 @@ def bateman_tmax(ke, ka):
 
 
 def elimination_rate(params: pd.DataFrame) -> np.ndarray:
-    """Elimination rate constant ke = CL / Vd per compound, 1/h."""
-    return CL_TO_L_PER_H * params["cl_ml_min_kg"].to_numpy(float) / params["vd_l_kg"].to_numpy(float)
+    """Elimination rate constant ke = CL / Vss per compound, 1/h."""
+    return CL_TO_L_PER_H * params["cl_ml_min_kg"].to_numpy(float) / params["vss_l_kg"].to_numpy(float)
 
 
 def unbound_concentration(params: pd.DataFrame, t, dose: float = 1.0, ka: float = DEFAULT_KA) -> np.ndarray:
@@ -104,14 +104,14 @@ def unbound_concentration(params: pd.DataFrame, t, dose: float = 1.0, ka: float 
     t = t[None, :] if t.ndim == 1 else t
     column = lambda name: params[name].to_numpy(float)[:, None]  # noqa: E731
     f_dose = dose * column("f_percent") / 100.0
-    conc = bateman_concentration(t, f_dose, column("vd_l_kg"), elimination_rate(params)[:, None], ka)
+    conc = bateman_concentration(t, f_dose, column("vss_l_kg"), elimination_rate(params)[:, None], ka)
     return column("fu_percent") / 100.0 * conc
 
 
 def exposure(params: pd.DataFrame, dose: float = 1.0, ka: float = DEFAULT_KA) -> pd.DataFrame:
     """Unbound exposure summaries per compound after a single oral dose.
 
-    `auc_u` is fu·F·Dose/CL and depends on neither ka nor Vd. `cmax_u` and `tmax` depend on
+    `auc_u` is fu·F·Dose/CL and depends on neither ka nor Vss. `cmax_u` and `tmax` depend on
     ka, so they partly score the assumed absorption rate.
 
     Args:
@@ -131,7 +131,7 @@ def exposure(params: pd.DataFrame, dose: float = 1.0, ka: float = DEFAULT_KA) ->
             "auc_u": fu * f_dose / (CL_TO_L_PER_H * params["cl_ml_min_kg"].to_numpy(float)),
             "half_life": np.log(2) / ke,
             "tmax": tmax,
-            "cmax_u": fu * bateman_concentration(tmax, f_dose, params["vd_l_kg"].to_numpy(float), ke, ka),
+            "cmax_u": fu * bateman_concentration(tmax, f_dose, params["vss_l_kg"].to_numpy(float), ke, ka),
         },
         index=params.index,
     )
@@ -193,7 +193,7 @@ def auc_u_error_terms(measured: pd.DataFrame, predicted: pd.DataFrame) -> pd.Dat
 
     AUCu = fu·F·Dose/CL is a product, so its log error is exactly the sum of the
     `fu`, `f` and `cl` columns. `cl` is negated: over-predicting clearance lowers AUCu.
-    Vd and ka do not enter.
+    Vss and ka do not enter.
 
     Args:
         measured (pd.DataFrame): Measured PK parameter frame.
@@ -217,7 +217,7 @@ def plausibility_flags(params: pd.DataFrame, species: str = "mouse") -> pd.DataF
     Columns in HARD_CHECKS are impossible values (a defect in whatever produced them).
     The rest are flags for review:
 
-    - `vd_high`: Vd above 100 L/kg, real for some lipophilic bases.
+    - `vss_high`: Vss above 100 L/kg, real for some lipophilic bases.
     - `half_life_out_of_range`: t½ outside 5 minutes to 1 week.
     - `f_above_hepatic_ceiling`: F above 100·(1 − CL/Q_h), the first-pass cap for a
       hepatically cleared compound. Renal and biliary clearance are legitimate exceptions.
@@ -231,18 +231,18 @@ def plausibility_flags(params: pd.DataFrame, species: str = "mouse") -> pd.DataF
     Returns:
         pd.DataFrame: One boolean column per check, indexed like `params`.
     """
-    cl, vd = params["cl_ml_min_kg"], params["vd_l_kg"]
+    cl, vss = params["cl_ml_min_kg"], params["vss_l_kg"]
     f, fu = params["f_percent"], params["fu_percent"]
     with np.errstate(divide="ignore", invalid="ignore"):
-        half_life = np.log(2) * vd / (CL_TO_L_PER_H * cl)
+        half_life = np.log(2) * vss / (CL_TO_L_PER_H * cl)
     f_ceiling = 100.0 * (1.0 - cl / HEPATIC_BLOOD_FLOW[species])
     return pd.DataFrame(
         {
             "f_nonpositive": f <= 0,
             "fu_out_of_range": ~fu.between(0, 100, inclusive="right"),
             "cl_nonpositive": cl <= 0,
-            "vd_below_plasma": vd < 0.04,
-            "vd_high": vd > 100,
+            "vss_below_plasma": vss < 0.04,
+            "vss_high": vss > 100,
             "half_life_out_of_range": ~half_life.between(5 / 60, 7 * 24),
             "f_above_hepatic_ceiling": f > f_ceiling,
         },
@@ -382,7 +382,7 @@ def nca_parameters(
     dose: str = "dose_mg_per_kg",
     route: str = "route",
     mol_wt: str = None,
-    pair_on: list = ("udm_mol_id",),
+    pair_on: list = ("compound_id",),
 ) -> pd.DataFrame:
     """Clearance, volumes and bioavailability from `nca()` output, in the ADMET reporting units.
 
@@ -399,7 +399,7 @@ def nca_parameters(
         mol_wt (str): Molecular weight column (g/mol) when concentrations are nM; None when
             they are ng/mL. Defaults to None.
         pair_on (list): Columns an IV curve must share with a curve to be its F reference.
-            Defaults to ("udm_mol_id",).
+            Defaults to ("compound_id",).
 
     Returns:
         pd.DataFrame: NCA_PARAM_COLUMNS, indexed like `summary`.

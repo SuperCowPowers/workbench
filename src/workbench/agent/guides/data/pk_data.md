@@ -1,6 +1,6 @@
 # PK Data Consistency
 
-> physical-plausibility checks on predicted F, CL, and Vd — catching rows that are individually reasonable but impossible together
+> physical-plausibility checks on predicted F, CL, and Vss — catching rows that are individually reasonable but impossible together
 
 A PK panel is a meta-endpoint over three heads: bioavailability, clearance, and volume
 of distribution. They arrive in one frame, so every check below is row-wise — no joins.
@@ -16,7 +16,7 @@ predictions = ep.inference(df)
 Head names are `<target>_pred` (see the `plotting` guide). Read them off
 `output_columns()` rather than hardcoding — the panel's composition is what decides them.
 
-**Units.** These checks assume the ADMET convention: **CL in mL/min/kg**, **Vd in L/kg**,
+**Units.** These checks assume the ADMET convention: **CL in mL/min/kg**, **Vss in L/kg**,
 **F as a percentage**. Those two units do not agree with each other; anything deriving a
 rate from both needs `CL * 0.06` to reach L/h/kg first.
 
@@ -65,19 +65,22 @@ Violations here are physically impossible, not merely unlikely — treat them as
 - `F_pred` outside `(0, 100]`. Above 100% cannot happen; at 0 the row carries nothing.
 - `CL_pred <= 0`, or above cardiac output. Above `Q_h` is not itself impossible — it
   means clearance is not purely hepatic — but it invalidates check 1 for that row.
-- `Vd_pred` below plasma volume (~0.04 L/kg). Nothing distributes into less than plasma.
-- `Vd_pred` above ~100 L/kg is suspicious but real for lipophilic bases, which bind
+- `Vss_pred` below plasma volume (~0.04 L/kg). Nothing distributes into less than plasma.
+- `Vss_pred` above ~100 L/kg is suspicious but real for lipophilic bases, which bind
   tissue extensively. Review rather than drop.
 
-## 3. Derived quantities — where CL and Vd interact
+## 3. Derived quantities — where CL and Vss interact
 
 Neither head alone says anything about duration; together they fix it.
 
 ```python
-half_life = 0.693 * predictions["vd_pred"] / (0.06 * predictions["cl_pred"])   # hours
+half_life = 0.693 * predictions["vss_pred"] / (0.06 * predictions["cl_pred"])   # hours
 ```
 
-A mid-range Vd and a mid-range CL can still imply a 30-second or a two-month half-life.
+This is the effective half-life. The terminal half-life uses Vz, which is at least as
+large as Vss, so the terminal value is this or longer.
+
+A mid-range Vss and a mid-range CL can still imply a 30-second or a two-month half-life.
 Flag outside roughly 5 minutes to 1 week and look at the pair — real drugs sit outside
 that window (amiodarone's terminal half-life is weeks), so it is a review trigger.
 
@@ -91,11 +94,11 @@ reproduction test rather than a plausibility one — the strongest check availab
 
 These are bad *predictions* rather than bad data, and each has a specific cause:
 
-- **Negative CL or Vd.** Both are log-normal; a model trained on linear targets predicts
+- **Negative CL or Vss.** Both are log-normal; a model trained on linear targets predicts
   into negatives and is dominated by high-clearance outliers. The fix is upstream —
   train on `log10`.
 - **A distribution in the wrong place.** CL centered near 20 is mL/min/kg; centered near
-  1 it is L/h/kg. Vd centered near 1 is L/kg; near 70 it is total L for a human. A panel
+  1 it is L/h/kg. Vss centered near 1 is L/kg; near 70 it is total L for a human. A panel
   whose heads were trained on differently-scaled columns produces exactly this.
 - **Constant or near-constant predictions** for a head, which means that model failed to
   learn and its column should not feed a downstream calculation at all.

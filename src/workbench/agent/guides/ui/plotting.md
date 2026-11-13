@@ -121,7 +121,7 @@ fig.show()      # opens a browser tab; the slider needs that or a notebook
 ```
 
 Volume and clearance usually come from an endpoint rather than a literal. A
-multi-target endpoint names each head **`<target>_pred`** — `vd_pred`, `cl_pred` — while
+multi-target endpoint names each head **`<target>_pred`** — `vss_pred`, `cl_pred` — while
 a single-target one returns a bare `prediction`. Read the columns off the frame you got
 back instead of assuming either shape:
 
@@ -129,11 +129,11 @@ back instead of assuming either shape:
 predictions = Endpoint("admet-meta").inference(df)
 [c for c in predictions.columns if c.endswith("_pred")]     # what this endpoint actually returned
 
-fig = pk.bateman(volume=predictions["vd_pred"].iloc[0], clearance=predictions["cl_pred"].iloc[0])
+fig = pk.bateman(volume=predictions["vss_pred"].iloc[0], clearance=predictions["cl_pred"].iloc[0])
 fig.show()
 ```
 
-Watch the units when the inputs are predictions: ADMET models commonly report Vd in
+Watch the units when the inputs are predictions: ADMET models commonly report Vss in
 **L/kg** and clearance in **mL/min/kg**, which do not agree. Convert clearance with
 `* 0.06` to reach L/h/kg before passing both, or `ke` lands ~17x too fast.
 

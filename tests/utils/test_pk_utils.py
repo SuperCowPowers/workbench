@@ -20,7 +20,7 @@ from workbench.utils.pk_utils import (
 PARAMS = pd.DataFrame(
     {
         "cl_ml_min_kg": [20.0, 5.0, 60.0],
-        "vd_l_kg": [2.0, 0.5, 8.0],
+        "vss_l_kg": [2.0, 0.5, 8.0],
         "f_percent": [10.0, 80.0, 40.0],
         "fu_percent": [1.0, 20.0, 5.0],
     },
@@ -53,8 +53,8 @@ def test_cmax_u_is_the_curve_peak():
     assert t[curves.argmax(axis=1)] == pytest.approx(summary["tmax"].to_numpy(), rel=1e-3)
 
 
-def test_auc_u_ignores_vd_and_ka():
-    wider = PARAMS.assign(vd_l_kg=PARAMS["vd_l_kg"] * 3)
+def test_auc_u_ignores_vss_and_ka():
+    wider = PARAMS.assign(vss_l_kg=PARAMS["vss_l_kg"] * 3)
     assert exposure(wider, ka=0.2)["auc_u"].to_numpy() == pytest.approx(exposure(PARAMS)["auc_u"].to_numpy())
 
 
@@ -75,7 +75,7 @@ def test_curve_fold_error_reads_an_amplitude_shift():
 
 def test_curve_fold_error_caps_a_vanishing_prediction_at_the_floor():
     """A week-long measured half-life against a sub-hour prediction costs at most 1/floor."""
-    slow = pd.DataFrame({"cl_ml_min_kg": [0.2], "vd_l_kg": [3.0], "f_percent": [40.0], "fu_percent": [10.0]})
+    slow = pd.DataFrame({"cl_ml_min_kg": [0.2], "vss_l_kg": [3.0], "f_percent": [40.0], "fu_percent": [10.0]})
     fast = slow.assign(cl_ml_min_kg=[40.0])
     for max_hours in (None, 24):
         score = curve_fold_error(slow, fast, max_hours=max_hours).iloc[0]
@@ -96,7 +96,7 @@ def test_curve_fold_error_is_nan_for_a_nonpositive_prediction():
 
 
 def test_auc_u_error_terms_sum_to_the_auc_u_log_ratio():
-    predicted = PARAMS.assign(cl_ml_min_kg=[24.0, 5.0, 30.0], f_percent=[25.0, 60.0, 40.0], vd_l_kg=[9.0, 1.0, 2.0])
+    predicted = PARAMS.assign(cl_ml_min_kg=[24.0, 5.0, 30.0], f_percent=[25.0, 60.0, 40.0], vss_l_kg=[9.0, 1.0, 2.0])
     terms = auc_u_error_terms(PARAMS, predicted)
     ratio = exposure(predicted)["auc_u"] / exposure(PARAMS)["auc_u"]
     assert terms["auc_u"].to_numpy() == pytest.approx(np.log10(ratio).to_numpy())
@@ -108,17 +108,17 @@ def test_plausibility_flags():
     rows = pd.DataFrame(
         {
             "cl_ml_min_kg": [20.0, 0.0, 20.0, 20.0, 80.0, 20.0, 20.0],
-            "vd_l_kg": [2.0, 2.0, 0.01, 150.0, 2.0, 2.0, 2.0],
+            "vss_l_kg": [2.0, 2.0, 0.01, 150.0, 2.0, 2.0, 2.0],
             "f_percent": [50.0, 50.0, 50.0, 50.0, 60.0, 120.0, 0.0],
             "fu_percent": [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
         },
-        index=["ok", "zero_cl", "tiny_vd", "huge_vd", "first_pass", "f_over", "zero_f"],
+        index=["ok", "zero_cl", "tiny_vss", "huge_vss", "first_pass", "f_over", "zero_f"],
     )
     flags = plausibility_flags(rows)
     assert not flags.loc["ok"].any()
     assert flags.loc["zero_cl", "cl_nonpositive"]
-    assert flags.loc["tiny_vd", "vd_below_plasma"]
-    assert flags.loc["huge_vd", "vd_high"] and not flags.loc["huge_vd", HARD_CHECKS].any()
+    assert flags.loc["tiny_vss", "vss_below_plasma"]
+    assert flags.loc["huge_vss", "vss_high"] and not flags.loc["huge_vss", HARD_CHECKS].any()
     assert flags.loc["first_pass", "f_above_hepatic_ceiling"] and not flags.loc["first_pass", HARD_CHECKS].any()
     assert flags.loc["f_over", "f_above_hepatic_ceiling"] and not flags.loc["f_over", HARD_CHECKS].any()
     assert flags.loc["zero_f", "f_nonpositive"]
@@ -190,32 +190,32 @@ def test_nca_returns_nan_rather_than_guessing():
 
 
 def test_nca_parameters_recover_the_generating_values():
-    """IV and PO curves simulated from known CL, Vd and F, in nM, come back in reporting units."""
-    cl, vd, f, mol_wt = 30.0, 2.0, 40.0, 400.0  # mL/min/kg, L/kg, %, g/mol
-    ke = 0.06 * cl / vd
+    """IV and PO curves simulated from known CL, Vss and F, in nM, come back in reporting units."""
+    cl, vss, f, mol_wt = 30.0, 2.0, 40.0, 400.0  # mL/min/kg, L/kg, %, g/mol
+    ke = 0.06 * cl / vss
     to_nm = 1e6 / mol_wt  # mg/L -> nM
     t = np.concatenate([np.linspace(0.05, 2, 40), np.linspace(2.25, 12, 40)])
     iv_dose, po_dose = 1.0, 10.0
     curves = pd.concat(
         [
-            _curve("iv", t, to_nm * iv_dose / vd * np.exp(-ke * t), route="IV"),
-            _curve("po", t, to_nm * bateman_concentration(t, po_dose * f / 100, vd, ke, 3.0)),
-            _curve("orphan", t, to_nm * bateman_concentration(t, po_dose * f / 100, vd, ke, 3.0)),
+            _curve("iv", t, to_nm * iv_dose / vss * np.exp(-ke * t), route="IV"),
+            _curve("po", t, to_nm * bateman_concentration(t, po_dose * f / 100, vss, ke, 3.0)),
+            _curve("orphan", t, to_nm * bateman_concentration(t, po_dose * f / 100, vss, ke, 3.0)),
         ]
     )
     arms = pd.DataFrame(
         {
             "route": ["IV", "PO", "PO"],
             "dose_mg_per_kg": [iv_dose, po_dose, po_dose],
-            "udm_mol_id": ["m1", "m1", "m2"],
+            "compound_id": ["m1", "m1", "m2"],
             "mol_wt": mol_wt,
         },
         index=pd.Index(["iv", "po", "orphan"], name="curve_id"),
     )
     params = nca_parameters(nca(curves), arms, mol_wt="mol_wt")
     assert params.loc["iv", "cl_ml_min_kg"] == pytest.approx(cl, rel=1e-3)
-    assert params.loc["iv", "vss_l_kg"] == pytest.approx(vd, rel=1e-3)
-    assert params.loc["iv", "vz_l_kg"] == pytest.approx(vd, rel=1e-3)
+    assert params.loc["iv", "vss_l_kg"] == pytest.approx(vss, rel=1e-3)
+    assert params.loc["iv", "vz_l_kg"] == pytest.approx(vss, rel=1e-3)
     assert params.loc["po", "f_percent"] == pytest.approx(f, rel=1e-2)
     assert params.loc["po", "auc_inf_ng_h_ml"] == pytest.approx(1000 * po_dose * f / 100 / (0.06 * cl), rel=1e-2)
     # IV curves carry no F, extravascular curves no CL, and a PO curve with no IV partner no F

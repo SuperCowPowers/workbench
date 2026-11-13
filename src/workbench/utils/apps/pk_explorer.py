@@ -17,27 +17,27 @@ TEXT_COLOR = "#e0e0e0"
 GROUP_COLORS = ["#4c9be8", "#e8804c", "#5fd08a", "#c77dd6", "#e8c84c", "#e85f7d"]
 
 
-def derive(df: pd.DataFrame, cl_col: str, vd_col: str, dose: float = 1.0) -> pd.DataFrame:
+def derive(df: pd.DataFrame, cl_col: str, vss_col: str, dose: float = 1.0) -> pd.DataFrame:
     """Add `ke`, `t_half`, and `auc` from clearance and volume of distribution.
 
     Args:
         df (pd.DataFrame): One row per compound.
         cl_col (str): Clearance column, mL/min/kg.
-        vd_col (str): Volume of distribution column, L/kg.
+        vss_col (str): Volume of distribution column, L/kg.
         dose (float): Dose in mg/kg, for AUC. Defaults to 1.0.
 
     Returns:
         pd.DataFrame: Copy with ke (1/h), t_half (h), and auc added.
     """
     out = df.copy()
-    out["ke"] = CL_TO_L_PER_H * out[cl_col] / out[vd_col]
+    out["ke"] = CL_TO_L_PER_H * out[cl_col] / out[vss_col]
     out["t_half"] = np.log(2) / out["ke"]
     out["auc"] = dose / (CL_TO_L_PER_H * out[cl_col])
     return out
 
 
-def cluster_pk_plane(df: pd.DataFrame, cl_col: str, vd_col: str, n_clusters: int = 4) -> pd.Series:
-    """Group compounds by where they sit on the (log CL, log Vd) plane.
+def cluster_pk_plane(df: pd.DataFrame, cl_col: str, vss_col: str, n_clusters: int = 4) -> pd.Series:
+    """Group compounds by where they sit on the (log CL, log Vss) plane.
 
     The plane separates compounds that profile space cannot: two groups with the same
     half-life still differ in volume of distribution. Labels are renumbered so group 0
@@ -46,7 +46,7 @@ def cluster_pk_plane(df: pd.DataFrame, cl_col: str, vd_col: str, n_clusters: int
     Args:
         df (pd.DataFrame): Frame carrying `t_half`, from :func:`derive`.
         cl_col (str): Clearance column.
-        vd_col (str): Volume of distribution column.
+        vss_col (str): Volume of distribution column.
         n_clusters (int): How many groups. Defaults to 4.
 
     Returns:
@@ -55,7 +55,7 @@ def cluster_pk_plane(df: pd.DataFrame, cl_col: str, vd_col: str, n_clusters: int
     from sklearn.cluster import KMeans
     from sklearn.preprocessing import StandardScaler
 
-    plane = np.log10(df[[cl_col, vd_col]].to_numpy())
+    plane = np.log10(df[[cl_col, vss_col]].to_numpy())
     raw = KMeans(n_clusters=n_clusters, n_init=10, random_state=0).fit_predict(StandardScaler().fit_transform(plane))
 
     # Slowest first, so group color tracks duration rather than k-means' arbitrary order.
@@ -63,21 +63,21 @@ def cluster_pk_plane(df: pd.DataFrame, cl_col: str, vd_col: str, n_clusters: int
     return pd.Series(raw, index=df.index).map({old: new for new, old in enumerate(order)})
 
 
-def _curves(df: pd.DataFrame, vd_col: str, dose: float, f_percent: float, ka: float, duration: float) -> tuple:
+def _curves(df: pd.DataFrame, vss_col: str, dose: float, f_percent: float, ka: float, duration: float) -> tuple:
     """Time grid, one concentration curve per row, and each row's (tmax, Cmax)."""
     t = np.linspace(0, duration, 300)
     f_dose = dose * f_percent / 100.0
 
     curves, peaks = [], []
     for row in df.itertuples():
-        ke, vd = row.ke, getattr(row, vd_col)
-        curves.append(bateman_concentration(t, f_dose, vd, ke, ka))
+        ke, vss = row.ke, getattr(row, vss_col)
+        curves.append(bateman_concentration(t, f_dose, vss, ke, ka))
         tmax = bateman_tmax(ke, ka)
-        peaks.append((tmax, float(bateman_concentration(np.array([tmax]), f_dose, vd, ke, ka)[0])))
+        peaks.append((tmax, float(bateman_concentration(np.array([tmax]), f_dose, vss, ke, ka)[0])))
     return t, curves, peaks
 
 
-def _build_figure(df, vd_col, id_col, group_label, dose, f_percent, ka, duration, y_floor):
+def _build_figure(df, vss_col, id_col, group_label, dose, f_percent, ka, duration, y_floor):
     """The figure, plus a trace-index -> compound-id list for resolving hover.
 
     `trace_ids` runs parallel to `fig.data`: a hover event gives a curve number, and
@@ -86,7 +86,7 @@ def _build_figure(df, vd_col, id_col, group_label, dose, f_percent, ka, duration
     """
     import plotly.graph_objects as go
 
-    t, curves, peaks = _curves(df, vd_col, dose, f_percent, ka, duration)
+    t, curves, peaks = _curves(df, vss_col, dose, f_percent, ka, duration)
     order = sorted(df["pk_group"].unique())
     colors = {g: GROUP_COLORS[i % len(GROUP_COLORS)] for i, g in enumerate(order)}
 
@@ -161,7 +161,7 @@ def _build_figure(df, vd_col, id_col, group_label, dose, f_percent, ka, duration
 def build_app(
     df: pd.DataFrame,
     cl_col: str = "cl",
-    vd_col: str = "vd",
+    vss_col: str = "vss",
     smiles_col: str = "smiles",
     id_col: str = "id",
     group_col: str = None,
@@ -185,11 +185,11 @@ def build_app(
     Args:
         df (pd.DataFrame): One row per compound.
         cl_col (str): Clearance column, mL/min/kg. Defaults to "cl".
-        vd_col (str): Volume of distribution column, L/kg. Defaults to "vd".
+        vss_col (str): Volume of distribution column, L/kg. Defaults to "vss".
         smiles_col (str): SMILES column, for the structure panel. Defaults to "smiles".
         id_col (str): Compound id column. Defaults to "id".
         group_col (str, optional): Column to color and group by. Clusters on the
-            (log CL, log Vd) plane when omitted.
+            (log CL, log Vss) plane when omitted.
         n_clusters (int): Groups to cluster into, when `group_col` is omitted.
         half_life_col (str, optional): Reported half-life, cross-checked against the
             derived one. Correlation is logged; below 0.95 means the units disagree.
@@ -208,20 +208,20 @@ def build_app(
     """
     from dash import Dash, Input, Output, dcc, html
 
-    missing = [c for c in (cl_col, vd_col, smiles_col, id_col) if c not in df.columns]
+    missing = [c for c in (cl_col, vss_col, smiles_col, id_col) if c not in df.columns]
     if missing:
         raise ValueError(f"Columns not in the frame: {missing}. Have: {list(df.columns)}")
 
-    usable = df.dropna(subset=[cl_col, vd_col]).copy()
+    usable = df.dropna(subset=[cl_col, vss_col]).copy()
     dropped = len(df) - len(usable)
     if dropped:
-        log.important(f"Dropped {dropped} of {len(df)} rows with no {cl_col} or {vd_col}")
+        log.important(f"Dropped {dropped} of {len(df)} rows with no {cl_col} or {vss_col}")
     if usable.empty:
-        raise ValueError(f"No rows with both {cl_col} and {vd_col}")
-    if (usable[[cl_col, vd_col]] <= 0).any().any():
-        raise ValueError(f"{cl_col} and {vd_col} must be positive; a log plane and a rate need them")
+        raise ValueError(f"No rows with both {cl_col} and {vss_col}")
+    if (usable[[cl_col, vss_col]] <= 0).any().any():
+        raise ValueError(f"{cl_col} and {vss_col} must be positive; a log plane and a rate need them")
 
-    usable = derive(usable, cl_col, vd_col, dose)
+    usable = derive(usable, cl_col, vss_col, dose)
 
     if half_life_col and half_life_col in usable.columns:
         pair = usable[["t_half", half_life_col]].dropna()
@@ -234,11 +234,11 @@ def build_app(
         groups = usable[group_col].astype(str)
         group_label = group_col
     else:
-        groups = cluster_pk_plane(usable, cl_col, vd_col, n_clusters).map(lambda k: f"C{k}")
+        groups = cluster_pk_plane(usable, cl_col, vss_col, n_clusters).map(lambda k: f"C{k}")
         group_label = "cluster"
     usable["pk_group"] = groups.to_numpy()
 
-    fig, trace_ids, colors = _build_figure(usable, vd_col, id_col, group_label, dose, f_percent, ka, duration, y_floor)
+    fig, trace_ids, colors = _build_figure(usable, vss_col, id_col, group_label, dose, f_percent, ka, duration, y_floor)
 
     app = Dash(__name__)
     panel = {"padding": "12px", "color": TEXT_COLOR, "fontFamily": "system-ui, sans-serif"}
@@ -281,7 +281,7 @@ def build_app(
         color = colors[row["pk_group"]]
         image = svg_from_smiles(row[smiles_col], width=420, height=340, background=BACKGROUND)
 
-        stats = [(group_label, row["pk_group"]), (cl_col, f"{row[cl_col]:.3g}"), (vd_col, f"{row[vd_col]:.3g}")]
+        stats = [(group_label, row["pk_group"]), (cl_col, f"{row[cl_col]:.3g}"), (vss_col, f"{row[vss_col]:.3g}")]
         stats += [("t½ (derived)", f"{row['t_half']:.2f} h"), ("AUC", f"{row['auc']:.3g}")]
         if half_life_col and half_life_col in lookup.columns and pd.notna(row[half_life_col]):
             stats.append(("t½ (reported)", f"{row[half_life_col]:.2f} h"))
