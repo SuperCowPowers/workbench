@@ -1,10 +1,11 @@
-"""Tests for the Bateman PK plot."""
+"""Tests for the PK plots."""
 
 import numpy as np
+import pandas as pd
 import pytest
 
-from workbench.utils.plots.pk import bateman
-from workbench.utils.pk_utils import bateman_concentration, bateman_tmax
+from workbench.utils.plots.pk import bateman, nca_curves
+from workbench.utils.pk_utils import bateman_concentration, bateman_tmax, nca
 
 V, CL, F_PCT, DOSE = 50.0, 10.0, 40.0, 100.0
 KE = CL / V
@@ -105,3 +106,23 @@ def test_default_window_covers_the_slowest_slider_position():
     for ka in (0.1, 0.2, 1.0, 5.0):
         captured = np.trapezoid(bateman_concentration(t, F_DOSE, V, KE, ka), t)
         assert captured / (F_DOSE / CL) > 0.9
+
+
+def test_nca_curves_draws_the_fit_through_the_samples_it_used():
+    """One panel per curve; the overlaid terminal line lies on a mono-exponential tail."""
+    t = np.array([0.5, 1.0, 2.0, 4.0, 8.0, 12.0, 24.0])
+    decline = 100.0 * np.exp(-0.25 * t)
+    curves = pd.concat(
+        [
+            pd.DataFrame({"curve_id": "a", "time_h": t, "conc": decline, "blq": False, "route": "IV"}),
+            pd.DataFrame({"curve_id": "b", "time_h": t, "conc": 0.0, "blq": True, "route": "PO"}),
+            pd.DataFrame({"curve_id": "c", "time_h": t[:3], "conc": [5.0, 9.0, 4.0], "blq": False, "route": "PO"}),
+        ]
+    )
+    fig = nca_curves(curves, ["a", "b", "c"], summary=nca(curves), ncols=2)
+    axes = fig.get_axes()
+    assert [ax.get_visible() for ax in axes] == [True, True, True, False]
+    fit = axes[0].get_lines()[-1]
+    assert fit.get_ydata() == pytest.approx(100.0 * np.exp(-0.25 * fit.get_xdata()))
+    # no terminal fit, no overlay: an all-BLQ panel is empty and a short curve is points only
+    assert [len(ax.get_lines()) for ax in axes[1:3]] == [1, 1]

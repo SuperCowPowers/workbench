@@ -1,6 +1,8 @@
-"""Pharmacokinetic plots. Interactive (Plotly), so knobs are sliders rather than arguments."""
+"""Pharmacokinetic plots: the interactive Bateman profile (Plotly, knobs are sliders) and
+measured concentration-time curves with their NCA fit (matplotlib, for reports)."""
 
 import numpy as np
+import pandas as pd
 
 from workbench.utils.pk_utils import bateman_concentration, bateman_tmax
 
@@ -166,4 +168,80 @@ def bateman(
             )
         ],
     )
+    return fig
+
+
+def nca_curves(
+    curves: pd.DataFrame,
+    curve_ids: list,
+    summary: pd.DataFrame = None,
+    labels: dict = None,
+    ncols: int = 4,
+    curve: str = "curve_id",
+    time: str = "time_h",
+    conc: str = "conc",
+    blq: str = "blq",
+):
+    """Measured concentration-time curves as small multiples on a log axis, one panel per curve.
+
+    Quantifiable samples are joined; BLQ samples are hollow markers at half the curve's
+    lowest quantifiable concentration. With `summary`, each panel overlays the terminal
+    log-linear fit across the samples it used and prints t½, extrapolated AUC % and the
+    fit's adjusted R².
+
+    Args:
+        curves (pd.DataFrame): One row per sample, as passed to `pk_utils.nca`.
+        curve_ids (list): Curves to draw, in panel order.
+        summary (pd.DataFrame, optional): `pk_utils.nca` output for the fit overlay.
+        labels (dict, optional): Panel title per curve id. Defaults to the curve id.
+        ncols (int): Panels per row. Defaults to 4.
+        curve (str): Column identifying the curve. Defaults to "curve_id".
+        time (str): Sample time column. Defaults to "time_h".
+        conc (str): Concentration column. Defaults to "conc".
+        blq (str): Boolean below-quantitation column, or None for none. Defaults to "blq".
+
+    Returns:
+        matplotlib.figure.Figure: The figure.
+    """
+    import matplotlib.pyplot as plt
+
+    from workbench.utils.plots.report import ACCENTS, BODY, MUTED
+
+    curve_ids = list(curve_ids)
+    ncols = min(ncols, len(curve_ids))
+    nrows = -(-len(curve_ids) // ncols)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(1.95 * ncols, 1.75 * nrows), squeeze=False)
+    for ax, curve_id in zip(axes.flat, curve_ids):
+        group = curves[curves[curve] == curve_id].sort_values(time)
+        t, c = group[time].to_numpy(float), group[conc].to_numpy(float, na_value=np.nan)
+        flagged = group[blq].fillna(False).to_numpy(bool) if blq else np.zeros(len(group), dtype=bool)
+        measured = flagged | ~np.isnan(c)
+        t, c, below = t[measured], c[measured], (flagged | ~(c > 0))[measured]
+        tq, cq = t[~below], c[~below]
+
+        ax.set_yscale("log")
+        ax.plot(tq, cq, "-o", color=ACCENTS[1], markersize=3, linewidth=1)
+        if below.any() and len(cq):
+            ax.plot(t[below], np.full(below.sum(), cq.min() / 2), "o", mfc="none", mec=MUTED, markersize=3)
+
+        fitted = summary is not None and curve_id in summary.index and pd.notna(summary.at[curve_id, "lambda_z"])
+        if fitted:
+            row = summary.loc[curve_id]
+            lambda_z, n = row["lambda_z"], int(row["lambda_z_n"])
+            # a least-squares line passes through the centroid of the samples it was fit to
+            intercept = np.mean(np.log(cq[-n:]) + lambda_z * tq[-n:])
+            ends = tq[-n:][[0, -1]]
+            ax.plot(ends, np.exp(intercept - lambda_z * ends), color=ACCENTS[3], linewidth=1.3)
+            note = f"t½ {row['half_life']:.3g} h\nextrap {row['extrap_percent']:.0f}%\nR² {row['lambda_z_r2']:.2f}"
+            ax.text(0.96, 0.95, note, transform=ax.transAxes, ha="right", va="top", fontsize=7, color=BODY)
+            # headroom on the log axis keeps the note clear of the samples
+            low, high = ax.get_ylim()
+            ax.set_ylim(low, high * (high / low) ** 0.6)
+        ax.set_title(labels.get(curve_id, curve_id) if labels else curve_id, fontsize=8, loc="left")
+        ax.tick_params(which="both", labelsize=7)
+    for ax in axes.flat[len(curve_ids) :]:
+        ax.set_visible(False)
+    fig.supxlabel("time (h)", fontsize=8)
+    fig.supylabel("concentration", fontsize=8)
+    fig.tight_layout()
     return fig
