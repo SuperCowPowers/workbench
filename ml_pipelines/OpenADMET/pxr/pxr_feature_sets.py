@@ -3,19 +3,17 @@
 Generic FeatureSets shared by every model. Each carries SMILES + 2D
 (RDKit/Mordred) + 3D features; models select the subset they want via
 `feature_list` (chemprop -> ["smiles"], a tabular model -> the descriptor columns).
-Two variants differ only in the 3D layer; the pipeline mode (`f1` or `f2`) selects
-the one this run builds:
+Two variants differ only in the 3D layer, selected by the pipeline mode:
 
-  - openadmet_pxr_f1  via smiles-to-2d-3d-v1  (v1 3D: 74 descriptors)
-  - openadmet_pxr_f2  via smiles-to-2d-3d-v2  (v2 3D: curated, xTB-powered)
+  - openadmet_pxr_f1  via smiles-to-2d-3d-v1  (v1 3D: 74 descriptors), the default
+  - openadmet_pxr_f2  via smiles-to-2d-3d-v2  (v2 3D: curated, xTB-powered), which
+    needs both an `f2` node in pipelines.json and the smiles-to-2d-3d-v2 endpoint
 
 A `split` column marks each row ("train" or "phase1_test"):
 
   - phase-1 model holds the `phase1_test` rows out of training (via validation_ids)
     so the held-out set never trains it — then evaluates on exactly those rows.
   - phase-2 model trains on everything (train + phase-1) and predicts the blinded set.
-
-f2 requires the smiles-to-2d-3d-v2 endpoint to be deployed first.
 
 Run before the phase models:  ml_pipeline_launcher pxr_feature_sets
 """
@@ -56,5 +54,6 @@ phase1 = test_main.loc[test_main["phase"] == 1, ["molecule_name", "smiles", "pec
 phase1["split"] = "phase1_test"
 df = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)
 
-variant = PipelineMeta().mode
+# A modeless run (the script named on its own) builds f1.
+variant = PipelineMeta().mode or "f1"
 build_feature_set(f"openadmet_pxr_{variant}", FEATURE_VARIANTS[variant], df)
