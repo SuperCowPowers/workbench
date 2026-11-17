@@ -16,7 +16,7 @@ across every model here. Phase-2 models train on all rows and predict the blinde
 
 ```
 pipelines.json                        # one DAG; subdir-relative script paths
-pxr_feature_sets.py                   # producer: openadmet_pxr_f1 (3D v1), openadmet_pxr_f2 (3D v2)
+pxr_feature_sets.py                   # producer: openadmet_pxr_f1 (SMILES + 2D + 3D v1)
 pxr_chemprop_mt_feature_sets.py       # producer: openadmet_pxr_mt (pEC50 + public logP/logD)
 pxr_lfc_feature_sets.py               # producer: openadmet_pxr_lfc (single-concentration screen)
 pxr_chemprop_lfc.py                   # the screen as a model, to be read out as features

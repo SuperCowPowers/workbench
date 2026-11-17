@@ -1,13 +1,9 @@
-"""Producer: combined PXR FeatureSets (train + revealed phase-1 Analog Set 1).
+"""Producer: the combined PXR FeatureSet (train + revealed phase-1 Analog Set 1).
 
-Generic FeatureSets shared by every model. Each carries SMILES + 2D
-(RDKit/Mordred) + 3D features; models select the subset they want via
-`feature_list` (chemprop -> ["smiles"], a tabular model -> the descriptor columns).
-Two variants differ only in the 3D layer, selected by the pipeline mode:
-
-  - openadmet_pxr_f1  via smiles-to-2d-3d-v1  (v1 3D: 74 descriptors), the default
-  - openadmet_pxr_f2  via smiles-to-2d-3d-v2  (v2 3D: curated, xTB-powered), which
-    needs both an `f2` node in pipelines.json and the smiles-to-2d-3d-v2 endpoint
+`openadmet_pxr_f1` is shared by every model here. It carries SMILES + 2D
+(RDKit/Mordred) + 3D features from the `smiles-to-2d-3d-v1` endpoint (74 3D
+descriptors); models select the subset they want via `feature_list` (chemprop ->
+["smiles"], a tabular model -> the descriptor columns).
 
 A `split` column marks each row ("train" or "phase1_test"):
 
@@ -21,13 +17,9 @@ Run before the phase models:  ml_pipeline_launcher pxr_feature_sets
 import pandas as pd
 from workbench.api import DataSource, Endpoint, PublicData
 from workbench.api.inference_cache import InferenceCache
-from workbench.core.pipelines.pipeline_meta import PipelineMeta
 
-# Variant (pipeline mode) -> the (Meta)Endpoint that produces its 2D+3D features.
-FEATURE_VARIANTS = {
-    "f1": "smiles-to-2d-3d-v1",  # v1 3D (74 descriptors)
-    "f2": "smiles-to-2d-3d-v2",  # v2 3D (curated, xTB)
-}
+FS_NAME = "openadmet_pxr_f1"
+FEATURE_ENDPOINT = "smiles-to-2d-3d-v1"  # the (Meta)Endpoint producing the 2D+3D columns
 
 
 def build_feature_set(fs_name: str, feature_endpoint: str, df: pd.DataFrame) -> None:
@@ -54,6 +46,4 @@ phase1 = test_main.loc[test_main["phase"] == 1, ["molecule_name", "smiles", "pec
 phase1["split"] = "phase1_test"
 df = pd.concat([train, phase1]).dropna(subset=["pec50"]).drop_duplicates("molecule_name").reset_index(drop=True)
 
-# A modeless run (the script named on its own) builds f1.
-variant = PipelineMeta().mode or "f1"
-build_feature_set(f"openadmet_pxr_{variant}", FEATURE_VARIANTS[variant], df)
+build_feature_set(FS_NAME, FEATURE_ENDPOINT, df)
