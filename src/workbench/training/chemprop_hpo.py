@@ -88,9 +88,7 @@ _SEARCH_GROUPS = {
 }
 
 # Knobs outside the default space — the working list for when this is revisited, ordered by
-# expected payoff. The full cross-file backlog (infra + correctness items too) lives in the
-# "Backlog / follow-ups" section of docs/planning/hpo_support.md; this comment covers only
-# the search-space knobs. The optimizer group carries the search: `max_lr` holds 0.46-0.64 of
+# expected payoff. The optimizer group carries the search: `max_lr` holds 0.46-0.64 of
 # the knob importance in every run so far, `hidden_dim` and `batch_size` behind it, the FFN
 # head second-order. Capacity search alone is a modest lever — Yang et al. 2019 measured
 # ~2-5% from HPO on most datasets. Ensembling is the big one, and the n_folds publish already
@@ -105,6 +103,12 @@ _SEARCH_GROUPS = {
 #   * `aggregation` (mean/sum/norm) — searchable in chemprop but unreachable from here:
 #     `chemprop_core.build_mpnn_model` constructs `NormAggregation` directly, so tuning it
 #     requires a model-construction change first.
+#   * tapered FFN as parameters rather than enumerated shapes — per-layer widths work end to
+#     end (`ffn_hidden_dim` takes a dash-string or list, and the template derives
+#     `ffn_num_layers` from the shape's length), but only the hardcoded `Choice` shapes are
+#     reachable. Searching first_layer_width x taper_ratio x n_layers would cover the space
+#     properly. A tapered head won all three 60-trial searches, tempered by low
+#     `ffn_hidden_dim` importance in two of them.
 #   * `activation`, `aggregation_norm` — the remainder of chemprop's "all" keyword; smallest
 #     expected effect.
 #

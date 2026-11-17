@@ -312,6 +312,11 @@ def run_search(
 # RUNG_FACTOR**k steps. Two is the gentle end of the usual range: the first rung is where the
 # partial estimate is least trustworthy, and a trial killed there is killed silently — no
 # later measurement can tell us it should have survived.
+#
+# The correlation between a trial's first-member value and its final one can never be measured
+# unattenuated, since only survivors have a final value. What is measurable: the spread between
+# the killed trials' first-member values and the eventual winner's. A pile clustered at the
+# cutoff means the cull was sharper than it looked, and is the signal to revisit this factor.
 RUNG_FACTOR = 2
 
 # The step counter a laddered trial reports alongside its objective; ASHA advances on it.

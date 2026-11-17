@@ -378,8 +378,9 @@ def train_chemprop_fold(
             # (data parallelism) and deadlocks, since phase-2 publish is a single process.
             # DDP is the wrong tool anyway — these models are small and dataloader-bound, so
             # splitting one fold across GPUs adds sync overhead for no gain. The utilization
-            # win is *task* parallelism (independent folds one-per-GPU); see the "Parallelize
-            # the publish folds" backlog item in docs/planning/hpo_support.md.
+            # win is *task* parallelism: train the winner's independent folds one-per-GPU,
+            # reusing the Ray fold fan-out the search already builds. That removes the idle
+            # publish tail, ~13% of 4-GPU-time at n_trials=40.
             devices=1,
             max_epochs=max_epochs,
             precision="16-mixed",

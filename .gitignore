@@ -171,7 +171,6 @@ ml_pipelines/OpenADMET/cyp/scripts/outputs/
 
 # Docs that are local only
 docs/marketing/
-docs/planning/
 
 # Understand Anything
 src/workbench/.understand-anything/
