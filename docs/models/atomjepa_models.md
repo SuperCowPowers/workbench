@@ -104,9 +104,9 @@ Both run Workbench's GPU inference image. GPU capacity is often short, so rather
 | 2 | `ml.g5.xlarge` | NVIDIA A10G |
 | 3 | `ml.g6.2xlarge` | NVIDIA L4 |
 | 4 | `ml.g5.2xlarge` | NVIDIA A10G |
-| 5 | `ml.c7i.4xlarge` | CPU, async endpoints only |
+| 5 | `ml.g6e.xlarge` | NVIDIA L40S |
 
-The CPU pool is a fallback: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU. Real-time endpoints stop at the GPU pools, since a real-time request must answer within 60 seconds. Pass `instance=` to deploy a single type instead. An async endpoint stays on one instance unless you pass `max_instances=`.
+Every pool is a GPU, across three generations — L4, A10G, L40S — so a shortage in one has others to fall to. SageMaker takes the highest-priority pool *with capacity*, so a CPU pool would be taken immediately rather than waiting out a GPU shortage. CPU serving is an explicit `instance="ml.c7i.4xlarge"` deploy instead: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU, so raise `max_instances=` to match the work. Pass `instance=` to deploy any single type. An async endpoint stays on one instance unless you pass `max_instances=`.
 
 When every pool is out, SageMaker keeps trying for up to an hour. If it still has no instance, `to_endpoint()` deletes the failed endpoint and raises `EndpointCapacityError` (from `workbench.core.artifacts.endpoint_core`); the model is intact, so deploy it again later. An async endpoint scaling up from zero raises the same error after the same hour.
 

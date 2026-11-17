@@ -20,15 +20,16 @@ Names are paths like `comp_chem/aqsol/aqsol_public_data`. The main groups:
 - `common/` — abalone, wine, test_data. Small, generic fixtures for smoke tests.
 - `comp_chem/` — the real cheminformatics data: `aqsol` (solubility, plus
   `aqsol/alignment` subsets), `logp`, `logd`, `logp_logd` (overlap bins),
-  `openadmet` (four challenges, below), `reference_compounds`,
+  `openadmet` (five challenges, below), `reference_compounds`,
   `synthetic/multi_task`, `compound_sets`.
 
-Datasets that ship a train/test split put them in `training/` and `testing/`
-subdirs, so `comp_chem/openadmet/<challenge>/training/<endpoint>` is the shape
-to expect. The four challenges are `expansionrx` (9 ADMET endpoints, plus an
-`all_endpoints` wide table for multi-task), `pxr` (induction), `asap`
-(antiviral ADMET + potency), and `octant_cyp` (CYP3A4 inhibition/reactivity, no
-split).
+Datasets that ship a train/test split put them in `train/` and `test/` subdirs,
+so `comp_chem/openadmet/<challenge>/train/<endpoint>` is the shape to expect.
+The five challenges are `expansionrx` (9 ADMET endpoints, plus an
+`all_endpoints` wide table for multi-task), `pxr` (induction), `cyp`
+(four-isoform inhibition, plus `tdi` and `emax` arms and a flat
+`single_concentration` screen), `asap` (antiviral ADMET + potency), and
+`octant_cyp` (CYP3A4 inhibition/reactivity, no split).
 
 Two quirks worth knowing: `list()` returns names **without** the `.csv`
 extension while `details()` shows them **with** it, and `descriptions` appears
