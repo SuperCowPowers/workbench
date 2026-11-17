@@ -5862,12 +5862,12 @@
 </tr>
 <tr>
 <td>5</td>
-<td><code>ml.c7i.4xlarge</code></td>
-<td>CPU, async endpoints only</td>
+<td><code>ml.g6e.xlarge</code></td>
+<td>NVIDIA L40S</td>
 </tr>
 </tbody>
 </table>
-<p>The CPU pool is a fallback: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU. Real-time endpoints stop at the GPU pools, since a real-time request must answer within 60 seconds. Pass <code>instance=</code> to deploy a single type instead. An async endpoint stays on one instance unless you pass <code>max_instances=</code>.</p>
+<p>Every pool is a GPU, across three generations — L4, A10G, L40S — so a shortage in one has others to fall to. SageMaker takes the highest-priority pool <em>with capacity</em>, so a CPU pool would be taken immediately rather than waiting out a GPU shortage. CPU serving is an explicit <code>instance="ml.c7i.4xlarge"</code> deploy instead: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU, so raise <code>max_instances=</code> to match the work. Pass <code>instance=</code> to deploy any single type. An async endpoint stays on one instance unless you pass <code>max_instances=</code>.</p>
 <p>When every pool is out, SageMaker keeps trying for up to an hour. If it still has no instance, <code>to_endpoint()</code> deletes the failed endpoint and raises <code>EndpointCapacityError</code> (from <code>workbench.core.artifacts.endpoint_core</code>); the model is intact, so deploy it again later. An async endpoint scaling up from zero raises the same error after the same hour.</p>
 <p>Endpoint instances are quota-limited per instance type and region; check <code>&lt;instance type&gt; for endpoint usage</code> for each pool type in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.</p>
 <p>A model's training captures need no endpoint: <code>get_inference_predictions("training")</code> gives the out-of-fold rows and <code>get_inference_predictions("validation")</code> the rows held out with <code>validation_ids</code>.</p>
