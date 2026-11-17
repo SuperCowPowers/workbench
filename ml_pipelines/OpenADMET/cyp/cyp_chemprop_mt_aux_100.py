@@ -1,14 +1,8 @@
 """The submission model: auxiliary-target Chemprop trained on 100% of the challenge data.
 
-Identical to `cyp_chemprop_mt_aux.py` except that nothing is held out. The analog holdout
-exists to *choose* between candidates; once chosen, the entry should train on every
-labelled row, and the 529 holdout compounds are 11% of the data.
-
-`cyp_chemprop_mt_aux.py` is what earned this a submission: on the analog holdout it lifted
-CYP2D6 Pearson 0.419 -> 0.502 and CYP1A2 0.588 -> 0.619 against `cyp-reg-chemprop-mt`,
-with every isoform improving. That is a ranking gain, which is the only thing left --
-per-isoform calibration has taken CYP2C9 and CYP3A4 to 100% and 98% of the R2 their own
-Spearman supports.
+Nothing is held out. The analog holdout exists to *choose* between candidates; once
+chosen, the entry trains on every labelled row, and the 529 holdout compounds are 11%
+of the data.
 
 It cannot be scored on the analog holdout, having trained on those rows. Read
 `cyp-reg-chemprop-mt-aux` for that. Its `cv_*` captures are still honest: chemprop's
@@ -18,8 +12,8 @@ optimistic on CYP1A2/CYP2C9, 1.9x on CYP3A4 and 2.5x on CYP2D6 against the board
 
 Predictions from this model need their own calibration. The offsets fitted for
 `cyp-reg-chemprop-mt-100` do not transfer -- different spread means different bias.
-Use `scripts/cyp_recalibrate.py --moments` against the estimated blind-set distribution
-rather than spending a submission to rediscover it.
+Fit the offsets against the estimated blind-set distribution rather than spending a
+submission to rediscover them.
 
 `--censored` trains on `openadmet_cyp_censored_f1` instead, where CYP1A2, CYP2C9 and CYP3A4
 carry a pIC50 bound on rows the single-concentration arm shows are weak, and swaps the

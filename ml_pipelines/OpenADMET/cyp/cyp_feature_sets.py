@@ -9,7 +9,7 @@ variant so a model can be compared across 3D sets with nothing else moving:
 
   - openadmet_cyp_<v>        Regression track. 4,905 compounds, four sparse pIC50
                              targets. Each target carries `_ci_lower`/`_ci_upper`
-                             (what `scripts/cyp_compare.py` scores ST-RAE against) and
+                             (the interval ST-RAE scores against) and
                              `_std`.
   - openadmet_cyp_tdi_<v>    TDI track. 6,145 compounds, `cyp3a4_is_tdi` and
                              `cyp2d6_is_tdi` as binary targets.
@@ -21,8 +21,8 @@ them, and the InferenceCache is SMILES-keyed and S3-persisted, so both tracks an
 rerun draw from that one pass.
 
 Target names keep the challenge's own naming, snake_cased. That is not cosmetic:
-`scripts/cyp_compare.py` finds the credible interval by appending `_ci_lower` to the
-target name, so renaming the targets silently drops ST-RAE.
+A target's credible interval is found by appending `_ci_lower` to its name, so renaming
+the targets silently drops ST-RAE.
 
 The CI and std columns are in the FeatureSet so they can be scored against, and
 they are NOT features. Every model script must pass an explicit `feature_list` --

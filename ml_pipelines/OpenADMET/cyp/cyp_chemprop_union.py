@@ -67,14 +67,14 @@ an older model that meant something else, and the run warns when the head counts
 variable, everything else identical.
 
 Read the variants on OOF against the seed noise floor -- 0.05 Pearson on CYP1A2 and CYP2D6,
-0.013 and 0.012 on CYP2C9 and CYP3A4 (`scripts/cyp_seed_noise.py`). Treat a smaller CYP2D6
+0.013 and 0.012 on CYP2C9 and CYP3A4 (seed-to-seed spread). Treat a smaller CYP2D6
 difference as unresolved. The union's scaffold split runs over 31,670 rows, so the
 challenge compounds sit in folds alongside public chemistry where the control's folds were
 challenge-only; that is the experiment rather than a flaw, but it is not a seed-for-seed
 contrast.
 
-Place its predictions with `scripts/cyp_recalibrate.py --oof MODEL` -- this model has no
-board history, so its Pearson comes from its own out-of-fold captures.
+Place its predictions from its own out-of-fold captures -- this model has no board
+history to take a Pearson from.
 
 Build the FeatureSet first: python cyp_union_features.py [--censored]
 """

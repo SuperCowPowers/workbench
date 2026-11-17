@@ -18,7 +18,7 @@ chemprops sit at 0.861-0.871 with each other.
 
 `--top-variance` keeps that many of the 720 embedding columns, ranked by variance on the
 training rows. 360 is the default because it is best or tied-best everywhere measured
-(`scripts/cyp_monroe_ablation.py`, out of fold over shared scaffold folds):
+(out of fold over shared scaffold folds):
 
     arm        CYP3A4 rho   CYP2D6 rho
     top100         0.7958       0.4516
@@ -49,7 +49,7 @@ Nothing drops NaN-target rows on the way into a training view, and coverage is s
 1,285 to 2,335 labels in a 4,905-row set -- so the unlabelled rows go to `exclude_ids`.
 Chemprop gets away without this because its multi-task loss masks missing targets.
 
-Read with `scripts/cyp_compare.py --bands` against the per-isoform thresholds it prints.
+Read the band Spearmans against the per-isoform resolution thresholds.
 
     ml_pipeline_launcher cyp_tabicl_monroe
     ml_pipeline_launcher cyp_tabicl_monroe -- --isoforms cyp1a2 cyp2c9 cyp3a4

@@ -7,8 +7,8 @@ at 50 uM, adding 17,500 measurements at 89% coverage and spanning the inactive r
 dose-response track never reaches.
 
 Those go in as four additional regression targets rather than as censored pIC50 bounds.
-The bounded-loss attempt (`cyp_chemprop_mt_censored.py`) failed because CYP2D6's log2fc is
-flat below pIC50 4.6, so it cannot say how far below a bound a compound sits. As a target
+Bounded loss cannot use them: CYP2D6's log2fc is flat below pIC50 4.6, so it cannot say
+how far below a bound a compound sits. As a target
 in its own right that flatness stops mattering -- the encoder learns what the assay
 actually measured instead of a threshold we imposed on it.
 

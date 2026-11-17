@@ -17,7 +17,7 @@ is what makes the readout an independent view.
 The screen is disjoint from the blind set (0 of 748 skeletons), so every blind compound's
 readout comes from the endpoint rather than from a row this model trained on.
 
-Consumed by `scripts/cyp_readout_spike.py` and the readout FeatureSet.
+Consumed by the readout FeatureSet.
 
 Build the FeatureSet first:  ml_pipeline_launcher cyp_aux_features
 """

@@ -11,7 +11,7 @@ the furthest thing from a D-MPNN we have.
 
 **Gate on solo strength before pooling.** The combination is a flat mean, so a weak member
 carries the same vote as a strong one, and the board has refuted our ability to down-weight
-it. Compare against the isoform's best member with `scripts/cyp_compare.py` and include only
+it. Compare against the isoform's best member and include only
 within the resolution threshold -- 0.033 / 0.028 / 0.037 / 0.012 paired, since these share a
 row set and seed with the TabICL and single-target chemprop arms and therefore share folds.
 

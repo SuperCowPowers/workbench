@@ -1,7 +1,7 @@
 """Create the AQSol solubility classification Model and Endpoint (variant 2).
 
-A copy of aqsol_class.py with different XGBoost hyperparameters -- a second
-challenger for the same target (more, shallower trees at a higher learning rate).
+A second challenger for the same target, with different XGBoost hyperparameters
+(more, shallower trees at a higher learning rate).
 
 Models:
     - aqsol-class-2

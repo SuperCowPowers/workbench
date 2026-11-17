@@ -1,7 +1,7 @@
 """Create the AQSol solubility regression Model and Endpoint (variant 2).
 
-A copy of aqsol_reg.py with different XGBoost hyperparameters -- a second
-challenger for the same target (more, shallower trees at a lower learning rate).
+A second challenger for the same target, with different XGBoost hyperparameters
+(more, shallower trees at a lower learning rate).
 
 Models:
     - aqsol-regression-2

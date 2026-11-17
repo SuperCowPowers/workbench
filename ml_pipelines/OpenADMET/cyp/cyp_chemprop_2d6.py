@@ -21,7 +21,7 @@ Two scopes, both with an encoder that sees CYP2D6 and nothing else, `isoform` by
                       an actual competitor would build.
 
 Compare against `cyp-reg-chemprop-union-p30` on `cv_cyp2d6_pic50_direct_inhibition`, against
-the thresholds in `scripts/cyp_ruler_power.py` -- 0.056 on the target itself, 0.031 on
+the resolution thresholds -- 0.056 on the target itself, 0.031 on
 log2fc. The training row set differs between variants, so scaffold folds differ too; that is
 inherent to the comparison rather than a flaw, but it is not seed-for-seed.
 
@@ -54,8 +54,8 @@ two measurements, not something reachable from structure; the union model's TDI 
 head nobody optimised. The plausible mechanism is dynamic range: a head fit to the arm that
 still varies down there cannot shrink the low end away.
 
-Read `cyp_compare.py --bands`, which grades any CYP2D6 model against the scored labels
-whatever column it trained on. Only the band Spearmans mean anything here -- the arms sit on
+Grade against the scored labels whatever column the model trained on. Only the band
+Spearmans mean anything here -- the arms sit on
 different scales, so ST-RAE and MAE do not transfer.
 
 `--low-weight` and `--deep-weight` re-weight the low band via `sample_weights`, which chemprop

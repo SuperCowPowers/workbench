@@ -8,8 +8,8 @@ log2FC for all four isoforms as features:
   - every other compound: the endpoint's predictions, which are already out-of-sample for
     rows that model never trained on
 
-Out of fold, against the same Monroe columns alone (`scripts/cyp_readout_spike.py`, shared
-scaffold folds, paired over compounds):
+Out of fold, against the same Monroe columns alone (shared scaffold folds, paired over
+compounds):
 
     isoform   monroe   + readouts   paired delta            resolves at
     CYP1A2    0.5482       0.5817   +0.0337 [+0.017,+0.049]      0.043
