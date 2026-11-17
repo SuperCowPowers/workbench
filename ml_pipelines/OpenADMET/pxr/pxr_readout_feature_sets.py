@@ -7,7 +7,7 @@ model's (pxr-reg-chemprop-lfc) predicted log2FC at 8.25 and 33 uM:
     readout the screen model was fit on (these are all `train` rows)
   - all other compounds (incl. every phase1_test row): the endpoint's predictions
 
-Consumed by phase1/pxr_chemprop_readout_phase1.py and phase1/pxr_tabicl_spike_phase1.py.
+Consumed by phase1/pxr_chemprop_readout_phase1.py and pxr_readout_monroe_feature_sets.py.
 
 Run after the readout model:  ml_pipeline_launcher pxr_chemprop_lfc
 """

@@ -2,7 +2,7 @@
 
 Generic FeatureSets shared by every model. Each carries SMILES + 2D
 (RDKit/Mordred) + 3D features; models select the subset they want via
-`feature_list` (chemprop -> ["smiles"], xgb/pytorch -> the descriptor columns).
+`feature_list` (chemprop -> ["smiles"], a tabular model -> the descriptor columns).
 Two variants differ only in the 3D layer; the pipeline mode (`f1` or `f2`) selects
 the one this run builds:
 

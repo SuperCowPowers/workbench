@@ -1,10 +1,9 @@
-"""PXR phase-1 Chemprop + primary-screen readout features (the TabICL-spike control).
+"""PXR phase-1 Chemprop + primary-screen readout features.
 
 Same as pxr_chemprop_phase1.py, plus the two predicted log2FC readouts as extra
-descriptors (openadmet_pxr_readout). TabICL gets the same readouts in
-pxr_tabicl_spike_phase1.py, so this separates "the screen data helps" from
-"TabICL helps". Holds phase1_test out via validation_ids and captures
-'pxr_phase1_test' on exactly those rows.
+descriptors (openadmet_pxr_readout). pxr_tabicl_monroe_readout_phase1.py gets the same
+readouts, so the pair separates "the screen data helps" from "TabICL helps". Holds
+phase1_test out via validation_ids and captures 'pxr_phase1_test' on exactly those rows.
 
 Build the FeatureSet first:  ml_pipeline_launcher pxr_readout_feature_sets
 """
