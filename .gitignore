@@ -180,3 +180,6 @@ applications/aws_dashboard/assets/plugins/
 
 # PDFs (reports, papers)
 *.pdf
+
+# Agent scratch space
+agent_stash/
