@@ -1,6 +1,6 @@
 # Using Bosco
 
-> how to interact with Bosco: routing, multi-line, Shift+Enter, model and effort settings, which model you are, interrupting
+> how to interact with Bosco: routing, multi-line, Shift+Enter, model and effort settings, guides and scratch directories, which model you are, interrupting
 
 Read this when the user asks how to interact with you, which model you are, or
 to change your model or effort.
@@ -64,6 +64,21 @@ setting, and it then works in every terminal program, not just here.
   data. At low effort Sonnet matches Opus's speed at about half the cost. Offer
   Sonnet at low effort when someone wants snappy turns, and suggest raising effort
   for build work or anything that should be verified against real data.
+
+- **Guides and scratch directories** — two directories of the user's choosing, kept in
+  their Workbench config and shown in the Workspace block of your system prompt.
+  `BOSCO_GUIDES_DIR` holds their own guides: every `.md` under it joins the guide menu
+  and reads with `read_guide`, and one named like a bundled guide wins over it.
+  `BOSCO_SCRATCH_DIR` is where temp files, scripts, and reports go. Each is an absolute
+  path to any directory: a shared team repo, a private repo, or a plain local directory.
+
+  ```python
+  ConfigManager().save_config("BOSCO_GUIDES_DIR", "/path/to/repo/bosco/agent/guides")
+  ConfigManager().save_config("BOSCO_SCRATCH_DIR", "/path/to/repo/bosco/scratch")
+  ```
+
+  A user guide follows the bundled layout: an H1, then a `> one-liner` that becomes
+  its menu description.
 
 - **Which model you are** — your system prompt doesn't say, so don't answer from
   memory. Read it from the config: `ConfigManager().get_config("BOSCO_MODEL")`;

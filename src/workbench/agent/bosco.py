@@ -30,6 +30,7 @@ from workbench.agent.tools import (
     egress_text,
     cache_text,
     mode_text,
+    workspace_text,
     provider_egress_text,
     personality_text,
     DEFAULT_PERSONALITY,
@@ -131,6 +132,8 @@ to triage compounds. Toxicity endpoints are liabilities to screen out.
 
 {cache}
 
+{workspace}
+
 {general}
 
 ## Egress
@@ -158,6 +161,7 @@ def _system_prompt() -> str:
     return SYSTEM_PROMPT.format(
         mode=mode_text(),
         cache=_cache_note,
+        workspace=workspace_text(),
         general=general_guide().strip(),
         egress=egress_text(),
         provider_egress=provider_egress_text(),

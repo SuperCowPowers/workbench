@@ -5,7 +5,7 @@ import logging
 import contextlib
 import traceback
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from workbench.utils import bosco_utils
 from workbench.utils.web_utils import EGRESS_MODE
@@ -21,9 +21,32 @@ DEFAULT_PERSONALITY = "chipper"
 # Always injected into the system prompt (not offered in the lazy-read menu).
 ALWAYS_LOADED = {"general"}
 
+# User-owned directories, kept in the Workbench config: the user's own guides, and
+# where temp files, scripts, and reports go. Unset means not asked yet; "" means declined.
+GUIDES_DIR_KEY = "BOSCO_GUIDES_DIR"
+SCRATCH_DIR_KEY = "BOSCO_SCRATCH_DIR"
+WORKSPACE_ASKS = {
+    GUIDES_DIR_KEY: ("a guides directory", "agent/guides"),
+    SCRATCH_DIR_KEY: ("a scratch directory", "scratch"),
+}
+
 # Tool output lands in history and is resent every round after, so keep it tight.
 # Hitting this usually means filtering belonged in the query.
 MAX_OUTPUT_CHARS = 4000
+
+
+def _config_dir(key: str) -> Optional[Path]:
+    """The directory saved under a config key, or None when unset or declined."""
+    from workbench.utils.config_manager import ConfigManager
+
+    value = ConfigManager().get_config(key)
+    return Path(value).expanduser() if value else None
+
+
+def user_guide_paths() -> List[Path]:
+    """The user's own guides, from their configured guides directory."""
+    guides_dir = _config_dir(GUIDES_DIR_KEY)
+    return sorted(guides_dir.rglob("*.md")) if guides_dir and guides_dir.is_dir() else []
 
 
 def guide_paths() -> List[Path]:
@@ -62,6 +85,11 @@ def guide_index() -> str:
         lines.append(f"  {bucket}/")
         lines += [f"    {p.stem:18} {_description(p)}".rstrip() for p in buckets[bucket]]
     lines += [f"  {p.stem:18} {_description(p)}".rstrip() for p in buckets.get("", [])]
+
+    user_guides = user_guide_paths()
+    if user_guides:
+        lines.append(f"  user guides ({_config_dir(GUIDES_DIR_KEY)})/")
+        lines += [f"    {p.stem:18} {_description(p)}".rstrip() for p in user_guides]
     return "\n".join(lines)
 
 
@@ -169,6 +197,61 @@ def cache_text() -> str:
     return CACHE_DOWN_TEXT
 
 
+WORKSPACE_ASK_TEXT = """The user has not chosen {what}. Before your first piece of work this session, ask
+where they want {it}, offering both kinds of place:
+
+{options}
+
+Any directory they name works. Check whether it exists (`os.path.isdir` on the expanded
+path); if it doesn't, ask whether they want you to create it, and create it only on a
+yes. Then save the absolute path, which applies at once and on every later session:
+
+```python
+from workbench.utils.config_manager import ConfigManager
+
+{saves}
+```
+
+If they don't want one, save `""` under that key and don't ask again."""
+
+
+def workspace_text() -> str:
+    """The user's guides and scratch directories for the system prompt, or the ask for unset ones."""
+    from workbench.utils.config_manager import ConfigManager
+
+    cm = ConfigManager()
+    guides_dir, scratch_dir = _config_dir(GUIDES_DIR_KEY), _config_dir(SCRATCH_DIR_KEY)
+    lines = []
+    if guides_dir:
+        lines.append(
+            f"- **Guides**: `{guides_dir}` holds the user's own guides, listed under 'user guides' "
+            "below and read with `read_guide`. When they ask you to write a guide down, it goes here."
+        )
+    if scratch_dir:
+        lines.append(
+            f"- **Scratch**: `{scratch_dir}` is where temp files, scripts, and reports go, "
+            "rather than the working directory, unless the user names another place."
+        )
+
+    # A session-only config (local mode) can't remember the answer, so it never asks
+    unset = [] if cm.using_default_config else [k for k in WORKSPACE_ASKS if cm.get_config(k) is None]
+    if unset:
+        options = "\n".join(
+            f"- {WORKSPACE_ASKS[k][0]}: a local directory (`~/<local dir>/{WORKSPACE_ASKS[k][1]}`) "
+            f"or one inside a repo (`<path to your repo>/{WORKSPACE_ASKS[k][1]}`)"
+            for k in unset
+        )
+        saves = "\n".join(f'ConfigManager().save_config("{k}", "<absolute path>")' for k in unset)
+        ask = WORKSPACE_ASK_TEXT.format(
+            what=" or ".join(WORKSPACE_ASKS[k][0] for k in unset),
+            it="them" if len(unset) > 1 else "it",
+            options=options,
+            saves=saves,
+        )
+        lines.append(ask)
+    return "## Workspace\n\n" + "\n".join(lines) if lines else ""
+
+
 def provider_egress_text() -> str:
     """Where this session's conversation goes, for the system prompt."""
     from workbench.utils.llm_utils import llm_provider
@@ -177,15 +260,18 @@ def provider_egress_text() -> str:
 
 
 def read_guide(name: str) -> str:
-    """Read a bundled guide by name, from whichever bucket holds it.
+    """Read a guide by name, from the user's guides directory or whichever bundled bucket holds it.
 
     Stems are unique across buckets, so the bare name is the address. A bucket
-    prefix or an .md suffix is tolerated rather than treated as a miss.
+    prefix or an .md suffix is tolerated rather than treated as a miss. A user
+    guide wins over a bundled one of the same name.
     """
     stem = Path(name).stem
-    for path in GUIDES_DIR.rglob(f"{stem}.md"):
+    user_guides = user_guide_paths()
+    for path in [p for p in user_guides if p.stem == stem] + list(GUIDES_DIR.rglob(f"{stem}.md")):
         return path.read_text(encoding="utf-8")
-    return f"No guide named '{name}'. Available: {', '.join(guide_names())}"
+    available = sorted(set(guide_names()) | {p.stem for p in user_guides})
+    return f"No guide named '{name}'. Available: {', '.join(available)}"
 
 
 # Loggers to watch during a run. The `workbench` logger sets `propagate = False`

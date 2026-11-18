@@ -9,12 +9,14 @@ share — otherwise `plt.show()`.
 
 ## Ask where it goes
 
-A report is a file on someone's disk, so the path is the user's call — not the current
-working directory by default. Before building, name the file you intend to write, say
-where it will land, and check you are not about to replace something:
+A report is a file on someone's disk, so the path is the user's call. Their scratch
+directory (the Workspace block of your system prompt) is the default; with none set,
+ask rather than using the current working directory. Before building, name the file
+you intend to write, say where it will land, and check you are not about to replace
+something:
 
 ```python
-out_pdf = os.path.join(os.getcwd(), "method1_bateman_report.pdf")
+out_pdf = os.path.join(ConfigManager().get_config("BOSCO_SCRATCH_DIR"), "method1_bateman_report.pdf")
 print(out_pdf, "| exists already?", os.path.exists(out_pdf))
 ```
 
