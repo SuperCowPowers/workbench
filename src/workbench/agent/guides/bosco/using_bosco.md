@@ -74,7 +74,7 @@ setting, and it then works in every terminal program, not just here.
 
   ```python
   ConfigManager().save_config("BOSCO_GUIDES_DIR", "/path/to/repo/agent/guides")
-  ConfigManager().save_config("BOSCO_REPORT_DIR", "/path/to/repo/agent/reports")
+  ConfigManager().save_config("BOSCO_REPORT_DIR", "/path/to/repo/reports")
   ```
 
   A user guide follows the bundled layout: an H1, then a `> one-liner` that becomes

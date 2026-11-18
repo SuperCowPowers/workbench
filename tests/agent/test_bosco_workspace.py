@@ -28,7 +28,7 @@ def guides_dir(tmp_path, config):
 def test_unset_directories_are_asked_for(config):
     text = tools.workspace_text()
     assert f'save_config("{tools.GUIDES_DIR_KEY}"' in text and "~/<local dir>/agent/guides" in text
-    assert f'save_config("{tools.REPORT_DIR_KEY}"' in text and "<path to your repo>/agent/reports" in text
+    assert f'save_config("{tools.REPORT_DIR_KEY}"' in text and "<path to your repo>/reports" in text
 
 
 def test_guides_ask_up_front_and_reports_on_first_report(config):

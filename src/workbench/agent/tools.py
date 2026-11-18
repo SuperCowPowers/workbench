@@ -246,8 +246,8 @@ def workspace_text() -> str:
             WORKSPACE_ASK_TEXT.format(
                 label="Reports",
                 when="The first time you are about to write a report",
-                what="reports and their scripts to go",
-                leaf="agent/reports",
+                what="PDF reports and the scripts that make them to go",
+                leaf="reports",
                 key=REPORT_DIR_KEY,
             )
             + REPORT_GITIGNORE_TEXT
