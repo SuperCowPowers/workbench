@@ -9,14 +9,14 @@ share — otherwise `plt.show()`.
 
 ## Ask where it goes
 
-A report is a file on someone's disk, so the path is the user's call. Their scratch
+A report is a file on someone's disk, so the path is the user's call. Their report
 directory (the Workspace block of your system prompt) is the default; with none set,
 ask rather than using the current working directory. Before building, name the file
 you intend to write, say where it will land, and check you are not about to replace
 something:
 
 ```python
-out_pdf = os.path.join(ConfigManager().get_config("BOSCO_SCRATCH_DIR"), "method1_bateman_report.pdf")
+out_pdf = os.path.join(ConfigManager().get_config("BOSCO_REPORT_DIR"), "method1_bateman_report.pdf")
 print(out_pdf, "| exists already?", os.path.exists(out_pdf))
 ```
 
@@ -24,6 +24,11 @@ If it already exists, stop and ask. A re-render that silently overwrites yesterd
 version is the one mistake a report author cannot undo, and "I regenerated it" is no
 help once the old numbers are gone. When the write succeeds, report the **full path and
 size** so the user can find it without hunting.
+
+Save the script that builds the report next to it, under the same name. In a git repo
+the script is what gets committed: the PDF is its build product, and git keeps a full
+copy of every re-render. A `.gitignore` holding `*.pdf` in the report directory does
+that; offer one when the directory is in a repo and has none.
 
 ## Structure: lead with the answer
 

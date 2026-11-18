@@ -22,13 +22,9 @@ DEFAULT_PERSONALITY = "chipper"
 ALWAYS_LOADED = {"general"}
 
 # User-owned directories, kept in the Workbench config: the user's own guides, and
-# where temp files, scripts, and reports go. Unset means not asked yet; "" means declined.
+# where reports and the scripts behind them go. Unset means not asked yet; "" means declined.
 GUIDES_DIR_KEY = "BOSCO_GUIDES_DIR"
-SCRATCH_DIR_KEY = "BOSCO_SCRATCH_DIR"
-WORKSPACE_ASKS = {
-    GUIDES_DIR_KEY: ("a guides directory", "agent/guides"),
-    SCRATCH_DIR_KEY: ("a scratch directory", "scratch"),
-}
+REPORT_DIR_KEY = "BOSCO_REPORT_DIR"
 
 # Tool output lands in history and is resent every round after, so keep it tight.
 # Hitting this usually means filtering belonged in the query.
@@ -197,58 +193,65 @@ def cache_text() -> str:
     return CACHE_DOWN_TEXT
 
 
-WORKSPACE_ASK_TEXT = """The user has not chosen {what}. Before your first piece of work this session, ask
-where they want {it}, offering both kinds of place:
+# How an unset directory gets chosen; {when} is the moment Bosco asks
+WORKSPACE_ASK_TEXT = """- **{label}**: not chosen yet. {when}, ask where they want {what}, offering both kinds
+  of place: a local directory (`~/<local dir>/{leaf}`) or one inside a repo
+  (`<path to your repo>/{leaf}`). Any directory they name works. Check whether it exists
+  (`os.path.isdir` on the expanded path); if it doesn't, ask whether they want you to
+  create it, and create it only on a yes. Then save the absolute path, which applies at
+  once and on every later session:
+  `ConfigManager().save_config("{key}", "<absolute path>")`.
+  If they don't want one, save `""` and don't ask again."""
 
-{options}
-
-Any directory they name works. Check whether it exists (`os.path.isdir` on the expanded
-path); if it doesn't, ask whether they want you to create it, and create it only on a
-yes. Then save the absolute path, which applies at once and on every later session:
-
-```python
-from workbench.utils.config_manager import ConfigManager
-
-{saves}
-```
-
-If they don't want one, save `""` under that key and don't ask again."""
+# A PDF is a build product of its script, and git keeps a full copy of every re-render
+REPORT_GITIGNORE_TEXT = """
+  When the directory is inside a git repo (`git -C <dir> rev-parse --is-inside-work-tree`)
+  and has no `.gitignore`, offer to add one holding `*.pdf`, so the scripts are committed
+  and the PDFs are not. Write it only on a yes."""
 
 
 def workspace_text() -> str:
-    """The user's guides and scratch directories for the system prompt, or the ask for unset ones."""
+    """The user's guides and report directories for the system prompt, or the ask for unset ones."""
     from workbench.utils.config_manager import ConfigManager
 
     cm = ConfigManager()
-    guides_dir, scratch_dir = _config_dir(GUIDES_DIR_KEY), _config_dir(SCRATCH_DIR_KEY)
+    can_ask = not cm.using_default_config  # a session-only config (local mode) can't remember the answer
     lines = []
+
+    guides_dir = _config_dir(GUIDES_DIR_KEY)
     if guides_dir:
         lines.append(
             f"- **Guides**: `{guides_dir}` holds the user's own guides, listed under 'user guides' "
             "below and read with `read_guide`. When they ask you to write a guide down, it goes here."
         )
-    if scratch_dir:
+    elif can_ask and cm.get_config(GUIDES_DIR_KEY) is None:
         lines.append(
-            f"- **Scratch**: `{scratch_dir}` is where temp files, scripts, and reports go, "
-            "rather than the working directory, unless the user names another place."
+            WORKSPACE_ASK_TEXT.format(
+                label="Guides",
+                when="Before your first piece of work this session",
+                what="a directory for their own guides",
+                leaf="agent/guides",
+                key=GUIDES_DIR_KEY,
+            )
         )
 
-    # A session-only config (local mode) can't remember the answer, so it never asks
-    unset = [] if cm.using_default_config else [k for k in WORKSPACE_ASKS if cm.get_config(k) is None]
-    if unset:
-        options = "\n".join(
-            f"- {WORKSPACE_ASKS[k][0]}: a local directory (`~/<local dir>/{WORKSPACE_ASKS[k][1]}`) "
-            f"or one inside a repo (`<path to your repo>/{WORKSPACE_ASKS[k][1]}`)"
-            for k in unset
+    report_dir = _config_dir(REPORT_DIR_KEY)
+    if report_dir:
+        lines.append(
+            f"- **Reports**: `{report_dir}` is where reports and the scripts that produce them go, "
+            "rather than the working directory, unless the user names another place."
         )
-        saves = "\n".join(f'ConfigManager().save_config("{k}", "<absolute path>")' for k in unset)
-        ask = WORKSPACE_ASK_TEXT.format(
-            what=" or ".join(WORKSPACE_ASKS[k][0] for k in unset),
-            it="them" if len(unset) > 1 else "it",
-            options=options,
-            saves=saves,
+    elif can_ask and cm.get_config(REPORT_DIR_KEY) is None:
+        lines.append(
+            WORKSPACE_ASK_TEXT.format(
+                label="Reports",
+                when="The first time you are about to write a report",
+                what="reports and their scripts to go",
+                leaf="agent/reports",
+                key=REPORT_DIR_KEY,
+            )
+            + REPORT_GITIGNORE_TEXT
         )
-        lines.append(ask)
     return "## Workspace\n\n" + "\n".join(lines) if lines else ""
 
 
