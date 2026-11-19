@@ -390,13 +390,15 @@ TOOL_SCHEMAS = [
         "description": (
             "Save a report on where this session ended up, when the user asks. Distill: "
             "the goal, artifacts by name, what was concluded, what is still open. Not a "
-            "transcript. Read the 'sessions' guide for the format."
+            "transcript. Read the 'sessions' guide for the format. Pass project to save a "
+            "shared project session: read the existing one first and update it."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "name": {"type": "string", "description": "Short session name, e.g. 'logd-cleanup'"},
                 "report": {"type": "string", "description": "Report markdown, distilled to conclusions"},
+                "project": {"type": "string", "description": "Project that owns it, e.g. 'pxr'; omit for the user's"},
             },
             "required": ["name", "report"],
         },
@@ -404,11 +406,15 @@ TOOL_SCHEMAS = [
     {
         "name": "read_session",
         "description": (
-            "Recall a saved session report. Use the bare name for your own, or " "'<user>/<name>' for someone else's."
+            "Recall a saved session report. Use the bare name for your own, '<user>/<name>' "
+            "for someone else's, or pass project for a project session."
         ),
         "input_schema": {
             "type": "object",
-            "properties": {"name": {"type": "string", "description": "Session name, or '<user>/<name>'"}},
+            "properties": {
+                "name": {"type": "string", "description": "Session name, or '<user>/<name>'"},
+                "project": {"type": "string", "description": "Project that owns it, e.g. 'pxr'; omit for a user's"},
+            },
             "required": ["name"],
         },
     },
@@ -448,14 +454,15 @@ def dispatch(name: str, tool_input: dict, namespace: dict) -> str:
     if name == "read_guide":
         return read_guide(tool_input["name"])
     if name == "read_session":
-        return bosco_utils.read_session(tool_input["name"])
+        return bosco_utils.read_session(tool_input["name"], project=tool_input.get("project"))
     if name == "read_last_session":
         return bosco_utils.read_last_session()
     if name == "note_topic":
         return "Noted."  # filed with the turn's record once the turn ends
     if name == "save_session":
         try:
-            return f"Saved to {bosco_utils.save_session(tool_input['name'], tool_input['report'])}"
+            path = bosco_utils.save_session(tool_input["name"], tool_input["report"], project=tool_input.get("project"))
+            return f"Saved to {path}"
         except ValueError as e:
             return str(e)
     return f"Unknown tool: {name}"

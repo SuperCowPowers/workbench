@@ -39,11 +39,23 @@ report that won't fit is carrying data rather than conclusions — park the data
 Write in past tense, plainly, for a reader who was not there. "Chemprop beat XGB
 by 0.04 RMSE on the analog set, so we kept chemprop" — not "we tried some models."
 
+## Project sessions
+
+A session belongs to the user who saved it, or to a named project. A user's session
+is theirs to write and everyone's to read. A project session (`project: pxr`) is the
+team's running record of that project: anyone can save over it.
+
+Save to a project when the user asks for one ("save this to the pxr project"), not by
+default. A save replaces the whole report, so **read the existing one first and update
+it**: fold the new findings in and keep what colleagues recorded. The store closes
+each project report with `_Saved by <user>_`, naming whoever saved it last.
+
 ## Recalling
 
 ```
-read_session("logd-cleanup")           # your own
-read_session("briford/logd-cleanup")   # someone else's -- reports are shared
+read_session("logd-cleanup")                  # your own
+read_session("briford/logd-cleanup")          # someone else's -- reports are shared
+read_session("analog-split", project="pxr")   # a project's
 ```
 
 Recall gives you the report and nothing else — **no variables, no artifacts in
@@ -59,7 +71,10 @@ To see what is available, most recent first:
 ```python
 recent_sessions()                  # yours -- [session, saved, when], for showing a person
 recent_sessions(all_users=True)    # everyone's
+recent_sessions(project="pxr")     # one project's, as "<project>/<name>"
+recent_sessions(projects=True)     # every project's
 show_session("eromm/caco2-er-class-xgb")   # rendered markdown; no arg = most recent
+show_session("analog-split", project="pxr")
 ```
 
 `recent_sessions` and `show_session` are REPL commands, so the user can run them

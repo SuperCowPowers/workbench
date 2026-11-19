@@ -108,6 +108,16 @@ show_session("logd-cleanup")
 show_session()             # the most recently saved, any user
 ```
 
+A session belongs to the user who saved it, or to a named project. Anyone can read
+either; a project session is also anyone's to update, and closes with a line naming
+whoever saved it last. Ask Bosco to "save this to the pxr project".
+
+```python
+recent_sessions(project="pxr")     # one project's
+recent_sessions(projects=True)     # every project's
+show_session("analog-split", project="pxr")
+```
+
 Ask Bosco to "save a session" and it writes one. Reports are prose, not
 transcripts: they name artifacts rather than restating them.
 

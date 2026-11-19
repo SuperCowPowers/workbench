@@ -4,7 +4,8 @@ A session report is prose, not a transcript and not a variable dump. It records 
 goal, the artifacts involved (by name, since those are re-derivable), what was
 concluded, and what is still open. Reports live in the Parameter Store: on an AWS
 account any user can recall one, including someone else's; in local mode they are
-files on the user's own disk.
+files on the user's own disk. A report belongs to the user who saved it, or to a named
+project, where anyone can update it.
 
 The last session is the implicit counterpart: a rolling record of the user's recent
 prompts and Bosco's replies, rewritten after every turn so the next REPL can pick up
@@ -13,6 +14,7 @@ where this one stopped.
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from functools import lru_cache
 
@@ -27,6 +29,12 @@ from workbench.utils.repl_color_utils import cprint, render_markdown
 log = logging.getLogger("workbench")
 
 SESSION_ROOT = "/workbench/bosco/sessions"
+
+# Project sessions: owned by a named project rather than a person, so anyone can update one
+PROJECT_ROOT = "/workbench/bosco/projects"
+
+# Closing line of a project report, naming whoever saved it last
+_SAVED_BY = re.compile(r"\n*_Saved by [^_\n]+_\s*$")
 
 # Outside SESSION_ROOT, so session listings show only reports someone chose to save
 LAST_SESSION_ROOT = "/workbench/bosco/last_session"
@@ -59,28 +67,36 @@ def param_store():
     return LocalParameterStore()
 
 
-def session_path(name: str, user: str = None) -> str:
+def session_path(name: str, user: str = None, project: str = None) -> str:
     """Full Parameter Store path for a session report.
 
     Args:
         name (str): Session name, or "<user>/<name>" to address someone else's.
         user (str): Owner of the session. Defaults to the current user.
+        project (str): Project the session belongs to, instead of a user.
 
     Returns:
-        str: e.g. "/workbench/bosco/sessions/briford/logd-cleanup"
+        str: e.g. "/workbench/bosco/sessions/briford/logd-cleanup", or
+            "/workbench/bosco/projects/pxr/analog-split" for a project session.
     """
+    if project:
+        return f"{PROJECT_ROOT}/{slugify(project)}/{slugify(name.rsplit('/', 1)[-1])}"
     if "/" in name:
         user, name = name.rsplit("/", 1)
     return f"{SESSION_ROOT}/{slugify(user or current_user())}/{slugify(name)}"
 
 
-def save_session(name: str, report: str, user: str = None) -> str:
+def save_session(name: str, report: str, user: str = None, project: str = None) -> str:
     """Save a session report.
+
+    A project report is shared and anyone can save over it, so it closes with a line
+    naming whoever saved it last.
 
     Args:
         name (str): Session name, e.g. "logd-cleanup".
         report (str): The report markdown.
         user (str): Owner. Defaults to the current user.
+        project (str): Save as a project session, e.g. "pxr", instead of a user's.
 
     Returns:
         str: The path it was saved to.
@@ -88,7 +104,9 @@ def save_session(name: str, report: str, user: str = None) -> str:
     Raises:
         ValueError: If the report is too large for the store to hold.
     """
-    path = session_path(name, user)
+    path = session_path(name, user, project)
+    if project:
+        report = f"{_SAVED_BY.sub('', report)}\n\n_Saved by {current_user()}_"
     try:
         param_store().upsert(path, report)
     except ValueError as e:
@@ -100,54 +118,64 @@ def save_session(name: str, report: str, user: str = None) -> str:
     return path
 
 
-def read_session(name: str, user: str = None) -> str:
+def read_session(name: str, user: str = None, project: str = None) -> str:
     """Read a session report back.
 
     Args:
         name (str): Session name, or "<user>/<name>" for someone else's.
         user (str): Owner. Defaults to the current user.
+        project (str): Read a project session, e.g. "pxr", instead of a user's.
 
     Returns:
         str: The report markdown, or a message naming what is available.
     """
-    path = session_path(name, user)
+    path = session_path(name, user, project)
     report = param_store().get(path)
     if report is None:
-        available = list_sessions(all_users=True)["session"].tolist()
+        available = list_sessions(all_users=True, projects=bool(project))["session"].tolist()
         listing = ", ".join(available) if available else "none saved yet"
         return f"No session at '{path}'. Available: {listing}"
     return report
 
 
-def show_session(name: str = None) -> None:
+def show_session(name: str = None, project: str = None) -> None:
     """Print a session report as rendered markdown.
 
     Args:
         name (str): Session name, or "<user>/<name>" for someone else's. Defaults to
-            the most recently saved session (any user).
+            the most recently saved session (any user, or in the project when given).
+        project (str): Show a project session, e.g. "pxr", instead of a user's.
     """
     if name is None:
-        recent = list_sessions(all_users=True)
+        recent = list_sessions(all_users=True, project=project)
         if recent.empty:
             cprint("darkyellow", "No sessions saved yet.")
             return
         name = recent.iloc[0]["session"]
     cprint("lightpurple", f"\n{name}")
-    render_markdown(read_session(name))
+    render_markdown(read_session(name, project=project))
 
 
-def list_sessions(all_users: bool = False) -> pd.DataFrame:
+def list_sessions(all_users: bool = False, project: str = None, projects: bool = False) -> pd.DataFrame:
     """Saved session reports, most recently written first.
 
     Args:
         all_users (bool): Include other users' sessions. Defaults to False.
+        project (str): List one project's sessions, e.g. "pxr", instead of users'.
+        projects (bool): List every project's sessions instead of users'. Defaults to False.
 
     Returns:
-        pd.DataFrame: columns [session, modified], where session is "<user>/<name>".
+        pd.DataFrame: columns [session, modified], where session is "<user>/<name>",
+            or "<project>/<name>" for project sessions.
     """
-    prefix = SESSION_ROOT if all_users else f"{SESSION_ROOT}/{current_user()}"
+    if project or projects:
+        root = PROJECT_ROOT
+        prefix = f"{root}/{slugify(project)}" if project else root
+    else:
+        root = SESSION_ROOT
+        prefix = root if all_users else f"{root}/{current_user()}"
     rows = [
-        {"session": p["name"][len(SESSION_ROOT) + 1 :], "modified": p["modified"]}
+        {"session": p["name"][len(root) + 1 :], "modified": p["modified"]}
         for p in param_store().list(prefix, details=True)
     ]
     df = pd.DataFrame(rows, columns=["session", "modified"])
@@ -168,7 +196,7 @@ def _age(when) -> str:
     return f"{minutes // (60 * 24)}d ago"
 
 
-def recent_sessions(all_users: bool = False) -> pd.DataFrame:
+def recent_sessions(all_users: bool = False, project: str = None, projects: bool = False) -> pd.DataFrame:
     """Saved sessions in a form worth showing a person.
 
     Same rows as ``list_sessions``, with the timestamp rendered as a relative age and
@@ -176,11 +204,13 @@ def recent_sessions(all_users: bool = False) -> pd.DataFrame:
 
     Args:
         all_users (bool): Include other users' sessions. Defaults to False.
+        project (str): List one project's sessions, e.g. "pxr", instead of users'.
+        projects (bool): List every project's sessions instead of users'. Defaults to False.
 
     Returns:
         pd.DataFrame: columns [session, saved, when]. Empty when nothing is saved.
     """
-    df = list_sessions(all_users)
+    df = list_sessions(all_users, project, projects)
     if df.empty:
         return pd.DataFrame(columns=["session", "saved", "when"])
     return pd.DataFrame(
