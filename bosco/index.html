@@ -5726,6 +5726,13 @@ can pick the thread back up. In local mode they are files under
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"logd-cleanup"</span><span class="p">)</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">show_session</span><span class="p">()</span>             <span class="c1"># the most recently saved, any user</span>
 </span></code></pre></div>
+<p>A session belongs to the user who saved it, or to a named project. Anyone can read
+either; a project session is also anyone's to update, and closes with a line naming
+whoever saved it last. Ask Bosco to "save this to the pxr project".</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">recent_sessions</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="s2">"pxr"</span><span class="p">)</span>     <span class="c1"># one project's</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">recent_sessions</span><span class="p">(</span><span class="n">projects</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>     <span class="c1"># every project's</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">show_session</span><span class="p">(</span><span class="s2">"analog-split"</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="s2">"pxr"</span><span class="p">)</span>
+</span></code></pre></div>
 <p>Ask Bosco to "save a session" and it writes one. Reports are prose, not
 transcripts: they name artifacts rather than restating them.</p>
 <h2 id="long-running-work">Long-running work</h2>
