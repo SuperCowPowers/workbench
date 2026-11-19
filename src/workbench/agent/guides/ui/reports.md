@@ -25,10 +25,10 @@ version is the one mistake a report author cannot undo, and "I regenerated it" i
 help once the old numbers are gone. When the write succeeds, report the **full path and
 size** so the user can find it without hunting.
 
-Save the script that builds the report next to it, under the same name. In a git repo
-the script is what gets committed: the PDF is its build product, and git keeps a full
-copy of every re-render. A `.gitignore` holding `*.pdf` in the report directory does
-that; offer one when the directory is in a repo and has none.
+Save the script that builds the report next to it, under the same name. When the
+report directory is in a git repo, both are tracked: the PDF is the record of what was
+found, and the script is how it was made. Git keeps a full copy of every version of a
+PDF, so keep them small — pass `rasterized=True` to a scatter with thousands of points.
 
 ## Structure: lead with the answer
 

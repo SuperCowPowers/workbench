@@ -199,15 +199,10 @@ WORKSPACE_ASK_TEXT = """- **{label}**: not chosen yet. {when}, ask where they wa
   (`<path to your repo>/{leaf}`). Any directory they name works. Check whether it exists
   (`os.path.isdir` on the expanded path); if it doesn't, ask whether they want you to
   create it, and create it only on a yes. Then save the absolute path, which applies at
-  once and on every later session:
-  `ConfigManager().save_config("{key}", "<absolute path>")`.
+  once and on every later session. Pass their path as a raw string, since a Windows
+  path's backslashes break a plain literal:
+  `ConfigManager().save_config("{key}", os.path.abspath(os.path.expanduser(r"<their path>")))`.
   If they don't want one, save `""` and don't ask again."""
-
-# A PDF is a build product of its script, and git keeps a full copy of every re-render
-REPORT_GITIGNORE_TEXT = """
-  When the directory is inside a git repo (`git -C <dir> rev-parse --is-inside-work-tree`)
-  and has no `.gitignore`, offer to add one holding `*.pdf`, so the scripts are committed
-  and the PDFs are not. Write it only on a yes."""
 
 
 def workspace_text() -> str:
@@ -250,7 +245,6 @@ def workspace_text() -> str:
                 leaf="reports",
                 key=REPORT_DIR_KEY,
             )
-            + REPORT_GITIGNORE_TEXT
         )
     return "## Workspace\n\n" + "\n".join(lines) if lines else ""
 

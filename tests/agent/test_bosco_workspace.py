@@ -74,8 +74,3 @@ def test_missing_guides_directory_adds_nothing(config, tmp_path):
     config[tools.GUIDES_DIR_KEY] = str(tmp_path / "not_there")
     assert tools.user_guide_paths() == []
     assert "user guides" not in tools.guide_index()
-
-
-def test_gitignore_is_offered_with_the_report_ask_only(config):
-    guides_ask, report_ask = tools.workspace_text().split("- **Reports**")
-    assert "*.pdf" in report_ask and "*.pdf" not in guides_ask
