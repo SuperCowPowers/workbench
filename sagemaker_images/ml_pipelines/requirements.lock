@@ -433,7 +433,7 @@ omegaconf==2.3.0
     # via
     #   -c ci/.uv-constraints.txt
     #   sagemaker-core
-opentelemetry-api==1.45.1
+opentelemetry-api==1.45.2
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
@@ -445,12 +445,12 @@ opentelemetry-proto==1.42.1
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
     #   mlflow-tracing
-opentelemetry-sdk==1.45.1
+opentelemetry-sdk==1.45.2
     # via
     #   -c ci/.uv-constraints.txt
     #   mlflow-skinny
     #   mlflow-tracing
-opentelemetry-semantic-conventions==0.66b1
+opentelemetry-semantic-conventions==0.66b2
     # via
     #   -c ci/.uv-constraints.txt
     #   opentelemetry-sdk
