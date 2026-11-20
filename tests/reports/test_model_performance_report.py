@@ -26,5 +26,19 @@ def test_model_performance_report(tmp_path):
     assert rows["error"].abs().is_monotonic_decreasing
 
 
+def test_model_performance_report_scores_the_selected_target(tmp_path):
+    """On a multi-target Endpoint a non-primary target is scored against its own predictions"""
+    endpoint_name, target = "cyp-reg-chemprop-mt-aux-100", "cyp2d6_pic50_direct_inhibition"
+    df = get_evaluation_data(Endpoint(endpoint_name)).head(60)
+    path = tmp_path / "cyp2d6_performance.pdf"
+    report = model_performance_report(endpoint_name, df, path, target=target, key="molecule_name", publish=False)
+
+    rows = report.frames["performance_rows"]
+    assert list(rows.columns) == ["molecule_name", target, f"{target}_pred", "error"]
+    scored = rows.dropna(subset=["error"])
+    assert report.frames["performance_breakout"].loc[0, "support"] == len(scored) == df[target].notna().sum()
+    assert path.read_bytes().startswith(b"%PDF")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])
