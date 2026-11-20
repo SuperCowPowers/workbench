@@ -9,7 +9,7 @@ import pandas as pd  # noqa: E402
 import pytest  # noqa: E402
 
 from workbench.api import DFStore  # noqa: E402
-from workbench.reports import Report, Section, sections  # noqa: E402
+from workbench.reports import Report, Section, Summary, sections  # noqa: E402
 from workbench.utils.pandas_utils import compare_keyed, data_quality  # noqa: E402
 
 CLEAN = {"overlaps": [], "glyphs": []}
@@ -53,7 +53,7 @@ def test_performance_section_builds_clean_and_ranks_the_worst_rows(tmp_path):
     report = Report("Performance").add(section)
 
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_count(report) == 2
+    assert page_count(report) == 3  # the summary, then the section's two pages
     rows = section.frames["performance_rows"]
     assert len(rows) == len(df)
     assert rows["log10_fold"].abs().is_monotonic_decreasing
@@ -72,7 +72,7 @@ def test_data_quality_section_adds_examples_only_for_warnings(tmp_path):
 
     assert dirty.save(tmp_path / "dirty.pdf", publish=False) == CLEAN
     assert clean.save(tmp_path / "clean.pdf", publish=False) == CLEAN
-    assert page_count(dirty) == 2 and page_count(clean) == 1
+    assert page_count(dirty) == 3 and page_count(clean) == 2
 
 
 def test_comparison_section_publishes_one_row_per_disagreeing_value(tmp_path):
@@ -89,14 +89,14 @@ def test_comparison_section_publishes_one_row_per_disagreeing_value(tmp_path):
     assert len(section.frames["comparison_left_only"]) == 10
     report = Report("Comparison").add(section)
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_count(report) == 2
+    assert page_count(report) == 3  # the summary, then the section's two pages
 
 
 def test_identical_frames_compare_on_one_page(tmp_path):
     df = predictions(20)
     report = Report("Comparison").add(sections.comparison(compare_keyed(df, df, on="id")))
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_count(report) == 1
+    assert page_count(report) == 2
 
 
 def test_a_page_function_is_a_section(tmp_path):
@@ -104,9 +104,9 @@ def test_a_page_function_is_a_section(tmp_path):
         fig, y = report.new_page("A custom page")
         return fig
 
-    report = Report("Custom").add(page)
+    report = Report("Custom", summary="One custom page.").add(page)
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_count(report) == 1
+    assert page_count(report) == 2
 
 
 def test_repeated_frame_names_are_refused():
@@ -137,7 +137,7 @@ def test_save_publishes_frames_lists_them_and_clears_emptied_ones(tmp_path):
 
         assert first.location("quality_rows") == "/reports/testing_report_publish/quality_rows"
         assert len(store.get("/quality_rows")) == len(first.frames["quality_rows"])
-        assert page_count(first) == 3  # two section pages and the data page
+        assert page_count(first) == 4  # the summary, two section pages and the data page
 
         # A clean regeneration removes the rows the previous run published
         second = Report("Publish", name="testing_report_publish")
@@ -145,7 +145,7 @@ def test_save_publishes_frames_lists_them_and_clears_emptied_ones(tmp_path):
         second.add(sections.data_quality(data_quality(spotless, key="id")))
         second.save(tmp_path / "second.pdf")
         assert not store.check("/quality_rows")
-        assert page_count(second) == 1
+        assert page_count(second) == 2
     finally:
         DFStore().delete_recursive("/reports/testing_report_publish")
 
@@ -213,10 +213,105 @@ def test_a_failing_page_leaves_the_previous_pdf_and_published_frames(tmp_path, m
     def broken(report):
         raise RuntimeError("page failed")
 
-    report = Report("Broken").add(Section(frames={"rows": predictions(5)})).add(broken)
+    report = Report("Broken", summary="Never written.").add(Section(frames={"rows": predictions(5)})).add(broken)
     with pytest.raises(RuntimeError):
         report.save(path, overwrite=True)
     assert path.read_bytes() == b"yesterday" and published == []
+
+
+def page_headlines(report: Report) -> list:
+    """The headline of every page, in order (the largest text on the page)."""
+
+    class Headlines:
+        found = []
+
+        def savefig(self, fig, **_):
+            self.found.append(max(fig.texts, key=lambda text: text.get_fontsize()).get_text())
+
+    headlines = Headlines()
+    headlines.found = []
+    report.build(headlines)
+    return headlines.found
+
+
+def test_page_one_is_the_summary_with_a_card_per_section(tmp_path):
+    report = Report("Intake", summary="The collected arms are usable.")
+    report.add(sections.performance(predictions(), "cmax", by="project", key="id", log=True))
+    report.add(sections.data_quality(data_quality(messy(), key="id")))
+    left = predictions(40)
+    report.add(sections.comparison(compare_keyed(left, left.iloc[5:], on="id"), "archive", "DataSource"))
+
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    assert page_headlines(report)[0] == "Summary"
+    assert [card.label for card in report._cards] == ["Model performance", "Data quality", "archive against DataSource"]
+    assert "within 2x" in report._cards[0].headline and "weakest project" in report._cards[0].headline
+    assert "35 of 35 paired rows agree" in report._cards[2].headline
+
+
+def test_a_report_with_nothing_to_summarise_is_refused(tmp_path):
+    def page(report):
+        return report.new_page("A custom page")[0]
+
+    with pytest.raises(ValueError, match="needs a summary"):
+        Report("Custom").add(page).save(tmp_path / "report.pdf", publish=False)
+    assert not (tmp_path / "report.pdf").exists()
+
+
+def test_a_custom_section_brings_its_own_card_and_cards_run_onto_a_second_page(tmp_path):
+    def page(report):
+        return report.new_page("Method")[0]
+
+    report = Report("Cards")
+    for n in range(6):
+        card = Summary(f"Step {n}", f"Finding number {n}.", [("Rows", n)], lambda ax: ax.plot([0, 1], [0, n]))
+        report.add(Section(pages=[page], summary=card))
+
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    assert page_headlines(report)[:3] == ["Summary", "Summary, continued", "Method"]
+
+
+def axes_per_page(report: Report) -> list:
+    class Axes:
+        found = []
+
+        def savefig(self, fig, **_):
+            self.found.append(len(fig.axes))
+
+    axes = Axes()
+    axes.found = []
+    report.build(axes)
+    return axes.found
+
+
+def test_the_agreement_scatter_is_drawn_only_when_values_disagree():
+    left = predictions(40)
+    right = left.copy()
+    agreeing = Report("Same").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
+    right.loc[right.index[:4], "cmax"] *= 3
+    disputed = Report("Differs").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
+
+    # page 2 is the comparison overview: the row-fate bars, plus the scatter when a value disagrees
+    assert axes_per_page(agreeing)[1] == 1
+    assert axes_per_page(disputed)[1] == 2
+
+
+def test_comparison_section_handles_flags_text_and_unsigned_values(tmp_path):
+    left = pd.DataFrame({"id": list("abcd"), "flag": [True, False, True, True], "note": [1, 2, 3, 4]})
+    left["n"] = np.array([1, 8, 5, 5], dtype="uint64")
+    right = left.assign(flag=[True, True, True, False], note=["1", "2", "x", "4"])
+    right["n"] = np.array([2, 4, 5, 5], dtype="uint64")
+    section = sections.comparison(compare_keyed(left, right, on="id"), "old", "new")
+
+    mismatched = section.frames["comparison_mismatched"]
+    assert list(mismatched[mismatched["column"] == "n"]["id"]) == ["b", "a"]  # relative gaps 1.0 then 0.5
+    assert set(mismatched["column"]) == {"flag", "note", "n"}
+    assert Report("Mixed").add(section).save(tmp_path / "report.pdf", publish=False) == CLEAN
+
+
+def test_duplicate_rows_alone_still_get_a_chart_and_the_headline():
+    df = pd.DataFrame({"x": [1.0, 1.0, 2.0, 2.0, 3.0], "y": [5.0, 5.0, 6.0, 6.0, 7.0]})
+    card = sections.data_quality(data_quality(df)).summary
+    assert card.chart is not None and "(whole row) has the most flagged rows (4)" in card.headline
 
 
 if __name__ == "__main__":

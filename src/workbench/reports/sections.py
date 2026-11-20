@@ -9,14 +9,18 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from workbench.reports.report import Report, Section
+from workbench.reports.report import Report, Section, Summary
 from workbench.utils.metrics_utils import performance_breakout
 from workbench.utils.pandas_utils import DataQuality, KeyedComparison
+from workbench.utils.plots import data as data_charts
 from workbench.utils.plots import performance as charts
 from workbench.utils.plots import report as pages
 
 # Rows of a detail frame shown on a page; the rest are in the published frame
 EXAMPLE_ROWS = 8
+
+# Columns shown beside the key in a one-sided example table
+EXTRA_COLUMNS = 3
 
 # Page geometry in figure units: the lowest a body may reach above the footer, a table's
 # header, and one table row
@@ -38,6 +42,10 @@ FOLDS = ("2x", "3x", "10x")
 
 def _num(value) -> str:
     return f"{value:.3g}" if isinstance(value, (float, np.floating)) else str(value)
+
+
+def _is_number(values: pd.Series) -> bool:
+    return pd.api.types.is_numeric_dtype(values) and not pd.api.types.is_bool_dtype(values)
 
 
 def _clip(value, width: int) -> str:
@@ -153,7 +161,23 @@ def performance(
         _where(report, fig, y - 0.008, rows_frame, len(detail))
         return fig
 
-    return Section(pages=[overview, misses], frames={rows_frame: detail, breakout_frame: breakout})
+    if log:
+        headline = f"{overall['within_2x']:.0%} of {target} predictions are within 2x of the measured value."
+        stats = [("GMFE", _num(overall["gmfe"])), ("Within 3x", f"{overall['within_3x']:.0%}")]
+    else:
+        headline = f"Predictions explain {overall['r2']:.0%} of the variance in {target}."
+        stats = [("RMSE", _num(overall["rmse"])), ("MAE", _num(overall["mae"]))]
+    if by and len(breakout) > 2:
+        metric = "gmfe" if log else "mae"
+        headline += f" {breakout.iloc[1:].set_index('group')[metric].idxmax()} is the weakest {by}."
+    stats += [("Spearman", _num(overall["spearmanr"])), ("Rows", f"{int(overall['support']):,}")]
+    card = Summary(
+        "Model performance",
+        headline,
+        stats,
+        lambda ax: charts.pred_vs_actual(df[target], df[prediction], groups=df[by] if by else None, log=log, ax=ax),
+    )
+    return Section(pages=[overview, misses], frames={rows_frame: detail, breakout_frame: breakout}, summary=card)
 
 
 def data_quality(result: DataQuality, title: str = "Data quality", name: str = "quality") -> Section:
@@ -172,20 +196,30 @@ def data_quality(result: DataQuality, title: str = "Data quality", name: str = "
     key_cols = [c for c in rows.columns if c not in ("check", "column", "value")]
     warnings = int((findings["severity"] == "warn").sum())
     notes = int((findings["severity"] == "info").sum())
+    flagged = int(findings["count"].sum())
+    per_column = data_charts.quality_counts(result).sum(axis=1)
     findings_frame, rows_frame = f"{name}_findings", f"{name}_rows"
+    verdict = f"{warnings} warnings and {notes} notes." if warnings or notes else "No problems found."
 
     def summary(report: Report):
-        sub = f"{warnings} warnings and {notes} notes." if warnings or notes else "No problems found."
-        fig, y = report.new_page(title, sub)
+        fig, y = report.new_page(title, verdict)
         y = pages.stat_row(
-            fig, pages.L, y, [("Warnings", warnings), ("Notes", notes), ("Cells listed", f"{len(rows):,}")]
+            fig, pages.L, y, [("Warnings", warnings), ("Notes", notes), ("Cells flagged", f"{flagged:,}")]
         )
         if findings.empty:
             return fig
-        shown = findings.fillna("").assign(detail=findings["detail"].map(lambda d: _clip(d, 50)))
-        y = pages.sec(fig, y - 0.01, "Findings, worst first")
+        if len(per_column):
+            height = 0.028 * min(len(per_column), 10) + 0.03
+            bars = fig.add_axes([0.22, y - height - 0.04, 0.62, height])
+            worst = per_column.idxmax()
+            data_charts.quality_bars(result, title=f"{worst} has the most flagged rows", ax=bars)
+            y -= height + 0.115
+        shown = findings.drop(columns="count").fillna("")
+        shown = shown.assign(detail=shown["detail"].map(lambda d: _clip(d, 50)))
+        y = pages.sec(fig, y, "Findings, worst first")
         columns = ["check", "column", "severity", "value", "detail"]
-        y = pages.table(fig, y, columns, _rows(shown, columns, limit=30, width=60))
+        limit = _rows_that_fit(y - BOTTOM - 0.03, most=30)
+        y = pages.table(fig, y, columns, _rows(shown, columns, limit=limit, width=60))
         _where(report, fig, y - 0.008, findings_frame, len(findings))
         return fig
 
@@ -200,9 +234,20 @@ def data_quality(result: DataQuality, title: str = "Data quality", name: str = "
         _where(report, fig, y - 0.008, rows_frame, len(rows))
         return fig
 
+    headline = verdict
+    if len(per_column):
+        headline += f" {per_column.idxmax()} has the most flagged rows ({int(per_column.max()):,})."
+    card = Summary(
+        title,
+        headline,
+        [("Warnings", warnings), ("Notes", notes), ("Cells flagged", f"{flagged:,}")],
+        (lambda ax: data_charts.quality_bars(result, most=5, ax=ax)) if len(per_column) else None,
+    )
     has_examples = warnings and not rows.empty
     return Section(
-        pages=[summary] + ([examples] if has_examples else []), frames={findings_frame: findings, rows_frame: rows}
+        pages=[summary] + ([examples] if has_examples else []),
+        frames={findings_frame: findings, rows_frame: rows},
+        summary=card,
     )
 
 
@@ -230,25 +275,34 @@ def comparison(
     title = title or f"{left} against {right}"
     on, pairs, counts = result.on, result.pairs, result.summary()
     values = [c[: -len("_agree")] for c in pairs.columns if c.endswith("_agree")]
+    numeric = [v for v in values if all(_is_number(pairs[f"{v}_{side}"]) for side in ("left", "right"))]
     disagreements = []
     for value in values:
         off = pairs[~pairs[f"{value}_agree"]]
+        if value in numeric:  # largest relative difference first
+            a, b = (off[f"{value}_{side}"].to_numpy(dtype=float, na_value=np.nan) for side in ("left", "right"))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                gap = np.abs(a - b) / np.abs(b)
+            off = off.iloc[np.argsort(-np.nan_to_num(gap, nan=-1.0), kind="stable")]
         sides = {left: off[f"{value}_left"].astype(str), right: off[f"{value}_right"].astype(str)}
         disagreements.append(off[on].assign(column=value, **sides))
     mismatched = pd.concat(disagreements, ignore_index=True) if disagreements else pd.DataFrame(columns=on)
+    ambiguous = result.ambiguous.sort_values(["n_left", "n_right"], ascending=False, kind="stable")
 
+    # frame suffix, what the document calls it, its rows, its size as shown, and what it means
     buckets = [
-        ("mismatched", mismatched, f"{counts['mismatched']:,} pairs", "one row on each side, values disagree"),
-        ("left_only", result.left_only, None, f"in {left}, key not in {right}"),
-        ("right_only", result.right_only, None, f"in {right}, key not in {left}"),
-        ("ambiguous", result.ambiguous, None, "key repeated on a side, so no single pairing to score"),
-        ("left_out_of_scope", result.left_out_of_scope, None, f"in {left}, carrying a value {right} never holds"),
-        ("right_out_of_scope", result.right_out_of_scope, None, f"in {right}, carrying a value {left} never holds"),
+        ("mismatched", "mismatched", mismatched, f"{counts['mismatched']:,} pairs", "values disagree"),
+        ("left_only", f"{left} only", result.left_only, None, f"key not in {right}"),
+        ("right_only", f"{right} only", result.right_only, None, f"key not in {left}"),
+        ("ambiguous", "ambiguous", ambiguous, f"{len(ambiguous):,} keys", "key repeated on a side, so not scored"),
+        ("left_out_of_scope", f"{left} out of scope", result.left_out_of_scope, None, f"a value {right} never holds"),
+        ("right_out_of_scope", f"{right} out of scope", result.right_out_of_scope, None, f"a value {left} never holds"),
     ]
-    frames = {f"{name}_{bucket}": frame for bucket, frame, _, _ in buckets}
+    frames = {f"{name}_{suffix}": frame for suffix, _, frame, _, _ in buckets}
+    verdict = f"{counts['agree']:,} of {counts['pairs']:,} uniquely keyed pairs agree."
 
     def overview(report: Report):
-        fig, y = report.new_page(title, f"{counts['agree']:,} of {counts['pairs']:,} uniquely keyed pairs agree.")
+        fig, y = report.new_page(title, verdict)
         stats = [("Pairs", counts["pairs"]), ("Agree", counts["agree"]), ("Mismatched", counts["mismatched"])]
         stats += [(f"{left} only", counts["left_only"]), (f"{right} only", counts["right_only"])]
         stats += [("Ambiguous keys", counts["ambiguous_keys"])]
@@ -256,32 +310,47 @@ def comparison(
         note = f"Rows are matched on {', '.join(on)}. Only keys held by one row on each side are scored"
         note += f", on {', '.join(values)}." if values else "."
         y = pages.para(fig, y - 0.006, note, size=8.6)
-        y = pages.sec(fig, y - 0.01, "Where every row went")
+        bars = fig.add_axes([0.16, y - 0.115, 0.74, 0.075])
+        data_charts.fate_bars(result, left, right, title="Where every row went", ax=bars)
+        y -= 0.215
         rows = [["agree", f"{counts['agree']:,} pairs", "one row on each side, values agree"]]
-        rows += [[bucket, shown or f"{len(frame):,} rows", meaning] for bucket, frame, shown, meaning in buckets]
-        pages.table(fig, y, ["bucket", "size", "meaning"], rows, aligns=["left", "right", "left"])
+        rows += [[label, shown or f"{len(frame):,} rows", meaning] for _, label, frame, shown, meaning in buckets]
+        y = pages.table(fig, y, ["bucket", "size", "meaning"], rows, aligns=["left", "right", "left"])
+        disputed = [v for v in numeric if not pairs[f"{v}_agree"].all()]
+        if disputed and y - BOTTOM > 0.30:
+            value = disputed[0]
+            agree = int(pairs[f"{value}_agree"].sum())
+            side = min(0.34, y - BOTTOM - 0.07)
+            scatter = fig.add_axes([0.5 - side * 11 / 17, y - side - 0.05, side * 22 / 17, side])
+            scatter_title = f"{agree:,} of {counts['pairs']:,} pairs agree on {value}"
+            data_charts.value_agreement(result, value, left, right, title=scatter_title, ax=scatter)
         return fig
 
     def examples(report: Report):
         fig, y = report.new_page(f"{title}: rows to look at")
-        filled = sum(not frame.empty for _, frame, _, _ in buckets)
+        filled = sum(not frame.empty for _, _, frame, _, _ in buckets)
         limit = _rows_that_fit((y - BOTTOM) / filled - 0.065, most=6)
-        for bucket, frame, _, meaning in buckets:
+        for suffix, label, frame, _, meaning in buckets:
             if frame.empty:
                 continue
-            columns = list(frame.columns) if bucket in ("mismatched", "ambiguous") else on
-            if bucket == "mismatched":
-                numeric = frame[[left, right]].apply(pd.to_numeric, errors="coerce")
-                frame = frame.assign(
-                    **{
-                        side: numeric[side].map(_num).where(numeric[side].notna(), frame[side])
-                        for side in (left, right)
-                    }
-                )
-            y = pages.sec(fig, y, f"{bucket.replace('_', ' ')}: {meaning}")
-            y = pages.table(fig, y, columns, _rows(frame, columns, limit=limit))
-            y = _where(report, fig, y - 0.004, f"{name}_{bucket}", len(frame)) - 0.008
+            if suffix == "mismatched":
+                parsed = frame[[left, right]].apply(pd.to_numeric, errors="coerce")
+                shown = {s: parsed[s].map(_num).where(parsed[s].notna(), frame[s]) for s in (left, right)}
+                frame, columns = frame.assign(**shown), list(frame.columns)
+            elif suffix == "ambiguous":
+                columns = list(frame.columns)
+            else:  # the key, then the first few other columns
+                columns = on + [c for c in frame.columns if c not in on][:EXTRA_COLUMNS]
+            y = pages.sec(fig, y, f"{label}: {meaning}")
+            y = pages.table(fig, y, columns, _rows(frame, columns, limit=limit, width=22))
+            y = _where(report, fig, y - 0.004, f"{name}_{suffix}", len(frame)) - 0.008
         return fig
 
-    has_examples = any(not frame.empty for _, frame, _, _ in buckets)
-    return Section(pages=[overview] + ([examples] if has_examples else []), frames=frames)
+    headline = f"{counts['agree']:,} of {counts['pairs']:,} paired rows agree"
+    headline += f" and {counts['mismatched']:,} disagree." if counts["mismatched"] else "."
+    headline += f" {counts['left_only']:,} rows are only in {left} and {counts['right_only']:,} only in {right}."
+    stats = [("Pairs", f"{counts['pairs']:,}"), ("Mismatched", f"{counts['mismatched']:,}")]
+    stats += [(f"{left} only", f"{counts['left_only']:,}"), (f"{right} only", f"{counts['right_only']:,}")]
+    card = Summary(title, headline, stats, lambda ax: data_charts.fate_bars(result, left, right, ax=ax))
+    has_examples = any(not frame.empty for _, _, frame, _, _ in buckets)
+    return Section(pages=[overview] + ([examples] if has_examples else []), frames=frames, summary=card)

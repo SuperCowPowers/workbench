@@ -36,17 +36,21 @@ The instinct is to narrate the work in the order it happened — method, then da
 findings. That order bores the reader out of the document before the findings arrive.
 Invert it:
 
-1. **The answer, visually.** The taxonomy, the ranking, the groups — as cards or panels
-   with one exemplar figure each. A reader should be able to stop after page 1 and be
-   usefully informed.
+1. **The answer, visually.** Page 1 is a summary: the conclusion in a sentence, then a
+   card per topic with its finding, its key numbers and one chart. A reader should be able
+   to stop after page 1 and be usefully informed.
 2. **The caveats.** What is wrong with the data, how reliability was scored, and the one
    plot that proves it. Define every metric *here*, where it is first used.
 3. **Method.** How the numbers were produced, which variants were tried, what was
    adopted and why.
 4. **Detail.** One page per group/model/cohort, for the reader who got interested.
 
-Two rules that do most of the work:
+Rules that do most of the work:
 
+- **Every report opens with a summary page.** `Report` builds it from the sections; you
+  supply the one sentence only a person can write.
+- **Lead with a picture.** Each section and each page opens with a chart or graphic; a
+  table backs it up, it does not replace it. A page of numbers alone is a page skipped.
 - **One idea per page.** If a page needs two headlines it is two pages.
 - **No wall of prose.** Cap any text block at ~4 lines, give it a short uppercase label,
   and put a number or a figure next to it. A full page of paragraphs is skipped.
@@ -63,18 +67,21 @@ Each section turns an analysis result into pages, and carries the rows behind ev
 from workbench.reports import Report, sections
 from workbench.utils.pandas_utils import compare_keyed, data_quality
 
-report = Report("Mouse PK intake")
+report = Report("Mouse PK intake", summary="The collected arms match the DataSource; 15 are new.")
 report.add(sections.performance(pred_df, "cmax", by="project", key="batch", log=True, unit="ng/mL"))
 report.add(sections.data_quality(data_quality(collected, key="batch", target="cmax")))
 report.add(sections.comparison(compare_keyed(collected, existing, on="batch"), "archive", "DataSource"))
 report.save(out_pdf)
 ```
 
-| section | takes | pages |
-|---|---|---|
-| `sections.performance` | a predictions frame | metrics and charts, then breakout by a column and the largest errors |
-| `sections.data_quality` | `data_quality(df, key=...)` | findings worst first, then example rows per warning |
-| `sections.comparison` | `compare_keyed(left, right, on=...)` | where every row went, then the rows to look at |
+| section | takes | leads with | then |
+|---|---|---|---|
+| `sections.performance` | a predictions frame | predicted-vs-measured scatter, error histogram | breakout by a column, largest errors |
+| `sections.data_quality` | `data_quality(df, key=...)` | flagged rows per column, by check | findings worst first, example rows per warning |
+| `sections.comparison` | `compare_keyed(left, right, on=...)` | where every row went, per side; left-vs-right scatter | the rows to look at, per bucket |
+
+Page 1 is generated: `summary=` is your conclusion, and each section adds a card with its
+finding, key numbers and lead chart. A report with neither is refused.
 
 `log=True` on the performance section is for positive quantities such as PK parameters: log
 axes, metrics on log10 values, and GMFE with the share within 2x, 3x and 10x.
@@ -95,9 +102,11 @@ report.frames["performance_breakout"]      # the metrics table behind the pages
 ```
 
 A page the sections do not cover is a function you add alongside them. It starts with
-`report.new_page(headline)`; the footer, page number, axes fit and save are done for you:
+`report.new_page(headline)`; the footer, page number, axes fit and save are done for you.
+Wrap it in a `Section` with a `Summary` to give it a card on page 1:
 
 ```python
+from workbench.reports import Section, Summary
 from workbench.utils.plots import report as pages
 
 def page_method(report):
@@ -105,8 +114,13 @@ def page_method(report):
     y = pages.para(fig, y, "Each workbook carries its parameters twice ...")
     return fig
 
-report.add(page_method)
+card = Summary("Method", "413 workbooks were read; 12 only after peeling a revision suffix.", [("Workbooks", 413)])
+report.add(Section(pages=[page_method], summary=card))
 ```
+
+The section charts are also usable on their own, each taking an optional `ax`:
+`workbench.utils.plots.performance` (`pred_vs_actual`, `residuals`, `breakout_bars`) and
+`workbench.utils.plots.data` (`fate_bars`, `value_agreement`, `quality_bars`).
 
 The rest of this guide is the craft behind those pages, for the ones you write yourself.
 
@@ -337,7 +351,8 @@ names you left behind.
 
 - Output path agreed with the user; nothing silently overwritten.
 - Built from `workbench.reports` sections where one fits; no count without the rows behind it.
-- Page 1 answers the question; method is late, not first.
+- Page 1 is the summary and answers the question; method is late, not first.
+- Every section opens with a chart; no page is tables alone.
 - Every page has one headline, and no text block exceeds ~4 lines.
 - Built on `report.theme()`; no hardcoded font family.
 - Equations typeset with `report.equation` / `EQ`, never faked with carets.
