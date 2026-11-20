@@ -15,11 +15,14 @@ from workbench.utils.plots.report import ACCENTS, BODY, MUTED, RULE, tidy
 # One colour per fate of a compared row, kept across charts and pages
 FATE_COLORS = {
     "agree": ACCENTS[0],
+    "not expected": RULE,
     "mismatched": ACCENTS[3],
-    "ambiguous": ACCENTS[2],
+    "repeated key differs": ACCENTS[2],
     "one side only": ACCENTS[1],
-    "out of scope": RULE,
 }
+
+# The fates that need no action; the rest need a look
+FINE = ("agree", "not expected")
 
 # One colour per data quality check
 CHECK_COLORS = {
@@ -39,24 +42,26 @@ def comparison_fates(result: KeyedComparison) -> pd.DataFrame:
         result (KeyedComparison): Output of `pandas_utils.compare_keyed`.
 
     Returns:
-        pd.DataFrame: Indexed by fate (agree, mismatched, ambiguous, one side only, out of
-            scope) with `left` and `right` row counts. Each column sums to its frame's rows.
+        pd.DataFrame: Indexed by fate, the fine ones first (agree, not expected) and then
+            those needing a look (mismatched, repeated key differs, one side only), with
+            `left` and `right` row counts. Each column sums to its frame's rows.
     """
-    paired = {"agree": int(result.pairs["agree"].sum()), "mismatched": len(result.mismatched)}
+    matched, differ = result.repeated[result.repeated["values_match"]], result.repeated_differ
+    unique_agree, mismatched = int(result.pairs["agree"].sum()), len(result.mismatched)
+
+    def side(name: str, only: pd.DataFrame, out_of_scope: pd.DataFrame) -> dict:
+        return {
+            "agree": unique_agree + int(matched[f"{name}_rows"].sum()),
+            "not expected": len(out_of_scope),
+            "mismatched": mismatched,
+            "repeated key differs": int(differ[f"{name}_rows"].sum()),
+            "one side only": len(only),
+        }
+
     return pd.DataFrame(
         {
-            "left": {
-                **paired,
-                "ambiguous": int(result.ambiguous["n_left"].sum()),
-                "one side only": len(result.left_only),
-                "out of scope": len(result.left_out_of_scope),
-            },
-            "right": {
-                **paired,
-                "ambiguous": int(result.ambiguous["n_right"].sum()),
-                "one side only": len(result.right_only),
-                "out of scope": len(result.right_out_of_scope),
-            },
+            "left": side("left", result.left_only, result.left_out_of_scope),
+            "right": side("right", result.right_only, result.right_out_of_scope),
         }
     )
 
@@ -81,7 +86,7 @@ def fate_bars(result: KeyedComparison, left: str = "left", right: str = "right",
         for fate, count in fates[side].items():
             ax.barh(position, count, left=start, color=FATE_COLORS[fate], lw=0, height=0.58, label=fate)
             if count > 0 and count >= 0.06 * fates[side].sum():
-                dark = fate == "out of scope"
+                dark = fate == "not expected"
                 ax.text(start + count / 2, position, f"{count:,}", ha="center", va="center", fontsize=7.5).set_color(
                     BODY if dark else "white"
                 )

@@ -89,13 +89,17 @@ two versions of a `FeatureSet`):
 from workbench.utils.pandas_utils import compare_keyed
 
 result = compare_keyed(collected, existing, on="compound_id", values=["logd"], rtol=0.02, scope=["assay"])
-result.summary()     # pairs, agree, mismatched, ambiguous_keys, left_only, right_only, out of scope
+result.summary()     # pairs, agree, mismatched, repeated_differ, left_only, right_only, out of scope
 result.mismatched    # both values side by side, with each side's index
 ```
 
-Only keys held by one row on each side are scored; repeated keys come back as `ambiguous`
-rather than inflating the mismatch count. `scope` sets aside rows carrying a value the other
-side never holds, so they read as out of scope instead of missing. Fold id spellings into
+Keys held by one row on each side are scored row against row. Rows sharing a key are
+compared as a set instead of inflating the mismatch count, and anything that does not agree
+lands in `result.repeated_differ`. By default the two sides must hold the same rows;
+`repeats="values"` accepts the same values however many rows carry them, for raw collected
+data where a result may be recorded more than once. `scope` sets aside rows carrying a
+value the other side never holds (`scope_reason` says which), so they read as not expected
+instead of missing. Fold id spellings into
 one form on both sides first. Both results drop straight into a PDF — see `reports`.
 
 ## Getting a landscape
