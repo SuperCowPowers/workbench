@@ -141,5 +141,14 @@ def test_missing_column_raises():
         compare_keyed(left, right, on="id", values=["x"])
 
 
+def test_zero_tolerance_compares_integers_exactly():
+    """Integers past float precision still differ when no tolerance is asked for"""
+    left = pd.DataFrame({"id": [1, 2], "n": [9007199254740992, 5]})
+    right = pd.DataFrame({"id": [1, 2], "n": [9007199254740993, 5]})
+
+    assert list(compare_keyed(left, right, on="id").pairs["agree"]) == [False, True]
+    assert list(compare_keyed(left, right, on="id", atol=2).pairs["agree"]) == [True, True]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

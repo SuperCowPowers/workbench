@@ -359,18 +359,21 @@ def performance_breakout(
 
     Returns:
         DataFrame with a "group" column ("all" first, then each group, largest first) and one
-        column per metric.
+        column per metric. A group with no scorable pair has support 0 and NaN metrics.
     """
 
     def score(group: str, frame: pd.DataFrame) -> dict:
         y_true, y_pred = frame[target_col].to_numpy(dtype=float), frame[prediction_col].to_numpy(dtype=float)
+        empty = {name: np.nan for name in columns[1:-1]}
         if not log:
-            return {"group": group, **compute_regression_metrics(y_true, y_pred)}
+            return {"group": group, **empty, "support": 0, **compute_regression_metrics(y_true, y_pred)}
         positive = (y_true > 0) & (y_pred > 0)
         y_true, y_pred = y_true[positive], y_pred[positive]
         metrics = compute_regression_metrics(np.log10(y_true), np.log10(y_pred))
-        return {"group": group, **metrics, **fold_summary(y_true, y_pred)}
+        return {"group": group, **empty, "support": 0, **metrics, **fold_summary(y_true, y_pred)}
 
+    columns = ["group", "rmse", "mae", "r2", "pearsonr", "spearmanr"]
+    columns += (["gmfe", "afe", "within_2x", "within_3x", "within_10x"] if log else []) + ["support"]
     rows = [score("all", predictions_df)]
     if by is not None:
         labels = predictions_df[by].astype(object).where(predictions_df[by].notna(), "unknown").astype(str)
@@ -379,7 +382,7 @@ def performance_breakout(
         labels = labels.where(labels.isin(named), "other")
         for group in named + (["other"] if (labels == "other").any() and "other" not in named else []):
             rows.append(score(group, predictions_df[labels == group]))
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=columns)
 
 
 def soft_threshold_error(

@@ -18,6 +18,10 @@ from workbench.utils.plots import report as pages
 # Rows of a detail frame shown on a page; the rest are in the published frame
 EXAMPLE_ROWS = 8
 
+# Page geometry in figure units: the lowest a body may reach above the footer, a table's
+# header, and one table row
+BOTTOM, TABLE_HEAD, TABLE_ROW = 0.06, 0.03, 0.0172
+
 METRIC_NOTES = (
     "R2 is the share of the target's variance the predictions explain. RMSE and MAE are in target units; "
     "RMSE weights large misses more. Spearman scores ranking alone."
@@ -43,6 +47,11 @@ def _clip(value, width: int) -> str:
 
 def _rows(df: pd.DataFrame, columns: List[str], limit: int = EXAMPLE_ROWS, width: int = 28) -> List[List[str]]:
     return [[_clip(_num(v), width) for v in row] for row in df[columns].head(limit).itertuples(index=False)]
+
+
+def _rows_that_fit(height: float, most: int) -> int:
+    """How many table rows fit in `height` of the page, under a header: at least 1, at most `most`."""
+    return int(min(most, max(1, (height - TABLE_HEAD) // TABLE_ROW)))
 
 
 def _where(report: Report, fig, y: float, frame: str, count: int) -> float:
@@ -85,10 +94,11 @@ def performance(
     breakout = performance_breakout(df, target, by=by, prediction_col=prediction, log=log)
     overall = breakout.iloc[0]
 
-    detail = df[key_cols + ([by] if by else []) + [target, prediction]].copy()
+    if int(overall["support"]) == 0:
+        raise ValueError(f"No row has both '{target}' and '{prediction}' to score")
+    detail = df[list(dict.fromkeys(key_cols + ([by] if by else []) + [target, prediction]))].copy()
     if not key_cols:
         detail.insert(0, "index", df.index)
-        key_cols = ["index"]
     if log:
         positive = (detail[target] > 0) & (detail[prediction] > 0)
         detail["log10_fold"] = np.log10((detail[prediction] / detail[target]).where(positive))
@@ -96,7 +106,7 @@ def performance(
     else:
         detail["error"] = detail[prediction] - detail[target]
         error = "error"
-    detail = detail.loc[detail[error].abs().sort_values(ascending=False, na_position="last").index]
+    detail = detail.sort_values(error, key=abs, ascending=False, na_position="last", kind="stable")
     rows_frame, breakout_frame = f"{name}_rows", f"{name}_breakout"
 
     def overview(report: Report):
@@ -139,7 +149,7 @@ def performance(
             y = _where(report, fig, y, breakout_frame, len(breakout))
         y = pages.sec(fig, y, "Largest errors")
         columns = list(detail.columns)
-        y = pages.table(fig, y, columns, _rows(detail, columns, limit=10))
+        y = pages.table(fig, y, columns, _rows(detail, columns, limit=_rows_that_fit(y - BOTTOM - 0.03, most=10)))
         _where(report, fig, y - 0.008, rows_frame, len(detail))
         return fig
 
@@ -168,7 +178,7 @@ def data_quality(result: DataQuality, title: str = "Data quality", name: str = "
         sub = f"{warnings} warnings and {notes} notes." if warnings or notes else "No problems found."
         fig, y = report.new_page(title, sub)
         y = pages.stat_row(
-            fig, pages.L, y, [("Warnings", warnings), ("Notes", notes), ("Cells flagged", f"{len(rows):,}")]
+            fig, pages.L, y, [("Warnings", warnings), ("Notes", notes), ("Cells listed", f"{len(rows):,}")]
         )
         if findings.empty:
             return fig
@@ -254,6 +264,8 @@ def comparison(
 
     def examples(report: Report):
         fig, y = report.new_page(f"{title}: rows to look at")
+        filled = sum(not frame.empty for _, frame, _, _ in buckets)
+        limit = _rows_that_fit((y - BOTTOM) / filled - 0.065, most=6)
         for bucket, frame, _, meaning in buckets:
             if frame.empty:
                 continue
@@ -267,7 +279,7 @@ def comparison(
                     }
                 )
             y = pages.sec(fig, y, f"{bucket.replace('_', ' ')}: {meaning}")
-            y = pages.table(fig, y, columns, _rows(frame, columns, limit=6))
+            y = pages.table(fig, y, columns, _rows(frame, columns, limit=limit))
             y = _where(report, fig, y - 0.004, f"{name}_{bucket}", len(frame)) - 0.008
         return fig
 

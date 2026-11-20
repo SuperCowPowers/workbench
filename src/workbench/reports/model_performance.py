@@ -43,8 +43,10 @@ def model_performance_report(
     endpoint = Endpoint(endpoint_name)
     target = target or resolve_primary_target(Model(endpoint.get_input()).target())
     predictions = endpoint.inference(df)
+    # A multi-target model carries each target's predictions in "<target>_pred"
+    prediction = f"{target}_pred" if f"{target}_pred" in predictions.columns else "prediction"
 
     report = Report(f"{endpoint_name} performance")
-    report.add(sections.performance(predictions, target, by=by, key=key, log=log, unit=unit))
+    report.add(sections.performance(predictions, target, prediction, by=by, key=key, log=log, unit=unit))
     report.save(path, overwrite=overwrite, publish=publish)
     return report

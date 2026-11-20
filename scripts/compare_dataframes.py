@@ -1,5 +1,5 @@
 from workbench.api import DFStore
-from workbench.utils.pandas_utils import compare_dataframes
+from workbench.utils.pandas_utils import compare_keyed
 
 # Initialize DFStore and load dataframes
 df_store = DFStore()
@@ -24,4 +24,6 @@ old_df = old_df[~old_df["smiles"].isin([old_error_smiles_1, old_error_smiles_2])
 new_df = new_df[~new_df["smiles"].isin([old_error_smiles_1, old_error_smiles_2])]
 
 # Compare the dataframes
-comparison = compare_dataframes(old_df, new_df, ["compound_id", "smiles"])
+comparison = compare_keyed(old_df, new_df, on="compound_id", atol=1e-10)
+print(comparison.summary())
+print(comparison.mismatched)

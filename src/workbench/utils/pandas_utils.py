@@ -170,7 +170,8 @@ def compare_keyed(
             column the two share outside `on` and `scope`.
         rtol (float): Relative tolerance for numeric values, as a fraction of the right
             value. Defaults to 0.0.
-        atol (float): Absolute tolerance for numeric values. Defaults to 0.0.
+        atol (float): Absolute tolerance for numeric values. Defaults to 0.0. With both
+            tolerances zero, values are compared exactly in their own dtype.
         scope (Optional[List[str]]): Columns whose values define what each side is meant to
             carry. A row holding a value the other side never has in that column is out of
             scope rather than missing, and is set aside before keys are compared.
@@ -216,7 +217,8 @@ def compare_keyed(
     pairs = lp.merge(rp, on=on, suffixes=("_left", "_right"), validate="one_to_one")
     for value in values:
         a, b = pairs[f"{value}_left"], pairs[f"{value}_right"]
-        if all(pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s) for s in (a, b)):
+        numeric = all(pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s) for s in (a, b))
+        if numeric and (rtol or atol):
             a_num = a.to_numpy(dtype=float, na_value=np.nan)
             b_num = b.to_numpy(dtype=float, na_value=np.nan)
             agree = np.isclose(a_num, b_num, rtol=rtol, atol=atol, equal_nan=True)
@@ -787,9 +789,8 @@ def data_quality(
                     detail = f"outside [{low:g}, {high:g}], {outlier_scale:g} x IQR beyond the quartiles"
                     add("outliers", col, "info", outliers, detail, values)
         elif not pd.api.types.is_bool_dtype(values) and not pd.api.types.is_datetime64_any_dtype(values):
-            parsed = pd.to_numeric(present, errors="coerce")
-            if parsed.isna().any() and parsed.notna().mean() >= MOSTLY_NUMERIC_FRACTION:
-                unparseable = parsed.isna().reindex(df.index, fill_value=False)
+            unparseable = pd.to_numeric(values, errors="coerce").isna() & ~missing
+            if unparseable.any() and 1 - unparseable.sum() / len(present) >= MOSTLY_NUMERIC_FRACTION:
                 add("unparseable", col, "warn", unparseable, "text in a mostly numeric column", values)
 
         if len(present) > 1 and present.nunique() == 1:
@@ -800,7 +801,9 @@ def data_quality(
         repeated = df.duplicated(key_cols, keep=False) & df[key_cols].notna().all(axis=1)
         if repeated.any():
             add("duplicate_key", ", ".join(key_cols), "warn", repeated, "key held by more than one row")
-    identical = df.duplicated(hashable_cols, keep=False) if hashable_cols else pd.Series(False, index=df.index)
+    # Whole-row identity needs every column comparable
+    comparable = len(hashable_cols) == len(df.columns) and len(hashable_cols) > 0
+    identical = df.duplicated(keep=False) if comparable else pd.Series(False, index=df.index)
     if identical.any():
         add("duplicate_rows", None, "warn", identical, "rows identical in every column")
 

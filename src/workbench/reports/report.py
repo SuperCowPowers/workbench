@@ -126,7 +126,10 @@ class Report:
             plt.close(fig)
 
     def save(self, path: Union[str, Path], overwrite: bool = False, publish: bool = True) -> Dict[str, List]:
-        """Publish the detail frames, lint the pages, and write the PDF.
+        """Lint the pages, publish the detail frames, and write the PDF.
+
+        Every page is built before anything is replaced, so a page that raises leaves the
+        previous run's PDF and published frames as they were.
 
         Args:
             path (Union[str, Path]): Where to write the PDF.
@@ -143,9 +146,11 @@ class Report:
         if Path(path).exists() and not overwrite:
             raise FileExistsError(f"{path} exists; pass overwrite=True to replace it")
         self._published = publish
+        lint = pages.check(self.build)
         if publish:
             self._publish_frames()
-        return pages.save(path, self.build, overwrite=overwrite)
+        pages.write(path, self.build)
+        return lint
 
     def _publish_frames(self) -> None:
         """Upsert each frame under /reports/<name>/; an empty frame removes the previous run's."""

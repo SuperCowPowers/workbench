@@ -588,12 +588,33 @@ def save(path: Union[str, Path], build: Callable, *args, overwrite: bool = False
     path = Path(path)
     if path.exists() and not overwrite:
         raise FileExistsError(f"{path} exists; pass overwrite=True to replace it")
+    lint = check(build, *args, **kwargs)
+    write(path, build, *args, **kwargs)
+    return lint
+
+
+def check(build: Callable, *args, **kwargs) -> Dict[str, List]:
+    """Apply the theme, build every page without writing, and log each lint problem.
+
+    Returns:
+        Dict[str, List]: The `audit` result.
+    """
     theme(HEADING_FONT, BODY_FONT)
     lint = audit(build, *args, **kwargs)
     for problem in lint["overlaps"] + lint["glyphs"]:
         log.warning(f"Report lint: {problem}")
+    return lint
+
+
+def write(path: Union[str, Path], build: Callable, *args, **kwargs) -> None:
+    """Write a report's pages to a PDF, replacing any file at `path`.
+
+    Args:
+        path (Union[str, Path]): Where to write the PDF. Parent directories are created.
+        build (Callable): Called as `build(pdf, *args, **kwargs)`.
+    """
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with PdfPages(path) as pdf:
         build(pdf, *args, **kwargs)
     log.info(f"Wrote {path.resolve()} ({path.stat().st_size / 1024:.0f} KB)")
-    return lint

@@ -150,5 +150,74 @@ def test_save_publishes_frames_lists_them_and_clears_emptied_ones(tmp_path):
         DFStore().delete_recursive("/reports/testing_report_publish")
 
 
+def lowest_text(report: Report) -> float:
+    """The lowest body text on any page, in figure units (the footer sits at 0.028)."""
+
+    class Lowest:
+        y = 1.0
+
+        def savefig(self, fig, **_):
+            self.y = min([self.y] + [t.get_position()[1] for t in fig.texts if t.get_position()[1] > 0.03])
+
+    lowest = Lowest()
+    report.build(lowest)
+    return lowest.y
+
+
+def test_performance_section_tolerates_a_key_that_includes_the_breakout(tmp_path):
+    section = sections.performance(predictions(), "cmax", by="project", key=["project", "id"])
+    assert list(section.frames["performance_rows"].columns) == ["project", "id", "cmax", "prediction", "error"]
+    assert Report("Performance").add(section).save(tmp_path / "report.pdf", publish=False) == CLEAN
+
+
+def test_performance_rows_are_not_multiplied_by_repeated_index_labels():
+    df = pd.concat([predictions(30), predictions(30)])
+    rows = sections.performance(df, "cmax", key="id").frames["performance_rows"]
+    assert len(rows) == 60 and rows["error"].abs().is_monotonic_decreasing
+
+
+def test_performance_section_refuses_a_frame_with_nothing_to_score():
+    with pytest.raises(ValueError, match="to score"):
+        sections.performance(predictions(20).assign(cmax=np.nan), "cmax")
+
+
+def test_a_full_breakout_page_stays_above_the_footer():
+    df = predictions(400)
+    df["project"] = [f"project_{i % 12}" for i in range(len(df))]
+    report = Report("Performance").add(sections.performance(df, "cmax", by="project", key="id", log=True))
+    report._published = True
+    assert lowest_text(report) > 0.045
+
+
+def test_six_full_comparison_buckets_stay_above_the_footer():
+    left = predictions(120).assign(route=["po"] * 100 + ["ip"] * 20)
+    right = predictions(120).assign(route=["po"] * 100 + ["sc"] * 20)
+    left = pd.concat([left, left.iloc[:8]]).reset_index(drop=True)
+    left.loc[left.index[20:40], "id"] = [f"only_left_{i}" for i in range(20)]
+    right.loc[right.index[40:60], "id"] = [f"only_right_{i}" for i in range(20)]
+    right.loc[right.index[60:70], "cmax"] *= 2
+    result = compare_keyed(left, right, on="id", values=["cmax"], scope=["route"])
+    assert (result.summary().drop(["pairs", "agree"]) > 6).all()
+
+    report = Report("Comparison").add(sections.comparison(result, "archive", "DataSource"))
+    report._published = True
+    assert lowest_text(report) > 0.045
+
+
+def test_a_failing_page_leaves_the_previous_pdf_and_published_frames(tmp_path, monkeypatch):
+    path = tmp_path / "report.pdf"
+    path.write_bytes(b"yesterday")
+    published = []
+    monkeypatch.setattr(Report, "_publish_frames", lambda self: published.append(self.name))
+
+    def broken(report):
+        raise RuntimeError("page failed")
+
+    report = Report("Broken").add(Section(frames={"rows": predictions(5)})).add(broken)
+    with pytest.raises(RuntimeError):
+        report.save(path, overwrite=True)
+    assert path.read_bytes() == b"yesterday" and published == []
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

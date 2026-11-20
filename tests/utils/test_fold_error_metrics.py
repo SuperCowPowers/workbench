@@ -65,3 +65,13 @@ def test_performance_breakout_without_by_is_one_row_in_target_units():
     table = performance_breakout(df, "y")
     assert list(table["group"]) == ["all"] and "gmfe" not in table
     assert table.loc[0, "mae"] == pytest.approx(np.mean(np.abs(PRED - TRUE)))
+
+
+def test_performance_breakout_keeps_its_columns_when_nothing_can_be_scored():
+    df = pd.DataFrame({"y": [np.nan, 1.0, 2.0, 3.0, 4.0, 5.0], "prediction": [1.0, 1.1, 2.1, 2.9, 4.2, 5.1]})
+    df["project"] = ["a"] * 1 + ["b"] * 5
+    table = performance_breakout(df.assign(y=np.nan), "y", by="project", log=True, min_support=1)
+
+    assert list(table["support"]) == [0, 0, 0]
+    assert table["gmfe"].isna().all() and "within_10x" in table
+    assert list(performance_breakout(df, "y", by="project", min_support=1)["support"]) == [5, 5, 0]

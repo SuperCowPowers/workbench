@@ -140,5 +140,19 @@ def test_unhashable_columns_are_skipped():
     assert result.findings.empty
 
 
+def test_repeated_index_labels_do_not_break_the_checks():
+    """A concatenated frame repeats index labels; rows are still found by position"""
+    df = pd.DataFrame({"id": ["a", "b", "c", "d"], "conc": ["1", "BLQ", None, "2.5"]}, index=[0, 0, 1, 1])
+    result = data_quality(df, key="id")
+
+    assert list(rows(result, "unparseable")["id"]) == ["b"]
+    assert list(rows(result, "missing")["id"]) == ["c"]
+
+
+def test_rows_differing_only_in_an_uncomparable_column_are_not_duplicates():
+    df = pd.DataFrame({"x": [1, 1], "fp": [[1, 0], [0, 1]]})
+    assert "duplicate_rows" not in set(data_quality(df).findings["check"])
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

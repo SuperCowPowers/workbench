@@ -92,3 +92,19 @@ def test_breakout_bars_keep_the_given_order_top_to_bottom():
     assert ticks["alpha"] > ticks["beta"] > ticks["gamma"]
     assert [p.get_width() for p in ax.patches] == [0.9, 0.5, 0.7]
     assert ax.lines[0].get_xdata()[0] == 0.6
+
+
+def test_infinite_pairs_are_left_off():
+    true = np.append(TRUE, [np.inf, 5.0])
+    pred = np.append(PRED, [5.0, -np.inf])
+
+    assert points(pred_vs_actual(true, pred).axes[0]) == 200
+    assert sum(p.get_height() for p in residuals(true, pred).axes[0].patches) == 200
+
+
+def test_an_input_group_named_other_is_drawn_once():
+    groups = np.array(["other"] * 150 + ["alpha"] * 50)
+    ax = pred_vs_actual(TRUE, PRED, groups=groups).axes[0]
+
+    assert [t.get_text() for t in ax.get_legend().get_texts()] == ["alpha", "other"]
+    assert points(ax) == 200

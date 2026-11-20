@@ -22,9 +22,9 @@ def _axes(ax, figsize: tuple):
 
 
 def _pairs(y_true, y_pred, positive: bool = False) -> pd.DataFrame:
-    """Aligned truth/prediction pairs with NaNs (and, for log axes, non-positives) dropped."""
+    """Aligned truth/prediction pairs with non-finite values (and, for log axes, non-positives) dropped."""
     pairs = pd.DataFrame({"true": np.asarray(y_true, dtype=float), "pred": np.asarray(y_pred, dtype=float)})
-    keep = pairs.notna().all(axis=1)
+    keep = pd.Series(np.isfinite(pairs.to_numpy()).all(axis=1), index=pairs.index)
     if positive:
         keep &= (pairs > 0).all(axis=1)
     return pairs[keep]
@@ -98,7 +98,7 @@ def pred_vs_actual(
         ax.scatter(pairs["true"], pairs["pred"], color=color, **style)
     else:
         labels = pd.Series(np.asarray(groups)).reindex(pairs.index).fillna("unknown").astype(str)
-        named = list(labels.value_counts().index[: len(ACCENTS)])
+        named = [label for label in labels.value_counts().index if label != "other"][: len(ACCENTS)]
         labels = labels.where(labels.isin(named), "other")
         for label, group_color in list(zip(named, ACCENTS)) + [("other", MUTED)]:
             hit = pairs[labels == label]
