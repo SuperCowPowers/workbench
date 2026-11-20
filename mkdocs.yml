@@ -35,7 +35,6 @@ nav:
     - Views: api_classes/views.md
     - Parameter Store: api_classes/parameter_store.md
     - DataFrame Store: api_classes/df_store.md
-    - Reports: api_classes/reports.md
     - Graph Store: api_classes/graph_store.md
     - Monitor: api_classes/monitor.md
     - Compound: api_classes/compound.md

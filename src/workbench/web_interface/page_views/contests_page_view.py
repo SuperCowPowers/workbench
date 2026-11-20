@@ -1,4 +1,4 @@
-"""ContestsPageView pulls the published contest reports from Reports()"""
+"""ContestsPageView pulls the published contest reports from the contest store"""
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
@@ -7,10 +7,9 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.web_interface.page_views.page_view import PageView
-from workbench.api import Reports
 from workbench.cached.cached_meta import CachedMeta
 from workbench.utils.pipeline_utils import endpoint_group_paths
-from workbench.utils.contest_utils import RECENT_CHANGE_HOURS
+from workbench.utils.contest_utils import RECENT_CHANGE_HOURS, contest_store
 
 
 class ContestsPageView(PageView):
@@ -19,9 +18,9 @@ class ContestsPageView(PageView):
         # Call SuperClass Initialization
         super().__init__()
 
-        # Reports (S3-backed) for the contest data; CachedMeta only for the pipeline
+        # Contest store (S3-backed) for the contest data; CachedMeta only for the pipeline
         # hierarchy (group paths). No Model/Endpoint constructions.
-        self.reports = Reports()
+        self.reports = contest_store()
         self.meta = CachedMeta()
 
         # One entry per contest: {"group": [path], "recent_change": bool, "rows": [row dicts]}

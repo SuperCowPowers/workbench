@@ -21,12 +21,12 @@ open_page("contests")
 
 ## Look them up directly
 
-Contest reports live under `/contests/` in the report store:
+Contest reports live under `/contests/` in the contest store:
 
 ```python
-from workbench.api import Reports
+from workbench.utils.contest_utils import contest_store
 
-reports = Reports()
+reports = contest_store()
 locations = [loc for loc in reports.list() if loc.startswith("/contests/")]
 df = reports.get("/contests/aqsol-class")
 ```
@@ -55,11 +55,10 @@ it instead of pulling metrics model-by-model (that is slower and easy to get
 wrong):
 
 ```python
-from workbench.utils.contest_utils import find_contests
-from workbench.api import Reports
+from workbench.utils.contest_utils import contest_store, find_contests
 
 loc = find_contests("pxr-reg-chemprop-mt-logd-260715")[0]["contest"]  # -> "/contests/pxr-reg-v1"
-report = Reports().get(loc)                                           # champion first, challengers best-first
+report = contest_store().get(loc)                                     # champion first, challengers best-first
 report[["model", "role", "rmse", "r2", "spearmanr"]]                  # the ranked comparison
 ```
 

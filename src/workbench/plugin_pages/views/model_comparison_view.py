@@ -1,6 +1,6 @@
 """ModelComparisonView: the full published contest reports.
 
-Contest reports are published to the Reports store (/contests/*) by the promotion
+Contest reports are published to the contest store (/contests/*) by the promotion
 arbiter. This view is a thin parallel read of that subtree -- no batch computation,
 no model construction. The page ships the raw rows to the browser and renders the
 rail + comparison table clientside (assets/mc/render.js).
@@ -13,7 +13,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.web_interface.page_views.page_view import PageView
-from workbench.api import Reports
+from workbench.utils.contest_utils import contest_store
 from workbench.cached.cached_meta import CachedMeta
 from workbench.utils.pipeline_utils import endpoint_group_paths
 
@@ -28,7 +28,7 @@ class ModelComparisonView(PageView):
     def __init__(self):
         """Initialize the ModelComparisonView"""
         super().__init__()
-        self.reports = Reports()
+        self.reports = contest_store()
         self.meta = CachedMeta()  # for the pipeline-hierarchy grouping (the rail's sections)
 
         # One entry per contest: {"endpoint": str, "group": [path], "rows": [row dicts]},

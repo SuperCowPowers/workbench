@@ -1,4 +1,4 @@
-"""Helpers for champion/challenger contest reports (Reports() /contests subtree)."""
+"""Helpers for champion/challenger contest reports (DFStore /reports/contests subtree)."""
 
 from datetime import timedelta
 
@@ -12,7 +12,18 @@ CONTEST_PREFIX = "/contests/"
 RECENT_CHANGE_HOURS = 72
 
 
-def find_contests(model_name: str, reports=None) -> list:
+def contest_store():
+    """The store contest reports are published to: a DFStore scoped to /reports.
+
+    Returns:
+        DFStore: Locations are relative to /reports, so a contest is "/contests/<endpoint>".
+    """
+    from workbench.api.df_store import DFStore
+
+    return DFStore(path_prefix="/reports")
+
+
+def find_contests(model_name: str) -> list:
     """Find the contests a model takes part in.
 
     Contest membership lives in the published report rows, not on the Model
@@ -21,15 +32,11 @@ def find_contests(model_name: str, reports=None) -> list:
     Args:
         model_name (str): The model name (use the promoted name; champions are
             usually the dated copy, e.g. "my-model-260715").
-        reports (Reports): Report store to search; defaults to Reports().
 
     Returns:
         list: One {"contest", "role", "endpoint"} dict per hit, empty if none.
     """
-    if reports is None:
-        from workbench.api.reports import Reports
-
-        reports = Reports()
+    reports = contest_store()
 
     hits = []
     for location in reports.list():
@@ -51,11 +58,8 @@ def find_contests(model_name: str, reports=None) -> list:
     return hits
 
 
-def contest_summary(reports=None) -> list:
+def contest_summary() -> list:
     """One row per contest for the REPL greeting, most recent first.
-
-    Args:
-        reports (Reports): Report store to search; defaults to Reports().
 
     Returns:
         list: One dict per contest, sorted newest-first, with keys "contest"
@@ -63,10 +67,7 @@ def contest_summary(reports=None) -> list:
             "endpoint", "contested" (bool), "recent_change" (bool, champion
             promoted within RECENT_CHANGE_HOURS), and "timestamp".
     """
-    if reports is None:
-        from workbench.api.reports import Reports
-
-        reports = Reports()
+    reports = contest_store()
 
     now = pd.Timestamp.now(tz="UTC")
     rows = []

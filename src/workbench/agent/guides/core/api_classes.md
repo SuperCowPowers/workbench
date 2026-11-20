@@ -9,7 +9,7 @@ locking you into one path.
 ```python
 from workbench.api import (
     DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint,
-    MetaEndpoint, InferenceCache, CachedMeta, ParameterStore, DFStore, Reports,
+    MetaEndpoint, InferenceCache, CachedMeta, ParameterStore, DFStore,
     InferenceStore, PublicData, Monitor,
 )
 ```
@@ -72,7 +72,6 @@ The storage classes share one interface — `get`, `upsert`, `list`, `delete`,
 | `DFStore` | DataFrames (S3 parquet) |
 | `ParameterStore` | small values / config |
 | `GraphStore` | networkx graphs |
-| `Reports` | published reports (a `DFStore` scoped to `/reports`) |
 | `InferenceStore` | inference results, Athena-queryable |
 
 Learn one, you know the rest. Use them as the glue for anything that isn't an

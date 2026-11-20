@@ -118,7 +118,7 @@ class Arbiter:
             with patch.object(model_promotion, "Model", side_effect=self._model):
                 with patch.object(model_promotion, "Endpoint", side_effect=self._endpoint):
                     with patch.object(model_promotion, "contest_report", side_effect=self._contest_report):
-                        with patch.object(model_promotion, "Reports", MagicMock()):
+                        with patch.object(model_promotion, "contest_store", MagicMock()):
                             main()
         return self
 

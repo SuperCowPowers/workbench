@@ -37,7 +37,6 @@ from workbench.api import (
     Monitor,
     ParameterStore,
     PublicData,
-    Reports,
 )
 from workbench.cached.cached_meta import CachedMeta
 from workbench.local import DataSource as LocalDataSource
@@ -58,7 +57,6 @@ CLASS_REFS = {
     "Meta": Meta,
     "ParameterStore": ParameterStore,
     "DFStore": DFStore,
-    "Reports": Reports,
     "InferenceStore": InferenceStore,
     "PublicData": PublicData,
     "Monitor": Monitor,

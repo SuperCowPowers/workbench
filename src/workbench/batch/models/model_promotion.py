@@ -7,7 +7,7 @@ freezes it to a dated copy and deploys it onto the endpoint. The challengers (th
 endpoint, so the best *promotable* challenger is the one that faces the incumbent. A
 model with ``deprecated`` set in its workbench_meta is treated the same way, and a
 deprecated incumbent forfeits the endpoint.
-Each promotion decision publishes the contest results to Reports() at /contests/<endpoint>.
+Each promotion decision publishes the contest results to the contest store at /contests/<endpoint>.
 
 This is a deliberately simple reference: no thresholds, notifications, or config --
 clients override it with a ``plugin:`` script for custom promotion policy.
@@ -16,8 +16,9 @@ clients override it with a ``plugin:`` script for custom promotion policy.
 import logging
 from datetime import datetime
 
-from workbench.api import Model, Endpoint, ModelType, Reports
+from workbench.api import Model, Endpoint, ModelType
 from workbench.core.pipelines.pipeline_meta import PipelineMeta
+from workbench.utils.contest_utils import contest_store
 from workbench.utils.model_comparison import contest_report
 
 log = logging.getLogger("workbench")
@@ -49,12 +50,12 @@ def beats(challenger: dict, incumbent: dict | None, is_classifier: bool) -> bool
 
 
 def publish_contest_report(endpoint_name: str, champion: Model | None, challengers: list, no_promote: list):
-    """Publish the contest results to Reports() at /contests/<endpoint>. Never raises:
+    """Publish the contest results to the contest store at /contests/<endpoint>. Never raises:
     the promotion decision has already been made, so a report failure is logged and swallowed."""
     try:
         report = contest_report(champion, challengers, endpoint_name, no_promote=no_promote)
         if report is not None:
-            Reports().upsert(f"/contests/{endpoint_name}", report)
+            contest_store().upsert(f"/contests/{endpoint_name}", report)
             log.important(f"Published contest report /contests/{endpoint_name}")
     except Exception as e:
         log.error(f"Failed to publish contest report for {endpoint_name}: {e}")

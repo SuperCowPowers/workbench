@@ -18,7 +18,6 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 - Meta: Direct, uncached API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store
 - DFStore: Manages DataFrames in AWS S3
-- Reports: Published analysis reports (a DFStore scoped to the /reports subtree)
 - InferenceStore: Manages inference results in Athena-queryable parquet on S3
 - Monitor: Wraps a deployed Endpoint with data-capture / model-quality monitors
 """
@@ -33,7 +32,6 @@ from workbench.cached.cached_meta import CachedMeta
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
-from .reports import Reports
 from .inference_store import InferenceStore
 from workbench.public_data import PublicData
 from .monitor import Monitor
@@ -51,7 +49,6 @@ __all__ = [
     "Meta",
     "ParameterStore",
     "DFStore",
-    "Reports",
     "InferenceStore",
     "PublicData",
     "Monitor",
