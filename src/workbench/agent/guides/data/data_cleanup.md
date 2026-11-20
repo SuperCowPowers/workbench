@@ -9,6 +9,7 @@ predicted-vs-actual scatter plot.
 | step | finds |
 |---|---|
 | `tag_molecules` + `filter_by_tags` | records fingerprints can't represent |
+| `data_quality(df, key=...)` | missing, infinite, unparseable, outlying and duplicated values, with the rows |
 | `target_health(df, target)` | censored / discretized / skewed target column |
 | `land.duplicates()` | same structure, different answer |
 | `land.cliffs()` | steep target change between distinct neighbors |
@@ -66,6 +67,36 @@ that determines the property — is discarded entirely. On aggregated public dat
 be a sixth of the rows; on a curated pharma library, zero. See `cheminformatics`.
 
 Say what you dropped and why. It's the user's call, not a silent preprocessing step.
+
+## Frame-level checks
+
+```python
+from workbench.utils.pandas_utils import data_quality
+
+result = data_quality(df, key="compound_id", target="logd")
+result.findings      # check, column, severity, value, detail; worst first
+result.rows          # one row per offending cell: the key, check, column, value
+```
+
+`unparseable` is the one that bites on collected data: text such as `<0.1` or `BLQ` in a
+column that is otherwise numbers. An empty `findings` frame is a clean bill. With `target`
+it appends the `target_health` checks from step 1.
+
+To check a frame against one that already exists (a collected set against a `DataSource`,
+two versions of a `FeatureSet`):
+
+```python
+from workbench.utils.pandas_utils import compare_keyed
+
+result = compare_keyed(collected, existing, on="compound_id", values=["logd"], rtol=0.02, scope=["assay"])
+result.summary()     # pairs, agree, mismatched, ambiguous_keys, left_only, right_only, out of scope
+result.mismatched    # both values side by side, with each side's index
+```
+
+Only keys held by one row on each side are scored; repeated keys come back as `ambiguous`
+rather than inflating the mismatch count. `scope` sets aside rows carrying a value the other
+side never holds, so they read as out of scope instead of missing. Fold id spellings into
+one form on both sides first. Both results drop straight into a PDF — see `reports`.
 
 ## Getting a landscape
 

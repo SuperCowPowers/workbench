@@ -13,14 +13,19 @@ DejaVu Sans, and equations use matplotlib's bundled STIX, so a report renders th
 a laptop, a Linux box, or inside a Batch container with no fonts installed.
 """
 
+import logging
 import textwrap
 import warnings
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.backends.backend_pdf import PdfPages
+
+log = logging.getLogger("workbench")
 
 # Softened ink rather than pure black -- three greys give hierarchy without bolding
 # everything: INK for headings and numbers, BODY for prose, MUTED for labels and units.
@@ -364,7 +369,7 @@ def stat_row(
     """
     needed = (
         max(
-            [text_width(str(k), 6.6, HEADING_FONT) for k, _ in pairs]
+            [text_width(_clean(str(k)).upper(), 6.6, HEADING_FONT) for k, _ in pairs]
             + [text_width(str(v), size, HEADING_FONT) for _, v in pairs]
         )
         + gutter
@@ -381,6 +386,23 @@ def footer(fig: plt.Figure, left: str, page: Optional[object] = None) -> None:
     fig.text(L, 0.028, _clean(left), fontsize=7.6, color=MUTED)
     if page is not None:
         fig.text(R, 0.028, str(page), fontsize=7.6, color=MUTED, ha="right")
+
+
+def tidy(ax, title: str = "", grid: str = "both") -> None:
+    """Report styling for an axes: no top/right spines, hairline grid, left-aligned title.
+
+    Args:
+        ax: Axes to style.
+        title (str): Left-aligned title, set in the heading font.
+        grid (str): Which gridlines to draw: "both", "x" or "y".
+    """
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    ax.grid(axis=grid, color=RULE, lw=0.6)
+    ax.set_axisbelow(True)
+    ax.tick_params(length=2.5, labelsize=8)
+    if title:
+        ax.set_title(title, loc="left", pad=7, fontsize=9.5, fontname=HEADING_FONT, color=INK)
 
 
 def _titles(ax) -> List:
@@ -546,3 +568,53 @@ def fit_axes(fig: plt.Figure, pad: float = 9.0) -> List[Dict]:
             }
         )
     return moved
+
+
+def save(path: Union[str, Path], build: Callable, *args, overwrite: bool = False, **kwargs) -> Dict[str, List]:
+    """Lint a report with `audit`, then write it.
+
+    Args:
+        path (Union[str, Path]): Where to write the PDF. Parent directories are created.
+        build (Callable): Called as `build(pdf, *args, **kwargs)`; saves each page with
+            `pdf.savefig(fig)`.
+        overwrite (bool): Replace an existing file. Defaults to False.
+
+    Returns:
+        Dict[str, List]: The `audit` result. Each problem is also logged as a warning.
+
+    Raises:
+        FileExistsError: If `path` exists and `overwrite` is False.
+    """
+    path = Path(path)
+    if path.exists() and not overwrite:
+        raise FileExistsError(f"{path} exists; pass overwrite=True to replace it")
+    lint = check(build, *args, **kwargs)
+    write(path, build, *args, **kwargs)
+    return lint
+
+
+def check(build: Callable, *args, **kwargs) -> Dict[str, List]:
+    """Apply the theme, build every page without writing, and log each lint problem.
+
+    Returns:
+        Dict[str, List]: The `audit` result.
+    """
+    theme(HEADING_FONT, BODY_FONT)
+    lint = audit(build, *args, **kwargs)
+    for problem in lint["overlaps"] + lint["glyphs"]:
+        log.warning(f"Report lint: {problem}")
+    return lint
+
+
+def write(path: Union[str, Path], build: Callable, *args, **kwargs) -> None:
+    """Write a report's pages to a PDF, replacing any file at `path`.
+
+    Args:
+        path (Union[str, Path]): Where to write the PDF. Parent directories are created.
+        build (Callable): Called as `build(pdf, *args, **kwargs)`.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with PdfPages(path) as pdf:
+        build(pdf, *args, **kwargs)
+    log.info(f"Wrote {path.resolve()} ({path.stat().st_size / 1024:.0f} KB)")

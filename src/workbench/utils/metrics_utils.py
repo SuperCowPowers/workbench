@@ -305,6 +305,86 @@ def within_fold(y_true: np.ndarray, y_pred: np.ndarray, fold: float = 2.0) -> fl
     return float(np.mean(np.abs(_log_fold(y_true, y_pred)) <= np.log10(fold)))
 
 
+def fold_summary(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    """Fold-error metrics over the pairs they are defined for.
+
+    Fold errors need strictly positive truth and predictions, so NaN and non-positive
+    pairs are dropped first; `support` is what remains.
+
+    Args:
+        y_true: Measured values
+        y_pred: Predicted values
+
+    Returns:
+        Dict with gmfe, afe, within_2x, within_3x, within_10x, support. Empty dict if no pair survives.
+    """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    keep = (y_true > 0) & (y_pred > 0)
+    if not keep.all():
+        log.warning(f"Fold errors: dropping {int((~keep).sum())} of {len(keep)} NaN or non-positive pairs.")
+        y_true, y_pred = y_true[keep], y_pred[keep]
+    if len(y_true) == 0:
+        return {}
+    return {
+        "gmfe": gmfe(y_true, y_pred),
+        "afe": afe(y_true, y_pred),
+        "within_2x": within_fold(y_true, y_pred, 2.0),
+        "within_3x": within_fold(y_true, y_pred, 3.0),
+        "within_10x": within_fold(y_true, y_pred, 10.0),
+        "support": len(y_true),
+    }
+
+
+def performance_breakout(
+    predictions_df: pd.DataFrame,
+    target_col: str,
+    by: Optional[str] = None,
+    prediction_col: str = "prediction",
+    log: bool = False,
+    max_groups: int = 8,
+    min_support: int = 5,
+) -> pd.DataFrame:
+    """Regression metrics over every row, and per group of a column.
+
+    Args:
+        predictions_df: DataFrame with target and prediction columns
+        target_col: Name of the target column
+        by: Column to break the metrics out on (e.g. "project"). None for the overall row only.
+        prediction_col: Name of the prediction column (default: "prediction")
+        log: The target is a positive quantity: score log10 of the positive pairs and add
+            the `fold_summary` metrics (default: False)
+        max_groups: Most groups given their own row, largest first; the rest pool as "other"
+        min_support: Groups with fewer rows than this pool as "other"
+
+    Returns:
+        DataFrame with a "group" column ("all" first, then each group, largest first) and one
+        column per metric. A group with no scorable pair has support 0 and NaN metrics.
+    """
+
+    def score(group: str, frame: pd.DataFrame) -> dict:
+        y_true, y_pred = frame[target_col].to_numpy(dtype=float), frame[prediction_col].to_numpy(dtype=float)
+        empty = {name: np.nan for name in columns[1:-1]}
+        if not log:
+            return {"group": group, **empty, "support": 0, **compute_regression_metrics(y_true, y_pred)}
+        positive = (y_true > 0) & (y_pred > 0)
+        y_true, y_pred = y_true[positive], y_pred[positive]
+        metrics = compute_regression_metrics(np.log10(y_true), np.log10(y_pred))
+        return {"group": group, **empty, "support": 0, **metrics, **fold_summary(y_true, y_pred)}
+
+    columns = ["group", "rmse", "mae", "r2", "pearsonr", "spearmanr"]
+    columns += (["gmfe", "afe", "within_2x", "within_3x", "within_10x"] if log else []) + ["support"]
+    rows = [score("all", predictions_df)]
+    if by is not None:
+        labels = predictions_df[by].astype(object).where(predictions_df[by].notna(), "unknown").astype(str)
+        counts = labels.value_counts()
+        named = list(counts[counts >= min_support].index[:max_groups])
+        labels = labels.where(labels.isin(named), "other")
+        for group in named + (["other"] if (labels == "other").any() and "other" not in named else []):
+            rows.append(score(group, predictions_df[labels == group]))
+    return pd.DataFrame(rows, columns=columns)
+
+
 def soft_threshold_error(
     y_pred: np.ndarray,
     ci_lower: np.ndarray,
