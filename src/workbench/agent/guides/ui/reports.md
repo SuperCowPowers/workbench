@@ -74,7 +74,8 @@ report.theme()          # rcParams: fonts, STIX maths, fonttype 42, softened ink
 It gives you the palette (`INK BODY MUTED RULE HAIRLINE ACCENTS`), the margins (`L R`),
 page helpers that each take and return the running `y` cursor — `new_page`, `head`,
 `sec`, `para`, `equation`, `table`, `stat_row`, `rule`, `footer` — plus `EQ` (typeset
-PK and metric equations), `text_width` for measuring, and `fit_axes` / `audit` for linting.
+PK and metric equations), `tidy` for axes, `text_width` for measuring, `fit_axes` / `audit`
+for linting, and `save` to lint and write.
 
 ### Fonts and portability
 
@@ -167,10 +168,7 @@ like a terminal dump.
 Strip the chartjunk that is tolerable on screen and distracting in print:
 
 ```python
-for s in ("top", "right"): ax.spines[s].set_visible(False)
-ax.grid(alpha=0.25, lw=0.6, color=RULE)
-ax.tick_params(length=2.5, labelsize=8.2)
-ax.set_title("What the reader should conclude", loc="left", pad=12)
+report.tidy(ax, "What the reader should conclude")   # no top/right spines, hairline grid, left title
 ```
 
 Left-align titles with the text column and make them the **conclusion**, not the
@@ -179,26 +177,39 @@ Hollow markers (`mfc="white"`, `mew=1.5`) keep observed points legible on top of
 line, and a 7-10% alpha fill under a curve adds weight without obscuring anything.
 Annotate values directly on the points and drop the legend when two series are obvious.
 
-### Assembly: build takes a pdf-like, a saver wraps it
+Model performance charts are ready-made in `workbench.utils.plots.performance`, and each
+draws onto an axes you place:
+
+```python
+from workbench.utils.plots import performance
+
+ax = fig.add_axes([0.10, y - 0.36, 0.38, 0.32])
+performance.pred_vs_actual(df[target], df["prediction"], groups=df["project"], log=True, unit="ng/mL", ax=ax)
+performance.residuals(df[target], df["prediction"], log=True, ax=ax2)
+performance.breakout_bars(gmfe_by_project, reference=overall_gmfe, xlabel="GMFE", ax=ax3)
+```
+
+`log=True` is for positive quantities: log axes with the 2x band and 3x / 10x guides.
+
+### Assembly: build takes a pdf-like, `report.save` writes it
 
 ```python
 def build_report(pdf):
     for page in (page_groups, page_issues, page_method):
         page(pdf)                      # each ends in pdf.savefig(fig); plt.close(fig)
 
-def save_report(path):
-    with PdfPages(path) as pdf:
-        build_report(pdf)
+lint = report.save(out_pdf, build_report)   # audits, then writes; logs the path and size
 ```
 
-The split is what makes a report lintable: `build` can be handed a stand-in that measures
+`save` raises `FileExistsError` rather than replace a file, unless `overwrite=True`. The
+split is what makes a report lintable: `build` can be handed a stand-in that measures
 pages instead of writing them, so nothing is overwritten while you iterate.
 
 ### Lint every page -- none of this raises on its own
 
 ```python
 report.fit_axes(fig, pad=9.0)      # per page, just before savefig
-report.audit(build_report)         # {'overlaps': [], 'glyphs': []} means clean
+report.audit(build_report)         # {'overlaps': [], 'glyphs': []} means clean; save returns the same
 ```
 
 Three silent failures. **Missing glyphs** -- nice faces carry small character sets and
@@ -274,7 +285,7 @@ names you left behind.
 - Built on `report.theme()`; no hardcoded font family.
 - Equations typeset with `report.equation` / `EQ`, never faked with carets.
 - Figure titles state conclusions and are left-aligned to the text column.
-- `report.audit(build_report)` returns no overlaps and no glyph warnings.
+- `report.save` (or `report.audit(build_report)`) returns no overlaps and no glyph warnings.
 - Lowest text on every page clears the footer; every axes' tight bbox sits inside the L/R margins.
 - Every metric and flag defined inside the document.
 - Exemplars include a failure, not only successes.
