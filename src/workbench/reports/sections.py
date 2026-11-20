@@ -44,6 +44,10 @@ def _num(value) -> str:
     return f"{value:.3g}" if isinstance(value, (float, np.floating)) else str(value)
 
 
+def _is_number(values: pd.Series) -> bool:
+    return pd.api.types.is_numeric_dtype(values) and not pd.api.types.is_bool_dtype(values)
+
+
 def _clip(value, width: int) -> str:
     text = str(value)
     return text if len(text) <= width else text[: width - 3] + "..."
@@ -193,7 +197,7 @@ def data_quality(result: DataQuality, title: str = "Data quality", name: str = "
     warnings = int((findings["severity"] == "warn").sum())
     notes = int((findings["severity"] == "info").sum())
     flagged = int(findings["count"].sum())
-    per_column = findings.dropna(subset=["count"]).groupby("column")["count"].sum()
+    per_column = data_charts.quality_counts(result).sum(axis=1)
     findings_frame, rows_frame = f"{name}_findings", f"{name}_rows"
     verdict = f"{warnings} warnings and {notes} notes." if warnings or notes else "No problems found."
 
@@ -271,13 +275,15 @@ def comparison(
     title = title or f"{left} against {right}"
     on, pairs, counts = result.on, result.pairs, result.summary()
     values = [c[: -len("_agree")] for c in pairs.columns if c.endswith("_agree")]
-    numeric = [v for v in values if pd.api.types.is_numeric_dtype(pairs[f"{v}_left"])]
+    numeric = [v for v in values if all(_is_number(pairs[f"{v}_{side}"]) for side in ("left", "right"))]
     disagreements = []
     for value in values:
         off = pairs[~pairs[f"{value}_agree"]]
         if value in numeric:  # largest relative difference first
-            gap = (off[f"{value}_left"] - off[f"{value}_right"]).abs() / off[f"{value}_right"].abs()
-            off = off.loc[gap.sort_values(ascending=False, na_position="last").index]
+            a, b = (off[f"{value}_{side}"].to_numpy(dtype=float, na_value=np.nan) for side in ("left", "right"))
+            with np.errstate(divide="ignore", invalid="ignore"):
+                gap = np.abs(a - b) / np.abs(b)
+            off = off.iloc[np.argsort(-np.nan_to_num(gap, nan=-1.0), kind="stable")]
         sides = {left: off[f"{value}_left"].astype(str), right: off[f"{value}_right"].astype(str)}
         disagreements.append(off[on].assign(column=value, **sides))
     mismatched = pd.concat(disagreements, ignore_index=True) if disagreements else pd.DataFrame(columns=on)

@@ -295,5 +295,24 @@ def test_the_agreement_scatter_is_drawn_only_when_values_disagree():
     assert axes_per_page(disputed)[1] == 2
 
 
+def test_comparison_section_handles_flags_text_and_unsigned_values(tmp_path):
+    left = pd.DataFrame({"id": list("abcd"), "flag": [True, False, True, True], "note": [1, 2, 3, 4]})
+    left["n"] = np.array([1, 8, 5, 5], dtype="uint64")
+    right = left.assign(flag=[True, True, True, False], note=["1", "2", "x", "4"])
+    right["n"] = np.array([2, 4, 5, 5], dtype="uint64")
+    section = sections.comparison(compare_keyed(left, right, on="id"), "old", "new")
+
+    mismatched = section.frames["comparison_mismatched"]
+    assert list(mismatched[mismatched["column"] == "n"]["id"]) == ["b", "a"]  # relative gaps 1.0 then 0.5
+    assert set(mismatched["column"]) == {"flag", "note", "n"}
+    assert Report("Mixed").add(section).save(tmp_path / "report.pdf", publish=False) == CLEAN
+
+
+def test_duplicate_rows_alone_still_get_a_chart_and_the_headline():
+    df = pd.DataFrame({"x": [1.0, 1.0, 2.0, 2.0, 3.0], "y": [5.0, 5.0, 6.0, 6.0, 7.0]})
+    card = sections.data_quality(data_quality(df)).summary
+    assert card.chart is not None and "(whole row) has the most flagged rows (4)" in card.headline
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

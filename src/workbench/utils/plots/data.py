@@ -80,7 +80,7 @@ def fate_bars(result: KeyedComparison, left: str = "left", right: str = "right",
         start = 0
         for fate, count in fates[side].items():
             ax.barh(position, count, left=start, color=FATE_COLORS[fate], lw=0, height=0.58, label=fate)
-            if count >= 0.06 * fates[side].sum():
+            if count > 0 and count >= 0.06 * fates[side].sum():
                 dark = fate == "out of scope"
                 ax.text(start + count / 2, position, f"{count:,}", ha="center", va="center", fontsize=7.5).set_color(
                     BODY if dark else "white"
@@ -151,6 +151,22 @@ def value_agreement(
     return ax.figure
 
 
+def quality_counts(result: DataQuality) -> pd.DataFrame:
+    """Flagged rows per column and check, worst column first.
+
+    Args:
+        result (DataQuality): Output of `pandas_utils.data_quality`.
+
+    Returns:
+        pd.DataFrame: Indexed by column, one column per check. A whole-row check such as
+            `duplicate_rows` is indexed as "(whole row)".
+    """
+    counted = result.findings.dropna(subset=["count"])
+    counted = counted.assign(column=counted["column"].fillna("(whole row)"), count=counted["count"].astype(int))
+    table = counted.pivot_table(index="column", columns="check", values="count", aggfunc="sum", fill_value=0)
+    return table.loc[table.sum(axis=1).sort_values(ascending=False, kind="stable").index]
+
+
 def quality_bars(result: DataQuality, most: int = 10, title: str = "", ax=None):
     """Flagged rows per column, stacked by check, worst column first.
 
@@ -163,10 +179,7 @@ def quality_bars(result: DataQuality, most: int = 10, title: str = "", ax=None):
     Returns:
         matplotlib.figure.Figure: The figure.
     """
-    counted = result.findings.dropna(subset=["count"])
-    counted = counted.assign(column=counted["column"].fillna("(whole row)"))
-    table = counted.pivot_table(index="column", columns="check", values="count", aggfunc="sum", fill_value=0)
-    table = table.loc[table.sum(axis=1).sort_values(ascending=False).index[:most]]
+    table = quality_counts(result).head(most)
     ax = ax if ax is not None else plt.subplots(figsize=(6.4, 0.7 + 0.3 * max(len(table), 1)))[1]
     positions = np.arange(len(table))[::-1]
     start = np.zeros(len(table))

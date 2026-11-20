@@ -11,7 +11,13 @@ import pytest  # noqa: E402
 from matplotlib.collections import PathCollection  # noqa: E402
 
 from workbench.utils.pandas_utils import compare_keyed, data_quality  # noqa: E402
-from workbench.utils.plots.data import comparison_fates, fate_bars, quality_bars, value_agreement  # noqa: E402
+from workbench.utils.plots.data import (  # noqa: E402
+    comparison_fates,
+    fate_bars,
+    quality_bars,
+    quality_counts,
+    value_agreement,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -72,3 +78,15 @@ def test_quality_bars_rank_columns_by_flagged_rows():
 def test_quality_bars_draw_nothing_for_a_clean_frame():
     df = pd.DataFrame({"id": ["a", "b", "c", "d"], "x": [1.0, 2.0, 3.0, 4.0]})
     assert len(quality_bars(data_quality(df, key="id")).axes[0].patches) == 0
+
+
+def test_whole_row_findings_are_counted_under_their_own_label():
+    df = pd.DataFrame({"id": list("aabbc"), "x": [1.0, 1.0, 2.0, 2.0, np.nan]})
+    counts = quality_counts(data_quality(df)).sum(axis=1)
+    assert counts.idxmax() == "(whole row)" and counts["(whole row)"] == 4 and counts["x"] == 1
+
+
+def test_an_empty_side_draws_no_zero_labels():
+    left = pd.DataFrame({"id": ["a", "b"], "x": [1.0, 2.0]})
+    ax = fate_bars(compare_keyed(left, left.iloc[:0], on="id")).axes[0]
+    assert [t.get_text() for t in ax.texts] == ["2"]
