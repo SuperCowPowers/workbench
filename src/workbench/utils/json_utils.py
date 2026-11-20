@@ -161,6 +161,9 @@ if __name__ == "__main__":
     decoded_df = json.loads(encoded, object_hook=custom_decoder)
 
     # Compare original and decoded DataFrame
-    from workbench.utils.pandas_utils import compare_dataframes
+    from workbench.utils.pandas_utils import compare_keyed
 
-    compare_dataframes(df, decoded_df)
+    comparison = compare_keyed(
+        df.rename_axis("row").reset_index(), decoded_df.rename_axis("row").reset_index(), on="row"
+    )
+    print(comparison.summary())

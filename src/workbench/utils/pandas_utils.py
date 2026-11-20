@@ -7,7 +7,8 @@ import json
 from io import StringIO
 import hashlib
 import logging
-from typing import Dict, Tuple, List, Optional
+from dataclasses import dataclass
+from typing import Dict, Tuple, List, Optional, Union
 
 # Workbench Logger
 log = logging.getLogger("workbench")
@@ -91,96 +92,147 @@ def dataframe_delta(func_that_returns_df, previous_hash: Optional[str] = None) -
     return df, current_hash
 
 
-def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: list = None):
-    """Compare two DataFrames and report on differences.
+@dataclass
+class KeyedComparison:
+    """The result of `compare_keyed`: every row of both frames lands in exactly one bucket.
+
+    Attributes:
+        pairs (pd.DataFrame): One row per key held by exactly one row on each side. Columns
+            are the keys, `left_index` / `right_index` (each side's original index label),
+            then `{value}_left`, `{value}_right`, `{value}_agree` per compared column, and
+            `agree` (True when every compared column agrees).
+        ambiguous (pd.DataFrame): Keys on both sides where either side holds more than one
+            row, with `n_left` / `n_right`. No single pairing of those rows is the right
+            one to score, so they are reported and left out of `pairs`.
+        left_only (pd.DataFrame): Rows of left whose key is not on the right (a NaN in any
+            key column matches nothing).
+        right_only (pd.DataFrame): Rows of right whose key is not on the left.
+        left_out_of_scope (pd.DataFrame): Rows of left carrying a `scope` value the right
+            never holds. Empty unless `scope` is given.
+        right_out_of_scope (pd.DataFrame): Rows of right carrying a `scope` value the left
+            never holds.
+    """
+
+    pairs: pd.DataFrame
+    ambiguous: pd.DataFrame
+    left_only: pd.DataFrame
+    right_only: pd.DataFrame
+    left_out_of_scope: pd.DataFrame
+    right_out_of_scope: pd.DataFrame
+
+    @property
+    def mismatched(self) -> pd.DataFrame:
+        """The uniquely-keyed pairs where at least one compared column disagrees."""
+        return self.pairs[~self.pairs["agree"]]
+
+    def summary(self) -> pd.Series:
+        """Row counts per bucket (`ambiguous_keys` counts keys, not rows)."""
+        return pd.Series(
+            {
+                "pairs": len(self.pairs),
+                "agree": int(self.pairs["agree"].sum()),
+                "mismatched": len(self.mismatched),
+                "ambiguous_keys": len(self.ambiguous),
+                "left_only": len(self.left_only),
+                "right_only": len(self.right_only),
+                "left_out_of_scope": len(self.left_out_of_scope),
+                "right_out_of_scope": len(self.right_out_of_scope),
+            },
+            name="rows",
+        )
+
+
+def compare_keyed(
+    left: pd.DataFrame,
+    right: pd.DataFrame,
+    on: Union[str, List[str]],
+    values: Optional[List[str]] = None,
+    rtol: float = 0.0,
+    atol: float = 0.0,
+    scope: Optional[List[str]] = None,
+) -> KeyedComparison:
+    """Compare two DataFrames by key: which keys each side holds, and whether the values agree.
+
+    Only keys held by exactly one row on each side are scored. A key repeated on either
+    side joins many-to-many, and counting those joined rows as disagreements inflates the
+    mismatch count; they are returned as `ambiguous` instead.
+
+    Keys, scope columns and values are compared as given, so fold spellings (case,
+    padding, units) into one form on both sides before calling.
 
     Args:
-        df1 (pd.DataFrame): First DataFrame to compare.
-        df2 (pd.DataFrame): Second DataFrame to compare.
-        display_columns (list): Columns to display when differences are found (defaults to all columns).
+        left (pd.DataFrame): First DataFrame.
+        right (pd.DataFrame): Second DataFrame.
+        on (Union[str, List[str]]): Key column(s), named the same on both sides.
+        values (Optional[List[str]]): Columns to check for agreement. Defaults to every
+            column the two share outside `on` and `scope`.
+        rtol (float): Relative tolerance for numeric values, as a fraction of the right
+            value. Defaults to 0.0.
+        atol (float): Absolute tolerance for numeric values. Defaults to 0.0.
+        scope (Optional[List[str]]): Columns whose values define what each side is meant to
+            carry. A row holding a value the other side never has in that column is out of
+            scope rather than missing, and is set aside before keys are compared.
+
+    Returns:
+        KeyedComparison: The pairs, ambiguous keys, one-sided rows and out-of-scope rows.
+
+    Raises:
+        ValueError: If a key, scope or value column is missing from either side.
     """
-    if display_columns is None:
-        display_columns = df1.columns.tolist()
+    on = [on] if isinstance(on, str) else list(on)
+    scope = list(scope or [])
+    if values is None:
+        values = [c for c in left.columns if c in right.columns and c not in on + scope]
+    for side, df in (("left", left), ("right", right)):
+        missing = [c for c in on + scope + values if c not in df.columns]
+        if missing:
+            raise ValueError(f"Columns {missing} not found in the {side} DataFrame")
 
-    # Check if the entire dataframes are equal
-    if df1.equals(df2):
-        print("The DataFrames are equal :)")
-        return
+    # Scope: set aside rows carrying a value the other side never holds
+    left_in = pd.Series(True, index=left.index)
+    right_in = pd.Series(True, index=right.index)
+    for col in scope:
+        left_in &= left[col].isin(right[col].dropna().unique())
+        right_in &= right[col].isin(left[col].dropna().unique())
+    lf, rf = left[left_in], right[right_in]
 
-    # Report on column differences
-    df1_columns = set(df1.columns)
-    df2_columns = set(df2.columns)
-    only_in_df1 = df1_columns - df2_columns
-    only_in_df2 = df2_columns - df1_columns
-    if only_in_df1:
-        print("\nColumns only in df1:", only_in_df1)
-    if only_in_df2:
-        print("\nColumns only in df2:", only_in_df2)
+    # Rows per key on each side (groupby drops keys holding a NaN)
+    left_n = lf.groupby(on, as_index=False, observed=True).size().rename(columns={"size": "n_left"})
+    right_n = rf.groupby(on, as_index=False, observed=True).size().rename(columns={"size": "n_right"})
+    shared = left_n.merge(right_n, on=on)
+    one_to_one = (shared["n_left"] == 1) & (shared["n_right"] == 1)
+    ambiguous = shared[~one_to_one].reset_index(drop=True)
 
-    # For common columns make sure they all have the same data types
-    common_columns = list(df1_columns.intersection(df2_columns))
-    same_types = True
-    for column in common_columns:
-        if df1[column].dtype != df2[column].dtype:
-            same_types = False
-            print(f"\nColumn '{column}' has different data types: {df1[column].dtype} vs {df2[column].dtype}")
-    if same_types:
-        print("\nAll common columns have the same data types")
-        # Print out the column types
-        print("\nColumn Types:")
-        print(f"DF1: {df1[common_columns].dtypes.value_counts()}")
-        print(f"\nDF2: {df2[common_columns].dtypes.value_counts()}")
+    def one_sided(df: pd.DataFrame) -> pd.DataFrame:
+        hit = df[on].merge(shared[on].assign(_hit=True), on=on, how="left")["_hit"]
+        return df[hit.isna().to_numpy()]
 
-    # Count the NaNs in each DataFrame individually (only show columns with > 0 NaNs)
-    nan_counts_df1 = df1.isna().sum()
-    nan_counts_df2 = df2.isna().sum()
-    nan_counts_df1 = nan_counts_df1[nan_counts_df1 > 0]
-    nan_counts_df2 = nan_counts_df2[nan_counts_df2 > 0]
-    if not nan_counts_df1.empty:
-        print("\nNaN Counts in df1:")
-        print(nan_counts_df1)
-    if not nan_counts_df2.empty:
-        print("\nNaN Counts in df2:")
-        print(nan_counts_df2)
-
-    # Define tolerance for float comparisons
-    epsilon = 1e-10
-    difference_counts = {}
-
-    # Check for differences in common columns
-    for column in common_columns:
-        if pd.api.types.is_string_dtype(df1[column]) and pd.api.types.is_string_dtype(df2[column]):
-            # String comparison with NaNs treated as equal
-            differences = ~(df1[column].fillna("") == df2[column].fillna(""))
-        elif pd.api.types.is_float_dtype(df1[column]) or pd.api.types.is_float_dtype(df2[column]):
-            # Float comparison within epsilon with NaNs treated as equal
-            differences = ~((df1[column] - df2[column]).abs() <= epsilon) & ~(
-                pd.isna(df1[column]) & pd.isna(df2[column])
-            )
+    # Score the one-to-one keys only
+    unique = shared.loc[one_to_one, on]
+    lp = lf[on + values].assign(left_index=lf.index).merge(unique, on=on)
+    rp = rf[on + values].assign(right_index=rf.index).merge(unique, on=on)
+    pairs = lp.merge(rp, on=on, suffixes=("_left", "_right"), validate="one_to_one")
+    for value in values:
+        a, b = pairs[f"{value}_left"], pairs[f"{value}_right"]
+        if all(pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s) for s in (a, b)):
+            a_num = a.to_numpy(dtype=float, na_value=np.nan)
+            b_num = b.to_numpy(dtype=float, na_value=np.nan)
+            agree = np.isclose(a_num, b_num, rtol=rtol, atol=atol, equal_nan=True)
         else:
-            # Other types (int, Int64, etc.) - compare with NaNs treated as equal
-            differences = (df1[column] != df2[column]) & ~(pd.isna(df1[column]) & pd.isna(df2[column]))
+            agree = ((a == b).fillna(False).astype(bool) | (a.isna() & b.isna())).to_numpy()
+        pairs[f"{value}_agree"] = agree
+    pairs["agree"] = pairs[[f"{v}_agree" for v in values]].all(axis=1)
 
-        # If differences exist, display them
-        if differences.any():
-            print(f"\nColumn {column} has {differences.sum()} differences")
-            difference_counts[column] = differences.sum()
-
-            # Create a merged DataFrame showing values from both DataFrames
-            merged_df = pd.DataFrame(
-                {
-                    **{col: df1.loc[differences, col] for col in display_columns},
-                    f"{column}_1": df1.loc[differences, column],
-                    f"{column}_2": df2.loc[differences, column],
-                }
-            )
-
-            # Display the merged DataFrame
-            print(merged_df)
-
-    # If there are no differences report that
-    if not difference_counts:
-        print(f"\nNo differences found in common columns within {epsilon}")
+    columns = on + ["left_index", "right_index"]
+    columns += [f"{v}_{part}" for v in values for part in ("left", "right", "agree")]
+    return KeyedComparison(
+        pairs=pairs[columns + ["agree"]],
+        ambiguous=ambiguous,
+        left_only=one_sided(lf),
+        right_only=one_sided(rf),
+        left_out_of_scope=left[~left_in],
+        right_out_of_scope=right[~right_in],
+    )
 
 
 def binary_accuracy(conf_matrix: pd.DataFrame, positive_classes: list) -> float:
@@ -894,17 +946,15 @@ if __name__ == "__main__":
     norm_df = drop_outliers_iqr(clean_df)
     log.info(norm_df)
 
-    # Create two dataframes for comparison
+    # Compare two dataframes by key
     my_df1 = test_data.person_data()
     my_df2 = my_df1.copy()
-    compare_dataframes(my_df1, my_df2, ["Id", "Name"])
-
-    # Make a couple of differences
     my_df2.loc[6, "Height"] = 99
     my_df2.loc[48, "Salary"] = 99000
-    my_df2.loc[82, "Age"] = 99
-    my_df2["new_column"] = "new_value"
-    compare_dataframes(my_df1, my_df2, ["Id", "Name"])
+    comparison = compare_keyed(my_df1, my_df2.drop(index=82), on="Id", values=["Height", "Salary", "Age"])
+    print(comparison.summary())
+    print(comparison.mismatched)
+    print(comparison.left_only)
 
     # Example for Binary Accuracy
     conf_matrix = pd.DataFrame(
