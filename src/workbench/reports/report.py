@@ -182,8 +182,11 @@ class Report:
             note (str): A note a section of this report declared.
 
         Returns:
-            str: The note's number in brackets. Notes are numbered in the order they were added.
+            str: The note's number in brackets. Notes are numbered in the order they were added;
+                one no section declared is added here.
         """
+        if note not in self.notes:
+            self.notes.append(note)
         return f"[{self.notes.index(note) + 1}]"
 
     def footnote(self, fig: plt.Figure, note: str) -> str:

@@ -480,5 +480,17 @@ def test_footnotes_stay_inside_the_right_margin():
     assert 0 < edges.worst <= pages.R + 0.002
 
 
+def test_a_page_can_footnote_a_note_no_section_declared(tmp_path):
+    def page(report):
+        fig, y = report.new_page("Method")
+        report.footnote(fig, "Read from the 2024 archive only.")
+        return fig
+
+    report = Report("Own note", summary="One page.").add(page)
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "[1]  Read from the 2024 archive only." in text[0] and "[1]  Read from the 2024 archive only." in text[1]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

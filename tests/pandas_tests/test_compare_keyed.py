@@ -202,5 +202,40 @@ def test_scope_is_split_by_position_when_index_labels_repeat():
     assert list(result.pairs["id"]) == ["a", "c"]
 
 
+def test_heavily_repeated_keys_do_not_join_every_row_with_every_other():
+    """20,000 rows under one key on each side is 400 million row pairs if joined naively"""
+    df = pd.DataFrame({"id": ["k"] * 20_000, "x": 1.0})
+    for repeats in ("exact", "values"):
+        result = compare_keyed(df, df, on="id", repeats=repeats)
+        assert result.repeated["values_match"].tolist() == [True]
+        assert result.repeated["x_left"].iloc[0].endswith("and 19,980 more")
+
+
+def test_a_key_with_too_many_distinct_values_is_reported_as_differing_under_values():
+    df = pd.DataFrame({"id": ["k"] * 600, "x": np.arange(600.0)})
+    assert compare_keyed(df, df, on="id", repeats="values").repeated["values_match"].tolist() == [False]
+    assert compare_keyed(df, df, on="id").repeated["values_match"].tolist() == [True]  # exact needs no join
+
+
+def test_a_missing_scope_value_is_named_as_missing():
+    left = pd.DataFrame({"id": ["a", "b"], "route": ["po", None]})
+    right = pd.DataFrame({"id": ["a"], "route": ["po"]})
+    assert compare_keyed(left, right, on="id", scope=["route"]).left_out_of_scope["scope_reason"].tolist() == [
+        "route is missing"
+    ]
+
+
+@pytest.mark.parametrize("kind", ["datetime", "category", "Int64", "float32"])
+def test_repeated_keys_of_any_key_type(kind):
+    codes = pd.Series([1, 1, 2, 2, 3])
+    key = pd.to_datetime("2024-01-0" + codes.astype(str)) if kind == "datetime" else codes.astype(kind)
+    df = pd.DataFrame({"id": key, "x": [1.0, 2.0, 3.0, 3.0, 5.0]})
+    result = compare_keyed(df, df, on="id")
+    assert result.repeated["values_match"].tolist() == [True, True] and result.repeated["x_left"].tolist() == [
+        "1; 2",
+        "3; 3",
+    ]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

@@ -187,8 +187,10 @@ def _sortable(values: pd.Series) -> pd.Series:
 
 
 def _as_text(values: pd.Series) -> str:
-    """A group's values on one line, e.g. "12.4; 18.5; 221"."""
-    return "; ".join(f"{v:g}" if isinstance(v, (float, np.floating)) else str(v) for v in values)
+    """A group's values on one line, e.g. "12.4; 18.5; 221", naming how many more past the first few."""
+    shown = [f"{v:g}" if isinstance(v, (float, np.floating)) else str(v) for v in values.iloc[:MAX_VALUES_AS_TEXT]]
+    more = len(values) - len(shown)
+    return "; ".join(shown) + (f"; and {more:,} more" if more else "")
 
 
 def compare_keyed(
@@ -228,6 +230,8 @@ def compare_keyed(
             on both sides: the same count carrying the same values, in any order. "values"
             needs only that every row has its values on the other side, however many rows
             carry them, for loosely processed data where a result may be recorded more than once.
+            Under "values", a key holding too many distinct values to compare as a set (a sign
+            the key is not really a key) is reported as differing, with a warning.
 
     Returns:
         KeyedComparison: The pairs, repeated keys, one-sided rows and out-of-scope rows.
@@ -252,7 +256,7 @@ def compare_keyed(
         reasons = np.full(len(df), "", dtype=object)
         for col in scope:
             unheld = ~df[col].isin(other[col].dropna().unique()).to_numpy()
-            named = (col + " = " + df[col].astype(str)).to_numpy()
+            named = (col + " = " + df[col].astype(str)).where(df[col].notna(), f"{col} is missing").to_numpy()
             reasons = np.where(unheld, np.where(reasons == "", named, reasons + "; " + named), reasons)
         return reasons
 
@@ -288,21 +292,33 @@ def compare_keyed(
         return rows.assign(**{f"_{side}": np.arange(len(rows))})
 
     left_rep, right_rep = under_repeated_keys(lf, "left"), under_repeated_keys(rf, "right")
-    every = left_rep.merge(right_rep, on=on, suffixes=("_left", "_right"))
-    every["_agree"] = True
-    for value in values:
-        every["_agree"] &= _values_agree(every[f"{value}_left"], every[f"{value}_right"], rtol, atol)
-    unmet = [
-        rows.loc[~every.groupby(f"_{side}")["_agree"].any().to_numpy(), on]
-        for side, rows in (("left", left_rep), ("right", right_rep))
-    ]
-    if repeats == "exact":  # also the same rows: each side in value order, compared rank by rank
+
+    if repeats == "exact":  # the same rows: each side in value order, compared rank by rank
         ranks = [rows.assign(_rank=rows.groupby(on, observed=True).cumcount()) for rows in (left_rep, right_rep)]
         by_rank = ranks[0].merge(ranks[1], on=on + ["_rank"], how="outer", suffixes=("_left", "_right"))
         same = by_rank["_left"].notna().to_numpy() & by_rank["_right"].notna().to_numpy()
         for value in values:
             same &= _values_agree(by_rank[f"{value}_left"], by_rank[f"{value}_right"], rtol, atol)
-        unmet.append(by_rank.loc[~same, on])
+        unmet = [by_rank.loc[~same, on]]
+    else:
+        # Whether a row's values are on the other side depends only on the distinct values, so
+        # those are what get joined. A key with too many of them to join is left as differing.
+        distinct = [rows.drop_duplicates(on + values) for rows in (left_rep, right_rep)]
+        sizes = [rows.groupby(on, as_index=False, observed=True).size() for rows in distinct]
+        load = sizes[0].merge(sizes[1], on=on, suffixes=("_left", "_right"))
+        too_many = load.loc[load["size_left"] * load["size_right"] > MAX_SET_PAIRS, on]
+        if len(too_many):
+            log.warning(f"compare_keyed: {len(too_many)} repeated keys hold too many distinct values to compare")
+        joinable = [rows.merge(too_many.assign(_skip=True), on=on, how="left") for rows in distinct]
+        joinable = [rows[rows["_skip"].isna()].drop(columns="_skip") for rows in joinable]
+        every = joinable[0].merge(joinable[1], on=on, suffixes=("_left", "_right"))
+        every["_agree"] = True
+        for value in values:
+            every["_agree"] &= _values_agree(every[f"{value}_left"], every[f"{value}_right"], rtol, atol)
+        unmet = [too_many]
+        for side, rows in (("left", joinable[0]), ("right", joinable[1])):
+            met = every.groupby(f"_{side}")["_agree"].any()
+            unmet.append(rows.loc[~rows[f"_{side}"].map(met).to_numpy(dtype=bool), on])
     differing = pd.concat(unmet).drop_duplicates().assign(_differs=True)
     repeated["values_match"] = repeated[on].merge(differing, on=on, how="left")["_differs"].isna().to_numpy()
     for value in values:
@@ -788,6 +804,10 @@ MISSING_WARN_FRACTION = 0.05
 # A text column where at least this fraction of entries parse as numbers is a numeric
 # column carrying stray text ("<0.1", "BLQ"), and the entries that do not parse are flagged
 MOSTLY_NUMERIC_FRACTION = 0.5
+
+# compare_keyed: the most distinct-value pairs joined under one repeated key, and the most of a
+# repeated key's values written out as text
+MAX_SET_PAIRS, MAX_VALUES_AS_TEXT = 250_000, 20
 
 # A positive column skewed beyond this is treated as log-distributed when looking for outliers
 LOG_FENCE_SKEW = 2.0
