@@ -369,7 +369,7 @@ def stat_row(
     """
     needed = (
         max(
-            [text_width(str(k), 6.6, HEADING_FONT) for k, _ in pairs]
+            [text_width(_clean(str(k)).upper(), 6.6, HEADING_FONT) for k, _ in pairs]
             + [text_width(str(v), size, HEADING_FONT) for _, v in pairs]
         )
         + gutter

@@ -97,6 +97,7 @@ class KeyedComparison:
     """The result of `compare_keyed`: every row of both frames lands in exactly one bucket.
 
     Attributes:
+        on (List[str]): The key column(s) the frames were compared on.
         pairs (pd.DataFrame): One row per key held by exactly one row on each side. Columns
             are the keys, `left_index` / `right_index` (each side's original index label),
             then `{value}_left`, `{value}_right`, `{value}_agree` per compared column, and
@@ -113,6 +114,7 @@ class KeyedComparison:
             never holds.
     """
 
+    on: List[str]
     pairs: pd.DataFrame
     ambiguous: pd.DataFrame
     left_only: pd.DataFrame
@@ -226,6 +228,7 @@ def compare_keyed(
     columns = on + ["left_index", "right_index"]
     columns += [f"{v}_{part}" for v in values for part in ("left", "right", "agree")]
     return KeyedComparison(
+        on=on,
         pairs=pairs[columns + ["agree"]],
         ambiguous=ambiguous,
         left_only=one_sided(lf),

@@ -3,7 +3,9 @@
 import numpy as np
 import pytest
 
-from workbench.utils.metrics_utils import afe, fold_summary, gmfe, within_fold
+import pandas as pd
+
+from workbench.utils.metrics_utils import afe, fold_summary, gmfe, performance_breakout, within_fold
 
 TRUE = np.array([1.0, 10.0, 100.0, 4.0])
 PRED = np.array([2.0, 5.0, 100.0, 16.0])  # 2x high, 2x low, exact, 4x high
@@ -45,3 +47,20 @@ def test_fold_summary_drops_nan_and_nonpositive_pairs():
     pred = np.append(PRED, [1.0, 1.0, -1.0, np.nan])
     assert fold_summary(true, pred) == fold_summary(TRUE, PRED)
     assert fold_summary([0.0, np.nan], [1.0, 1.0]) == {}
+
+
+def test_performance_breakout_scores_all_rows_then_each_group():
+    df = pd.DataFrame({"y": list(TRUE) * 3, "prediction": list(PRED) * 3, "project": ["a"] * 6 + ["b"] * 5 + ["c"]})
+    table = performance_breakout(df, "y", by="project", log=True, min_support=5)
+
+    assert list(table["group"]) == ["all", "a", "b", "other"]
+    assert list(table["support"]) == [12, 6, 5, 1]
+    assert table.loc[0, "gmfe"] == pytest.approx(gmfe(TRUE, PRED))
+    assert table.loc[0, "rmse"] == pytest.approx(np.sqrt(np.mean(np.log10(PRED / TRUE) ** 2)))
+
+
+def test_performance_breakout_without_by_is_one_row_in_target_units():
+    df = pd.DataFrame({"y": TRUE, "prediction": PRED})
+    table = performance_breakout(df, "y")
+    assert list(table["group"]) == ["all"] and "gmfe" not in table
+    assert table.loc[0, "mae"] == pytest.approx(np.mean(np.abs(PRED - TRUE)))
