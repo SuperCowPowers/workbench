@@ -684,6 +684,136 @@ def target_health(df: pd.DataFrame, target: str, pileup_percent: float = 2.0) ->
     return pd.DataFrame(findings)
 
 
+# A column missing in at least this fraction of rows is a warning rather than a note
+MISSING_WARN_FRACTION = 0.05
+
+# A text column where at least this fraction of entries parse as numbers is a numeric
+# column carrying stray text ("<0.1", "BLQ"), and the entries that do not parse are flagged
+MOSTLY_NUMERIC_FRACTION = 0.5
+
+SEVERITY_ORDER = {"warn": 0, "info": 1, "ok": 2}
+
+
+@dataclass
+class DataQuality:
+    """The result of `data_quality`: what is wrong, and which rows.
+
+    Attributes:
+        findings (pd.DataFrame): One row per finding with columns: check, column,
+            severity (warn/info/ok), value, detail. Worst first.
+        rows (pd.DataFrame): One row per offending cell: the key column(s) (or `index`
+            when no key was given), check, column, and the offending value as text.
+            Joins back to the source frame on the key.
+    """
+
+    findings: pd.DataFrame
+    rows: pd.DataFrame
+
+
+def data_quality(
+    df: pd.DataFrame,
+    key: Union[str, List[str], None] = None,
+    target: Optional[str] = None,
+    outlier_scale: float = 3.0,
+    max_rows: int = 1000,
+) -> DataQuality:
+    """Check a DataFrame for the problems that corrupt whatever is built on it.
+
+    Per column: `missing` values, `non_finite` (infinite) numbers, `unparseable` text in a
+    mostly numeric column, `outliers` beyond the quartiles, and `constant` columns. Per
+    frame: `duplicate_key` and `duplicate_rows`. With a `target`, the `target_health`
+    checks (censoring, discretization, pileup, skew, range) are appended.
+
+    Only problems are reported, so an empty `findings` frame is a clean bill.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        key (Union[str, List[str], None]): Column(s) identifying a row. Offending rows are
+            listed by key so they can be looked up; without one the index is used.
+        target (Optional[str]): Regression target column to run `target_health` on.
+        outlier_scale (float): Multiple of the interquartile range beyond the quartiles
+            that counts as an outlier. Defaults to 3.0.
+        max_rows (int): Most rows listed per finding. Defaults to 1000.
+
+    Returns:
+        DataQuality: The findings and the rows behind them.
+    """
+    key_cols = [key] if isinstance(key, str) else list(key or [])
+    if not key_cols:
+        log.warning("data_quality: no key given, offending rows are listed by index")
+    ids = df[key_cols] if key_cols else pd.DataFrame({"index": df.index}, index=df.index)
+    findings, row_frames = [], []
+
+    def add(check: str, column: str, severity: str, mask: pd.Series, detail: str, values: pd.Series = None):
+        count = int(mask.sum())
+        if count > max_rows:
+            detail += f" (first {max_rows} rows listed)"
+        value = f"{count} ({100 * count / len(df):.1f}%)"
+        findings.append({"check": check, "column": column, "severity": severity, "value": value, "detail": detail})
+        hit = ids[mask.to_numpy()].head(max_rows).assign(check=check, column=column, value=None)
+        if values is not None:
+            hit["value"] = values[mask.to_numpy()].head(max_rows).astype(str).to_numpy()
+        row_frames.append(hit)
+
+    hashable_cols = []
+    for col in df.columns:
+        values = df[col]
+        missing = values.isna()
+        if missing.any():
+            serious = col in key_cols or missing.mean() >= MISSING_WARN_FRACTION
+            add("missing", col, "warn" if serious else "info", missing, "rows with no value")
+        present = values[~missing]
+        if present.map(pd.api.types.is_hashable).all():
+            hashable_cols.append(col)
+        else:
+            continue
+        if col in key_cols:
+            continue
+
+        if pd.api.types.is_numeric_dtype(values) and not pd.api.types.is_bool_dtype(values):
+            numbers = pd.Series(values.to_numpy(dtype=float, na_value=np.nan), index=values.index)
+            infinite = np.isinf(numbers)
+            if infinite.any():
+                add("non_finite", col, "warn", infinite, "infinite values", values)
+            finite = numbers[~infinite & ~missing]
+            if not finite.empty:
+                q1, q3 = np.percentile(finite, [25, 75])
+                low, high = q1 - outlier_scale * (q3 - q1), q3 + outlier_scale * (q3 - q1)
+                outliers = ~infinite & ((numbers < low) | (numbers > high))
+                if q3 > q1 and outliers.any():
+                    detail = f"outside [{low:g}, {high:g}], {outlier_scale:g} x IQR beyond the quartiles"
+                    add("outliers", col, "info", outliers, detail, values)
+        elif not pd.api.types.is_bool_dtype(values) and not pd.api.types.is_datetime64_any_dtype(values):
+            parsed = pd.to_numeric(present, errors="coerce")
+            if parsed.isna().any() and parsed.notna().mean() >= MOSTLY_NUMERIC_FRACTION:
+                unparseable = parsed.isna().reindex(df.index, fill_value=False)
+                add("unparseable", col, "warn", unparseable, "text in a mostly numeric column", values)
+
+        if len(present) > 1 and present.nunique() == 1:
+            finding = {"check": "constant", "column": col, "severity": "info", "value": str(present.iloc[0])}
+            findings.append({**finding, "detail": "every row holds the same value"})
+
+    if key_cols:
+        repeated = df.duplicated(key_cols, keep=False) & df[key_cols].notna().all(axis=1)
+        if repeated.any():
+            add("duplicate_key", ", ".join(key_cols), "warn", repeated, "key held by more than one row")
+    identical = df.duplicated(hashable_cols, keep=False) if hashable_cols else pd.Series(False, index=df.index)
+    if identical.any():
+        add("duplicate_rows", None, "warn", identical, "rows identical in every column")
+
+    findings_df = pd.DataFrame(findings, columns=["check", "column", "severity", "value", "detail"])
+    if target:
+        health = target_health(df, target)
+        health = health[health["check"] != "missing"].assign(column=target)
+        findings_df = pd.concat([findings_df, health[findings_df.columns]], ignore_index=True)
+    order = findings_df["severity"].map(SEVERITY_ORDER)
+    findings_df = findings_df.loc[order.sort_values(kind="stable").index].reset_index(drop=True)
+
+    row_columns = list(ids.columns) + ["check", "column", "value"]
+    rows = pd.concat(row_frames, ignore_index=True) if row_frames else pd.DataFrame(columns=row_columns)
+    return DataQuality(findings=findings_df, rows=rows[row_columns])
+
+
 def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:
     """This method should be used with caution"""
 

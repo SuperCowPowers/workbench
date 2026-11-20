@@ -305,6 +305,36 @@ def within_fold(y_true: np.ndarray, y_pred: np.ndarray, fold: float = 2.0) -> fl
     return float(np.mean(np.abs(_log_fold(y_true, y_pred)) <= np.log10(fold)))
 
 
+def fold_summary(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    """Fold-error metrics over the pairs they are defined for.
+
+    Fold errors need strictly positive truth and predictions, so NaN and non-positive
+    pairs are dropped first; `support` is what remains.
+
+    Args:
+        y_true: Measured values
+        y_pred: Predicted values
+
+    Returns:
+        Dict with gmfe, afe, within_2x, within_3x, support. Empty dict if no pair survives.
+    """
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    keep = (y_true > 0) & (y_pred > 0)
+    if not keep.all():
+        log.warning(f"Fold errors: dropping {int((~keep).sum())} of {len(keep)} NaN or non-positive pairs.")
+        y_true, y_pred = y_true[keep], y_pred[keep]
+    if len(y_true) == 0:
+        return {}
+    return {
+        "gmfe": gmfe(y_true, y_pred),
+        "afe": afe(y_true, y_pred),
+        "within_2x": within_fold(y_true, y_pred, 2.0),
+        "within_3x": within_fold(y_true, y_pred, 3.0),
+        "support": len(y_true),
+    }
+
+
 def soft_threshold_error(
     y_pred: np.ndarray,
     ci_lower: np.ndarray,

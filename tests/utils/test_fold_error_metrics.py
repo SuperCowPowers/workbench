@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from workbench.utils.metrics_utils import afe, gmfe, within_fold
+from workbench.utils.metrics_utils import afe, fold_summary, gmfe, within_fold
 
 TRUE = np.array([1.0, 10.0, 100.0, 4.0])
 PRED = np.array([2.0, 5.0, 100.0, 16.0])  # 2x high, 2x low, exact, 4x high
@@ -29,3 +29,19 @@ def test_within_fold_counts_both_directions_and_the_boundary():
 def test_nonpositive_values_raise(metric):
     with pytest.raises(ValueError):
         metric(TRUE, np.array([2.0, 0.0, 100.0, 16.0]))
+
+
+def test_fold_summary_matches_the_individual_metrics():
+    summary = fold_summary(TRUE, PRED)
+    assert summary["gmfe"] == pytest.approx(gmfe(TRUE, PRED))
+    assert summary["afe"] == pytest.approx(afe(TRUE, PRED))
+    assert summary["within_2x"] == pytest.approx(0.75)
+    assert summary["within_3x"] == pytest.approx(0.75)
+    assert summary["support"] == 4
+
+
+def test_fold_summary_drops_nan_and_nonpositive_pairs():
+    true = np.append(TRUE, [np.nan, 0.0, 5.0, 5.0])
+    pred = np.append(PRED, [1.0, 1.0, -1.0, np.nan])
+    assert fold_summary(true, pred) == fold_summary(TRUE, PRED)
+    assert fold_summary([0.0, np.nan], [1.0, 1.0]) == {}
