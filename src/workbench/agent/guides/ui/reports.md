@@ -54,6 +54,62 @@ Two rules that do most of the work:
 When showing exemplars, pick **one clean and one broken** rather than two clean ones. A
 reader learns the failure mode from seeing it, not from a count in a table.
 
+## Build it from sections
+
+`workbench.reports` composes a report from sections, so the common cases are a few lines.
+Each section turns an analysis result into pages, and carries the rows behind every count:
+
+```python
+from workbench.reports import Report, sections
+from workbench.utils.pandas_utils import compare_keyed, data_quality
+
+report = Report("Mouse PK intake")
+report.add(sections.performance(pred_df, "cmax", by="project", key="batch", log=True, unit="ng/mL"))
+report.add(sections.data_quality(data_quality(collected, key="batch", target="cmax")))
+report.add(sections.comparison(compare_keyed(collected, existing, on="batch"), "archive", "DataSource"))
+report.save(out_pdf)
+```
+
+| section | takes | pages |
+|---|---|---|
+| `sections.performance` | a predictions frame | metrics and charts, then breakout by a column and the largest errors |
+| `sections.data_quality` | `data_quality(df, key=...)` | findings worst first, then example rows per warning |
+| `sections.comparison` | `compare_keyed(left, right, on=...)` | where every row went, then the rows to look at |
+
+`log=True` on the performance section is for positive quantities such as PK parameters: log
+axes, metrics on log10 values, and GMFE with the share within 2x, 3x and 10x.
+
+`report.save` lints, writes the PDF, and publishes each section's detail frames to
+`/reports/<name>/<frame>` in the `DFStore`, replacing the previous run's. A closing page
+lists them, so a reader goes from "7 mismatched" to the seven rows. `publish=False` skips
+the store. Run the analysis functions on their own when the user wants the numbers rather
+than a document.
+
+Model performance for an endpoint is one call:
+
+```python
+from workbench.reports.model_performance import model_performance_report
+
+report = model_performance_report("abalone-regression", df, out_pdf, by="sex", key="auto_id")
+report.frames["performance_breakout"]      # the metrics table behind the pages
+```
+
+A page the sections do not cover is a function you add alongside them. It starts with
+`report.new_page(headline)`; the footer, page number, axes fit and save are done for you:
+
+```python
+from workbench.utils.plots import report as pages
+
+def page_method(report):
+    fig, y = report.new_page("How the archive was read")
+    y = pages.para(fig, y, "Each workbook carries its parameters twice ...")
+    return fig
+
+report.add(page_method)
+```
+
+The rest of this guide is the craft behind those pages, for the ones you write yourself.
+
 ## Modern PDFs
 
 The default matplotlib look — DejaVu Sans, black text, full box spines, grey grid —
@@ -280,6 +336,7 @@ names you left behind.
 ## Checklist
 
 - Output path agreed with the user; nothing silently overwritten.
+- Built from `workbench.reports` sections where one fits; no count without the rows behind it.
 - Page 1 answers the question; method is late, not first.
 - Every page has one headline, and no text block exceeds ~4 lines.
 - Built on `report.theme()`; no hardcoded font family.

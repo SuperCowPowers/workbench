@@ -316,7 +316,7 @@ def fold_summary(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
         y_pred: Predicted values
 
     Returns:
-        Dict with gmfe, afe, within_2x, within_3x, support. Empty dict if no pair survives.
+        Dict with gmfe, afe, within_2x, within_3x, within_10x, support. Empty dict if no pair survives.
     """
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
@@ -331,6 +331,7 @@ def fold_summary(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
         "afe": afe(y_true, y_pred),
         "within_2x": within_fold(y_true, y_pred, 2.0),
         "within_3x": within_fold(y_true, y_pred, 3.0),
+        "within_10x": within_fold(y_true, y_pred, 10.0),
         "support": len(y_true),
     }
 

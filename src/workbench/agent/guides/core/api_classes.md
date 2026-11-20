@@ -77,6 +77,9 @@ The storage classes share one interface — `get`, `upsert`, `list`, `delete`,
 Learn one, you know the rest. Use them as the glue for anything that isn't an
 artifact — intermediate frames, config, cross-session state.
 
+A `Report` (`workbench.reports`) writes a PDF and publishes the rows behind it under
+`/reports/<name>/` in the `DFStore` — see `reports`.
+
 ## Wrappers and composition
 
 Several classes take a piece and give back something with the same shape, which

@@ -25,8 +25,11 @@ METRIC_NOTES = (
 LOG_METRIC_NOTES = (
     "R2, RMSE, MAE and Spearman are computed on log10 values, over the rows where measured and predicted are "
     "both positive. GMFE is the typical fold miss (1.5 means off by 50% in either direction), and within 2x "
-    "is the share of predictions between half and double the measured value."
+    "is the share of predictions between half and double the measured value; 3x and 10x likewise."
 )
+
+# Fold bands reported for a positive quantity
+FOLDS = ("2x", "3x", "10x")
 
 
 def _num(value) -> str:
@@ -101,7 +104,8 @@ def performance(
         stats = [("R2", _num(overall["r2"])), ("RMSE", _num(overall["rmse"])), ("MAE", _num(overall["mae"]))]
         stats += [("Spearman", _num(overall["spearmanr"])), ("Rows", f"{int(overall['support']):,}")]
         if log:
-            stats += [("GMFE", _num(overall["gmfe"])), ("Within 2x", f"{overall['within_2x']:.0%}")]
+            stats += [("GMFE", _num(overall["gmfe"]))]
+            stats += [(f"Within {fold}", f"{overall[f'within_{fold}']:.0%}") for fold in FOLDS]
         y = pages.stat_row(fig, pages.L, y, stats)
         y = pages.para(fig, y - 0.006, LOG_METRIC_NOTES if log else METRIC_NOTES, size=8.6)
 
@@ -120,9 +124,11 @@ def performance(
         fig, y = report.new_page("Where the model misses")
         if by:
             metric = "gmfe" if log else "mae"
-            columns = ["group", "support", "r2", "rmse", "mae"] + (["gmfe", "within_2x"] if log else [])
+            within = [f"within_{fold}" for fold in FOLDS]
+            columns = ["group", "support", "r2", "rmse"] + (["gmfe"] + within if log else ["mae"])
+            shown = breakout.assign(**{c: breakout[c].map("{:.0%}".format) for c in within}) if log else breakout
             y = pages.sec(fig, y, f"By {by}")
-            y = pages.table(fig, y, columns, _rows(breakout, columns, limit=len(breakout)), hl_row=0)
+            y = pages.table(fig, y, columns, _rows(shown, columns, limit=len(shown)), hl_row=0)
             groups = breakout.iloc[1:].set_index("group")[metric]
             bars = fig.add_axes([0.24, y - 0.05 - 0.026 * len(groups), 0.50, 0.026 * len(groups) + 0.02])
             worst = groups.idxmax() if len(groups) else ""

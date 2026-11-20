@@ -39,6 +39,7 @@ def test_fold_summary_matches_the_individual_metrics():
     assert summary["afe"] == pytest.approx(afe(TRUE, PRED))
     assert summary["within_2x"] == pytest.approx(0.75)
     assert summary["within_3x"] == pytest.approx(0.75)
+    assert summary["within_10x"] == pytest.approx(1.0)
     assert summary["support"] == 4
 
 
