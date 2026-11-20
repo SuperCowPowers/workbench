@@ -3,12 +3,10 @@
 import pandas as pd
 from pandas.errors import ParserError
 import numpy as np
-import sys
 import json
 from io import StringIO
 import hashlib
 import logging
-from collections import defaultdict
 from typing import Dict, Tuple, List, Optional
 
 # Workbench Logger
@@ -183,30 +181,6 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
     # If there are no differences report that
     if not difference_counts:
         print(f"\nNo differences found in common columns within {epsilon}")
-
-
-def subnormal_check(df):
-    """
-    Identifies and prints rows from the DataFrame containing subnormal floats.
-
-    A subnormal float is smaller than the smallest positive normal float
-    (~2.2e-308) but greater than zero (~5e-324).
-    """
-    # Define the range for subnormal floats
-    min_positive = np.nextafter(0, 1)  # Smallest positive subnormal float (~5e-324)
-    min_normal = sys.float_info.min  # Smallest positive normal float (~2.2e-308)
-
-    # Check for subnormal floats in the DataFrame
-    subnormal_mask = df.map(lambda x: isinstance(x, float) and min_positive <= abs(x) < min_normal)
-
-    # Get rows where any column contains a subnormal float
-    rows_with_subnormal = df[subnormal_mask.any(axis=1)]
-
-    if not rows_with_subnormal.empty:
-        print("Rows containing subnormal floats:")
-        print(rows_with_subnormal)
-    else:
-        print("No subnormal floats found in the DataFrame.")
 
 
 def binary_accuracy(conf_matrix: pd.DataFrame, positive_classes: list) -> float:
@@ -406,36 +380,6 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def convert_to_numeric(df, verbose=False) -> pd.DataFrame:
-    """Converts all columns in a DataFrame to numeric, reporting parse errors and coercing invalid values to NaN.
-
-    Args:
-        df (pd.DataFrame): Input DataFrame.
-        verbose (bool): Whether to log failed parsing attempts.
-
-    Returns:
-        pd.DataFrame: DataFrame with columns converted to numeric.
-    """
-
-    # Backup the original DataFrame before conversion
-    original_df = df.copy()
-
-    # Convert to numeric, coercing invalid values to NaN
-    df = df.apply(pd.to_numeric, errors="coerce")
-
-    # If verbose, find locations where values were coerced to NaN and report
-    if verbose:
-        failed_parsing = df.isna() & ~original_df.isna()
-        for column in failed_parsing.columns:
-            if failed_parsing[column].any():
-                failed_rows = original_df.loc[failed_parsing[column], column]
-                for index, value in failed_rows.items():
-                    log.warning(f"Failed to parse value '{value}' in column '{column}' at index {index}.")
-
-    # Return the DataFrame with columns converted to numeric
-    return df
-
-
 def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list = None) -> pd.DataFrame:
     """
     Removes rows with NaN or INF values from the DataFrame.
@@ -552,121 +496,6 @@ def detect_drift(current_df, new_df, drift_percentage=0.1):
     return has_drift, details
 
 
-def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy: str = "median") -> pd.DataFrame:
-    """
-    Imputes NaN/INF values in the specified feature columns of the DataFrame and tracks feature quality issues.
-
-    Args:
-        input_df (pd.DataFrame): Input data frame.
-        feature_list (list): List of feature columns to process.
-        strategy (str): Imputation strategy. Currently supports 'mean', 'median', or 'zero'.
-
-    Returns:
-        pd.DataFrame: DataFrame with NaN/INF values imputed and a 'feature_quality_tags' column.
-
-    Behavior:
-        1. Tracks and tags rows with feature quality issues:
-            - 'parse': Values that failed to parse when converting to numeric.
-            - 'inf': INF/-INF values in the DataFrame.
-            - 'nan': NaN values identified during processing.
-        2. Replaces parse errors and inf values with NaN.
-        3. Imputes all NaN values using the specified strategy ('mean', 'median', or 'zero').
-        4. Logs detailed information about detected and handled feature quality issues.
-    """
-    # Backup the original DataFrame and isolate feature columns for processing
-    process_df = input_df[feature_list].copy()
-
-    # Initialize the feature_quality_tags column as an empty list for all rows
-    feature_quality_tags = [set() for _ in range(len(process_df))]
-
-    # Convert feature columns to numeric, coercing invalid values to NaN
-    process_df = process_df.apply(pd.to_numeric, errors="coerce")
-
-    # Track and tag parsing errors
-    parsing_error_counts = defaultdict(lambda: defaultdict(int))
-
-    # Get indices of failed parsing as a single DataFrame
-    failed_parsing = process_df.isna() & ~input_df[feature_list].isna()
-    failed_indices = failed_parsing.stack()  # Stack to get a Series of True values with multi-index (row, column)
-
-    # Filter to keep only True (failed parsing) entries
-    failed_indices = failed_indices[failed_indices]
-
-    # Process all parsing errors at once
-    for row, column in failed_indices.index:
-        value = input_df.at[row, column]
-        feature_quality_tags[row].add("parse")
-        parsing_error_counts[column][str(value)] += 1
-
-    # Report parsing error counts
-    for column, errors in parsing_error_counts.items():
-        for value, count in errors.items():
-            log.important(f"Column '{column}' had {count} occurrences of the parsing error value '{value}'.")
-
-    # Count and log the number of INF/-INF values
-    inf_locations = np.isinf(process_df[feature_list])
-    inf_count = inf_locations.sum().sum()  # Total count across all rows and columns
-
-    if inf_count > 0:
-        for column in process_df.columns:
-            if inf_locations[column].any():
-                inf_rows = process_df.loc[inf_locations[column], column]
-                for index, value in inf_rows.items():
-                    log.important(f"'{value}' found in column '{column}' at index {index}.")
-                    feature_quality_tags[index].add("inf")
-
-        # Replace INF/-INF values with NaN
-        process_df = process_df.replace([np.inf, -np.inf], np.nan)
-
-    # Log and handle NaN values
-    log.info(f"Imputing missing values using '{strategy}' strategy.")
-    for col in process_df.columns:
-        if process_df[col].isna().any():
-            # Determine the imputation value
-            if strategy == "mean":
-                fill_value = process_df[col].mean()
-            elif strategy == "median":
-                fill_value = process_df[col].median()
-            elif strategy == "zero":
-                fill_value = 0
-            else:
-                raise ValueError(f"Unsupported imputation strategy: {strategy}")
-
-            # Count the number of NaN values to be replaced
-            num_values = process_df[col].isna().sum()
-
-            # Update the feature_quality_tags for NaN values
-            nan_indices = process_df[process_df[col].isna()].index
-            for index in nan_indices:
-                feature_quality_tags[index].add("nan")
-
-            # Update the column
-            process_df[col] = process_df[col].fillna(fill_value)
-            log.important(f"Imputing {col} replacing {num_values} values with {strategy}({fill_value:.2f})")
-
-    # Combine processed feature columns with untouched columns and feature_quality_tags
-    untouched_columns = input_df.drop(columns=feature_list)
-    result_df = pd.concat([untouched_columns, process_df], axis=1)
-    result_df["feature_quality_tags"] = [list(tags) for tags in feature_quality_tags]
-
-    return result_df
-
-
-def drop_duplicates(input_df: pd.DataFrame) -> pd.DataFrame:
-    """Drop duplicate rows from a dataframe
-    Args:
-        input_df (pd.DataFrame): Input DataFrame
-    Returns:
-        pd.DataFrame: DataFrame with duplicate rows dropped
-    """
-
-    # Drop Duplicates
-    output_df = input_df.drop_duplicates()
-    if input_df.shape[0] != output_df.shape[0]:
-        log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} duplicate rows")
-    return output_df
-
-
 def drop_outliers_iqr(input_df: pd.DataFrame, scale: float = 1.5) -> pd.DataFrame:
     """Drop outliers from a dataframe
     Args:
@@ -689,24 +518,6 @@ def drop_outliers_iqr(input_df: pd.DataFrame, scale: float = 1.5) -> pd.DataFram
     return output_df
 
 
-def drop_outliers_sdev(input_df: pd.DataFrame, sigma: float = 2.0) -> pd.DataFrame:
-    """Drop outliers from a dataframe
-    Args:
-        input_df (pd.DataFrame): Input DataFrame
-        sigma (float, optional): Scale to use for Standard Deviation. Defaults to 2.0.
-    Returns:
-        pd.DataFrame: DataFrame with outliers dropped
-    """
-    # Just the numeric columns
-    numeric_df = input_df.select_dtypes(include="number")
-
-    output_df = input_df[numeric_df.apply(lambda x: np.abs(x - x.mean()) / x.std() < sigma).all(axis=1)]
-    if input_df.shape[0] != output_df.shape[0]:
-        log.info(f"Dropped {input_df.shape[0] - output_df.shape[0]} outlier rows")
-    return output_df
-
-
-# Rows on a single value below this are the tail of a distribution, not a pileup.
 MIN_PILEUP_ROWS = 3
 
 
@@ -1083,9 +894,6 @@ if __name__ == "__main__":
     norm_df = drop_outliers_iqr(clean_df)
     log.info(norm_df)
 
-    norm_df = drop_outliers_sdev(clean_df)
-    log.info(norm_df)
-
     # Create two dataframes for comparison
     my_df1 = test_data.person_data()
     my_df2 = my_df1.copy()
@@ -1097,11 +905,6 @@ if __name__ == "__main__":
     my_df2.loc[82, "Age"] = 99
     my_df2["new_column"] = "new_value"
     compare_dataframes(my_df1, my_df2, ["Id", "Name"])
-
-    # Subnormal Check
-    data = {"col1": [5, 0, 1e-310, 5e-325], "col2": [3, 0, 1e-100, -1e-320]}
-    df = pd.DataFrame(data)
-    subnormal_check(df)
 
     # Example for Binary Accuracy
     conf_matrix = pd.DataFrame(

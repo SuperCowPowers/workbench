@@ -45,7 +45,7 @@ class CleanData(DataToDataLight):
 
         # Drop Duplicates
         if drop_duplicates:
-            self.output_df = pandas_utils.drop_duplicates(self.output_df)
+            self.output_df = self.output_df.drop_duplicates()
 
         # Drop Outliers
         if drop_outliers:
