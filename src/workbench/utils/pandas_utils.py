@@ -705,7 +705,8 @@ class DataQuality:
 
     Attributes:
         findings (pd.DataFrame): One row per finding with columns: check, column,
-            severity (warn/info/ok), value, detail. Worst first.
+            severity (warn/info/ok), count (rows flagged, where the check counts rows),
+            value, detail. Worst first.
         rows (pd.DataFrame): One row per offending cell: the key column(s) (or `index`
             when no key was given), check, column, and the offending value as text.
             Joins back to the source frame on the key.
@@ -754,7 +755,8 @@ def data_quality(
         if count > max_rows:
             detail += f" (first {max_rows} rows listed)"
         value = f"{count} ({100 * count / len(df):.1f}%)"
-        findings.append({"check": check, "column": column, "severity": severity, "value": value, "detail": detail})
+        finding = {"check": check, "column": column, "severity": severity, "count": count}
+        findings.append({**finding, "value": value, "detail": detail})
         hit = ids[mask.to_numpy()].head(max_rows).assign(check=check, column=column, value=None)
         if values is not None:
             hit["value"] = values[mask.to_numpy()].head(max_rows).astype(str).to_numpy()
@@ -807,11 +809,12 @@ def data_quality(
     if identical.any():
         add("duplicate_rows", None, "warn", identical, "rows identical in every column")
 
-    findings_df = pd.DataFrame(findings, columns=["check", "column", "severity", "value", "detail"])
+    findings_df = pd.DataFrame(findings, columns=["check", "column", "severity", "count", "value", "detail"])
     if target:
         health = target_health(df, target)
-        health = health[health["check"] != "missing"].assign(column=target)
+        health = health[health["check"] != "missing"].assign(column=target, count=pd.NA)
         findings_df = pd.concat([findings_df, health[findings_df.columns]], ignore_index=True)
+    findings_df["count"] = findings_df["count"].astype("Int64")
     order = findings_df["severity"].map(SEVERITY_ORDER)
     findings_df = findings_df.loc[order.sort_values(kind="stable").index].reset_index(drop=True)
 

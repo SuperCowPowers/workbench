@@ -74,7 +74,7 @@ Say what you dropped and why. It's the user's call, not a silent preprocessing s
 from workbench.utils.pandas_utils import data_quality
 
 result = data_quality(df, key="compound_id", target="logd")
-result.findings      # check, column, severity, value, detail; worst first
+result.findings      # check, column, severity, count, value, detail; worst first
 result.rows          # one row per offending cell: the key, check, column, value
 ```
 

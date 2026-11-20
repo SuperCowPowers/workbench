@@ -154,5 +154,15 @@ def test_rows_differing_only_in_an_uncomparable_column_are_not_duplicates():
     assert "duplicate_rows" not in set(data_quality(df).findings["check"])
 
 
+def test_findings_carry_a_row_count():
+    df = clean_frame().assign(species="mouse")
+    df.loc[[3, 7], "x"] = np.nan
+    findings = data_quality(df, key="id").findings.set_index("check")
+
+    assert list(findings.columns) == ["column", "severity", "count", "value", "detail"]
+    assert findings.loc["missing", "count"] == 2
+    assert pd.isna(findings.loc["constant", "count"])
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])
