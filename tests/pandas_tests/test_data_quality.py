@@ -154,6 +154,18 @@ def test_rows_differing_only_in_an_uncomparable_column_are_not_duplicates():
     assert "duplicate_rows" not in set(data_quality(df).findings["check"])
 
 
+def test_a_log_distributed_column_is_fenced_on_its_log_values():
+    """The upper tail of a concentration is not a pile of outliers, but a value decades away is"""
+    rng = np.random.default_rng(1)
+    df = pd.DataFrame({"id": [f"c{i}" for i in range(400)], "cmax": 10 ** rng.normal(2, 1, 400)})
+    assert "outliers" not in set(data_quality(df, key="id").findings["check"])
+
+    df.loc[0, "cmax"] = 1e12
+    result = data_quality(df, key="id")
+    assert list(rows(result, "outliers")["id"]) == ["c0"]
+    assert "log10" in finding(result, "outliers", "cmax")["detail"]
+
+
 def test_findings_carry_a_row_count():
     df = clean_frame().assign(species="mouse")
     df.loc[[3, 7], "x"] = np.nan

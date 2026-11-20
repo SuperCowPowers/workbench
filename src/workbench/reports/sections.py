@@ -310,8 +310,9 @@ def comparison(
         rows = [["agree", f"{counts['agree']:,} pairs", "one row on each side, values agree"]]
         rows += [[label, shown or f"{len(frame):,} rows", meaning] for _, label, frame, shown, meaning in buckets]
         y = pages.table(fig, y, ["bucket", "size", "meaning"], rows, aligns=["left", "right", "left"])
-        if numeric and counts["pairs"] and y - BOTTOM > 0.30:
-            value = numeric[0]
+        disputed = [v for v in numeric if not pairs[f"{v}_agree"].all()]
+        if disputed and y - BOTTOM > 0.30:
+            value = disputed[0]
             agree = int(pairs[f"{value}_agree"].sum())
             side = min(0.34, y - BOTTOM - 0.07)
             scatter = fig.add_axes([0.5 - side * 11 / 17, y - side - 0.05, side * 22 / 17, side])

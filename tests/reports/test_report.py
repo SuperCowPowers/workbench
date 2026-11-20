@@ -270,5 +270,30 @@ def test_a_custom_section_brings_its_own_card_and_cards_run_onto_a_second_page(t
     assert page_headlines(report)[:3] == ["Summary", "Summary, continued", "Method"]
 
 
+def axes_per_page(report: Report) -> list:
+    class Axes:
+        found = []
+
+        def savefig(self, fig, **_):
+            self.found.append(len(fig.axes))
+
+    axes = Axes()
+    axes.found = []
+    report.build(axes)
+    return axes.found
+
+
+def test_the_agreement_scatter_is_drawn_only_when_values_disagree():
+    left = predictions(40)
+    right = left.copy()
+    agreeing = Report("Same").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
+    right.loc[right.index[:4], "cmax"] *= 3
+    disputed = Report("Differs").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
+
+    # page 2 is the comparison overview: the row-fate bars, plus the scatter when a value disagrees
+    assert axes_per_page(agreeing)[1] == 1
+    assert axes_per_page(disputed)[1] == 2
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

@@ -696,6 +696,9 @@ MISSING_WARN_FRACTION = 0.05
 # column carrying stray text ("<0.1", "BLQ"), and the entries that do not parse are flagged
 MOSTLY_NUMERIC_FRACTION = 0.5
 
+# A positive column skewed beyond this is treated as log-distributed when looking for outliers
+LOG_FENCE_SKEW = 2.0
+
 SEVERITY_ORDER = {"warn": 0, "info": 1, "ok": 2}
 
 
@@ -738,7 +741,8 @@ def data_quality(
             listed by key so they can be looked up; without one the index is used.
         target (Optional[str]): Regression target column to run `target_health` on.
         outlier_scale (float): Multiple of the interquartile range beyond the quartiles
-            that counts as an outlier. Defaults to 3.0.
+            that counts as an outlier. Defaults to 3.0. A positive, strongly skewed column
+            is fenced on its log10 values.
         max_rows (int): Most rows listed per finding. Defaults to 1000.
 
     Returns:
@@ -784,11 +788,16 @@ def data_quality(
                 add("non_finite", col, "warn", infinite, "infinite values", values)
             finite = numbers[~infinite & ~missing]
             if not finite.empty:
-                q1, q3 = np.percentile(finite, [25, 75])
+                # A positive, strongly skewed column (a concentration, a clearance) is fenced on
+                # its log10 values; on the raw values its whole upper tail reads as outliers
+                on_log = bool((finite > 0).all() and abs(finite.skew()) > LOG_FENCE_SKEW)
+                q1, q3 = np.percentile(np.log10(finite) if on_log else finite, [25, 75])
                 low, high = q1 - outlier_scale * (q3 - q1), q3 + outlier_scale * (q3 - q1)
+                low, high = (10**low, 10**high) if on_log else (low, high)
                 outliers = ~infinite & ((numbers < low) | (numbers > high))
                 if q3 > q1 and outliers.any():
-                    detail = f"outside [{low:g}, {high:g}], {outlier_scale:g} x IQR beyond the quartiles"
+                    scale = " of the log10 values" if on_log else ""
+                    detail = f"outside [{low:g}, {high:g}], {outlier_scale:g} x IQR beyond the quartiles{scale}"
                     add("outliers", col, "info", outliers, detail, values)
         elif not pd.api.types.is_bool_dtype(values) and not pd.api.types.is_datetime64_any_dtype(values):
             unparseable = pd.to_numeric(values, errors="coerce").isna() & ~missing
