@@ -13,7 +13,7 @@ set -euo pipefail
 #   scripts/admin/backup_data_captures.sh <bucket>              # dry run (default)
 #   scripts/admin/backup_data_captures.sh <bucket> --execute    # really copy
 #
-# Bucket is the Workbench artifacts bucket, e.g. idb-prod-sageworks-artifacts.
+# Bucket is the Workbench artifacts bucket, e.g. acme-prod-workbench-artifacts.
 
 BUCKET="${1:?usage: $0 <bucket> [--execute]}"
 

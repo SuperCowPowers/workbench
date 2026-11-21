@@ -26,7 +26,7 @@ header prints it alongside the version the current inference image pins.
 Usage:
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --model cl-mouse-reg-chemprop-1-dt
-    AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --pipelines-dir ~/work/ideaya/ml_pipelines
+    AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --pipelines-dir ~/work/ml_pipelines
     AWS_PROFILE=<profile> python scripts/admin/find_stale_model_bundles.py --mark-deprecated
 """
 

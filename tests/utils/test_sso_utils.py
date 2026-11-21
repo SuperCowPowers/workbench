@@ -18,15 +18,15 @@ from workbench.utils.config_manager import ConfigManager
 
 LEGACY = """\
 # keep this comment
-[profile idb-dev]
-sso_start_url = https://ideayabio.awsapps.com/start
+[profile acme-dev]
+sso_start_url = https://acme.awsapps.com/start
 sso_region = us-west-2
 sso_account_id = 111111111111
 sso_role_name = Developer
 region = us-west-2
 
-[profile idb-dev-admin]
-sso_start_url = https://ideayabio.awsapps.com/start
+[profile acme-dev-admin]
+sso_start_url = https://acme.awsapps.com/start
 sso_region = us-west-2
 sso_account_id = 111111111111
 sso_role_name = Admin
@@ -41,17 +41,17 @@ def write_config(tmp_path, text: str, newline: str = "\n") -> str:
 
 def test_migrate_legacy_profile(tmp_path):
     path = write_config(tmp_path, LEGACY)
-    assert sso_utils.migrate_legacy_sso_profile("idb-dev", path)
+    assert sso_utils.migrate_legacy_sso_profile("acme-dev", path)
 
     config = load_config(path)
-    assert config["profiles"]["idb-dev"] == {
-        "sso_session": "ideayabio",
+    assert config["profiles"]["acme-dev"] == {
+        "sso_session": "acme",
         "sso_account_id": "111111111111",
         "sso_role_name": "Developer",
         "region": "us-west-2",
     }
-    assert config["sso_sessions"]["ideayabio"] == {
-        "sso_start_url": "https://ideayabio.awsapps.com/start",
+    assert config["sso_sessions"]["acme"] == {
+        "sso_start_url": "https://acme.awsapps.com/start",
         "sso_region": "us-west-2",
         "sso_registration_scopes": "sso:account:access",
     }
@@ -59,34 +59,34 @@ def test_migrate_legacy_profile(tmp_path):
     # Only the target profile moved; the sibling and the comment are untouched
     text = open(path, encoding="utf-8").read()
     assert text.startswith("# keep this comment\n")
-    assert "sso_start_url" in config["profiles"]["idb-dev-admin"]
+    assert "sso_start_url" in config["profiles"]["acme-dev-admin"]
     assert open(path + ".bak", encoding="utf-8").read() == LEGACY
 
 
 def test_migrate_reuses_matching_session(tmp_path):
     path = write_config(tmp_path, LEGACY)
-    sso_utils.migrate_legacy_sso_profile("idb-dev", path)
-    assert sso_utils.migrate_legacy_sso_profile("idb-dev-admin", path)
+    sso_utils.migrate_legacy_sso_profile("acme-dev", path)
+    assert sso_utils.migrate_legacy_sso_profile("acme-dev-admin", path)
 
     text = open(path, encoding="utf-8").read()
     assert text.count("[sso-session") == 1
-    assert load_config(path)["profiles"]["idb-dev-admin"]["sso_session"] == "ideayabio"
+    assert load_config(path)["profiles"]["acme-dev-admin"]["sso_session"] == "acme"
 
 
 def test_migrate_session_name_collision(tmp_path):
-    other = "[sso-session ideayabio]\nsso_start_url = https://other.example.com/start\nsso_region = us-east-1\n\n"
+    other = "[sso-session acme]\nsso_start_url = https://other.example.com/start\nsso_region = us-east-1\n\n"
     path = write_config(tmp_path, other + LEGACY)
-    sso_utils.migrate_legacy_sso_profile("idb-dev", path)
-    assert load_config(path)["profiles"]["idb-dev"]["sso_session"] == "ideayabio-2"
+    sso_utils.migrate_legacy_sso_profile("acme-dev", path)
+    assert load_config(path)["profiles"]["acme-dev"]["sso_session"] == "acme-2"
 
 
 def test_migrate_keeps_crlf(tmp_path):
     path = write_config(tmp_path, LEGACY, newline="\r\n")
-    sso_utils.migrate_legacy_sso_profile("idb-dev", path)
+    sso_utils.migrate_legacy_sso_profile("acme-dev", path)
 
     raw = open(path, "rb").read()
     assert b"\n" not in raw.replace(b"\r\n", b"")
-    assert load_config(path)["profiles"]["idb-dev"]["sso_session"] == "ideayabio"
+    assert load_config(path)["profiles"]["acme-dev"]["sso_session"] == "acme"
 
 
 @pytest.mark.parametrize(
@@ -150,8 +150,8 @@ def renew_world(monkeypatch):
 @pytest.mark.parametrize("answer", ["", "y", "YES"])
 def test_renew_yes(renew_world, answer, capsys):
     renew_world.answers = [answer]
-    assert sso_utils.sso_renew("idb-dev")
-    assert renew_world.logins == [["/usr/local/bin/aws", "sso", "login", "--profile", "idb-dev"]]
+    assert sso_utils.sso_renew("acme-dev")
+    assert renew_world.logins == [["/usr/local/bin/aws", "sso", "login", "--profile", "acme-dev"]]
     assert renew_world.saved == {}
     assert CLI_OUTPUT not in capsys.readouterr().out
 
@@ -160,31 +160,31 @@ def test_renew_yes(renew_world, answer, capsys):
 def test_renew_failure_shows_cli_output(renew_world, returncode, interrupt, capsys):
     renew_world.answers = ["y"]
     renew_world.returncode, renew_world.interrupt = returncode, interrupt
-    assert not sso_utils.sso_renew("idb-dev")
+    assert not sso_utils.sso_renew("acme-dev")
     assert CLI_OUTPUT in capsys.readouterr().out
 
 
 def test_renew_no(renew_world):
     renew_world.answers = ["n"]
-    assert not sso_utils.sso_renew("idb-dev")
+    assert not sso_utils.sso_renew("acme-dev")
     assert renew_world.logins == []
 
 
 def test_renew_always_saves_flag(renew_world):
     renew_world.answers = ["a"]
-    assert sso_utils.sso_renew("idb-dev")
+    assert sso_utils.sso_renew("acme-dev")
     assert renew_world.saved == {"AUTO_SSO_RENEW": True}
 
 
 def test_renew_auto_skips_prompt(renew_world):
     renew_world.auto = True
-    assert sso_utils.sso_renew("idb-dev")  # input() would raise IndexError on the empty answers list
+    assert sso_utils.sso_renew("acme-dev")  # input() would raise IndexError on the empty answers list
     assert len(renew_world.logins) == 1
 
 
 def test_renew_needs_a_terminal(renew_world, monkeypatch):
     monkeypatch.setattr(sso_utils.sys.stdin, "isatty", lambda: False, raising=False)
-    assert not sso_utils.sso_renew("idb-dev")
+    assert not sso_utils.sso_renew("acme-dev")
     assert renew_world.logins == []
 
 
@@ -214,7 +214,7 @@ def test_with_sso_renewal_reraises_when_declined(monkeypatch):
 
 def test_save_config_writes_only_that_key(tmp_path, monkeypatch):
     site = tmp_path / "site.json"
-    site.write_text('{"WORKBENCH_BUCKET": "bucket", "AWS_PROFILE": "idb-dev"}', encoding="utf-8")
+    site.write_text('{"WORKBENCH_BUCKET": "bucket", "AWS_PROFILE": "acme-dev"}', encoding="utf-8")
     cm = ConfigManager()
     monkeypatch.setattr(cm, "config", {"WORKBENCH_BUCKET": "bucket", "FROM_ENV": "not-on-disk"})
     monkeypatch.setattr(cm, "site_config_path", str(site))
@@ -224,7 +224,7 @@ def test_save_config_writes_only_that_key(tmp_path, monkeypatch):
     assert cm.config["AUTO_SSO_RENEW"] is True
     assert json.loads(site.read_text(encoding="utf-8")) == {
         "WORKBENCH_BUCKET": "bucket",
-        "AWS_PROFILE": "idb-dev",
+        "AWS_PROFILE": "acme-dev",
         "AUTO_SSO_RENEW": True,
     }
 
@@ -262,7 +262,7 @@ def test_save_config_keeps_permissions_and_symlink(tmp_path, monkeypatch):
 
 def test_renew_without_stdin(renew_world, monkeypatch):
     monkeypatch.setattr(sso_utils.sys, "stdin", None)
-    assert not sso_utils.sso_renew("idb-dev")
+    assert not sso_utils.sso_renew("acme-dev")
 
 
 def test_renew_survives_failed_migration(renew_world, monkeypatch):
@@ -271,7 +271,7 @@ def test_renew_survives_failed_migration(renew_world, monkeypatch):
 
     monkeypatch.setattr(sso_utils, "migrate_legacy_sso_profile", locked)
     renew_world.answers = ["y"]
-    assert sso_utils.sso_renew("idb-dev")
+    assert sso_utils.sso_renew("acme-dev")
     assert len(renew_world.logins) == 1
 
 

@@ -17,7 +17,7 @@ def frame(n_slow=6, n_fast=18, seed=0):
     n = n_slow + n_fast
     df = pd.DataFrame(
         {
-            "id": [f"IDC-{20000 + i}" for i in range(n)],
+            "id": [f"ID-{20000 + i}" for i in range(n)],
             "smiles": [SMILES[i % len(SMILES)] for i in range(n)],
             "cl": cl,
             "vss": vss,
@@ -164,8 +164,8 @@ def test_hover_resolves_to_a_compound():
 def test_hover_on_a_marker_uses_customdata():
     """Marker traces hold "" in trace_ids, so they must resolve via customdata."""
     handler = _hover_handler(build_app(frame()))
-    title, _, img, _ = handler({"points": [{"curveNumber": 0, "customdata": "IDC-20005"}]})
-    assert title == "IDC-20005"
+    title, _, img, _ = handler({"points": [{"curveNumber": 0, "customdata": "ID-20005"}]})
+    assert title == "ID-20005"
     assert img.startswith("data:image/svg+xml;base64,")
 
 

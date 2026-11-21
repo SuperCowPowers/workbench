@@ -70,14 +70,14 @@ def right_edges(fig) -> list:
 def test_a_table_too_wide_for_the_page_is_fitted_not_overprinted(recwarn):
     headers = ["bat", "dose", "route", "matrix", "date", "archive rows", "datasource rows", "cmax in archive"]
     headers.append("cmax in datasource")
-    row = ["IDC-25163-14", "100", "po", "plasma", "2024-04-02", "3", "5", "133000; 166000; 185000"]
+    row = ["ID-25163-14", "100", "po", "plasma", "2024-04-02", "3", "5", "133000; 166000; 185000"]
     row.append("104000; 128000; 133000; 166000; 185000; 201000; 244000")
     fig = report.new_page()
     report.table(fig, 0.8, headers, [row, row])
 
     assert max(right_edges(fig)) <= report.R + 0.002
     assert any(text.get_text().endswith("...") for text in fig.texts)
-    assert "IDC-25163-14" in [text.get_text() for text in fig.texts]  # short cells are left whole
+    assert "ID-25163-14" in [text.get_text() for text in fig.texts]  # short cells are left whole
     assert not [w for w in recwarn if "table:" in str(w.message)]
     plt.close(fig)
 

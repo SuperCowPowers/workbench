@@ -309,10 +309,18 @@ def table(
         aligns = ["right" if body and all(_is_num(r[k]) for r in body) and k > 0 else "left" for k in range(ncol)]
     aligns = list(aligns)
 
+    def face(i: int, k: int) -> str:
+        """The face a body cell is drawn in, which is the face it has to be measured in."""
+        return HEADING_FONT if k == 0 or (hl_row is not None and i == hl_row) else BODY_FONT
+
+    def widths(k: int) -> list:
+        """Width of a column's header, then of each of its cells."""
+        cells = [text_width(r[k], size, face(i, k)) for i, r in enumerate(body)]
+        return [text_width(headers[k].upper(), 7.1, HEADING_FONT)] + cells
+
     # natural width of each column: widest of its header and its cells
     def natural(k: int) -> float:
-        cells = [text_width(r[k], size, HEADING_FONT) for r in body]
-        return max([text_width(headers[k].upper(), 7.1, HEADING_FONT)] + cells)
+        return max(widths(k))
 
     avail = x1 - x0 - gutter * (ncol - 1)
     nat = [natural(k) for k in range(ncol)]
@@ -328,10 +336,8 @@ def table(
             break
         # A column is as wide as its widest text, so trimming only helps where that text can be cut
         for k in sorted(range(ncol), key=nat.__getitem__, reverse=True):
-            widths = [text_width(headers[k].upper(), 7.1, HEADING_FONT)] + [
-                text_width(r[k], size, HEADING_FONT) for r in body
-            ]
-            widest = max(range(len(widths)), key=widths.__getitem__)
+            column = widths(k)
+            widest = max(range(len(column)), key=column.__getitem__)
             text = headers[k] if widest == 0 else body[widest - 1][k]
             if len(text) > MIN_CELL_CHARS:
                 break
@@ -373,14 +379,7 @@ def table(
         hot = hl_row is not None and i == hl_row
         for k, v in enumerate(r):
             fig.text(
-                anchor[k],
-                y,
-                v,
-                fontsize=size,
-                va="top",
-                ha=aligns[k],
-                color=INK if hot else BODY,
-                fontname=HEADING_FONT if hot or k == 0 else BODY_FONT,
+                anchor[k], y, v, fontsize=size, va="top", ha=aligns[k], color=INK if hot else BODY, fontname=face(i, k)
             )
         y -= lead
         if row_rules and i < len(body) - 1:
