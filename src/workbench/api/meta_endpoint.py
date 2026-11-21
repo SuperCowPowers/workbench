@@ -165,7 +165,7 @@ class MetaEndpoint(Endpoint):
             max_instances=max_instances if uses_autoscaler else None,
             inference_batch_size=dag.meta_batch_size(),
         )
-        # A sync meta takes no more invocations at once than its tightest child does
+        # A sync meta's invocations at once leave every child within its own concurrency
         deploy_meta = {"meta_endpoint_dag": dag.to_dict()}
         if not is_async:
             deploy_meta["inference_concurrency"] = dag.meta_concurrency()

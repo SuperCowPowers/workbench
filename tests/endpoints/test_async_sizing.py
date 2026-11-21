@@ -305,14 +305,17 @@ GPU_REALTIME = {"inference_batch_size": 16, "inference_concurrency": 1}
 @pytest.mark.parametrize(
     "children, batch, concurrency",
     [
-        ({"a": {}, "b": {}}, 400, SYNC_CONCURRENCY),  # real-time children: 100 rows x 4 at once
-        ({"a": {"serverless": True}, "b": {"serverless": True}}, 200, 2),
+        ({"a": {}, "b": {}}, 400, 1),  # real-time children: one invocation is 4 calls of 100 rows
+        ({"a": {"serverless": True}, "b": {"serverless": True}}, 200, 1),  # 2 calls, at MaxConcurrency
         ({"fast": {"serverless": True}, "gpu": GPU_REALTIME}, 16, 1),  # one 16-row call, inside 60 s
-        ({"a": {"inference_batch_size": 400}, "b": {"inference_batch_size": 200}}, SYNC_META_BATCH_SIZE, 4),
+        # Capped at SYNC_META_BATCH_SIZE: 3 calls to b leave no room for a second invocation
+        ({"a": {"inference_batch_size": 400}, "b": {"inference_batch_size": 200}}, SYNC_META_BATCH_SIZE, 1),
+        # Capped, and one call per child: the children have room for 4 invocations
+        ({"a": {"inference_batch_size": 500}, "b": {"inference_batch_size": 1000}}, SYNC_META_BATCH_SIZE, 4),
     ],
 )
 def test_sync_meta_downshifts_to_its_tightest_child(monkeypatch, children, batch, concurrency):
-    """A sync meta has 60 s, so it takes one round through the child that takes the fewest rows at once."""
+    """A sync meta has 60 s: one round through its tightest child, and no child past its own concurrency."""
     dag = child_meta(monkeypatch, children)
 
     assert dag.meta_batch_size() == batch

@@ -54,6 +54,7 @@ before any inference round-trips.
 from __future__ import annotations
 
 import json
+import math
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, Union
 
@@ -643,15 +644,21 @@ class MetaEndpointDAG:
         return self._endpoint_batch_sizes[slowest] * self._endpoint_concurrency[slowest] * 2
 
     def meta_concurrency(self) -> Optional[int]:
-        """Invocations at once for a sync MetaEndpoint over this DAG: its tightest child's.
+        """Invocations at once for a sync MetaEndpoint over this DAG.
 
-        Each meta invocation calls every child, so more of them at once than a child takes
-        only queue on that child inside the time limit. None with async children: that meta
-        takes its concurrency from its own queue. Needs :meth:`populate_child_metadata` first.
+        One meta invocation already sends each child its rows in chunks, up to that child's
+        concurrency at once. The meta takes as many invocations as leave every child within
+        its own: one when its batch is a full round through the tightest child. None with
+        async children: that meta takes its concurrency from its own queue. Needs
+        :meth:`populate_child_metadata` first.
         """
         if any(self._endpoint_async_flags.values()):
             return None
-        return min(self._endpoint_concurrency.values())
+        batch = self.meta_batch_size()
+        return min(
+            concurrency // min(concurrency, math.ceil(batch / self._endpoint_batch_sizes[name]))
+            for name, concurrency in self._endpoint_concurrency.items()
+        )
 
     def has_async_endpoint(self) -> bool:
         """Return True if any endpoint in the DAG is deployed as async.
