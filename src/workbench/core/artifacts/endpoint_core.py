@@ -5,7 +5,6 @@ from datetime import datetime
 from botocore.exceptions import ClientError, ReadTimeoutError
 import pandas as pd
 import numpy as np
-from io import StringIO
 import awswrangler as wr
 from typing import Union, Optional
 import hashlib
@@ -25,8 +24,6 @@ from sagemaker.core.resources import (
     Model as SagemakerModel,
     MonitoringSchedule,
 )
-from sagemaker.core.serializers import CSVSerializer
-from sagemaker.core.deserializers import PandasDeserializer
 from sagemaker.core.shapes.shapes import DataCaptureConfigSummary
 from sagemaker.core.utils.utils import Unassigned as _Unassigned
 
@@ -39,8 +36,15 @@ from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_cv
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
-from workbench.utils.async_endpoint_utils import ASYNC_BATCH_SIZE
-from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, fast_inference
+from workbench.utils.async_endpoint_utils import ASYNC_BATCH_SIZE, async_max_in_flight
+from workbench.endpoints.fast_inference import (
+    SYNC_BATCH_SIZE,
+    SYNC_CONCURRENCY,
+    df_type_conversions,
+    fast_inference,
+    invoke_csv,
+    runtime_client,
+)
 
 # FIXME: sagemaker-core bug — DataCaptureConfigSummary.kms_key_id is required but should be
 # Optional, causing Endpoint.get() to fail on endpoints with data capture but no KMS key.
@@ -63,20 +67,6 @@ class EndpointCapacityError(RuntimeError):
 def is_capacity_failure(reason) -> bool:
     """Whether an endpoint's FailureReason says SageMaker couldn't provision an instance"""
     return CAPACITY_ERROR_CODE in str(reason or "")
-
-
-class WorkbenchDeserializer(PandasDeserializer):
-    """PandasDeserializer that handles 'text/csv; charset=utf-8' content types.
-
-    FIXME: V3 SDK Bug — PandasDeserializer checks for exact 'text/csv' match but SageMaker
-    endpoints return 'text/csv; charset=utf-8'.
-    No existing GitHub issue — consider filing on https://github.com/aws/sagemaker-core/issues
-    """
-
-    def deserialize(self, stream, content_type):
-        # Strip charset suffix (e.g., 'text/csv; charset=utf-8' -> 'text/csv')
-        base_content_type = content_type.split(";")[0].strip()
-        return super().deserialize(stream, base_content_type)
 
 
 class EndpointCore(AWSArtifact):
@@ -314,6 +304,21 @@ class EndpointCore(AWSArtifact):
         meta = self.workbench_meta() or {}
         default = ASYNC_BATCH_SIZE if meta.get("async_endpoint") else SYNC_BATCH_SIZE
         return int(meta.get("inference_batch_size", default))
+
+    def inference_concurrency(self) -> int:
+        """Invocations a client keeps outstanding at once, from how this endpoint was deployed.
+
+        An async endpoint answers its queue depth at full scale, a serverless one its
+        MaxConcurrency, and a real-time one what it stamped at deploy.
+        """
+        meta = self.workbench_meta() or {}
+        if meta.get("async_endpoint"):
+            return async_max_in_flight(meta)
+        variant = (self.endpoint_meta or {}).get("ProductionVariants", [{}])[0]
+        max_concurrency = variant.get("CurrentServerlessConfig", {}).get("MaxConcurrency")
+        if max_concurrency:
+            return int(max_concurrency)
+        return int(meta.get("inference_concurrency", SYNC_CONCURRENCY))
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint.
@@ -813,21 +818,25 @@ class EndpointCore(AWSArtifact):
             capture_name += "_exc"
         return self.inference(holdout_df, capture_name=capture_name)
 
-    def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
+    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
         Args:
             eval_df (pd.DataFrame): The DataFrame to run predictions on
-            threads (int): The number of threads to use (default: 4)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
 
         Note:
-            There's no sanity checks or error handling... just FAST Inference!
+            There's no sanity checks or error handling... just FAST Inference! Rows per
+            invocation and invocations at once both come from how the endpoint was deployed.
         """
         return fast_inference(
-            self.name, eval_df, self.sm_session, threads=threads, batch_size=self.inference_batch_size()
+            self.name,
+            eval_df,
+            self.sm_session,
+            threads=self.inference_concurrency(),
+            batch_size=self.inference_batch_size(),
         )
 
     def _predict(self, eval_df: pd.DataFrame, features: list[str], drop_error_rows: bool = False) -> pd.DataFrame:
@@ -853,10 +862,9 @@ class EndpointCore(AWSArtifact):
             missing_features = features_lower - df_columns_lower
             raise ValueError(f"DataFrame does not contain required features: {missing_features}")
 
-        # Create our SageMaker Endpoint object with CSV in / DataFrame out
-        sm_endpoint = SagemakerEndpoint.get(self.name, session=self.boto3_session)
-        sm_endpoint.serializer = CSVSerializer()
-        sm_endpoint.deserializer = WorkbenchDeserializer()
+        # The same client fast_inference() uses: its read timeout outlasts the server's
+        # invocation limit, so a slow chunk comes back as the server's error
+        sm_runtime = runtime_client(self.boto3_session)
 
         batch_size = self.inference_batch_size()
 
@@ -868,65 +876,19 @@ class EndpointCore(AWSArtifact):
             self.log.info(f"Processing {index}:{min(index+batch_size, total_rows)} out of {total_rows} rows...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(
-                sm_endpoint, eval_df[index : index + batch_size], drop_error_rows
-            )
+            partial_df = self._endpoint_error_handling(sm_runtime, eval_df[index : index + batch_size], drop_error_rows)
             df_list.append(partial_df)
 
-        # Concatenate the dataframes
-        combined_df = pd.concat(df_list, ignore_index=True)
-
-        # Some endpoints will put in "N/A" values (for CSV serialization)
-        # We need to convert these to NaN and the run the conversions below
-        # Report on the number of N/A values in each column in the DataFrame
-        # For any cound above 0 list the column name and the number of N/A values
-        na_counts = combined_df.isin(["N/A"]).sum()
-        for column, count in na_counts.items():
-            if count > 0:
-                self.log.warning(f"{column} has {count} N/A values, converting to NaN")
-        pd.set_option("future.no_silent_downcasting", True)
-        combined_df = combined_df.replace("N/A", float("nan"))
-
-        # Convert data to numeric
-        # Note: Since we're using CSV serializers numeric columns often get changed to generic 'object' types
-
-        # Hard Conversion
-        # Note: We explicitly catch exceptions for columns that cannot be converted to numeric
-        converted_df = combined_df.copy()
-        for column in combined_df.columns:
-            try:
-                converted_df[column] = pd.to_numeric(combined_df[column])
-            except ValueError:
-                # If a ValueError is raised, the column cannot be converted to numeric, so we keep it as is
-                pass
-            except TypeError:
-                # This typically means a duplicated column name, so confirm duplicate (more than 1) and log it
-                column_count = (converted_df.columns == column).sum()
-                self.log.critical(f"{column} occurs {column_count} times in the DataFrame.")
-
-        # Soft Conversion
-        # Convert columns to the best possible dtype that supports the pd.NA missing value.
-        converted_df = converted_df.convert_dtypes()
-
-        # Convert pd.NA placeholders to pd.NA
-        # Note: CSV serialization converts pd.NA to blank strings, so we have to put in placeholders
-        converted_df.replace("__NA__", pd.NA, inplace=True)
-
-        # Check for True/False values in the string columns
-        for column in converted_df.select_dtypes(include=["string"]).columns:
-            if converted_df[column].str.lower().isin(["true", "false"]).all():
-                converted_df[column] = converted_df[column].str.lower().map({"true": True, "false": False})
-
-        # Return the Dataframe
-        return converted_df
+        # Stitch the chunks together and restore the types CSV serialization flattens
+        return df_type_conversions(pd.concat(df_list, ignore_index=True))
 
     def _endpoint_error_handling(
-        self, sm_endpoint, feature_df, drop_error_rows: bool = False, retries: int = 0
+        self, sm_runtime, feature_df, drop_error_rows: bool = False, retries: int = 0
     ) -> pd.DataFrame:
         """Internal: Handles errors, retries, and binary search for problematic rows.
 
         Args:
-            sm_endpoint (SagemakerEndpoint): The SageMaker Endpoint object
+            sm_runtime: A sagemaker-runtime client
             feature_df (pd.DataFrame): DataFrame to run predictions on
             drop_error_rows (bool): If True, drop rows that had endpoint errors/issues (default=False)
             retries (int): Current retry count for transient errors (default=0)
@@ -939,14 +901,8 @@ class EndpointCore(AWSArtifact):
             self.log.warning("DataFrame has 0 rows. No predictions to run.")
             return pd.DataFrame(columns=feature_df.columns)
 
-        # Convert DataFrame into a CSV buffer
-        csv_buffer = StringIO()
-        feature_df.to_csv(csv_buffer, index=False)
-
         try:
-            # Send CSV buffer to the endpoint (PandasDeserializer returns a DataFrame directly)
-            response = sm_endpoint.invoke(body=csv_buffer.getvalue(), content_type="text/csv", accept="text/csv")
-            results_df = response.body
+            results_df = invoke_csv(sm_runtime, self.name, feature_df)
             self.endpoint_return_columns = results_df.columns.tolist()
             return results_df
 
@@ -970,7 +926,7 @@ class EndpointCore(AWSArtifact):
                     sleep_time = min(2**retries * 30, 120)
                     self.log.warning(f"{label} (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
                     time.sleep(sleep_time)
-                    return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)
+                    return self._endpoint_error_handling(sm_runtime, feature_df, drop_error_rows, retries + 1)
                 self.log.critical(f"{label}: max retries exceeded")
                 raise
 
@@ -996,8 +952,8 @@ class EndpointCore(AWSArtifact):
                 self.log.warning(f"ModelError on {len(feature_df)} rows: {short_msg}. Bisecting...")
                 mid_point = len(feature_df) // 2
                 self.log.info(f"Bisect: 0:{mid_point} and {mid_point}:{len(feature_df)}")
-                first_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[:mid_point], drop_error_rows)
-                second_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[mid_point:], drop_error_rows)
+                first_half = self._endpoint_error_handling(sm_runtime, feature_df.iloc[:mid_point], drop_error_rows)
+                second_half = self._endpoint_error_handling(sm_runtime, feature_df.iloc[mid_point:], drop_error_rows)
                 return pd.concat([first_half, second_half], ignore_index=True)
 
             else:
@@ -1011,7 +967,7 @@ class EndpointCore(AWSArtifact):
                 sleep_time = min(2**retries * 5, 30)
                 self.log.warning(f"ReadTimeoutError (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
                 time.sleep(sleep_time)
-                return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)
+                return self._endpoint_error_handling(sm_runtime, feature_df, drop_error_rows, retries + 1)
             self.log.critical("ReadTimeoutError: max retries exceeded")
             raise
 

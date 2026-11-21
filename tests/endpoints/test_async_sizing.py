@@ -1,12 +1,14 @@
 """Unit tests for how an endpoint sizes the calls made to it.
 
-Local + fast (no AWS). Each endpoint stamps its own batch size at deploy and every caller
-reads that stamp: a direct client, or a MetaEndpoint calling sync and async children. The
-queue has to match what the fleet drains: too deep and chunks die on a poll deadline they
-spent waiting rather than working.
+Local + fast (no AWS). Each endpoint owns its rows per invocation and its invocations at
+once, and every caller reads them: a direct client, or a MetaEndpoint calling sync and async
+children. The queue has to match what the fleet drains: too deep and chunks die on a poll
+deadline they spent waiting rather than working.
 """
 
 import logging
+import threading
+import time
 from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -14,11 +16,17 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 
-from workbench.core.artifacts import async_endpoint_core
+from workbench.core.artifacts import async_endpoint_core, endpoint_core
 from workbench.core.artifacts.async_endpoint_core import AsyncEndpointCore
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench.core.transforms.model_to_endpoint.model_to_endpoint import GPU_BATCH_SIZE, default_batch_size
-from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, fast_inference
+from workbench.core.transforms.model_to_endpoint.model_to_endpoint import (
+    GPU_BATCH_SIZE,
+    GPU_REALTIME_BATCH_SIZE,
+    GPU_REALTIME_CONCURRENCY,
+    default_batch_size,
+    default_concurrency,
+)
+from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, SYNC_CONCURRENCY, fast_inference, runtime_client
 from workbench.utils import async_endpoint_utils as au
 from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
 
@@ -51,7 +59,7 @@ def test_instance_vcpus_reads_the_size_suffix(instance_type, vcpus):
     "instance_type, pools, async_endpoint, expected",
     [
         (None, ["ml.g6.xlarge", "ml.g5.xlarge"], True, GPU_BATCH_SIZE),
-        (None, ["ml.g6.xlarge", "ml.g5.xlarge"], False, GPU_BATCH_SIZE),
+        (None, ["ml.g6.xlarge", "ml.g5.xlarge"], False, GPU_REALTIME_BATCH_SIZE),  # 60 s to answer
         ("ml.c7i.4xlarge", None, True, 32),  # an explicit CPU instance fills its vCPUs
         ("ml.c7i.metal-24xl", None, True, au.ASYNC_BATCH_SIZE),
         ("ml.c7i.large", None, False, SYNC_BATCH_SIZE),
@@ -89,6 +97,96 @@ def test_fast_inference_runs_at_the_batch_size():
     assert len(result) == 11
 
 
+def test_realtime_gpu_takes_one_invocation_at_a_time():
+    assert default_concurrency(["ml.g6.xlarge", "ml.g5.xlarge"]) == GPU_REALTIME_CONCURRENCY == 1
+    assert default_concurrency(None) == SYNC_CONCURRENCY
+
+
+SERVERLESS_VARIANT = {"ProductionVariants": [{"CurrentServerlessConfig": {"MaxConcurrency": 2}}]}
+
+
+@pytest.mark.parametrize(
+    "meta, endpoint_meta, expected",
+    [
+        ({"inference_concurrency": 1}, {}, 1),  # a real-time GPU endpoint's stamp
+        ({}, {}, SYNC_CONCURRENCY),  # a real-time endpoint without one
+        ({"serverless": True}, SERVERLESS_VARIANT, 2),
+        ({"async_endpoint": True, "max_instances": 8}, {}, 8 * au.IN_FLIGHT_PER_SLOT),
+        ({"async_endpoint": True, "max_instances": 1}, {}, au.IN_FLIGHT_PER_SLOT),
+    ],
+)
+def test_endpoint_reads_its_own_concurrency(meta, endpoint_meta, expected):
+    endpoint = SimpleNamespace(workbench_meta=lambda: meta, endpoint_meta=endpoint_meta)
+    assert EndpointCore.inference_concurrency(endpoint) == expected
+
+
+def test_endpoint_fast_inference_runs_at_its_own_sizing(monkeypatch):
+    """The endpoint, not the caller, decides rows per invocation and invocations at once."""
+    sent = {}
+    monkeypatch.setattr(endpoint_core, "fast_inference", lambda *args, **kwargs: sent.update(kwargs))
+    endpoint = MagicMock()
+    endpoint.inference_batch_size.return_value = 16
+    endpoint.inference_concurrency.return_value = 1
+
+    EndpointCore.fast_inference(endpoint, pd.DataFrame({"x": [1]}))
+
+    assert sent == {"threads": 1, "batch_size": 16}
+
+
+def test_fast_inference_keeps_no_more_than_threads_outstanding():
+    """One thread means the next invocation leaves only after the last one answered."""
+    outstanding, peak = 0, 0
+    lock = threading.Lock()
+
+    def invoke_endpoint(**kwargs):
+        nonlocal outstanding, peak
+        with lock:
+            outstanding += 1
+            peak = max(peak, outstanding)
+        time.sleep(0.01)
+        with lock:
+            outstanding -= 1
+        return {"Body": BytesIO(kwargs["Body"].encode())}
+
+    runtime = MagicMock()
+    runtime.invoke_endpoint.side_effect = invoke_endpoint
+    session = MagicMock()
+    session.boto_session.client.return_value = runtime
+
+    fast_inference("ep", pd.DataFrame({"x": range(8)}), session, threads=1, batch_size=2)
+
+    assert runtime.invoke_endpoint.call_count == 4
+    assert peak == 1
+
+
+def test_runtime_client_outlasts_the_server_invocation_limit():
+    """A read timeout at the server's 60 s would re-send a slow chunk before its error arrives."""
+    made = {}
+    session = SimpleNamespace(client=lambda service, config: made.update(service=service, config=config))
+
+    runtime_client(session)
+
+    assert made["service"] == "sagemaker-runtime"
+    assert made["config"].read_timeout > 60
+
+
+def test_inference_chunks_through_the_runtime_client(monkeypatch):
+    """inference() and fast_inference() invoke the same way."""
+    runtime = MagicMock()
+    runtime.invoke_endpoint.side_effect = lambda **kwargs: {"Body": BytesIO(kwargs["Body"].encode())}
+    monkeypatch.setattr(endpoint_core, "runtime_client", lambda session: runtime)
+    core = object.__new__(EndpointCore)  # skip __init__ (no AWS)
+    core.name = "ep"
+    core.log = logging.getLogger("test")
+    core.endpoint_return_columns = None
+    core.inference_batch_size = lambda: 2
+
+    out = core._predict(pd.DataFrame({"x": range(5)}), ["x"])
+
+    assert runtime.invoke_endpoint.call_count == 3
+    assert out["x"].tolist() == list(range(5))
+
+
 def test_in_flight_follows_the_fleet_ceiling():
     """A cold endpoint sizes on what it can scale to, so the queue reads as demand."""
     assert au.async_max_in_flight({"max_instances": 8}) == 8 * au.IN_FLIGHT_PER_SLOT
@@ -113,6 +211,7 @@ def test_async_client_sends_what_the_endpoint_stamped(monkeypatch):
     endpoint.boto3_session.client.return_value.describe_endpoint_config.return_value = {"ProductionVariants": [{}]}
     endpoint.workbench_meta.return_value = meta
     endpoint.inference_batch_size.return_value = 64
+    endpoint.inference_concurrency = lambda: EndpointCore.inference_concurrency(endpoint)
 
     AsyncEndpointCore._async_batch_invoke(endpoint, pd.DataFrame({"x": [1]}))
 
@@ -125,9 +224,10 @@ def child_meta(monkeypatch, children: dict) -> MetaEndpointDAG:
 
     class FakeEndpoint:
         def __init__(self, name):
-            self.endpoint_meta = {}
+            self.endpoint_meta = SERVERLESS_VARIANT if children[name].get("serverless") else {}
             self.workbench_meta = lambda: children[name]
             self.inference_batch_size = lambda: EndpointCore.inference_batch_size(self)
+            self.inference_concurrency = lambda: EndpointCore.inference_concurrency(self)
 
     monkeypatch.setattr("workbench.api.Endpoint", FakeEndpoint)
     dag = MetaEndpointDAG()
@@ -148,7 +248,21 @@ def test_mixed_meta_calls_each_child_at_its_own_size(monkeypatch):
     )
 
     assert dag.endpoint_batch_sizes == {"fast-2d": 200, "slow-3d": 4}
-    assert dag.endpoint_max_in_flight == {"slow-3d": 16}
+    assert dag.endpoint_concurrency == {"fast-2d": SYNC_CONCURRENCY, "slow-3d": 16}
+
+
+def test_meta_calls_every_kind_of_child_at_its_own_concurrency(monkeypatch):
+    """Serverless, real-time GPU and async children each answer through the same accessor."""
+    dag = child_meta(
+        monkeypatch,
+        {
+            "serverless": {"serverless": True},
+            "gpu-realtime": {"inference_batch_size": 16, "inference_concurrency": 1},
+            "gpu-async": {"async_endpoint": True, "inference_batch_size": 64, "max_instances": 1},
+        },
+    )
+
+    assert dag.endpoint_concurrency == {"serverless": 2, "gpu-realtime": 1, "gpu-async": au.IN_FLIGHT_PER_SLOT}
 
 
 def test_meta_reads_unstamped_children_at_their_defaults(monkeypatch):
@@ -165,7 +279,7 @@ def test_meta_sizing_survives_serialization(monkeypatch):
     rebuilt = MetaEndpointDAG.from_dict(dag.to_dict())
 
     assert rebuilt.endpoint_batch_sizes == {"child": 4}
-    assert rebuilt.endpoint_max_in_flight == {"child": 16}
+    assert rebuilt.endpoint_concurrency == {"child": 16}
 
 
 def test_meta_batch_sizes_to_the_slowest_child(monkeypatch):

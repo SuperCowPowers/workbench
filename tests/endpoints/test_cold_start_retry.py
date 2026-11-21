@@ -9,7 +9,7 @@ recognises it through a MetaEndpoint's 500 instead of bisecting down to NaN rows
 
 import json
 import logging
-from io import StringIO
+from io import BytesIO, StringIO
 from types import SimpleNamespace
 
 import pandas as pd
@@ -48,26 +48,63 @@ class _ColdThenWarm:
     def __init__(self):
         self.calls = []
 
-    def invoke(self, body, content_type, accept):
-        rows = pd.read_csv(StringIO(body))
+    def invoke_endpoint(self, EndpointName, Body, ContentType, Accept):
+        rows = pd.read_csv(StringIO(Body))
         self.calls.append(len(rows))
         if len(self.calls) == 1:
             meta_body = json.dumps({"error": f"An error occurred (ModelError): {_COLD_CHILD}"})
             raise _model_error(f'Received server error (500) from model with message "{meta_body}".')
-        return SimpleNamespace(body=rows.assign(prediction=1.0))
+        return {"Body": BytesIO(rows.assign(prediction=1.0).to_csv(index=False).encode())}
 
 
 def test_meta_wrapped_cold_start_retries_whole_batch(monkeypatch):
     monkeypatch.setattr(mod.time, "sleep", lambda s: None)
     core = object.__new__(EndpointCore)  # skip __init__ (no AWS)
+    core.name = "meta"
     core.log = logging.getLogger("test")
     core.endpoint_return_columns = None
 
-    endpoint = _ColdThenWarm()
-    out = core._endpoint_error_handling(endpoint, pd.DataFrame({"smiles": ["CCO", "CCN", "CCC"]}))
+    runtime = _ColdThenWarm()
+    out = core._endpoint_error_handling(runtime, pd.DataFrame({"smiles": ["CCO", "CCN", "CCC"]}))
 
-    assert endpoint.calls == [3, 3]  # retried the batch; never bisected
+    assert runtime.calls == [3, 3]  # retried the batch; never bisected
     assert out["prediction"].notna().all()
+
+
+_OVER_THE_LIMIT = (
+    'Received server error (0) from primary with message "Your invocation timed out while waiting '
+    'for a response from container primary."'
+)
+
+
+class _SlowThenFast:
+    """The first call runs past the server's 60 s invocation limit, the retry answers."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def invoke_endpoint(self, EndpointName, Body, ContentType, Accept):
+        self.calls += 1
+        if self.calls == 1:
+            raise _model_error(_OVER_THE_LIMIT)
+        return {"Body": BytesIO(pd.read_csv(StringIO(Body)).assign(prediction=1.0).to_csv(index=False).encode())}
+
+
+def test_a_chunk_over_the_invocation_limit_is_retried_out_loud(monkeypatch, caplog):
+    """The server's timeout reaches the logged retry, so a re-sent chunk is never silent."""
+    monkeypatch.setattr(mod.time, "sleep", lambda s: None)
+    core = object.__new__(EndpointCore)  # skip __init__ (no AWS)
+    core.name = "slow"
+    core.log = logging.getLogger("test")
+    core.endpoint_return_columns = None
+
+    runtime = _SlowThenFast()
+    with caplog.at_level(logging.WARNING, logger="test"):
+        out = core._endpoint_error_handling(runtime, pd.DataFrame({"smiles": ["CCO", "CCN"]}))
+
+    assert runtime.calls == 2
+    assert out["prediction"].notna().all()
+    assert "ModelError (timeout) (retry 1/5)" in caplog.text
 
 
 if __name__ == "__main__":
