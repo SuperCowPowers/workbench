@@ -309,16 +309,19 @@ class EndpointCore(AWSArtifact):
         """Invocations a client keeps outstanding at once, from how this endpoint was deployed.
 
         An async endpoint answers its queue depth at full scale, a serverless one its
-        MaxConcurrency, and a real-time one what it stamped at deploy.
+        MaxConcurrency, and a real-time one what it stamped at deploy. A stamp on a
+        serverless endpoint lowers it: MaxConcurrency throttles the calls past it, where
+        a stamp only paces this client.
         """
         meta = self.workbench_meta() or {}
         if meta.get("async_endpoint"):
             return async_max_in_flight(meta)
         variant = (self.endpoint_meta or {}).get("ProductionVariants", [{}])[0]
         max_concurrency = variant.get("CurrentServerlessConfig", {}).get("MaxConcurrency")
+        stamped = meta.get("inference_concurrency")
         if max_concurrency:
-            return int(max_concurrency)
-        return int(meta.get("inference_concurrency", SYNC_CONCURRENCY))
+            return min(int(max_concurrency), int(stamped)) if stamped else int(max_concurrency)
+        return int(stamped or SYNC_CONCURRENCY)
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint.

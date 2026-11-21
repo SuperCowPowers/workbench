@@ -63,6 +63,9 @@ from workbench.utils.aggregation_nodes import DAG_ROW_ID, AggregationNode
 
 EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
 
+# Most rows a sync MetaEndpoint takes per invocation
+SYNC_META_BATCH_SIZE = 500
+
 
 def select_target_columns(columns: List[str], targets: List[str], context: str) -> List[str]:
     """Keep only the columns belonging to ``targets`` (``<target>`` or ``<target>_*``).
@@ -625,14 +628,30 @@ class MetaEndpointDAG:
         Each child call runs at that child's own batch size, so the meta's batch only has
         to keep one invocation inside the time limit. With async children it sizes to the
         slowest, the one with the smallest batch: about four rounds through that child's
-        slots, for shorter invocations and finer-grained failure/retry. An all-sync DAG
-        stays large (rows are cheap). Needs :meth:`populate_child_metadata` first.
+        slots, for shorter invocations and finer-grained failure/retry. An all-sync DAG has
+        60 s per invocation, so it sizes to one round through its tightest child (the fewest
+        rows a child takes at once), up to SYNC_META_BATCH_SIZE. Needs
+        :meth:`populate_child_metadata` first.
         """
         async_children = [name for name, is_async in self._endpoint_async_flags.items() if is_async]
         if not async_children:
-            return 500
+            one_round = min(
+                self._endpoint_batch_sizes[n] * self._endpoint_concurrency[n] for n in self._endpoint_batch_sizes
+            )
+            return min(SYNC_META_BATCH_SIZE, one_round)
         slowest = min(async_children, key=self._endpoint_batch_sizes.get)
         return self._endpoint_batch_sizes[slowest] * self._endpoint_concurrency[slowest] * 2
+
+    def meta_concurrency(self) -> Optional[int]:
+        """Invocations at once for a sync MetaEndpoint over this DAG: its tightest child's.
+
+        Each meta invocation calls every child, so more of them at once than a child takes
+        only queue on that child inside the time limit. None with async children: that meta
+        takes its concurrency from its own queue. Needs :meth:`populate_child_metadata` first.
+        """
+        if any(self._endpoint_async_flags.values()):
+            return None
+        return min(self._endpoint_concurrency.values())
 
     def has_async_endpoint(self) -> bool:
         """Return True if any endpoint in the DAG is deployed as async.

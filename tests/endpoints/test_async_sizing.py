@@ -28,7 +28,7 @@ from workbench.core.transforms.model_to_endpoint.model_to_endpoint import (
 )
 from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, SYNC_CONCURRENCY, fast_inference, runtime_client
 from workbench.utils import async_endpoint_utils as au
-from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
+from workbench.utils.meta_endpoint_dag import SYNC_META_BATCH_SIZE, MetaEndpointDAG
 
 
 @pytest.fixture
@@ -111,6 +111,8 @@ SERVERLESS_VARIANT = {"ProductionVariants": [{"CurrentServerlessConfig": {"MaxCo
         ({"inference_concurrency": 1}, {}, 1),  # a real-time GPU endpoint's stamp
         ({}, {}, SYNC_CONCURRENCY),  # a real-time endpoint without one
         ({"serverless": True}, SERVERLESS_VARIANT, 2),
+        ({"serverless": True, "inference_concurrency": 1}, SERVERLESS_VARIANT, 1),  # a stamp lowers it
+        ({"serverless": True, "inference_concurrency": 8}, SERVERLESS_VARIANT, 2),  # never past MaxConcurrency
         ({"async_endpoint": True, "max_instances": 8}, {}, 8 * au.IN_FLIGHT_PER_SLOT),
         ({"async_endpoint": True, "max_instances": 1}, {}, au.IN_FLIGHT_PER_SLOT),
     ],
@@ -177,6 +179,7 @@ def test_inference_chunks_through_the_runtime_client(monkeypatch):
     monkeypatch.setattr(endpoint_core, "runtime_client", lambda session: runtime)
     core = object.__new__(EndpointCore)  # skip __init__ (no AWS)
     core.name = "ep"
+    core.boto3_session = None  # shadows the lazy class attribute, which would build an AWS session
     core.log = logging.getLogger("test")
     core.endpoint_return_columns = None
     core.inference_batch_size = lambda: 2
@@ -296,10 +299,30 @@ def test_meta_batch_sizes_to_the_slowest_child(monkeypatch):
     assert dag.meta_batch_size() == 4 * 2 * 4
 
 
-def test_all_sync_meta_batch_stays_large(monkeypatch):
-    dag = child_meta(monkeypatch, {"a": {}, "b": {}})
+GPU_REALTIME = {"inference_batch_size": 16, "inference_concurrency": 1}
 
-    assert dag.meta_batch_size() == 500
+
+@pytest.mark.parametrize(
+    "children, batch, concurrency",
+    [
+        ({"a": {}, "b": {}}, 400, SYNC_CONCURRENCY),  # real-time children: 100 rows x 4 at once
+        ({"a": {"serverless": True}, "b": {"serverless": True}}, 200, 2),
+        ({"fast": {"serverless": True}, "gpu": GPU_REALTIME}, 16, 1),  # one 16-row call, inside 60 s
+        ({"a": {"inference_batch_size": 400}, "b": {"inference_batch_size": 200}}, SYNC_META_BATCH_SIZE, 4),
+    ],
+)
+def test_sync_meta_downshifts_to_its_tightest_child(monkeypatch, children, batch, concurrency):
+    """A sync meta has 60 s, so it takes one round through the child that takes the fewest rows at once."""
+    dag = child_meta(monkeypatch, children)
+
+    assert dag.meta_batch_size() == batch
+    assert dag.meta_concurrency() == concurrency
+
+
+def test_async_meta_takes_its_concurrency_from_its_own_queue(monkeypatch):
+    dag = child_meta(monkeypatch, {"slow": {"async_endpoint": True, "max_instances": 2}, "gpu": GPU_REALTIME})
+
+    assert dag.meta_concurrency() is None
 
 
 def pool_pair(preferred: str, fallback: str, serving: str) -> tuple:

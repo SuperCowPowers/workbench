@@ -23,8 +23,10 @@ from torch import nn
 
 PREDICT_BATCH_SIZE = 64
 
-# One forward at a time: the inference server runs each invocation on its own thread, and
-# the encoder's cuEquivariance ops fail ("batch dim mismatch") when two threads run them at once
+# One forward at a time: the inference server runs each invocation on its own thread, and the
+# encoder keeps a batch's edge rotations on the model during a forward (so3_rotation.set_wigner).
+# Overlapping forwards read each other's: a shape error when the batches differ in size, wrong
+# predictions with no error when they match.
 _FORWARD_LOCK = threading.Lock()
 
 
