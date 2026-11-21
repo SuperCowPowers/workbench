@@ -29,7 +29,7 @@ ase==3.29.0
     # via
     #   -c ci/.uv-constraints.txt
     #   atom-jepa
-atom-jepa==0.3.0
+atom-jepa==0.4.0
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/inference_gpu/requirements.in

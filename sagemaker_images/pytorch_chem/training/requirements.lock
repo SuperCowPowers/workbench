@@ -37,7 +37,7 @@ astartes==1.3.3
     # via
     #   -c ci/.uv-constraints.txt
     #   chemprop
-atom-jepa==0.3.0
+atom-jepa==0.4.0
     # via
     #   -c ci/.uv-constraints.txt
     #   -r sagemaker_images/pytorch_chem/training/requirements.in
