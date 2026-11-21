@@ -49,6 +49,10 @@ Rules that do most of the work:
 
 - **Every report opens with a summary page.** `Report` builds it from the sections; you
   supply the one sentence only a person can write.
+- **Every table of rows names its frame.** Under a table that lists rows, print how many
+  are shown and the `DFStore` location of all of them ("Showing the first 10 of 778. All
+  778 rows: DFStore /reports/<name>/<frame>"). The sections do this; `report.location(frame)`
+  gives the location for a table of your own.
 - **Lead with a picture.** Each section and each page opens with a chart or graphic; a
   table backs it up, it does not replace it. A page of numbers alone is a page skipped.
 - **One idea per page.** If a page needs two headlines it is two pages.
@@ -78,10 +82,23 @@ report.save(out_pdf)
 |---|---|---|---|
 | `sections.performance` | a predictions frame | predicted-vs-measured scatter, error histogram | breakout by a column, largest errors |
 | `sections.data_quality` | `data_quality(df, key=...)` | flagged rows per column, by check | findings worst first, example rows per warning |
-| `sections.comparison` | `compare_keyed(left, right, on=...)` | where every row went, per side; left-vs-right scatter | the rows to look at, per bucket |
+| `sections.comparison` | `compare_keyed(left, right, on=...)` | where every row went, per side; left-vs-right scatter | what is fine, what needs a look, and the rows that need it |
 
 Page 1 is generated: `summary=` is your conclusion, and each section adds a card with its
 finding, key numbers and lead chart. A report with neither is refused.
+
+**Notes are footnotes.** A caveat the reader needs in order to read a number correctly goes
+in as a note: `sections.comparison(..., notes={"mismatched": NOTE})` marks that bucket
+`[1]` wherever it is named and prints the note at the foot of those pages, and
+`sections.data_quality(..., notes=[NOTE])` states it prominently at the top of the page.
+Notes are numbered once across the report and listed on page 1. In a page of your own,
+`report.footnote(fig, NOTE)` returns the marker and puts the note at that page's foot.
+
+**State what the numbers cover.** Pass `filters=[...]`, one line per restriction (species,
+route, date range, rows left out and why), and they are listed on page 1. A reader who
+does not know a filter was applied reads every count wrong. The comparison section states
+its own method the same way: the key, the values and tolerance, the scope values, and how
+rows sharing a key were judged.
 
 `log=True` on the performance section is for positive quantities such as PK parameters: log
 axes, metrics on log10 values, and GMFE with the share within 2x, 3x and 10x.
@@ -229,7 +246,9 @@ column its natural width, and spreads the slack evenly across the gaps — label
 at `x0`, last column flush at `x1` — then infers alignment, ranging numeric columns right
 and text left (`aligns` overrides when an id looks like a float). A hand-placed column is
 the surest way to bury a number under its neighbour, which is why there is no way to place
-one by hand; if the content genuinely cannot fit it warns rather than overprinting. Hairline
+one by hand. A table too wide for the page is fitted rather than left to run off it: the
+body is set smaller, then the longest cells are trimmed with an ellipsis, and it warns only
+if that still is not enough. Hairline
 rules between rows and no verticals: ASCII tables and boxed grids are what make a PDF look
 like a terminal dump.
 
@@ -352,7 +371,10 @@ names you left behind.
 - Output path agreed with the user; nothing silently overwritten.
 - Built from `workbench.reports` sections where one fits; no count without the rows behind it.
 - Page 1 is the summary and answers the question; method is late, not first.
+- Every filter applied to the data is listed in `filters=`.
+- A caveat that changes how a number reads is a note, marked where it applies.
 - Every section opens with a chart; no page is tables alone.
+- Every table of rows says how many it shows and where the full frame is.
 - Every page has one headline, and no text block exceeds ~4 lines.
 - Built on `report.theme()`; no hardcoded font family.
 - Equations typeset with `report.equation` / `EQ`, never faked with carets.

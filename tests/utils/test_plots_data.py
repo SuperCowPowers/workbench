@@ -27,7 +27,7 @@ def close_figures():
 
 
 def compared():
-    left = pd.DataFrame({"id": list("abcdeffg"), "route": ["po"] * 7 + ["ip"], "x": [1.0, 2, 3, 4, 5, 6, 6, 7]})
+    left = pd.DataFrame({"id": list("abcdeffg"), "route": ["po"] * 7 + ["ip"], "x": [1.0, 2, 3, 4, 5, 6, 6.5, 7]})
     right = pd.DataFrame({"id": list("abcdfh"), "route": ["po"] * 6, "x": [1.0, 2, 30, 4, 6, 8]})
     return left, right, compare_keyed(left, right, on="id", values=["x"], scope=["route"])
 
@@ -38,8 +38,9 @@ def test_fates_account_for_every_row_of_each_side():
 
     assert fates["left"].sum() == len(left) and fates["right"].sum() == len(right)
     assert fates.loc["agree"].tolist() == [3, 3] and fates.loc["mismatched"].tolist() == [1, 1]
-    assert fates.loc["ambiguous"].tolist() == [2, 1]
-    assert fates.loc["one side only"].tolist() == [1, 1] and fates.loc["out of scope"].tolist() == [1, 0]
+    assert fates.loc["repeated key differs"].tolist() == [2, 1]
+    assert fates.loc["one side only"].tolist() == [1, 1] and fates.loc["not expected"].tolist() == [1, 0]
+    assert list(fates.index[:2]) == ["agree", "not expected"]
 
 
 def test_fate_bars_stack_to_each_sides_row_count():
@@ -90,3 +91,10 @@ def test_an_empty_side_draws_no_zero_labels():
     left = pd.DataFrame({"id": ["a", "b"], "x": [1.0, 2.0]})
     ax = fate_bars(compare_keyed(left, left.iloc[:0], on="id")).axes[0]
     assert [t.get_text() for t in ax.texts] == ["2"]
+
+
+def test_repeated_keys_with_matching_values_count_as_agree():
+    left = pd.DataFrame({"id": ["a", "a", "b"], "x": [1.0, 2.0, 3.0]})
+    right = pd.DataFrame({"id": ["a", "a", "b"], "x": [2.0, 1.0, 3.0]})
+    fates = comparison_fates(compare_keyed(left, right, on="id"))
+    assert fates.loc["agree"].tolist() == [3, 3] and fates.loc["repeated key differs"].tolist() == [0, 0]

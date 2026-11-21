@@ -98,25 +98,39 @@ class KeyedComparison:
 
     Attributes:
         on (List[str]): The key column(s) the frames were compared on.
+        values (List[str]): The column(s) checked for agreement.
+        scope (Dict[str, list]): Per scope column, the values both sides hold, which is what
+            the comparison was limited to. Empty when no scope was given.
+        rtol (float): The relative tolerance used.
+        atol (float): The absolute tolerance used.
+        repeats (str): How repeated keys were judged, "exact" or "values".
         pairs (pd.DataFrame): One row per key held by exactly one row on each side. Columns
             are the keys, `left_index` / `right_index` (each side's original index label),
             then `{value}_left`, `{value}_right`, `{value}_agree` per compared column, and
             `agree` (True when every compared column agrees).
-        ambiguous (pd.DataFrame): Keys on both sides where either side holds more than one
-            row, with `n_left` / `n_right`. No single pairing of those rows is the right
-            one to score, so they are reported and left out of `pairs`.
+        repeated (pd.DataFrame): Keys on both sides where either side holds more than one
+            row, with `left_rows` / `right_rows`, each side's values as text in `{value}_left` /
+            `{value}_right`, and `values_match`. Rows under a repeated key cannot be paired
+            one to one, so they are judged as a set: matching sets agree, anything else
+            needs a look.
         left_only (pd.DataFrame): Rows of left whose key is not on the right (a NaN in any
             key column matches nothing).
         right_only (pd.DataFrame): Rows of right whose key is not on the left.
         left_out_of_scope (pd.DataFrame): Rows of left carrying a `scope` value the right
-            never holds. Empty unless `scope` is given.
+            never holds, with `scope_reason` naming it (e.g. "matrix = blood"). Empty unless
+            `scope` is given.
         right_out_of_scope (pd.DataFrame): Rows of right carrying a `scope` value the left
             never holds.
     """
 
     on: List[str]
+    values: List[str]
+    scope: Dict[str, list]
+    rtol: float
+    atol: float
+    repeats: str
     pairs: pd.DataFrame
-    ambiguous: pd.DataFrame
+    repeated: pd.DataFrame
     left_only: pd.DataFrame
     right_only: pd.DataFrame
     left_out_of_scope: pd.DataFrame
@@ -127,14 +141,26 @@ class KeyedComparison:
         """The uniquely-keyed pairs where at least one compared column disagrees."""
         return self.pairs[~self.pairs["agree"]]
 
+    @property
+    def repeated_differ(self) -> pd.DataFrame:
+        """The repeated keys whose two sides do not hold the same values."""
+        return self.repeated[~self.repeated["values_match"]]
+
     def summary(self) -> pd.Series:
-        """Row counts per bucket (`ambiguous_keys` counts keys, not rows)."""
+        """Counts per bucket.
+
+        `agree` and `mismatched` count pairs, and `pairs` is their sum; the left rows under a
+        repeated key whose values match count as agreeing pairs. `repeated_differ` counts
+        keys. The rest count rows.
+        """
+        matched = int(self.repeated.loc[self.repeated["values_match"], "left_rows"].sum())
+        agree = int(self.pairs["agree"].sum()) + matched
         return pd.Series(
             {
-                "pairs": len(self.pairs),
-                "agree": int(self.pairs["agree"].sum()),
+                "pairs": agree + len(self.mismatched),
+                "agree": agree,
                 "mismatched": len(self.mismatched),
-                "ambiguous_keys": len(self.ambiguous),
+                "repeated_differ": len(self.repeated_differ),
                 "left_only": len(self.left_only),
                 "right_only": len(self.right_only),
                 "left_out_of_scope": len(self.left_out_of_scope),
@@ -142,6 +168,46 @@ class KeyedComparison:
             },
             name="rows",
         )
+
+
+def _values_agree(a: pd.Series, b: pd.Series, rtol: float, atol: float) -> np.ndarray:
+    """Element-wise agreement of two aligned columns: within tolerance for numbers, equality otherwise."""
+    numeric = all(pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s) for s in (a, b))
+    if numeric and (rtol or atol):
+        a_num = a.to_numpy(dtype=float, na_value=np.nan)
+        b_num = b.to_numpy(dtype=float, na_value=np.nan)
+        return np.isclose(a_num, b_num, rtol=rtol, atol=atol, equal_nan=True)
+    return ((a == b).fillna(False).astype(bool) | (a.isna() & b.isna())).to_numpy()
+
+
+def _rows_pair_up(left: pd.DataFrame, right: pd.DataFrame, values: List[str], rtol: float, atol: float) -> bool:
+    """Whether two groups of rows can be paired one to one with every pair agreeing on every value."""
+    from scipy.optimize import linear_sum_assignment
+
+    n = len(left)
+    if n != len(right) or n > MAX_MATCH_ROWS:
+        return False
+    agree = np.ones(n * n, dtype=bool)
+    for value in values:  # every left row against every right row
+        a = left[value].iloc[np.repeat(np.arange(n), n)].reset_index(drop=True)
+        b = right[value].iloc[np.tile(np.arange(n), n)].reset_index(drop=True)
+        agree &= _values_agree(a, b, rtol, atol)
+    agree = agree.reshape(n, n)
+    rows, columns = linear_sum_assignment(~agree)
+    return bool(agree[rows, columns].all())
+
+
+def _sortable(values: pd.Series) -> pd.Series:
+    """A column as given when it is numeric, as text otherwise, so mixed values still sort."""
+    numeric = pd.api.types.is_numeric_dtype(values) and not pd.api.types.is_bool_dtype(values)
+    return values if numeric else values.astype(str)
+
+
+def _as_text(values: pd.Series) -> str:
+    """A group's values on one line, e.g. "12.4; 18.5; 221", naming how many more past the first few."""
+    shown = [f"{v:g}" if isinstance(v, (float, np.floating)) else str(v) for v in values.iloc[:MAX_VALUES_AS_TEXT]]
+    more = len(values) - len(shown)
+    return "; ".join(shown) + (f"; and {more:,} more" if more else "")
 
 
 def compare_keyed(
@@ -152,12 +218,14 @@ def compare_keyed(
     rtol: float = 0.0,
     atol: float = 0.0,
     scope: Optional[List[str]] = None,
+    repeats: str = "exact",
 ) -> KeyedComparison:
     """Compare two DataFrames by key: which keys each side holds, and whether the values agree.
 
-    Only keys held by exactly one row on each side are scored. A key repeated on either
-    side joins many-to-many, and counting those joined rows as disagreements inflates the
-    mismatch count; they are returned as `ambiguous` instead.
+    Only keys held by exactly one row on each side are scored row against row. A key repeated
+    on either side joins many-to-many, and counting those joined rows as disagreements
+    inflates the mismatch count. Repeated keys are judged as a set instead, by `repeats`,
+    and are returned in `repeated` either way.
 
     Keys, scope columns and values are compared as given, so fold spellings (case,
     padding, units) into one form on both sides before calling.
@@ -175,13 +243,22 @@ def compare_keyed(
         scope (Optional[List[str]]): Columns whose values define what each side is meant to
             carry. A row holding a value the other side never has in that column is out of
             scope rather than missing, and is set aside before keys are compared.
+        repeats (str): When a repeated key agrees. "exact" (the default) needs the same rows
+            on both sides: the same count carrying the same values, in any order. "values"
+            needs only that every row has its values on the other side, however many rows
+            carry them, for loosely processed data where a result may be recorded more than once.
+            Under "values", a key holding too many distinct values to compare as a set (a sign
+            the key is not really a key) is reported as differing, with a warning.
 
     Returns:
-        KeyedComparison: The pairs, ambiguous keys, one-sided rows and out-of-scope rows.
+        KeyedComparison: The pairs, repeated keys, one-sided rows and out-of-scope rows.
 
     Raises:
-        ValueError: If a key, scope or value column is missing from either side.
+        ValueError: If a key, scope or value column is missing from either side, or
+            `repeats` is not "exact" or "values".
     """
+    if repeats not in ("exact", "values"):
+        raise ValueError(f"repeats must be 'exact' or 'values', not '{repeats}'")
     on = [on] if isinstance(on, str) else list(on)
     scope = list(scope or [])
     if values is None:
@@ -191,52 +268,111 @@ def compare_keyed(
         if missing:
             raise ValueError(f"Columns {missing} not found in the {side} DataFrame")
 
-    # Scope: set aside rows carrying a value the other side never holds
-    left_in = pd.Series(True, index=left.index)
-    right_in = pd.Series(True, index=right.index)
-    for col in scope:
-        left_in &= left[col].isin(right[col].dropna().unique())
-        right_in &= right[col].isin(left[col].dropna().unique())
-    lf, rf = left[left_in], right[right_in]
+    # Scope: set aside rows carrying a value the other side never holds, and say which
+    def scope_reasons(df: pd.DataFrame, other: pd.DataFrame) -> np.ndarray:
+        reasons = np.full(len(df), "", dtype=object)
+        for col in scope:
+            unheld = ~df[col].isin(other[col].dropna().unique()).to_numpy()
+            named = (col + " = " + df[col].astype(str)).where(df[col].notna(), f"{col} is missing").to_numpy()
+            reasons = np.where(unheld, np.where(reasons == "", named, reasons + "; " + named), reasons)
+        return reasons
+
+    left_why, right_why = scope_reasons(left, right), scope_reasons(right, left)
+    lf, rf = left[left_why == ""], right[right_why == ""]
+    left_out = left[left_why != ""].assign(scope_reason=left_why[left_why != ""])
+    right_out = right[right_why != ""].assign(scope_reason=right_why[right_why != ""])
 
     # Rows per key on each side (groupby drops keys holding a NaN)
-    left_n = lf.groupby(on, as_index=False, observed=True).size().rename(columns={"size": "n_left"})
-    right_n = rf.groupby(on, as_index=False, observed=True).size().rename(columns={"size": "n_right"})
+    left_n = lf.groupby(on, as_index=False, observed=True).size().rename(columns={"size": "left_rows"})
+    right_n = rf.groupby(on, as_index=False, observed=True).size().rename(columns={"size": "right_rows"})
     shared = left_n.merge(right_n, on=on)
-    one_to_one = (shared["n_left"] == 1) & (shared["n_right"] == 1)
-    ambiguous = shared[~one_to_one].reset_index(drop=True)
+    one_to_one = (shared["left_rows"] == 1) & (shared["right_rows"] == 1)
 
     def one_sided(df: pd.DataFrame) -> pd.DataFrame:
         hit = df[on].merge(shared[on].assign(_hit=True), on=on, how="left")["_hit"]
         return df[hit.isna().to_numpy()]
 
-    # Score the one-to-one keys only
+    # One-to-one keys are scored row against row
     unique = shared.loc[one_to_one, on]
     lp = lf[on + values].assign(left_index=lf.index).merge(unique, on=on)
     rp = rf[on + values].assign(right_index=rf.index).merge(unique, on=on)
     pairs = lp.merge(rp, on=on, suffixes=("_left", "_right"), validate="one_to_one")
     for value in values:
-        a, b = pairs[f"{value}_left"], pairs[f"{value}_right"]
-        numeric = all(pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s) for s in (a, b))
-        if numeric and (rtol or atol):
-            a_num = a.to_numpy(dtype=float, na_value=np.nan)
-            b_num = b.to_numpy(dtype=float, na_value=np.nan)
-            agree = np.isclose(a_num, b_num, rtol=rtol, atol=atol, equal_nan=True)
-        else:
-            agree = ((a == b).fillna(False).astype(bool) | (a.isna() & b.isna())).to_numpy()
-        pairs[f"{value}_agree"] = agree
+        pairs[f"{value}_agree"] = _values_agree(pairs[f"{value}_left"], pairs[f"{value}_right"], rtol, atol)
     pairs["agree"] = pairs[[f"{v}_agree" for v in values]].all(axis=1)
+
+    # Repeated keys are judged as a set: every row on each side needs its values on the other
+    repeated = shared[~one_to_one].reset_index(drop=True)
+
+    def under_repeated_keys(df: pd.DataFrame, side: str) -> pd.DataFrame:
+        rows = df[on + values].merge(repeated[on], on=on).sort_values(on + values, key=_sortable, kind="stable")
+        return rows.assign(**{f"_{side}": np.arange(len(rows))})
+
+    left_rep, right_rep = under_repeated_keys(lf, "left"), under_repeated_keys(rf, "right")
+
+    if repeats == "exact":  # the same rows: each side in value order, compared rank by rank
+        ranks = [rows.assign(_rank=rows.groupby(on, observed=True).cumcount()) for rows in (left_rep, right_rep)]
+        by_rank = ranks[0].merge(ranks[1], on=on + ["_rank"], how="outer", suffixes=("_left", "_right"))
+        same = by_rank["_left"].notna().to_numpy() & by_rank["_right"].notna().to_numpy()
+        for value in values:
+            same &= _values_agree(by_rank[f"{value}_left"], by_rank[f"{value}_right"], rtol, atol)
+        failed = by_rank.loc[~same, on].drop_duplicates()
+        if (rtol or atol) and len(failed):
+            # Within a tolerance, value order need not line matching rows up, so a key that
+            # failed by rank gets a proper one-to-one matching of its rows
+            failed = failed.assign(_key=np.arange(len(failed)))
+            sides = [dict(iter(rows.merge(failed, on=on).groupby("_key"))) for rows in (left_rep, right_rep)]
+            matched = [
+                k for k in sides[0] if k in sides[1] and _rows_pair_up(sides[0][k], sides[1][k], values, rtol, atol)
+            ]
+            failed = failed[~failed["_key"].isin(matched)]
+        unmet = [failed[on]]
+    else:
+        # Whether a row's values are on the other side depends only on the distinct values, so
+        # those are what get joined. A key with too many of them to join is left as differing.
+        distinct = [rows.drop_duplicates(on + values) for rows in (left_rep, right_rep)]
+        sizes = [rows.groupby(on, as_index=False, observed=True).size() for rows in distinct]
+        load = sizes[0].merge(sizes[1], on=on, suffixes=("_left", "_right"))
+        too_many = load.loc[load["size_left"] * load["size_right"] > MAX_SET_PAIRS, on]
+        if len(too_many):
+            log.warning(f"compare_keyed: {len(too_many)} repeated keys hold too many distinct values to compare")
+        joinable = [rows.merge(too_many.assign(_skip=True), on=on, how="left") for rows in distinct]
+        joinable = [rows[rows["_skip"].isna()].drop(columns="_skip") for rows in joinable]
+        every = joinable[0].merge(joinable[1], on=on, suffixes=("_left", "_right"))
+        every["_agree"] = True
+        for value in values:
+            every["_agree"] &= _values_agree(every[f"{value}_left"], every[f"{value}_right"], rtol, atol)
+        unmet = [too_many]
+        for side, rows in (("left", joinable[0]), ("right", joinable[1])):
+            met = every.groupby(f"_{side}")["_agree"].any()
+            unmet.append(rows.loc[~rows[f"_{side}"].map(met).to_numpy(dtype=bool), on])
+    differing = pd.concat(unmet).drop_duplicates().assign(_differs=True)
+    repeated["values_match"] = repeated[on].merge(differing, on=on, how="left")["_differs"].isna().to_numpy()
+    for value in values:
+        for side, rows in (("left", left_rep), ("right", right_rep)):
+            text = pd.DataFrame(
+                [(*key, _as_text(group[value])) for key, group in rows.groupby(on, observed=True, sort=False)],
+                columns=on + [f"{value}_{side}"],
+            )
+            repeated = (
+                repeated.merge(text, on=on, how="left") if len(text) else repeated.assign(**{text.columns[-1]: None})
+            )
 
     columns = on + ["left_index", "right_index"]
     columns += [f"{v}_{part}" for v in values for part in ("left", "right", "agree")]
     return KeyedComparison(
         on=on,
+        values=values,
+        scope={col: sorted(set(left[col].dropna()) & set(right[col].dropna()), key=str) for col in scope},
+        rtol=rtol,
+        atol=atol,
+        repeats=repeats,
         pairs=pairs[columns + ["agree"]],
-        ambiguous=ambiguous,
+        repeated=repeated,
         left_only=one_sided(lf),
         right_only=one_sided(rf),
-        left_out_of_scope=left[~left_in],
-        right_out_of_scope=right[~right_in],
+        left_out_of_scope=left_out,
+        right_out_of_scope=right_out,
     )
 
 
@@ -695,6 +831,13 @@ MISSING_WARN_FRACTION = 0.05
 # A text column where at least this fraction of entries parse as numbers is a numeric
 # column carrying stray text ("<0.1", "BLQ"), and the entries that do not parse are flagged
 MOSTLY_NUMERIC_FRACTION = 0.5
+
+# compare_keyed: the most distinct-value pairs joined under one repeated key, and the most of a
+# repeated key's values written out as text
+MAX_SET_PAIRS, MAX_VALUES_AS_TEXT = 250_000, 20
+
+# compare_keyed: the most rows under one repeated key that are matched one to one within a tolerance
+MAX_MATCH_ROWS = 400
 
 # A positive column skewed beyond this is treated as log-distributed when looking for outliers
 LOG_FENCE_SKEW = 2.0

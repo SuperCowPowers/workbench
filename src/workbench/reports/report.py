@@ -2,6 +2,7 @@
 
 import logging
 import re
+import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union
@@ -13,8 +14,14 @@ from workbench.utils.plots import report as pages
 
 log = logging.getLogger("workbench")
 
-# Summary page layout: cards per page, and the height of one in figure units
-CARDS_PER_PAGE, CARD_HEIGHT = 4, 0.185
+# Summary page layout, in figure units: the height of a card, the lowest the page body may reach,
+# the pitch of a filter or note line, and the characters on one
+CARD_HEIGHT, SUMMARY_BOTTOM, SUMMARY_LEAD, SUMMARY_WIDTH = 0.185, 0.07, 0.0155, 112
+
+# Footnotes: the baseline of the lowest line, the pitch between lines, and characters per line.
+# A page body stops at sections.BOTTOM, which leaves room for FOOTNOTE_LINES lines.
+FOOTNOTE_BASE, FOOTNOTE_LEAD, FOOTNOTE_WIDTH, FOOTNOTE_LINES = 0.047, 0.0125, 128, 3
+IN_FULL = " (in full on page 1)"
 
 
 def _thumbnail(ax) -> None:
@@ -50,18 +57,22 @@ class Section:
     """Pages for a report, the detail frames behind them, and a card for the summary page.
 
     Attributes:
-        pages (List[Callable]): Each is called with the Report and returns one page figure.
-            Start a page with `report.new_page(headline)`; the Report adds the footer and
-            page number, fits the axes and saves it.
+        pages (List[Callable]): Each is called with the Report and returns one page figure,
+            or a list of them when its content runs over. Start a page with
+            `report.new_page(headline)`; the Report adds the footer and page number, fits
+            the axes and saves it.
         frames (Dict[str, pd.DataFrame]): Detail frames by name, published to the DataFrame
             Store when the report is saved. A page gets a frame's location from
             `report.location(name)`.
         summary (Optional[Summary]): This section's card on the summary page.
+        notes (List[str]): Notes this section refers to. The Report numbers them; a page marks
+            one with `report.mark(note)` and prints it at its foot with `report.footnote(fig, note)`.
     """
 
     pages: List[Callable] = field(default_factory=list)
     frames: Dict[str, pd.DataFrame] = field(default_factory=dict)
     summary: Optional[Summary] = None
+    notes: List[str] = field(default_factory=list)
 
 
 class Report:
@@ -69,7 +80,9 @@ class Report:
 
     Sections come from `workbench.reports.sections` (model performance, data quality, data
     comparison) or are your own page functions. Page 1 is always a summary: the author's
-    sentence, then one card per section with its finding, key numbers and lead chart. Saving
+    sentence, what the report is limited to, its numbered notes, then one card per section
+    with its finding, key numbers and lead chart. A note is marked where it applies and
+    printed again at the foot of that page. Saving
     lints every page, writes the PDF, and publishes each section's detail frames to
     `/reports/<name>/<frame>` so a reader can go from a count in the document to the rows
     behind it.
@@ -86,7 +99,13 @@ class Report:
         ```
     """
 
-    def __init__(self, title: str, name: Optional[str] = None, summary: Optional[str] = None):
+    def __init__(
+        self,
+        title: str,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        filters: Optional[List[str]] = None,
+    ):
         """Report Init
 
         Args:
@@ -94,7 +113,13 @@ class Report:
             name (Optional[str]): Names the report's DataFrame Store subtree, /reports/<name>.
                 Defaults to the title in lowercase with underscores.
             summary (Optional[str]): The author's conclusion, shown at the top of the summary page.
+            filters (Optional[List[str]]): What the report is limited to, one line each (species,
+                route, date range, which rows were left out and why). Listed on the summary
+                page so a reader knows what the numbers cover.
         """
+        self.filters = list(filters or [])
+        self.notes: List[str] = []
+        self._footnotes: Dict[int, List[str]] = {}
         self.title = title
         self.summary = summary
         self._cards: List[Summary] = []
@@ -121,6 +146,7 @@ class Report:
         repeated = sorted(set(section.frames) & set(self.frames))
         if repeated:
             raise ValueError(f"Frames {repeated} are already in the report; give the section its own name")
+        self.notes.extend(note for note in section.notes if note not in self.notes)
         self._pages.extend(section.pages)
         self.frames.update(section.frames)
         if section.summary is not None:
@@ -151,6 +177,56 @@ class Report:
         """
         return f"/reports/{self.name}/{frame}" if self._published else None
 
+    def mark(self, note: str) -> str:
+        """The marker for a note, e.g. "[1]", to put in the text it qualifies.
+
+        Args:
+            note (str): A note a section of this report declared.
+
+        Returns:
+            str: The note's number in brackets. Notes are numbered in the order they were added;
+                one no section declared is added here.
+        """
+        if note not in self.notes:
+            self.notes.append(note)
+        return f"[{self.notes.index(note) + 1}]"
+
+    def footnote(self, fig: plt.Figure, note: str) -> str:
+        """Print a note at the foot of a page, and return its marker for the text above.
+
+        Args:
+            fig (plt.Figure): The page that refers to the note.
+            note (str): A note a section of this report declared.
+
+        Returns:
+            str: The note's marker, as `mark` gives it.
+        """
+        on_page = self._footnotes.setdefault(id(fig), [])
+        if note not in on_page:
+            on_page.append(note)
+        return self.mark(note)
+
+    def _draw_footnotes(self, fig: plt.Figure) -> None:
+        """The notes a page refers to, stacked up from just above the footer in note order.
+
+        A page body leaves room for FOOTNOTE_LINES lines. Notes that need more are cut to a
+        line each, and past that to one line naming them; the summary page has each in full.
+        """
+        notes = sorted(self._footnotes.pop(id(fig), []), key=self.notes.index)
+        lines = [line for note in notes for line in textwrap.wrap(f"{self.mark(note)}  {note}", FOOTNOTE_WIDTH)]
+        if (
+            len(lines) > FOOTNOTE_LINES
+        ):  # more than the page keeps room for: point to the summary, where each is in full
+            room = FOOTNOTE_WIDTH - len(IN_FULL)
+            lines = [
+                textwrap.shorten(f"{self.mark(note)}  {note}", room, placeholder="...") + IN_FULL for note in notes
+            ]
+        if len(lines) > FOOTNOTE_LINES:
+            marks = ", ".join(self.mark(note) for note in notes)
+            lines = [f"Notes {marks} apply here, each in full on page 1."]
+        for row, line in enumerate(reversed(lines)):
+            fig.text(pages.L, FOOTNOTE_BASE + row * FOOTNOTE_LEAD, line, fontsize=7.8, color=pages.BODY)
+
     def build(self, pdf) -> None:
         """Draw every page onto a PdfPages-like object, numbering them in order.
 
@@ -160,17 +236,18 @@ class Report:
         if not self.summary and not self._cards:
             raise ValueError("A report needs a summary: pass summary= or add a section that has one")
         published = {name: df for name, df in self.frames.items() if self._published and not df.empty}
-        summary_pages = [
-            lambda _report, first=first: self._summary_page(first)
-            for first in range(0, max(len(self._cards), 1), CARDS_PER_PAGE)
-        ]
-        every_page = summary_pages + self._pages + ([self._data_page] if published else [])
-        for number, page in enumerate(every_page, start=1):
-            fig = page(self)
-            pages.footer(fig, self.title, number)
-            pages.fit_axes(fig)
-            pdf.savefig(fig)
-            plt.close(fig)
+        # The summary is drawn last, once every page has named its notes, and saved first
+        with plt.rc_context({"figure.max_open_warning": 0}):
+            body = []
+            for page in self._pages + ([self._data_page] if published else []):
+                drawn = page(self)
+                body += drawn if isinstance(drawn, list) else [drawn]
+            for number, fig in enumerate(self._summary_pages() + body, start=1):
+                self._draw_footnotes(fig)
+                pages.footer(fig, self.title, number)
+                pages.fit_axes(fig)
+                pdf.savefig(fig)
+                plt.close(fig)
 
     def save(self, path: Union[str, Path], overwrite: bool = False, publish: bool = True) -> Dict[str, List]:
         """Lint the pages, publish the detail frames, and write the PDF.
@@ -210,10 +287,42 @@ class Report:
             elif store.check(f"/{name}"):
                 store.delete(f"/{name}")
 
-    def _summary_page(self, first: int) -> plt.Figure:
-        """A summary page: the author's sentence, then a card per section from `first` on."""
-        fig, y = self.new_page("Summary" if first == 0 else "Summary, continued", self.summary if first == 0 else None)
-        for card in self._cards[first : first + CARDS_PER_PAGE]:
+    def _summary_pages(self) -> List[plt.Figure]:
+        """The summary: the author's sentence, the filters, the notes, then a card per section.
+
+        Laid out from the top down by what is actually there, onto as many pages as it takes.
+        """
+        fig, y = self.new_page("Summary", self.summary)
+        figs = [fig]
+
+        def turn() -> None:
+            nonlocal fig, y
+            fig, y = self.new_page("Summary, continued")
+            figs.append(fig)
+
+        def block(label: str, entries: List[str]) -> None:
+            nonlocal y
+            lines = [wrapped for entry in entries for wrapped in textwrap.wrap(entry, SUMMARY_WIDTH) or [""]]
+            start = 0
+            while start < len(lines):
+                room = int((y - SUMMARY_BOTTOM - 0.03) // SUMMARY_LEAD)
+                if room < min(3, len(lines) - start):
+                    turn()
+                    continue
+                y = pages.sec(fig, y, label if start == 0 else f"{label}, continued", pages.MUTED)
+                text = "\n".join(lines[start : start + room])
+                y = pages.para(fig, y, text, size=9.2, width=SUMMARY_WIDTH, lead=SUMMARY_LEAD, gap=0.0)
+                start += room
+            pages.rule(fig, y - 0.004, c=pages.HAIRLINE)
+            y -= 0.028
+
+        if self.filters:
+            block("What this report covers", [f"-  {line}" for line in self.filters])
+        if self.notes:
+            block("Notes", [f"{self.mark(note)}  {note}" for note in self.notes])
+        for card in self._cards:
+            if y - CARD_HEIGHT < SUMMARY_BOTTOM:
+                turn()
             top = y
             y = pages.sec(fig, y, card.label, pages.MUTED)
             y = pages.para(fig, y, card.headline, size=11.5, width=56, color=pages.INK, lead=0.019)
@@ -226,7 +335,7 @@ class Report:
             y = top - CARD_HEIGHT
             pages.rule(fig, y + 0.012, c=pages.HAIRLINE)
             y -= 0.012
-        return fig
+        return figs
 
     def _data_page(self, _report: "Report") -> plt.Figure:
         """The closing page: every published frame, its size, and where to get it."""

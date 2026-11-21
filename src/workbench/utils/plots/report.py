@@ -39,6 +39,10 @@ HAIRLINE = "#F0F2F4"
 # on every page so a reader can track it without reading the label.
 ACCENTS = ["#0F766E", "#1D4ED8", "#B45309", "#BE123C", "#6D28D9", "#047857"]
 
+# A table too wide for the page is set smaller, to no less than MIN_TABLE_SIZE points, and
+# then has its longest cells trimmed, to no fewer than MIN_CELL_CHARS characters
+MIN_TABLE_SIZE, MIN_CELL_CHARS, TRIM_STEPS = 6.8, 8, 2000
+
 # Page margins in figure coordinates. Every helper honours these, so text columns and
 # rules line up across pages without per-page arithmetic.
 L, R = 0.068, 0.932
@@ -287,6 +291,10 @@ def table(
     is the most reliable way to bury a number under its neighbour, so there is no way to
     hand-place one here.
 
+    A table wider than the column is made to fit rather than run off the page: the body is
+    set smaller, down to a floor, and then the longest text of the widest column is trimmed
+    with an ellipsis until it fits. It warns only if that is still not enough.
+
     Alignment is inferred -- numeric columns range right, text ranges left -- and `aligns`
     overrides per column when inference is wrong (an id that looks like a float, say).
     `hl_row` sets one row in the heading face, for the line the page is arguing about.
@@ -302,17 +310,45 @@ def table(
     aligns = list(aligns)
 
     # natural width of each column: widest of its header and its cells
-    nat = []
-    for k in range(ncol):
+    def natural(k: int) -> float:
         cells = [text_width(r[k], size, HEADING_FONT) for r in body]
-        nat.append(max([text_width(headers[k].upper(), 6.9, HEADING_FONT)] + cells))
+        return max([text_width(headers[k].upper(), 7.1, HEADING_FONT)] + cells)
 
-    avail = x1 - x0
-    slack = avail - (sum(nat) + gutter * (ncol - 1))
+    avail = x1 - x0 - gutter * (ncol - 1)
+    nat = [natural(k) for k in range(ncol)]
+
+    # Too wide for the column: set the body smaller, down to a floor that still reads
+    while sum(nat) > avail and size > MIN_TABLE_SIZE:
+        size = max(MIN_TABLE_SIZE, size - 0.3)
+        nat = [natural(k) for k in range(ncol)]
+
+    # Still too wide: trim the widest text of the widest column that can spare it, a few characters at a time
+    for _ in range(TRIM_STEPS):
+        if sum(nat) <= avail:
+            break
+        # A column is as wide as its widest text, so trimming only helps where that text can be cut
+        for k in sorted(range(ncol), key=nat.__getitem__, reverse=True):
+            widths = [text_width(headers[k].upper(), 7.1, HEADING_FONT)] + [
+                text_width(r[k], size, HEADING_FONT) for r in body
+            ]
+            widest = max(range(len(widths)), key=widths.__getitem__)
+            text = headers[k] if widest == 0 else body[widest - 1][k]
+            if len(text) > MIN_CELL_CHARS:
+                break
+        else:
+            break  # nothing left to trim
+        trimmed = text.removesuffix("...")[:-3].rstrip() + "..."
+        if widest == 0:
+            headers[k] = trimmed
+        else:
+            body[widest - 1][k] = trimmed
+        nat[k] = natural(k)
+
+    slack = avail - sum(nat)
     if slack < 0:
         warnings.warn(
-            f"table: content needs {sum(nat) + gutter * (ncol - 1):.3f} of {avail:.3f} "
-            f"figure width; shorten labels or drop a column",
+            f"table: content needs {sum(nat) + gutter * (ncol - 1):.3f} of {x1 - x0:.3f} "
+            f"figure width even set small and trimmed; drop a column",
             stacklevel=2,
         )
         slack = 0.0

@@ -89,7 +89,7 @@ def test_comparison_section_publishes_one_row_per_disagreeing_value(tmp_path):
     assert len(section.frames["comparison_left_only"]) == 10
     report = Report("Comparison").add(section)
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_count(report) == 3  # the summary, then the section's two pages
+    assert page_count(report) == 4  # the summary, the overview, the scatter of what disagrees, the rows
 
 
 def test_identical_frames_compare_on_one_page(tmp_path):
@@ -192,7 +192,7 @@ def test_a_full_breakout_page_stays_above_the_footer():
 def test_six_full_comparison_buckets_stay_above_the_footer():
     left = predictions(120).assign(route=["po"] * 100 + ["ip"] * 20)
     right = predictions(120).assign(route=["po"] * 100 + ["sc"] * 20)
-    left = pd.concat([left, left.iloc[:8]]).reset_index(drop=True)
+    left = pd.concat([left, left.iloc[:8].assign(cmax=-1.0)]).reset_index(drop=True)
     left.loc[left.index[20:40], "id"] = [f"only_left_{i}" for i in range(20)]
     right.loc[right.index[40:60], "id"] = [f"only_right_{i}" for i in range(20)]
     right.loc[right.index[60:70], "cmax"] *= 2
@@ -245,7 +245,7 @@ def test_page_one_is_the_summary_with_a_card_per_section(tmp_path):
     assert page_headlines(report)[0] == "Summary"
     assert [card.label for card in report._cards] == ["Model performance", "Data quality", "archive against DataSource"]
     assert "within 2x" in report._cards[0].headline and "weakest project" in report._cards[0].headline
-    assert "35 of 35 paired rows agree" in report._cards[2].headline
+    assert "35 of 35 paired rows agree. Needs a look: 5 rows only in archive." == report._cards[2].headline
 
 
 def test_a_report_with_nothing_to_summarise_is_refused(tmp_path):
@@ -290,9 +290,9 @@ def test_the_agreement_scatter_is_drawn_only_when_values_disagree():
     right.loc[right.index[:4], "cmax"] *= 3
     disputed = Report("Differs").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
 
-    # page 2 is the comparison overview: the row-fate bars, plus the scatter when a value disagrees
-    assert axes_per_page(agreeing)[1] == 1
-    assert axes_per_page(disputed)[1] == 2
+    # the summary thumbnail and the row-fate bars, plus the scatter when a value disagrees
+    assert sum(axes_per_page(agreeing)) == 2
+    assert sum(axes_per_page(disputed)) == 3
 
 
 def test_comparison_section_handles_flags_text_and_unsigned_values(tmp_path):
@@ -312,6 +312,263 @@ def test_duplicate_rows_alone_still_get_a_chart_and_the_headline():
     df = pd.DataFrame({"x": [1.0, 1.0, 2.0, 2.0, 3.0], "y": [5.0, 5.0, 6.0, 6.0, 7.0]})
     card = sections.data_quality(data_quality(df)).summary
     assert card.chart is not None and "(whole row) has the most flagged rows (4)" in card.headline
+
+
+def test_comparison_section_sorts_rows_into_fine_and_needs_a_look():
+    left = predictions(30).assign(route=["po"] * 26 + ["ip"] * 4)
+    left = pd.concat([left, left.iloc[[0, 1]]], ignore_index=True)
+    right = pd.concat([left.iloc[:26], left.iloc[[0]]], ignore_index=True)
+    right.loc[right.index[-1], "cmax"] *= 3  # the second "c0" row now differs; "c1" repeats the same value
+    result = compare_keyed(left, right, on="id", values=["cmax"], scope=["route"], repeats="values")
+    section = sections.comparison(result, "old", "new")
+
+    assert list(section.frames["comparison_repeated_differ"]["id"]) == ["c0"]
+    assert {"cmax in old", "cmax in new"} <= set(section.frames["comparison_repeated_differ"].columns)
+    assert section.frames["comparison_left_out_of_scope"]["scope_reason"].unique().tolist() == ["route = ip"]
+    assert section.summary.headline == ("26 of 26 paired rows agree. Needs a look: 1 repeated key whose values differ.")
+
+
+def test_identical_frames_with_repeated_keys_need_nothing():
+    df = pd.concat([predictions(10), predictions(10)], ignore_index=True)
+    section = sections.comparison(compare_keyed(df, df, on="id"))
+    assert section.summary.headline == "20 of 20 paired rows agree. Nothing needs a look."
+    assert len(section.pages) == 1
+
+
+def page_text(report: Report) -> list:
+    """All the text on each page, in order."""
+
+    class Text:
+        found = []
+
+        def savefig(self, fig, **_):
+            self.found.append(" | ".join(text.get_text() for text in fig.texts))
+
+    text = Text()
+    text.found = []
+    report.build(text)
+    return text.found
+
+
+def test_filters_are_listed_on_the_summary_page_and_take_a_cards_room(tmp_path):
+    def page(report):
+        return report.new_page("Method")[0]
+
+    report = Report("Filtered", filters=["Species: mouse", "Route: PO and IV only"])
+    for n in range(4):
+        report.add(Section(pages=[page], summary=Summary(f"Step {n}", f"Finding number {n}.")))
+
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "Species: mouse" in text[0] and "Route: PO and IV only" in text[0]
+    assert "Finding number 2." in text[0] and "Finding number 3." not in text[0] and "Finding number 3." in text[1]
+
+
+def test_the_comparison_page_states_how_rows_were_compared():
+    left = predictions(30).assign(route=["po"] * 26 + ["ip"] * 4)
+    result = compare_keyed(left, left.iloc[:26], on="id", values=["cmax"], rtol=0.02, scope=["route"], repeats="values")
+    text = page_text(Report("Method").add(sections.comparison(result, "old", "new")))[1]
+
+    assert "matched on | id" in text
+    assert "cmax; numbers agree within 0.02 of the new value" in text
+    assert "limited to route | po" in text
+    assert "however many rows carry it" in text
+
+
+def rows_to_look_at(report: Report) -> list:
+    """The text of each rows-to-look-at page."""
+    return [page for page in page_text(report) if "rows to look at" in page]
+
+
+def test_rows_to_look_at_show_ten_per_bucket_and_say_how_many_there_are():
+    left = predictions(120)
+    right = left.iloc[30:].copy()
+    right.loc[right.index[:8], "cmax"] *= 2
+    report = Report("Rows").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"]), "old", "new"))
+    report._published = True
+    text = rows_to_look_at(report)[0]
+
+    assert all(f"c{n}" in text for n in range(30, 38))  # all eight mismatches are on the page
+    assert "Showing the first 10 of 30. All 30 rows: DFStore /reports/rows/comparison_left_only" in text
+    assert "All 8 rows: DFStore /reports/rows/comparison_mismatched" in text
+
+
+def test_the_not_expected_table_names_its_frame_without_a_showing_line():
+    left = predictions(30).assign(route=["po"] * 26 + ["ip"] * 4)
+    report = Report("Rows").add(sections.comparison(compare_keyed(left, left.iloc[:26], on="id", scope=["route"])))
+    report._published = True
+    text = rows_to_look_at(report)[0]
+
+    assert "route = ip | 4" in text
+    assert "All 4 rows: DFStore /reports/rows/comparison_left_out_of_scope" in text and "Showing" not in text
+
+
+def test_rows_to_look_at_run_onto_another_page_when_they_do_not_fit():
+    left = predictions(200).assign(route=[f"r{i % 40}" for i in range(200)])
+    right = left.iloc[100:].copy()
+    right.loc[right.index[:50], "cmax"] *= 2
+    right = pd.concat([right, right.iloc[:1].assign(id="new", route="elsewhere")])
+    result = compare_keyed(left, right, on="id", values=["cmax"], scope=["route"])
+    section = sections.comparison(result, "old", "new", max_rows=45)
+    report = Report("Rows").add(section)
+
+    rows_pages = rows_to_look_at(report)
+    assert len(rows_pages) > 1 and all("Continued." in page for page in rows_pages[1:])
+    assert lowest_text(report) > 0.045
+
+
+def test_a_missing_value_is_shown_blank_not_as_nan():
+    left = predictions(12)
+    left.loc[0, "project"] = None
+    left.loc[1, "cmax"] = np.nan
+    text = page_text(Report("Blank").add(sections.comparison(compare_keyed(left, left.iloc[6:], on="id"))))[2]
+    assert "c0" in text and "nan" not in text.lower() and "None" not in text
+
+
+NOTE = "The DataSource carries corrections, so a mismatch against the archive can be the fix."
+
+
+def test_notes_are_numbered_listed_on_the_summary_and_printed_where_marked(tmp_path):
+    left = predictions(40)
+    right = left.iloc[5:].copy()
+    right.loc[right.index[:3], "cmax"] *= 2
+    report = Report("Noted", filters=["Species: mouse"])
+    result = compare_keyed(left, right, on="id", values=["cmax"])
+    report.add(sections.comparison(result, "archive", "DataSource", notes={"mismatched": NOTE}))
+    report.add(sections.data_quality(data_quality(messy(), key="id"), notes=[NOTE, "A second note."]))
+
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    assert report.notes == [NOTE, "A second note."]  # one number per note, however many sections use it
+    text = page_text(report)
+    assert f"[1]  {NOTE}" in text[0] and "[2]  A second note." in text[0]
+    overview, scatter, rows = text[1:4]
+    assert "mismatched [1]" in overview and "MISMATCHED [1]" in rows
+    assert all(f"[1]  {NOTE}" in page for page in (overview, scatter, rows))  # printed at the foot of each
+    quality = next(page for page in text if "Data quality" in page and "NOTE [1]" in page)
+    assert NOTE in quality and "NOTE [2]" in quality
+    assert lowest_text(report) > 0.04
+
+
+def test_a_note_for_an_unknown_bucket_is_refused():
+    df = predictions(10)
+    with pytest.raises(ValueError, match="No bucket named"):
+        sections.comparison(compare_keyed(df, df, on="id"), notes={"mismatches": "typo"})
+
+
+def test_footnotes_stay_inside_the_right_margin():
+    from workbench.utils.plots import report as pages
+
+    long_note = "A caveat long enough to need wrapping, " * 6
+    left = predictions(20)
+    right = left.copy()
+    right.loc[right.index[:2], "cmax"] *= 2
+    report = Report("Wide").add(
+        sections.comparison(compare_keyed(left, right, on="id"), notes={"mismatched": long_note})
+    )
+
+    class Edges:
+        worst = 0.0
+
+        def savefig(self, fig, **_):
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            notes = [text for text in fig.texts if text.get_fontsize() == 7.8]
+            self.worst = max([self.worst] + [text.get_window_extent(renderer).x1 / fig.bbox.width for text in notes])
+
+    edges = Edges()
+    report.build(edges)
+    assert 0 < edges.worst <= pages.R + 0.002
+
+
+def test_a_page_can_footnote_a_note_no_section_declared(tmp_path):
+    def page(report):
+        fig, y = report.new_page("Method")
+        report.footnote(fig, "Read from the 2024 archive only.")
+        return fig
+
+    report = Report("Own note", summary="One page.").add(page)
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "[1]  Read from the 2024 archive only." in text[0] and "[1]  Read from the 2024 archive only." in text[1]
+
+
+def body_text_floor(report: Report) -> float:
+    """The lowest text on any page that is not the footer or a footnote, in figure units."""
+
+    class Lowest:
+        y = 1.0
+
+        def savefig(self, fig, **_):
+            body = [text.get_position()[1] for text in fig.texts if text.get_fontsize() not in (7.6, 7.8)]
+            self.y = min([self.y] + body)
+
+    lowest = Lowest()
+    report.build(lowest)
+    return lowest.y
+
+
+def test_a_long_list_of_filters_pushes_cards_onto_the_next_summary_page(tmp_path):
+    def page(report):
+        return report.new_page("Method")[0]
+
+    report = Report("Many filters", filters=[f"Filter number {n}" for n in range(20)])
+    for n in range(3):
+        report.add(Section(pages=[page], summary=Summary(f"Step {n}", f"Finding number {n}.")))
+
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "Filter number 19" in text[0] and "Finding number 2." not in text[0] and "Finding number 2." in text[1]
+    assert body_text_floor(report) > 0.06
+
+
+def test_more_filters_than_a_page_holds_continue_on_the_next(tmp_path):
+    report = Report("Too many", summary="A lot is left out.", filters=[f"Filter number {n}" for n in range(80)])
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "Filter number 0" in text[0] and "Filter number 79" in text[1] and "COVERS, CONTINUED" in text[1]
+    assert body_text_floor(report) > 0.06
+
+
+def test_footnotes_never_take_more_than_their_reserved_lines():
+    long_note = "A caveat that goes on at length about exactly why this number is not what it seems. " * 12
+    other = "A second caveat, also long. " * 20
+    left = predictions(20)
+    right = left.copy()
+    right.loc[right.index[:2], "cmax"] *= 2
+    result = compare_keyed(pd.concat([left, left.iloc[:1].assign(cmax=-1.0)]), right, on="id")
+    section = sections.comparison(result, notes={"mismatched": long_note, "repeated_differ": other})
+    report = Report("Long notes").add(section)
+
+    class Footnotes:
+        most, text = 0, ""
+
+        def savefig(self, fig, **_):
+            notes = [text for text in fig.texts if text.get_fontsize() == 7.8]
+            self.most = max(self.most, len(notes))
+            self.text += " ".join(text.get_text() for text in notes)
+
+    footnotes = Footnotes()
+    report.build(footnotes)
+    assert 0 < footnotes.most <= 3
+    assert "(in full on page 1)" in footnotes.text
+    assert long_note.strip() in " ".join(page_text(report)[0].replace(" | ", " ").split())  # the summary has it whole
+
+
+def test_a_note_added_by_a_page_is_on_the_summary_the_first_time_it_is_built():
+    def page(report):
+        fig, y = report.new_page("Method")
+        report.footnote(fig, "Read from the 2024 archive only.")
+        return fig
+
+    first_build = page_text(Report("Own note", summary="One page.").add(page))
+    assert "[1]  Read from the 2024 archive only." in first_build[0]
+
+
+def test_the_method_table_states_summed_tolerances():
+    left = predictions(10)
+    result = compare_keyed(left, left, on="id", values=["cmax"], rtol=0.02, atol=1)
+    text = page_text(Report("Method").add(sections.comparison(result, "old", "new")))[1]
+    assert "numbers agree within 1 plus 0.02 of the new value" in text
 
 
 if __name__ == "__main__":

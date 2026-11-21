@@ -58,3 +58,48 @@ def test_save_reports_overlapping_text(tmp_path):
         plt.close(fig)
 
     assert report.save(tmp_path / "report.pdf", colliding)["overlaps"]
+
+
+def right_edges(fig) -> list:
+    """The right edge of every piece of text on a page, in figure units."""
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    return [t.get_window_extent(renderer).x1 / fig.bbox.width for t in fig.texts if t.get_text().strip()]
+
+
+def test_a_table_too_wide_for_the_page_is_fitted_not_overprinted(recwarn):
+    headers = ["bat", "dose", "route", "matrix", "date", "archive rows", "datasource rows", "cmax in archive"]
+    headers.append("cmax in datasource")
+    row = ["IDC-25163-14", "100", "po", "plasma", "2024-04-02", "3", "5", "133000; 166000; 185000"]
+    row.append("104000; 128000; 133000; 166000; 185000; 201000; 244000")
+    fig = report.new_page()
+    report.table(fig, 0.8, headers, [row, row])
+
+    assert max(right_edges(fig)) <= report.R + 0.002
+    assert any(text.get_text().endswith("...") for text in fig.texts)
+    assert "IDC-25163-14" in [text.get_text() for text in fig.texts]  # short cells are left whole
+    assert not [w for w in recwarn if "table:" in str(w.message)]
+    plt.close(fig)
+
+
+def test_a_table_that_fits_is_left_as_written():
+    fig = report.new_page()
+    report.table(fig, 0.8, ["check", "column", "rows"], [["missing", "dose", "3"], ["outliers", "cmax", "12"]])
+    texts = [text.get_text() for text in fig.texts]
+
+    assert not any(text.endswith("...") for text in texts)
+    assert {text.get_fontsize() for text in fig.texts if text.get_text() in ("missing", "dose", "3")} == {8.8}
+    plt.close(fig)
+
+
+def test_a_table_is_still_fitted_when_its_widest_column_cannot_be_trimmed():
+    """A short wide id cannot be cut, so the long text beside it gives up the room instead"""
+    headers = ["id", "note", "more", "value"]
+    row = ["WWWWWWWW", "i" * 160, "l" * 160, "12.5"]
+    fig = report.new_page()
+    report.table(fig, 0.8, headers, [row, row])
+    texts = [text.get_text() for text in fig.texts]
+
+    assert "WWWWWWWW" in texts and any(text.startswith("iii") and text.endswith("...") for text in texts)
+    assert max(right_edges(fig)) <= report.R + 0.002
+    plt.close(fig)
