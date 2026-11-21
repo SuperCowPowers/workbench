@@ -79,14 +79,17 @@ REALTIME_DEFAULT_INSTANCE = "ml.c7i.large"
 ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
 # Models that serve from the CUDA image (Atom-JEPA) get an instance from the first of these pools
 # with capacity, at creation and on every scale-up; an async endpoint scales it to zero when idle.
-# L4, A10G and L40S GPUs: Ampere or later, for bf16 and cuEquivariance. Three GPU generations
-# across five pools (the API max), cheapest first, so the priciest is reached only once every
-# other pool is out. Every pool is a GPU, so a regional shortage is waited out (see
-# CAPACITY_ATTEMPTS) and raises EndpointCapacityError if it does not clear. SageMaker
-# takes the highest-priority pool that has capacity, so a pool the model runs 50x slower on would
-# be taken rather than waited out: CPU serving is an explicit instance= deploy, at ~30 s/molecule
-# against ~0.6 on a GPU. Endpoint-usage quota is 8 per type, against the 1 an endpoint asks for.
+# L4, A10G and L40S GPUs across five pools (the API max), cheapest first, so the priciest is
+# reached only once every other pool is out. Every pool is a GPU, so a regional shortage is
+# waited out (see CAPACITY_ATTEMPTS) and raises EndpointCapacityError if it does not clear.
+# SageMaker takes the highest-priority pool that has capacity, so a pool the model runs 50x
+# slower on would be taken rather than waited out: CPU serving is an explicit instance= deploy,
+# at ~30 s/molecule against ~0.6 on a GPU. An endpoint asks for 1 instance of a type's
+# endpoint-usage quota.
 GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge", "ml.g6e.xlarge"]
+# Async endpoints end on a T4 pool: ~2 s/molecule, which a 60-minute async invocation absorbs
+# and a 60-second real-time one does not.
+GPU_ASYNC_INSTANCE_POOLS = [*GPU_INSTANCE_POOLS[:4], "ml.g4dn.xlarge"]
 # How long SageMaker waits for capacity once every pool is out (valid: 300-3600)
 GPU_PROVISION_TIMEOUT_SECONDS = 3600
 # Endpoint creations tried on a capacity failure. Each GPU pool attempt waits up to
@@ -182,7 +185,7 @@ class ModelToEndpoint(Transform):
             endpoint_name(str): The Name of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
             instance(str): The instance type for Realtime Endpoints (default: None = auto-select;
-                Atom-JEPA models get GPU_INSTANCE_POOLS)
+                Atom-JEPA models get the GPU instance pools)
             async_endpoint(bool): Deploy as an async endpoint (default: False). Async
                 endpoints support up to 60-minute invocations and use S3 for I/O.
                 Incompatible with serverless — if both are True, serverless is forced off.
@@ -403,7 +406,7 @@ class ModelToEndpoint(Transform):
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
             elif workbench_model.model_framework == ModelFramework.ATOMJEPA:
                 instance_type = None
-                instance_pools = GPU_INSTANCE_POOLS
+                instance_pools = GPU_ASYNC_INSTANCE_POOLS if self.async_endpoint else GPU_INSTANCE_POOLS
                 self.log.important(f"Endpoint: Instance Pools={' > '.join(instance_pools)} (Atom-JEPA)")
             else:
                 memory_gb = (workbench_model.workbench_meta() or {}).get("workbench_inference_memory_gb")

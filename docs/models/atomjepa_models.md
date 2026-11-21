@@ -104,11 +104,14 @@ Both run Workbench's GPU inference image. GPU capacity is often short, so rather
 | 2 | `ml.g5.xlarge` | NVIDIA A10G |
 | 3 | `ml.g6.2xlarge` | NVIDIA L4 |
 | 4 | `ml.g5.2xlarge` | NVIDIA A10G |
-| 5 | `ml.g6e.xlarge` | NVIDIA L40S |
+| 5 (real-time) | `ml.g6e.xlarge` | NVIDIA L40S |
+| 5 (async) | `ml.g4dn.xlarge` | NVIDIA T4 |
 
-Every pool is a GPU, across three generations — L4, A10G, L40S — so a shortage in one has others to fall to. SageMaker takes the highest-priority pool *with capacity*, so a CPU pool would be taken immediately rather than waiting out a GPU shortage. CPU serving is an explicit `instance="ml.c7i.4xlarge"` deploy instead: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU, so raise `max_instances=` to match the work. Pass `instance=` to deploy any single type. An async endpoint stays on one instance unless you pass `max_instances=`.
+The last pool depends on the endpoint type. A T4 serves at about 2 seconds per molecule, against about half a second on an A10G: an async invocation has 60 minutes to absorb that, a real-time one has 60 seconds, so only async endpoints fall back to it.
 
-When every pool is out, SageMaker keeps trying for up to an hour. If it still has no instance, `to_endpoint()` deletes the failed endpoint and raises `EndpointCapacityError` (from `workbench.core.artifacts.endpoint_core`); the model is intact, so deploy it again later. An async endpoint scaling up from zero raises the same error after the same hour.
+Every pool is a GPU, across three generations, so a shortage in one has others to fall to. SageMaker takes the highest-priority pool *with capacity*, so a CPU pool would be taken immediately rather than waiting out a GPU shortage. CPU serving is an explicit `instance="ml.c7i.4xlarge"` deploy instead: the same image serves there at roughly 30 seconds per molecule, against under a second on a GPU, so raise `max_instances=` to match the work. Pass `instance=` to deploy any single type. An async endpoint stays on one instance unless you pass `max_instances=`.
+
+When every pool is out, SageMaker keeps trying for up to an hour, and `to_endpoint()` makes three such attempts. If there is still no instance, it deletes the failed endpoint and raises `EndpointCapacityError` (from `workbench.core.artifacts.endpoint_core`); the model is intact, so deploy it again later. An async endpoint scaling up from zero raises the same error after an hour.
 
 Endpoint instances are quota-limited per instance type and region; check `<instance type> for endpoint usage` for each pool type in the Service Quotas console. To run several Atom-JEPA endpoints at once, or scale one past a single instance, request an increase there.
 

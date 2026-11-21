@@ -9,6 +9,7 @@ from workbench.api import ModelFramework
 from workbench.core.artifacts.endpoint_core import EndpointCapacityError
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import (
     CAPACITY_ATTEMPTS,
+    GPU_ASYNC_INSTANCE_POOLS,
     GPU_ASYNC_MAX_INSTANCES,
     GPU_INSTANCE_POOLS,
     SERVERLESS_MODEL_MEMORY_LIMIT_GB,
@@ -88,16 +89,23 @@ def _transform(async_endpoint, max_instances, max_instances_given):
     )
 
 
-def test_every_instance_pool_is_a_gpu():
+@pytest.mark.parametrize("pools", [GPU_INSTANCE_POOLS, GPU_ASYNC_INSTANCE_POOLS])
+def test_every_instance_pool_is_a_gpu(pools):
     """A CPU pool here would be taken rather than waited out.
 
     SageMaker serves from the highest-priority pool that has capacity, and a CPU instance
     always has capacity, so one in this list resolves a GPU shortage in seconds at roughly
     50x the per-row cost instead of spending GPU_PROVISION_TIMEOUT_SECONDS on a GPU.
     """
-    assert GPU_INSTANCE_POOLS
-    families = [pool.split(".")[1] for pool in GPU_INSTANCE_POOLS]
+    assert 1 <= len(pools) <= 5
+    families = [pool.split(".")[1] for pool in pools]
     assert all(family.startswith(("g", "p")) for family in families), families
+
+
+def test_only_async_pools_hold_a_t4():
+    """A T4 serves at ~2 s/molecule: fine for an async invocation, past a real-time one's 60 s."""
+    assert not any(".g4dn." in pool for pool in GPU_INSTANCE_POOLS)
+    assert GPU_ASYNC_INSTANCE_POOLS[-1] == "ml.g4dn.xlarge"
 
 
 def test_gpu_async_defaults_to_one_instance():
