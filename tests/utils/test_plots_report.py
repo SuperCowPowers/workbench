@@ -90,3 +90,16 @@ def test_a_table_that_fits_is_left_as_written():
     assert not any(text.endswith("...") for text in texts)
     assert {text.get_fontsize() for text in fig.texts if text.get_text() in ("missing", "dose", "3")} == {8.8}
     plt.close(fig)
+
+
+def test_a_table_is_still_fitted_when_its_widest_column_cannot_be_trimmed():
+    """A short wide id cannot be cut, so the long text beside it gives up the room instead"""
+    headers = ["id", "note", "more", "value"]
+    row = ["WWWWWWWW", "i" * 160, "l" * 160, "12.5"]
+    fig = report.new_page()
+    report.table(fig, 0.8, headers, [row, row])
+    texts = [text.get_text() for text in fig.texts]
+
+    assert "WWWWWWWW" in texts and any(text.startswith("iii") and text.endswith("...") for text in texts)
+    assert max(right_edges(fig)) <= report.R + 0.002
+    plt.close(fig)

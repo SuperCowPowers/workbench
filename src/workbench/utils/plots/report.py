@@ -322,18 +322,21 @@ def table(
         size = max(MIN_TABLE_SIZE, size - 0.3)
         nat = [natural(k) for k in range(ncol)]
 
-    # Still too wide: trim the widest text of the widest column, a few characters at a time
+    # Still too wide: trim the widest text of the widest column that can spare it, a few characters at a time
     for _ in range(TRIM_STEPS):
         if sum(nat) <= avail:
             break
-        k = max(range(ncol), key=nat.__getitem__)
-        widths = [text_width(headers[k].upper(), 7.1, HEADING_FONT)] + [
-            text_width(r[k], size, HEADING_FONT) for r in body
-        ]
-        widest = max(range(len(widths)), key=widths.__getitem__)
-        text = headers[k] if widest == 0 else body[widest - 1][k]
-        if len(text) <= MIN_CELL_CHARS:
-            break
+        # A column is as wide as its widest text, so trimming only helps where that text can be cut
+        for k in sorted(range(ncol), key=nat.__getitem__, reverse=True):
+            widths = [text_width(headers[k].upper(), 7.1, HEADING_FONT)] + [
+                text_width(r[k], size, HEADING_FONT) for r in body
+            ]
+            widest = max(range(len(widths)), key=widths.__getitem__)
+            text = headers[k] if widest == 0 else body[widest - 1][k]
+            if len(text) > MIN_CELL_CHARS:
+                break
+        else:
+            break  # nothing left to trim
         trimmed = text.removesuffix("...")[:-3].rstrip() + "..."
         if widest == 0:
             headers[k] = trimmed

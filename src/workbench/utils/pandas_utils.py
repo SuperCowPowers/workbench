@@ -180,6 +180,23 @@ def _values_agree(a: pd.Series, b: pd.Series, rtol: float, atol: float) -> np.nd
     return ((a == b).fillna(False).astype(bool) | (a.isna() & b.isna())).to_numpy()
 
 
+def _rows_pair_up(left: pd.DataFrame, right: pd.DataFrame, values: List[str], rtol: float, atol: float) -> bool:
+    """Whether two groups of rows can be paired one to one with every pair agreeing on every value."""
+    from scipy.optimize import linear_sum_assignment
+
+    n = len(left)
+    if n != len(right) or n > MAX_MATCH_ROWS:
+        return False
+    agree = np.ones(n * n, dtype=bool)
+    for value in values:  # every left row against every right row
+        a = left[value].iloc[np.repeat(np.arange(n), n)].reset_index(drop=True)
+        b = right[value].iloc[np.tile(np.arange(n), n)].reset_index(drop=True)
+        agree &= _values_agree(a, b, rtol, atol)
+    agree = agree.reshape(n, n)
+    rows, columns = linear_sum_assignment(~agree)
+    return bool(agree[rows, columns].all())
+
+
 def _sortable(values: pd.Series) -> pd.Series:
     """A column as given when it is numeric, as text otherwise, so mixed values still sort."""
     numeric = pd.api.types.is_numeric_dtype(values) and not pd.api.types.is_bool_dtype(values)
@@ -299,7 +316,17 @@ def compare_keyed(
         same = by_rank["_left"].notna().to_numpy() & by_rank["_right"].notna().to_numpy()
         for value in values:
             same &= _values_agree(by_rank[f"{value}_left"], by_rank[f"{value}_right"], rtol, atol)
-        unmet = [by_rank.loc[~same, on]]
+        failed = by_rank.loc[~same, on].drop_duplicates()
+        if (rtol or atol) and len(failed):
+            # Within a tolerance, value order need not line matching rows up, so a key that
+            # failed by rank gets a proper one-to-one matching of its rows
+            failed = failed.assign(_key=np.arange(len(failed)))
+            sides = [dict(iter(rows.merge(failed, on=on).groupby("_key"))) for rows in (left_rep, right_rep)]
+            matched = [
+                k for k in sides[0] if k in sides[1] and _rows_pair_up(sides[0][k], sides[1][k], values, rtol, atol)
+            ]
+            failed = failed[~failed["_key"].isin(matched)]
+        unmet = [failed[on]]
     else:
         # Whether a row's values are on the other side depends only on the distinct values, so
         # those are what get joined. A key with too many of them to join is left as differing.
@@ -808,6 +835,9 @@ MOSTLY_NUMERIC_FRACTION = 0.5
 # compare_keyed: the most distinct-value pairs joined under one repeated key, and the most of a
 # repeated key's values written out as text
 MAX_SET_PAIRS, MAX_VALUES_AS_TEXT = 250_000, 20
+
+# compare_keyed: the most rows under one repeated key that are matched one to one within a tolerance
+MAX_MATCH_ROWS = 400
 
 # A positive column skewed beyond this is treated as log-distributed when looking for outliers
 LOG_FENCE_SKEW = 2.0

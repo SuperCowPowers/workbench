@@ -375,9 +375,12 @@ def comparison(
         return f"{label} {report.footnote(fig, notes[suffix])}" if suffix in notes else label
 
     # How the rows were compared, stated so a reader knows what "agree" means here
-    tolerance = [f"within {result.rtol:.3g} of the {right} value" if result.rtol else ""]
-    tolerance += [f"within {result.atol:g}" if result.atol else ""]
-    tolerance = " or ".join(t for t in tolerance if t) or "exactly"
+    if result.rtol and result.atol:  # the two allowances add
+        tolerance = f"within {result.atol:g} plus {result.rtol:.3g} of the {right} value"
+    elif result.rtol:
+        tolerance = f"within {result.rtol:.3g} of the {right} value"
+    else:
+        tolerance = f"within {result.atol:g}" if result.atol else "exactly"
     method = [["matched on", ", ".join(on)]]
     method += [["compared", f"{', '.join(values)}; numbers agree {tolerance}"]] if values else []
     method += [[f"limited to {col}", ", ".join(str(v) for v in held)] for col, held in result.scope.items()]

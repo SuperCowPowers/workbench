@@ -492,5 +492,84 @@ def test_a_page_can_footnote_a_note_no_section_declared(tmp_path):
     assert "[1]  Read from the 2024 archive only." in text[0] and "[1]  Read from the 2024 archive only." in text[1]
 
 
+def body_text_floor(report: Report) -> float:
+    """The lowest text on any page that is not the footer or a footnote, in figure units."""
+
+    class Lowest:
+        y = 1.0
+
+        def savefig(self, fig, **_):
+            body = [text.get_position()[1] for text in fig.texts if text.get_fontsize() not in (7.6, 7.8)]
+            self.y = min([self.y] + body)
+
+    lowest = Lowest()
+    report.build(lowest)
+    return lowest.y
+
+
+def test_a_long_list_of_filters_pushes_cards_onto_the_next_summary_page(tmp_path):
+    def page(report):
+        return report.new_page("Method")[0]
+
+    report = Report("Many filters", filters=[f"Filter number {n}" for n in range(20)])
+    for n in range(3):
+        report.add(Section(pages=[page], summary=Summary(f"Step {n}", f"Finding number {n}.")))
+
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "Filter number 19" in text[0] and "Finding number 2." not in text[0] and "Finding number 2." in text[1]
+    assert body_text_floor(report) > 0.06
+
+
+def test_more_filters_than_a_page_holds_continue_on_the_next(tmp_path):
+    report = Report("Too many", summary="A lot is left out.", filters=[f"Filter number {n}" for n in range(80)])
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "Filter number 0" in text[0] and "Filter number 79" in text[1] and "COVERS, CONTINUED" in text[1]
+    assert body_text_floor(report) > 0.06
+
+
+def test_footnotes_never_take_more_than_their_reserved_lines():
+    long_note = "A caveat that goes on at length about exactly why this number is not what it seems. " * 12
+    other = "A second caveat, also long. " * 20
+    left = predictions(20)
+    right = left.copy()
+    right.loc[right.index[:2], "cmax"] *= 2
+    result = compare_keyed(pd.concat([left, left.iloc[:1].assign(cmax=-1.0)]), right, on="id")
+    section = sections.comparison(result, notes={"mismatched": long_note, "repeated_differ": other})
+    report = Report("Long notes").add(section)
+
+    class Footnotes:
+        most, text = 0, ""
+
+        def savefig(self, fig, **_):
+            notes = [text for text in fig.texts if text.get_fontsize() == 7.8]
+            self.most = max(self.most, len(notes))
+            self.text += " ".join(text.get_text() for text in notes)
+
+    footnotes = Footnotes()
+    report.build(footnotes)
+    assert 0 < footnotes.most <= 3
+    assert "(in full on page 1)" in footnotes.text
+    assert long_note.strip() in " ".join(page_text(report)[0].replace(" | ", " ").split())  # the summary has it whole
+
+
+def test_a_note_added_by_a_page_is_on_the_summary_the_first_time_it_is_built():
+    def page(report):
+        fig, y = report.new_page("Method")
+        report.footnote(fig, "Read from the 2024 archive only.")
+        return fig
+
+    first_build = page_text(Report("Own note", summary="One page.").add(page))
+    assert "[1]  Read from the 2024 archive only." in first_build[0]
+
+
+def test_the_method_table_states_summed_tolerances():
+    left = predictions(10)
+    result = compare_keyed(left, left, on="id", values=["cmax"], rtol=0.02, atol=1)
+    text = page_text(Report("Method").add(sections.comparison(result, "old", "new")))[1]
+    assert "numbers agree within 1 plus 0.02 of the new value" in text
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

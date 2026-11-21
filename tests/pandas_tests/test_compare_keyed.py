@@ -237,5 +237,17 @@ def test_repeated_keys_of_any_key_type(kind):
     ]
 
 
+def test_exact_repeats_within_a_tolerance_are_matched_one_to_one():
+    """Value order does not line the rows up here, but each left row has its own right row within 2%"""
+    left = pd.DataFrame({"id": ["a", "a"], "x": [1.0, 1.01], "y": [100, 200]})
+    right = pd.DataFrame({"id": ["a", "a"], "x": [1.01, 1.0], "y": [100, 200]})
+    assert compare_keyed(left, right, on="id", rtol=0.02).repeated["values_match"].tolist() == [True]
+
+    # Two left rows cannot both claim the one right row that suits them
+    left = pd.DataFrame({"id": ["a"] * 3, "x": [1.0, 1.0, 2.0]})
+    right = pd.DataFrame({"id": ["a"] * 3, "x": [1.0, 2.0, 2.0]})
+    assert compare_keyed(left, right, on="id", rtol=0.02).repeated["values_match"].tolist() == [False]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

@@ -14,12 +14,14 @@ from workbench.utils.plots import report as pages
 
 log = logging.getLogger("workbench")
 
-# Summary page layout: cards per page, and the height of one in figure units
-CARDS_PER_PAGE, CARD_HEIGHT = 4, 0.185
+# Summary page layout, in figure units: the height of a card, the lowest the page body may reach,
+# the pitch of a filter or note line, and the characters on one
+CARD_HEIGHT, SUMMARY_BOTTOM, SUMMARY_LEAD, SUMMARY_WIDTH = 0.185, 0.07, 0.0155, 112
 
 # Footnotes: the baseline of the lowest line, the pitch between lines, and characters per line.
-# A page body stops at sections.BOTTOM, which leaves room for three lines.
-FOOTNOTE_BASE, FOOTNOTE_LEAD, FOOTNOTE_WIDTH = 0.047, 0.0125, 128
+# A page body stops at sections.BOTTOM, which leaves room for FOOTNOTE_LINES lines.
+FOOTNOTE_BASE, FOOTNOTE_LEAD, FOOTNOTE_WIDTH, FOOTNOTE_LINES = 0.047, 0.0125, 128, 3
+IN_FULL = " (in full on page 1)"
 
 
 def _thumbnail(ax) -> None:
@@ -205,10 +207,23 @@ class Report:
         return self.mark(note)
 
     def _draw_footnotes(self, fig: plt.Figure) -> None:
-        """The notes a page refers to, stacked up from just above the footer in note order."""
-        lines = []
-        for note in sorted(self._footnotes.pop(id(fig), []), key=self.notes.index):
-            lines += textwrap.wrap(f"{self.mark(note)}  {note}", FOOTNOTE_WIDTH)
+        """The notes a page refers to, stacked up from just above the footer in note order.
+
+        A page body leaves room for FOOTNOTE_LINES lines. Notes that need more are cut to a
+        line each, and past that to one line naming them; the summary page has each in full.
+        """
+        notes = sorted(self._footnotes.pop(id(fig), []), key=self.notes.index)
+        lines = [line for note in notes for line in textwrap.wrap(f"{self.mark(note)}  {note}", FOOTNOTE_WIDTH)]
+        if (
+            len(lines) > FOOTNOTE_LINES
+        ):  # more than the page keeps room for: point to the summary, where each is in full
+            room = FOOTNOTE_WIDTH - len(IN_FULL)
+            lines = [
+                textwrap.shorten(f"{self.mark(note)}  {note}", room, placeholder="...") + IN_FULL for note in notes
+            ]
+        if len(lines) > FOOTNOTE_LINES:
+            marks = ", ".join(self.mark(note) for note in notes)
+            lines = [f"Notes {marks} apply here, each in full on page 1."]
         for row, line in enumerate(reversed(lines)):
             fig.text(pages.L, FOOTNOTE_BASE + row * FOOTNOTE_LEAD, line, fontsize=7.8, color=pages.BODY)
 
@@ -221,20 +236,13 @@ class Report:
         if not self.summary and not self._cards:
             raise ValueError("A report needs a summary: pass summary= or add a section that has one")
         published = {name: df for name, df in self.frames.items() if self._published and not df.empty}
-        # The filters take a card's room on the first summary page
-        on_first = CARDS_PER_PAGE - bool(self.filters) - bool(self.notes)
-        starts = [0] + list(range(on_first, len(self._cards), CARDS_PER_PAGE))
-        stops = starts[1:] + [len(self._cards)]
-        summary_pages = [
-            lambda _report, first=first, stop=stop: self._summary_page(first, stop)
-            for first, stop in zip(starts, stops)
-        ]
-        every_page = summary_pages + self._pages + ([self._data_page] if published else [])
-        number = 0
-        for page in every_page:
-            drawn = page(self)
-            for fig in drawn if isinstance(drawn, list) else [drawn]:
-                number += 1
+        # The summary is drawn last, once every page has named its notes, and saved first
+        with plt.rc_context({"figure.max_open_warning": 0}):
+            body = []
+            for page in self._pages + ([self._data_page] if published else []):
+                drawn = page(self)
+                body += drawn if isinstance(drawn, list) else [drawn]
+            for number, fig in enumerate(self._summary_pages() + body, start=1):
                 self._draw_footnotes(fig)
                 pages.footer(fig, self.title, number)
                 pages.fit_axes(fig)
@@ -279,20 +287,42 @@ class Report:
             elif store.check(f"/{name}"):
                 store.delete(f"/{name}")
 
-    def _summary_page(self, first: int, stop: int) -> plt.Figure:
-        """A summary page: the author's sentence, the filters and notes, then the cards `first` to `stop`."""
-        fig, y = self.new_page("Summary" if first == 0 else "Summary, continued", self.summary if first == 0 else None)
-        if first == 0 and self.filters:
-            y = pages.sec(fig, y, "What this report covers", pages.MUTED)
-            y = pages.para(fig, y, "\n".join(f"-  {line}" for line in self.filters), size=9.2, gap=0.0)
+    def _summary_pages(self) -> List[plt.Figure]:
+        """The summary: the author's sentence, the filters, the notes, then a card per section.
+
+        Laid out from the top down by what is actually there, onto as many pages as it takes.
+        """
+        fig, y = self.new_page("Summary", self.summary)
+        figs = [fig]
+
+        def turn() -> None:
+            nonlocal fig, y
+            fig, y = self.new_page("Summary, continued")
+            figs.append(fig)
+
+        def block(label: str, entries: List[str]) -> None:
+            nonlocal y
+            lines = [wrapped for entry in entries for wrapped in textwrap.wrap(entry, SUMMARY_WIDTH) or [""]]
+            start = 0
+            while start < len(lines):
+                room = int((y - SUMMARY_BOTTOM - 0.03) // SUMMARY_LEAD)
+                if room < min(3, len(lines) - start):
+                    turn()
+                    continue
+                y = pages.sec(fig, y, label if start == 0 else f"{label}, continued", pages.MUTED)
+                text = "\n".join(lines[start : start + room])
+                y = pages.para(fig, y, text, size=9.2, width=SUMMARY_WIDTH, lead=SUMMARY_LEAD, gap=0.0)
+                start += room
             pages.rule(fig, y - 0.004, c=pages.HAIRLINE)
             y -= 0.028
-        if first == 0 and self.notes:
-            y = pages.sec(fig, y, "Notes", pages.MUTED)
-            y = pages.para(fig, y, "\n".join(f"{self.mark(note)}  {note}" for note in self.notes), size=9.2, gap=0.0)
-            pages.rule(fig, y - 0.004, c=pages.HAIRLINE)
-            y -= 0.028
-        for card in self._cards[first:stop]:
+
+        if self.filters:
+            block("What this report covers", [f"-  {line}" for line in self.filters])
+        if self.notes:
+            block("Notes", [f"{self.mark(note)}  {note}" for note in self.notes])
+        for card in self._cards:
+            if y - CARD_HEIGHT < SUMMARY_BOTTOM:
+                turn()
             top = y
             y = pages.sec(fig, y, card.label, pages.MUTED)
             y = pages.para(fig, y, card.headline, size=11.5, width=56, color=pages.INK, lead=0.019)
@@ -305,7 +335,7 @@ class Report:
             y = top - CARD_HEIGHT
             pages.rule(fig, y + 0.012, c=pages.HAIRLINE)
             y -= 0.012
-        return fig
+        return figs
 
     def _data_page(self, _report: "Report") -> plt.Figure:
         """The closing page: every published frame, its size, and where to get it."""
