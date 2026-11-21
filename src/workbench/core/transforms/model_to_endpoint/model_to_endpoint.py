@@ -82,13 +82,16 @@ ASYNC_DEFAULT_INSTANCE = "ml.c7i.xlarge"
 # L4, A10G and L40S GPUs: Ampere or later, for bf16 and cuEquivariance. Three GPU generations
 # across five pools (the API max), cheapest first, so the priciest is reached only once every
 # other pool is out. Every pool is a GPU, so a regional shortage is waited out (see
-# GPU_PROVISION_TIMEOUT_SECONDS) and raises EndpointCapacityError if it does not clear. SageMaker
+# CAPACITY_ATTEMPTS) and raises EndpointCapacityError if it does not clear. SageMaker
 # takes the highest-priority pool that has capacity, so a pool the model runs 50x slower on would
 # be taken rather than waited out: CPU serving is an explicit instance= deploy, at ~30 s/molecule
 # against ~0.6 on a GPU. Endpoint-usage quota is 8 per type, against the 1 an endpoint asks for.
 GPU_INSTANCE_POOLS = ["ml.g6.xlarge", "ml.g5.xlarge", "ml.g6.2xlarge", "ml.g5.2xlarge", "ml.g6e.xlarge"]
 # How long SageMaker waits for capacity once every pool is out (valid: 300-3600)
 GPU_PROVISION_TIMEOUT_SECONDS = 3600
+# Endpoint creations tried on a capacity failure. Each GPU pool attempt waits up to
+# GPU_PROVISION_TIMEOUT_SECONDS, so three span about three hours of a regional shortage.
+CAPACITY_ATTEMPTS = 3
 # An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
 # the caller asks for more
 GPU_ASYNC_MAX_INSTANCES = 1
@@ -264,7 +267,7 @@ class ModelToEndpoint(Transform):
         EndpointCore.managed_delete(self.output_name)
 
         # Deploy the model
-        self._deploy_model(workbench_model, **kwargs)
+        self._deploy_with_capacity_retries(workbench_model, **kwargs)
 
         # Add this endpoint to the set of registered endpoints for the model
         workbench_model.register_endpoint(self.output_name)
@@ -273,6 +276,24 @@ class ModelToEndpoint(Transform):
         time.sleep(5)  # We wait for AWS Lag
         end = EndpointCore(self.output_name)
         self.log.important(f"Endpoint {end.name} is ready for use on {end.instance_type}")
+
+    def _deploy_with_capacity_retries(self, workbench_model: ModelCore, **kwargs):
+        """Deploy, creating the endpoint again after a capacity failure (which leaves none behind).
+
+        Args:
+            workbench_model(ModelCore): The model to deploy
+            **kwargs: Passed through to _deploy_model
+
+        Raises:
+            EndpointCapacityError: If the last of CAPACITY_ATTEMPTS still finds no capacity
+        """
+        for attempt in range(1, CAPACITY_ATTEMPTS + 1):
+            try:
+                return self._deploy_model(workbench_model, **kwargs)
+            except EndpointCapacityError:
+                if attempt == CAPACITY_ATTEMPTS:
+                    raise
+                self.log.warning(f"No capacity for {self.output_name} ({attempt}/{CAPACITY_ATTEMPTS}), retrying...")
 
     def _check_serverless_framework(self, workbench_model: ModelCore):
         """Raise when a model's framework can't serve from a serverless endpoint.

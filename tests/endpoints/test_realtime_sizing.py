@@ -1,11 +1,14 @@
 """Tests for sizing an endpoint from a model's measured serving memory"""
 
+import logging
 from types import SimpleNamespace
 
 import pytest
 
 from workbench.api import ModelFramework
+from workbench.core.artifacts.endpoint_core import EndpointCapacityError
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import (
+    CAPACITY_ATTEMPTS,
     GPU_ASYNC_MAX_INSTANCES,
     GPU_INSTANCE_POOLS,
     SERVERLESS_MODEL_MEMORY_LIMIT_GB,
@@ -113,3 +116,28 @@ def test_cpu_async_keeps_its_default():
     transform = _transform(async_endpoint=True, max_instances=8, max_instances_given=False)
     ModelToEndpoint._apply_gpu_defaults(transform, SimpleNamespace(model_framework=ModelFramework.CHEMPROP))
     assert transform.max_instances == 8
+
+
+def _deployer(failures: int) -> SimpleNamespace:
+    """A transform whose deploy finds no capacity for the first `failures` attempts."""
+    calls = []
+
+    def deploy(model, **kwargs):
+        calls.append(model)
+        if len(calls) <= failures:
+            raise EndpointCapacityError("no capacity")
+
+    return SimpleNamespace(_deploy_model=deploy, output_name="test-endpoint", log=logging.getLogger(), calls=calls)
+
+
+def test_capacity_failure_is_retried_until_it_deploys():
+    transform = _deployer(failures=CAPACITY_ATTEMPTS - 1)
+    ModelToEndpoint._deploy_with_capacity_retries(transform, "model")
+    assert len(transform.calls) == CAPACITY_ATTEMPTS
+
+
+def test_capacity_failure_raises_after_the_last_attempt():
+    transform = _deployer(failures=CAPACITY_ATTEMPTS)
+    with pytest.raises(EndpointCapacityError):
+        ModelToEndpoint._deploy_with_capacity_retries(transform, "model")
+    assert len(transform.calls) == CAPACITY_ATTEMPTS
