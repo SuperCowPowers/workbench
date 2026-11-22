@@ -106,12 +106,13 @@ Other flavors:
 ```python
 end.full_inference()                      # everything in the model's training view
 end.ts_inference(date_column, after_date) # temporal holdout (rows after a date)
-end.fast_inference(eval_df, threads=4)    # no checks, no capture -- just speed
+end.fast_inference(eval_df)               # no checks, no capture -- just speed
 ```
 
 `fast_inference()` skips sanity checks and error handling. Use it for bulk
 scoring where you already trust the input; never for a first run against new
-data.
+data. Rows per invocation and invocations at once both come from how the
+endpoint was deployed (`end.inference_batch_size()`, `end.inference_concurrency()`).
 
 ## Inspecting
 

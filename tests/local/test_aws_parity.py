@@ -58,7 +58,6 @@ DECLARED = {
 # Keyed by (method, parameter) so a whole method is never waved through.
 ALLOWED_EXTRA_AWS_PARAMS = {
     ("to_features", "auto_one_hot"),
-    ("inference", "threads"),
     ("inference", "drop_error_rows"),
     ("pull_dataframe", "include_aws_columns"),
     # Local files are not encrypted, so there is nothing to decrypt on the way out

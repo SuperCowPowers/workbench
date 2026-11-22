@@ -31,7 +31,6 @@ from workbench.endpoints.async_inference import async_inference
 from workbench.utils.async_endpoint_utils import (
     EndpointWarmingError,
     _async_children,
-    async_max_in_flight,
     build_meta_instances_str_fn,
     build_meta_progress_str_fn,
     purge_async_queue,
@@ -90,8 +89,8 @@ class AsyncEndpointCore(EndpointCore):
     # -----------------------------------------------------------------
     # Override: fast_inference  (called for "floating" endpoints with no model)
     # -----------------------------------------------------------------
-    def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
-        """Async version of fast_inference — ignores threads, uses S3 polling."""
+    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+        """Async version of fast_inference, which uses S3 polling."""
         if eval_df.empty:
             return pd.DataFrame(columns=eval_df.columns)
 
@@ -295,7 +294,7 @@ class AsyncEndpointCore(EndpointCore):
             eval_df=eval_df,
             sm_session=self.boto3_session,
             batch_size=self.inference_batch_size(),
-            max_in_flight=async_max_in_flight(meta),
+            max_in_flight=self.inference_concurrency(),
             s3_bucket=self.workbench_bucket,
             s3_input_prefix=f"endpoints/{self.name}/async-input",
             instances_str_fn=build_meta_instances_str_fn(meta),

@@ -8,6 +8,7 @@ Prediction averages over each molecule's conformers in target units.
 
 import json
 import os
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 
@@ -21,6 +22,12 @@ from safetensors.torch import save_file
 from torch import nn
 
 PREDICT_BATCH_SIZE = 64
+
+# One forward at a time: the inference server runs each invocation on its own thread, and the
+# encoder keeps a batch's edge rotations on the model during a forward (so3_rotation.set_wigner).
+# Overlapping forwards read each other's: a shape error when the batches differ in size, wrong
+# predictions with no error when they match.
+_FORWARD_LOCK = threading.Lock()
 
 
 # -----------------------------------------------------------------------------
@@ -130,7 +137,8 @@ class FoldModel:
         for start in range(0, len(pairs), PREDICT_BATCH_SIZE):
             chunk = pairs[start : start + PREDICT_BATCH_SIZE]
             batch = move_batch(collator([sample(conf, extra=extra, i=i) for i, conf in chunk]), device)
-            preds[start : start + len(chunk)] = self.model(batch).float().cpu().numpy()
+            with _FORWARD_LOCK:
+                preds[start : start + len(chunk)] = self.model(batch).float().cpu().numpy()
         mol = np.array([i for i, _ in pairs])
         native = preds * self.target_std + self.target_mean
         return np.bincount(mol, weights=native, minlength=len(conformers)) / np.bincount(mol, minlength=len(conformers))

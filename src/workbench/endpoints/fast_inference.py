@@ -48,9 +48,51 @@ def get_or_create_sm_client():
 # Rows per invocation for a sync endpoint that did not choose its own at deploy
 SYNC_BATCH_SIZE = 100
 
+# Invocations outstanding at once on a sync endpoint that did not stamp its own at deploy
+SYNC_CONCURRENCY = 4
+
+
+def runtime_client(sm_session=None):
+    """A SageMaker Runtime client whose read timeout outlasts the server's invocation limit.
+
+    Args:
+        sm_session: A boto3 Session (or legacy SageMaker Session with .boto_session). If None, a cached client is used.
+
+    Returns:
+        A boto3 sagemaker-runtime client
+    """
+    if sm_session is None:
+        return get_or_create_sm_client()
+    boto_session = getattr(sm_session, "boto_session", sm_session)
+    return boto_session.client("sagemaker-runtime", config=_SM_CLIENT_CONFIG)
+
+
+def invoke_csv(sm_runtime, endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+    """One invocation: the DataFrame goes out as CSV and the response CSV comes back as a DataFrame.
+
+    Args:
+        sm_runtime: A sagemaker-runtime client (see :func:`runtime_client`)
+        endpoint_name (str): The name of the Endpoint
+        df (pd.DataFrame): The rows for this invocation
+
+    Returns:
+        pd.DataFrame: The endpoint's response
+    """
+    response = sm_runtime.invoke_endpoint(
+        EndpointName=endpoint_name,
+        Body=df.to_csv(index=False),
+        ContentType="text/csv",
+        Accept="text/csv",
+    )
+    return pd.read_csv(StringIO(response["Body"].read().decode("utf-8")))
+
 
 def fast_inference(
-    endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, threads: int = 4, batch_size: int = SYNC_BATCH_SIZE
+    endpoint_name: str,
+    eval_df: pd.DataFrame,
+    sm_session=None,
+    threads: int = SYNC_CONCURRENCY,
+    batch_size: int = SYNC_BATCH_SIZE,
 ) -> pd.DataFrame:
     """Run inference on the Endpoint using the provided DataFrame
 
@@ -58,37 +100,19 @@ def fast_inference(
         endpoint_name (str): The name of the Endpoint
         eval_df (pd.DataFrame): The DataFrame to run predictions on
         sm_session: A boto3 Session (or legacy SageMaker Session with .boto_session). If None, a cached client is used.
-        threads (int): The number of threads to use (default: 4)
+        threads (int): Invocations outstanding at once (default: SYNC_CONCURRENCY)
         batch_size (int): Rows per invocation (default: SYNC_BATCH_SIZE)
 
     Returns:
         pd.DataFrame: The DataFrame with predictions
     """
-    # Build the sagemaker-runtime client
-    if sm_session is not None:
-        # Support both plain boto3.Session and legacy SageMaker Session objects
-        boto_session = getattr(sm_session, "boto_session", sm_session)
-        sm_runtime = boto_session.client("sagemaker-runtime", config=_SM_CLIENT_CONFIG)
-    else:
-        sm_runtime = get_or_create_sm_client()
-
+    sm_runtime = runtime_client(sm_session)
     total_rows = len(eval_df)
 
     def process_chunk(chunk_df: pd.DataFrame, start_index: int) -> pd.DataFrame:
         log.info(f"Processing {start_index}:{min(start_index + batch_size, total_rows)} out of {total_rows} rows...")
-        csv_buffer = StringIO()
-        chunk_df.to_csv(csv_buffer, index=False)
         try:
-            response = sm_runtime.invoke_endpoint(
-                EndpointName=endpoint_name,
-                Body=csv_buffer.getvalue(),
-                ContentType="text/csv",
-                Accept="text/csv",
-            )
-            # Read the response body and parse as CSV into a DataFrame
-            response_body = response["Body"].read().decode("utf-8")
-            # Handle 'charset' in content type (e.g. 'text/csv; charset=utf-8')
-            return pd.read_csv(StringIO(response_body))
+            return invoke_csv(sm_runtime, endpoint_name, chunk_df)
         except Exception as e:
             # Propagate rather than drop the chunk: a missing chunk silently loses
             # rows, and the original message is what lets a caller tell a cold-start

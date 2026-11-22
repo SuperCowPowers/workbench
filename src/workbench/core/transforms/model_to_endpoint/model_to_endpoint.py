@@ -52,7 +52,7 @@ from workbench.utils.endpoint_autoscaling import (  # noqa: E402
     register_autoscaling,
 )
 from workbench.utils.async_endpoint_utils import ASYNC_BATCH_SIZE, TASKS_PER_VCPU, instance_vcpus  # noqa: E402
-from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE  # noqa: E402
+from workbench.endpoints.fast_inference import SYNC_BATCH_SIZE, SYNC_CONCURRENCY  # noqa: E402
 from workbench.utils.monitor_utils import (  # noqa: E402
     CAPTURE_CSV_CONTENT_TYPES,
     CAPTURE_JSON_CONTENT_TYPES,
@@ -98,9 +98,15 @@ CAPACITY_ATTEMPTS = 3
 # An async GPU endpoint serves one invocation at a time, so it stays on one instance unless
 # the caller asks for more
 GPU_ASYNC_MAX_INSTANCES = 1
-# Rows per invocation on the GPU pools: each invocation costs about 0.6 s beyond its rows, 2% of a
-# row's cost at this size, and one runs about 30 s
+# Rows per async invocation on the GPU pools: each invocation costs about 0.6 s beyond its rows,
+# 2% of a row's cost at this size, and one runs about 30 s
 GPU_BATCH_SIZE = 64
+# Rows per real-time invocation on the GPU pools, which has 60 s to answer. A molecule takes
+# 0.8-1.4 s on an L4 (ml.g6.xlarge), slowest on the first call after startup.
+GPU_REALTIME_BATCH_SIZE = 16
+# Invocations at once on a real-time GPU endpoint: forwards share one GPU, so a second
+# invocation only waits on the first while its own 60 s runs down
+GPU_REALTIME_CONCURRENCY = 1
 # SageMaker host image for GPU endpoints: NVIDIA driver 580 / CUDA 13.0, matching the GPU
 # inference image. The unpinned default host image varies by instance family.
 GPU_INFERENCE_AMI = "al2023-ami-sagemaker-inference-gpu-4-1"
@@ -123,10 +129,25 @@ def default_batch_size(instance_type: Union[str, None], instance_pools: Union[li
         int: Rows per invocation
     """
     if instance_pools:
-        return GPU_BATCH_SIZE
+        return GPU_BATCH_SIZE if async_endpoint else GPU_REALTIME_BATCH_SIZE
     if not async_endpoint:
         return SYNC_BATCH_SIZE
     return instance_vcpus(instance_type) * TASKS_PER_VCPU or ASYNC_BATCH_SIZE
+
+
+def default_concurrency(instance_pools: Union[list, None]) -> int:
+    """Invocations a client keeps outstanding at once on a real-time endpoint.
+
+    Async and serverless endpoints carry theirs in their own deploy settings
+    (max_instances and async_max_concurrent, and max_concurrency).
+
+    Args:
+        instance_pools (list): The GPU instance pools, if the endpoint serves from them
+
+    Returns:
+        int: Invocations at once
+    """
+    return GPU_REALTIME_CONCURRENCY if instance_pools else SYNC_CONCURRENCY
 
 
 def realtime_instance(memory_gb: Union[float, None], async_endpoint: bool = False) -> str:
@@ -252,6 +273,7 @@ class ModelToEndpoint(Transform):
         self.scale_in_idle_minutes = scale_in_idle_minutes
         self.async_max_concurrent = async_max_concurrent
         self.inference_batch_size = inference_batch_size
+        self.inference_concurrency = None
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -417,6 +439,12 @@ class ModelToEndpoint(Transform):
         if self.inference_batch_size is None:
             self.inference_batch_size = default_batch_size(instance_type, instance_pools, self.async_endpoint)
         self.log.important(f"Endpoint: Inference Batch Size={self.inference_batch_size}")
+
+        # A real-time endpoint stamps how many invocations it takes at once
+        self.inference_concurrency = None
+        if not self.serverless and not self.async_endpoint:
+            self.inference_concurrency = default_concurrency(instance_pools)
+            self.log.important(f"Endpoint: Inference Concurrency={self.inference_concurrency}")
 
         # Configure data capture if requested (and not serverless)
         data_capture_config = None
@@ -636,6 +664,7 @@ class ModelToEndpoint(Transform):
                 "async_max_concurrent": self.async_max_concurrent if self.async_endpoint else None,
                 "serverless": self.serverless,
                 "inference_batch_size": self.inference_batch_size,
+                "inference_concurrency": self.inference_concurrency,
             }.items()
             if v is not None
         }

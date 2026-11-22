@@ -372,7 +372,7 @@ wheels = [
 
 [[package]]
 name = "atom-jepa"
-version = "0.3.0"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ase" },
@@ -383,9 +383,9 @@ dependencies = [
     { name = "torch" },
     { name = "torch-geometric" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/b5/1e32f68faa02dd75b5afa1b8407b4f34c21fc314699fe9cb17ca2fd69225/atom_jepa-0.3.0.tar.gz", hash = "sha256:6804b1ab74b0e6a2053165619c6c4f8280fec5648cdda6441be1b2d8cb5c9a7a", size = 70010, upload-time = "2026-10-05T16:32:43.019Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/be/7a/e37658da2d924a76b7988f88b22d956b67cec9eb30f4dbcb2bdad4eedb50/atom_jepa-0.4.0.tar.gz", hash = "sha256:46fdc7045b895a3804f21aadcd731565d3c6a702ae7cc69002aadcc53d84e74c", size = 74962, upload-time = "2026-11-04T08:16:16.909Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/74/1dacfafdf39701989cfc47389f35b1566fe0b060b8b91b34a0257f773248/atom_jepa-0.3.0-py3-none-any.whl", hash = "sha256:b68786d539e6efe1b4ea09fc37b762e4b59fa031f453f3ba4714c9d63e3b9f4a", size = 78047, upload-time = "2026-10-05T16:32:41.592Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/c7/ce4f6171a944d077ec485634b012010e06758be780ae717300be24af3885/atom_jepa-0.4.0-py3-none-any.whl", hash = "sha256:6f56bc3a5de06baac150930bec36456cdd605b5709e9f72567e97c1cdcd7c3ab", size = 82646, upload-time = "2026-11-04T08:16:15.564Z" },
 ]
 
 [[package]]

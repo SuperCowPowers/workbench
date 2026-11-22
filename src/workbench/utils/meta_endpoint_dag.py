@@ -54,6 +54,7 @@ before any inference round-trips.
 from __future__ import annotations
 
 import json
+import math
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, Union
 
@@ -62,6 +63,9 @@ import pandas as pd
 from workbench.utils.aggregation_nodes import DAG_ROW_ID, AggregationNode
 
 EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
+
+# Most rows a sync MetaEndpoint takes per invocation
+SYNC_META_BATCH_SIZE = 500
 
 
 def select_target_columns(columns: List[str], targets: List[str], context: str) -> List[str]:
@@ -113,8 +117,7 @@ class MetaEndpointDAG:
         self._primary: Dict[str, str] = {}  # node_name → panel name for the endpoint's primary head
         self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_child_metadata()
         self._endpoint_batch_sizes: Dict[str, int] = {}  # populated by populate_child_metadata()
-        self._endpoint_max_in_flight: Dict[str, int] = {}  # populated by populate_child_metadata()
-        self._endpoint_max_concurrency: Dict[str, int] = {}  # populated by populate_child_metadata()
+        self._endpoint_concurrency: Dict[str, int] = {}  # populated by populate_child_metadata()
         self._aggregations: Dict[str, AggregationNode] = {}
         self._edges: List[tuple[str, str]] = []  # (from_node, to_node)
         self._input_nodes: List[str] = []
@@ -258,14 +261,9 @@ class MetaEndpointDAG:
         return self._endpoint_batch_sizes
 
     @property
-    def endpoint_max_in_flight(self) -> Dict[str, int]:
-        """Mapping of async endpoint_name → max in-flight invocations (populated by :meth:`populate_child_metadata`)."""
-        return self._endpoint_max_in_flight
-
-    @property
-    def endpoint_max_concurrency(self) -> Dict[str, int]:
-        """Mapping of endpoint_name → serverless MaxConcurrency (populated by :meth:`populate_child_metadata`)."""
-        return self._endpoint_max_concurrency
+    def endpoint_concurrency(self) -> Dict[str, int]:
+        """Mapping of endpoint_name → inference_concurrency (populated by :meth:`populate_child_metadata`)."""
+        return self._endpoint_concurrency
 
     def _all_nodes(self) -> List[str]:
         return list(self._endpoints.keys()) + list(self._aggregations.keys())
@@ -594,8 +592,7 @@ class MetaEndpointDAG:
             "endpoint_primary": dict(self._primary),
             "endpoint_async": dict(self._endpoint_async_flags),
             "endpoint_batch_size": dict(self._endpoint_batch_sizes),
-            "endpoint_max_in_flight": dict(self._endpoint_max_in_flight),
-            "endpoint_max_concurrency": dict(self._endpoint_max_concurrency),
+            "endpoint_concurrency": dict(self._endpoint_concurrency),
             "aggregations": [_serialize_aggregation(a) for a in self._aggregations.values()],
             "edges": [list(e) for e in self._edges],
             "input_nodes": list(self._input_nodes),
@@ -606,33 +603,25 @@ class MetaEndpointDAG:
         return json.dumps(self.to_dict(), indent=2)
 
     def populate_child_metadata(self) -> None:
-        """Record each child's async flag, batch size, in-flight depth and serverless concurrency.
+        """Record each child's async flag, batch size and concurrency.
 
         Keyed by endpoint name (not node name) so the deployed invoker can both
         dispatch (``async_inference`` vs ``fast_inference``) and call each child, sync
         or async, the way that child set itself up at deploy — a slow GFN2-xTB child
-        stamps a small batch so one chunk doesn't exceed the per-invocation timeout. A
-        serverless child's ``MaxConcurrency`` caps the invoker's ``fast_inference``
-        threads; more concurrent calls than that are throttled.
+        stamps a small batch so one chunk doesn't exceed the per-invocation timeout, and
+        a GPU child takes one invocation at a time.
 
         Read once, at create: a child that changes its sizing needs the meta recreated.
         Called by :meth:`MetaEndpoint.create` before serializing the DAG.
         """
         from workbench.api import Endpoint
-        from workbench.utils.async_endpoint_utils import async_max_in_flight
 
         for endpoint_name in set(self._endpoints.values()):
             endpoint = Endpoint(endpoint_name)
-            variant = (endpoint.endpoint_meta or {}).get("ProductionVariants", [{}])[0]
-            max_concurrency = variant.get("CurrentServerlessConfig", {}).get("MaxConcurrency")
-            if max_concurrency:
-                self._endpoint_max_concurrency[endpoint_name] = int(max_concurrency)
             meta = endpoint.workbench_meta() or {}
-            is_async = bool(meta.get("async_endpoint"))
-            self._endpoint_async_flags[endpoint_name] = is_async
+            self._endpoint_async_flags[endpoint_name] = bool(meta.get("async_endpoint"))
             self._endpoint_batch_sizes[endpoint_name] = endpoint.inference_batch_size()
-            if is_async:
-                self._endpoint_max_in_flight[endpoint_name] = async_max_in_flight(meta)
+            self._endpoint_concurrency[endpoint_name] = endpoint.inference_concurrency()
 
     def meta_batch_size(self) -> int:
         """Rows per invocation for a MetaEndpoint over this DAG.
@@ -640,14 +629,36 @@ class MetaEndpointDAG:
         Each child call runs at that child's own batch size, so the meta's batch only has
         to keep one invocation inside the time limit. With async children it sizes to the
         slowest, the one with the smallest batch: about four rounds through that child's
-        slots, for shorter invocations and finer-grained failure/retry. An all-sync DAG
-        stays large (rows are cheap). Needs :meth:`populate_child_metadata` first.
+        slots, for shorter invocations and finer-grained failure/retry. An all-sync DAG has
+        60 s per invocation, so it sizes to one round through its tightest child (the fewest
+        rows a child takes at once), up to SYNC_META_BATCH_SIZE. Needs
+        :meth:`populate_child_metadata` first.
         """
         async_children = [name for name, is_async in self._endpoint_async_flags.items() if is_async]
         if not async_children:
-            return 500
+            one_round = min(
+                self._endpoint_batch_sizes[n] * self._endpoint_concurrency[n] for n in self._endpoint_batch_sizes
+            )
+            return min(SYNC_META_BATCH_SIZE, one_round)
         slowest = min(async_children, key=self._endpoint_batch_sizes.get)
-        return self._endpoint_batch_sizes[slowest] * self._endpoint_max_in_flight[slowest] * 2
+        return self._endpoint_batch_sizes[slowest] * self._endpoint_concurrency[slowest] * 2
+
+    def meta_concurrency(self) -> Optional[int]:
+        """Invocations at once for a sync MetaEndpoint over this DAG.
+
+        One meta invocation already sends each child its rows in chunks, up to that child's
+        concurrency at once. The meta takes as many invocations as leave every child within
+        its own: one when its batch is a full round through the tightest child. None with
+        async children: that meta takes its concurrency from its own queue. Needs
+        :meth:`populate_child_metadata` first.
+        """
+        if any(self._endpoint_async_flags.values()):
+            return None
+        batch = self.meta_batch_size()
+        return min(
+            concurrency // min(concurrency, math.ceil(batch / self._endpoint_batch_sizes[name]))
+            for name, concurrency in self._endpoint_concurrency.items()
+        )
 
     def has_async_endpoint(self) -> bool:
         """Return True if any endpoint in the DAG is deployed as async.
@@ -737,8 +748,7 @@ class MetaEndpointDAG:
             )
         dag._endpoint_async_flags = dict(data.get("endpoint_async", {}))
         dag._endpoint_batch_sizes = {k: int(v) for k, v in data.get("endpoint_batch_size", {}).items()}
-        dag._endpoint_max_in_flight = {k: int(v) for k, v in data.get("endpoint_max_in_flight", {}).items()}
-        dag._endpoint_max_concurrency = {k: int(v) for k, v in data.get("endpoint_max_concurrency", {}).items()}
+        dag._endpoint_concurrency = {k: int(v) for k, v in data.get("endpoint_concurrency", {}).items()}
         for agg_data in data.get("aggregations", []):
             dag.add_aggregation(_deserialize_aggregation(agg_data))
         for src, dst in data.get("edges", []):

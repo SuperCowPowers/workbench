@@ -120,22 +120,22 @@ class Endpoint(EndpointCore):
         """
         return super().ts_inference(date_column, after_date=after_date, exclude_ids=exclude_ids)
 
-    def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
+    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
         Args:
             eval_df (pd.DataFrame): The DataFrame to run predictions on
-            threads (int): The number of threads to use (default: 4)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
 
         Note:
-            There's no sanity checks or error handling... just FAST Inference!
+            There's no sanity checks or error handling... just FAST Inference! Rows per
+            invocation and invocations at once both come from how the endpoint was deployed.
         """
         if self._async is not None:
-            return self._async.fast_inference(eval_df, threads=threads)
-        return super().fast_inference(eval_df, threads=threads)
+            return self._async.fast_inference(eval_df)
+        return super().fast_inference(eval_df)
 
     def cross_fold_inference(self) -> pd.DataFrame:
         """Pull cross-fold inference from model associated with this Endpoint
