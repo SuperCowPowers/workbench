@@ -8,15 +8,14 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import pytest  # noqa: E402
-from matplotlib.collections import PathCollection  # noqa: E402
 
 from workbench.utils.pandas_utils import compare_keyed, data_quality  # noqa: E402
 from workbench.utils.plots.data import (  # noqa: E402
-    comparison_fates,
-    fate_bars,
+    one_sided_bars,
+    outlier_box,
+    overlap_venn,
     quality_bars,
     quality_counts,
-    value_agreement,
 )
 
 
@@ -32,36 +31,61 @@ def compared():
     return left, right, compare_keyed(left, right, on="id", values=["x"], scope=["route"])
 
 
-def test_fates_account_for_every_row_of_each_side():
-    left, right, result = compared()
-    fates = comparison_fates(result)
-
-    assert fates["left"].sum() == len(left) and fates["right"].sum() == len(right)
-    assert fates.loc["agree"].tolist() == [3, 3] and fates.loc["mismatched"].tolist() == [1, 1]
-    assert fates.loc["repeated key differs"].tolist() == [2, 1]
-    assert fates.loc["one side only"].tolist() == [1, 1] and fates.loc["not expected"].tolist() == [1, 0]
-    assert list(fates.index[:2]) == ["agree", "not expected"]
+def venn_text(result, *names) -> list:
+    return [t.get_text() for t in overlap_venn(result, *names).axes[0].texts]
 
 
-def test_fate_bars_stack_to_each_sides_row_count():
-    left, right, result = compared()
-    ax = fate_bars(result, "archive", "DataSource").axes[0]
-    widths = {1: 0, 0: 0}
-    for patch in ax.patches:
-        widths[round(patch.get_y() + patch.get_height() / 2)] += patch.get_width()
-
-    assert widths == {1: len(left), 0: len(right)}
-    assert [t.get_text() for t in ax.get_yticklabels()] == ["archive", "DataSource"]
-
-
-def test_value_agreement_draws_every_pair_and_marks_the_mismatches():
+def test_the_venn_counts_each_region_and_names_each_side():
     _, _, result = compared()
-    ax = value_agreement(result, "x", "archive", "DataSource").axes[0]
-    agree, off = [c for c in ax.collections if isinstance(c, PathCollection)]
+    text = venn_text(result, "archive", "DataSource")
 
-    assert len(agree.get_offsets()) == 3 and len(off.get_offsets()) == 1
-    assert off.get_offsets()[0].tolist() == [30.0, 3.0]
-    assert ax.get_xlabel() == "x in DataSource" and ax.get_ylabel() == "x in archive"
+    assert text[:4] == ["archive", "", "DataSource", ""]
+    assert text[4:10] == ["1", "only here", "1", "only here", "3", "agree"]
+    assert text[-2:] == ["1 mismatched, 1 repeated keys differ", "1 rows not expected, set aside"]
+
+
+def test_the_venn_shows_where_a_side_lives_under_its_name():
+    _, _, result = compared()
+    long = "s3://a-bucket/" + "with/a/very/long/prefix/" * 4 + "archive"
+    figure = overlap_venn(result, "Archive", "DataSource", locations={"Archive": long, "DataSource": "cmax_clean"})
+    text = [t.get_text() for t in figure.axes[0].texts]
+
+    assert text[0] == "Archive" and text[1].startswith("s3://a-bucket/") and text[1].endswith("/archive")
+    assert len(text[1]) == 59 and "..." in text[1]
+    assert text[2:4] == ["DataSource", "cmax_clean"]
+
+
+def test_the_venn_says_nothing_about_differences_when_there_are_none():
+    left = pd.DataFrame({"id": ["a", "a", "b"], "x": [1.0, 2.0, 3.0]})
+    right = pd.DataFrame({"id": ["a", "a", "b"], "x": [2.0, 1.0, 3.0]})
+    text = venn_text(compare_keyed(left, right, on="id"))
+
+    assert "3" in text and not [t for t in text if "differ" in t or "mismatched" in t or "not expected" in t]
+
+
+def test_one_sided_bars_count_each_sides_rows_per_group():
+    left = pd.DataFrame({"id": list("abcd"), "year": ["2021", "2021", "2022", None]})
+    right = pd.DataFrame({"id": list("aefg"), "year": ["2021", "2022", "2022", "2023"]})
+    ax = one_sided_bars(compare_keyed(left, right, on="id"), "year", "Archive", "DataSource").axes[0]
+
+    assert [t.get_text() for t in ax.get_yticklabels()] == ["(none)", "2021", "2022", "2023"]
+    assert sum(patch.get_width() for patch in ax.patches) == 6
+    assert [t.get_text() for t in ax.get_legend().get_texts()] == ["only in Archive", "only in DataSource"]
+
+
+def test_one_sided_bars_fold_the_smallest_groups_into_other():
+    left = pd.DataFrame({"id": range(40), "site": [f"s{i % 12}" for i in range(40)]})
+    ax = one_sided_bars(compare_keyed(left, left.iloc[:0], on="id"), "site").axes[0]
+
+    labels = [t.get_text() for t in ax.get_yticklabels()]
+    assert len(labels) == 8 and labels[-1] == "other"
+    assert sum(patch.get_width() for patch in ax.patches) == 40
+
+
+def test_one_sided_bars_refuse_a_column_neither_side_has():
+    left = pd.DataFrame({"id": list("ab")})
+    with pytest.raises(ValueError, match="year"):
+        one_sided_bars(compare_keyed(left, left.iloc[:1], on="id"), "year")
 
 
 def test_quality_bars_rank_columns_by_flagged_rows():
@@ -87,14 +111,17 @@ def test_whole_row_findings_are_counted_under_their_own_label():
     assert counts.idxmax() == "(whole row)" and counts["(whole row)"] == 4 and counts["x"] == 1
 
 
-def test_an_empty_side_draws_no_zero_labels():
-    left = pd.DataFrame({"id": ["a", "b"], "x": [1.0, 2.0]})
-    ax = fate_bars(compare_keyed(left, left.iloc[:0], on="id")).axes[0]
-    assert [t.get_text() for t in ax.texts] == ["2"]
+def test_the_outlier_box_marks_each_value_outside_the_fence():
+    rng = np.random.default_rng(1)
+    df = pd.DataFrame({"id": range(400), "cmax": 10 ** rng.normal(2, 1, 400)})
+    df.loc[[5, 9], "cmax"] = 0.0
+    ax = outlier_box(data_quality(df, key="id"), "cmax").axes[0]
+
+    (points,) = [c for c in ax.collections if len(c.get_offsets())]
+    assert points.get_offsets()[:, 0].tolist() == [0.0, 0.0]
+    assert ax.get_xscale() == "symlog"  # a zero has no place on a log axis
 
 
-def test_repeated_keys_with_matching_values_count_as_agree():
-    left = pd.DataFrame({"id": ["a", "a", "b"], "x": [1.0, 2.0, 3.0]})
-    right = pd.DataFrame({"id": ["a", "a", "b"], "x": [2.0, 1.0, 3.0]})
-    fates = comparison_fates(compare_keyed(left, right, on="id"))
-    assert fates.loc["agree"].tolist() == [3, 3] and fates.loc["repeated key differs"].tolist() == [0, 0]
+def test_the_outlier_box_refuses_a_column_without_outliers():
+    with pytest.raises(ValueError, match="no outliers"):
+        outlier_box(data_quality(pd.DataFrame({"x": [1.0, 2.0, 3.0]})), "x")

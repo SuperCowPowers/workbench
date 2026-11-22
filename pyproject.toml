@@ -56,6 +56,8 @@ dependencies = [
     # Plotting (matplotlib lives here because workbench_shell has a show()
     # command that's useful for showing 2D plots of chemical structures
     "matplotlib >= 3.9.2",
+    # Internal page links in PDF reports
+    "pypdf >= 5.0",
     # Pipeline orchestration (DAG building for pipeline specs)
     "networkx >= 3.2",
     # ML agent (Claude via Bedrock); the [bedrock] extra is just boto3/botocore

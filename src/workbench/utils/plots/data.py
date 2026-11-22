@@ -1,28 +1,29 @@
-"""Data plots (matplotlib): where the rows of a keyed comparison went, how paired values agree,
+"""Data plots (matplotlib): how the rows of a keyed comparison overlap, where its one-sided rows concentrate,
 and which columns a quality check flagged.
 
 Each takes an optional `ax` so a report can draw onto a page it is laying out; without one it
 makes its own figure. Either way it returns the figure.
 """
 
+from typing import Dict, Optional
+
 import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
 
 from workbench.utils.pandas_utils import DataQuality, KeyedComparison
-from workbench.utils.plots.report import ACCENTS, BODY, MUTED, RULE, tidy
+from workbench.utils.plots.report import ACCENTS, BODY, HEADING_FONT, HEADING_WEIGHT, INK, MUTED, tidy
 
-# One colour per fate of a compared row, kept across charts and pages
-FATE_COLORS = {
-    "agree": ACCENTS[0],
-    "not expected": RULE,
-    "mismatched": ACCENTS[3],
-    "repeated key differs": ACCENTS[2],
-    "one side only": ACCENTS[1],
-}
+# A pair whose values disagree
+MISMATCH_COLOR = ACCENTS[3]
 
-# The fates that need no action; the rest need a look
-FINE = ("agree", "not expected")
+# The most characters of a column name on a chart's axis
+MAX_COLUMN_CHARS = 24
+
+# The most groups a breakdown draws; the rest are summed into one bar
+MAX_GROUPS = 8
 
 # One colour per data quality check
 CHECK_COLORS = {
@@ -35,124 +36,191 @@ CHECK_COLORS = {
 }
 
 
-def comparison_fates(result: KeyedComparison) -> pd.DataFrame:
-    """Rows of each side of a comparison by what became of them.
+def overlap_venn(
+    result: KeyedComparison,
+    left: str = "left",
+    right: str = "right",
+    title: str = "",
+    locations: Optional[Dict[str, str]] = None,
+    location_chars: int = 60,
+    ax=None,
+):
+    """Two frames as overlapping circles: rows only in one, and paired rows that agree or differ.
+
+    The circles are a fixed size, so a small region stays readable; the counts carry the scale.
 
     Args:
         result (KeyedComparison): Output of `pandas_utils.compare_keyed`.
-
-    Returns:
-        pd.DataFrame: Indexed by fate, the fine ones first (agree, not expected) and then
-            those needing a look (mismatched, repeated key differs, one side only), with
-            `left` and `right` row counts. Each column sums to its frame's rows.
-    """
-    matched, differ = result.repeated[result.repeated["values_match"]], result.repeated_differ
-    unique_agree, mismatched = int(result.pairs["agree"].sum()), len(result.mismatched)
-
-    def side(name: str, only: pd.DataFrame, out_of_scope: pd.DataFrame) -> dict:
-        return {
-            "agree": unique_agree + int(matched[f"{name}_rows"].sum()),
-            "not expected": len(out_of_scope),
-            "mismatched": mismatched,
-            "repeated key differs": int(differ[f"{name}_rows"].sum()),
-            "one side only": len(only),
-        }
-
-    return pd.DataFrame(
-        {
-            "left": side("left", result.left_only, result.left_out_of_scope),
-            "right": side("right", result.right_only, result.right_out_of_scope),
-        }
-    )
-
-
-def fate_bars(result: KeyedComparison, left: str = "left", right: str = "right", title: str = "", ax=None):
-    """Where every row of a comparison went: one stacked bar per side.
-
-    Args:
-        result (KeyedComparison): Output of `pandas_utils.compare_keyed`.
-        left (str): Label for the left frame's bar.
-        right (str): Label for the right frame's bar.
+        left (str): Name of the left frame.
+        right (str): Name of the right frame.
         title (str): Left-aligned axes title.
+        locations (Optional[Dict[str, str]]): Where a side's data lives, keyed by its name;
+            shown small under that name. Leave it out on a chart drawn small.
+        location_chars (int): Most characters of a location; a longer one keeps both ends.
         ax: Axes to draw on. Defaults to a new figure.
 
     Returns:
         matplotlib.figure.Figure: The figure.
     """
-    ax = ax if ax is not None else plt.subplots(figsize=(6.4, 1.6))[1]
-    fates = comparison_fates(result)
-    for position, side in ((1, "left"), (0, "right")):
-        start = 0
-        for fate, count in fates[side].items():
-            ax.barh(position, count, left=start, color=FATE_COLORS[fate], lw=0, height=0.58, label=fate)
-            if count > 0 and count >= 0.06 * fates[side].sum():
-                dark = fate == "not expected"
-                ax.text(start + count / 2, position, f"{count:,}", ha="center", va="center", fontsize=7.5).set_color(
-                    BODY if dark else "white"
-                )
-            start += count
-    handles, labels = ax.get_legend_handles_labels()
-    unique = dict(zip(labels, handles))
-    ax.legend(
-        unique.values(), unique.keys(), frameon=False, fontsize=7.5, ncols=5, loc="upper left", bbox_to_anchor=(0, -0.3)
-    )
-    ax.set_yticks([1, 0], [left, right])
-    ax.set_ylim(-0.5, 1.5)
+    ax = ax if ax is not None else plt.subplots(figsize=(4.2, 2.8))[1]
+    locations = locations or {}
+    counts = result.summary()
+    aside = counts["left_out_of_scope"] + counts["right_out_of_scope"]
+    for x, color in ((-0.44, ACCENTS[1]), (0.44, ACCENTS[0])):
+        ax.add_patch(Circle((x, 0), 1.0, fc=color, alpha=0.16, lw=0))
+        ax.add_patch(Circle((x, 0), 1.0, fc="none", ec=color, lw=1.5))
+    # The two names meet over the middle and each runs outward, so a long location has its own half of the page
+    for x, side, name in ((-0.1, "right", left), (0.1, "left", right)):
+        heading = {"fontname": HEADING_FONT, "fontweight": HEADING_WEIGHT}
+        ax.text(x, 1.3, name, ha=side, va="bottom", fontsize=8, color=BODY, **heading)
+        where = locations.get(name, "")
+        if len(where) > location_chars:  # keep both ends: the root and the leaf are what identify it
+            keep = (location_chars - 3) // 2
+            where = f"{where[:keep]}...{where[-keep:]}"
+        ax.text(x, 1.26, where, ha=side, va="top", fontsize=6.4, color=MUTED)
+
+    def region(x: float, count: int, label: str) -> None:
+        ax.text(
+            x,
+            0.06,
+            f"{count:,}",
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            color=INK,
+            fontname=HEADING_FONT,
+            fontweight=HEADING_WEIGHT,
+        )
+        ax.text(x, -0.04, label, ha="center", va="top", fontsize=7, color=BODY)
+
+    region(-1.0, counts["left_only"], "only here")
+    region(1.0, counts["right_only"], "only here")
+    region(0, counts["agree"], "agree")
+    # Under the circles: the paired rows that differ, by the counts the report states elsewhere, then rows set aside
+    differing = [(counts["mismatched"], "mismatched"), (counts["repeated_differ"], "repeated keys differ")]
+    below = [(", ".join(f"{count:,} {label}" for count, label in differing if count), MISMATCH_COLOR)]
+    below += [(f"{aside:,} rows not expected, set aside" if aside else "", MUTED)]
+    for row, (line, color) in enumerate((line, color) for line, color in below if line):
+        ax.text(0, -1.1 - 0.2 * row, line, ha="center", va="top", fontsize=7, color=color)
+    ax.set_xlim(-1.5, 1.5)
+    ax.set_ylim(-1.52, 1.56)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    if title:
+        ax.set_title(
+            title, loc="left", pad=7, fontsize=9.5, fontname=HEADING_FONT, fontweight=HEADING_WEIGHT, color=INK
+        )
+    return ax.figure
+
+
+def one_sided_bars(
+    result: KeyedComparison, by: str, left: str = "left", right: str = "right", title: str = "", ax=None
+):
+    """Where the rows held by one side only concentrate: a pair of bars per value of a column.
+
+    Args:
+        result (KeyedComparison): Output of `pandas_utils.compare_keyed`.
+        by (str): The column to group the one-sided rows by. A side without it is left out.
+        left (str): Name of the left frame.
+        right (str): Name of the right frame.
+        title (str): Left-aligned axes title.
+        ax: Axes to draw on. Defaults to a new figure.
+
+    Returns:
+        matplotlib.figure.Figure: The figure.
+
+    Raises:
+        ValueError: If neither side's one-sided rows carry `by`.
+    """
+    sides = [(left, result.left_only, ACCENTS[1]), (right, result.right_only, ACCENTS[0])]
+    sides = [(name, frame, color) for name, frame, color in sides if by in frame.columns]
+    if not sides:
+        raise ValueError(f"Neither side's one-sided rows have a column named {by}")
+    counts = pd.DataFrame(
+        {name: frame[by].astype("string").fillna("(none)").value_counts() for name, frame, _ in sides}
+    ).fillna(0)
+    if len(counts) > MAX_GROUPS:  # the largest groups, then everything else as one
+        order = counts.sum(axis=1).sort_values(ascending=False, kind="stable").index
+        rest = counts.loc[order[MAX_GROUPS - 1 :]].sum().rename("other")
+        counts = pd.concat([counts.loc[order[: MAX_GROUPS - 1]].sort_index(), rest.to_frame().T])
+    else:
+        counts = counts.sort_index()
+
+    ax = ax if ax is not None else plt.subplots(figsize=(4.2, 0.6 + 0.4 * len(counts)))[1]
+    positions, height = np.arange(len(counts))[::-1], 0.8 / len(sides)
+    for i, (name, _, color) in enumerate(sides):
+        offsets = positions + 0.4 - height * (i + 0.5)
+        ax.barh(offsets, counts[name], height=height * 0.86, color=color, lw=0, label=f"only in {name}")
+        for offset, count in zip(offsets, counts[name]):
+            if count:
+                ax.text(count, offset, f" {int(count):,}", va="center", fontsize=7, color=BODY)
+    ax.set_yticks(positions, [str(group) for group in counts.index])
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
+    ax.margins(x=0.12)
+    ax.legend(frameon=False, fontsize=7.5, ncols=2, loc="upper left", bbox_to_anchor=(0, -0.16))
     tidy(ax, title, grid="x")
     return ax.figure
 
 
-def value_agreement(
-    result: KeyedComparison, value: str, left: str = "left", right: str = "right", title: str = "", ax=None
-):
-    """One compared value, left against right, for every uniquely keyed pair.
+def outlier_box(result: DataQuality, column: str, title: str = "", ax=None):
+    """One column's spread as a box, with its fence and the values outside it marked.
 
-    Agreeing pairs sit on the 1:1 line; the pairs that disagree are drawn on top in a second
-    colour. Axes are logarithmic when every value is positive and they span over two decades.
+    The box is drawn from the quartiles and whiskers `data_quality` kept, so the column itself
+    is not needed. A column fenced on its log10 values gets a log axis; when an outlier is zero,
+    the axis is linear near zero so the point has somewhere to sit.
 
     Args:
-        result (KeyedComparison): Output of `pandas_utils.compare_keyed`.
-        value (str): A numeric column the comparison scored.
-        left (str): Axis label for the left frame.
-        right (str): Axis label for the right frame.
+        result (DataQuality): Output of `pandas_utils.data_quality`.
+        column (str): A column with an outliers finding.
         title (str): Left-aligned axes title.
         ax: Axes to draw on. Defaults to a new figure.
 
     Returns:
         matplotlib.figure.Figure: The figure.
+
+    Raises:
+        ValueError: If the column has no outliers finding.
     """
-    ax = ax if ax is not None else plt.subplots(figsize=(4.6, 4.6))[1]
-    pairs = pd.DataFrame(
-        {
-            "left": result.pairs[f"{value}_left"].to_numpy(dtype=float, na_value=np.nan),
-            "right": result.pairs[f"{value}_right"].to_numpy(dtype=float, na_value=np.nan),
-            "agree": result.pairs[f"{value}_agree"].to_numpy(dtype=bool),
-        }
+    held = result.boxes[result.boxes["column"] == column]
+    if held.empty:
+        raise ValueError(f"{column} has no outliers finding")
+    box = held.iloc[0]
+    listed = result.rows[(result.rows["check"] == "outliers") & (result.rows["column"] == column)]
+    outliers = pd.to_numeric(listed["value"], errors="coerce").dropna().to_numpy()
+
+    ax = ax if ax is not None else plt.subplots(figsize=(6.4, 1.1))[1]
+    stats = {"med": box["median"], "q1": box["q1"], "q3": box["q3"]}
+    stats.update(whislo=box["whisker_low"], whishi=box["whisker_high"], fliers=[])
+    ax.bxp(
+        [stats],
+        orientation="horizontal",
+        widths=0.5,
+        showfliers=False,
+        patch_artist=True,
+        boxprops={"facecolor": ACCENTS[1], "alpha": 0.18, "edgecolor": ACCENTS[1], "linewidth": 1.2},
+        medianprops={"color": INK, "linewidth": 1.4},
+        whiskerprops={"color": ACCENTS[1], "linewidth": 1.2},
+        capprops={"color": ACCENTS[1], "linewidth": 1.2},
     )
-    pairs = pairs[np.isfinite(pairs[["left", "right"]]).all(axis=1)]
-    values = pairs[["left", "right"]].to_numpy()
-    if len(values):
-        lo, hi = values.min(), values.max()
-        if lo > 0 and hi / lo > 100:
-            lo, hi = 10 ** np.floor(np.log10(lo)), 10 ** np.ceil(np.log10(hi))
-            ax.set_xscale("log")
-            ax.set_yscale("log")
-        else:
-            lo, hi = lo - 0.04 * (hi - lo), hi + 0.04 * (hi - lo)
-        ax.plot([lo, hi], [lo, hi], color=BODY, lw=1.0, zorder=1)
-        if hi > lo:
-            ax.set_xlim(lo, hi)
-            ax.set_ylim(lo, hi)
-    style = dict(s=9, lw=0, rasterized=len(pairs) > 2000)
+    for fence in (box["fence_low"], box["fence_high"]):
+        ax.axvline(fence, color=MUTED, lw=0.9, ls=(0, (4, 3)))
     ax.scatter(
-        pairs.loc[pairs.agree, "right"], pairs.loc[pairs.agree, "left"], color=MUTED, alpha=0.6, zorder=2, **style
+        outliers, np.ones(len(outliers)), s=26, color=MISMATCH_COLOR, edgecolor="white", lw=0.8, zorder=3, clip_on=False
     )
-    off = pairs[~pairs.agree]
-    ax.scatter(off["right"], off["left"], color=FATE_COLORS["mismatched"], alpha=0.9, zorder=3, **style)
-    ax.set_aspect("equal")
-    ax.set_xlabel(f"{value} in {right}", fontsize=8.5)
-    ax.set_ylabel(f"{value} in {left}", fontsize=8.5)
-    tidy(ax, title)
+    if box["log"] and (outliers <= 0).any():
+        # Linear below a tenth of the smallest value inside the fence, with zero and the decades above it labelled
+        threshold = box["whisker_low"] / 10
+        ax.set_xscale("symlog", linthresh=threshold)
+        ax.set_xlim(left=-threshold / 2)
+        decades = np.arange(np.ceil(np.log10(threshold)) + 1, np.ceil(np.log10(ax.get_xlim()[1])))
+        ax.set_xticks([0] + list(10.0**decades))
+        ax.minorticks_off()
+    elif box["log"]:
+        ax.set_xscale("log")
+    ax.set_yticks([])
+    ax.set_ylim(0.5, 1.5)
+    tidy(ax, title, grid="x")
+    ax.spines["left"].set_visible(False)
     return ax.figure
 
 
@@ -190,14 +258,15 @@ def quality_bars(result: DataQuality, most: int = 10, title: str = "", ax=None):
     start = np.zeros(len(table))
     for check in table.columns:
         color = CHECK_COLORS.get(check, BODY)
-        ax.barh(positions, table[check], left=start, color=color, alpha=0.9, lw=0, height=0.62, label=check)
+        ax.barh(positions, table[check], left=start, color=color, lw=0, height=0.5, label=check)
         start += table[check].to_numpy(dtype=float)
     for position, total in zip(positions, start):
         ax.text(total, position, f" {int(total):,}", va="center", fontsize=7.5, color=BODY)
     if len(table):
-        ax.legend(frameon=False, fontsize=7.5, loc="lower right")
-    ax.set_yticks(positions, [str(c) for c in table.index])
-    ax.set_xlabel("Rows flagged", fontsize=8.5)
+        ax.legend(frameon=False, fontsize=7.5, ncols=len(table.columns), loc="upper left", bbox_to_anchor=(0, -0.22))
+    names = [str(c) for c in table.index]
+    ax.set_yticks(positions, [n if len(n) <= MAX_COLUMN_CHARS else f"{n[: MAX_COLUMN_CHARS - 3]}..." for n in names])
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.margins(x=0.1)
     tidy(ax, title, grid="x")
     return ax.figure

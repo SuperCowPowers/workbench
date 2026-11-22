@@ -22,6 +22,7 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
+from matplotlib.patches import FancyBboxPatch
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -34,6 +35,9 @@ BODY = "#3F4651"
 MUTED = "#9AA1AC"
 RULE = "#E4E7EB"
 HAIRLINE = "#F0F2F4"
+
+# The fill of a panel: a card, or any block set off from the page
+PANEL = "#F6F7F9"
 
 # Accents for groups, cohorts, or model families. Used in order; a group keeps its colour
 # on every page so a reader can track it without reading the label.
@@ -87,6 +91,14 @@ def pick_font(prefs: Sequence[str], fallback: str = "DejaVu Sans") -> str:
 HEADING_FONT = pick_font(HEADING_PREFS)
 BODY_FONT = pick_font(BODY_PREFS)
 
+# Headings are set bold. A face that ships several weights resolves to its regular one unless told.
+HEADING_WEIGHT = "bold"
+
+
+def _weight(fontname: str) -> str:
+    """The weight text in a face is drawn at: the heading face is bold, any other regular."""
+    return HEADING_WEIGHT if fontname == HEADING_FONT else "normal"
+
 
 def theme(heading: Optional[str] = None, body: Optional[str] = None) -> dict:
     """Apply the report look to rcParams. Call once, before building pages.
@@ -137,7 +149,7 @@ def _measured(text: str, size: float, fontname: str, figw: float) -> float:
     """Rendered width of a string in figure-fraction units. Cached -- it is a real render."""
     fig = plt.figure(figsize=(figw, 11))
     canvas = FigureCanvasAgg(fig)
-    t = fig.text(0, 0, text, fontsize=size, fontname=fontname)
+    t = fig.text(0, 0, text, fontsize=size, fontname=fontname, fontweight=_weight(fontname))
     width = t.get_window_extent(renderer=canvas.get_renderer()).width / (fig.dpi * figw)
     plt.close(fig)
     return width
@@ -163,12 +175,106 @@ def rule(fig: plt.Figure, y: float, x0: float = L, x1: float = R, c: str = RULE,
     fig.add_artist(plt.Line2D([x0, x1], [y, y], color=c, lw=lw, transform=fig.transFigure))
 
 
+def panel(fig: plt.Figure, x0: float, y0: float, x1: float, y1: float, fill: str = PANEL, edge: str = RULE) -> None:
+    """Rounded panel behind a block of content, in figure coordinates.
+
+    Args:
+        fig (plt.Figure): The page.
+        x0 (float): Left edge.
+        y0 (float): Bottom edge.
+        x1 (float): Right edge.
+        y1 (float): Top edge.
+        fill (str): Fill colour.
+        edge (str): Outline colour.
+    """
+    width, height = fig.get_size_inches()
+    box = FancyBboxPatch(
+        (x0, y0),
+        x1 - x0,
+        y1 - y0,
+        boxstyle="round,pad=0,rounding_size=0.012",
+        mutation_aspect=width / height,
+        fc=fill,
+        ec=edge,
+        lw=0.8,
+        transform=fig.transFigure,
+        zorder=-1,
+    )
+    fig.add_artist(box)
+
+
+def badge(fig: plt.Figure, x: float, y: float, label: str, color: str) -> float:
+    """A filled pill with a word in it, for a status or a severity. Returns its right edge.
+
+    Args:
+        fig (plt.Figure): The page.
+        x (float): Left edge.
+        y (float): Top edge.
+        label (str): The word, set in capitals.
+        color (str): Fill colour; the word is white.
+    """
+    label, size, height = _clean(label).upper(), 6.4, 0.0152
+    width = text_width(label, size, HEADING_FONT) + 0.016
+    page_width, page_height = fig.get_size_inches()
+    pill = FancyBboxPatch(
+        (x, y - height),
+        width,
+        height,
+        boxstyle="round,pad=0,rounding_size=0.006",
+        mutation_aspect=page_width / page_height,
+        fc=color,
+        ec="none",
+        transform=fig.transFigure,
+    )
+    fig.add_artist(pill)
+    middle = y - height / 2 - 0.0004
+    fig.text(x + width / 2, middle, label, fontsize=size, color="white", ha="center", va="center").set(
+        fontname=HEADING_FONT, fontweight=HEADING_WEIGHT
+    )
+    return x + width
+
+
+def navigate(
+    path: Union[str, Path],
+    links: Sequence[Tuple[int, Tuple[float, float, float, float], int]] = (),
+    bookmarks: Sequence[Tuple[str, int]] = (),
+    title: Optional[str] = None,
+) -> None:
+    """Give a written PDF its navigation: regions that jump to a page, bookmarks, and a title.
+
+    Args:
+        path (Union[str, Path]): The PDF, rewritten in place.
+        links (Sequence[Tuple[int, Tuple[float, float, float, float], int]]): For each link, the
+            page it sits on, its (x0, y0, x1, y1) box in figure coordinates, and the page it opens.
+        bookmarks (Sequence[Tuple[str, int]]): The reader's outline: each entry's text and the
+            page it opens. A PDF with bookmarks opens with the outline showing.
+        title (Optional[str]): The document title a reader shows in its window and search.
+
+    Pages count from 0.
+    """
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.annotations import Link
+
+    writer = PdfWriter(clone_from=PdfReader(path))
+    for page, (x0, y0, x1, y1), target in links:
+        width, height = float(writer.pages[page].mediabox.width), float(writer.pages[page].mediabox.height)
+        rect = (x0 * width, y0 * height, x1 * width, y1 * height)
+        writer.add_annotation(page, Link(rect=rect, border=[0, 0, 0], target_page_index=target))
+    for text, page in bookmarks:
+        writer.add_outline_item(text, page)
+    if bookmarks:
+        writer.page_mode = "/UseOutlines"
+    if title:
+        writer.add_metadata({"/Title": title})
+    writer.write(path)
+
+
 @lru_cache(maxsize=2048)
 def _measured_height(text: str, size: float, fontname: str, figh: float) -> float:
     """Rendered height of a string in figure-fraction units, descenders included."""
     fig = plt.figure(figsize=(8.5, figh))
     canvas = FigureCanvasAgg(fig)
-    t = fig.text(0, 0.5, text, fontsize=size, fontname=fontname)
+    t = fig.text(0, 0.5, text, fontsize=size, fontname=fontname, fontweight=_weight(fontname))
     height = t.get_window_extent(renderer=canvas.get_renderer()).height / (fig.dpi * figh)
     plt.close(fig)
     return height
@@ -190,8 +296,16 @@ def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) ->
     not crowd it and one without does not leave a hole. Returns the `y` to start the body at.
     """
     title, size = _clean(title), 25.0
-    fig.text(L, 0.962, "  ".join(_clean(kicker).upper()), fontname=HEADING_FONT, fontsize=7.6, color=MUTED)
-    fig.text(L, 0.936, title, fontname=HEADING_FONT, fontsize=size, color=INK, va="top")
+    fig.text(
+        L,
+        0.962,
+        "  ".join(_clean(kicker).upper()),
+        fontname=HEADING_FONT,
+        fontweight=HEADING_WEIGHT,
+        fontsize=7.6,
+        color=MUTED,
+    )
+    fig.text(L, 0.936, title, fontname=HEADING_FONT, fontweight=HEADING_WEIGHT, fontsize=size, color=INK, va="top")
     y = 0.936 - _measured_height(title, size, HEADING_FONT, 11.0) - 0.007
     if sub:
         for line in textwrap.wrap(_clean(sub), 104):
@@ -203,7 +317,16 @@ def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) ->
 
 def sec(fig: plt.Figure, y: float, label: str, color: str = INK) -> float:
     """Small uppercase section label. Give every text block one of these."""
-    fig.text(L, y, _clean(label).upper(), fontname=HEADING_FONT, fontsize=9.2, color=color, va="top")
+    fig.text(
+        L,
+        y,
+        _clean(label).upper(),
+        fontname=HEADING_FONT,
+        fontweight=HEADING_WEIGHT,
+        fontsize=9.2,
+        color=color,
+        va="top",
+    )
     return y - 0.021
 
 
@@ -369,7 +492,15 @@ def table(
 
     for k, h in enumerate(headers):
         fig.text(
-            anchor[k], y, h.upper(), fontsize=7.1, color=header_color, va="top", ha=aligns[k], fontname=HEADING_FONT
+            anchor[k],
+            y,
+            h.upper(),
+            fontsize=7.1,
+            color=header_color,
+            va="top",
+            ha=aligns[k],
+            fontname=HEADING_FONT,
+            fontweight=HEADING_WEIGHT,
         )
     y -= 0.0145
     rule(fig, y + 0.004, x0=x0, x1=x1, c=RULE)
@@ -379,7 +510,15 @@ def table(
         hot = hl_row is not None and i == hl_row
         for k, v in enumerate(r):
             fig.text(
-                anchor[k], y, v, fontsize=size, va="top", ha=aligns[k], color=INK if hot else BODY, fontname=face(i, k)
+                anchor[k],
+                y,
+                v,
+                fontsize=size,
+                va="top",
+                ha=aligns[k],
+                color=INK if hot else BODY,
+                fontname=face(i, k),
+                fontweight=_weight(face(i, k)),
             )
         y -= lead
         if row_rules and i < len(body) - 1:
@@ -411,9 +550,83 @@ def stat_row(
     )
     dx = max(dx, needed)
     for i, (k, v) in enumerate(pairs):
-        fig.text(x + i * dx, y, _clean(k).upper(), fontsize=6.6, color=MUTED, va="top", fontname=HEADING_FONT)
-        fig.text(x + i * dx, y - 0.0125, _clean(str(v)), fontsize=size, color=INK, va="top", fontname=HEADING_FONT)
+        fig.text(
+            x + i * dx,
+            y,
+            _clean(k).upper(),
+            fontsize=6.6,
+            color=MUTED,
+            va="top",
+            fontname=HEADING_FONT,
+            fontweight=HEADING_WEIGHT,
+        )
+        fig.text(
+            x + i * dx,
+            y - 0.0125,
+            _clean(str(v)),
+            fontsize=size,
+            color=INK,
+            va="top",
+            fontname=HEADING_FONT,
+            fontweight=HEADING_WEIGHT,
+        )
     return y - 0.030
+
+
+def stat_tiles(
+    fig: plt.Figure,
+    y: float,
+    pairs: Sequence[Tuple[str, str]],
+    x0: float = L,
+    x1: float = R,
+    height: float = 0.05,
+    gap: float = 0.01,
+) -> float:
+    """A page's headline numbers as a row of equal tiles: a large value over its label.
+
+    A value too wide for its tile is set smaller, so a row never overprints. Returns the `y`
+    to continue at.
+
+    Args:
+        fig (plt.Figure): The page.
+        y (float): Top of the row.
+        pairs (Sequence[Tuple[str, str]]): Label and value for each tile.
+        x0 (float): Left edge of the row.
+        x1 (float): Right edge of the row.
+        height (float): Height of a tile.
+        gap (float): Space between tiles.
+    """
+    width = (x1 - x0 - gap * (len(pairs) - 1)) / len(pairs)
+    inset = 0.012
+    for i, (label, value) in enumerate(pairs):
+        left = x0 + i * (width + gap)
+        panel(fig, left, y - height, left + width, y)
+        label, value, size = _clean(str(label)).upper(), _clean(str(value)), 14.0
+        while text_width(value, size, HEADING_FONT) > width - 2 * inset and size > 8:
+            size -= 0.5
+        fig.text(
+            left + inset,
+            y - 0.0085,
+            value,
+            fontsize=size,
+            color=INK,
+            va="top",
+            fontname=HEADING_FONT,
+            fontweight=HEADING_WEIGHT,
+        )
+        label_size = 6.4
+        while text_width(label, label_size, HEADING_FONT) > width - 2 * inset and label_size > 5:
+            label_size -= 0.2
+        fig.text(
+            left + inset,
+            y - height + 0.008,
+            label,
+            fontsize=label_size,
+            color=MUTED,
+            fontname=HEADING_FONT,
+            fontweight=HEADING_WEIGHT,
+        )
+    return y - height - 0.022
 
 
 def footer(fig: plt.Figure, left: str, page: Optional[object] = None) -> None:
@@ -437,7 +650,9 @@ def tidy(ax, title: str = "", grid: str = "both") -> None:
     ax.set_axisbelow(True)
     ax.tick_params(length=2.5, labelsize=8)
     if title:
-        ax.set_title(title, loc="left", pad=7, fontsize=9.5, fontname=HEADING_FONT, color=INK)
+        ax.set_title(
+            title, loc="left", pad=7, fontsize=9.5, fontname=HEADING_FONT, fontweight=HEADING_WEIGHT, color=INK
+        )
 
 
 def _titles(ax) -> List:

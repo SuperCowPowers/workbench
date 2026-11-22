@@ -1,6 +1,6 @@
 """PDF reports composed from sections: model performance, data quality, data comparison."""
 
 from workbench.reports import sections
-from workbench.reports.report import Report, Section, Summary
+from workbench.reports.report import Note, Report, Section, Summary
 
-__all__ = ["Report", "Section", "Summary", "sections"]
+__all__ = ["Note", "Report", "Section", "Summary", "sections"]

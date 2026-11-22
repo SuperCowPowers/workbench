@@ -176,5 +176,41 @@ def test_findings_carry_a_row_count():
     assert pd.isna(findings.loc["constant", "count"])
 
 
+def test_a_zero_does_not_cost_a_log_distributed_column_its_log_fence():
+    """Zeros in a concentration are the outliers, not its whole upper tail"""
+    rng = np.random.default_rng(1)
+    df = pd.DataFrame({"id": [f"c{i}" for i in range(400)], "cmax": 10 ** rng.normal(2, 1, 400)})
+    df.loc[[5, 9], "cmax"] = 0.0
+    result = data_quality(df, key="id")
+
+    assert list(rows(result, "outliers")["id"]) == ["c5", "c9"]
+    assert "log10" in finding(result, "outliers", "cmax")["detail"]
+
+
+def test_duplicate_rows_carry_their_fields_with_copies_side_by_side():
+    df = pd.DataFrame({"route": ["po", "iv", "po", "iv", "sc"], "dose": [10, 3, 10, 3, 1]})
+    listed = rows(data_quality(df), "duplicate_rows")
+
+    assert list(listed["value"]) == ["route=iv, dose=3", "route=iv, dose=3", "route=po, dose=10", "route=po, dose=10"]
+    assert list(listed["index"]) == [1, 3, 0, 2]
+
+
+def test_a_duplicate_key_lists_what_else_each_row_holds_grouped_by_key():
+    df = pd.DataFrame({"id": ["b", "a", "b", "a"], "x": [1, 2, 3, 4]})
+    listed = rows(data_quality(df, key="id"), "duplicate_key")
+
+    assert listed[["id", "value"]].values.tolist() == [["a", "x=2"], ["a", "x=4"], ["b", "x=1"], ["b", "x=3"]]
+
+
+def test_outliers_keep_what_a_box_plot_needs():
+    df = clean_frame(200)
+    df.loc[1, "x"] = 500.0
+    box = data_quality(df, key="id").boxes.set_index("column").loc["x"]
+
+    assert box["q1"] < box["median"] < box["q3"] and box["whisker_high"] < box["fence_high"] < 500
+    assert box["whisker_low"] >= box["fence_low"] and not box["log"]
+    assert data_quality(clean_frame(), key="id").boxes.empty
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

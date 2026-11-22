@@ -6,6 +6,8 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 import pytest  # noqa: E402
+from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
+from pypdf import PdfReader  # noqa: E402
 
 from workbench.utils.plots import report  # noqa: E402
 
@@ -103,3 +105,30 @@ def test_a_table_is_still_fitted_when_its_widest_column_cannot_be_trimmed():
     assert "WWWWWWWW" in texts and any(text.startswith("iii") and text.endswith("...") for text in texts)
     assert max(right_edges(fig)) <= report.R + 0.002
     plt.close(fig)
+
+
+def test_stat_tiles_keep_every_value_inside_its_tile():
+    fig = report.new_page()
+    pairs = [("Rows", "1,400"), ("A much longer label than fits", "123,456,789,012,345"), ("R2", "0.85")]
+    y = report.stat_tiles(fig, 0.8, pairs)
+
+    assert y < 0.8 - 0.05
+    assert max(right_edges(fig)) <= report.R
+    plt.close(fig)
+
+
+def test_navigate_adds_links_bookmarks_and_a_title(tmp_path):
+    path = tmp_path / "three.pdf"
+    with PdfPages(path) as pdf:
+        for _ in range(3):
+            fig = report.new_page()
+            pdf.savefig(fig)
+            plt.close(fig)
+    report.navigate(path, [(0, (0.1, 0.5, 0.9, 0.7), 2)], [("First", 0), ("Last", 2)], "Three pages")
+
+    reader = PdfReader(path)
+    (link,) = [a.get_object() for a in reader.pages[0]["/Annots"]]
+    assert [round(float(v)) for v in link["/Rect"]] == [61, 396, 551, 554]
+    assert link["/Dest"][0] == reader.pages[2].indirect_reference
+    assert [(o.title, reader.get_destination_page_number(o)) for o in reader.outline] == [("First", 0), ("Last", 2)]
+    assert reader.metadata.title == "Three pages"

@@ -74,7 +74,7 @@ from workbench.utils.pandas_utils import compare_keyed, data_quality
 report = Report("Mouse PK intake", summary="The collected arms match the DataSource; 15 are new.")
 report.add(sections.performance(pred_df, "cmax", by="project", key="batch", log=True, unit="ng/mL"))
 report.add(sections.data_quality(data_quality(collected, key="batch", target="cmax")))
-report.add(sections.comparison(compare_keyed(collected, existing, on="batch"), "archive", "DataSource"))
+report.add(sections.comparison(compare_keyed(collected, existing, on="batch"), "Archive", "DataSource"))
 report.save(out_pdf)
 ```
 
@@ -87,12 +87,35 @@ report.save(out_pdf)
 Page 1 is generated: `summary=` is your conclusion, and each section adds a card with its
 finding, key numbers and lead chart. A report with neither is refused.
 
-**Notes are footnotes.** A caveat the reader needs in order to read a number correctly goes
-in as a note: `sections.comparison(..., notes={"mismatched": NOTE})` marks that bucket
-`[1]` wherever it is named and prints the note at the foot of those pages, and
-`sections.data_quality(..., notes=[NOTE])` states it prominently at the top of the page.
-Notes are numbered once across the report and listed on page 1. In a page of your own,
-`report.footnote(fig, NOTE)` returns the marker and puts the note at that page's foot.
+The PDF navigates: clicking a card opens its section, every later page has a `SUMMARY` link back,
+and the sections are the PDF's bookmarks. A card can lead with one number and a status:
+`Summary(..., hero=("1,319", "of 1,327 paired rows agree"), needs_action=True)`.
+
+A comparison names where each side's data lives:
+`sections.comparison(..., locations={"Archive": "s3://bucket/prefix"})` prints the location under
+that side's name on the overlap chart and in full with how the rows were compared.
+
+**Notes say what the sections cannot.** A caveat specific to this data goes in as a `Note`, with a
+severity (`serious`, `warning`, `info`) and usually the artifact it is about:
+
+```python
+from workbench.reports import Note
+
+note = Note("8 arms in the Upload sheets carry another arm's values.", severity="serious", about="Archive")
+report = Report("Mouse PK intake", notes=[note])
+report.add(sections.comparison(result, "Archive", "DataSource"))
+report.add(sections.data_quality(quality, title="Archive data quality", about="Archive"))
+```
+
+The note is printed once, under a badge carrying its number in its severity's colour (red, dark
+yellow, green), in the section about that artifact (the one
+about it alone, else the first to involve it). Every other section that involves the artifact gets
+a `Note [1]` badge that links to it, and the cards of those sections carry the badge; a
+serious note makes them read "Needs a look". A note with no `about` is printed on the summary
+page. A page of your own shows its notes with `y = report.note_block(fig, y, ["Archive"])`.
+
+**Break one-sided rows down.** `sections.comparison(..., by="year")` draws, beside the overlap,
+how the rows held by one side only spread over a column, which shows where a gap concentrates.
 
 **State what the numbers cover.** Pass `filters=[...]`, one line per restriction (species,
 route, date range, rows left out and why), and they are listed on page 1. A reader who
@@ -137,7 +160,7 @@ report.add(Section(pages=[page_method], summary=card))
 
 The section charts are also usable on their own, each taking an optional `ax`:
 `workbench.utils.plots.performance` (`pred_vs_actual`, `residuals`, `breakout_bars`) and
-`workbench.utils.plots.data` (`fate_bars`, `value_agreement`, `quality_bars`).
+`workbench.utils.plots.data` (`overlap_venn`, `one_sided_bars`, `quality_bars`, `outlier_box`).
 
 The rest of this guide is the craft behind those pages, for the ones you write yourself.
 
@@ -160,7 +183,7 @@ report.theme()          # rcParams: fonts, STIX maths, fonttype 42, softened ink
 
 It gives you the palette (`INK BODY MUTED RULE HAIRLINE ACCENTS`), the margins (`L R`),
 page helpers that each take and return the running `y` cursor — `new_page`, `head`,
-`sec`, `para`, `equation`, `table`, `stat_row`, `rule`, `footer` — plus `EQ` (typeset
+`sec`, `para`, `equation`, `table`, `stat_row`, `stat_tiles`, `panel`, `rule`, `footer`, `navigate` — plus `EQ` (typeset
 PK and metric equations), `tidy` for axes, `text_width` for measuring, `fit_axes` / `audit`
 for linting, and `save` to lint and write.
 

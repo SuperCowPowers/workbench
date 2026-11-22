@@ -7,9 +7,10 @@ matplotlib.use("Agg")
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 import pytest  # noqa: E402
+from pypdf import PdfReader  # noqa: E402
 
 from workbench.api import DFStore  # noqa: E402
-from workbench.reports import Report, Section, Summary, sections  # noqa: E402
+from workbench.reports import Note, Report, Section, Summary, sections  # noqa: E402
 from workbench.utils.pandas_utils import compare_keyed, data_quality  # noqa: E402
 
 CLEAN = {"overlaps": [], "glyphs": []}
@@ -89,7 +90,7 @@ def test_comparison_section_publishes_one_row_per_disagreeing_value(tmp_path):
     assert len(section.frames["comparison_left_only"]) == 10
     report = Report("Comparison").add(section)
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_count(report) == 4  # the summary, the overview, the scatter of what disagrees, the rows
+    assert page_count(report) == 3  # the summary, the overview, the rows
 
 
 def test_identical_frames_compare_on_one_page(tmp_path):
@@ -243,9 +244,10 @@ def test_page_one_is_the_summary_with_a_card_per_section(tmp_path):
 
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
     assert page_headlines(report)[0] == "Summary"
-    assert [card.label for card in report._cards] == ["Model performance", "Data quality", "archive against DataSource"]
-    assert "within 2x" in report._cards[0].headline and "weakest project" in report._cards[0].headline
-    assert "35 of 35 paired rows agree. Needs a look: 5 rows only in archive." == report._cards[2].headline
+    cards = [card for card, *_ in report._cards]
+    assert [card.label for card in cards] == ["Model performance", "Data quality", "archive against DataSource"]
+    assert "within 2x" in cards[0].headline and "weakest project" in cards[0].headline
+    assert "35 of 35 paired rows agree. Needs a look: 5 rows only in archive." == cards[2].headline
 
 
 def test_a_report_with_nothing_to_summarise_is_refused(tmp_path):
@@ -283,16 +285,29 @@ def axes_per_page(report: Report) -> list:
     return axes.found
 
 
-def test_the_agreement_scatter_is_drawn_only_when_values_disagree():
+def test_a_breakdown_column_adds_a_chart_beside_the_overlap():
     left = predictions(40)
-    right = left.copy()
-    agreeing = Report("Same").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
-    right.loc[right.index[:4], "cmax"] *= 3
-    disputed = Report("Differs").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"])))
+    result = compare_keyed(left, left.iloc[5:], on="id")
+    plain = Report("Plain").add(sections.comparison(result))
+    broken_down = Report("By project").add(sections.comparison(result, by="project"))
 
-    # the summary thumbnail and the row-fate bars, plus the scatter when a value disagrees
-    assert sum(axes_per_page(agreeing)) == 2
-    assert sum(axes_per_page(disputed)) == 3
+    # the summary thumbnail and the overlap, plus the breakdown when a column is named
+    assert sum(axes_per_page(plain)) == 2
+    assert sum(axes_per_page(broken_down)) == 3
+    assert "Rows on one side only, by project" in axes_titles(broken_down)
+
+
+def axes_titles(report: Report) -> list:
+    class Titles:
+        found = []
+
+        def savefig(self, fig, **_):
+            self.found += [ax.get_title(loc="left") for ax in fig.axes]
+
+    titles = Titles()
+    titles.found = []
+    report.build(titles)
+    return titles.found
 
 
 def test_comparison_section_handles_flags_text_and_unsigned_values(tmp_path):
@@ -425,81 +440,137 @@ def test_a_missing_value_is_shown_blank_not_as_nan():
     assert "c0" in text and "nan" not in text.lower() and "None" not in text
 
 
-NOTE = "The DataSource carries corrections, so a mismatch against the archive can be the fix."
+NOTE = "8 arms in the Upload sheets carry another arm's values."
 
 
-def test_notes_are_numbered_listed_on_the_summary_and_printed_where_marked(tmp_path):
+def annotations(path) -> list:
+    """For each page, the pages its links open (all counted from 1)."""
+    reader = PdfReader(path)
+    number = {page.indirect_reference: n for n, page in enumerate(reader.pages, start=1)}
+    return [[number[a.get_object()["/Dest"][0]] for a in page.get("/Annots", [])] for page in reader.pages]
+
+
+def noted_report(note: Note) -> Report:
     left = predictions(40)
-    right = left.iloc[5:].copy()
-    right.loc[right.index[:3], "cmax"] *= 2
-    report = Report("Noted", filters=["Species: mouse"])
-    result = compare_keyed(left, right, on="id", values=["cmax"])
-    report.add(sections.comparison(result, "archive", "DataSource", notes={"mismatched": NOTE}))
-    report.add(sections.data_quality(data_quality(messy(), key="id"), notes=[NOTE, "A second note."]))
+    report = Report("Noted", notes=[note])
+    report.add(sections.comparison(compare_keyed(left, left.iloc[5:], on="id"), "Archive", "DataSource"))
+    report.add(sections.data_quality(data_quality(messy(), key="id"), title="Archive data quality", about="Archive"))
+    return report
 
+
+def test_a_note_is_printed_once_with_its_artifact_and_linked_from_the_other_sections(tmp_path):
+    report = noted_report(Note(NOTE, severity="serious", about="Archive"))
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert report.notes == [NOTE, "A second note."]  # one number per note, however many sections use it
+
     text = page_text(report)
-    assert f"[1]  {NOTE}" in text[0] and "[2]  A second note." in text[0]
-    overview, scatter, rows = text[1:4]
-    assert "mismatched [1]" in overview and "MISMATCHED [1]" in rows
-    assert all(f"[1]  {NOTE}" in page for page in (overview, scatter, rows))  # printed at the foot of each
-    quality = next(page for page in text if "Data quality" in page and "NOTE [1]" in page)
-    assert NOTE in quality and "NOTE [2]" in quality
-    assert lowest_text(report) > 0.04
+    home = next(n for n, page in enumerate(text, start=1) if NOTE in page)
+    assert "Archive data quality" in text[home - 1] and "NOTE [1] | on Archive" in text[home - 1]
+    assert sum(page.count(NOTE) for page in text) == 1
+    assert f"NOTE [1] | on Archive: see page {home}" in text[1]  # the comparison names the page that has it
+    assert home in annotations(tmp_path / "report.pdf")[1]  # and its marker opens that page
 
 
-def test_a_note_for_an_unknown_bucket_is_refused():
-    df = predictions(10)
-    with pytest.raises(ValueError, match="No bucket named"):
-        sections.comparison(compare_keyed(df, df, on="id"), notes={"mismatches": "typo"})
+def summary_badges(report: Report) -> list:
+    """The fill colour of each badge on the summary page."""
+    from matplotlib.colors import to_hex
+    from matplotlib.patches import FancyBboxPatch
+
+    class Badges:
+        found = None
+
+        def savefig(self, fig, **_):
+            if self.found is None:  # a badge is the only filled patch that is not a panel
+                fills = [to_hex(a.get_facecolor()) for a in fig.artists if isinstance(a, FancyBboxPatch)]
+                self.found = [fill for fill in fills if fill != "#f6f7f9"]
+
+    badges = Badges()
+    report.build(badges)
+    return badges.found
 
 
-def test_footnotes_stay_inside_the_right_margin():
-    from workbench.utils.plots import report as pages
+def test_a_serious_note_badges_its_cards_and_makes_them_need_a_look(tmp_path):
+    serious = noted_report(Note(NOTE, severity="serious", about="Archive"))
+    summary = page_text(serious)[0]
+    assert summary.count("NOTE [1]") == 2 and summary.count("| Needs a look |") == 2 and "| Fine |" not in summary
+    assert summary_badges(serious) == ["#b42318", "#b42318"]
 
-    long_note = "A caveat long enough to need wrapping, " * 6
-    left = predictions(20)
-    right = left.copy()
-    right.loc[right.index[:2], "cmax"] *= 2
-    report = Report("Wide").add(
-        sections.comparison(compare_keyed(left, right, on="id"), notes={"mismatched": long_note})
-    )
+    assert summary_badges(noted_report(Note(NOTE, severity="warning", about="Archive"))) == ["#a16207", "#a16207"]
+    assert summary_badges(noted_report(Note(NOTE, severity="info", about="Archive"))) == ["#15803d", "#15803d"]
+
+
+def test_a_note_lands_with_the_first_section_to_involve_its_artifact_when_none_is_about_it_alone():
+    left = predictions(40)
+    report = Report("Comparison only", notes=[Note(NOTE, about="Archive")])
+    report.add(sections.comparison(compare_keyed(left, left.iloc[5:], on="id"), "Archive", "DataSource"))
+    text = page_text(report)
+    assert NOTE in text[1] and "see page" not in " ".join(text)
+
+
+def test_a_general_note_is_printed_on_the_summary_page(tmp_path):
+    def page(report):
+        return report.new_page("Method")[0]
+
+    report = Report("General", summary="One page.", notes=[Note("Read from the 2024 archive only.")]).add(page)
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+    text = page_text(report)
+    assert "Read from the 2024 archive only." in text[0] and "NOTE [1]" in text[0]
+
+
+def test_a_note_about_something_no_section_covers_is_refused():
+    report = noted_report(Note(NOTE, about="FeatureSet"))
+    with pytest.raises(ValueError, match="FeatureSet"):
+        page_text(report)
+
+
+def test_outliers_get_a_box_plot_on_the_quality_page():
+    df = predictions(60)
+    df.loc[0, "cmax"] = df["cmax"].max() * 1e6
+    report = Report("Boxed").add(sections.data_quality(data_quality(df, key="id")))
+    assert any(title.startswith("cmax: 1 outside the fence") for title in axes_titles(report))
+
+
+def test_a_note_tables_its_details_and_publishes_them(tmp_path):
+    swapped = pd.DataFrame({"arm": [f"ID-{n}" for n in range(14)], "archive": [1.5] * 14, "corrected": [2.5] * 14})
+    report = noted_report(Note(NOTE, severity="serious", about="Archive", details=swapped))
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+
+    home = next(page for page in page_text(report) if NOTE in page)
+    assert "ARM | ARCHIVE | CORRECTED" in home and "ID-9 | 1.5 | 2.5" in home and "ID-10" not in home
+    assert "Showing the first 10 of 14." in home
+    assert report.frames["note_1"] is swapped
+
+
+def test_an_unknown_severity_is_refused():
+    with pytest.raises(ValueError, match="severity"):
+        Note(NOTE, severity="critical")
+
+
+def test_a_long_note_stays_inside_the_margins(tmp_path):
+    report = noted_report(Note("A caveat that goes on at length about why this number misleads. " * 8, about="Archive"))
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
 
     class Edges:
-        worst = 0.0
+        right = 0.0
 
         def savefig(self, fig, **_):
             fig.canvas.draw()
             renderer = fig.canvas.get_renderer()
-            notes = [text for text in fig.texts if text.get_fontsize() == 7.8]
-            self.worst = max([self.worst] + [text.get_window_extent(renderer).x1 / fig.bbox.width for text in notes])
+            edges = [t.get_window_extent(renderer).x1 / fig.bbox.width for t in fig.texts if t.get_text().strip()]
+            self.right = max([self.right] + edges)
 
     edges = Edges()
     report.build(edges)
-    assert 0 < edges.worst <= pages.R + 0.002
-
-
-def test_a_page_can_footnote_a_note_no_section_declared(tmp_path):
-    def page(report):
-        fig, y = report.new_page("Method")
-        report.footnote(fig, "Read from the 2024 archive only.")
-        return fig
-
-    report = Report("Own note", summary="One page.").add(page)
-    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    text = page_text(report)
-    assert "[1]  Read from the 2024 archive only." in text[0] and "[1]  Read from the 2024 archive only." in text[1]
+    assert edges.right <= 0.932 + 0.002
 
 
 def body_text_floor(report: Report) -> float:
-    """The lowest text on any page that is not the footer or a footnote, in figure units."""
+    """The lowest text on any page that is not the footer, in figure units."""
 
     class Lowest:
         y = 1.0
 
         def savefig(self, fig, **_):
-            body = [text.get_position()[1] for text in fig.texts if text.get_fontsize() not in (7.6, 7.8)]
+            body = [text.get_position()[1] for text in fig.texts if text.get_fontsize() != 7.6]
             self.y = min([self.y] + body)
 
     lowest = Lowest()
@@ -529,41 +600,6 @@ def test_more_filters_than_a_page_holds_continue_on_the_next(tmp_path):
     assert body_text_floor(report) > 0.06
 
 
-def test_footnotes_never_take_more_than_their_reserved_lines():
-    long_note = "A caveat that goes on at length about exactly why this number is not what it seems. " * 12
-    other = "A second caveat, also long. " * 20
-    left = predictions(20)
-    right = left.copy()
-    right.loc[right.index[:2], "cmax"] *= 2
-    result = compare_keyed(pd.concat([left, left.iloc[:1].assign(cmax=-1.0)]), right, on="id")
-    section = sections.comparison(result, notes={"mismatched": long_note, "repeated_differ": other})
-    report = Report("Long notes").add(section)
-
-    class Footnotes:
-        most, text = 0, ""
-
-        def savefig(self, fig, **_):
-            notes = [text for text in fig.texts if text.get_fontsize() == 7.8]
-            self.most = max(self.most, len(notes))
-            self.text += " ".join(text.get_text() for text in notes)
-
-    footnotes = Footnotes()
-    report.build(footnotes)
-    assert 0 < footnotes.most <= 3
-    assert "(in full on page 1)" in footnotes.text
-    assert long_note.strip() in " ".join(page_text(report)[0].replace(" | ", " ").split())  # the summary has it whole
-
-
-def test_a_note_added_by_a_page_is_on_the_summary_the_first_time_it_is_built():
-    def page(report):
-        fig, y = report.new_page("Method")
-        report.footnote(fig, "Read from the 2024 archive only.")
-        return fig
-
-    first_build = page_text(Report("Own note", summary="One page.").add(page))
-    assert "[1]  Read from the 2024 archive only." in first_build[0]
-
-
 def test_the_method_table_states_summed_tolerances():
     left = predictions(10)
     result = compare_keyed(left, left, on="id", values=["cmax"], rtol=0.02, atol=1)
@@ -573,3 +609,25 @@ def test_the_method_table_states_summed_tolerances():
 
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])
+
+
+def test_cards_open_their_sections_and_every_page_leads_back(tmp_path):
+    report = Report("Intake", summary="The collected arms are usable.")
+    report.add(sections.performance(predictions(), "cmax", by="project", key="id", log=True))
+    report.add(sections.data_quality(data_quality(messy(), key="id")))
+    report.save(tmp_path / "report.pdf", publish=False)
+
+    reader = PdfReader(tmp_path / "report.pdf")
+    headlines = page_headlines(report)
+    quality = headlines.index("Data quality")
+
+    def targets(page: int) -> list:
+        dests = [a.get_object()["/Dest"][0] for a in reader.pages[page].get("/Annots", [])]
+        return [i for dest in dests for i, p in enumerate(reader.pages) if p.indirect_reference == dest]
+
+    assert targets(0) == [1, quality]
+    assert all(targets(page) == [0] for page in range(1, len(reader.pages)))
+    bookmarks = [(o.title, reader.get_destination_page_number(o)) for o in reader.outline]
+    assert bookmarks == [("Summary", 0), ("Model performance", 1), ("Data quality", quality)]
+    assert reader.metadata.title == "Intake"
+    assert f"PAGE {quality + 1}" in page_text(report)[0]
