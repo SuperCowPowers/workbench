@@ -7,7 +7,7 @@ import json
 from io import StringIO
 import hashlib
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Tuple, List, Optional, Union
 
 # Workbench Logger
@@ -844,6 +844,8 @@ LOG_FENCE_SKEW = 2.0
 
 SEVERITY_ORDER = {"warn": 0, "info": 1, "ok": 2}
 
+BOX_COLUMNS = ["column", "q1", "median", "q3", "whisker_low", "whisker_high", "fence_low", "fence_high", "log"]
+
 
 @dataclass
 class DataQuality:
@@ -854,12 +856,17 @@ class DataQuality:
             severity (warn/info/ok), count (rows flagged, where the check counts rows),
             value, detail. Worst first.
         rows (pd.DataFrame): One row per offending cell: the key column(s) (or `index`
-            when no key was given), check, column, and the offending value as text.
+            when no key was given), check, column, and the offending value as text. A
+            duplicate carries its row's fields as "column=value, ...", its copies side by side.
             Joins back to the source frame on the key.
+        boxes (pd.DataFrame): One row per column with outliers, enough to draw its box plot:
+            column, q1, median, q3, the whiskers (the extreme values inside the fence), the
+            fence, and whether it was set on log10 values.
     """
 
     findings: pd.DataFrame
     rows: pd.DataFrame
+    boxes: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=BOX_COLUMNS))
 
 
 def data_quality(
@@ -895,19 +902,30 @@ def data_quality(
     if not key_cols:
         log.warning("data_quality: no key given, offending rows are listed by index")
     ids = df[key_cols] if key_cols else pd.DataFrame({"index": df.index}, index=df.index)
-    findings, row_frames = [], []
+    findings, row_frames, boxes = [], [], []
 
-    def add(check: str, column: str, severity: str, mask: pd.Series, detail: str, values: pd.Series = None):
+    def add(check, column, severity, mask: pd.Series, detail: str, values: pd.Series = None, together=None):
+        """Record a finding and its rows. `together` names the row columns to sort by, so rows that
+        belong with each other (the copies of a duplicate) are listed side by side."""
         count = int(mask.sum())
         if count > max_rows:
             detail += f" (first {max_rows} rows listed)"
         value = f"{count} ({100 * count / len(df):.1f}%)"
         finding = {"check": check, "column": column, "severity": severity, "count": count}
         findings.append({**finding, "value": value, "detail": detail})
-        hit = ids[mask.to_numpy()].head(max_rows).assign(check=check, column=column, value=None)
+        hit = ids[mask.to_numpy()].assign(check=check, column=column, value=None)
         if values is not None:
-            hit["value"] = values[mask.to_numpy()].head(max_rows).astype(str).to_numpy()
-        row_frames.append(hit)
+            hit["value"] = values[mask.to_numpy()].astype(str).to_numpy()
+        if together:
+            hit = hit.sort_values(together, kind="stable")
+        row_frames.append(hit.head(max_rows))
+
+    def fields(mask: pd.Series, columns: List[str]) -> pd.Series:
+        """The named columns of the masked rows as text, "column=value, ...", for a row that is listed whole."""
+        text = np.full(len(df), None, dtype=object)
+        chosen = df.loc[mask.to_numpy(), columns] if columns else df.loc[mask.to_numpy(), []]
+        text[mask.to_numpy()] = [", ".join(f"{c}={v}" for c, v in zip(columns, row)) for row in chosen.to_numpy()]
+        return pd.Series(text, index=df.index)
 
     hashable_cols = []
     for col in df.columns:
@@ -931,10 +949,12 @@ def data_quality(
                 add("non_finite", col, "warn", infinite, "infinite values", values)
             finite = numbers[~infinite & ~missing]
             if not finite.empty:
-                # A positive, strongly skewed column (a concentration, a clearance) is fenced on
-                # its log10 values; on the raw values its whole upper tail reads as outliers
-                on_log = bool((finite > 0).all() and abs(finite.skew()) > LOG_FENCE_SKEW)
-                q1, q3 = np.percentile(np.log10(finite) if on_log else finite, [25, 75])
+                # A strongly skewed column with no negative values (a concentration, a clearance) is
+                # fenced on the log10 of its positive values; on the raw values its whole upper tail
+                # reads as outliers. A zero in such a column falls below the fence.
+                positive = finite[finite > 0]
+                on_log = bool((finite >= 0).all() and len(positive) and abs(finite.skew()) > LOG_FENCE_SKEW)
+                q1, q3 = np.percentile(np.log10(positive) if on_log else finite, [25, 75])
                 low, high = q1 - outlier_scale * (q3 - q1), q3 + outlier_scale * (q3 - q1)
                 low, high = (10**low, 10**high) if on_log else (low, high)
                 outliers = ~infinite & ((numbers < low) | (numbers > high))
@@ -942,6 +962,10 @@ def data_quality(
                     scale = " of the log10 values" if on_log else ""
                     detail = f"outside [{low:g}, {high:g}], {outlier_scale:g} x IQR beyond the quartiles{scale}"
                     add("outliers", col, "info", outliers, detail, values)
+                    inside = finite[(finite >= low) & (finite <= high)]
+                    middle = 10 ** np.median(np.log10(positive)) if on_log else finite.median()
+                    q1, q3 = (10**q1, 10**q3) if on_log else (q1, q3)
+                    boxes.append([col, q1, middle, q3, inside.min(), inside.max(), low, high, on_log])
         elif not pd.api.types.is_bool_dtype(values) and not pd.api.types.is_datetime64_any_dtype(values):
             unparseable = pd.to_numeric(values, errors="coerce").isna() & ~missing
             if unparseable.any() and 1 - unparseable.sum() / len(present) >= MOSTLY_NUMERIC_FRACTION:
@@ -954,12 +978,15 @@ def data_quality(
     if key_cols:
         repeated = df.duplicated(key_cols, keep=False) & df[key_cols].notna().all(axis=1)
         if repeated.any():
-            add("duplicate_key", ", ".join(key_cols), "warn", repeated, "key held by more than one row")
+            others = [c for c in hashable_cols if c not in key_cols]
+            detail = "key held by more than one row"
+            add("duplicate_key", ", ".join(key_cols), "warn", repeated, detail, fields(repeated, others), key_cols)
     # Whole-row identity needs every column comparable
     comparable = len(hashable_cols) == len(df.columns) and len(hashable_cols) > 0
     identical = df.duplicated(keep=False) if comparable else pd.Series(False, index=df.index)
     if identical.any():
-        add("duplicate_rows", None, "warn", identical, "rows identical in every column")
+        detail = "rows identical in every column"
+        add("duplicate_rows", None, "warn", identical, detail, fields(identical, list(df.columns)), ["value"])
 
     findings_df = pd.DataFrame(findings, columns=["check", "column", "severity", "count", "value", "detail"])
     if target:
@@ -972,7 +999,7 @@ def data_quality(
 
     row_columns = list(ids.columns) + ["check", "column", "value"]
     rows = pd.concat(row_frames, ignore_index=True) if row_frames else pd.DataFrame(columns=row_columns)
-    return DataQuality(findings=findings_df, rows=rows[row_columns])
+    return DataQuality(findings=findings_df, rows=rows[row_columns], boxes=pd.DataFrame(boxes, columns=BOX_COLUMNS))
 
 
 def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:

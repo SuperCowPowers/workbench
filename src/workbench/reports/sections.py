@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
+from workbench.reports.paginator import LABEL, TABLE_HEAD, TABLE_ROW, Paginator, Panel
 from workbench.reports.report import Report, Section, Summary
 from workbench.utils.metrics_utils import performance_breakout
 from workbench.utils.pandas_utils import DataQuality, KeyedComparison
@@ -19,11 +20,17 @@ from workbench.utils.plots import report as pages
 # Rows of a detail frame shown on a page; the rest are in the published frame
 EXAMPLE_ROWS = 8
 
+# Columns whose outliers get a box plot on the data quality page
+OUTLIER_BOXES = 3
+
+# Beside the box plots: where they start, the pitch between them, and the most findings listed
+BOXES_X, BOX_PITCH, FINDINGS_BESIDE_BOXES = 0.58, 0.115, 12
+
+# Rows shown behind each data quality warning
+EXAMPLE_ROWS_PER_WARNING = 10
+
 # Columns shown beside the key in a one-sided example table
 EXTRA_COLUMNS = 3
-
-# A table is not started, or continued, with fewer rows than this at the foot of a page
-MIN_TABLE_ROWS = 3
 
 SETS_DIFFER = "several rows share a key, and the two sides do not hold the same values"
 
@@ -32,10 +39,6 @@ REPEATS = {
     "exact": "agree when both sides hold the same rows: the same count with the same values",
     "values": "agree when every value is on both sides, however many rows carry it",
 }
-
-# Page geometry in figure units: the lowest a body may reach, which leaves room for footnotes
-# above the footer; a table's header; and one table row
-BOTTOM, TABLE_HEAD, TABLE_ROW = 0.09, 0.03, 0.0172
 
 METRIC_NOTES = (
     "R2 is the share of the target's variance the predictions explain. RMSE and MAE are in target units; "
@@ -71,32 +74,6 @@ def _rows(df: pd.DataFrame, columns: List[str], limit: int = EXAMPLE_ROWS, width
     return [[_clip(_num(v), width) for v in row] for row in df[columns].head(limit).itertuples(index=False)]
 
 
-def _rows_that_fit(height: float, most: int) -> int:
-    """How many table rows fit in `height` of the page, under a header: at least 1, at most `most`."""
-    return int(min(most, max(1, (height - TABLE_HEAD) // TABLE_ROW)))
-
-
-def _callout(report: Report, fig, y: float, notes: List[str]) -> float:
-    """Notes stated prominently at the top of a page, each under its number."""
-    for note in notes:
-        y = pages.sec(fig, y, f"Note {report.mark(note)}", pages.ACCENTS[3])
-        y = pages.para(fig, y, note, size=10.5, width=100, color=pages.INK, lead=0.0175) - 0.008
-    return y
-
-
-def _where(report: Report, fig, y: float, frame: str, count: int, shown: Optional[int] = None) -> float:
-    """A muted line saying how many rows were shown and where every row of the frame is.
-
-    Says nothing about the location when the report is unpublished, and nothing at all when
-    every row is on the page and there is no location to give.
-    """
-    location = report.location(frame)
-    parts = [f"Showing the first {shown:,} of {count:,}." if shown is not None and shown < count else ""]
-    parts += [f"All {count:,} rows: DFStore {location}" if location is not None and count else ""]
-    note = " ".join(part for part in parts if part)
-    return pages.para(fig, y, note, size=8.2, color=pages.MUTED) - 0.012 if note else y
-
-
 def performance(
     df: pd.DataFrame,
     target: str,
@@ -106,6 +83,7 @@ def performance(
     log: bool = False,
     unit: Optional[str] = None,
     name: str = "performance",
+    about: Optional[str] = None,
 ) -> Section:
     """Model performance: metrics and charts, then where the model misses.
 
@@ -120,6 +98,8 @@ def performance(
             Defaults to False.
         unit (Optional[str]): Target unit for axis labels.
         name (str): Prefix for this section's frames. Defaults to "performance".
+        about (Optional[str]): The model or endpoint scored, by the name the report uses for it.
+            The report's notes on it are shown at the top of the page.
 
     Returns:
         Section: Two pages, and the frames `<name>_rows` (every row with its error, worst
@@ -144,50 +124,67 @@ def performance(
     detail = detail.sort_values(error, key=abs, ascending=False, na_position="last", kind="stable")
     rows_frame, breakout_frame = f"{name}_rows", f"{name}_breakout"
 
-    def overview(report: Report):
-        fig, y = report.new_page(f"Model performance: {target}", f"{int(overall['support']):,} rows scored.")
+    about = [about] if about else []
+
+    def build(report: Report):
+        flow = Paginator(report, f"Model performance: {target}", f"{int(overall['support']):,} rows scored.")
+        flow.notes(about)
         stats = [("R2", _num(overall["r2"])), ("RMSE", _num(overall["rmse"])), ("MAE", _num(overall["mae"]))]
         stats += [("Spearman", _num(overall["spearmanr"])), ("Rows", f"{int(overall['support']):,}")]
         if log:
             stats += [("GMFE", _num(overall["gmfe"]))]
             stats += [(f"Within {fold}", f"{overall[f'within_{fold}']:.0%}") for fold in FOLDS]
-        y = pages.stat_row(fig, pages.L, y, stats)
-        y = pages.para(fig, y - 0.006, LOG_METRIC_NOTES if log else METRIC_NOTES, size=8.6)
+        flow.tiles(stats)
+        flow.para(LOG_METRIC_NOTES if log else METRIC_NOTES, size=8.6)
 
         scatter_title = f"{overall['within_2x']:.0%} of predictions within 2x" if log else f"R2 {overall['r2']:.2f}"
         groups = df[by] if by else None
-        scatter = fig.add_axes([0.10, y - 0.40, 0.37, 0.33])
-        charts.pred_vs_actual(
-            df[target], df[prediction], groups=groups, log=log, unit=unit, title=scatter_title, ax=scatter
-        )
         median = detail[error].median()
-        spread = fig.add_axes([0.58, y - 0.40, 0.35, 0.33])
-        charts.residuals(df[target], df[prediction], log=log, unit=unit, title=f"Median error {median:+.3g}", ax=spread)
-        return fig
+        flow.charts(
+            0.33,
+            Panel(
+                0.10,
+                0.37,
+                lambda ax: charts.pred_vs_actual(
+                    df[target], df[prediction], groups=groups, log=log, unit=unit, title=scatter_title, ax=ax
+                ),
+            ),
+            Panel(
+                0.58,
+                0.35,
+                lambda ax: charts.residuals(
+                    df[target], df[prediction], log=log, unit=unit, title=f"Median error {median:+.3g}", ax=ax
+                ),
+            ),
+            above=0.07,
+            below=0.06,
+        )
 
-    def misses(report: Report):
-        fig, y = report.new_page("Where the model misses")
+        flow.heading("Where the model misses")
         if by:
             metric = "gmfe" if log else "mae"
             within = [f"within_{fold}" for fold in FOLDS]
             columns = ["group", "support", "r2", "rmse"] + (["gmfe"] + within if log else ["mae"])
             shown = breakout.assign(**{c: breakout[c].map("{:.0%}".format) for c in within}) if log else breakout
-            y = pages.sec(fig, y, f"By {by}")
-            y = pages.table(fig, y, columns, _rows(shown, columns, limit=len(shown)), hl_row=0)
-            groups = breakout.iloc[1:].set_index("group")[metric]
-            bars = fig.add_axes([0.24, y - 0.05 - 0.026 * len(groups), 0.50, 0.026 * len(groups) + 0.02])
-            worst = groups.idxmax() if len(groups) else ""
-            charts.breakout_bars(
-                groups, overall[metric], metric.upper(), f"{worst} has the highest {metric.upper()}", ax=bars
+            flow.label(f"By {by}")
+            flow.table(columns, _rows(shown, columns, limit=len(shown)), hl_row=0)
+            scores = breakout.iloc[1:].set_index("group")[metric]
+            worst = scores.idxmax() if len(scores) else ""
+            bars_title = f"{worst} has the highest {metric.upper()}"
+            flow.charts(
+                0.026 * len(scores) + 0.02,
+                Panel(
+                    0.24,
+                    0.50,
+                    lambda ax: charts.breakout_bars(scores, overall[metric], metric.upper(), bars_title, ax=ax),
+                ),
+                below=0.06,
             )
-            y -= 0.13 + 0.026 * len(groups)
-            y = _where(report, fig, y, breakout_frame, len(breakout))
-        y = pages.sec(fig, y, "Largest errors")
+            flow.where(breakout_frame, len(breakout))
+        flow.label("Largest errors")
         columns = list(detail.columns)
-        shown = min(len(detail), _rows_that_fit(y - BOTTOM - 0.03, most=10))
-        y = pages.table(fig, y, columns, _rows(detail, columns, limit=shown))
-        _where(report, fig, y - 0.008, rows_frame, len(detail), shown=shown)
-        return fig
+        flow.table(columns, _rows(detail, columns, limit=10), frame=rows_frame, count=len(detail))
+        return flow.figs
 
     if log:
         headline = f"{overall['within_2x']:.0%} of {target} predictions are within 2x of the measured value."
@@ -204,15 +201,17 @@ def performance(
         headline,
         stats,
         lambda ax: charts.pred_vs_actual(df[target], df[prediction], groups=df[by] if by else None, log=log, ax=ax),
+        hero=(f"{overall['within_2x']:.0%}", "within 2x") if log else (f"{overall['r2']:.2f}", "R2"),
     )
-    return Section(pages=[overview, misses], frames={rows_frame: detail, breakout_frame: breakout}, summary=card)
+    frames = {rows_frame: detail, breakout_frame: breakout}
+    return Section(pages=[build], frames=frames, summary=card, about=about)
 
 
 def data_quality(
     result: DataQuality,
     title: str = "Data quality",
     name: str = "quality",
-    notes: Optional[List[str]] = None,
+    about: Optional[str] = None,
 ) -> Section:
     """Data quality: the findings, then example rows for each warning.
 
@@ -220,8 +219,8 @@ def data_quality(
         result (DataQuality): Output of `pandas_utils.data_quality`.
         title (str): Page headline. Defaults to "Data quality".
         name (str): Prefix for this section's frames. Defaults to "quality".
-        notes (Optional[List[str]]): What a reader must know to read these findings, stated
-            prominently at the top of the page.
+        about (Optional[str]): The artifact the frame came from, by the name the report uses
+            for it. The report's notes on that artifact are shown at the top of the page.
 
     Returns:
         Section: One or two pages, and the frames `<name>_findings` and `<name>_rows`
@@ -231,45 +230,56 @@ def data_quality(
     key_cols = [c for c in rows.columns if c not in ("check", "column", "value")]
     warnings = int((findings["severity"] == "warn").sum())
     minor = int((findings["severity"] == "info").sum())
-    notes = list(notes or [])
+    about = [about] if about else []
     flagged = int(findings["count"].sum())
     per_column = data_charts.quality_counts(result).sum(axis=1)
     findings_frame, rows_frame = f"{name}_findings", f"{name}_rows"
-    verdict = f"{warnings} warnings and {minor} minor findings." if warnings or minor else "No problems found."
+    counted = [(warnings, "warning", "warnings"), (minor, "minor finding", "minor findings")]
+    verdict = " and ".join(f"{count} {one if count == 1 else many}" for count, one, many in counted) + "."
+    verdict = verdict if warnings or minor else "No problems found."
 
-    def summary(report: Report):
-        fig, y = report.new_page(title, verdict)
-        y = _callout(report, fig, y, notes)
-        y = pages.stat_row(
-            fig, pages.L, y, [("Warnings", warnings), ("Minor", minor), ("Cells flagged", f"{flagged:,}")]
-        )
+    has_examples = bool(warnings) and not rows.empty
+
+    def build(report: Report):
+        flow = Paginator(report, title, verdict)
+        flow.notes(about)
         if findings.empty:
-            return fig
-        if len(per_column):
-            height = 0.028 * min(len(per_column), 10) + 0.03
-            bars = fig.add_axes([0.22, y - height - 0.04, 0.62, height])
-            worst = per_column.idxmax()
-            data_charts.quality_bars(result, title=f"{worst} has the most flagged rows", ax=bars)
-            y -= height + 0.115
+            return flow.figs
+        boxed = list(result.boxes["column"].head(OUTLIER_BOXES))
         shown = findings.drop(columns="count").fillna("")
-        shown = shown.assign(detail=shown["detail"].map(lambda d: _clip(d, 50)))
-        y = pages.sec(fig, y, "Findings, worst first")
-        columns = ["check", "column", "severity", "value", "detail"]
-        limit = _rows_that_fit(y - BOTTOM - 0.03, most=30)
-        y = pages.table(fig, y, columns, _rows(shown, columns, limit=limit, width=60))
-        _where(report, fig, y - 0.008, findings_frame, len(findings), shown=min(limit, len(findings)))
-        return fig
+        if not boxed:  # the findings take the page's width, with their detail
+            shown = shown.assign(detail=shown["detail"].map(lambda d: _clip(d, 50)))
+            columns = ["check", "column", "severity", "value", "detail"]
+            flow.label("Findings, worst first")
+            flow.table(columns, _rows(shown, columns, limit=30, width=60), frame=findings_frame, count=len(findings))
+        else:  # the findings on the left, a box per column with outliers on the right
+            columns = ["check", "column", "severity", "value"]
+            listed = _rows(shown, columns, limit=FINDINGS_BESIDE_BOXES, width=24)
+            box_height = 0.2
 
-    def examples(report: Report):
-        fig, y = report.new_page(f"{title}: rows to look at", "The first rows behind each warning.")
-        warned = findings[findings["severity"] == "warn"][["check", "column"]]
-        picks = (
-            rows.merge(warned, on=["check", "column"]).groupby(["check", "column"], sort=False, dropna=False).head(3)
-        )
-        columns = ["check", "column"] + key_cols + ["value"]
-        y = pages.table(fig, y, columns, _rows(picks.fillna(""), columns, limit=30))
-        _where(report, fig, y - 0.008, rows_frame, len(rows), shown=min(30, len(picks)))
-        return fig
+            def beside(fig, y):
+                pages.sec(fig, y, "Findings, worst first")
+                below = pages.table(fig, y - LABEL, columns, listed, x1=BOXES_X - 0.04)
+                for place, column in enumerate(boxed):
+                    ax = fig.add_axes([BOXES_X + 0.03 + BOX_PITCH * place, y - 0.02 - box_height, 0.07, box_height])
+                    data_charts.outlier_box(result, column, column, ax=ax)
+                return min(below, y - 0.02 - box_height - 0.06)
+
+            table_height = LABEL + TABLE_HEAD + len(listed) * TABLE_ROW
+            flow.block(max(table_height, 0.02 + box_height + 0.06), beside)
+            flow.where(findings_frame, len(findings), shown=len(listed))
+        if has_examples:
+            each = EXAMPLE_ROWS_PER_WARNING
+            warned = findings[findings["severity"] == "warn"][["check", "column"]]
+            behind = rows.merge(warned, on=["check", "column"])
+            picks = behind.groupby(["check", "column"], sort=False, dropna=False).head(each)
+            columns = ["check", "column"] + key_cols + ["value"]
+            flow.heading(f"Rows to look at: up to {each} behind each warning")
+            # Say rows were held back only when a warning has more than are shown
+            held_back = len(picks) < len(behind)
+            cells = _rows(picks.fillna(""), columns, limit=len(picks), width=90)
+            flow.table(columns, cells, frame=rows_frame, count=len(rows), sample=held_back)
+        return flow.figs
 
     headline = verdict
     if len(per_column):
@@ -278,15 +288,12 @@ def data_quality(
         title,
         headline,
         [("Warnings", warnings), ("Minor", minor), ("Cells flagged", f"{flagged:,}")],
-        (lambda ax: data_charts.quality_bars(result, most=5, ax=ax)) if len(per_column) else None,
+        (lambda ax: data_charts.quality_list(result, most=4, ax=ax)) if len(per_column) else None,
+        hero=(str(warnings), "warning" if warnings == 1 else "warnings"),
+        needs_action=bool(warnings),
     )
-    has_examples = warnings and not rows.empty
-    return Section(
-        pages=[summary] + ([examples] if has_examples else []),
-        frames={findings_frame: findings, rows_frame: rows},
-        summary=card,
-        notes=notes,
-    )
+    frames = {findings_frame: findings, rows_frame: rows}
+    return Section(pages=[build], frames=frames, summary=card, about=about)
 
 
 def comparison(
@@ -296,7 +303,8 @@ def comparison(
     title: Optional[str] = None,
     name: str = "comparison",
     max_rows: int = 10,
-    notes: Optional[Dict[str, str]] = None,
+    locations: Optional[Dict[str, str]] = None,
+    by: Optional[str] = None,
 ) -> Section:
     """Data comparison: what is fine and what needs a look, then the rows that need it.
 
@@ -313,9 +321,12 @@ def comparison(
         max_rows (int): Most rows shown per bucket in the rows to look at. Defaults to 10;
             every row is in the bucket's frame, whose location is printed under the table.
             The tables run onto further pages when they do not fit on one.
-        notes (Optional[Dict[str, str]]): A note per bucket, keyed "mismatched", "left_only",
-            "right_only" or "repeated_differ". The bucket is marked with the note's number
-            wherever it is named, and the note is printed at the foot of those pages.
+        locations (Optional[Dict[str, str]]): Where a side's data lives (a network drive, an S3
+            prefix), keyed by its name. Shown under that name on the overlap chart, and in
+            full with how the rows were compared.
+        by (Optional[str]): A column to break the one-sided rows down by (a year, a route, a
+            project), drawn beside the overlap chart. Rows of a side that lacks the column
+            are left out of it.
 
     Returns:
         Section: The overview page, the rows to look at, and a frame per bucket: `<name>_mismatched` (one row per
@@ -365,15 +376,6 @@ def comparison(
     frames = {f"{name}_{suffix}": frame for suffix, _, frame, _, _ in look}
     frames.update({f"{name}_{suffix}": frame for suffix, _, _, frame in aside})
     verdict = f"{counts['agree']:,} of {counts['pairs']:,} paired rows agree."
-    notes = dict(notes or {})
-    unknown = sorted(set(notes) - {suffix for suffix, *_ in look})
-    if unknown:
-        raise ValueError(f"No bucket named {unknown}; notes go on {[suffix for suffix, *_ in look]}")
-
-    def noted(report: Report, fig, suffix: str, label: str) -> str:
-        """A bucket's label, marked with its note when it has one (and the note put at the page's foot)."""
-        return f"{label} {report.footnote(fig, notes[suffix])}" if suffix in notes else label
-
     # How the rows were compared, stated so a reader knows what "agree" means here
     if result.rtol and result.atol:  # the two allowances add
         tolerance = f"within {result.atol:g} plus {result.rtol:.3g} of the {right} value"
@@ -381,7 +383,8 @@ def comparison(
         tolerance = f"within {result.rtol:.3g} of the {right} value"
     else:
         tolerance = f"within {result.atol:g}" if result.atol else "exactly"
-    method = [["matched on", ", ".join(on)]]
+    method = [[f"{side} is at", where] for side, where in (locations or {}).items() if side in (left, right)]
+    method += [["matched on", ", ".join(on)]]
     method += [["compared", f"{', '.join(values)}; numbers agree {tolerance}"]] if values else []
     method += [[f"limited to {col}", ", ".join(str(v) for v in held)] for col, held in result.scope.items()]
     method += [["rows sharing a key", REPEATS[result.repeats]]]
@@ -393,74 +396,56 @@ def comparison(
     ]
     open_items = [f"{count:,} {one if count == 1 else many}" for count, one, many in phrases if count]
 
-    def overview(report: Report):
-        fig, y = report.new_page(title, verdict)
+    has_examples = bool(open_items) or any(not frame.empty for *_, frame in aside)
+
+    def build(report: Report):
+        flow = Paginator(report, title, verdict)
+        flow.notes([left, right])
         stats = [("Agree", counts["agree"]), ("Mismatched", counts["mismatched"])]
         stats += [(f"{left} only", counts["left_only"]), (f"{right} only", counts["right_only"])]
         stats += [("Repeated keys differ", counts["repeated_differ"])]
-        y = pages.stat_row(fig, pages.L, y, [(k, f"{v:,}") for k, v in stats])
-        y = pages.table(fig, y - 0.018, ["how rows were compared", ""], method, aligns=["left", "left"]) - 0.006
-        bars = fig.add_axes([0.16, y - 0.115, 0.74, 0.075])
-        data_charts.fate_bars(result, left, right, title="Where every row went", ax=bars)
-        y -= 0.215
+        flow.tiles([(k, f"{v:,}") for k, v in stats])
+        flow.table(["how rows were compared", ""], method, aligns=["left", "left"])
+        if by is None:
+            overlap = Panel(
+                pages.L,
+                pages.R - pages.L,
+                lambda ax: data_charts.overlap_venn(result, left, right, locations=locations, ax=ax),
+            )
+            flow.charts(0.2, overlap, above=0.0, below=0.025)
+        else:  # the breakdown of one-sided rows on the left, the overlap on the right
+            breakdown = Panel(
+                pages.L + 0.07,
+                0.36,
+                lambda ax: data_charts.one_sided_bars(
+                    result, by, left, right, title=f"Rows on one side only, by {by}", ax=ax
+                ),
+                height=0.145,
+                lift=0.015,
+            )
+            overlap = Panel(
+                0.54,
+                pages.R - 0.54,
+                lambda ax: data_charts.overlap_venn(result, left, right, locations=locations, location_chars=36, ax=ax),
+            )
+            flow.charts(0.2, breakdown, overlap, above=0.0, below=0.025)
 
-        y = pages.sec(fig, y, "Fine")
         fine = [["agree", f"{counts['agree']:,} pairs", "the two sides hold the same values"]]
         for _, source, other, frame in aside:
             if not frame.empty:
                 meaning = f"{source} rows with a {' or '.join(result.scope)} {other} never holds"
                 fine.append([f"not expected in {other}", f"{len(frame):,} rows", meaning])
-        y = pages.table(fig, y, ["bucket", "size", "meaning"], fine, aligns=["left", "right", "left"]) - 0.012
-        y = pages.sec(fig, y, "Needs a look")
-        rows = [
-            [noted(report, fig, suffix, label), shown or f"{len(frame):,} rows", meaning]
-            for suffix, label, frame, shown, meaning in look
-        ]
-        y = pages.table(fig, y, ["bucket", "size", "meaning"], rows, aligns=["left", "right", "left"])
+        buckets = {"aligns": ["left", "right", "left"]}
+        flow.label("Fine")
+        flow.table(["bucket", "size", "meaning"], fine, **buckets)
+        flow.gap(0.004)
+        flow.label("Needs a look")
+        needing = [[label, shown or f"{len(frame):,} rows", meaning] for _, label, frame, shown, meaning in look]
+        flow.table(["bucket", "size", "meaning"], needing, **buckets)
+        if not has_examples:
+            return flow.figs
 
-        disputed = [v for v in numeric if not pairs[f"{v}_agree"].all()]
-        if not disputed:
-            return fig
-        # The first value that disagrees, left against right: below the tables, or on a page of its own
-        figs, value = [fig], disputed[0]
-        if y - BOTTOM < 0.30:
-            fig, y = report.new_page(title, "Continued.")
-            figs.append(fig)
-        agree = int(pairs[f"{value}_agree"].sum())
-        side = min(0.40, y - BOTTOM - 0.07)
-        scatter = fig.add_axes([0.5 - side * 11 / 17, y - side - 0.05, side * 22 / 17, side])
-        scatter_title = (
-            f"{agree:,} of {len(pairs):,} one-to-one pairs agree on {noted(report, fig, 'mismatched', value)}"
-        )
-        data_charts.value_agreement(result, value, left, right, title=scatter_title, ax=scatter)
-        return figs
-
-    def examples(report: Report):
-        heading = f"{title}: rows to look at"
-        fig, y = report.new_page(heading)
-        figs = [fig]
-
-        def flow(suffix: str, label: str, meaning: str, columns: list, rows: list, total: int, sample: bool):
-            """One table, continued onto as many pages as its rows need.
-
-            `sample` is True for a table listing the frame's own rows, which says how many
-            of them it shows, and False for one summarising them.
-            """
-            nonlocal fig, y
-            color = pages.INK if sample else pages.MUTED
-            start = 0
-            while start < len(rows):
-                room = int((y - BOTTOM - TABLE_HEAD - 0.07) // TABLE_ROW)
-                if room < min(MIN_TABLE_ROWS, len(rows) - start):
-                    fig, y = report.new_page(heading, "Continued.")
-                    figs.append(fig)
-                    continue
-                marked = noted(report, fig, suffix, label)
-                y = pages.sec(fig, y, f"{marked}: {meaning}" if start == 0 else f"{marked}, continued", color)
-                y = pages.table(fig, y, columns, rows[start : start + room])
-                start += room
-            y = _where(report, fig, y - 0.004, f"{name}_{suffix}", total, shown=len(rows) if sample else None) - 0.012
-
+        flow.heading("Rows to look at")
         for suffix, label, frame, _, meaning in look:
             if frame.empty:
                 continue
@@ -472,21 +457,28 @@ def comparison(
                 columns = list(frame.columns)
             else:  # the key, then the first few other columns
                 columns = on + [c for c in frame.columns if c not in on][:EXTRA_COLUMNS]
-            rows = _rows(frame, columns, limit=max_rows, width=22)
-            flow(suffix, label, meaning, columns, rows, len(frame), True)
+            flow.label(f"{label}: {meaning}", short=label)
+            cells = _rows(frame, columns, limit=max_rows, width=22)
+            flow.table(columns, cells, frame=f"{name}_{suffix}", count=len(frame))
         for suffix, source, other, frame in aside:
             if frame.empty:
                 continue
             reasons = frame.groupby("scope_reason").size().sort_values(ascending=False, kind="stable")
-            rows = [[reason, f"{count:,}"] for reason, count in reasons.items()]
-            meaning = f"{source} rows it holds no counterpart for"
-            flow(suffix, f"Not expected in {other}", meaning, ["reason", "rows"], rows, len(frame), False)
-        return figs
+            cells = [[reason, f"{count:,}"] for reason, count in reasons.items()]
+            label = f"Not expected in {other}"
+            flow.label(f"{label}: {source} rows it holds no counterpart for", pages.MUTED, short=label)
+            flow.table(["reason", "rows"], cells, frame=f"{name}_{suffix}", count=len(frame), sample=False)
+        return flow.figs
 
     headline = verdict + (f" Needs a look: {', '.join(open_items)}." if open_items else " Nothing needs a look.")
     stats = [("Agree", f"{counts['agree']:,}"), ("Mismatched", f"{counts['mismatched']:,}")]
     stats += [(f"{left} only", f"{counts['left_only']:,}"), (f"{right} only", f"{counts['right_only']:,}")]
-    card = Summary(title, headline, stats, lambda ax: data_charts.fate_bars(result, left, right, ax=ax))
-    has_examples = bool(open_items) or any(not frame.empty for *_, frame in aside)
-    pages_ = [overview] + ([examples] if has_examples else [])
-    return Section(pages=pages_, frames=frames, summary=card, notes=list(notes.values()))
+    card = Summary(
+        title,
+        headline,
+        stats,
+        lambda ax: data_charts.overlap_venn(result, left, right, ax=ax),
+        hero=(f"{counts['agree']:,}", f"of {counts['pairs']:,} paired rows agree"),
+        needs_action=bool(open_items),
+    )
+    return Section(pages=[build], frames=frames, summary=card, about=[left, right])
