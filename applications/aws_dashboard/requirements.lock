@@ -617,6 +617,10 @@ pyparsing==3.3.2
     #   -c ci/.uv-constraints.txt
     #   matplotlib
     #   pyiceberg
+pypdf==7.1.1
+    # via
+    #   -c ci/.uv-constraints.txt
+    #   workbench (pyproject.toml)
 pyroaring==1.1.0
     # via
     #   -c ci/.uv-constraints.txt
