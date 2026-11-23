@@ -485,7 +485,13 @@ def comparison(
     return Section(pages=[build], frames=frames, summary=card, about=[left, right])
 
 
-def archive(result: ArchiveRead, source: Archive, title: Optional[str] = None, name: str = "archive") -> Section:
+def archive(
+    result: ArchiveRead,
+    source: Archive,
+    title: Optional[str] = None,
+    name: str = "archive",
+    card_size: str = "half_height",
+) -> Section:
     """How an Archive was read: where it is, how many of its files gave rows, and which could not be read.
 
     Args:
@@ -493,6 +499,8 @@ def archive(result: ArchiveRead, source: Archive, title: Optional[str] = None, n
         source (Archive): The Archive that was read.
         title (Optional[str]): Page headline. Defaults to "How the <name> was read".
         name (str): Prefix for this section's frames. Defaults to "archive".
+        card_size (str): The size of its card on the summary page: "half_height" (the default),
+            "half_width" or "full".
 
     Returns:
         Section: The page, and the frame `<name>_unreadable` (every file the reader raised on).
@@ -523,5 +531,6 @@ def archive(result: ArchiveRead, source: Archive, title: Optional[str] = None, n
         [("Files", f"{result.files:,}"), ("Unreadable", f"{len(unreadable):,}"), ("Rows", f"{len(result.rows):,}")],
         hero=(f"{read:,}", f"of {result.files:,} files read"),
         needs_action=bool(len(unreadable)),
+        size=card_size,
     )
     return Section(pages=[build], frames={unreadable_frame: unreadable}, summary=card, about=[source.name])
