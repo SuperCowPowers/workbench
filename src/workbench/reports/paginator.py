@@ -42,7 +42,7 @@ class Paginator:
     """Paginator: lays a section's blocks down its pages, turning the page when the next block does not fit.
 
     A section makes one, hands it blocks from the top down, and returns its `figs`. A block that
-    does not fit under the cursor starts a new page with the same headline and "Continued.". A
+    does not fit under the cursor starts a new page with the same headline, marked "Continued". A
     table is split across pages by rows, and a label stays with the block it heads.
 
     Common Usage:
@@ -76,7 +76,7 @@ class Paginator:
 
     def turn(self) -> None:
         """Start the next page, with the same headline."""
-        self.fig, self.y = self.report.new_page(self.headline, "Continued.")
+        self.fig, self.y = self.report.new_page(self.headline, continued=True)
         self.figs.append(self.fig)
         self._top = self.y
 
@@ -143,16 +143,19 @@ class Paginator:
             keep (float): Room that must be left under it on the page, so it never sits alone.
         """
 
+        self.gap(0.012)
+        if not self._fits(HEADING + keep):
+            self.turn()
+        ruled = self.y < self._top  # at the top of a page the page's own rule is just above
+
         def draw(fig, y):
-            pages.rule(fig, y)
+            if ruled:
+                pages.rule(fig, y)
             fig.text(pages.L, y - 0.014, text, fontsize=12.5, color=pages.INK, va="top").set(
                 fontname=pages.HEADING_FONT, fontweight=pages.HEADING_WEIGHT
             )
             return y - HEADING
 
-        self.gap(0.012)
-        if not self._fits(HEADING + keep):
-            self.turn()
         self.block(HEADING, draw)
 
     def para(self, text: str, size: float = 9.5, width: int = 112, lead: float = 0.0155, **style) -> None:

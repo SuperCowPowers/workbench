@@ -1,5 +1,5 @@
 """Data plots (matplotlib): how the rows of a keyed comparison overlap, where its one-sided rows concentrate,
-and which columns a quality check flagged.
+which columns a quality check flagged, and a column's outliers against its spread.
 
 Each takes an optional `ax` so a report can draw onto a page it is laying out; without one it
 makes its own figure. Either way it returns the figure.
@@ -24,6 +24,9 @@ MAX_COLUMN_CHARS = 24
 
 # The most groups a breakdown draws; the rest are summed into one bar
 MAX_GROUPS = 8
+
+# The height of one entry of the flagged-rows list, in inches
+ITEM_PITCH = 0.36
 
 # One colour per data quality check
 CHECK_COLORS = {
@@ -163,7 +166,7 @@ def one_sided_bars(
 
 
 def outlier_box(result: DataQuality, column: str, title: str = "", ax=None):
-    """One column's spread as a box, with its fence and the values outside it marked.
+    """One column's spread as an upright box, with its fence and the values outside it marked.
 
     The box is drawn from the quartiles and whiskers `data_quality` kept, so the column itself
     is not needed. A column fenced on its log10 values gets a log axis; when an outlier is zero,
@@ -188,12 +191,12 @@ def outlier_box(result: DataQuality, column: str, title: str = "", ax=None):
     listed = result.rows[(result.rows["check"] == "outliers") & (result.rows["column"] == column)]
     outliers = pd.to_numeric(listed["value"], errors="coerce").dropna().to_numpy()
 
-    ax = ax if ax is not None else plt.subplots(figsize=(6.4, 1.1))[1]
+    ax = ax if ax is not None else plt.subplots(figsize=(1.6, 3.2))[1]
     stats = {"med": box["median"], "q1": box["q1"], "q3": box["q3"]}
     stats.update(whislo=box["whisker_low"], whishi=box["whisker_high"], fliers=[])
     ax.bxp(
         [stats],
-        orientation="horizontal",
+        orientation="vertical",
         widths=0.5,
         showfliers=False,
         patch_artist=True,
@@ -203,24 +206,26 @@ def outlier_box(result: DataQuality, column: str, title: str = "", ax=None):
         capprops={"color": ACCENTS[1], "linewidth": 1.2},
     )
     for fence in (box["fence_low"], box["fence_high"]):
-        ax.axvline(fence, color=MUTED, lw=0.9, ls=(0, (4, 3)))
+        ax.axhline(fence, color=MUTED, lw=0.9, ls=(0, (4, 3)))
     ax.scatter(
-        outliers, np.ones(len(outliers)), s=26, color=MISMATCH_COLOR, edgecolor="white", lw=0.8, zorder=3, clip_on=False
+        np.ones(len(outliers)), outliers, s=26, color=MISMATCH_COLOR, edgecolor="white", lw=0.8, zorder=3, clip_on=False
     )
     if box["log"] and (outliers <= 0).any():
         # Linear below a tenth of the smallest value inside the fence, with zero and the decades above it labelled
         threshold = box["whisker_low"] / 10
-        ax.set_xscale("symlog", linthresh=threshold)
-        ax.set_xlim(left=-threshold / 2)
-        decades = np.arange(np.ceil(np.log10(threshold)) + 1, np.ceil(np.log10(ax.get_xlim()[1])))
-        ax.set_xticks([0] + list(10.0**decades))
+        ax.set_yscale("symlog", linthresh=threshold)
+        ax.set_ylim(bottom=-threshold / 2)
+        decades = np.arange(np.ceil(np.log10(threshold)) + 1, np.ceil(np.log10(ax.get_ylim()[1])))
+        ax.set_yticks([0] + list(10.0**decades))
         ax.minorticks_off()
     elif box["log"]:
-        ax.set_xscale("log")
-    ax.set_yticks([])
-    ax.set_ylim(0.5, 1.5)
-    tidy(ax, title, grid="x")
-    ax.spines["left"].set_visible(False)
+        ax.set_yscale("log")
+    ax.set_xticks([])
+    ax.set_xlim(0.5, 1.5)
+    fence = f"fence {box['fence_low']:.3g} to {box['fence_high']:.3g}"
+    ax.set_xlabel(f"{len(outliers):,} outside\n{fence}", fontsize=7).set_color(BODY)
+    tidy(ax, title, grid="y")
+    ax.spines["bottom"].set_visible(False)
     return ax.figure
 
 
@@ -240,33 +245,40 @@ def quality_counts(result: DataQuality) -> pd.DataFrame:
     return table.loc[table.sum(axis=1).sort_values(ascending=False, kind="stable").index]
 
 
-def quality_bars(result: DataQuality, most: int = 10, title: str = "", ax=None):
-    """Flagged rows per column, stacked by check, worst column first.
+def quality_list(result: DataQuality, most: int = 8, title: str = "", ax=None):
+    """Flagged rows per column as a list: the count, the column, and the checks behind the count.
+
+    A count is coloured for a warning and plain for a minor finding, worst column first.
 
     Args:
         result (DataQuality): Output of `pandas_utils.data_quality`.
-        most (int): Most columns drawn. Defaults to 10.
+        most (int): Most columns listed. Defaults to 8; fewer when the axes is too short.
         title (str): Left-aligned axes title.
         ax: Axes to draw on. Defaults to a new figure.
 
     Returns:
         matplotlib.figure.Figure: The figure.
     """
-    table = quality_counts(result).head(most)
-    ax = ax if ax is not None else plt.subplots(figsize=(6.4, 0.7 + 0.3 * max(len(table), 1)))[1]
-    positions = np.arange(len(table))[::-1]
-    start = np.zeros(len(table))
-    for check in table.columns:
-        color = CHECK_COLORS.get(check, BODY)
-        ax.barh(positions, table[check], left=start, color=color, lw=0, height=0.5, label=check)
-        start += table[check].to_numpy(dtype=float)
-    for position, total in zip(positions, start):
-        ax.text(total, position, f" {int(total):,}", va="center", fontsize=7.5, color=BODY)
-    if len(table):
-        ax.legend(frameon=False, fontsize=7.5, ncols=len(table.columns), loc="upper left", bbox_to_anchor=(0, -0.22))
-    names = [str(c) for c in table.index]
-    ax.set_yticks(positions, [n if len(n) <= MAX_COLUMN_CHARS else f"{n[: MAX_COLUMN_CHARS - 3]}..." for n in names])
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.margins(x=0.1)
-    tidy(ax, title, grid="x")
+    table = quality_counts(result)
+    ax = ax if ax is not None else plt.subplots(figsize=(3.6, 0.3 + ITEM_PITCH * max(min(len(table), most), 1)))[1]
+    warned = result.findings[result.findings["severity"] == "warn"]["column"].fillna("(whole row)")
+    width, height = (
+        ax.get_position().width * ax.figure.get_figwidth(),
+        ax.get_position().height * ax.figure.get_figheight(),
+    )
+    pitch = ITEM_PITCH / height
+    heading = {"fontname": HEADING_FONT, "fontweight": HEADING_WEIGHT}
+    for row, (column, counts) in enumerate(table.head(min(most, int(1 / pitch))).iterrows()):
+        y = 1 - row * pitch
+        color = MISMATCH_COLOR if column in set(warned) else ACCENTS[1]
+        ax.text(0.52 / width, y, f"{int(counts.sum()):,}", ha="right", va="top", fontsize=13, color=color, **heading)
+        name = str(column) if len(str(column)) <= MAX_COLUMN_CHARS else f"{str(column)[: MAX_COLUMN_CHARS - 3]}..."
+        ax.text(0.64 / width, y - 0.02 / height, name, va="top", fontsize=9, color=INK, **heading)
+        checks = ", ".join(f"{check} {int(count):,}" for check, count in counts.items() if count)
+        ax.text(0.64 / width, y - 0.18 / height, checks, va="top", fontsize=7.5, color=BODY)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+    if title:
+        ax.set_title(title, loc="left", pad=7, fontsize=9.5, color=INK, **heading)
     return ax.figure

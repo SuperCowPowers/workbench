@@ -280,6 +280,22 @@ def _measured_height(text: str, size: float, fontname: str, figh: float) -> floa
     return height
 
 
+@lru_cache(maxsize=512)
+def _baseline_drop(size: float, fontname: str, figh: float) -> float:
+    """How far below its top a top-aligned line's baseline sits, in figure-fraction units.
+
+    A line's box runs from its tallest ascender to its deepest descender, so the baseline is
+    the box's foot raised by the face's descent.
+    """
+    fig = plt.figure(figsize=(8.5, figh))
+    renderer = FigureCanvasAgg(fig).get_renderer()
+    t = fig.text(0, 0.5, "lp", fontsize=size, fontname=fontname, fontweight=_weight(fontname), va="top")
+    descent = renderer.get_text_width_height_descent("lp", t.get_fontproperties(), False)[2]
+    foot = (t.get_window_extent(renderer=renderer).y0 + descent) / (fig.dpi * figh)
+    plt.close(fig)
+    return 0.5 - foot
+
+
 def text_height(text: str, size: float = 9.5, font: Optional[str] = None, figh: float = 11.0) -> float:
     """How tall a string will actually be, in figure-fraction units.
 
@@ -289,11 +305,13 @@ def text_height(text: str, size: float = 9.5, font: Optional[str] = None, figh: 
     return _measured_height(text, size, font or BODY_FONT, figh)
 
 
-def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) -> float:
+def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None, tag: Optional[str] = None) -> float:
     """Page header: letterspaced kicker, large title, optional standfirst, rule.
 
     The standfirst sits under the title's *measured* bottom, so a title with descenders does
-    not crowd it and one without does not leave a hole. Returns the `y` to start the body at.
+    not crowd it and one without does not leave a hole. `tag` is a word set small, grey and in
+    capitals after the title on its baseline, e.g. "Continued". Returns the `y` to start the
+    body at.
     """
     title, size = _clean(title), 25.0
     fig.text(
@@ -306,6 +324,12 @@ def head(fig: plt.Figure, kicker: str, title: str, sub: Optional[str] = None) ->
         color=MUTED,
     )
     fig.text(L, 0.936, title, fontname=HEADING_FONT, fontweight=HEADING_WEIGHT, fontsize=size, color=INK, va="top")
+    if tag:
+        baseline = 0.936 - _baseline_drop(size, HEADING_FONT, 11.0)
+        after = L + text_width(title, size, HEADING_FONT) + 0.014
+        fig.text(after, baseline, _clean(tag).upper(), fontsize=7.6, color=MUTED, va="baseline").set(
+            fontname=HEADING_FONT, fontweight=HEADING_WEIGHT
+        )
     y = 0.936 - _measured_height(title, size, HEADING_FONT, 11.0) - 0.007
     if sub:
         for line in textwrap.wrap(_clean(sub), 104):

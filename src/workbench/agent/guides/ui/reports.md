@@ -142,7 +142,7 @@ report.frames["performance_breakout"]      # the metrics table behind the pages
 ```
 
 A section of your own is a function that lays its blocks out with a `Paginator` and returns its
-pages. The paginator starts a new page, with the same headline and "Continued.", whenever the next
+pages. The paginator starts a new page, with the same headline marked "Continued", whenever the next
 block does not fit; it splits a table by rows, and keeps a label with the block it heads. The
 footer, page number, axes fit and save are done for you. Wrap the function in a `Section` with a
 `Summary` to give it a card on page 1:
@@ -169,7 +169,7 @@ draws at the cursor and returns the `y` to continue at.
 
 The section charts are also usable on their own, each taking an optional `ax`:
 `workbench.utils.plots.performance` (`pred_vs_actual`, `residuals`, `breakout_bars`) and
-`workbench.utils.plots.data` (`overlap_venn`, `one_sided_bars`, `quality_bars`, `outlier_box`).
+`workbench.utils.plots.data` (`overlap_venn`, `one_sided_bars`, `quality_list`, `outlier_box`).
 
 The rest of this guide is the craft behind those pages, for the ones you write yourself.
 

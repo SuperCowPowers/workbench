@@ -205,18 +205,19 @@ class Report:
         self.frames.update(section.frames)
         return self
 
-    def new_page(self, headline: str, sub: Optional[str] = None) -> Tuple[plt.Figure, float]:
+    def new_page(self, headline: str, sub: Optional[str] = None, continued: bool = False) -> Tuple[plt.Figure, float]:
         """Start a page: the report title as the kicker, then the headline and standfirst.
 
         Args:
             headline (str): The page's one idea.
             sub (Optional[str]): A sentence under the headline.
+            continued (bool): Mark the page as carrying on from the one before it.
 
         Returns:
             Tuple[plt.Figure, float]: The page figure and the `y` to start the body at.
         """
         fig = pages.new_page()
-        return fig, pages.head(fig, self.title, headline, sub)
+        return fig, pages.head(fig, self.title, headline, sub, tag="Continued" if continued else None)
 
     def location(self, frame: str) -> Optional[str]:
         """Where a detail frame is published, or None when the report is saved without publishing.

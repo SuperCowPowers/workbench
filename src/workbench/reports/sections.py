@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from workbench.reports.paginator import Paginator, Panel
+from workbench.reports.paginator import LABEL, TABLE_HEAD, TABLE_ROW, Paginator, Panel
 from workbench.reports.report import Report, Section, Summary
 from workbench.utils.metrics_utils import performance_breakout
 from workbench.utils.pandas_utils import DataQuality, KeyedComparison
@@ -22,6 +22,9 @@ EXAMPLE_ROWS = 8
 
 # Columns whose outliers get a box plot on the data quality page
 OUTLIER_BOXES = 3
+
+# Beside the box plots: where they start, the pitch between them, and the most findings listed
+BOXES_X, BOX_PITCH, FINDINGS_BESIDE_BOXES = 0.58, 0.115, 12
 
 # Rows shown behind each data quality warning
 EXAMPLE_ROWS_PER_WARNING = 10
@@ -240,24 +243,31 @@ def data_quality(
     def build(report: Report):
         flow = Paginator(report, title, verdict)
         flow.notes(about)
-        flow.tiles([("Warnings", warnings), ("Minor", minor), ("Cells flagged", f"{flagged:,}")])
         if findings.empty:
             return flow.figs
-        if len(per_column):
-            worst = f"{per_column.idxmax()} has the most flagged rows"
-            bars = Panel(0.22, 0.62, lambda ax: data_charts.quality_bars(result, title=worst, ax=ax))
-            flow.charts(0.028 * min(len(per_column), 10) + 0.03, bars, above=0.04, below=0.075)
-        for _, box in result.boxes.head(OUTLIER_BOXES).iterrows():
-            column = box["column"]
-            count = int(findings[(findings["check"] == "outliers") & (findings["column"] == column)]["count"].iloc[0])
-            heading = f"{column}: {count:,} outside the fence" + (" (log scale)" if box["log"] else "")
-            draw = Panel(0.22, 0.62, lambda ax, c=column, h=heading: data_charts.outlier_box(result, c, title=h, ax=ax))
-            flow.charts(0.042, draw, above=0.033, below=0.04)
+        boxed = list(result.boxes["column"].head(OUTLIER_BOXES))
         shown = findings.drop(columns="count").fillna("")
-        shown = shown.assign(detail=shown["detail"].map(lambda d: _clip(d, 50)))
-        columns = ["check", "column", "severity", "value", "detail"]
-        flow.label("Findings, worst first")
-        flow.table(columns, _rows(shown, columns, limit=30, width=60), frame=findings_frame, count=len(findings))
+        if not boxed:  # the findings take the page's width, with their detail
+            shown = shown.assign(detail=shown["detail"].map(lambda d: _clip(d, 50)))
+            columns = ["check", "column", "severity", "value", "detail"]
+            flow.label("Findings, worst first")
+            flow.table(columns, _rows(shown, columns, limit=30, width=60), frame=findings_frame, count=len(findings))
+        else:  # the findings on the left, a box per column with outliers on the right
+            columns = ["check", "column", "severity", "value"]
+            listed = _rows(shown, columns, limit=FINDINGS_BESIDE_BOXES, width=24)
+            box_height = 0.2
+
+            def beside(fig, y):
+                pages.sec(fig, y, "Findings, worst first")
+                below = pages.table(fig, y - LABEL, columns, listed, x1=BOXES_X - 0.04)
+                for place, column in enumerate(boxed):
+                    ax = fig.add_axes([BOXES_X + 0.03 + BOX_PITCH * place, y - 0.02 - box_height, 0.07, box_height])
+                    data_charts.outlier_box(result, column, column, ax=ax)
+                return min(below, y - 0.02 - box_height - 0.06)
+
+            table_height = LABEL + TABLE_HEAD + len(listed) * TABLE_ROW
+            flow.block(max(table_height, 0.02 + box_height + 0.06), beside)
+            flow.where(findings_frame, len(findings), shown=len(listed))
         if has_examples:
             each = EXAMPLE_ROWS_PER_WARNING
             warned = findings[findings["severity"] == "warn"][["check", "column"]]
@@ -278,7 +288,7 @@ def data_quality(
         title,
         headline,
         [("Warnings", warnings), ("Minor", minor), ("Cells flagged", f"{flagged:,}")],
-        (lambda ax: data_charts.quality_bars(result, most=5, ax=ax)) if len(per_column) else None,
+        (lambda ax: data_charts.quality_list(result, most=4, ax=ax)) if len(per_column) else None,
         hero=(str(warnings), "warning" if warnings == 1 else "warnings"),
         needs_action=bool(warnings),
     )

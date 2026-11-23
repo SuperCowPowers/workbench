@@ -14,7 +14,7 @@ from workbench.utils.plots.data import (  # noqa: E402
     one_sided_bars,
     outlier_box,
     overlap_venn,
-    quality_bars,
+    quality_list,
     quality_counts,
 )
 
@@ -88,21 +88,28 @@ def test_one_sided_bars_refuse_a_column_neither_side_has():
         one_sided_bars(compare_keyed(left, left.iloc[:1], on="id"), "year")
 
 
-def test_quality_bars_rank_columns_by_flagged_rows():
+def test_the_quality_list_ranks_columns_and_names_the_checks_behind_each_count():
     df = pd.DataFrame({"id": [f"c{i}" for i in range(40)], "a": np.arange(40.0), "b": np.arange(40.0)})
     df.loc[:9, "a"] = np.nan
     df.loc[:2, "b"] = np.nan
     df.loc[5, "b"] = np.inf
-    ax = quality_bars(data_quality(df, key="id")).axes[0]
+    text = [t.get_text() for t in quality_list(data_quality(df, key="id")).axes[0].texts]
 
-    ticks = dict(zip([t.get_text() for t in ax.get_yticklabels()], ax.get_yticks()))
-    assert ticks["a"] > ticks["b"]
-    assert sum(patch.get_width() for patch in ax.patches) == 14
+    assert text == ["10", "a", "missing 10", "4", "b", "missing 3, non_finite 1"]
 
 
-def test_quality_bars_draw_nothing_for_a_clean_frame():
+def test_the_quality_list_colours_a_warned_columns_count():
+    df = pd.DataFrame({"id": [f"c{i}" for i in range(40)], "a": np.arange(40.0), "b": np.arange(40.0)})
+    df.loc[0, "a"] = np.nan
+    df.loc[[5, 6], "b"] = np.inf
+    counts = {t.get_text(): t.get_color() for t in quality_list(data_quality(df, key="id")).axes[0].texts}
+
+    assert counts["1"] != counts["2"]  # a is missing one value (minor), b holds infinities (a warning)
+
+
+def test_the_quality_list_is_empty_for_a_clean_frame():
     df = pd.DataFrame({"id": ["a", "b", "c", "d"], "x": [1.0, 2.0, 3.0, 4.0]})
-    assert len(quality_bars(data_quality(df, key="id")).axes[0].patches) == 0
+    assert not quality_list(data_quality(df, key="id")).axes[0].texts
 
 
 def test_whole_row_findings_are_counted_under_their_own_label():
@@ -118,8 +125,9 @@ def test_the_outlier_box_marks_each_value_outside_the_fence():
     ax = outlier_box(data_quality(df, key="id"), "cmax").axes[0]
 
     (points,) = [c for c in ax.collections if len(c.get_offsets())]
-    assert points.get_offsets()[:, 0].tolist() == [0.0, 0.0]
-    assert ax.get_xscale() == "symlog"  # a zero has no place on a log axis
+    assert points.get_offsets()[:, 1].tolist() == [0.0, 0.0]
+    assert ax.get_yscale() == "symlog"  # a zero has no place on a log axis
+    assert ax.get_xlabel().startswith("2 outside\nfence ")
 
 
 def test_the_outlier_box_refuses_a_column_without_outliers():
