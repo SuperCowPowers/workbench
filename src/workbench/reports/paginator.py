@@ -289,4 +289,6 @@ class Paginator:
         parts += [f"All {count:,} rows: DFStore {location}" if location is not None and count else ""]
         note = " ".join(part for part in parts if part)
         if note:
-            self.y = pages.para(self.fig, self.y - 0.004, note, size=8.2, color=pages.MUTED) - 0.012
+            lines = len(textwrap.wrap(note, 112))
+            draw = lambda fig, y: pages.para(fig, y - 0.004, note, size=8.2, color=pages.MUTED) - 0.012  # noqa: E731
+            self.block(lines * 0.0155 + 0.02, draw)

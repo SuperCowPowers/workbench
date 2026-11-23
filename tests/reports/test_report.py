@@ -617,6 +617,43 @@ def test_a_note_tables_its_details_and_publishes_them(tmp_path):
     assert report.frames["note_1"] is swapped
 
 
+def test_a_card_with_no_pages_to_open_is_refused():
+    with pytest.raises(ValueError, match="no pages"):
+        Report("Example").add(Section(summary=Summary("Result", "Done.")))
+
+
+def test_a_note_detail_cell_holding_a_list_is_shown_as_text():
+    details = pd.DataFrame({"arm": ["ID-1", "ID-2"], "doses": [[1, 2], [3]]})
+    report = noted_report(Note(NOTE, about="Archive", details=details))
+    home = next(page for page in page_text(report) if NOTE in page)
+    assert "[1, 2]" in home
+
+
+def test_a_long_note_fits_its_panel():
+    from matplotlib.patches import FancyBboxPatch
+
+    long_note = "A caveat that goes on at length about why this number misleads. " * 10
+    report = noted_report(Note(long_note, about="Archive"))
+
+    class Inside:
+        ok = None
+
+        def savefig(self, fig, **_):
+            words = [t for t in fig.texts if t.get_text() and t.get_text() in long_note]
+            if not words:
+                return
+            panels = [a for a in fig.artists if isinstance(a, FancyBboxPatch) and a.get_height() > 0.05]
+            floor = min(panel.get_y() for panel in panels)
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            lowest = min(t.get_window_extent(renderer).y0 / fig.bbox.height for t in words)
+            self.ok = lowest >= floor
+
+    inside = Inside()
+    report.build(inside)
+    assert inside.ok
+
+
 def test_an_unknown_severity_is_refused():
     with pytest.raises(ValueError, match="severity"):
         Note(NOTE, severity="critical")

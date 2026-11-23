@@ -133,3 +133,11 @@ def test_the_outlier_box_marks_each_value_outside_the_fence():
 def test_the_outlier_box_refuses_a_column_without_outliers():
     with pytest.raises(ValueError, match="no outliers"):
         outlier_box(data_quality(pd.DataFrame({"x": [1.0, 2.0, 3.0]})), "x")
+
+
+def test_the_outlier_box_counts_every_outlier_when_only_some_are_listed():
+    df = pd.DataFrame({"x": list(np.arange(1.0, 201.0)) + [1e6, 2e6, 3e6]})
+    result = data_quality(df, max_rows=1)
+    total = int(result.findings.set_index("check").loc["outliers", "count"])
+    ax = outlier_box(result, "x").axes[0]
+    assert total > 1 and ax.get_xlabel().startswith(f"{total} outside, 1 drawn")

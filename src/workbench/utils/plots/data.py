@@ -190,13 +190,14 @@ def outlier_box(result: DataQuality, column: str, title: str = "", ax=None):
     box = held.iloc[0]
     listed = result.rows[(result.rows["check"] == "outliers") & (result.rows["column"] == column)]
     outliers = pd.to_numeric(listed["value"], errors="coerce").dropna().to_numpy()
+    found = result.findings[(result.findings["check"] == "outliers") & (result.findings["column"] == column)]
+    total = int(found["count"].iloc[0])  # the rows frame holds at most `max_rows` of them
 
     ax = ax if ax is not None else plt.subplots(figsize=(1.6, 3.2))[1]
     stats = {"med": box["median"], "q1": box["q1"], "q3": box["q3"]}
     stats.update(whislo=box["whisker_low"], whishi=box["whisker_high"], fliers=[])
     ax.bxp(
         [stats],
-        orientation="vertical",
         widths=0.5,
         showfliers=False,
         patch_artist=True,
@@ -223,7 +224,8 @@ def outlier_box(result: DataQuality, column: str, title: str = "", ax=None):
     ax.set_xticks([])
     ax.set_xlim(0.5, 1.5)
     fence = f"fence {box['fence_low']:.3g} to {box['fence_high']:.3g}"
-    ax.set_xlabel(f"{len(outliers):,} outside\n{fence}", fontsize=7).set_color(BODY)
+    outside = f"{total:,} outside" + (f", {len(outliers):,} drawn" if len(outliers) < total else "")
+    ax.set_xlabel(f"{outside}\n{fence}", fontsize=7).set_color(BODY)
     tidy(ax, title, grid="y")
     ax.spines["bottom"].set_visible(False)
     return ax.figure

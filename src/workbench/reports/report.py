@@ -195,6 +195,8 @@ class Report:
         """
         if not isinstance(section, Section):
             section = Section(pages=[section])
+        if section.summary is not None and not section.pages:
+            raise ValueError(f"The section {section.summary.label!r} has a card but no pages for it to open")
         repeated = sorted(set(section.frames) & set(self.frames))
         if repeated:
             raise ValueError(f"Frames {repeated} are already in the report; give the section its own name")
@@ -298,12 +300,15 @@ class Report:
         fig.text(right + 0.01, y - 0.0142, label, fontsize=8.6, color=pages.BODY, va="top").set(
             fontname=pages.HEADING_FONT, fontweight=pages.HEADING_WEIGHT
         )
-        text_size = {"size": 9.6, "width": NOTE_WIDTH, "color": pages.INK, "x": x, "lead": NOTE_LEAD}
+        text_size = {"size": 9.6, "width": NOTE_WIDTH, "color": pages.INK, "x": x, "lead": NOTE_LEAD, "gap": 0.0}
         below = pages.para(fig, y - 0.036, "\n".join(lines), **text_size)
         if note.details is not None and len(note.details):
             shown = note.details.head(NOTE_DETAIL_ROWS)
             cells = [
-                ["" if pd.isna(v) else f"{v:g}" if isinstance(v, float) else str(v) for v in row]
+                [
+                    "" if pd.api.types.is_scalar(v) and pd.isna(v) else f"{v:g}" if isinstance(v, float) else str(v)
+                    for v in row
+                ]
                 for row in shown.to_numpy()
             ]
             below = pages.table(fig, below - 0.008, list(shown.columns), cells, x0=x, x1=pages.R - 0.014)
