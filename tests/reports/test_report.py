@@ -73,7 +73,7 @@ def test_data_quality_section_adds_examples_only_for_warnings(tmp_path):
 
     assert dirty.save(tmp_path / "dirty.pdf", publish=False) == CLEAN
     assert clean.save(tmp_path / "clean.pdf", publish=False) == CLEAN
-    assert page_count(dirty) == 3 and page_count(clean) == 2
+    assert "Rows to look at" in " ".join(page_text(dirty)) and "Rows to look at" not in " ".join(page_text(clean))
 
 
 def test_comparison_section_publishes_one_row_per_disagreeing_value(tmp_path):
@@ -269,7 +269,8 @@ def test_a_custom_section_brings_its_own_card_and_cards_run_onto_a_second_page(t
         report.add(Section(pages=[page], summary=card))
 
     assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
-    assert page_headlines(report)[:3] == ["Summary", "Summary, continued", "Method"]
+    assert page_headlines(report)[:3] == ["Summary", "Summary", "Method"]
+    assert "Continued." in page_text(report)[1]
 
 
 def axes_per_page(report: Report) -> list:
@@ -390,9 +391,84 @@ def test_the_comparison_page_states_how_rows_were_compared():
     assert "however many rows carry it" in text
 
 
-def rows_to_look_at(report: Report) -> list:
-    """The text of each rows-to-look-at page."""
-    return [page for page in page_text(report) if "rows to look at" in page]
+def nothing_below_the_floor(report: Report, floor: float = 0.07) -> bool:
+    """Whether every page keeps its text and its charts above the floor (the footer aside)."""
+
+    class Lowest:
+        ok = True
+
+        def savefig(self, fig, **_):
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            body = [t for t in fig.texts if t.get_text().strip() and t.get_position()[1] > 0.03]
+            edges = [t.get_window_extent(renderer).y0 / fig.bbox.height for t in body]
+            edges += [ax.get_tightbbox(renderer).y0 / fig.bbox.height for ax in fig.axes]
+            self.ok = self.ok and min(edges, default=1.0) >= floor - 0.004
+
+    lowest = Lowest()
+    report.build(lowest)
+    return lowest.ok
+
+
+def test_a_crowded_data_quality_page_runs_onto_the_next():
+    rng = np.random.default_rng(4)
+    wide = pd.DataFrame({f"col{n}": 10 ** rng.normal(2, 1, 300) for n in range(12)})
+    for n in range(12):
+        wide.loc[rng.choice(300, 5 + n, replace=False), f"col{n}"] = np.nan
+    wide.loc[0, ["col0", "col1", "col2"]] = 1e15
+    wide = pd.concat([wide, wide.iloc[[1, 2]]], ignore_index=True)
+    report = Report("Wide").add(sections.data_quality(data_quality(wide)))
+
+    assert page_count(report) > 2
+    assert nothing_below_the_floor(report)
+
+
+def test_a_note_with_details_does_not_push_a_full_page_past_the_floor():
+    details = pd.DataFrame({"arm": [f"ID-{n}" for n in range(10)], "archive": [1.5] * 10, "corrected": [2.5] * 10})
+    left = predictions(120).assign(year=["2021", "2022", "2023"] * 40)
+    right = left.iloc[30:].copy()
+    right.loc[right.index[:8], "cmax"] *= 2
+    result = compare_keyed(left, right, on="id", values=["cmax"], rtol=0.02)
+    report = Report("Noted", notes=[Note(NOTE, severity="serious", about="Archive", details=details)])
+    report.add(sections.comparison(result, "Archive", "DataSource", by="year"))
+    report.add(sections.performance(predictions(), "cmax", by="project", key="id", log=True, about="Archive"))
+
+    assert nothing_below_the_floor(report)
+    text = page_text(report)
+    assert sum(page.count(NOTE) for page in text) == 1 and "on Archive: see page" in text[1]
+
+
+def test_a_split_table_never_leaves_a_stub_of_rows_on_the_next_page():
+    from workbench.reports import Paginator
+
+    def long_table(rows: int) -> list:
+        def build(report):
+            flow = Paginator(report, "Long table")
+            flow.table(["n", "square"], [[f"row{n}", n * n] for n in range(rows)])
+            return flow.figs
+
+        return page_text(Report("Stub", summary="One table.").add(build))
+
+    full = next(rows for rows in range(20, 80) if len(long_table(rows + 1)) == 3)  # the most one page holds
+    for over in (1, 2, 3):  # a row or two more than fits takes rows with it, so the next page has three
+        text = long_table(full + over)
+        assert len(text) == 3 and "Continued." in text[2]
+        assert f"row{full + over - 3} |" in text[2] and f"row{full + over - 4} |" not in text[2]
+
+
+def test_every_built_in_section_stays_above_the_floor():
+    report = Report("All three")
+    report.add(sections.performance(predictions(), "cmax", by="project", key="id", log=True))
+    report.add(sections.data_quality(data_quality(messy(), key="id")))
+    left = predictions(40)
+    report.add(sections.comparison(compare_keyed(left, left.iloc[5:], on="id"), "archive", "DataSource"))
+    assert nothing_below_the_floor(report)
+
+
+def rows_to_look_at(report: Report) -> str:
+    """The text of a one-section report from its "Rows to look at" heading on."""
+    text = " | ".join(page_text(report)[1:])
+    return text[text.index("Rows to look at") :]
 
 
 def test_rows_to_look_at_show_ten_per_bucket_and_say_how_many_there_are():
@@ -401,7 +477,7 @@ def test_rows_to_look_at_show_ten_per_bucket_and_say_how_many_there_are():
     right.loc[right.index[:8], "cmax"] *= 2
     report = Report("Rows").add(sections.comparison(compare_keyed(left, right, on="id", values=["cmax"]), "old", "new"))
     report._published = True
-    text = rows_to_look_at(report)[0]
+    text = rows_to_look_at(report)
 
     assert all(f"c{n}" in text for n in range(30, 38))  # all eight mismatches are on the page
     assert "Showing the first 10 of 30. All 30 rows: DFStore /reports/rows/comparison_left_only" in text
@@ -412,7 +488,7 @@ def test_the_not_expected_table_names_its_frame_without_a_showing_line():
     left = predictions(30).assign(route=["po"] * 26 + ["ip"] * 4)
     report = Report("Rows").add(sections.comparison(compare_keyed(left, left.iloc[:26], on="id", scope=["route"])))
     report._published = True
-    text = rows_to_look_at(report)[0]
+    text = rows_to_look_at(report)
 
     assert "route = ip | 4" in text
     assert "All 4 rows: DFStore /reports/rows/comparison_left_out_of_scope" in text and "Showing" not in text
@@ -427,16 +503,17 @@ def test_rows_to_look_at_run_onto_another_page_when_they_do_not_fit():
     section = sections.comparison(result, "old", "new", max_rows=45)
     report = Report("Rows").add(section)
 
-    rows_pages = rows_to_look_at(report)
-    assert len(rows_pages) > 1 and all("Continued." in page for page in rows_pages[1:])
-    assert lowest_text(report) > 0.045
+    section_pages = page_text(report)[1:]
+    assert len(section_pages) > 2 and all("Continued." in page for page in section_pages[1:])
+    assert ", CONTINUED" in " ".join(section_pages)  # a table split across pages says so
+    assert nothing_below_the_floor(report)
 
 
 def test_a_missing_value_is_shown_blank_not_as_nan():
     left = predictions(12)
     left.loc[0, "project"] = None
     left.loc[1, "cmax"] = np.nan
-    text = page_text(Report("Blank").add(sections.comparison(compare_keyed(left, left.iloc[6:], on="id"))))[2]
+    text = rows_to_look_at(Report("Blank").add(sections.comparison(compare_keyed(left, left.iloc[6:], on="id"))))
     assert "c0" in text and "nan" not in text.lower() and "None" not in text
 
 

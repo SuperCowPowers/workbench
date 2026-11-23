@@ -10,13 +10,13 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from workbench.reports.paginator import TABLE_HEAD, TABLE_ROW, Paginator
 from workbench.utils.plots import report as pages
 
 log = logging.getLogger("workbench")
 
-# Summary page layout, in figure units: the height of a card and the gap under it, the lowest the
-# page body may reach, the pitch of a filter or note line, and the characters on one
-CARD_HEIGHT, CARD_GAP, SUMMARY_BOTTOM, SUMMARY_LEAD, SUMMARY_WIDTH = 0.2, 0.014, 0.07, 0.0155, 112
+# Summary page layout, in figure units: the height of a card and the gap under it
+CARD_HEIGHT, CARD_GAP = 0.2, 0.014
 
 # Inside a card: the inset of its content, where its chart starts, and the characters of a headline line
 CARD_PAD, CARD_CHART_X, CARD_TEXT_WIDTH = 0.02, 0.62, 66
@@ -29,9 +29,6 @@ SEVERITY = {"serious": "#B42318", "warning": "#A16207", "info": "#15803D"}
 
 # A printed note: the characters on a line, the pitch between lines, and the most rows of its details shown
 NOTE_WIDTH, NOTE_LEAD, NOTE_DETAIL_ROWS = 104, 0.0165, 10
-
-# A table in figure units: the height of its header, and of each row
-TABLE_HEAD, TABLE_ROW = 0.03, 0.0172
 
 
 def _thumbnail(ax) -> None:
@@ -100,16 +97,15 @@ class Section:
     """Pages for a report, the detail frames behind them, and a card for the summary page.
 
     Attributes:
-        pages (List[Callable]): Each is called with the Report and returns one page figure,
-            or a list of them when its content runs over. Start a page with
-            `report.new_page(headline)`; the Report adds the footer and page number, fits
-            the axes and saves it.
+        pages (List[Callable]): Each is called with the Report and returns one page figure, or
+            a list of them. Lay a section out with a `Paginator` and return its `figs`; the
+            Report adds the footer and page number, fits the axes and saves each page.
         frames (Dict[str, pd.DataFrame]): Detail frames by name, published to the DataFrame
             Store when the report is saved. A page gets a frame's location from
             `report.location(name)`.
         summary (Optional[Summary]): This section's card on the summary page.
         about (List[str]): The artifacts this section is about, by name. The report's notes on
-            those artifacts are shown where the section's first page calls `report.note_block`.
+            those artifacts are shown where the section calls `Paginator.notes`.
     """
 
     pages: List[Callable] = field(default_factory=list)
@@ -239,30 +235,48 @@ class Report:
         alone = [about for about in involved if len(about) == 1]
         return (alone or involved or [None])[0]
 
-    def note_block(self, fig: plt.Figure, y: float, about: List[str]) -> float:
-        """Show the report's notes on some artifacts at the top of a page. Returns the `y` to continue at.
+    def note_blocks(self, about: List[str]) -> List[Tuple[float, Callable]]:
+        """The report's notes on some artifacts, as blocks for a section's page to place.
 
-        A note is printed in full on the first page of the section it belongs with, under a badge
-        carrying its number in its severity's colour. Any other page gets one line: the badge and
-        the page that has the note in full, which it links to.
+        A note is printed in full in the section it belongs with, under a badge carrying its
+        number in its severity's colour. Any other section gets one line: the badge and the page
+        that has the note in full, which it links to.
 
         Args:
-            fig (plt.Figure): The page.
-            y (float): Where the block starts.
-            about (List[str]): The artifacts this page's section is about.
+            about (List[str]): The artifacts the section is about.
+
+        Returns:
+            List[Tuple[float, Callable]]: For each note, the height it needs and a function
+                `draw(fig, y)` that draws it and returns the `y` to continue at.
         """
-        for index, note in enumerate(self.notes):
-            if note.about is None or note.about not in about:
-                continue
-            if tuple(about) == self._home(note) and index not in self._homes:
+
+        def printed(index: int) -> Callable:
+            def draw(fig, y):
                 self._homes[index] = fig
-                y = self._print_note(fig, y, index)
-            else:  # the line's wording is filled in once the page that has the note is numbered
+                return self._print_note(fig, y, index)
+
+            return draw
+
+        def marker(index: int) -> Callable:
+            def draw(fig, y):  # the line's wording is filled in once the page that has the note is numbered
+                note = self.notes[index]
                 right = pages.badge(fig, pages.L, y, f"Note [{index + 1}]", SEVERITY[note.severity])
                 line = fig.text(right + 0.01, y - 0.0025, "", fontsize=8.8, color=pages.ACCENTS[1], va="top")
                 self._marks.append((fig, (pages.L, y - 0.019, pages.R, y + 0.003), index, line))
-                y -= 0.03
-        return y
+                return y - 0.03
+
+            return draw
+
+        blocks, claimed = [], set()
+        for index, note in enumerate(self.notes):
+            if note.about is None or note.about not in about:
+                continue
+            if tuple(about) == self._home(note) and index not in self._homes and index not in claimed:
+                claimed.add(index)
+                blocks.append((self._note_height(index) + 0.018, printed(index)))
+            else:
+                blocks.append((0.03, marker(index)))
+        return blocks
 
     def _note_height(self, index: int) -> float:
         """The height of a note's panel: its badge line, its text, and its details table when it has one."""
@@ -374,50 +388,32 @@ class Report:
     def _summary_pages(self, starts: List[int]) -> List[plt.Figure]:
         """The summary: the author's sentence, the filters, the general notes, then a card per section.
 
-        Laid out from the top down by what is actually there, onto as many pages as it takes.
-
         Args:
             starts (List[int]): For each page function, the body page its first figure is.
         """
-        fig, y = self.new_page("Summary", self.summary)
-        figs = [fig]
-
-        def turn() -> None:
-            nonlocal fig, y
-            fig, y = self.new_page("Summary, continued")
-            figs.append(fig)
-
-        def block(label: str, entries: List[str]) -> None:
-            nonlocal y
-            lines = [wrapped for entry in entries for wrapped in textwrap.wrap(entry, SUMMARY_WIDTH) or [""]]
-            start = 0
-            while start < len(lines):
-                room = int((y - SUMMARY_BOTTOM - 0.03) // SUMMARY_LEAD)
-                if room < min(3, len(lines) - start):
-                    turn()
-                    continue
-                y = pages.sec(fig, y, label if start == 0 else f"{label}, continued", pages.MUTED)
-                text = "\n".join(lines[start : start + room])
-                y = pages.para(fig, y, text, size=9.2, width=SUMMARY_WIDTH, lead=SUMMARY_LEAD, gap=0.0)
-                start += room
-            pages.rule(fig, y - 0.004, c=pages.HAIRLINE)
-            y -= 0.028
-
+        flow = Paginator(self, "Summary", self.summary)
         if self.filters:
-            block("What this report covers", [f"-  {line}" for line in self.filters])
+            flow.label("What this report covers", pages.MUTED)
+            flow.lines([f"-  {line}" for line in self.filters])
+            flow.block(0.028, lambda fig, y: pages.rule(fig, y - 0.004, c=pages.HAIRLINE))
         for index, note in enumerate(self.notes):
             if note.about is None:
-                if y - self._note_height(index) < SUMMARY_BOTTOM:
-                    turn()
-                self._homes[index] = fig
-                y = self._print_note(fig, y, index)
+
+                def general(fig, y, index=index):
+                    self._homes[index] = fig
+                    return self._print_note(fig, y, index)
+
+                flow.block(self._note_height(index) + 0.018, general)
         placed = []  # each card's page text and box, numbered once the summary's own page count is known
         for card, first, about in self._cards:
-            if y - CARD_HEIGHT < SUMMARY_BOTTOM:
-                turn()
-            box = (pages.L, y - CARD_HEIGHT, pages.R, y)
-            placed.append((self._card(fig, card, box, self._worst_note(about)), len(figs) - 1, box, starts[first]))
-            y -= CARD_HEIGHT + CARD_GAP
+
+            def draw(fig, y, card=card, first=first, about=about):
+                box = (pages.L, y - CARD_HEIGHT, pages.R, y)
+                text = self._card(fig, card, box, self._worst_note(about))
+                placed.append((text, len(flow.figs) - 1, box, starts[first]))
+
+            flow.block(CARD_HEIGHT + CARD_GAP, draw)
+        figs = flow.figs
         self._links = [(on, box, len(figs) + target) for _, on, box, target in placed]
         self._bookmarks = [("Summary", 0)]
         for (card, _, _), (text, _, _, target) in zip(self._cards, placed):
@@ -510,13 +506,14 @@ class Report:
             _thumbnail(ax)
         return page
 
-    def _data_page(self, _report: "Report") -> plt.Figure:
-        """The closing page: every published frame, its size, and where to get it."""
-        fig, y = self.new_page(
-            "Data behind this report", "Every count in this report has its rows in the DataFrame Store."
+    def _data_page(self, _report: "Report") -> List[plt.Figure]:
+        """The closing pages: every published frame, its size, and where to get it."""
+        flow = Paginator(
+            self, "Data behind this report", "Every count in this report has its rows in the DataFrame Store."
         )
         rows = [[name, f"{len(df):,}", self.location(name)] for name, df in self.frames.items() if not df.empty]
-        y = pages.table(fig, y, ["frame", "rows", "location"], rows, aligns=["left", "right", "left"])
-        y = pages.sec(fig, y - 0.02, "Reading one", pages.MUTED)
-        pages.para(fig, y, f'from workbench.api import DFStore\ndf = DFStore().get("{rows[0][2]}")', size=8.8)
-        return fig
+        flow.table(["frame", "rows", "location"], rows, aligns=["left", "right", "left"])
+        flow.gap(0.02)
+        flow.label("Reading one", pages.MUTED)
+        flow.para(f'from workbench.api import DFStore\ndf = DFStore().get("{rows[0][2]}")', size=8.8)
+        return flow.figs
