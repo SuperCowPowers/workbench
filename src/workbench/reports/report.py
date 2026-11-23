@@ -18,6 +18,9 @@ log = logging.getLogger("workbench")
 # Summary page layout, in figure units: the height of a card and the gap under it
 CARD_HEIGHT, CARD_GAP = 0.2, 0.014
 
+# A card's sizes: full, half the width (paired side by side), or half the height
+CARD_SIZES = ("full", "half_width", "half_height")
+
 # Inside a card: the inset of its content, where its chart starts, and the characters of a headline line
 CARD_PAD, CARD_CHART_X, CARD_TEXT_WIDTH = 0.02, 0.62, 66
 
@@ -54,6 +57,8 @@ class Summary:
         hero (Optional[Tuple[str, str]]): The one number the card leads with, and what it counts.
         needs_action (Optional[bool]): Whether the section found something to act on. None
             leaves the card without a status.
+        size (str): "full", or a mini card: "half_width" (two side by side, no chart) or
+            "half_height" (full width, the hero number and the stats only).
     """
 
     label: str
@@ -62,6 +67,11 @@ class Summary:
     chart: Optional[Callable] = None
     hero: Optional[Tuple[str, str]] = None
     needs_action: Optional[bool] = None
+    size: str = "full"
+
+    def __post_init__(self):
+        if self.size not in CARD_SIZES:
+            raise ValueError(f"size is one of {CARD_SIZES}, not {self.size!r}")
 
 
 @dataclass(frozen=True, eq=False)
@@ -286,8 +296,15 @@ class Report:
         note = self.notes[index]
         height = 0.05 + len(textwrap.wrap(note.text, NOTE_WIDTH)) * NOTE_LEAD
         if note.details is not None and len(note.details):
-            height += TABLE_HEAD + min(len(note.details), NOTE_DETAIL_ROWS) * TABLE_ROW + 0.03
+            height += TABLE_HEAD + min(len(note.details), NOTE_DETAIL_ROWS) * TABLE_ROW
+            height += 0.03 if self._details_line(index) else -0.006  # a table ends with its own space
         return height
+
+    def _details_line(self, index: int) -> str:
+        """The line under a note's details: how many rows are shown, and where all of them are."""
+        count, location = len(self.notes[index].details), self.location(f"note_{index + 1}")
+        line = f"Showing the first {NOTE_DETAIL_ROWS:,} of {count:,}. " if count > NOTE_DETAIL_ROWS else ""
+        return line + (f"All {count:,} rows: DFStore {location}" if location else "")
 
     def _print_note(self, fig: plt.Figure, y: float, index: int) -> float:
         """One note in full, in a panel under its severity badge, with the first rows of its details."""
@@ -312,9 +329,7 @@ class Report:
                 for row in shown.to_numpy()
             ]
             below = pages.table(fig, below - 0.008, list(shown.columns), cells, x0=x, x1=pages.R - 0.014)
-            location, count = self.location(f"note_{index + 1}"), len(note.details)
-            where = f"Showing the first {len(shown):,} of {count:,}. " if len(shown) < count else ""
-            where += f"All {count:,} rows: DFStore {location}" if location else ""
+            where = self._details_line(index)
             fig.text(x, below + 0.002, where, fontsize=8.2, color=pages.MUTED, va="top")
         return y - height - 0.018
 
@@ -411,18 +426,31 @@ class Report:
 
                 flow.block(self._note_height(index) + 0.018, general)
         placed = []  # each card's page text and box, numbered once the summary's own page count is known
-        for card, first, about in self._cards:
+        rows, cards = [], list(self._cards)
+        while cards:  # a half-width card shares its row with the next one
+            pair = 2 if cards[0][0].size == "half_width" and len(cards) > 1 and cards[1][0].size == "half_width" else 1
+            rows.append(cards[:pair])
+            cards = cards[pair:]
+        order = []  # the cards in the order they are placed, matching `placed`
+        for row in rows:
+            height = CARD_HEIGHT / 2 if row[0][0].size == "half_height" else CARD_HEIGHT
+            order += row
 
-            def draw(fig, y, card=card, first=first, about=about):
-                box = (pages.L, y - CARD_HEIGHT, pages.R, y)
-                text = self._card(fig, card, box, self._worst_note(about))
-                placed.append((text, len(flow.figs) - 1, box, starts[first]))
+            def draw(fig, y, row=row, height=height):
+                half = (pages.R - pages.L - CARD_GAP) / 2
+                for place, (card, first, about) in enumerate(row):
+                    left = pages.L + place * (half + CARD_GAP)
+                    right = left + half if card.size == "half_width" else pages.R
+                    box = (left, y - height, right, y)
+                    text = self._card(fig, card, box, self._worst_note(about))
+                    placed.append((text, len(flow.figs) - 1, box, starts[first]))
 
-            flow.block(CARD_HEIGHT + CARD_GAP, draw)
+            flow.gap(CARD_GAP)  # between cards, never under the last one on a page
+            flow.block(height, draw)
         figs = flow.figs
         self._links = [(on, box, len(figs) + target) for _, on, box, target in placed]
         self._bookmarks = [("Summary", 0)]
-        for (card, _, _), (text, _, _, target) in zip(self._cards, placed):
+        for (card, _, _), (text, _, _, target) in zip(order, placed):
             text.set_text(f"PAGE {len(figs) + target + 1}")
             self._bookmarks.append((card.label, len(figs) + target))
         if len(starts) > len(self._pages):
@@ -492,6 +520,23 @@ class Report:
             ha="right",
         )
         y -= 0.026
+        if card.size == "half_height":  # the hero number on the left, the stats on the right
+            if card.hero is not None:
+                value, counts = card.hero
+                hero = {"fontname": heading, "fontweight": pages.HEADING_WEIGHT}
+                fig.text(x, y, value, fontsize=22, color=pages.INK, va="top", **hero)
+                fig.text(
+                    x + pages.text_width(value, 22, heading) + 0.012,
+                    y - 0.014,
+                    counts,
+                    fontsize=9,
+                    color=pages.MUTED,
+                    va="top",
+                )
+            if card.stats:
+                pages.stat_row(fig, CARD_CHART_X, y - 0.004, [(k, str(v)) for k, v in card.stats[:3]], dx=0.09)
+            return page
+        half = card.size == "half_width"
         if card.hero is not None:
             value, counts = card.hero
             fig.text(
@@ -501,11 +546,12 @@ class Report:
             fig.text(caption_x, y - 0.017, counts, fontsize=9, color=pages.MUTED, va="top")
             y -= 0.046
         size, lead = (9.4, 0.0155) if card.hero is not None else (11.5, 0.019)
-        chars = CARD_TEXT_WIDTH if card.hero is not None else 54
+        chars = (CARD_TEXT_WIDTH if card.hero is not None else 54) // (2 if half else 1)
         pages.para(fig, y, card.headline, size=size, width=chars, color=pages.INK, x=x, lead=lead)
         if card.stats:
-            pages.stat_row(fig, x, y0 + 0.046, [(k, str(v)) for k, v in card.stats[:4]], dx=0.11)
-        if card.chart is not None:
+            stats = [(k, str(v)) for k, v in card.stats[: 2 if half else 4]]
+            pages.stat_row(fig, x, y0 + 0.046, stats, dx=0.11)
+        if card.chart is not None and not half:
             ax = fig.add_axes([CARD_CHART_X, y0 + 0.018, x1 - CARD_PAD - CARD_CHART_X, CARD_HEIGHT - 0.054])
             ax.set_facecolor("none")
             card.chart(ax)

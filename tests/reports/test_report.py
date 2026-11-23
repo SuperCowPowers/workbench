@@ -654,6 +654,60 @@ def test_a_long_note_fits_its_panel():
     assert inside.ok
 
 
+def card_boxes(report: Report) -> list:
+    """The (x0, y0, x1, y1) box of every card on the first summary page."""
+    from matplotlib.patches import FancyBboxPatch
+
+    class Boxes:
+        found = None
+
+        def savefig(self, fig, **_):
+            if self.found is None:
+                panels = [a for a in fig.artists if isinstance(a, FancyBboxPatch) and a.get_height() > 0.05]
+                self.found = [
+                    tuple(
+                        round(v, 3)
+                        for v in (a.get_x(), a.get_y(), a.get_x() + a.get_width(), a.get_y() + a.get_height())
+                    )
+                    for a in panels
+                ]
+
+    boxes = Boxes()
+    report.build(boxes)
+    return boxes.found
+
+
+def test_mini_cards_pair_side_by_side_or_take_half_the_height(tmp_path):
+    def page(report):
+        return report.new_page("Method")[0]
+
+    report = Report("Mini", summary="Three cards.")
+    for size in ("half_width", "half_width", "half_height"):
+        card = Summary(size, "A finding.", [("Rows", "3")], lambda ax: ax.plot([0, 1]), hero=("3", "rows"), size=size)
+        report.add(Section(pages=[page], summary=card))
+    assert report.save(tmp_path / "report.pdf", publish=False) == CLEAN
+
+    left, right, short = card_boxes(report)
+    assert left[1] == right[1] and left[2] < right[0]  # the two half-width cards share a row
+    assert round(short[3] - short[1], 3) == round((left[3] - left[1]) / 2, 3)  # half the height
+    assert short[0] == left[0] and short[2] == right[2]  # and the full width
+    assert sum(axes_per_page(report)[:1]) == 0  # no card this small draws its chart
+    assert annotations(tmp_path / "report.pdf")[0] == [2, 3, 4]  # each still opens its section
+
+
+def test_an_unknown_card_size_is_refused():
+    with pytest.raises(ValueError, match="size"):
+        Summary("Result", "Done.", size="quarter")
+
+
+def test_a_note_panel_has_no_room_for_a_rows_line_it_does_not_print():
+    details = pd.DataFrame({"arm": ["ID-1", "ID-2"]})
+    report = noted_report(Note(NOTE, about="Archive", details=details))
+    unpublished = report._note_height(0)
+    report._published = True
+    assert report._note_height(0) - unpublished > 0.02
+
+
 def test_an_unknown_severity_is_refused():
     with pytest.raises(ValueError, match="severity"):
         Note(NOTE, severity="critical")
