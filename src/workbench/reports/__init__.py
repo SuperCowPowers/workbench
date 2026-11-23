@@ -1,4 +1,4 @@
-"""PDF reports composed from sections: model performance, data quality, data comparison."""
+"""PDF reports composed from sections: model performance, data quality, data comparison, archive reads."""
 
 from workbench.reports import sections
 from workbench.reports.paginator import Paginator, Panel

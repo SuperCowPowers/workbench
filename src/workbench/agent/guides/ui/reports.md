@@ -117,6 +117,21 @@ page. A section of your own shows its notes with `flow.notes(["Archive"])`.
 **Break one-sided rows down.** `sections.comparison(..., by="year")` draws, beside the overlap,
 how the rows held by one side only spread over a column, which shows where a gap concentrates.
 
+**Read a client's pile of files with an Archive.** The files and their location are generic; how
+one file is read is the client's own code, passed in as a function that returns that file's rows:
+
+```python
+from workbench.utils.archive import Archive
+
+archive = Archive("s3://bucket/pk_studies", read_upload, pattern="*.zip")
+archive.fetch("~/work/datasets/pk_studies")         # an S3 Archive is read from a local copy
+result = archive.read("~/work/datasets/pk_studies")  # rows with source_file, plus the unreadable files
+report.add(sections.archive(result, archive))        # where it is, what was read, what was not
+```
+
+The Archive's `name` is what the comparison labels it and what a `Note(about=...)` names, and its
+location goes to `sections.comparison(..., locations={archive.name: archive.location})`.
+
 **State what the numbers cover.** Pass `filters=[...]`, one line per restriction (species,
 route, date range, rows left out and why), and they are listed on page 1. A reader who
 does not know a filter was applied reads every count wrong. The comparison section states

@@ -12,6 +12,7 @@ import pandas as pd
 from workbench.reports.paginator import LABEL, TABLE_HEAD, TABLE_ROW, Paginator, Panel
 from workbench.reports.report import Report, Section, Summary
 from workbench.utils.metrics_utils import performance_breakout
+from workbench.utils.archive import Archive, ArchiveRead
 from workbench.utils.pandas_utils import DataQuality, KeyedComparison
 from workbench.utils.plots import data as data_charts
 from workbench.utils.plots import performance as charts
@@ -482,3 +483,45 @@ def comparison(
         needs_action=bool(open_items),
     )
     return Section(pages=[build], frames=frames, summary=card, about=[left, right])
+
+
+def archive(result: ArchiveRead, source: Archive, title: Optional[str] = None, name: str = "archive") -> Section:
+    """How an Archive was read: where it is, how many of its files gave rows, and which could not be read.
+
+    Args:
+        result (ArchiveRead): Output of `Archive.read`.
+        source (Archive): The Archive that was read.
+        title (Optional[str]): Page headline. Defaults to "How the <name> was read".
+        name (str): Prefix for this section's frames. Defaults to "archive".
+
+    Returns:
+        Section: The page, and the frame `<name>_unreadable` (every file the reader raised on).
+    """
+    title = title or f"How the {source.name} was read"
+    unreadable, unreadable_frame = result.unreadable, f"{name}_unreadable"
+    read = result.files - len(unreadable)
+    verdict = f"{read:,} of {result.files:,} files read, giving {len(result.rows):,} rows."
+    if len(unreadable):
+        verdict += f" {len(unreadable):,} could not be read."
+
+    def build(report: Report):
+        flow = Paginator(report, title, verdict)
+        flow.notes([source.name])
+        stats = [("Files", f"{result.files:,}"), ("Read", f"{read:,}"), ("Unreadable", f"{len(unreadable):,}")]
+        flow.tiles(stats + [("Rows", f"{len(result.rows):,}")])
+        where = [[f"{source.name} is at", source.location], ["files", source.pattern]]
+        flow.table(["how it was read", ""], where, aligns=["left", "left"])
+        if len(unreadable):
+            flow.label("Files that could not be read")
+            cells = _rows(unreadable, ["source_file", "reason"], limit=EXAMPLE_ROWS_PER_WARNING, width=70)
+            flow.table(["file", "reason"], cells, frame=unreadable_frame, count=len(unreadable))
+        return flow.figs
+
+    card = Summary(
+        title,
+        verdict,
+        [("Files", f"{result.files:,}"), ("Unreadable", f"{len(unreadable):,}"), ("Rows", f"{len(result.rows):,}")],
+        hero=(f"{read:,}", f"of {result.files:,} files read"),
+        needs_action=bool(len(unreadable)),
+    )
+    return Section(pages=[build], frames={unreadable_frame: unreadable}, summary=card, about=[source.name])
