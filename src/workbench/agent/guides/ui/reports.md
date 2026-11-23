@@ -113,15 +113,15 @@ on a file it cannot read.
 from workbench.utils.archive import Archive
 
 archive = Archive("s3://bucket/pk_studies", read_upload, pattern="*.zip")
-archive.files()                                        # name, key, size, modified
+archive.files()                                        # path within the Archive, name, key, size, modified
 archive.fetch("~/work/datasets/pk_studies")            # copies an S3 Archive locally, skipping what is there
 result = archive.read("~/work/datasets/pk_studies", workers=8)
-result.rows, result.unreadable                         # rows with source_file and source_row; files and reasons
+result.rows, result.unreadable                         # rows with source_file (its path) and source_row
 report.add(sections.archive(result, archive))
 ```
 
 - The location is an S3 prefix (a whole bucket works) or a local or network directory, which
-  is read in place. Pass `boto3_session=` when the Workbench role cannot read the bucket.
+  is read in place. The local copy keeps each file's path within the Archive. Pass `boto3_session=` when the Workbench role cannot read the bucket.
 - `name` (default "Archive") is what the comparison labels it and what `Note(about=...)` names;
   pass `locations={archive.name: archive.location}` to the comparison.
 - With `workers > 1` the reader must be a module-level function.

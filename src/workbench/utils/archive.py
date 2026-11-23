@@ -20,7 +20,7 @@ class ArchiveRead:
     """The result of `Archive.read`: the rows the files held, and the files that could not be read.
 
     Attributes:
-        rows (pd.DataFrame): Every reader's rows, with `source_file` (the file's name) and
+        rows (pd.DataFrame): Every reader's rows, with `source_file` (the file's path within the Archive) and
             `source_row` (the row's position in what the reader returned for it).
         unreadable (pd.DataFrame): One row per file the reader raised on: `source_file`, `reason`.
         files (int): Files the reader was given.
@@ -105,33 +105,48 @@ class Archive:
         """The files the Archive holds.
 
         Returns:
-            pd.DataFrame: One row per file matching `pattern`: `name`, `key` (its S3 key or its
-                path), `size` in bytes, and `modified`.
+            pd.DataFrame: One row per file matching `pattern`: `path` (relative to the Archive),
+                `name`, `key` (its S3 key or its full path), `size` in bytes, and `modified`.
         """
         rows = []
         if self.on_s3:
             bucket, prefix = self._bucket_prefix()
             for page in self._s3().get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=prefix):
                 for obj in page.get("Contents", []):
-                    name = obj["Key"].rsplit("/", 1)[-1]
+                    path = obj["Key"][len(prefix) :]
+                    name = path.rsplit("/", 1)[-1]
                     if name and fnmatch.fnmatch(name, self.pattern):
-                        rows.append([name, obj["Key"], obj["Size"], obj["LastModified"]])
+                        rows.append([path, name, obj["Key"], obj["Size"], obj["LastModified"]])
         else:
-            for path in sorted(Path(self.location).expanduser().rglob(self.pattern)):
+            root = self._root(self.location)
+            for path in sorted(root.rglob(self.pattern)):
                 if path.is_file():
-                    stat = path.stat()
-                    rows.append([path.name, str(path), stat.st_size, pd.Timestamp(stat.st_mtime, unit="s", tz="UTC")])
-        return pd.DataFrame(rows, columns=["name", "key", "size", "modified"])
+                    modified = pd.Timestamp(path.stat().st_mtime, unit="s", tz="UTC")
+                    rows.append(
+                        [path.relative_to(root).as_posix(), path.name, str(path), path.stat().st_size, modified]
+                    )
+        return pd.DataFrame(rows, columns=["path", "name", "key", "size", "modified"])
 
-    def fetch(self, local_dir: Union[str, Path], names: Optional[list] = None) -> pd.DataFrame:
+    @staticmethod
+    def _root(directory: Union[str, Path]) -> Path:
+        """A local directory to read, which must exist: a mistyped one would read as an empty Archive."""
+        root = Path(directory).expanduser()
+        if not root.is_dir():
+            raise FileNotFoundError(f"{root} is not a directory")
+        return root
+
+    def fetch(self, local_dir: Union[str, Path], paths: Optional[list] = None) -> pd.DataFrame:
         """Copy the Archive's files from S3 into a local directory, skipping those already there.
 
+        The copy keeps each file's path within the Archive, so files of one name in different
+        folders stay apart.
+
         Args:
-            local_dir (Union[str, Path]): Where the copies go, flat, by file name.
-            names (Optional[list]): Only these file names. Defaults to every file.
+            local_dir (Union[str, Path]): Where the copy goes.
+            paths (Optional[list]): Only these files, by their path within the Archive. Defaults to every file.
 
         Returns:
-            pd.DataFrame: One row per file: `name` and `status` ("fetched", "present", or why it failed).
+            pd.DataFrame: One row per file: `path` and `status` ("fetched", "present", or why it failed).
 
         Raises:
             ValueError: If the Archive is a directory, which is read in place.
@@ -139,24 +154,25 @@ class Archive:
         if not self.on_s3:
             raise ValueError(f"{self.location} is a directory; read it in place")
         local = Path(local_dir).expanduser()
-        local.mkdir(parents=True, exist_ok=True)
         listed = self.files()
-        if names is not None:
-            listed = listed[listed["name"].isin(names)]
+        if paths is not None:
+            listed = listed[listed["path"].isin(paths)]
         bucket, client = self._bucket_prefix()[0], self._s3()
 
-        def get(name: str, key: str) -> Tuple[str, str]:
-            if (local / name).exists():
-                return name, "present"
+        def get(path: str, key: str) -> Tuple[str, str]:
+            target = local / path
+            if target.exists():
+                return path, "present"
             try:
-                client.download_file(bucket, key, str(local / name))
-                return name, "fetched"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                client.download_file(bucket, key, str(target))
+                return path, "fetched"
             except Exception as exc:  # noqa: BLE001 - report each file, keep the sweep going
-                return name, f"failed: {exc}"
+                return path, f"failed: {exc}"
 
         with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as pool:
-            done = list(pool.map(get, listed["name"], listed["key"]))
-        status = pd.DataFrame(done, columns=["name", "status"])
+            done = list(pool.map(get, listed["path"], listed["key"]))
+        status = pd.DataFrame(done, columns=["path", "status"])
         log.info(f"Archive {self.name}: {status['status'].value_counts().to_dict()}")
         return status
 
@@ -170,13 +186,15 @@ class Archive:
 
         Returns:
             ArchiveRead: The rows, the files that could not be read, and how many were given.
+                A file is named by its path within the Archive.
 
         Raises:
             ValueError: If an S3 Archive is read without a local copy.
+            FileNotFoundError: If the directory to read does not exist.
         """
         if self.on_s3 and local_dir is None:
             raise ValueError("An S3 Archive is read from its local copy: fetch it, then pass local_dir")
-        root = Path(local_dir if local_dir is not None else self.location).expanduser()
+        root = self._root(local_dir if local_dir is not None else self.location)
         paths = sorted(path for path in root.rglob(self.pattern) if path.is_file())
         if workers > 1:
             with ProcessPoolExecutor(max_workers=workers) as pool:
@@ -186,9 +204,10 @@ class Archive:
 
         frames, unreadable = [], []
         for path, (frame, reason) in zip(paths, results):
+            source = path.relative_to(root).as_posix()
             if reason is not None:
-                unreadable.append([path.name, reason])
+                unreadable.append([source, reason])
             elif frame is not None and len(frame):
-                frames.append(frame.reset_index(drop=True).assign(source_file=path.name, source_row=range(len(frame))))
+                frames.append(frame.reset_index(drop=True).assign(source_file=source, source_row=range(len(frame))))
         rows = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["source_file", "source_row"])
         return ArchiveRead(rows, pd.DataFrame(unreadable, columns=["source_file", "reason"]), len(paths))

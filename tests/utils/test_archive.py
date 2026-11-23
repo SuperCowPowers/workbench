@@ -35,8 +35,8 @@ def pile(tmp_path):
 
 def test_files_lists_what_matches_the_pattern(pile):
     files = Archive(str(pile), read_csv, pattern="*.csv").files()
-    assert list(files["name"]) == ["a.csv", "b.csv", "broken.csv"]
-    assert list(files.columns) == ["name", "key", "size", "modified"] and (files["size"] > 0).all()
+    assert list(files["path"]) == ["a.csv", "b.csv", "broken.csv"]
+    assert list(files.columns) == ["path", "name", "key", "size", "modified"] and (files["size"] > 0).all()
 
 
 def test_read_keeps_the_source_of_every_row_and_lists_what_it_could_not_read(pile):
@@ -49,6 +49,24 @@ def test_read_keeps_the_source_of_every_row_and_lists_what_it_could_not_read(pil
         ["z", "b.csv", 0],
     ]
     assert result.unreadable.values.tolist() == [["broken.csv", "ValueError: no value column"]]
+
+
+def test_files_of_one_name_in_different_folders_stay_apart(pile):
+    for folder, value in (("study_a", 1), ("study_b", 2)):
+        (pile / folder).mkdir()
+        (pile / folder / "upload.csv").write_text(f"arm,value\nx,{value}\n")
+    archive = Archive(str(pile), read_csv, pattern="upload.csv")
+
+    assert list(archive.files()["path"]) == ["study_a/upload.csv", "study_b/upload.csv"]
+    rows = archive.read().rows
+    assert rows[["source_file", "value"]].values.tolist() == [["study_a/upload.csv", 1], ["study_b/upload.csv", 2]]
+
+
+def test_a_missing_directory_is_refused_rather_than_read_as_empty(pile):
+    with pytest.raises(FileNotFoundError):
+        Archive(str(pile / "mistyped"), read_csv).read()
+    with pytest.raises(FileNotFoundError):
+        Archive("s3://bucket/prefix", read_csv).read(pile / "mistyped")
 
 
 def test_read_in_several_processes_gives_the_same_rows(pile):
@@ -92,17 +110,20 @@ def test_an_s3_archive_lists_and_fetches_its_files(tmp_path):
     session = AWSAccountClamp().boto3_session
     bucket, prefix = ConfigManager().get_config("WORKBENCH_BUCKET"), f"testing/archive_{uuid.uuid4().hex[:8]}"
     s3 = session.client("s3")
-    for name, body in (("a.csv", "arm,value\nx,1\n"), ("b.csv", "arm,value\ny,2\n"), ("skip.txt", "no")):
+    objects = (("a.csv", "arm,value\nx,1\n"), ("sub/a.csv", "arm,value\ny,2\n"), ("skip.txt", "no"))
+    for name, body in objects:
         s3.put_object(Bucket=bucket, Key=f"{prefix}/{name}", Body=body.encode())
     try:
         archive = Archive(f"s3://{bucket}/{prefix}", read_csv, pattern="*.csv")
-        assert list(archive.files()["name"]) == ["a.csv", "b.csv"]
+        assert list(archive.files()["path"]) == ["a.csv", "sub/a.csv"]
 
         assert archive.fetch(tmp_path)["status"].tolist() == ["fetched", "fetched"]
         assert archive.fetch(tmp_path)["status"].tolist() == ["present", "present"]
-        assert archive.read(tmp_path).rows["arm"].tolist() == ["x", "y"]
+        rows = archive.read(tmp_path).rows
+        assert rows[["source_file", "arm"]].values.tolist() == [["a.csv", "x"], ["sub/a.csv", "y"]]
+        assert archive.fetch(tmp_path / "one", paths=["sub/a.csv"])["path"].tolist() == ["sub/a.csv"]
     finally:
-        for name in ("a.csv", "b.csv", "skip.txt"):
+        for name, _ in objects:
             s3.delete_object(Bucket=bucket, Key=f"{prefix}/{name}")
 
 
