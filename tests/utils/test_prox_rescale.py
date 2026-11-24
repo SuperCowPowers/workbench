@@ -8,6 +8,7 @@ from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceP
 from workbench.utils.prox_utils import rescale_proximity_targets
 
 FEATURES = ["f1", "f2"]
+TARGETS = ["cmax", "logd"]
 
 
 @pytest.fixture
@@ -22,13 +23,13 @@ def prox():
 
 
 def test_untransformed_model_gets_the_same_proximity(prox):
-    assert rescale_proximity_targets(prox, {}, to_model_space=True) is prox
-    assert rescale_proximity_targets(prox, {"target_transform": None}, to_model_space=False) is prox
+    assert rescale_proximity_targets(prox, {}, TARGETS, to_model_space=True) is prox
+    assert rescale_proximity_targets(prox, {"target_transform": None}, TARGETS, to_model_space=False) is prox
 
 
 def test_forward_moves_only_the_transformed_target(prox):
     hyperparameters = {"target_transform": {"cmax": {"name": "log10"}}}
-    model_space = rescale_proximity_targets(prox, hyperparameters, to_model_space=True)
+    model_space = rescale_proximity_targets(prox, hyperparameters, TARGETS, to_model_space=True)
 
     np.testing.assert_allclose(model_space.df["cmax"], np.log10(prox.df["cmax"]))
     np.testing.assert_allclose(model_space.df["logd"], prox.df["logd"])
@@ -38,14 +39,22 @@ def test_forward_moves_only_the_transformed_target(prox):
 
 def test_inverse_undoes_forward(prox):
     hyperparameters = {"target_transform": {"cmax": {"name": "log10"}}}
-    model_space = rescale_proximity_targets(prox, hyperparameters, to_model_space=True)
-    original = rescale_proximity_targets(model_space, hyperparameters, to_model_space=False)
+    model_space = rescale_proximity_targets(prox, hyperparameters, TARGETS, to_model_space=True)
+    original = rescale_proximity_targets(model_space, hyperparameters, TARGETS, to_model_space=False)
     np.testing.assert_allclose(original.df["cmax"], prox.df["cmax"], rtol=1e-9)
 
 
 def test_neighbors_carry_the_converted_targets(prox):
     hyperparameters = {"target_transform": "log10"}
     single = FeatureSpaceProximity(prox.df.dropna(subset=["cmax"]), id_column="id", features=FEATURES, target="cmax")
-    model_space = rescale_proximity_targets(single, hyperparameters, to_model_space=True)
+    model_space = rescale_proximity_targets(single, hyperparameters, "cmax", to_model_space=True)
     neighbors = model_space.neighbors("r10", n_neighbors=3, include_self=False)
     assert neighbors["cmax"].max() < 5.0, "neighbor targets read in log units"
+
+
+def test_proximity_holding_a_subset_of_the_targets(prox):
+    """A target UQ never calibrated is absent from the proximity but still named by the mapping."""
+    hyperparameters = {"target_transform": {"cmax": {"name": "log10"}, "logd": None}}
+    partial = FeatureSpaceProximity(prox.df.dropna(subset=["cmax"]), id_column="id", features=FEATURES, target="cmax")
+    model_space = rescale_proximity_targets(partial, hyperparameters, TARGETS, to_model_space=True)
+    np.testing.assert_allclose(model_space.df["cmax"], np.log10(partial.df["cmax"]))

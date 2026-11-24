@@ -56,7 +56,7 @@ def build_proximity(
     )
 
 
-def rescale_proximity_targets(prox, hyperparameters: dict, to_model_space: bool):
+def rescale_proximity_targets(prox, hyperparameters: dict, targets, to_model_space: bool):
     """A proximity whose target columns are moved between the original scale and the model's space.
 
     UQ works in the model's ``target_transform`` space, so the proximity embedded in its
@@ -66,13 +66,15 @@ def rescale_proximity_targets(prox, hyperparameters: dict, to_model_space: bool)
     Args:
         prox: The proximity to convert.
         hyperparameters: The model's hyperparameters, which name its ``target_transform``.
+        targets: The model's target column(s). A proximity may carry only some of them.
         to_model_space: True forwards original-scale targets; False inverts model-space ones.
 
     Returns:
         A shallow copy with converted target columns, or ``prox`` itself for an
         untransformed model.
     """
-    transforms = resolve_target_transforms((hyperparameters or {}).get("target_transform"), prox.targets)
+    targets = targets if isinstance(targets, list) else [targets]
+    transforms = resolve_target_transforms((hyperparameters or {}).get("target_transform"), targets)
     active = {t: x for t, x in transforms.items() if not isinstance(x, Identity) and t in prox.df.columns}
     if not active:
         return prox
@@ -101,7 +103,7 @@ def precomputed_model_proximity(model, space: str):
     prox = getattr(uq, "prox", None)
     if prox is None:
         return None
-    return rescale_proximity_targets(prox, model.hyperparameters(), to_model_space=False)
+    return rescale_proximity_targets(prox, model.hyperparameters(), model.target(), to_model_space=False)
 
 
 def fingerprint_prox_model_local(

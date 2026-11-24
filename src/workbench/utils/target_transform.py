@@ -369,6 +369,9 @@ def check_target_domain(spec: TransformSpec, targets: Sequence[str], ranges: dic
 # UQ output columns that sit on the target scale, alongside the ``q_*`` quantiles
 _LOCATION_COLUMNS = ("neighbor_target_mean",)
 
+# The quantile columns a UQ model writes
+_QUANTILE_COLUMNS = ("q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975")
+
 
 class TargetAdapter:
     """One target's path between the model's space and the scale a model reports on.
@@ -404,10 +407,12 @@ class TargetAdapter:
             truth: The target column, when the frame carries it in the model's space. Omit
                 for rows whose truth was never forwarded (held-out and inference rows).
         """
+        bounded = {prediction, *(f"{prefix}{name}" for name in _QUANTILE_COLUMNS)}
+        unbounded = {truth, *(f"{prefix}{name}" for name in _LOCATION_COLUMNS)}
         for column in df.columns:
-            if column == prediction or column.startswith(f"{prefix}q_"):
+            if column in bounded:
                 df[column] = clip_to_bounds(self.transform.inverse(df[column].to_numpy(dtype=float)), self.bounds)
-            elif column == truth or column in [f"{prefix}{name}" for name in _LOCATION_COLUMNS]:
+            elif column in unbounded:
                 df[column] = self.transform.inverse(df[column].to_numpy(dtype=float))
 
     def __repr__(self) -> str:

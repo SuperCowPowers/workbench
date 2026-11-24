@@ -375,7 +375,7 @@ def uq_model_local(
 
         # A FeatureSet proximity carries original-scale targets; UQ reads model-space ones
         fresh_prox = fingerprint_prox_model_local(model, radius=radius, n_bits=n_bits)
-        fresh_prox = rescale_proximity_targets(fresh_prox, model.hyperparameters(), to_model_space=True)
+        fresh_prox = rescale_proximity_targets(fresh_prox, model.hyperparameters(), model.target(), to_model_space=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         local_tar_path = os.path.join(tmpdir, "model.tar.gz")

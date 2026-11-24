@@ -619,3 +619,10 @@ def test_forward_predictions_maps_each_target_with_its_own_transform():
 def test_forward_predictions_is_a_no_op_for_identity():
     df = pd.DataFrame({"y": [1.0], "prediction": [1.0], "prediction_std": [0.1]})
     assert forward_predictions(df, {"y": Identity()}, primary="y") is df
+
+
+def test_report_leaves_input_columns_that_look_like_quantiles_alone():
+    df = pd.DataFrame({"prediction": [2.0], "q_95": [3.0], "q_feature": [3.0], "q_note": ["text"]})
+    TargetAdapter(Log10()).report(df)
+    assert df["prediction"][0] == pytest.approx(100.0) and df["q_95"][0] == pytest.approx(1000.0)
+    assert df["q_feature"][0] == 3.0 and df["q_note"][0] == "text"
