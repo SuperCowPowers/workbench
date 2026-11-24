@@ -14,8 +14,6 @@ from typing import Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 
-from workbench.utils.target_transform import Identity, clip_quantile_columns, clip_to_bounds
-
 # UQ output columns, as the UQ models name them before per-target prefixing
 UQ_COLUMN_PREFIXES = ("q_",)
 UQ_COLUMN_NAMES = ("confidence", "expected_residual")
@@ -25,46 +23,29 @@ def per_target_predictions(
     target_columns: Sequence[str],
     preds: np.ndarray,
     ensemble_stack: Optional[np.ndarray] = None,
-    transforms: Optional[dict] = None,
-    bounds: Optional[dict] = None,
 ) -> pd.DataFrame:
-    """Per-target prediction and spread columns, on the original scale.
+    """Per-target prediction and spread columns, in the model's space.
 
     Pure: it reads arrays and returns columns, leaving each caller to assign them however
     its frame is shaped (masked rows at inference, whole columns in training).
-
-    The point prediction inverts the mean, which is the conditional median and so the
-    MAE-optimal estimate. The spread is the std of the inverted members, which keeps it in
-    the same units as the prediction it accompanies — a transformed-space std would be
-    meaningless to UQ and to anything else reading ``{target}_pred_std``.
-
-    Bounds clip the point prediction, and ``apply_per_target_uq`` clips the UQ quantiles to
-    match. The spread stays the std of the unclipped members: clipping them would shrink it
-    exactly where predictions pile up at a bound, and UQ calibrates ``expected_residual`` and
-    ``confidence`` off ``{target}_pred_std``. So ``pred ± std`` can reach past a bound.
+    ``report_targets`` moves the predictions to the reported scale once UQ has been scored.
 
     Args:
         target_columns: Target columns, in the model's output order.
-        preds: ``(rows, targets)`` point predictions, in the model's own space.
+        preds: ``(rows, targets)`` point predictions.
         ensemble_stack: ``(members, rows, targets)`` member predictions for the spread.
             None (a single model) gives a zero spread.
-        transforms: ``{target: transform}``; omit for an untransformed model.
-        bounds: ``{target: (low, high)}``; omit to leave predictions unclipped.
 
     Returns:
         A frame of ``{target}_pred`` and ``{target}_pred_std`` columns.
     """
-    identity = Identity()
     columns = {}
     for target_index, target in enumerate(target_columns):
-        transform = (transforms or {}).get(target) or identity
-        prediction = clip_to_bounds(transform.inverse(preds[:, target_index]), (bounds or {}).get(target))
-        columns[f"{target}_pred"] = prediction
+        columns[f"{target}_pred"] = preds[:, target_index]
         if ensemble_stack is None:
-            columns[f"{target}_pred_std"] = np.zeros(len(prediction))
+            columns[f"{target}_pred_std"] = np.zeros(len(preds))
         else:
-            members = transform.inverse(ensemble_stack[:, :, target_index])
-            columns[f"{target}_pred_std"] = np.std(members, axis=0)
+            columns[f"{target}_pred_std"] = np.std(ensemble_stack[:, :, target_index], axis=0)
     return pd.DataFrame(columns)
 
 
@@ -88,7 +69,6 @@ def apply_per_target_uq(
     uq_outs: dict,
     primary: str,
     masks: Union[None, np.ndarray, pd.Series, dict] = None,
-    bounds: Optional[dict] = None,
 ) -> None:
     """Write ``{target}_``-prefixed UQ columns, aliasing the primary target's, in place.
 
@@ -98,12 +78,9 @@ def apply_per_target_uq(
         primary: The target whose columns are also written unprefixed.
         masks: Row selector — one boolean array for every target, ``{target: array}`` for a
             per-target one, or None to write whole columns.
-        bounds: ``{target: (low, high)}``, which clips that target's quantiles as it clips its
-            point prediction; omit to leave the quantiles unclipped.
     """
     for target, uq_out in uq_outs.items():
         mask = masks.get(target) if isinstance(masks, dict) else masks
-        clip_quantile_columns(uq_out, (bounds or {}).get(target))
         for col in uq_out.columns:
             prefixed = f"{target}_{col}"
             if mask is None:
@@ -113,6 +90,24 @@ def apply_per_target_uq(
                 df.loc[mask, prefixed] = uq_out[col].values
             if target == primary:
                 df[col] = df[prefixed]
+
+
+def report_targets(df: pd.DataFrame, adapters: dict, primary: str, truth: bool = False) -> None:
+    """Move every target's prediction and quantiles to the reported scale, in place.
+
+    Each target's ``{target}_pred`` and ``{target}_q_*`` columns go through that target's
+    adapter, and the primary's unprefixed aliases go through the primary's.
+
+    Args:
+        df: Frame of model-space columns.
+        adapters: ``{target: TargetAdapter}``.
+        primary: The target the unprefixed ``prediction`` and ``q_*`` columns belong to.
+        truth: True when the frame's target columns are in the model's space too (training
+            rows). Held-out and inference rows carry original-scale targets.
+    """
+    for target, adapter in adapters.items():
+        adapter.report(df, prediction=f"{target}_pred", prefix=f"{target}_", truth=target if truth else None)
+    adapters[primary].report(df)
 
 
 def multi_target_output_columns(df: pd.DataFrame, id_column: str, target_columns: Sequence[str]) -> list:

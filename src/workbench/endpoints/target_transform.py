@@ -5,13 +5,12 @@ from workbench.utils.target_transform import (  # noqa: F401
     Identity,
     Log10,
     Logit,
+    TargetAdapter,
     check_target_domain,
-    clip_quantile_columns,
     clip_to_bounds,
-    load_target_transform,
-    resolve_prediction_bounds,
-    resolve_target_transform,
-    resolve_target_transforms,
+    load_target_adapter,
+    resolve_target_adapter,
+    resolve_target_adapters,
 )
 
 __all__ = [
@@ -19,11 +18,10 @@ __all__ = [
     "Identity",
     "Log10",
     "Logit",
+    "TargetAdapter",
     "check_target_domain",
-    "clip_quantile_columns",
     "clip_to_bounds",
-    "load_target_transform",
-    "resolve_prediction_bounds",
-    "resolve_target_transform",
-    "resolve_target_transforms",
+    "load_target_adapter",
+    "resolve_target_adapter",
+    "resolve_target_adapters",
 ]

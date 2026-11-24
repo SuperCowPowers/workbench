@@ -68,8 +68,11 @@ before any training job starts. The error names the fix.
   and without one. MAE, RMSE and R² move because the model learned differently.
 - The usual trade is better error in the low tail for somewhat worse RMSE, so
   the tail is the place to look when judging whether it helped.
-- `prediction_std` is the spread of the inverted ensemble members, in original
-  units, and is not clipped by `prediction_bounds`.
+- UQ is calibrated in transformed space. `confidence` ranks the error there and
+  the `q_*` quantiles are inverted to original units, so read intervals from them.
+- `prediction_std` and `expected_residual` are spreads in transformed units
+  (under `log10`, 0.3 is about a factor of two) and are not clipped by
+  `prediction_bounds`.
 
 ## Limits
 

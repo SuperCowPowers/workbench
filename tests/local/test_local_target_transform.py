@@ -257,6 +257,68 @@ def test_prediction_bounds_clip_uq_quantiles_but_not_the_spread(decades_feature_
     )
 
 
+def test_log10_uq_is_calibrated_in_model_space(decades_feature_set):
+    """UQ lives in the model's space: quantiles come back positive and bracket the truth in
+    original units, while the spread columns stay in log units."""
+    model = _train(
+        decades_feature_set,
+        "uq-log10-model",
+        {"target_transform": {"name": "log10", "offset": 0.001}, "n_folds": 3},
+        model_type=ModelType.UQ_REGRESSOR,
+    )
+
+    oof = model.oof_predictions()
+    quantiles = [c for c in oof.columns if c.startswith("q_")]
+    assert quantiles, "a UQ model emits quantile columns"
+    assert oof[quantiles].min().min() > 0.0, "an inverted log quantile cannot reach zero"
+    assert oof["prediction"].max() > 100, "the prediction is on the original scale"
+    np.testing.assert_allclose(oof["q_50"], oof["prediction"], rtol=1e-6)
+
+    # A spread in ng-style units would run into the hundreds across five decades
+    assert oof["prediction_std"].max() < 5.0, "the ensemble spread is in log units"
+
+    # The interval is multiplicative, so it is wider above the prediction than below it
+    upper, lower = oof["q_95"] - oof["prediction"], oof["prediction"] - oof["q_05"]
+    assert (upper >= lower - 1e-9).all()
+    covered = (oof["y"] >= oof["q_05"]) & (oof["y"] <= oof["q_95"])
+    assert covered.mean() > 0.75
+
+    # predict_fn reports the same way from the spec it reads back
+    predictions = model.to_endpoint().inference(decades_feature_set.pull_dataframe())
+    assert predictions[quantiles].min().min() > 0.0
+    assert predictions["prediction_std"].max() < 5.0
+
+
+def test_log10_holdout_rows_are_reported_on_the_original_scale(decades_feature_set):
+    """Held-out rows are never forwarded: their truth stays put while predictions and quantiles are inverted."""
+    held_out = list(range(100, 120))
+    model = decades_feature_set.to_model(
+        "uq-log10-holdout-model",
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
+        target_column="y",
+        feature_list=["a", "b"],
+        hyperparameters={"target_transform": "log10", "n_folds": 3},
+        validation_ids=held_out,
+    )
+    assert model.training_state()["returncode"] == 0, model.training_log()
+
+    truth = decades_feature_set.pull_dataframe().set_index("id")["y"]
+    val = model.validation_predictions().set_index("id")
+    assert len(val) == len(held_out)
+    np.testing.assert_allclose(val["y"], truth.loc[val.index], err_msg="held-out truth must be untouched")
+    assert val["prediction"].corr(val["y"], method="spearman") > 0.9
+    assert val["prediction"].max() > 10, "an un-inverted prediction would top out near 3"
+
+    quantiles = [c for c in val.columns if c.startswith("q_")]
+    assert quantiles and val[quantiles].min().min() > 0.0
+    assert val["prediction_std"].max() < 5.0, "the spread is in log units"
+
+    # The out-of-fold truth was forwarded for training and has to come back exactly
+    oof = model.oof_predictions().set_index("id")
+    np.testing.assert_allclose(oof["y"], truth.loc[oof.index], rtol=1e-9)
+
+
 def test_unsupported_framework_is_rejected_at_creation(decades_feature_set):
     """A template that would drop the spec must fail before any training runs."""
     with pytest.raises(ValueError, match="does not support target_transform"):

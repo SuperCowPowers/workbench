@@ -41,12 +41,7 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from workbench.endpoints.target_transform import (
-    clip_quantile_columns,
-    clip_to_bounds,
-    load_target_transform,
-    resolve_target_transform,
-)
+from workbench.endpoints.target_transform import load_target_adapter, resolve_target_adapter
 from workbench.endpoints.uq_regression import load_regression_uq, uq_query_df
 
 log = logging.getLogger("workbench")
@@ -94,15 +89,14 @@ DEFAULT_HYPERPARAMETERS = {
     # saved when regression UQ is enabled, so the other versions stay available for
     # comparison via Model.uq_model(version=...).
     "uq_version": "v1",
-    # Target transform (regression only): fit in transformed space, serve on the original
-    # scale. None (identity), a name ("log10"), or a name with arguments ({"name": "log10",
+    # Target transform (regression only): fit in transformed space, report on the original scale.
+    # None (identity), a name ("log10"), or a name with arguments ({"name": "log10",
     # "offset": 0.001}). Set offset near the assay's lower limit to bring zeros into the
-    # domain. Metrics, saved predictions, and UQ are all on the original scale, while an
-    # `hpo` search scores trials in transformed space, so its cv_mae is not comparable to
-    # the reported metrics.
+    # domain. The prediction, the q_* quantiles and the metrics are on the original scale;
+    # prediction_std and expected_residual are spreads in transformed space.
     "target_transform": None,
-    # Clip predictions into a physically valid range, e.g. [0.0, 100.0] for a percentage.
-    # Applied after any inverse transform; either side may be null.
+    # Clip the reported prediction and quantiles into a physically valid range, e.g.
+    # [0.0, 100.0] for a percentage. Either side may be null.
     "prediction_bounds": None,
 }
 
@@ -153,15 +147,14 @@ def model_fn(model_dir: str) -> dict:
     if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
         classification_uq = load_classification_uq(model_dir)
 
-    target_transform, prediction_bounds = load_target_transform(model_dir)
+    target_adapter = load_target_adapter(model_dir)
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": n_ensemble,
         "scaler": scaler,
         "uq_model": uq_model,
         "classification_uq": classification_uq,
-        "target_transform": target_transform,
-        "prediction_bounds": prediction_bounds,
+        "target_adapter": target_adapter,
     }
 
 
@@ -261,13 +254,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             raw_conf = compute_vgmu_confidence(avg_probs, ensemble_preds)
             df["confidence"] = apply_classification_confidence(raw_conf, classification_uq["classification_confidence"])
     else:
-        # Regression, back on the original scale: the point prediction inverts the ensemble
-        # mean, which is the conditional median and so the MAE-optimal estimate, while the
-        # spread is the std of the inverted members so it shares the prediction's units.
-        target_transform = model_dict["target_transform"]
-        predictions = clip_to_bounds(target_transform.inverse(preds.flatten()), model_dict.get("prediction_bounds"))
-        df["prediction"] = predictions
-        df["prediction_std"] = np.std(target_transform.inverse(ensemble_preds), axis=0).flatten()
+        # Regression, in the model's space until the report below
+        df["prediction"] = preds.flatten()
+        df["prediction_std"] = np.std(ensemble_preds, axis=0).flatten()
 
         # UQModel UQ: expected_residual, confidence, conformal intervals.
         # V1/V2 need a neighbor-lookup payload — smiles/fingerprint or the feature
@@ -277,7 +266,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             query = uq_query_df(uq_model, matched_df)
             if query is not None or uq_model.UQ_VERSION == "v0":
                 uq_out = uq_model.predict(query, df["prediction"].values, df["prediction_std"].values)
-                clip_quantile_columns(uq_out, model_dict.get("prediction_bounds"))
                 for col in uq_out.columns:
                     df[col] = uq_out[col].values
             else:
@@ -285,6 +273,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                     f"UQ {uq_model.UQ_VERSION} can't score this batch: its {uq_model.prox.space} proximity needs "
                     "'smiles' (fingerprint) or the model's features (feature space) in the inference payload"
                 )
+
+        # Prediction and quantiles back to the original scale, clipped to the bounds
+        model_dict["target_adapter"].report(df)
+        predictions = df["prediction"].values
 
     df["prediction"] = predictions
     return df
@@ -411,19 +403,14 @@ if __name__ == "__main__":
         n_outputs = len(label_encoder.classes_)
         print(f"Class labels: {label_encoder.classes_.tolist()}")
 
-    # -------------------------------------------------------------------------
-    # Target transform and prediction bounds (regression only)
-    # -------------------------------------------------------------------------
-    # Fit in transformed space. Metrics, saved predictions, and UQ are all inverted back to
-    # the original scale below, so a transform never changes how a model is reported or
-    # compared. Held-out rows keep their original-scale target; only predictions are inverted.
-    # Model creation rejects these on a classifier, so only the regression path transforms.
-    target_transform = resolve_target_transform(hyperparameters.get("target_transform"))
-    prediction_bounds = hyperparameters.get("prediction_bounds")
+    # Target adapter (regression only; model creation rejects a transform or bounds on a
+    # classifier). The target is forwarded once here, so cross-validation, the ensemble
+    # spread, UQ and the proximity reference all work in the model's space. report() moves
+    # each saved frame back to the original scale.
+    target_adapter = resolve_target_adapter(hyperparameters)
     if model_type != "classifier":
-        all_df[target] = target_transform.forward(all_df[target].values)
-        print(f"Target transform: {target_transform}")
-        print(f"Prediction bounds: {prediction_bounds}")
+        all_df[target] = target_adapter.forward(all_df[target].values)
+        print(f"Target adapter: {target_adapter}")
 
     # -------------------------------------------------------------------------
     # Cross-validation setup
@@ -591,13 +578,7 @@ if __name__ == "__main__":
             df_oof["pred_proba"] = [p.tolist() for p in oof_proba]
             df_oof = expand_proba_column(df_oof, label_encoder.classes_)
     else:
-        # Back to the original scale before anything reads these: metrics, prediction_std,
-        # UQ, and the saved OOF predictions are all original-scale. Cross-validation is done
-        # with the models fitted, so all_df's target is inverted too — it still feeds the UQ
-        # proximity reference set, which must agree with the original-scale y_true.
-        df_oof[target] = target_transform.inverse(df_oof[target].values)
-        df_oof["prediction"] = clip_to_bounds(target_transform.inverse(predictions), prediction_bounds)
-        all_df[target] = target_transform.inverse(all_df[target].values)
+        df_oof["prediction"] = predictions
 
     # -------------------------------------------------------------------------
     # Compute and print metrics
@@ -627,8 +608,6 @@ if __name__ == "__main__":
         # No regression UQ on classification tasks
         uq_dict = None
     else:
-        metrics = compute_regression_metrics(y_true, y_pred)
-        print_regression_metrics(metrics)
         classification_uq = None
 
         # Compute ensemble prediction_std
@@ -638,7 +617,6 @@ if __name__ == "__main__":
                 df_oof, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
             )
             all_preds = [predict(m, x_cont, x_cat).flatten() for m in ensemble_models]
-            all_preds = target_transform.inverse(np.stack(all_preds))
             df_oof["prediction_std"] = np.std(all_preds, axis=0)
             print(
                 f"Ensemble std - mean: {df_oof['prediction_std'].mean():.4f}, max: {df_oof['prediction_std'].max():.4f}"
@@ -669,9 +647,12 @@ if __name__ == "__main__":
 
         # Apply active UQ to df_oof for oof_predictions.csv
         uq_out = uq_dict["oof_outputs"][target]
-        clip_quantile_columns(uq_out, prediction_bounds)
         for col in uq_out.columns:
             df_oof[col] = uq_out[col].values
+
+        # Truth, prediction and quantiles back to the original scale, which metrics read
+        target_adapter.report(df_oof, truth=target)
+        print_regression_metrics(compute_regression_metrics(df_oof[target].values, df_oof["prediction"].values))
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance (continuous features only)
@@ -819,13 +800,8 @@ if __name__ == "__main__":
                 )
         else:
             fold_preds = np.stack([p.flatten() for p in all_preds])
-            h_pred = clip_to_bounds(target_transform.inverse(np.mean(fold_preds, axis=0)), prediction_bounds)
-            fold_preds = target_transform.inverse(fold_preds)
+            h_pred = np.mean(fold_preds, axis=0)
             h_std = np.std(fold_preds, axis=0) if len(ensemble_models) > 1 else np.zeros(len(h_pred))
-            metrics = compute_regression_metrics(y_h_true, h_pred)
-            print("Held-out validation metrics:")
-            print_regression_metrics(metrics)
-            print(f"holdout_mae: {metrics['mae']:.3f}")
             df_val = pd.DataFrame(
                 {
                     id_column: holdout_df[id_column].values,
@@ -850,6 +826,14 @@ if __name__ == "__main__":
                 )
                 for col in val_uq.columns:
                     df_val[col] = val_uq[col].values
+
+        # Held-out rows were never forwarded, so only the prediction and quantiles move
+        if model_type != "classifier":
+            target_adapter.report(df_val)
+            metrics = compute_regression_metrics(df_val[target].values, df_val["prediction"].values)
+            print("Held-out validation metrics:")
+            print_regression_metrics(metrics)
+            print(f"holdout_mae: {metrics['mae']:.3f}")
 
     # -------------------------------------------------------------------------
     # Save out-of-fold and held-out validation predictions to S3
