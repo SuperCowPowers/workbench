@@ -371,9 +371,11 @@ def uq_model_local(
     # V1/V2 share the proximity artifact; optionally build a fresh one to override
     fresh_prox = None
     if effective_version in ("v1", "v2") and refresh_proximity:
-        from workbench.utils.prox_utils import fingerprint_prox_model_local
+        from workbench.utils.prox_utils import fingerprint_prox_model_local, rescale_proximity_targets
 
+        # A FeatureSet proximity carries original-scale targets; UQ reads model-space ones
         fresh_prox = fingerprint_prox_model_local(model, radius=radius, n_bits=n_bits)
+        fresh_prox = rescale_proximity_targets(fresh_prox, model.hyperparameters(), model.target(), to_model_space=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         local_tar_path = os.path.join(tmpdir, "model.tar.gz")

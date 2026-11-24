@@ -1,9 +1,13 @@
 """Target transforms: train in transformed space, serve predictions on the original scale.
 
-A model's ``target_transform`` hyperparameter names an invertible, monotonic map. Training
-applies ``forward`` to the target column(s); inference applies ``inverse`` to predictions.
-Metrics are always computed on the original scale, so a transform never changes how a model
-is reported or compared.
+A model's ``target_transform`` hyperparameter names an invertible, monotonic map. A model
+script meets it at two points, both through a ``TargetAdapter``. On entry the target column
+is forwarded once, and from there the model, its ensemble spread, UQ and the proximity
+reference all work in the model's space with no transform-aware code. On exit ``report``
+inverts the columns that sit on the target scale (the prediction, the ``q_*`` quantiles, the
+truth) and applies ``prediction_bounds``. Spreads have no inverse, so ``prediction_std`` and
+``expected_residual`` stay in the model's space. Metrics are computed on the reported frame,
+so a transform never changes how a model is reported or compared.
 
 Monotonicity is the contract: rank-based metrics (Spearman, Kendall) are identical with and
 without a transform, and only placement-dependent metrics move.
@@ -279,8 +283,9 @@ def forward_predictions(df, transforms: dict, primary: str):
 
     A display view: a value outside a transform's domain, such as a prediction clipped to a
     bound the transform cannot reach, becomes NaN rather than raising. Quantiles map exactly,
-    but a spread in original units has no meaning after a nonlinear map, so spread columns
-    are dropped. Targets with the identity transform pass through untouched.
+    and the spread columns (``prediction_std``, ``expected_residual``) are already in that
+    space. ``residual`` is in original units, so it is dropped. Targets with the identity
+    transform pass through untouched.
 
     Args:
         df: Prediction frame on the original scale.
@@ -295,18 +300,14 @@ def forward_predictions(df, transforms: dict, primary: str):
         return df
 
     out = df.copy()
-    drop = []
     for target, transform in active.items():
         columns = [target, f"{target}_pred"] + [c for c in out.columns if c.startswith(f"{target}_q_")]
-        spreads = [f"{target}_pred_std", f"{target}_expected_residual"]
         if target == primary:
             columns += ["prediction"] + [c for c in out.columns if c.startswith("q_")]
-            spreads += ["prediction_std", "expected_residual", "residual"]
         for column in columns:
             if column in out.columns:
                 out[column] = transform.forward(out[column].to_numpy(dtype=float), strict=False)
-        drop += [column for column in spreads if column in out.columns]
-    return out.drop(columns=drop)
+    return out.drop(columns=[c for c in ["residual"] if c in out.columns and primary in active])
 
 
 def resolve_prediction_bounds(spec, targets: Sequence[str]) -> dict:
@@ -365,19 +366,88 @@ def check_target_domain(spec: TransformSpec, targets: Sequence[str], ranges: dic
             raise ValueError(f"{where}: {exc}") from exc
 
 
-def load_target_transform(model_dir: str, targets: Optional[Sequence[str]] = None) -> tuple:
-    """Resolve the transform and bounds a trained model was fitted with.
+# UQ output columns that sit on the target scale, alongside the ``q_*`` quantiles
+_LOCATION_COLUMNS = ("neighbor_target_mean",)
 
-    Reads the model's own ``hyperparameters.json``, so inference inverts exactly what
-    training applied rather than trusting a separately-passed value.
+# The quantile columns a UQ model writes
+_QUANTILE_COLUMNS = ("q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975")
+
+
+class TargetAdapter:
+    """One target's path between the model's space and the scale a model reports on.
+
+    A model script forwards its target once on the way in and calls ``report`` on each
+    frame it hands back. Everything between those two points is in the model's space.
+    """
+
+    def __init__(self, transform: Optional[Transform] = None, bounds: Optional[Sequence[Optional[float]]] = None):
+        """
+        Args:
+            transform: The target's transform; omit for an untransformed target.
+            bounds: ``(low, high)`` on the reported scale, either side optional.
+        """
+        self.transform = transform or Identity()
+        self.bounds = _validated_bounds(bounds)
+
+    def forward(self, y: np.ndarray) -> np.ndarray:
+        """Map target values into the model's space."""
+        return self.transform.forward(y)
+
+    def report(self, df, prediction: str = "prediction", prefix: str = "", truth: Optional[str] = None) -> None:
+        """Move a frame's target-scale columns from the model's space to the reported scale, in place.
+
+        The prediction and the quantiles are inverted and clipped to the bounds. A quantile
+        predicts the target and the target obeys the bound, so clipping one cannot change
+        interval coverage. Spread columns have no inverse and are left in the model's space.
+
+        Args:
+            df: Frame of model-space columns, modified in place.
+            prediction: The point-prediction column.
+            prefix: Prefix of this target's UQ columns (``"{target}_"`` in a multi-target frame).
+            truth: The target column, when the frame carries it in the model's space. Omit
+                for rows whose truth was never forwarded (held-out and inference rows).
+        """
+        bounded = {prediction, *(f"{prefix}{name}" for name in _QUANTILE_COLUMNS)}
+        unbounded = {truth, *(f"{prefix}{name}" for name in _LOCATION_COLUMNS)}
+        for column in df.columns:
+            if column in bounded:
+                df[column] = clip_to_bounds(self.transform.inverse(df[column].to_numpy(dtype=float)), self.bounds)
+            elif column in unbounded:
+                df[column] = self.transform.inverse(df[column].to_numpy(dtype=float))
+
+    def __repr__(self) -> str:
+        return f"TargetAdapter({self.transform!r}, bounds={self.bounds})"
+
+
+def resolve_target_adapter(hyperparameters: Optional[dict]) -> TargetAdapter:
+    """The adapter for a single-target model, from its hyperparameters."""
+    hyperparameters = hyperparameters or {}
+    return TargetAdapter(
+        resolve_target_transform(hyperparameters.get("target_transform")), hyperparameters.get("prediction_bounds")
+    )
+
+
+def resolve_target_adapters(hyperparameters: Optional[dict], targets: Sequence[str]) -> dict:
+    """``{target_column: adapter}`` for a multi-target model, from its hyperparameters."""
+    hyperparameters = hyperparameters or {}
+    transforms = resolve_target_transforms(hyperparameters.get("target_transform"), targets)
+    bounds = resolve_prediction_bounds(hyperparameters.get("prediction_bounds"), targets)
+    return {target: TargetAdapter(transforms[target], bounds[target]) for target in targets}
+
+
+def load_target_adapter(model_dir: str, targets: Optional[Sequence[str]] = None):
+    """Resolve the adapter a trained model was fitted with.
+
+    Reads the model's own ``hyperparameters.json``, so inference reports exactly as training
+    did rather than trusting a separately-passed value.
 
     Args:
         model_dir: The model directory, as handed to ``model_fn``.
         targets: Target columns for a multi-target model. Omit for a single target.
 
     Returns:
-        ``(transform, bounds)`` for a single target, or ``({target: transform}, {target:
-        bounds})`` when ``targets`` is given.
+        A ``TargetAdapter`` for a single target, or ``{target: adapter}`` when ``targets``
+        is given.
     """
     hyperparameters = {}
     hyperparameters_path = os.path.join(model_dir, "hyperparameters.json")
@@ -385,11 +455,9 @@ def load_target_transform(model_dir: str, targets: Optional[Sequence[str]] = Non
         with open(hyperparameters_path, encoding="utf-8") as file_handle:
             hyperparameters = json.load(file_handle)
 
-    spec = hyperparameters.get("target_transform")
-    bounds = hyperparameters.get("prediction_bounds")
     if targets is None:
-        return resolve_target_transform(spec), _validated_bounds(bounds)
-    return resolve_target_transforms(spec, targets), resolve_prediction_bounds(bounds, targets)
+        return resolve_target_adapter(hyperparameters)
+    return resolve_target_adapters(hyperparameters, targets)
 
 
 def _validated_bounds(bounds: Optional[Sequence[Optional[float]]]) -> Optional[tuple]:
@@ -402,26 +470,6 @@ def _validated_bounds(bounds: Optional[Sequence[Optional[float]]]) -> Optional[t
     if low is not None and high is not None and low >= high:
         raise ValueError(f"prediction_bounds low must be below high, got {bounds!r}")
     return (low, high)
-
-
-def clip_quantile_columns(df, bounds: Optional[Sequence[Optional[float]]], prefix: str = "q_") -> None:
-    """Clip UQ prediction quantiles into the same range as the point prediction, in place.
-
-    A quantile predicts the target and the target obeys the bound, so clipping one cannot
-    change interval coverage — it only drops mass the model has declared impossible. The
-    spread in ``prediction_std`` is a dispersion estimate that UQ calibrates against, so it
-    stays unclipped and ``prediction ± prediction_std`` can still reach past a bound.
-
-    Args:
-        df: Frame of UQ columns, modified in place.
-        bounds: ``(low, high)``, either side optional, or None to leave the frame untouched.
-        prefix: Names the quantile columns.
-    """
-    if bounds is None:
-        return
-    for column in df.columns:
-        if column.startswith(prefix):
-            df[column] = clip_to_bounds(df[column].to_numpy(), bounds)
 
 
 def clip_to_bounds(values: np.ndarray, bounds: Optional[Sequence[Optional[float]]]) -> np.ndarray:

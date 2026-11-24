@@ -4,9 +4,12 @@ Keeps the construction and precomputed-lookup logic out of the Model and Feature
 API classes — they just handle caching and pass through the right arguments.
 """
 
+import copy
 from typing import TYPE_CHECKING, Optional, Union
 
 import pandas as pd
+
+from workbench.utils.target_transform import Identity, resolve_target_transforms
 
 if TYPE_CHECKING:
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
@@ -53,11 +56,43 @@ def build_proximity(
     )
 
 
+def rescale_proximity_targets(prox, hyperparameters: dict, targets, to_model_space: bool):
+    """A proximity whose target columns are moved between the original scale and the model's space.
+
+    UQ works in the model's ``target_transform`` space, so the proximity embedded in its
+    artifact carries model-space targets, while a proximity built from a FeatureSet carries
+    original-scale ones. This converts one into the other.
+
+    Args:
+        prox: The proximity to convert.
+        hyperparameters: The model's hyperparameters, which name its ``target_transform``.
+        targets: The model's target column(s). A proximity may carry only some of them.
+        to_model_space: True forwards original-scale targets; False inverts model-space ones.
+
+    Returns:
+        A shallow copy with converted target columns, or ``prox`` itself for an
+        untransformed model.
+    """
+    targets = targets if isinstance(targets, list) else [targets]
+    transforms = resolve_target_transforms((hyperparameters or {}).get("target_transform"), targets)
+    active = {t: x for t, x in transforms.items() if not isinstance(x, Identity) and t in prox.df.columns}
+    if not active:
+        return prox
+
+    converted = copy.copy(prox)
+    converted.df = prox.df.copy()
+    for target, transform in active.items():
+        values = converted.df[target].to_numpy(dtype=float)
+        converted.df[target] = transform.forward(values, strict=False) if to_model_space else transform.inverse(values)
+    return converted
+
+
 def precomputed_model_proximity(model, space: str):
     """Return the proximity embedded in a model's artifact for ``space``, or None.
 
     Only fingerprint proximity is embedded today (carried in the UQ artifact);
     feature-space proximity is never embedded, so ``"features"`` always returns None.
+    The embedded targets are in the model's space, so they are inverted on the way out.
     """
     if space == "features":
         return None
@@ -65,7 +100,10 @@ def precomputed_model_proximity(model, space: str):
         uq = model.uq_model()
     except FileNotFoundError:
         return None
-    return getattr(uq, "prox", None)
+    prox = getattr(uq, "prox", None)
+    if prox is None:
+        return None
+    return rescale_proximity_targets(prox, model.hyperparameters(), model.target(), to_model_space=False)
 
 
 def fingerprint_prox_model_local(

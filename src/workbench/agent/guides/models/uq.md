@@ -50,6 +50,11 @@ means "expected error lower than 70% of calibration-set predictions."
 
 `inference()` and `cross_fold_inference()` persist the `q_*` columns in each capture.
 
+A `target_transform` model is calibrated in its transformed space: `confidence` and
+the `q_*` columns read as usual, while `prediction_std` and `expected_residual` are
+in transformed units. A `uq_model()` scored directly takes a transformed-space
+prediction and returns transformed-space quantiles. See the `target_transforms` guide.
+
 A multi-task model calibrates every target and repeats the block per target as
 `{target}_confidence`, `{target}_expected_residual`, `{target}_q_*`; the
 unprefixed names alias the primary. Each target's per-target capture carries its

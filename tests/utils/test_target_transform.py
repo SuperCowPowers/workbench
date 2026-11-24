@@ -12,11 +12,11 @@ from workbench.utils.target_transform import (
     Identity,
     Log10,
     Logit,
+    TargetAdapter,
     check_target_domain,
-    clip_quantile_columns,
     clip_to_bounds,
     forward_predictions,
-    load_target_transform,
+    load_target_adapter,
     resolve_prediction_bounds,
     resolve_target_transform,
     resolve_target_transforms,
@@ -237,28 +237,28 @@ def _write_hyperparameters(model_dir, hyperparameters):
     return str(model_dir)
 
 
-def test_load_target_transform_single_target(tmp_path):
+def test_load_target_adapter_single_target(tmp_path):
     model_dir = _write_hyperparameters(
         tmp_path, {"target_transform": {"name": "log10", "offset": 0.01}, "prediction_bounds": [0.0, 1.0]}
     )
-    transform, bounds = load_target_transform(model_dir)
-    assert isinstance(transform, Log10) and transform.offset == 0.01
-    assert bounds == (0.0, 1.0)
+    adapter = load_target_adapter(model_dir)
+    assert isinstance(adapter.transform, Log10) and adapter.transform.offset == 0.01
+    assert adapter.bounds == (0.0, 1.0)
 
 
-def test_load_target_transform_multi_target(tmp_path):
+def test_load_target_adapter_multi_target(tmp_path):
     model_dir = _write_hyperparameters(tmp_path, {"target_transform": {"ksol": "log10"}})
-    transforms, bounds = load_target_transform(model_dir, TARGETS)
-    assert isinstance(transforms["ksol"], Log10)
-    assert isinstance(transforms["logd"], Identity)
-    assert bounds == {t: None for t in TARGETS}
+    adapters = load_target_adapter(model_dir, TARGETS)
+    assert isinstance(adapters["ksol"].transform, Log10)
+    assert isinstance(adapters["logd"].transform, Identity)
+    assert all(adapters[t].bounds is None for t in TARGETS)
 
 
-def test_load_target_transform_without_hyperparameters_is_identity(tmp_path):
-    """A model trained before transforms existed carries no spec and must still serve."""
-    transform, bounds = load_target_transform(str(tmp_path))
-    assert isinstance(transform, Identity)
-    assert bounds is None
+def test_load_target_adapter_without_hyperparameters_is_identity(tmp_path):
+    """A model with no spec reports its predictions unchanged."""
+    adapter = load_target_adapter(str(tmp_path))
+    assert isinstance(adapter.transform, Identity)
+    assert adapter.bounds is None
 
 
 def test_clip_to_bounds():
@@ -408,13 +408,13 @@ def test_multi_target_mapping_mixes_the_transforms():
     assert isinstance(resolved["logd"], Identity)
 
 
-def test_load_target_transform_reads_back_a_logit(tmp_path):
+def test_load_target_adapter_reads_back_a_logit(tmp_path):
     """The spec that trained the model is what inference inverts."""
     model_dir = _write_hyperparameters(tmp_path, {"target_transform": {"name": "logit", "ceiling": 120.0}})
-    transform, bounds = load_target_transform(model_dir)
-    assert isinstance(transform, Logit)
-    assert transform.ceiling == 120.0
-    assert bounds is None
+    adapter = load_target_adapter(model_dir)
+    assert isinstance(adapter.transform, Logit)
+    assert adapter.transform.ceiling == 120.0
+    assert adapter.bounds is None
 
 
 def _uq_frame():
@@ -430,9 +430,10 @@ def _uq_frame():
     )
 
 
-def test_clip_quantile_columns_clips_only_the_quantiles():
-    uq_out = _uq_frame()
-    clip_quantile_columns(uq_out, (0.0, 100.0))
+def test_report_clips_only_the_prediction_and_quantiles():
+    uq_out = _uq_frame().assign(prediction=[-2.0, 120.0])
+    TargetAdapter(bounds=(0.0, 100.0)).report(uq_out)
+    assert uq_out["prediction"].tolist() == [0.0, 100.0]
     assert uq_out["q_05"].tolist() == [0.0, 10.0]
     assert uq_out["q_95"].tolist() == [40.0, 100.0]
     assert uq_out["prediction_std"].tolist() == [12.0, 40.0], "a dispersion estimate is not clipped"
@@ -440,22 +441,82 @@ def test_clip_quantile_columns_clips_only_the_quantiles():
     assert uq_out["expected_residual"].tolist() == [4.0, 9.0]
 
 
-def test_clip_quantile_columns_without_bounds_is_a_no_op():
+def test_report_without_a_transform_or_bounds_is_a_no_op():
     uq_out = _uq_frame()
-    clip_quantile_columns(uq_out, None)
+    TargetAdapter().report(uq_out)
     pd.testing.assert_frame_equal(uq_out, _uq_frame())
 
 
-def test_clip_quantile_columns_cannot_lose_coverage():
+def test_report_clipping_cannot_lose_coverage():
     """Truth obeys the bound, so a clipped interval still covers whatever it covered."""
     truth = np.array([0.0, 42.0, 100.0])
     uq_out = pd.DataFrame({"q_05": [-20.0, 30.0, 80.0], "q_95": [25.0, 150.0, 140.0]})
     covered = (truth >= uq_out["q_05"]) & (truth <= uq_out["q_95"])
 
-    clip_quantile_columns(uq_out, (0.0, 100.0))
+    TargetAdapter(bounds=(0.0, 100.0)).report(uq_out)
     still_covered = (truth >= uq_out["q_05"]) & (truth <= uq_out["q_95"])
     assert still_covered.tolist() == covered.tolist()
     assert (uq_out["q_95"] - uq_out["q_05"]).sum() < 190.0, "and the intervals got tighter"
+
+
+def _model_space_frame():
+    """A log10 model's frame before it is reported: every column in log units."""
+    return pd.DataFrame(
+        {
+            "y": [1.0, 2.0],
+            "prediction": [1.0, 3.0],
+            "prediction_std": [0.2, 0.3],
+            "expected_residual": [0.4, 0.5],
+            "confidence": [0.8, 0.3],
+            "q_05": [0.0, 2.0],
+            "q_95": [2.0, 4.0],
+            "neighbor_target_mean": [1.0, 2.0],
+        }
+    )
+
+
+def test_report_inverts_locations_and_leaves_spreads_in_model_space():
+    df = _model_space_frame()
+    TargetAdapter(Log10()).report(df, truth="y")
+    np.testing.assert_allclose(df["y"], [10.0, 100.0])
+    np.testing.assert_allclose(df["prediction"], [10.0, 1000.0])
+    np.testing.assert_allclose(df["q_05"], [1.0, 100.0])
+    np.testing.assert_allclose(df["q_95"], [100.0, 10000.0])
+    np.testing.assert_allclose(df["neighbor_target_mean"], [10.0, 100.0])
+    assert df["prediction_std"].tolist() == [0.2, 0.3]
+    assert df["expected_residual"].tolist() == [0.4, 0.5]
+    assert df["confidence"].tolist() == [0.8, 0.3]
+
+
+def test_report_leaves_an_unforwarded_truth_alone():
+    """Held-out and inference rows carry an original-scale target the model never saw."""
+    df = _model_space_frame()
+    TargetAdapter(Log10()).report(df)
+    assert df["y"].tolist() == [1.0, 2.0]
+    np.testing.assert_allclose(df["prediction"], [10.0, 1000.0])
+
+
+def test_report_clips_after_inverting():
+    df = _model_space_frame()
+    TargetAdapter(Log10(), bounds=(0.0, 500.0)).report(df, truth="y")
+    np.testing.assert_allclose(df["prediction"], [10.0, 500.0])
+    np.testing.assert_allclose(df["q_95"], [100.0, 500.0])
+    np.testing.assert_allclose(df["y"], [10.0, 100.0], err_msg="truth is inverted but never clipped")
+
+
+def test_report_handles_a_prefixed_target():
+    df = pd.DataFrame({"ksol_pred": [2.0], "ksol_q_95": [3.0], "ksol_pred_std": [0.1], "logd_pred": [2.0]})
+    TargetAdapter(Log10()).report(df, prediction="ksol_pred", prefix="ksol_")
+    assert df["ksol_pred"][0] == pytest.approx(100.0) and df["ksol_q_95"][0] == pytest.approx(1000.0)
+    assert df["ksol_pred_std"][0] == 0.1 and df["logd_pred"][0] == 2.0
+
+
+def test_adapter_round_trips_the_training_target():
+    adapter = TargetAdapter(Log10(offset=0.01))
+    truth = np.array([0.0, 0.5, 250.0])
+    df = pd.DataFrame({"y": adapter.forward(truth)})
+    adapter.report(df, truth="y")
+    np.testing.assert_allclose(df["y"], truth, atol=1e-12)
 
 
 def test_check_target_domain_passes_an_in_domain_column():
@@ -530,7 +591,7 @@ def test_forward_predictions_maps_target_prediction_and_quantiles():
     np.testing.assert_allclose(out["ksol"], [1.0, 2.0])
     np.testing.assert_allclose(out["q_05"], [0.0, 1.0])
     assert out["prediction"].iloc[0] == 1.0 and np.isnan(out["prediction"].iloc[1])
-    assert "prediction_std" not in out.columns
+    assert out["prediction_std"].tolist() == [1.0, 2.0], "the spread is already in the model's space"
     assert out["id"].tolist() == [1, 2] and out["confidence"].tolist() == [0.4, 0.9]
     assert df["ksol"].tolist() == [10.0, 100.0]
 
@@ -552,9 +613,16 @@ def test_forward_predictions_maps_each_target_with_its_own_transform():
 
     assert out["ksol"].iloc[0] == 1.0 and out["ksol_pred"].iloc[0] == 2.0 and out["prediction"].iloc[0] == 2.0
     assert out["logd"].iloc[0] == 2.0 and out["logd_pred_std"].iloc[0] == 0.3
-    assert "ksol_pred_std" not in out.columns and "prediction_std" not in out.columns
+    assert out["ksol_pred_std"].iloc[0] == 1.0 and out["prediction_std"].iloc[0] == 1.0
 
 
 def test_forward_predictions_is_a_no_op_for_identity():
     df = pd.DataFrame({"y": [1.0], "prediction": [1.0], "prediction_std": [0.1]})
     assert forward_predictions(df, {"y": Identity()}, primary="y") is df
+
+
+def test_report_leaves_input_columns_that_look_like_quantiles_alone():
+    df = pd.DataFrame({"prediction": [2.0], "q_95": [3.0], "q_feature": [3.0], "q_note": ["text"]})
+    TargetAdapter(Log10()).report(df)
+    assert df["prediction"][0] == pytest.approx(100.0) and df["q_95"][0] == pytest.approx(1000.0)
+    assert df["q_feature"][0] == 3.0 and df["q_note"][0] == "text"

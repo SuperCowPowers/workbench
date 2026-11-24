@@ -314,8 +314,7 @@ free.
 
 `prediction_std` stays the spread of the unclipped ensemble members, because clipping them
 would shrink it exactly where predictions pile up at a bound, and UQ calibrates
-`expected_residual` and `confidence` off that spread. So `prediction ± prediction_std` can
-still reach past a bound, while the quantiles do not. A target that keeps hitting its bound
+`expected_residual` and `confidence` off that spread. The quantiles never reach past a bound. A target that keeps hitting its bound
 wants a `logit`, whose inverse is bounded by construction, rather than a clip.
 
 ## Multi-target models
@@ -336,11 +335,20 @@ hyperparameters={
 | | |
 |---|---|
 | point prediction | `inverse(mean)` — the conditional median, which is what MAE scores |
-| `prediction_std` | `std` of the inverted ensemble members, so the spread is in original units |
+| `q_*` quantiles | calibrated in transformed space, then inverted: original units, asymmetric around the prediction, and inside the transform's domain |
+| `confidence` | ranks the expected error in transformed space, so it does not track the size of the prediction |
+| `prediction_std` | `std` of the ensemble members in transformed space |
+| `expected_residual` | transformed units: under `log10`, 0.3 means the prediction is expected to be off by about a factor of two |
 | metrics | always the original scale |
 | rank metrics | identical with and without a transform |
 
-That last row is the contract: the transform is monotonic, so Spearman and Kendall cannot
+The model, its ensemble spread and UQ all work in transformed space, where the model's errors
+are comparable from one compound to the next. On the way out, the columns that sit on the
+target scale are inverted: the prediction and the quantiles. A spread has no inverse, so
+`prediction_std` and `expected_residual` stay in transformed units and
+`prediction ± prediction_std` is not an interval. Read the `q_*` columns for that.
+
+The last row of the table is the contract: the transform is monotonic, so Spearman and Kendall cannot
 move. Only placement-dependent metrics — MAE, RMSE, R² — change, and they change because the
 model learned something different, not because the scale shifted.
 
