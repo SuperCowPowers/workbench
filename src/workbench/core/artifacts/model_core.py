@@ -1051,11 +1051,15 @@ class ModelCore(AWSArtifact):
         frozen_url = copy_model_artifacts(self, dst_name)
 
         # Rebuild the container from create-valid fields only, repointing the artifact
-        # URL to the frozen copy. Skip describe's read-only fields (ModelDataETag,
-        # IsCheckpoint) and ImageDigest (pins a digest the mutable :latest tag may have
-        # moved past -> ValidationException); SageMaker resolves the current digest.
+        # URL to the frozen copy and skipping describe's read-only fields (ModelDataETag,
+        # IsCheckpoint). The image is addressed by the source's digest, so the copy serves
+        # on the image its model script was generated against wherever the tag points.
         src_container = src_spec["Containers"][0]
-        container = {"Image": src_container["Image"], "ModelDataUrl": frozen_url}
+        image = src_container["Image"]
+        if src_container.get("ImageDigest"):
+            repository, _, name = image.split("@")[0].rpartition("/")
+            image = f"{repository}/{name.split(':')[0]}@{src_container['ImageDigest']}"
+        container = {"Image": image, "ModelDataUrl": frozen_url}
         for field in ("Environment", "Framework", "FrameworkVersion"):
             if field in src_container:
                 container[field] = src_container[field]
