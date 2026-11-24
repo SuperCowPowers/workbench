@@ -43,12 +43,13 @@ INSTANCE_LADDERS = {
         "ml.g6.12xlarge",  # 4x NVIDIA L4
         "ml.g5.12xlarge",  # 4x NVIDIA A10G
     ],
-    # Single-GPU training. Both rungs are a 24GB card with 32GB host RAM, clearing the
-    # 16.2GB VRAM and 24.5GB host peak of the multi-task models, and they draw on separate
-    # capacity pools.
+    # Single-GPU training. Every rung has at least a 24GB card and 32GB host RAM, clearing
+    # the 16.2GB VRAM and 24.5GB host peak of the multi-task models, and each draws on a
+    # separate capacity pool.
     "gpu": [
         "ml.g6.2xlarge",  # 1x NVIDIA L4, 8 vCPUs for data loading
         "ml.g5.2xlarge",  # 1x NVIDIA A10G, same shape
+        "ml.g6e.2xlarge",  # 1x NVIDIA L40S (48GB), 64GB host RAM
     ],
     # A search is hundreds of fits. XGBoost spreads one fit across every core, so cores cut
     # wall-clock even though the search itself is serial.
