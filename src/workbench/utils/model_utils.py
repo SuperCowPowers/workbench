@@ -16,6 +16,8 @@ import tarfile
 import awswrangler as wr
 from typing import Iterator, Optional, Dict, Any, TYPE_CHECKING
 
+from workbench.utils.target_transform import QUANTILE_COLUMNS
+
 if TYPE_CHECKING:
     from workbench.api import Model
     from workbench.algorithms.models.noise_model import NoiseModel
@@ -569,6 +571,28 @@ def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
         workbench_model.upsert_workbench_meta({"workbench_hyperparameters": hyperparameters})
 
     return hyperparameters
+
+
+def target_uq_frame(df: pd.DataFrame, target: str) -> pd.DataFrame:
+    """One target's labeled rows of a multi-target frame, with its UQ columns under the unprefixed names.
+
+    Args:
+        df: Multi-target prediction frame (``{target}_pred``, ``{target}_pred_std``, ``{target}_q_*``).
+        target: The target to view.
+
+    Returns:
+        A copy whose ``prediction``, ``prediction_std``, ``confidence`` and ``q_*`` columns are
+        this target's. A quantile the target lacks is dropped, never left as another target's.
+    """
+    uq_df = df.dropna(subset=[target]).copy()
+    uq_df["prediction"] = uq_df[f"{target}_pred"]
+    uq_df["prediction_std"] = uq_df[f"{target}_pred_std"]
+    for name in ("confidence", *QUANTILE_COLUMNS):
+        if f"{target}_{name}" in uq_df.columns:
+            uq_df[name] = uq_df[f"{target}_{name}"]
+        elif name in uq_df.columns:
+            uq_df = uq_df.drop(columns=name)
+    return uq_df
 
 
 def uq_metrics(df: pd.DataFrame, target_col: str, transform=None) -> Dict[str, Any]:

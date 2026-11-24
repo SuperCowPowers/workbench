@@ -370,7 +370,7 @@ def check_target_domain(spec: TransformSpec, targets: Sequence[str], ranges: dic
 _LOCATION_COLUMNS = ("neighbor_target_mean",)
 
 # The quantile columns a UQ model writes
-_QUANTILE_COLUMNS = ("q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975")
+QUANTILE_COLUMNS = ("q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975")
 
 
 class TargetAdapter:
@@ -407,7 +407,7 @@ class TargetAdapter:
             truth: The target column, when the frame carries it in the model's space. Omit
                 for rows whose truth was never forwarded (held-out and inference rows).
         """
-        bounded = {prediction, *(f"{prefix}{name}" for name in _QUANTILE_COLUMNS)}
+        bounded = {prediction, *(f"{prefix}{name}" for name in QUANTILE_COLUMNS)}
         unbounded = {truth, *(f"{prefix}{name}" for name in _LOCATION_COLUMNS)}
         for column in df.columns:
             if column in bounded:

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from workbench.utils.model_utils import uq_metrics
+from workbench.utils.model_utils import target_uq_frame, uq_metrics
 from workbench.utils.target_transform import Log10
 
 QUANTILES = {"q_025": -1.96, "q_05": -1.645, "q_10": -1.282, "q_16": -1.0, "q_25": -0.674}
@@ -44,3 +44,16 @@ def test_values_outside_the_transform_domain_are_left_out(log_model_frame):
     log_model_frame.loc[0, "q_16"] = 0.0
     metrics = uq_metrics(log_model_frame, "target", Log10())
     assert np.isfinite(metrics["interval_to_error_corr"]) and metrics["n_samples"] == len(log_model_frame)
+
+
+def test_target_uq_frame_carries_the_targets_own_columns():
+    df = pd.DataFrame({"a": [1.0, 2.0], "b": [5.0, np.nan], "a_pred": [1.1, 2.1], "b_pred": [5.5, 6.5]})
+    df = df.assign(a_pred_std=0.1, b_pred_std=0.5, prediction=df["a_pred"], prediction_std=0.1)
+    df = df.assign(confidence=0.9, a_confidence=0.9, b_confidence=0.2)
+    df = df.assign(q_16=1.0, a_q_16=1.0, b_q_16=5.0, q_84=2.2)
+
+    view = target_uq_frame(df, "b")
+    assert len(view) == 1, "only the target's labeled rows"
+    assert view["prediction"].iloc[0] == 5.5 and view["prediction_std"].iloc[0] == 0.5
+    assert view["confidence"].iloc[0] == 0.2 and view["q_16"].iloc[0] == 5.0
+    assert "q_84" not in view.columns, "another target's quantile is never left behind"

@@ -32,7 +32,7 @@ from workbench.core.artifacts.aws_artifact import AWSArtifact
 from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType, ModelFramework
 from workbench.utils.endpoint_metrics import EndpointMetrics
 from workbench.utils.s3_utils import compute_s3_object_hash
-from workbench.utils.model_utils import uq_metrics
+from workbench.utils.model_utils import target_uq_frame, uq_metrics
 from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_cv
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
@@ -705,12 +705,7 @@ class EndpointCore(AWSArtifact):
         if is_regression and is_multi_target:
             # Multi-target: compute UQ metrics per target using per-target columns
             for target in target_list:
-                uq_df = out_of_fold_df.dropna(subset=[target]).copy()
-                uq_df["prediction"] = uq_df[f"{target}_pred"]
-                uq_df["prediction_std"] = uq_df[f"{target}_pred_std"]
-                if f"{target}_confidence" in uq_df.columns:
-                    uq_df["confidence"] = uq_df[f"{target}_confidence"]
-                metrics = uq_metrics(uq_df, target, transforms[target])
+                metrics = uq_metrics(target_uq_frame(out_of_fold_df, target), target, transforms[target])
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/cv_{target}", metrics)
             # Also capture full_cross_fold metrics for the primary target so default
             # UI views (which look up "full_cross_fold") work on multi-target models.
