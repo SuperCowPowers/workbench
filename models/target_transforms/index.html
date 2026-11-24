@@ -6125,8 +6125,7 @@ clip only drops mass the model has declared impossible and the interval gets tig
 free.</p>
 <p><code>prediction_std</code> stays the spread of the unclipped ensemble members, because clipping them
 would shrink it exactly where predictions pile up at a bound, and UQ calibrates
-<code>expected_residual</code> and <code>confidence</code> off that spread. So <code>prediction ± prediction_std</code> can
-still reach past a bound, while the quantiles do not. A target that keeps hitting its bound
+<code>expected_residual</code> and <code>confidence</code> off that spread. The quantiles never reach past a bound. A target that keeps hitting its bound
 wants a <code>logit</code>, whose inverse is bounded by construction, rather than a clip.</p>
 <h2 id="multi-target-models">Multi-target models</h2>
 <p>A single spec applies to every target. Since a multi-target model usually carries targets in
@@ -6151,8 +6150,20 @@ omits get identity:</p>
 <td><code>inverse(mean)</code> — the conditional median, which is what MAE scores</td>
 </tr>
 <tr>
+<td><code>q_*</code> quantiles</td>
+<td>calibrated in transformed space, then inverted: original units, asymmetric around the prediction, and inside the transform's domain</td>
+</tr>
+<tr>
+<td><code>confidence</code></td>
+<td>ranks the expected error in transformed space, so it does not track the size of the prediction</td>
+</tr>
+<tr>
 <td><code>prediction_std</code></td>
-<td><code>std</code> of the inverted ensemble members, so the spread is in original units</td>
+<td><code>std</code> of the ensemble members in transformed space</td>
+</tr>
+<tr>
+<td><code>expected_residual</code></td>
+<td>transformed units: under <code>log10</code>, 0.3 means the prediction is expected to be off by about a factor of two</td>
 </tr>
 <tr>
 <td>metrics</td>
@@ -6164,7 +6175,12 @@ omits get identity:</p>
 </tr>
 </tbody>
 </table>
-<p>That last row is the contract: the transform is monotonic, so Spearman and Kendall cannot
+<p>The model, its ensemble spread and UQ all work in transformed space, where the model's errors
+are comparable from one compound to the next. On the way out, the columns that sit on the
+target scale are inverted: the prediction and the quantiles. A spread has no inverse, so
+<code>prediction_std</code> and <code>expected_residual</code> stay in transformed units and
+<code>prediction ± prediction_std</code> is not an interval. Read the <code>q_*</code> columns for that.</p>
+<p>The last row of the table is the contract: the transform is monotonic, so Spearman and Kendall cannot
 move. Only placement-dependent metrics — MAE, RMSE, R² — change, and they change because the
 model learned something different, not because the scale shifted.</p>
 <h2 id="what-a-transform-buys">What a transform buys</h2>
