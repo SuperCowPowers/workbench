@@ -600,10 +600,10 @@ def uq_metrics(df: pd.DataFrame, target_col: str, transform=None) -> Dict[str, A
     Evaluate uncertainty quantification model with essential metrics.
     Args:
         df: DataFrame with predictions and uncertainty estimates. Must contain the target
-            column, a "prediction" column, and a "prediction_std" column (required for
-            median_std). Quantile columns ("q_025", "q_975", "q_05", "q_95",
-            "q_10", "q_90", "q_25", "q_75") are used for coverage/width when present;
-            otherwise Gaussian bounds are derived from "prediction_std".
+            column and a "prediction" column. Each metric is reported only when the
+            frame carries its inputs: "prediction_std" for median_std, the "q_*" quantile
+            columns for coverage, widths and the interval correlation, and "confidence"
+            for the confidence correlation.
         target_col: Name of the true target column in the DataFrame.
         transform: The model's target transform. UQ is calibrated in the model's space, so
             the two error correlations are scored there. Coverage and widths are reported
@@ -649,95 +649,39 @@ def uq_metrics(df: pd.DataFrame, target_col: str, transform=None) -> Dict[str, A
         log.warning("UQ metrics: no valid rows after dropping NaNs. Returning empty metrics.")
         return {}
 
-    # --- Coverage and Interval Width ---
-    if "q_025" in df.columns and "q_975" in df.columns:
-        lower_95, upper_95 = df["q_025"], df["q_975"]
-        lower_90, upper_90 = df["q_05"], df["q_95"]
-        lower_80, upper_80 = df["q_10"], df["q_90"]
-        lower_68 = df.get("q_16", df["q_10"])  # fallback to 80% interval
-        upper_68 = df.get("q_84", df["q_90"])  # fallback to 80% interval
-        lower_50, upper_50 = df["q_25"], df["q_75"]
-    elif "prediction_std" in df.columns:
-        lower_95 = df["prediction"] - 1.96 * df["prediction_std"]
-        upper_95 = df["prediction"] + 1.96 * df["prediction_std"]
-        lower_90 = df["prediction"] - 1.645 * df["prediction_std"]
-        upper_90 = df["prediction"] + 1.645 * df["prediction_std"]
-        lower_80 = df["prediction"] - 1.282 * df["prediction_std"]
-        upper_80 = df["prediction"] + 1.282 * df["prediction_std"]
-        lower_68 = df["prediction"] - 1.0 * df["prediction_std"]
-        upper_68 = df["prediction"] + 1.0 * df["prediction_std"]
-        lower_50 = df["prediction"] - 0.674 * df["prediction_std"]
-        upper_50 = df["prediction"] + 0.674 * df["prediction_std"]
-    else:
-        raise ValueError(
-            "Either quantile columns (q_025, q_975, q_25, q_75) or 'prediction_std' column must be present."
-        )
-    median_std = df["prediction_std"].median()
-    coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
-    coverage_90 = np.mean((df[target_col] >= lower_90) & (df[target_col] <= upper_90))
-    coverage_80 = np.mean((df[target_col] >= lower_80) & (df[target_col] <= upper_80))
-    coverage_68 = np.mean((df[target_col] >= lower_68) & (df[target_col] <= upper_68))
-    median_width_95 = np.median(upper_95 - lower_95)
-    median_width_90 = np.median(upper_90 - lower_90)
-    median_width_80 = np.median(upper_80 - lower_80)
-    median_width_50 = np.median(upper_50 - lower_50)
-    median_width_68 = np.median(upper_68 - lower_68)
+    results = {}
+    if "prediction_std" in df.columns:
+        results["median_std"] = df["prediction_std"].median()
 
-    # --- Interval to Error Correlation ---
-    # Scored in the model's space, where the interval and the confidence are calibrated
-    truth, prediction, lower, upper = (
-        np.asarray(values, dtype=float) for values in (df[target_col], df["prediction"], lower_68, upper_68)
-    )
-    if transform is not None:
-        # A value outside the transform's domain forwards to NaN and is left out
-        truth, prediction, lower, upper = (
-            transform.forward(values, strict=False) for values in (truth, prediction, lower, upper)
-        )
-    scored = np.isfinite(truth) & np.isfinite(prediction) & np.isfinite(lower) & np.isfinite(upper)
-    abs_residuals = np.abs(truth - prediction)[scored]
-    width_68 = (upper - lower)[scored]
+    # Scored in the model's space, where the intervals and the confidence are calibrated.
+    # A value outside the transform's domain forwards to NaN and is left out.
+    def model_space(values):
+        values = np.asarray(values, dtype=float)
+        return values if transform is None else transform.forward(values, strict=False)
 
-    # Spearman correlation for robustness
-    interval_to_error_corr = spearmanr(width_68, abs_residuals)[0]
+    abs_residuals = np.abs(model_space(df[target_col]) - model_space(df["prediction"]))
 
-    # --- Confidence to Error Correlation ---
-    # If confidence column exists, compute correlation (should be negative: high confidence = low error)
-    confidence_to_error_corr = None
+    # --- Coverage, Interval Width and Interval to Error Correlation ---
+    levels = {"50": ("q_25", "q_75"), "68": ("q_16", "q_84"), "80": ("q_10", "q_90")}
+    levels.update({"90": ("q_05", "q_95"), "95": ("q_025", "q_975")})
+    if all(column in df.columns for pair in levels.values() for column in pair):
+        for level, (lower, upper) in levels.items():
+            if level != "50":
+                results[f"coverage_{level}"] = np.mean((df[target_col] >= df[lower]) & (df[target_col] <= df[upper]))
+            results[f"median_width_{level}"] = np.median(df[upper] - df[lower])
+        width_68 = model_space(df["q_84"]) - model_space(df["q_16"])
+        scored = np.isfinite(width_68) & np.isfinite(abs_residuals)
+        results["interval_to_error_corr"] = spearmanr(width_68[scored], abs_residuals[scored])[0]
+
+    # --- Confidence to Error Correlation (negative is good: high confidence, low error) ---
     if "confidence" in df.columns:
-        confidence_to_error_corr = spearmanr(df["confidence"].to_numpy()[scored], abs_residuals)[0]
-
-    # Collect results
-    results = {
-        "coverage_68": coverage_68,
-        "coverage_80": coverage_80,
-        "coverage_90": coverage_90,
-        "coverage_95": coverage_95,
-        "median_std": median_std,
-        "median_width_50": median_width_50,
-        "median_width_68": median_width_68,
-        "median_width_80": median_width_80,
-        "median_width_90": median_width_90,
-        "median_width_95": median_width_95,
-        "interval_to_error_corr": interval_to_error_corr,
-        "confidence_to_error_corr": confidence_to_error_corr,
-        "n_samples": len(df),
-    }
+        scored = np.isfinite(abs_residuals)
+        results["confidence_to_error_corr"] = spearmanr(df["confidence"].to_numpy()[scored], abs_residuals[scored])[0]
+    results["n_samples"] = len(df)
 
     print("\n=== UQ Metrics ===")
-    print(f"Coverage @ 68%: {coverage_68:.3f} (target: 0.68)")
-    print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
-    print(f"Coverage @ 90%: {coverage_90:.3f} (target: 0.90)")
-    print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
-    print(f"Median Prediction StdDev: {median_std:.3f}")
-    print(f"Median 50% Width: {median_width_50:.3f}")
-    print(f"Median 68% Width: {median_width_68:.3f}")
-    print(f"Median 80% Width: {median_width_80:.3f}")
-    print(f"Median 90% Width: {median_width_90:.3f}")
-    print(f"Median 95% Width: {median_width_95:.3f}")
-    print(f"Interval/Error Corr: {interval_to_error_corr:.3f} (higher is better, target: >0.5)")
-    if confidence_to_error_corr is not None:
-        print(f"Confidence/Error Corr: {confidence_to_error_corr:.3f} (lower is better, target: <-0.5)")
-    print(f"Samples: {len(df)}")
+    for name, value in results.items():
+        print(f"{name}: {value:.3f}" if isinstance(value, float) else f"{name}: {value}")
     return results
 
 

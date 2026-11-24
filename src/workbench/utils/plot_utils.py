@@ -127,18 +127,9 @@ def prediction_intervals(df, figure, x_col):
         Updated figure with prediction intervals
     """
 
-    # Does the dataframe have the quantiles computed already?
-    required_cols = ["q_025", "q_25", "q_75", "q_975"]
-    if not all(col in df.columns for col in required_cols):
-        # Check for a prediction_std column and compute quantiles if needed
-        if "prediction_std" not in df.columns:
-            return figure  # No quantiles to plot
-
-        # Calculate quantiles based on standard deviation
-        df["q_025"] = df["prediction"] - 1.96 * df["prediction_std"]
-        df["q_975"] = df["prediction"] + 1.96 * df["prediction_std"]
-        df["q_25"] = df["prediction"] - 0.674 * df["prediction_std"]
-        df["q_75"] = df["prediction"] + 0.674 * df["prediction_std"]
+    # The bands are the model's own quantiles; a frame without them gets none
+    if not all(col in df.columns for col in ["q_025", "q_25", "q_75", "q_975"]):
+        return figure
 
     # Sort dataframe by x_col for connected lines
     sorted_df = df.sort_values(by=x_col)

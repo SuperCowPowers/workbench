@@ -57,3 +57,16 @@ def test_target_uq_frame_carries_the_targets_own_columns():
     assert view["prediction"].iloc[0] == 5.5 and view["prediction_std"].iloc[0] == 0.5
     assert view["confidence"].iloc[0] == 0.2 and view["q_16"].iloc[0] == 5.0
     assert "q_84" not in view.columns, "another target's quantile is never left behind"
+
+
+def test_a_frame_without_quantiles_reports_no_interval_metrics(log_model_frame):
+    """Intervals are the model's own quantiles; they are never rebuilt from prediction_std."""
+    df = log_model_frame.drop(columns=[c for c in log_model_frame.columns if c.startswith("q_")])
+    metrics = uq_metrics(df, "target", Log10())
+    assert not [key for key in metrics if key.startswith(("coverage_", "median_width_", "interval_"))]
+    assert metrics["confidence_to_error_corr"] < 0 and metrics["median_std"] > 0 and metrics["n_samples"] == len(df)
+
+
+def test_a_plain_regression_frame_reports_only_its_size(log_model_frame):
+    metrics = uq_metrics(log_model_frame[["target", "prediction"]], "target")
+    assert metrics == {"n_samples": len(log_model_frame)}

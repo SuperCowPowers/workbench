@@ -431,6 +431,12 @@ class ScatterPlot(PluginInterface):
             xaxis = dict(visible=False)
             yaxis = dict(visible=False)
 
+        # A few very wide interval bands would otherwise set the scale and flatten the points
+        if pred_intervals and y_col == "prediction" and "q_975" in df.columns:
+            low, high = float(df[y_col].min()), float(df[y_col].max())
+            pad = 0.5 * (high - low)
+            yaxis["range"] = [low - pad, high + pad]
+
         # Update layout.
         figure.update_layout(
             margin={"t": 20, "b": 55, "r": 0, "l": 35, "pad": 0},

@@ -698,7 +698,7 @@ class EndpointCore(AWSArtifact):
         is_multi_target = len(target_list) > 1
         is_regression = model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
 
-        # Capture uncertainty metrics (regression only — uq_metrics requires prediction_std)
+        # Capture uncertainty metrics (regression only)
         transforms = model.target_transform() if is_regression else None
         if not isinstance(transforms, dict):
             transforms = {primary_target: transforms}
