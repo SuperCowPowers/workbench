@@ -571,7 +571,7 @@ def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
     return hyperparameters
 
 
-def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
+def uq_metrics(df: pd.DataFrame, target_col: str, transform=None) -> Dict[str, Any]:
     """
     Evaluate uncertainty quantification model with essential metrics.
     Args:
@@ -581,6 +581,9 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
             "q_10", "q_90", "q_25", "q_75") are used for coverage/width when present;
             otherwise Gaussian bounds are derived from "prediction_std".
         target_col: Name of the true target column in the DataFrame.
+        transform: The model's target transform. UQ is calibrated in the model's space, so
+            the two error correlations are scored there. Coverage and widths are reported
+            on the frame's own scale.
     Returns:
         Dictionary of computed metrics.
     """
@@ -657,8 +660,18 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     median_width_68 = np.median(upper_68 - lower_68)
 
     # --- Interval to Error Correlation ---
-    abs_residuals = np.abs(df[target_col] - df["prediction"])
-    width_68 = upper_68 - lower_68
+    # Scored in the model's space, where the interval and the confidence are calibrated
+    truth, prediction, lower, upper = (
+        np.asarray(values, dtype=float) for values in (df[target_col], df["prediction"], lower_68, upper_68)
+    )
+    if transform is not None:
+        # A value outside the transform's domain forwards to NaN and is left out
+        truth, prediction, lower, upper = (
+            transform.forward(values, strict=False) for values in (truth, prediction, lower, upper)
+        )
+    scored = np.isfinite(truth) & np.isfinite(prediction) & np.isfinite(lower) & np.isfinite(upper)
+    abs_residuals = np.abs(truth - prediction)[scored]
+    width_68 = (upper - lower)[scored]
 
     # Spearman correlation for robustness
     interval_to_error_corr = spearmanr(width_68, abs_residuals)[0]
@@ -667,7 +680,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     # If confidence column exists, compute correlation (should be negative: high confidence = low error)
     confidence_to_error_corr = None
     if "confidence" in df.columns:
-        confidence_to_error_corr = spearmanr(df["confidence"], abs_residuals)[0]
+        confidence_to_error_corr = spearmanr(df["confidence"].to_numpy()[scored], abs_residuals)[0]
 
     # Collect results
     results = {

@@ -620,7 +620,9 @@ class EndpointCore(AWSArtifact):
             # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
             regressor_types = [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
             if model.model_type in regressor_types and "prediction_std" in prediction_df.columns:
-                metrics = uq_metrics(prediction_df, primary_target)
+                transform = model.target_transform()
+                transform = transform[primary_target] if isinstance(transform, dict) else transform
+                metrics = uq_metrics(prediction_df, primary_target, transform)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
         # Return the prediction DataFrame
@@ -697,6 +699,9 @@ class EndpointCore(AWSArtifact):
         is_regression = model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
 
         # Capture uncertainty metrics (regression only — uq_metrics requires prediction_std)
+        transforms = model.target_transform() if is_regression else None
+        if not isinstance(transforms, dict):
+            transforms = {primary_target: transforms}
         if is_regression and is_multi_target:
             # Multi-target: compute UQ metrics per target using per-target columns
             for target in target_list:
@@ -705,14 +710,16 @@ class EndpointCore(AWSArtifact):
                 uq_df["prediction_std"] = uq_df[f"{target}_pred_std"]
                 if f"{target}_confidence" in uq_df.columns:
                     uq_df["confidence"] = uq_df[f"{target}_confidence"]
-                metrics = uq_metrics(uq_df, target)
+                metrics = uq_metrics(uq_df, target, transforms[target])
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/cv_{target}", metrics)
             # Also capture full_cross_fold metrics for the primary target so default
             # UI views (which look up "full_cross_fold") work on multi-target models.
-            primary_metrics = uq_metrics(out_of_fold_df.dropna(subset=[primary_target]), primary_target)
+            primary_metrics = uq_metrics(
+                out_of_fold_df.dropna(subset=[primary_target]), primary_target, transforms[primary_target]
+            )
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", primary_metrics)
         elif is_regression:
-            metrics = uq_metrics(out_of_fold_df, primary_target)
+            metrics = uq_metrics(out_of_fold_df, primary_target, transforms[primary_target])
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
         for target in target_list:
             # Drop rows with NaN target values for metrics/plots
