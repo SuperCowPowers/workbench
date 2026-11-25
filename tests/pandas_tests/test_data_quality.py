@@ -214,7 +214,7 @@ def test_outliers_keep_what_a_box_plot_needs():
 
 def test_noise_floor_pools_the_spread_of_repeated_keys():
     df = pd.DataFrame({"cpd": ["a", "a", "b", "b", "c"], "y": [1.0, 3.0, 10.0, 14.0, 7.0]})
-    noise = noise_floor(df, "y", "cpd", log=False)
+    noise = noise_floor(df, "y", "cpd", log_scale=False)
 
     assert noise.groups == 2 and noise.rows == 4 and not noise.log and noise.rough
     assert noise.sd == pytest.approx(np.sqrt((2 + 8) / 2))  # squared deviations 1+1 and 4+4, two degrees of freedom
@@ -239,6 +239,7 @@ def test_data_quality_estimates_noise_by_replicate_key_or_key():
     assert data_quality(df, key="row", target="y", replicate_key="cpd").noise.groups == 2
     assert data_quality(df, key="row", target="y").noise.groups == 0
     assert data_quality(df, key="row").noise is None
+    assert data_quality(df, key="row", target="y", replicate_key="cpd", log_scale=True).noise.log
 
 
 if __name__ == "__main__":

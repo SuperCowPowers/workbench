@@ -891,7 +891,7 @@ class NoiseFloor:
 
 
 def noise_floor(
-    df: pd.DataFrame, target: str, replicate_key: Union[str, List[str]], log: Optional[bool] = None
+    df: pd.DataFrame, target: str, replicate_key: Union[str, List[str]], log_scale: Optional[bool] = None
 ) -> NoiseFloor:
     """Estimate a measurement's noise from the keys measured more than once.
 
@@ -904,8 +904,8 @@ def noise_floor(
         target (str): The measured column.
         replicate_key (Union[str, List[str]]): Column(s) naming what was measured; rows sharing
             them are repeats of one measurement.
-        log (Optional[bool]): Measure the spread on log10 values. Defaults to doing so for a
-            positive, strongly skewed column.
+        log_scale (Optional[bool]): Measure the spread on log10 values; pass the scale a model
+            of the target is fit on. Defaults to log for a positive, strongly skewed column.
 
     Returns:
         NoiseFloor: The pooled spread, the total spread, and each replicated key's.
@@ -915,9 +915,9 @@ def noise_floor(
     values = pd.to_numeric(frame[target], errors="coerce")
     usable = np.isfinite(values) & frame[keys].notna().all(axis=1)
     frame, values = frame[usable], values[usable]
-    if log is None:
-        log = bool(len(values) and (values > 0).all() and abs(values.skew()) > LOG_FENCE_SKEW)
-    if log:
+    if log_scale is None:
+        log_scale = bool(len(values) and (values > 0).all() and abs(values.skew()) > LOG_FENCE_SKEW)
+    if log_scale:
         frame, values = frame[values > 0], np.log10(values[values > 0])
 
     grouped = values.groupby([frame[k] for k in keys], sort=True)
@@ -928,7 +928,7 @@ def noise_floor(
     freedom = int((replicates["n"] - 1).sum())
     sd = float(np.sqrt(squares.sum() / freedom)) if freedom else float("nan")
     total_sd = float(values.std()) if len(values) > 1 else float("nan")
-    return NoiseFloor(target, keys, log, sd, total_sd, len(replicates), int(replicates["n"].sum()), replicates)
+    return NoiseFloor(target, keys, log_scale, sd, total_sd, len(replicates), int(replicates["n"].sum()), replicates)
 
 
 def _exact_copies(df: pd.DataFrame) -> pd.Series:
@@ -966,6 +966,7 @@ def data_quality(
     key: Union[str, List[str], None] = None,
     target: Optional[str] = None,
     replicate_key: Union[str, List[str], None] = None,
+    log_scale: Optional[bool] = None,
     outlier_scale: float = 3.0,
     max_rows: int = 1000,
 ) -> DataQuality:
@@ -986,6 +987,7 @@ def data_quality(
         target (Optional[str]): Regression target column to run `target_health` on.
         replicate_key (Union[str, List[str], None]): Column(s) naming what the target measures,
             for its noise floor. Defaults to `key`.
+        log_scale (Optional[bool]): Measure the noise floor on log10 values (see `noise_floor`).
         outlier_scale (float): Multiple of the interquartile range beyond the quartiles
             that counts as an outlier. Defaults to 3.0. A positive, strongly skewed column
             is fenced on its log10 values.
@@ -1097,7 +1099,7 @@ def data_quality(
     rows = pd.concat(row_frames, ignore_index=True) if row_frames else pd.DataFrame(columns=row_columns)
     noise = None
     if target and (replicate_key or key_cols):
-        noise = noise_floor(df, target, replicate_key or key_cols)
+        noise = noise_floor(df, target, replicate_key or key_cols, log_scale=log_scale)
     boxes_df = pd.DataFrame(boxes, columns=BOX_COLUMNS)
     return DataQuality(findings=findings_df, rows=rows[row_columns], boxes=boxes_df, noise=noise)
 

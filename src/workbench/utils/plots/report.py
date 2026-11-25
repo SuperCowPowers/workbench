@@ -693,16 +693,18 @@ def _titles(ax) -> List:
 def _on_axes_ticks(ax, renderer) -> List:
     """Tick labels that are really drawn.
 
-    matplotlib keeps tick artists for ticks outside the view at stale positions, so an
-    unfiltered sweep reports a `2.4` or a `10^25` that no reader will ever see. On this
-    report that noise was 18 of 23 hits.
+    matplotlib keeps tick artists for ticks outside the view, so only ticks whose location
+    lies within the axis' view interval count.
     """
-    box = ax.get_window_extent(renderer).padded(30)
-    return [
-        t
-        for t in ax.get_xticklabels() + ax.get_yticklabels()
-        if t.get_visible() and box.overlaps(t.get_window_extent(renderer))
-    ]
+    drawn = []
+    for axis in (ax.xaxis, ax.yaxis):
+        low, high = sorted(axis.get_view_interval())
+        span = (high - low) * 1e-9
+        for tick in axis.get_major_ticks():
+            label = tick.label1
+            if label.get_visible() and label.get_text() and low - span <= tick.get_loc() <= high + span:
+                drawn.append(label)
+    return drawn
 
 
 def overlaps(fig: plt.Figure, min_frac: float = 0.12, pad: float = -0.6) -> List[Dict]:

@@ -791,6 +791,20 @@ def test_data_quality_section_reports_the_noise_floor(tmp_path):
     assert "quality_replicates" not in none_repeated.frames
 
 
+def test_a_warning_with_no_rows_behind_it_adds_no_examples_page(tmp_path):
+    df = predictions(60)
+    df["cmax"] = 10 ** np.random.default_rng(1).normal(2, 1.5, 60)  # skewed: a target-health warning, no rows
+    report = Report("Skewed").add(sections.data_quality(data_quality(df, key="id", target="cmax", log_scale=False)))
+
+    assert report.save(tmp_path / "skewed.pdf", publish=False) == CLEAN
+    assert "Rows to look at" not in " ".join(page_text(report))
+
+
+def test_ticks_outside_the_view_do_not_count_as_overlaps(tmp_path):
+    report = Report("Outliers").add(sections.data_quality(data_quality(predictions(60), key="id")))
+    assert report.save(tmp_path / "outliers.pdf", publish=False) == CLEAN
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])
 

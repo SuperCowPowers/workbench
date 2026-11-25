@@ -239,7 +239,10 @@ def data_quality(
     verdict = " and ".join(f"{count} {one if count == 1 else many}" for count, one, many in counted) + "."
     verdict = verdict if warnings or minor else "No problems found."
 
-    has_examples = bool(warnings) and not rows.empty
+    # Only some warnings have rows behind them (target checks describe the column as a whole)
+    warned = findings.loc[findings["severity"] == "warn", ["check", "column"]]
+    behind = rows.merge(warned, on=["check", "column"])
+    has_examples = not behind.empty
     noise = result.noise
     replicates_frame = f"{name}_replicates"
 
@@ -277,8 +280,6 @@ def data_quality(
             _noise_floor(flow, noise, replicates_frame)
         if has_examples:
             each = EXAMPLE_ROWS_PER_WARNING
-            warned = findings[findings["severity"] == "warn"][["check", "column"]]
-            behind = rows.merge(warned, on=["check", "column"])
             picks = behind.groupby(["check", "column"], sort=False, dropna=False).head(each)
             columns = ["check", "column"] + key_cols + ["value"]
             flow.heading(f"Rows to look at: up to {each} behind each warning")
