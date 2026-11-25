@@ -8,6 +8,8 @@ from typing import List, Dict, Tuple, Optional, Union
 from rdkit import Chem
 from rdkit.Chem import Descriptors
 
+from workbench.utils.chem_utils.mol_standardize import largest_fragment
+
 # Set up the logger
 log = logging.getLogger("workbench")
 
@@ -61,28 +63,10 @@ def extract_advanced_salt_features(
     if mol is None:
         return None, None
 
-    # Get fragments
-    fragments = Chem.GetMolFrags(mol, asMols=True)
-
-    # Identify API (largest organic fragment) vs salt fragments
-    fragment_weights = [(frag, Descriptors.MolWt(frag)) for frag in fragments]
-    fragment_weights.sort(key=lambda x: x[1], reverse=True)
-
-    # Find largest organic fragment as API
-    api_mol = None
-    salt_frags = []
-
-    for frag, mw in fragment_weights:
-        atoms = [atom.GetSymbol() for atom in frag.GetAtoms()]
-        if "C" in atoms and api_mol is None:  # First organic fragment = API
-            api_mol = frag
-        else:
-            salt_frags.append(frag)
-
-    # Fallback: if no organic fragments, use largest
-    if api_mol is None:
-        api_mol = fragment_weights[0][0]
-        salt_frags = [frag for frag, _ in fragment_weights[1:]]
+    # The API is the largest fragment; every fragment that is not a copy of it is salt
+    api_mol = largest_fragment(mol)
+    api_smiles = Chem.MolToSmiles(api_mol)
+    salt_frags = [frag for frag in Chem.GetMolFrags(mol, asMols=True) if Chem.MolToSmiles(frag) != api_smiles]
 
     # Initialize all features with default values
     features = {col: 0 for col in _get_salt_feature_columns()}

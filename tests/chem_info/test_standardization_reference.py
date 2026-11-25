@@ -11,9 +11,10 @@ Built by: data/public_data/build_reference_compounds.py --dataset standardizatio
 """
 
 import pandas as pd
+from rdkit import Chem
 
 from workbench.api import PublicData
-from workbench.utils.chem_utils.mol_standardize import standardize
+from workbench.utils.chem_utils.mol_standardize import largest_fragment, standardize
 
 REFERENCE_DATASET = "comp_chem/reference_compounds/standardization"
 
@@ -130,9 +131,20 @@ def test_undefined_chiral_centers_match():
     assert not failures, f"{len(failures)} undefined_chiral_centers mismatches"
 
 
+def test_largest_fragment_prefers_organic_in_any_order():
+    """An inorganic fragment never wins, and the pick does not depend on how the SMILES is written."""
+
+    def pick(smiles: str) -> str:
+        return Chem.MolToSmiles(largest_fragment(Chem.MolFromSmiles(smiles)))
+
+    assert pick("CN.OS(=O)(=O)O") == pick("OS(=O)(=O)O.CN") == "CN"
+    assert pick("CCCl.CCBr") == pick("CCBr.CCCl") == "CCBr"
+
+
 if __name__ == "__main__":
     test_reference_compounds_loadable()
     test_standardized_smiles_match()
     test_extracted_salts_match()
     test_undefined_chiral_centers_match()
+    test_largest_fragment_prefers_organic_in_any_order()
     print("\nAll standardization reference tests passed!")

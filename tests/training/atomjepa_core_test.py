@@ -10,7 +10,7 @@ import pytest
 pytest.importorskip("atom_jepa")
 
 # Workbench Imports
-from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers, largest_fragment  # noqa: E402
+from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers, compound_smiles  # noqa: E402
 from workbench.training.atomjepa_core import lr_scale, pretrained_encoder_dir, train_fold  # noqa: E402
 
 pytestmark = pytest.mark.medium
@@ -90,8 +90,8 @@ def test_build_conformers_drops_counterions():
 
 
 def test_a_single_fragment_smiles_is_left_as_written():
-    assert largest_fragment("OCC") == "OCC"
-    assert largest_fragment("C1.C1") == "C1.C1"  # a ring closure across the dot: one fragment
+    assert compound_smiles("OCC") == "OCC"
+    assert compound_smiles("C1.C1") == "C1.C1"  # a ring closure across the dot: one fragment
 
 
 def test_returned_predictions_use_every_conformer(fitted):

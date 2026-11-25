@@ -198,6 +198,15 @@ KNOWN_COUNTERIONS: set[str] = {
 }
 
 
+def largest_fragment(mol: Mol) -> Mol:
+    """The compound in a multi-fragment molecule: its largest fragment, organic ahead of inorganic.
+
+    Size is the atom count, hydrogens included, and molecular weight breaks a tie. Workbench's
+    one rule for telling a compound from its counterions and solvates.
+    """
+    return rdMolStandardize.LargestFragmentChooser(preferOrganic=True).choose(mol)
+
+
 # Helper context manager for timing
 @contextmanager
 def timer(name):
@@ -284,7 +293,7 @@ class MolStandardizer:
             # Step 2: Fragment handling (conditional based on remove_salts)
             if self.remove_salts:
                 # Get parent molecule
-                parent_mol = rdMolStandardize.FragmentParent(cleaned_mol, self.params)
+                parent_mol = largest_fragment(cleaned_mol)
                 if parent_mol:
                     # Extract salt BEFORE any modifications to parent
                     salt_smiles, is_mixture = self._extract_salt(cleaned_mol, parent_mol)

@@ -22,6 +22,8 @@ from rdkit import Chem
 from safetensors.torch import save_file
 from torch import nn
 
+from workbench.utils.chem_utils.mol_standardize import largest_fragment
+
 PREDICT_BATCH_SIZE = 64
 
 # One forward at a time: the inference server runs each invocation on its own thread, and the
@@ -34,8 +36,8 @@ _FORWARD_LOCK = threading.Lock()
 # -----------------------------------------------------------------------------
 # Conformers
 # -----------------------------------------------------------------------------
-def largest_fragment(smiles: str) -> str:
-    """The largest fragment, by heavy atoms, of a multi-fragment SMILES (a salt, a solvate).
+def compound_smiles(smiles: str) -> str:
+    """The SMILES to embed: the largest fragment of a multi-fragment SMILES (a salt, a solvate).
 
     The embedder places a disconnected counterion at an arbitrary pose. A single-fragment
     SMILES comes back as written, since its atom order decides the seeded conformers.
@@ -43,13 +45,13 @@ def largest_fragment(smiles: str) -> str:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None or len(Chem.GetMolFrags(mol)) < 2:
         return smiles
-    return Chem.MolToSmiles(max(Chem.GetMolFrags(mol, asMols=True), key=lambda frag: frag.GetNumAtoms()))
+    return Chem.MolToSmiles(largest_fragment(mol))
 
 
 def _conformers(smiles: str, n: int) -> list | None:
     """n seeded ETKDGv3 + MMFF94 conformers of the largest fragment, or None when RDKit cannot build them."""
     try:
-        return smiles_to_samples(largest_fragment(smiles), num_conformers=n)
+        return smiles_to_samples(compound_smiles(smiles), num_conformers=n)
     except (ValueError, RuntimeError):
         return None
 

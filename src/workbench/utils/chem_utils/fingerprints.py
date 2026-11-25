@@ -14,7 +14,8 @@ import numpy as np
 import pandas as pd
 from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
-from rdkit.Chem.MolStandardize import rdMolStandardize
+
+from workbench.utils.chem_utils.mol_standardize import largest_fragment
 
 # Suppress RDKit warnings (e.g., "not removing hydrogen atom without neighbors")
 # Keep errors enabled so we see actual problems
@@ -145,9 +146,7 @@ def feature_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int = 4096, 
         df = df.dropna(subset=["molecule"])
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
-    largest_frags = df["molecule"].apply(
-        lambda mol: rdMolStandardize.LargestFragmentChooser().choose(mol) if mol else None
-    )
+    largest_frags = df["molecule"].apply(lambda mol: largest_fragment(mol) if mol else None)
 
     def mol_to_count_string(mol):
         """Convert molecule to comma-separated count fingerprint string."""
