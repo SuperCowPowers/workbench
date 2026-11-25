@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 # Workbench Imports
-from workbench.utils.pandas_utils import data_quality
+from workbench.utils.pandas_utils import data_quality, noise_floor
 
 
 def finding(result, check: str, column: str = None) -> pd.Series:
@@ -210,6 +210,35 @@ def test_outliers_keep_what_a_box_plot_needs():
     assert box["q1"] < box["median"] < box["q3"] and box["whisker_high"] < box["fence_high"] < 500
     assert box["whisker_low"] >= box["fence_low"] and not box["log"]
     assert data_quality(clean_frame(), key="id").boxes.empty
+
+
+def test_noise_floor_pools_the_spread_of_repeated_keys():
+    df = pd.DataFrame({"cpd": ["a", "a", "b", "b", "c"], "y": [1.0, 3.0, 10.0, 14.0, 7.0]})
+    noise = noise_floor(df, "y", "cpd", log=False)
+
+    assert noise.groups == 2 and noise.rows == 4 and not noise.log and noise.rough
+    assert noise.sd == pytest.approx(np.sqrt((2 + 8) / 2))  # squared deviations 1+1 and 4+4, two degrees of freedom
+    assert noise.replicates[["cpd", "n"]].values.tolist() == [["a", 2], ["b", 2]]
+    assert noise.max_r2 == pytest.approx(1 - noise.sd**2 / df["y"].var())
+    assert noise.fold is None
+
+
+def test_noise_floor_goes_log_on_a_skewed_positive_target_and_ignores_exact_copies():
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame({"cpd": np.repeat([f"c{i}" for i in range(40)], 3)})
+    df["y"] = np.repeat(10 ** rng.uniform(0, 5, 40), 3) * 10 ** rng.normal(0, 0.1, 120)
+    noise = noise_floor(pd.concat([df, df.head(30)]), "y", "cpd")
+
+    assert noise.log and noise.groups == 40 and noise.rows == 120 and not noise.rough
+    assert 0.07 < noise.sd < 0.13 and noise.fold == pytest.approx(10**noise.sd)
+
+
+def test_data_quality_estimates_noise_by_replicate_key_or_key():
+    df = pd.DataFrame({"row": range(4), "cpd": ["a", "a", "b", "b"], "y": [1.0, 2.0, 5.0, 5.5]})
+
+    assert data_quality(df, key="row", target="y", replicate_key="cpd").noise.groups == 2
+    assert data_quality(df, key="row", target="y").noise.groups == 0
+    assert data_quality(df, key="row").noise is None
 
 
 if __name__ == "__main__":

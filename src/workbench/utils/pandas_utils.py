@@ -844,7 +844,97 @@ LOG_FENCE_SKEW = 2.0
 
 SEVERITY_ORDER = {"warn": 0, "info": 1, "ok": 2}
 
+# Replicated keys below which a noise floor is a rough estimate
+NOISE_MIN_GROUPS = 10
+
 BOX_COLUMNS = ["column", "q1", "median", "q3", "whisker_low", "whisker_high", "fence_low", "fence_high", "log"]
+
+
+@dataclass
+class NoiseFloor:
+    """The result of `noise_floor`: how far repeat measurements of one thing disagree.
+
+    Attributes:
+        target (str): The measured column.
+        replicate_key (List[str]): The column(s) naming what was measured.
+        log (bool): Whether the spread is on log10 values.
+        sd (float): Pooled within-key standard deviation; NaN with no replicated key.
+        total_sd (float): Standard deviation of every value, on the same scale.
+        groups (int): Keys measured more than once.
+        rows (int): Rows under those keys.
+        replicates (pd.DataFrame): One row per replicated key: the key column(s), `n`, `mean`, `sd`.
+    """
+
+    target: str
+    replicate_key: List[str]
+    log: bool
+    sd: float
+    total_sd: float
+    groups: int
+    rows: int
+    replicates: pd.DataFrame
+
+    @property
+    def max_r2(self) -> float:
+        """The highest R² a model can reach when its errors are no smaller than the noise."""
+        return 1 - (self.sd / self.total_sd) ** 2 if self.total_sd > 0 else float("nan")
+
+    @property
+    def fold(self) -> Optional[float]:
+        """The noise as a fold error (10 ** sd) on a log scale; None on a linear one."""
+        return 10**self.sd if self.log else None
+
+    @property
+    def rough(self) -> bool:
+        """Whether too few keys are replicated for the estimate to be more than a rough one."""
+        return self.groups < NOISE_MIN_GROUPS
+
+
+def noise_floor(
+    df: pd.DataFrame, target: str, replicate_key: Union[str, List[str]], log: Optional[bool] = None
+) -> NoiseFloor:
+    """Estimate a measurement's noise from the keys measured more than once.
+
+    The pooled within-key standard deviation bounds what a model of `target` can reach: its
+    RMSE cannot honestly fall below it, nor its R² rise above `max_r2`. Rows identical in
+    every column are copies, not repeats, and count once.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        target (str): The measured column.
+        replicate_key (Union[str, List[str]]): Column(s) naming what was measured; rows sharing
+            them are repeats of one measurement.
+        log (Optional[bool]): Measure the spread on log10 values. Defaults to doing so for a
+            positive, strongly skewed column.
+
+    Returns:
+        NoiseFloor: The pooled spread, the total spread, and each replicated key's.
+    """
+    keys = [replicate_key] if isinstance(replicate_key, str) else list(replicate_key)
+    frame = df[~_exact_copies(df)] if len(df) else df
+    values = pd.to_numeric(frame[target], errors="coerce")
+    usable = np.isfinite(values) & frame[keys].notna().all(axis=1)
+    frame, values = frame[usable], values[usable]
+    if log is None:
+        log = bool(len(values) and (values > 0).all() and abs(values.skew()) > LOG_FENCE_SKEW)
+    if log:
+        frame, values = frame[values > 0], np.log10(values[values > 0])
+
+    grouped = values.groupby([frame[k] for k in keys], sort=True)
+    stats = grouped.agg(n="size", mean="mean", sd="std")
+    replicates = stats[stats["n"] > 1].reset_index()
+    replicates.columns = keys + ["n", "mean", "sd"]
+    squares = ((values - grouped.transform("mean")) ** 2)[grouped.transform("size") > 1]
+    freedom = int((replicates["n"] - 1).sum())
+    sd = float(np.sqrt(squares.sum() / freedom)) if freedom else float("nan")
+    total_sd = float(values.std()) if len(values) > 1 else float("nan")
+    return NoiseFloor(target, keys, log, sd, total_sd, len(replicates), int(replicates["n"].sum()), replicates)
+
+
+def _exact_copies(df: pd.DataFrame) -> pd.Series:
+    """Rows identical in every column to an earlier one; none when a column holds unhashable values."""
+    hashable = all(df[c].dropna().map(pd.api.types.is_hashable).all() for c in df.columns)
+    return df.duplicated() if hashable and len(df.columns) else pd.Series(False, index=df.index)
 
 
 @dataclass
@@ -862,17 +952,20 @@ class DataQuality:
         boxes (pd.DataFrame): One row per column with outliers, enough to draw its box plot:
             column, q1, median, q3, the whiskers (the extreme values inside the fence), the
             fence, and whether it was set on log10 values.
+        noise (Optional[NoiseFloor]): The target's noise floor, when a target and a key were given.
     """
 
     findings: pd.DataFrame
     rows: pd.DataFrame
     boxes: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=BOX_COLUMNS))
+    noise: Optional[NoiseFloor] = None
 
 
 def data_quality(
     df: pd.DataFrame,
     key: Union[str, List[str], None] = None,
     target: Optional[str] = None,
+    replicate_key: Union[str, List[str], None] = None,
     outlier_scale: float = 3.0,
     max_rows: int = 1000,
 ) -> DataQuality:
@@ -881,7 +974,8 @@ def data_quality(
     Per column: `missing` values, `non_finite` (infinite) numbers, `unparseable` text in a
     mostly numeric column, `outliers` beyond the quartiles, and `constant` columns. Per
     frame: `duplicate_key` and `duplicate_rows`. With a `target`, the `target_health`
-    checks (censoring, discretization, pileup, skew, range) are appended.
+    checks (censoring, discretization, pileup, skew, range) are appended, and its noise
+    floor is estimated from the keys measured more than once (see `noise_floor`).
 
     Only problems are reported, so an empty `findings` frame is a clean bill.
 
@@ -890,6 +984,8 @@ def data_quality(
         key (Union[str, List[str], None]): Column(s) identifying a row. Offending rows are
             listed by key so they can be looked up; without one the index is used.
         target (Optional[str]): Regression target column to run `target_health` on.
+        replicate_key (Union[str, List[str], None]): Column(s) naming what the target measures,
+            for its noise floor. Defaults to `key`.
         outlier_scale (float): Multiple of the interquartile range beyond the quartiles
             that counts as an outlier. Defaults to 3.0. A positive, strongly skewed column
             is fenced on its log10 values.
@@ -999,7 +1095,11 @@ def data_quality(
 
     row_columns = list(ids.columns) + ["check", "column", "value"]
     rows = pd.concat(row_frames, ignore_index=True) if row_frames else pd.DataFrame(columns=row_columns)
-    return DataQuality(findings=findings_df, rows=rows[row_columns], boxes=pd.DataFrame(boxes, columns=BOX_COLUMNS))
+    noise = None
+    if target and (replicate_key or key_cols):
+        noise = noise_floor(df, target, replicate_key or key_cols)
+    boxes_df = pd.DataFrame(boxes, columns=BOX_COLUMNS)
+    return DataQuality(findings=findings_df, rows=rows[row_columns], boxes=boxes_df, noise=noise)
 
 
 def shorten_values(df: pd.DataFrame, max_length: int = 100) -> pd.DataFrame:

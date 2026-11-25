@@ -775,6 +775,22 @@ def test_the_method_table_states_summed_tolerances():
     assert "numbers agree within 1 plus 0.02 of the new value" in text
 
 
+def test_data_quality_section_reports_the_noise_floor(tmp_path):
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame({"id": [f"c{i}" for i in range(200)], "compound": [f"m{i // 2}" for i in range(200)]})
+    df["cmax"] = np.repeat(10 ** rng.normal(2, 1, 100), 2) * 10 ** rng.normal(0, 0.1, 200)
+    with_noise = sections.data_quality(data_quality(df, key="id", target="cmax", replicate_key="compound"))
+    none_repeated = sections.data_quality(data_quality(df, key="id", target="cmax"))
+    first, second = Report("Noise").add(with_noise), Report("No noise").add(none_repeated)
+
+    assert first.save(tmp_path / "noise.pdf", publish=False) == CLEAN
+    assert second.save(tmp_path / "none.pdf", publish=False) == CLEAN
+    assert "Noise floor: repeat measurements agree within" in " ".join(page_text(first))
+    assert "no repeat measurements" in " ".join(page_text(second))
+    assert len(with_noise.frames["quality_replicates"]) == 100
+    assert "quality_replicates" not in none_repeated.frames
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])
 

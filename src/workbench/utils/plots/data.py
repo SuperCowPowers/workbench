@@ -1,5 +1,6 @@
 """Data plots (matplotlib): how the rows of a keyed comparison overlap, where its one-sided rows concentrate,
-which columns a quality check flagged, and a column's outliers against its spread.
+which columns a quality check flagged, a column's outliers against its spread, and how far repeat
+measurements disagree.
 
 Each takes an optional `ax` so a report can draw onto a page it is laying out; without one it
 makes its own figure. Either way it returns the figure.
@@ -13,7 +14,7 @@ from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
 
-from workbench.utils.pandas_utils import DataQuality, KeyedComparison
+from workbench.utils.pandas_utils import DataQuality, KeyedComparison, NoiseFloor
 from workbench.utils.plots.report import ACCENTS, BODY, HEADING_FONT, HEADING_WEIGHT, INK, MUTED, tidy
 
 # A pair whose values disagree
@@ -283,4 +284,42 @@ def quality_list(result: DataQuality, most: int = 8, title: str = "", ax=None):
     ax.axis("off")
     if title:
         ax.set_title(title, loc="left", pad=7, fontsize=9.5, color=INK, **heading)
+    return ax.figure
+
+
+def replicate_spread(noise: NoiseFloor, title: str = "", ax=None):
+    """Each replicated key's spread against its mean, with the pooled noise floor drawn across.
+
+    A spread that climbs with the mean says the noise is proportional, and the target is
+    better measured on a log scale.
+
+    Args:
+        noise (NoiseFloor): Output of `pandas_utils.noise_floor`, with at least one replicated key.
+        title (str): Left-aligned axes title.
+        ax: Axes to draw on. Defaults to a new figure.
+
+    Returns:
+        matplotlib.figure.Figure: The figure.
+    """
+    ax = ax if ax is not None else plt.subplots(figsize=(4.2, 2.6))[1]
+    reps = noise.replicates
+    scale = "log10 " if noise.log else ""
+    sizes = 14 + 6 * np.minimum(reps["n"] - 2, 6)
+    ax.scatter(reps["mean"], reps["sd"], s=sizes, color=ACCENTS[1], alpha=0.6, edgecolor="white", lw=0.6)
+    ax.axhline(noise.sd, color=MISMATCH_COLOR, lw=1.1, ls=(0, (4, 3)))
+    ax.annotate(
+        f"pooled SD {noise.sd:.3g}",
+        (1, noise.sd),
+        xycoords=("axes fraction", "data"),
+        xytext=(0, 3),
+        textcoords="offset points",
+        ha="right",
+        va="bottom",
+        fontsize=8,
+        color=MISMATCH_COLOR,
+    )
+    ax.set_xlabel(f"mean {scale}{noise.target}", fontsize=8.5, color=BODY)
+    ax.set_ylabel(f"SD of {scale}{noise.target}", fontsize=8.5, color=BODY)
+    ax.set_ylim(bottom=0)
+    tidy(ax, title)
     return ax.figure

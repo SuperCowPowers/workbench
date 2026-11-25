@@ -13,7 +13,7 @@ from workbench.reports.paginator import LABEL, TABLE_HEAD, TABLE_ROW, Paginator,
 from workbench.reports.report import Report, Section, Summary
 from workbench.utils.metrics_utils import performance_breakout
 from workbench.utils.archive import Archive, ArchiveRead
-from workbench.utils.pandas_utils import DataQuality, KeyedComparison
+from workbench.utils.pandas_utils import DataQuality, KeyedComparison, NoiseFloor
 from workbench.utils.plots import data as data_charts
 from workbench.utils.plots import performance as charts
 from workbench.utils.plots import report as pages
@@ -214,7 +214,7 @@ def data_quality(
     name: str = "quality",
     about: Optional[str] = None,
 ) -> Section:
-    """Data quality: the findings, then example rows for each warning.
+    """Data quality: the findings, the target's noise floor, then example rows for each warning.
 
     Args:
         result (DataQuality): Output of `pandas_utils.data_quality`.
@@ -224,8 +224,8 @@ def data_quality(
             for it. The report's notes on that artifact are shown at the top of the page.
 
     Returns:
-        Section: One or two pages, and the frames `<name>_findings` and `<name>_rows`
-            (every offending cell).
+        Section: One or two pages, and the frames `<name>_findings`, `<name>_rows` (every
+            offending cell) and, with a noise floor, `<name>_replicates` (every replicated key).
     """
     findings, rows = result.findings, result.rows
     key_cols = [c for c in rows.columns if c not in ("check", "column", "value")]
@@ -240,11 +240,15 @@ def data_quality(
     verdict = verdict if warnings or minor else "No problems found."
 
     has_examples = bool(warnings) and not rows.empty
+    noise = result.noise
+    replicates_frame = f"{name}_replicates"
 
     def build(report: Report):
         flow = Paginator(report, title, verdict)
         flow.notes(about)
         if findings.empty:
+            if noise is not None:
+                _noise_floor(flow, noise, replicates_frame)
             return flow.figs
         boxed = list(result.boxes["column"].head(OUTLIER_BOXES))
         shown = findings.drop(columns="count").fillna("")
@@ -269,6 +273,8 @@ def data_quality(
             table_height = LABEL + TABLE_HEAD + len(listed) * TABLE_ROW
             flow.block(max(table_height, 0.02 + box_height + 0.06), beside)
             flow.where(findings_frame, len(findings), shown=len(listed))
+        if noise is not None:
+            _noise_floor(flow, noise, replicates_frame)
         if has_examples:
             each = EXAMPLE_ROWS_PER_WARNING
             warned = findings[findings["severity"] == "warn"][["check", "column"]]
@@ -285,16 +291,50 @@ def data_quality(
     headline = verdict
     if len(per_column):
         headline += f" {per_column.idxmax()} has the most flagged rows ({int(per_column.max()):,})."
+    stats = [("Warnings", warnings), ("Minor", minor), ("Cells flagged", f"{flagged:,}")]
+    if noise is not None and noise.groups:
+        stats.append(("Noise floor", f"{noise.fold:.2g}x" if noise.log else f"SD {noise.sd:.3g}"))
     card = Summary(
         title,
         headline,
-        [("Warnings", warnings), ("Minor", minor), ("Cells flagged", f"{flagged:,}")],
+        stats,
         (lambda ax: data_charts.quality_list(result, most=4, ax=ax)) if len(per_column) else None,
         hero=(str(warnings), "warning" if warnings == 1 else "warnings"),
         needs_action=bool(warnings),
     )
     frames = {findings_frame: findings, rows_frame: rows}
+    if noise is not None and noise.groups:
+        frames[replicates_frame] = noise.replicates
     return Section(pages=[build], frames=frames, summary=card, about=about)
+
+
+def _noise_floor(flow: Paginator, noise: NoiseFloor, frame: str) -> None:
+    """The noise floor part of a data quality section: what repeats say about the target's noise."""
+    what = ", ".join(noise.replicate_key)
+    scale = "log10 " if noise.log else ""
+    if not noise.groups:
+        flow.heading("Noise floor: no repeat measurements to estimate it from")
+        flow.para(f"No {what} holds more than one {noise.target} value, so its noise cannot be estimated.")
+        return
+    spread = f"within {noise.fold:.2g}x" if noise.log else f"by an SD of {noise.sd:.3g}"
+    flow.heading(f"Noise floor: repeat measurements agree {spread}")
+    tiles = [("Replicated", f"{noise.groups:,}"), ("Rows", f"{noise.rows:,}")]
+    tiles += [(f"SD ({scale.strip() or 'linear'})", f"{noise.sd:.3g}")]
+    tiles += [("Fold error", f"{noise.fold:.2g}x")] if noise.log else []
+    tiles += [("Max R²", f"{noise.max_r2:.2f}")]
+    flow.tiles(tiles)
+    text = (
+        f"{noise.groups:,} {what} values were measured more than once. Their repeats disagree by a pooled SD of "
+        f"{noise.sd:.3g} in {scale}{noise.target}"
+        + (f", a typical {noise.fold:.2g}x either way" if noise.log else "")
+        + f". No model of {noise.target} can honestly beat an RMSE of about {noise.sd:.3g}, or an R² of about "
+        f"{noise.max_r2:.2f}, against single measurements this noisy."
+    )
+    if noise.rough:
+        text += " So few repeats make this a rough estimate."
+    flow.para(text)
+    flow.charts(0.19, Panel(pages.L + 0.05, 0.45, lambda ax: data_charts.replicate_spread(noise, ax=ax)))
+    flow.where(frame, noise.groups)
 
 
 def comparison(
