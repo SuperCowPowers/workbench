@@ -10,7 +10,7 @@ import pytest
 pytest.importorskip("atom_jepa")
 
 # Workbench Imports
-from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers  # noqa: E402
+from workbench.endpoints.atomjepa_utils import FoldModel, build_conformers, largest_fragment  # noqa: E402
 from workbench.training.atomjepa_core import lr_scale, pretrained_encoder_dir, train_fold  # noqa: E402
 
 pytestmark = pytest.mark.medium
@@ -81,6 +81,17 @@ def test_an_unknown_encoder_is_refused():
 def test_build_conformers_marks_failures_none():
     out = build_conformers(["CCO", "not_a_smiles"], 3)
     assert len(out[0]) == 3 and out[1] is None
+
+
+def test_build_conformers_drops_counterions():
+    sodium_salt, hcl_salt = build_conformers(["CC(=O)Oc1ccccc1C(=O)[O-].[Na+]", "CN1CCC(CC1)c1ccccc1.Cl"], 2)
+    assert 11 not in sodium_salt[0]["atomic_numbers"].tolist()
+    assert 17 not in hcl_salt[0]["atomic_numbers"].tolist()
+
+
+def test_a_single_fragment_smiles_is_left_as_written():
+    assert largest_fragment("OCC") == "OCC"
+    assert largest_fragment("C1.C1") == "C1.C1"  # a ring closure across the dot: one fragment
 
 
 def test_returned_predictions_use_every_conformer(fitted):

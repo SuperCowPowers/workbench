@@ -44,20 +44,25 @@ An independent evaluation of the authors' own code ([Model Validation Central](h
 - Against Monroe + TabPFN 3 it leads on ExpansionRx and trails on Biogen.
 - Its best endpoints are LogD, LogS, HLM clearance, and plasma and brain protein binding; its weakest are Caco-2 permeability and MLM clearance.
 
-The authors' Atom-JEPA-Bio evaluation, on the same protocol, is best or tied on 34 of 45 combinations (Monroe + TabPFN 3: 18). It leads on Biogen ADME (14 of 18, against 0 for Atom-JEPA) and cuts LogD MAE by about 9%, but still trails Monroe on Caco-2 and MLM.
+For Atom-JEPA-Bio, the authors report best or tied on 34 of 45 combinations on the same protocol (Monroe + TabPFN 3: 18). The [independent replication](https://patwalters.github.io/model-validation-central/reports/atom-jepa-bio.html), which re-trains every fold with their code and weights, gets 35 and 17:
+
+- Paired by fold against the `molecules` encoder, Bio is ahead on 32 of 45 combinations and behind on one, with LogD MAE about 9% lower.
+- Against Monroe + TabPFN 3 it is ahead on 30 and behind on 10. That includes Biogen (12 ahead, 3 behind), where the `molecules` encoder trails (3 ahead, 13 behind).
+- It still trails Monroe on MLM clearance, MDR1 efflux, and parts of Caco-2 permeability.
+- The gain over the `molecules` encoder holds on the Biogen test molecules that are absent from PCBA, on all six endpoints.
 
 In practice:
 
 - **Try Atom-JEPA** for lipophilicity, solubility, microsomal clearance, and protein or tissue binding.
 - **Prefer [TabICL](tabicl_models.md) over the [Monroe embedding](../blogs/monroe_tabicl.md)** for permeability and for target-activity assays like PXR and CYP inhibition.
-- **Fine-tune it.** The frozen encoder used as an embedding is weak in both evaluations.
+- **Fine-tune it.** Fine-tuned Bio beats its own frozen embedding on 35 of 45 paired comparisons. Frozen, Bio is ahead of the Monroe embedding on Biogen and behind it on ExpansionRx; the frozen `molecules` encoder is weak on both.
 - **Budget GPU hours.** A Chemprop model trains in minutes; an Atom-JEPA model takes hours.
 
 ## How an Atom-JEPA Model Is Built
 
 | Step | What happens |
 |------|--------------|
-| **Conformers** | Each molecule gets `n_conformers` seeded conformers. Training draws one at random per epoch; predictions average over all of them. Molecules RDKit cannot embed are dropped from training. |
+| **Conformers** | Each molecule gets `n_conformers` seeded conformers of its largest fragment, so counterions and solvates are left out. Training draws one at random per epoch; predictions average over all of them. Molecules RDKit cannot embed are dropped from training. |
 | **Fine-tuning** | Per fold: the encoder is frozen for the first epochs while the readout trains, then the whole model trains with warmup and cosine decay. An exponential moving average of the weights is what gets validated, picked and saved. |
 | **Ensemble** | The fold models are the served model: the prediction is their mean, `prediction_std` their spread. |
 | **Uncertainty** | The out-of-fold spread feeds Workbench's confidence model, with neighbors found by structure (fingerprint proximity). |
@@ -147,3 +152,4 @@ The SuperCowPowers team is happy to answer any questions you may have about AWSÂ
 - **Code:** [github.com/khelverskovp/atom-jepa](https://github.com/khelverskovp/atom-jepa) (MIT); `pip install atom-jepa`
 - **Weights:** [huggingface.co/atom-jepa/atom-jepa](https://huggingface.co/atom-jepa/atom-jepa) (CC BY 4.0)
 - **Independent evaluation:** Pat Walters, [Model Validation Central: Fine-tuning in 3D (Atom-JEPA)](https://patwalters.github.io/model-validation-central/reports/atom-jepa.html), with the study code in [model-validation-central/studies/atom-jepa](https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa)
+- **Independent evaluation, Atom-JEPA-Bio:** Pat Walters, [Model Validation Central: Bioassays Before ADMET](https://patwalters.github.io/model-validation-central/reports/atom-jepa-bio.html), with the study code in [model-validation-central/studies/atom-jepa-bio](https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa-bio)

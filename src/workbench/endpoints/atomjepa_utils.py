@@ -18,6 +18,7 @@ from atom_jepa import AtomJEPA
 from atom_jepa.conformers import smiles_to_samples
 from atom_jepa.data.collate import GraphCollator, move_batch
 from atom_jepa.models.jepa_equiformer import pool_nodes
+from rdkit import Chem
 from safetensors.torch import save_file
 from torch import nn
 
@@ -33,10 +34,22 @@ _FORWARD_LOCK = threading.Lock()
 # -----------------------------------------------------------------------------
 # Conformers
 # -----------------------------------------------------------------------------
+def largest_fragment(smiles: str) -> str:
+    """The largest fragment, by heavy atoms, of a multi-fragment SMILES (a salt, a solvate).
+
+    The embedder places a disconnected counterion at an arbitrary pose. A single-fragment
+    SMILES comes back as written, since its atom order decides the seeded conformers.
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None or len(Chem.GetMolFrags(mol)) < 2:
+        return smiles
+    return Chem.MolToSmiles(max(Chem.GetMolFrags(mol, asMols=True), key=lambda frag: frag.GetNumAtoms()))
+
+
 def _conformers(smiles: str, n: int) -> list | None:
-    """n seeded ETKDGv3 + MMFF94 conformers, or None when RDKit cannot build them."""
+    """n seeded ETKDGv3 + MMFF94 conformers of the largest fragment, or None when RDKit cannot build them."""
     try:
-        return smiles_to_samples(smiles, num_conformers=n)
+        return smiles_to_samples(largest_fragment(smiles), num_conformers=n)
     except (ValueError, RuntimeError):
         return None
 
