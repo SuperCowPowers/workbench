@@ -786,6 +786,7 @@ def test_data_quality_section_reports_the_noise_floor(tmp_path):
     assert first.save(tmp_path / "noise.pdf", publish=False) == CLEAN
     assert second.save(tmp_path / "none.pdf", publish=False) == CLEAN
     assert "Noise floor: repeat measurements agree within" in " ".join(page_text(first))
+    assert "against the mean of 2 repeats" in " ".join(page_text(first))
     assert "no repeat measurements" in " ".join(page_text(second))
     assert len(with_noise.frames["quality_replicates"]) == 100
     assert "quality_replicates" not in none_repeated.frames
@@ -803,6 +804,17 @@ def test_a_warning_with_no_rows_behind_it_adds_no_examples_page(tmp_path):
 def test_ticks_outside_the_view_do_not_count_as_overlaps(tmp_path):
     report = Report("Outliers").add(sections.data_quality(data_quality(predictions(60), key="id")))
     assert report.save(tmp_path / "outliers.pdf", publish=False) == CLEAN
+
+
+def test_noise_floor_withholds_the_ceiling_when_repeats_outspread_the_target(tmp_path):
+    df = pd.DataFrame({"id": range(12), "cpd": ["a", "a", "b", "b"] + list("cdefghij")})
+    df["y"] = [0.0, 90, 10, 80] + [50.0 + i for i in range(8)]
+    section = sections.data_quality(data_quality(df, key="id", target="y", replicate_key="cpd", log_scale=False))
+    report = Report("Wild").add(section)
+
+    assert report.save(tmp_path / "wild.pdf", publish=False) == CLEAN
+    text = " ".join(page_text(report))
+    assert "no R² ceiling follows" in text and "rough estimate" in text
 
 
 if __name__ == "__main__":

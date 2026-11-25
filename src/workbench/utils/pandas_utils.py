@@ -847,6 +847,10 @@ SEVERITY_ORDER = {"warn": 0, "info": 1, "ok": 2}
 # Replicated keys below which a noise floor is a rough estimate
 NOISE_MIN_GROUPS = 10
 
+# A noise floor is concentrated when the most scattered NOISE_TOP_FRACTION of its replicated
+# keys supply more than NOISE_CONCENTRATED of the pooled sum of squares
+NOISE_TOP_FRACTION, NOISE_CONCENTRATED = 0.05, 1 / 3
+
 BOX_COLUMNS = ["column", "q1", "median", "q3", "whisker_low", "whisker_high", "fence_low", "fence_high", "log"]
 
 
@@ -875,9 +879,31 @@ class NoiseFloor:
     replicates: pd.DataFrame
 
     @property
+    def exceeds_spread(self) -> bool:
+        """Whether repeats disagree at least as much as the whole target spreads.
+
+        The replicated keys are then not representative of the rest, and no R² ceiling follows.
+        """
+        return bool(self.sd >= self.total_sd)
+
+    @property
     def max_r2(self) -> float:
-        """The highest R² a model can reach when its errors are no smaller than the noise."""
-        return 1 - (self.sd / self.total_sd) ** 2 if self.total_sd > 0 else float("nan")
+        """The highest R² a model can reach against single measurements; NaN when `exceeds_spread`."""
+        return self.max_r2_of_mean(1)
+
+    def max_r2_of_mean(self, n: int) -> float:
+        """The highest R² a model can reach against the mean of `n` repeats of each key.
+
+        Averaging divides the noise variance by `n` and leaves the variance between keys alone,
+        so the ceiling is between / (between + noise / n). NaN when `exceeds_spread`.
+        """
+        between = self.total_sd**2 - self.sd**2
+        return between / (between + self.sd**2 / n) if between > 0 else float("nan")
+
+    @property
+    def typical_repeats(self) -> int:
+        """Rows under a replicated key, as the rounded mean."""
+        return int(round(self.replicates["n"].mean())) if self.groups else 0
 
     @property
     def fold(self) -> Optional[float]:
@@ -889,15 +915,58 @@ class NoiseFloor:
         """Whether too few keys are replicated for the estimate to be more than a rough one."""
         return self.groups < NOISE_MIN_GROUPS
 
+    def sd_interval(self, level: float = 0.95) -> Tuple[float, float]:
+        """The chi-square confidence interval of the pooled SD; NaNs with no replicated key."""
+        from scipy.stats import chi2
+
+        freedom = int((self.replicates["n"] - 1).sum())
+        if not freedom:
+            return float("nan"), float("nan")
+        tail = (1 - level) / 2
+        return tuple(float(self.sd * np.sqrt(freedom / chi2.ppf(q, freedom))) for q in (1 - tail, tail))
+
+    @property
+    def median_sd(self) -> float:
+        """The median replicated key's own SD, which a few wild keys cannot move."""
+        return float(self.replicates["sd"].median()) if self.groups else float("nan")
+
+    @property
+    def top_groups(self) -> int:
+        """How many keys are the most scattered NOISE_TOP_FRACTION of those replicated."""
+        return int(np.ceil(self.groups * NOISE_TOP_FRACTION))
+
+    @property
+    def top_share(self) -> float:
+        """The share of the pooled sum of squares that the `top_groups` most scattered keys supply."""
+        squares = ((self.replicates["n"] - 1) * self.replicates["sd"] ** 2).sort_values(ascending=False)
+        return float(squares.head(self.top_groups).sum() / squares.sum()) if squares.sum() > 0 else float("nan")
+
+    @property
+    def concentrated(self) -> bool:
+        """Whether a few keys carry the pooled SD, which then says little about a typical key."""
+        return bool(self.top_share > NOISE_CONCENTRATED)
+
+    @property
+    def trend(self) -> float:
+        """Spearman correlation of each replicated key's mean with its SD; NaN under three keys.
+
+        Far from zero, the noise is not constant on this scale: one SD over-states the floor
+        where the spread is small and under-states it where the spread is large.
+        """
+        if self.groups < 3:
+            return float("nan")
+        return float(self.replicates["mean"].corr(self.replicates["sd"], method="spearman"))
+
 
 def noise_floor(
     df: pd.DataFrame, target: str, replicate_key: Union[str, List[str]], log_scale: Optional[bool] = None
 ) -> NoiseFloor:
     """Estimate a measurement's noise from the keys measured more than once.
 
-    The pooled within-key standard deviation bounds what a model of `target` can reach: its
-    RMSE cannot honestly fall below it, nor its R² rise above `max_r2`. Rows identical in
-    every column are copies, not repeats, and count once.
+    The pooled within-key standard deviation bounds what a model of `target` can reach against
+    single measurements: its RMSE cannot honestly fall below it, nor its R² rise above `max_r2`
+    (`max_r2_of_mean(n)` against the mean of n repeats). Rows identical in every column are
+    copies, not repeats, and count once.
 
     Args:
         df (pd.DataFrame): Input DataFrame.

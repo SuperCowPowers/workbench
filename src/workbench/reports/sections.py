@@ -4,6 +4,7 @@ A section's pages show counts and a few example rows; its frames hold every row,
 Report publishes them so a reader can look the rest up.
 """
 
+import textwrap
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -29,6 +30,9 @@ BOXES_X, BOX_PITCH, FINDINGS_BESIDE_BOXES = 0.58, 0.115, 12
 
 # Rows shown behind each data quality warning
 EXAMPLE_ROWS_PER_WARNING = 10
+
+# A noise floor's spread is said to move with the value at a Spearman correlation this far from zero
+NOISE_TREND = 0.3
 
 # Columns shown beside the key in a one-sided example table
 EXTRA_COLUMNS = 3
@@ -319,22 +323,58 @@ def _noise_floor(flow: Paginator, noise: NoiseFloor, frame: str) -> None:
         return
     spread = f"within {noise.fold:.2g}x" if noise.log else f"by an SD of {noise.sd:.3g}"
     flow.heading(f"Noise floor: repeat measurements agree {spread}")
-    tiles = [("Replicated", f"{noise.groups:,}"), ("Rows", f"{noise.rows:,}")]
-    tiles += [(f"SD ({scale.strip() or 'linear'})", f"{noise.sd:.3g}")]
+    repeats = noise.typical_repeats
+    ceiling = "none" if noise.exceeds_spread else f"{noise.max_r2:.2f}"
+    tiles = [("Replicated", f"{noise.groups:,}"), (f"SD ({scale.strip() or 'linear'})", f"{noise.sd:.3g}")]
     tiles += [("Fold error", f"{noise.fold:.2g}x")] if noise.log else []
-    tiles += [("Max R²", f"{noise.max_r2:.2f}")]
+    tiles += [("Median key SD", f"{noise.median_sd:.3g}"), ("Max R², one row", ceiling)]
+    tiles += [] if noise.exceeds_spread else [(f"Max R², mean of {repeats}", f"{noise.max_r2_of_mean(repeats):.2f}")]
     flow.tiles(tiles)
+    low, high = noise.sd_interval()
     text = (
-        f"{noise.groups:,} {what} values were measured more than once. Their repeats disagree by a pooled SD of "
-        f"{noise.sd:.3g} in {scale}{noise.target}"
-        + (f", a typical {noise.fold:.2g}x either way" if noise.log else "")
-        + f". No model of {noise.target} can honestly beat an RMSE of about {noise.sd:.3g}, or an R² of about "
-        f"{noise.max_r2:.2f}, against single measurements this noisy."
+        f"{noise.groups:,} {what} values were measured more than once, over {noise.rows:,} rows. Their repeats "
+        f"disagree by a pooled SD of {noise.sd:.3g} in {scale}{noise.target} (95% interval {low:.3g} to {high:.3g})"
+        + (f", a typical {noise.fold:.2g}x either way. " if noise.log else ". ")
     )
+    if noise.exceeds_spread:
+        text += (
+            f"That is more than the whole target spreads (SD {noise.total_sd:.3g}), so the replicated values are "
+            "not representative of the rest and no R² ceiling follows from them."
+        )
+    else:
+        text += (
+            f"Against single measurements no model of {noise.target} can honestly beat an RMSE of about "
+            f"{noise.sd:.3g} or an R² of about {noise.max_r2:.2f}; against the mean of {repeats} repeats the R² "
+            f"ceiling is {noise.max_r2_of_mean(repeats):.2f}."
+        )
+    caveats = []
+    if noise.concentrated:
+        caveats.append(
+            f"The {noise.top_groups:,} most scattered of the {noise.groups:,} supply {100 * noise.top_share:.0f}% of "
+            f"that spread; the median one has an SD of {noise.median_sd:.3g}."
+        )
+    if abs(noise.trend) >= NOISE_TREND:
+        low_end, high_end = ("over", "under") if noise.trend > 0 else ("under", "over")
+        caveats.append(
+            f"The spread {'rises' if noise.trend > 0 else 'falls'} with the value (Spearman {noise.trend:.2f}), so "
+            f"the noise is not constant on this scale: one SD {low_end}-states the floor at low values and "
+            f"{high_end}-states it at high."
+        )
     if noise.rough:
-        text += " So few repeats make this a rough estimate."
-    flow.para(text)
-    flow.charts(0.19, Panel(pages.L + 0.05, 0.45, lambda ax: data_charts.replicate_spread(noise, ax=ax)))
+        caveats.append("So few repeats make this a rough estimate.")
+    paragraphs = [text] + ([" ".join(caveats)] if caveats else [])
+    chart_x, chart_height, wrap = 0.6, 0.19, 60
+
+    def beside(fig, y):  # the reading on the left, each key's spread on the right
+        below = y
+        for paragraph in paragraphs:
+            below = pages.para(fig, below, paragraph, width=wrap) - 0.008
+        ax = fig.add_axes([chart_x, y - 0.012 - chart_height, pages.R - chart_x, chart_height])
+        data_charts.replicate_spread(noise, ax=ax)
+        return min(below, y - 0.012 - chart_height - 0.055)
+
+    lines = sum(len(textwrap.wrap(paragraph, wrap)) for paragraph in paragraphs)
+    flow.block(max(lines * 0.0155 + 0.008 * len(paragraphs), 0.012 + chart_height + 0.055), beside)
     flow.where(frame, noise.groups)
 
 

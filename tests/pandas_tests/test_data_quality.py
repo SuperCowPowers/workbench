@@ -242,5 +242,37 @@ def test_data_quality_estimates_noise_by_replicate_key_or_key():
     assert data_quality(df, key="row", target="y", replicate_key="cpd", log_scale=True).noise.log
 
 
+def test_noise_floor_ceiling_rises_for_a_mean_of_repeats_and_is_withheld_when_noise_exceeds_the_spread():
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame({"cpd": np.repeat(np.arange(200), 2)})
+    df["y"] = np.repeat(rng.normal(0, 2, 200), 2) + rng.normal(0, 1, 400)
+    noise = noise_floor(df, "y", "cpd", log_scale=False)
+
+    assert noise.max_r2 == pytest.approx(0.8, abs=0.05)  # between 4, noise 1
+    assert noise.max_r2_of_mean(2) == pytest.approx(4 / 4.5, abs=0.04) and noise.typical_repeats == 2
+    low, high = noise.sd_interval()
+    assert low < noise.sd < high and low < 1 < high
+
+    # Repeats only among wild keys: noisier than the frame as a whole
+    wild = pd.DataFrame({"cpd": ["a", "a", "b", "b"] + list("cdefghij"), "y": [0, 90, 10, 80] + [50.0] * 8})
+    noise = noise_floor(wild, "y", "cpd", log_scale=False)
+    assert noise.exceeds_spread and np.isnan(noise.max_r2) and np.isnan(noise.max_r2_of_mean(3))
+
+
+def test_noise_floor_says_when_a_few_keys_carry_it_and_when_spread_moves_with_the_value():
+    rng = np.random.default_rng(1)
+    means = np.repeat(rng.uniform(1, 100, 100), 3)
+    df = pd.DataFrame({"cpd": np.repeat(np.arange(100), 3), "y": means * (1 + rng.normal(0, 0.2, 300))})
+    proportional = noise_floor(df, "y", "cpd", log_scale=False)
+    assert proportional.trend > 0.5 and abs(noise_floor(df, "y", "cpd", log_scale=True).trend) < 0.3
+
+    df = pd.DataFrame({"cpd": np.repeat(np.arange(100), 2), "y": rng.normal(0, 1, 200)})
+    assert not noise_floor(df, "y", "cpd", log_scale=False).concentrated
+    df.loc[0, "y"] = 100.0
+    spiked = noise_floor(df, "y", "cpd", log_scale=False)
+    assert spiked.concentrated and spiked.top_groups == 5 and spiked.top_share > 0.9
+    assert spiked.median_sd < 1.5 < spiked.sd
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

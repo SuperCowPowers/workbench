@@ -73,6 +73,11 @@ Section options worth knowing:
   (the compound, not the row id) and `log_scale` to the scale a model is fit on; it defaults to
   log10 for a positive, skewed target, which can double the R² ceiling. `noise_floor(df, target,
   replicate_key)` in `pandas_utils` gives the same estimate alone.
+  The section gives the ceiling against one row and against the mean of the typical repeat
+  count (`max_r2_of_mean(n)`): that gap is the per-row or per-aggregate modeling decision. It
+  also says when a few keys carry the pooled SD (`concentrated`, beside `median_sd`), when the
+  spread moves with the value (`trend`), and withholds the ceiling when repeats disagree more
+  than the whole target spreads (`exceeds_spread`): the replicated keys are not representative.
 - `about=` on `data_quality` and `performance` names the artifact the frame came from, so the
   report's notes on it show there. A comparison is about both its sides.
 
