@@ -274,5 +274,14 @@ def test_noise_floor_says_when_a_few_keys_carry_it_and_when_spread_moves_with_th
     assert spiked.median_sd < 1.5 < spiked.sd
 
 
+def test_an_all_null_string_column_is_checked_like_any_other():
+    df = pd.DataFrame({"cpd": ["a", "a", "b", "b"], "y": [1.0, 2.0, 3.0, 4.0]})
+    df["note"] = pd.Series([None] * 4, dtype="string")
+
+    assert noise_floor(df, "y", "cpd").groups == 2
+    findings = data_quality(df, target="y", replicate_key="cpd").findings
+    assert findings[findings["column"] == "note"]["check"].tolist() == ["missing"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-q", "--no-cov"])

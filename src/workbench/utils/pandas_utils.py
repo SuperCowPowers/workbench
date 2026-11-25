@@ -1002,7 +1002,7 @@ def noise_floor(
 
 def _exact_copies(df: pd.DataFrame) -> pd.Series:
     """Rows identical in every column to an earlier one; none when a column holds unhashable values."""
-    hashable = all(df[c].dropna().map(pd.api.types.is_hashable).all() for c in df.columns)
+    hashable = all(all(map(pd.api.types.is_hashable, df[c].dropna())) for c in df.columns)
     return df.duplicated() if hashable and len(df.columns) else pd.Series(False, index=df.index)
 
 
@@ -1102,7 +1102,7 @@ def data_quality(
             serious = col in key_cols or missing.mean() >= MISSING_WARN_FRACTION
             add("missing", col, "warn" if serious else "info", missing, "rows with no value")
         present = values[~missing]
-        if present.map(pd.api.types.is_hashable).all():
+        if all(map(pd.api.types.is_hashable, present)):
             hashable_cols.append(col)
         else:
             continue
