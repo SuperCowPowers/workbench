@@ -5680,12 +5680,18 @@
 <li>Against Monroe + TabPFN 3 it leads on ExpansionRx and trails on Biogen.</li>
 <li>Its best endpoints are LogD, LogS, HLM clearance, and plasma and brain protein binding; its weakest are Caco-2 permeability and MLM clearance.</li>
 </ul>
-<p>The authors' Atom-JEPA-Bio evaluation, on the same protocol, is best or tied on 34 of 45 combinations (Monroe + TabPFN 3: 18). It leads on Biogen ADME (14 of 18, against 0 for Atom-JEPA) and cuts LogD MAE by about 9%, but still trails Monroe on Caco-2 and MLM.</p>
+<p>For Atom-JEPA-Bio, the authors report best or tied on 34 of 45 combinations on the same protocol (Monroe + TabPFN 3: 18). The <a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa-bio.html">independent replication</a>, which re-trains every fold with their code and weights, gets 35 and 17:</p>
+<ul>
+<li>Paired by fold against the <code>molecules</code> encoder, Bio is ahead on 32 of 45 combinations and behind on one, with LogD MAE about 9% lower.</li>
+<li>Against Monroe + TabPFN 3 it is ahead on 30 and behind on 10. That includes Biogen (12 ahead, 3 behind), where the <code>molecules</code> encoder trails (3 ahead, 13 behind).</li>
+<li>It still trails Monroe on MLM clearance, MDR1 efflux, and parts of Caco-2 permeability.</li>
+<li>The gain over the <code>molecules</code> encoder holds on the Biogen test molecules that are absent from PCBA, on all six endpoints.</li>
+</ul>
 <p>In practice:</p>
 <ul>
 <li><strong>Try Atom-JEPA</strong> for lipophilicity, solubility, microsomal clearance, and protein or tissue binding.</li>
 <li><strong>Prefer <a href="../tabicl_models/">TabICL</a> over the <a href="../../blogs/monroe_tabicl/">Monroe embedding</a></strong> for permeability and for target-activity assays like PXR and CYP inhibition.</li>
-<li><strong>Fine-tune it.</strong> The frozen encoder used as an embedding is weak in both evaluations.</li>
+<li><strong>Fine-tune it.</strong> Fine-tuned Bio beats its own frozen embedding on 35 of 45 paired comparisons. Frozen, Bio is ahead of the Monroe embedding on Biogen and behind it on ExpansionRx; the frozen <code>molecules</code> encoder is weak on both.</li>
 <li><strong>Budget GPU hours.</strong> A Chemprop model trains in minutes; an Atom-JEPA model takes hours.</li>
 </ul>
 <h2 id="how-an-atom-jepa-model-is-built">How an Atom-JEPA Model Is Built</h2>
@@ -5699,7 +5705,7 @@
 <tbody>
 <tr>
 <td><strong>Conformers</strong></td>
-<td>Each molecule gets <code>n_conformers</code> seeded conformers. Training draws one at random per epoch; predictions average over all of them. Molecules RDKit cannot embed are dropped from training.</td>
+<td>Each molecule gets <code>n_conformers</code> seeded conformers of its largest fragment, so counterions and solvates are left out. Training draws one at random per epoch; predictions average over all of them. Molecules RDKit cannot embed are dropped from training.</td>
 </tr>
 <tr>
 <td><strong>Fine-tuning</strong></td>
@@ -5873,6 +5879,7 @@
 <li><strong>Code:</strong> <a href="https://github.com/khelverskovp/atom-jepa">github.com/khelverskovp/atom-jepa</a> (MIT); <code>pip install atom-jepa</code></li>
 <li><strong>Weights:</strong> <a href="https://huggingface.co/atom-jepa/atom-jepa">huggingface.co/atom-jepa/atom-jepa</a> (CC BY 4.0)</li>
 <li><strong>Independent evaluation:</strong> Pat Walters, <a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa.html">Model Validation Central: Fine-tuning in 3D (Atom-JEPA)</a>, with the study code in <a href="https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa">model-validation-central/studies/atom-jepa</a></li>
+<li><strong>Independent evaluation, Atom-JEPA-Bio:</strong> Pat Walters, <a href="https://patwalters.github.io/model-validation-central/reports/atom-jepa-bio.html">Model Validation Central: Bioassays Before ADMET</a>, with the study code in <a href="https://github.com/PatWalters/model-validation-central/tree/main/studies/atom-jepa-bio">model-validation-central/studies/atom-jepa-bio</a></li>
 </ul>
 
 
