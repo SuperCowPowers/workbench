@@ -39,7 +39,7 @@ report.save(out_pdf)
 | section | takes | shows |
 |---|---|---|
 | `sections.comparison` | `compare_keyed(left, right, on=...)` | how rows were compared, a Venn of the overlap, what is fine and what needs a look, then the rows to look at |
-| `sections.data_quality` | `data_quality(df, key=...)` | findings worst first beside a box plot per column with outliers, then the rows behind each warning |
+| `sections.data_quality` | `data_quality(df, key=...)` | findings worst first beside a box plot per column with outliers, the target's noise floor, then the rows behind each warning |
 | `sections.performance` | a predictions frame | metric tiles, predicted vs measured, error histogram, breakout by a column, largest errors |
 | `sections.archive` | `Archive.read(...)` | where the Archive is, files read and unreadable, the reasons |
 
@@ -67,6 +67,12 @@ Section options worth knowing:
   held by several rows on its values, for raw data where row counts are loose.
 - `performance(..., log=True)` is for positive quantities such as PK parameters: log axes,
   metrics on log10 values, GMFE and the share within 2x, 3x and 10x.
+- `data_quality(..., target=..., replicate_key=..., log_scale=...)` estimates the target's noise
+  floor: the pooled SD of repeat measurements of one `replicate_key` (default `key`), with the
+  RMSE and R² no model can beat on data that noisy. Set `replicate_key` to what was measured
+  (the compound, not the row id) and `log_scale` to the scale a model is fit on; it defaults to
+  log10 for a positive, skewed target, which can double the R² ceiling. `noise_floor(df, target,
+  replicate_key)` in `pandas_utils` gives the same estimate alone.
 - `about=` on `data_quality` and `performance` names the artifact the frame came from, so the
   report's notes on it show there. A comparison is about both its sides.
 
@@ -158,7 +164,8 @@ fit and save are done by the report.
 
 The section charts work on their own, each taking an optional `ax`:
 `workbench.utils.plots.performance` (`pred_vs_actual`, `residuals`, `breakout_bars`) and
-`workbench.utils.plots.data` (`overlap_venn`, `one_sided_bars`, `quality_list`, `outlier_box`).
+`workbench.utils.plots.data` (`overlap_venn`, `one_sided_bars`, `quality_list`, `outlier_box`,
+`replicate_spread`).
 
 ## Writing a report that reads
 
