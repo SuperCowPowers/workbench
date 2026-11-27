@@ -108,7 +108,9 @@ def save_session(name: str, report: str, user: str = None, project: str = None) 
     if project:
         report = f"{_SAVED_BY.sub('', report)}\n\n_Saved by {current_user()}_"
     try:
-        param_store().upsert(path, report)
+        # The store logs a failed write; the raise below carries it to the caller instead
+        with silence_logs():
+            param_store().upsert(path, report)
     except ValueError as e:
         # The store owns the size limit; it reports the encoded byte count in the cause
         raise ValueError(

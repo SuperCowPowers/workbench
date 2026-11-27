@@ -189,7 +189,7 @@ class ParameterStoreCore:
             )
 
         except Exception as e:
-            self.log.critical(f"Failed to add/update parameter '{name}': {e}")
+            self.log.error(f"Failed to add/update parameter '{name}': {e}")
             raise
 
     def _call_with_retry(self, func, **kwargs):

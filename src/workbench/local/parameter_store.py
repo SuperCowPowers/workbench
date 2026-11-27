@@ -151,7 +151,7 @@ class ParameterStore:
             with open(path, "w", encoding="utf-8") as fp:
                 fp.write(json.dumps(value, cls=CustomEncoder, precision=precision))
         except (OSError, TypeError) as e:
-            self.log.critical(f"Failed to add/update parameter '{name}': {e}")
+            self.log.error(f"Failed to add/update parameter '{name}': {e}")
             raise
 
     def last_modified(self, name: str) -> Optional[datetime]:

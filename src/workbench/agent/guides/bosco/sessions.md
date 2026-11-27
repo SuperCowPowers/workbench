@@ -29,12 +29,22 @@ What earns its place:
 - **Decisions** — what was chosen, and why the alternative lost.
 - **Open threads** — what was left undone, and any dead end worth not repeating.
 
-There is no character limit — the store caps the *encoded* size (compressed, then
-base64) at 4KB, and `save_session` raises with the byte count if a report exceeds it.
-Distilled prose fits easily when you **name artifacts instead of restating them**:
-`logd_value_f1` is thirteen characters and re-derivable, its column list is not. A
-report that won't fit is carrying data rather than conclusions — park the data in a
-`DFStore` frame and name the key.
+The store caps the *encoded* size (compressed, then base64) at 4KB — roughly 8,000
+characters of prose — and `save_session` raises with the byte count if a report
+exceeds it. Distilled prose fits easily when you **name artifacts instead of
+restating them**: `logd_value_f1` is thirteen characters and re-derivable, its column
+list is not.
+
+A report is a pointer, not a container. Decide where each piece lives *before* the
+first save, rather than trimming after a failed one:
+
+- **Data** (tables, value lists) — a `DFStore` frame; the report names the key.
+- **Code and step-by-step procedures** — a guide or a `DFStore` entry; the report
+  names it and says in one line what it does.
+- **Conclusions, decisions, open threads** — the report itself.
+
+If a save still fails, move content out by that list rather than shortening the
+conclusions, and tell the user what moved where.
 
 Write in past tense, plainly, for a reader who was not there. "Chemprop beat XGB
 by 0.04 RMSE on the analog set, so we kept chemprop" — not "we tried some models."
